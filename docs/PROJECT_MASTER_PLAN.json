@@ -1,0 +1,347 @@
+{
+  "project_overview": "Das SecureCall Ecosystem ist ein modular aufgebautes Hochsicherheits-Kommunikationssystem bestehend aus Android-Client(s), einer plattformübergreifenden Kryptografie-Engine, Backend-Infrastruktur (Signaling, GhostNet Relays, Key Directory, Management-API) und einem gehärteten Spezialbetriebssystem (GHOSTOS BlackRoot). Ziel ist verschleierte, Ende-zu-Ende-verschlüsselte Audio-Kommunikation mit minimaler Angriffsfläche auf App-, Netzwerk- und OS-Ebene, abgestuft in vier Produktlinien (Free / Pro / Premium / Military OS).",
+  "architecture_plan": "Das System ist in drei Hauptbereiche gegliedert: (1) SecureCall Client (Android) mit Core Crypto Engine, GhostNet Transport Layer, Signaling & Identity Layer, Security Monitor, Policy Engine sowie UI & Call Control; (2) Backend & GhostNet-Infrastruktur mit Signaling-Server, STUN/TURN-Relays, optionalen Multi-Hop-GhostNet-Nodes, Public-Key-Verzeichnis und Management-API; (3) GHOSTOS BlackRoot als gehärtetes Spezialbetriebssystem mit Kernel-Hardening, strikten Netzwerk-Policies, exklusiven Ressourcenrechten für SecureCall und minimaler Systemoberfläche.",
+  "development_phases": [
+    {
+      "phase_name": "Phase 0 – Foundation & Architektur",
+      "description": "Aufbau des Repos, Definition der Architektur, Erstellung der Kern-Dokumentation und Anlegen der Skelett-Struktur für Android, Crypto, Backend und OS.",
+      "developer_tasks": [
+        {
+          "task_name": "ARCH-01 – Architektur finalisieren und dokumentieren",
+          "expected_output": "Vollständige und konsistente ARCHITECTURE_OVERVIEW.md inklusive Komponentenliste, Integrationspunkten und High-Level-Diagramm.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Wo finde ich die bisherigen Entscheidungen zur Sicherheit und Bedrohungsmodellierung?",
+              "answer": "Alle sicherheitsrelevanten Grundentscheidungen sind in docs/SECURITY_DESIGN.md beschrieben, das Threat-Model und die Produktlinien stehen zusätzlich im PROJECT_PAPER.md."
+            },
+            {
+              "question": "Wie detailliert muss das Architekturdiagramm sein?",
+              "answer": "Es sollte die drei Schichten (Client, Backend, OS), die Hauptmodule (Crypto, GhostNet, Signaling, Policy, Security Monitor) und deren Datenflüsse zeigen – keine Klassenebene, aber klar erkennbare Modulgrenzen."
+            },
+            {
+              "question": "Darf ich neue Module einführen, wenn ich Lücken sehe?",
+              "answer": "Ja, solange sie logisch in eine der drei Ebenen passen und du sie in ARCHITECTURE_OVERVIEW.md dokumentierst und die Integrationspunkte eindeutig definierst."
+            }
+          ]
+        },
+        {
+          "task_name": "CRYPTO-01 – Core Crypto Engine Skeleton (Rust)",
+          "expected_output": "Rust-Projekt im Ordner core_crypto/ mit Modulstruktur identity/, session/, aead/, utils/zeroize/ und leeren API-Signaturen für generate_identity, start_session, encrypt_frame, decrypt_frame.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Muss in CRYPTO-01 schon echte Kryptographie implementiert werden?",
+              "answer": "Nein, CRYPTO-01 ist reiner Skeleton-Task. Es geht nur um Modulstruktur, Typen und Funktionssignaturen – die echte Krypto folgt später in weiteren Tasks."
+            },
+            {
+              "question": "Welche Rust-Version und Edition soll ich nutzen?",
+              "answer": "Bitte Rust Edition 2021 verwenden. Die konkrete Toolchain-Version kann in einer späteren Phase festgezurrt werden, sollte aber stabil und gängig sein."
+            },
+            {
+              "question": "Soll die FFI/JNI-Anbindung in diesem Task schon umgesetzt werden?",
+              "answer": "Nur vorbereiten (Modul ffi/ und erste Funktions-Signaturen). Die tatsächliche JNI-Integration erfolgt in CRYPTO-02 zusammen mit dem Android-Team."
+            }
+          ]
+        },
+        {
+          "task_name": "ANDROID-01 – UI Dummy App & Projektgrundlage",
+          "expected_output": "Android-Projekt im Ordner client_android/ mit Basispaketstruktur, drei Dummy-Screens (Home, Call, Settings) und lauffähigem Gradle-Build ohne echte Logik.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Soll ich schon Berechtigungen setzen?",
+              "answer": "Ja, RECORD_AUDIO und INTERNET sollten bereits im Manifest eingetragen werden, damit spätere Audio- und Netzwerkfeatures direkt funktionieren."
+            },
+            {
+              "question": "Muss das Design schon final sein?",
+              "answer": "Nein, wichtig ist die Navigationsstruktur und die Trennung der Screens. Ein neutrales Layout genügt, Feintuning kommt später."
+            },
+            {
+              "question": "Darf ich Jetpack Navigation verwenden?",
+              "answer": "Ja, solange die Abhängigkeiten klar dokumentiert werden und die Struktur modular bleibt."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase_name": "Phase 1 – GhostTalk Basic (Free-Version)",
+      "description": "Erste funktionsfähige Ende-zu-Ende-Audioverbindung mit Signaling-MVP, Crypto-Skeleton, Basis-GhostNet-Transport und einfachen Secure-Mode-Prüfungen.",
+      "developer_tasks": [
+        {
+          "task_name": "BACKEND-01 – Signaling Server MVP",
+          "expected_output": "Minimaler Signaling-Server mit /register, /invite, /answer, /cancel und WebSocket für Echtzeit-Events.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Welche Sprache soll verwendet werden?",
+              "answer": "Empfehlung: Node.js, Go oder Rust. Hauptsache API-Verträge werden eingehalten."
+            },
+            {
+              "question": "Muss Skalierung schon berücksichtigt werden?",
+              "answer": "Nein, ein Single-Instance-Server genügt. Skalierung kommt in späteren Phasen."
+            },
+            {
+              "question": "Darf der Server Logs speichern?",
+              "answer": "Nur technische Fehlerlogs. Keine Metadaten wie User-ID, IP oder Session-IDs."
+            }
+          ]
+        },
+        {
+          "task_name": "BACKEND-02 – STUN/TURN Integration",
+          "expected_output": "STUN/TURN-Server (Coturn) angebunden, stabile Session-Verwaltung, Timeouts, Heartbeats.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Welcher STUN/TURN-Server?",
+              "answer": "Coturn ist stabil und weit verbreitet. Für den MVP ausreichend."
+            },
+            {
+              "question": "Wie streng soll Session-Cleanup sein?",
+              "answer": "Nach Timeouts automatisch bereinigen. Werte 60–120s sind typisch."
+            },
+            {
+              "question": "Ist TLS in dieser Phase zwingend?",
+              "answer": "Optional für MVP. Später verpflichtend."
+            }
+          ]
+        },
+        {
+          "task_name": "CRYPTO-02 – Crypto Engine Integration (JNI/FFI)",
+          "expected_output": "Rust Crypto Engine über JNI mit Android verbinden. Identity-Key generieren, encrypt/decrypt für Dummy-Frames testen.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Welche CPU-Architekturen unterstützen?",
+              "answer": "arm64-v8a und armeabi-v7a. x86 optional für Emulator."
+            },
+            {
+              "question": "Wie testen wir Encryption/Decryption?",
+              "answer": "Mit festen ByteArrays – encrypt→decrypt muss identische Daten ergeben."
+            },
+            {
+              "question": "Wo kommen .so-Dateien hin?",
+              "answer": "In jniLibs/ oder per Gradle-NDK eingebunden."
+            }
+          ]
+        },
+        {
+          "task_name": "ANDROID-02 – GhostNet Audio Pipeline (MVP)",
+          "expected_output": "Call-Aufbau via Signaling, AudioRecord/Audiotrack, WebRTC/QUIC Transport. Frames senden & empfangen.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Muss die Pipeline schon verschlüsseln?",
+              "answer": "Ja, Ziel ist Verschlüsselung. Temporär unverschlüsselt erlaubt für Debugging."
+            },
+            {
+              "question": "WebRTC oder QUIC?",
+              "answer": "WebRTC ist für den MVP am einfachsten. QUIC später in Premium/OS."
+            },
+            {
+              "question": "Welche Latenz ist akzeptabel?",
+              "answer": "Idealerweise unter 400ms, darüber Warnung anzeigen."
+            }
+          ]
+        },
+        {
+          "task_name": "ANDROID-03 – Secure Mode Checks (Free)",
+          "expected_output": "Security Monitor erkennt Screen-Recording, WLAN-Status, Developer-Options. Zeigt Warnungen an.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Root erkennen & blockieren?",
+              "answer": "In Free nur Warnung. Blockieren erst in Pro/Premium."
+            },
+            {
+              "question": "Wie aggressiv Screen-Recording?",
+              "answer": "Bei aktiver Aufnahme: keine sensiblen Inhalte anzeigen, Call abbrechen."
+            },
+            {
+              "question": "Wie anzeigen?",
+              "answer": "Ampel-Status im UI (grün/gelb/rot)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase_name": "Phase 2 – GhostShield Advanced (Pro-Version)",
+      "description": "Erweiterung der Free-Basis um VPN-Firewall, erweiterte Root-/Hooking-Erkennung, Policy Engine und optimierte GhostNet-Nutzung.",
+      "developer_tasks": [
+        {
+          "task_name": "ANDROID-04 – Policy Engine Implementierung",
+          "expected_output": "Policy Engine, die Free/Pro/Premium/OS-Profile auswertet und ALLOW/WARN/BLOCK an Security Monitor übergibt.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "In welchem Format werden Policies definiert?",
+              "answer": "Empfohlen: JSON/YAML zur Build-Zeit. Premium/OS erhalten dynamische Policies via Management-API."
+            },
+            {
+              "question": "Was macht die Policy Engine im Vergleich zum Security Monitor?",
+              "answer": "Monitor sammelt Zustände — Policy Engine entscheidet, was passiert (blockieren/warnen/zulassen)."
+            },
+            {
+              "question": "Kann Policy Engine zur Laufzeit aktualisiert werden?",
+              "answer": "Ja, für Premium/OS. Für Pro reicht statisch."
+            }
+          ]
+        },
+        {
+          "task_name": "ANDROID-05 – VPN-Firewall & Ghost Tunnel",
+          "expected_output": "App-internes VPN (auf Basis Android VpnService), das nur GhostNet-Verbindungen zulässt.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Systemweiter oder App-lokaler VPN?",
+              "answer": "Für Pro reicht App-lokal. Systemweit kommt erst in Premium/OS."
+            },
+            {
+              "question": "Welche Pakete dürfen durchgelassen werden?",
+              "answer": "Nur GhostNet/Relay-Verbindungen, alles andere blockieren."
+            },
+            {
+              "question": "Was passiert bei parallelen Apps, die Netzwerk nutzen?",
+              "answer": "Sie laufen normal weiter. Whitelists erst in Premium."
+            }
+          ]
+        },
+        {
+          "task_name": "SEC-01 – Hardening & Anti-Manipulation (Pro)",
+          "expected_output": "Erweiterter Security Monitor erkennt Hooking, Debugging, Emulator, Root, Magisk.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Wie Frida/Xposed erkennen?",
+              "answer": "Kombination aus Prozess-Scan, Library-Signaturen, Ports, abnormalen Systemaufrufen."
+            },
+            {
+              "question": "Soll Blockierung sofort erfolgen?",
+              "answer": "Laut Pro-Policy meist Warnung + optional Block. Premium/OS blockiert aggressiver."
+            },
+            {
+              "question": "Brauchen wir Signatur-Checks?",
+              "answer": "Ja, App sollte eigene Signatur prüfen. Vollausbau kommt später."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase_name": "Phase 3 – PhantomLine Elite (Premium-Version)",
+      "description": "High-Security-App mit Device-Owner-Modus, App-Whitelist, IMSI-Catcher-Detection, Multi-Hop-GhostNet und tiefgreifender Geräteisolierung.",
+      "developer_tasks": [
+        {
+          "task_name": "ANDROID-06 – Device Owner Setup & App-Whitelist",
+          "expected_output": "Provisionierungs-Flow, der SecureCall als Device Owner setzt und App-Installationen auf Whitelist begrenzt.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Welche Geräte funktionieren zuverlässig?",
+              "answer": "Pixel-Geräte und AOSP-basierte ROMs. Hersteller-ROMs brauchen Zusatztests."
+            },
+            {
+              "question": "Wie wird die Whitelist verwaltet?",
+              "answer": "Zunächst statisch, später über Management-API dynamisch aktualisierbar."
+            },
+            {
+              "question": "Kann der Benutzer Device Owner entfernen?",
+              "answer": "Nein — nur über einen definierten Deprovisioning-Flow."
+            }
+          ]
+        },
+        {
+          "task_name": "SEC-02 – IMSI-Catcher Detection & Funkzellenmonitoring",
+          "expected_output": "Modul erkennt Funkzellen-Anomalien (2G-Downgrade, Cell-ID-Sprünge, atypische Parameter).",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Wie zuverlässig ist IMSI-Catcher-Detection?",
+              "answer": "Grundsätzlich heuristisch. Ziel ist Erkennung offensichtlicher Angriffe – keine absolute Sicherheit."
+            },
+            {
+              "question": "Welche Daten dürfen verwendet werden?",
+              "answer": "Nur lokale Funkparameter wie MCC/MNC, LAC/CID, Signalstärke. Keine Langzeitspeicherung."
+            },
+            {
+              "question": "Automatisch Calls blockieren?",
+              "answer": "In Premium optional via Policy (Warnung, Blockierung oder Zwangs-Abbruch)."
+            }
+          ]
+        },
+        {
+          "task_name": "GHOSTNET-03 – Multi-Hop Routing",
+          "expected_output": "GhostNet nutzt mehrere Relays (2–3 Hops) zur Verschleierung des Verkehrs.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Welche Latenz ist akzeptabel?",
+              "answer": "Unter 700 ms mit zwei Hops bei guter Netzqualität."
+            },
+            {
+              "question": "Müssen wir Path-Randomization einbauen?",
+              "answer": "Ja, mindestens zufällige Relayauswahl pro Call."
+            },
+            {
+              "question": "Wie schützen wir Multi-Hop vor Timing-Korrelation?",
+              "answer": "Durch Frame-Padding, leichte Random-Delays und feste Framegrößen."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase_name": "Phase 4 – GHOSTOS BlackRoot (Military Secure OS)",
+      "description": "Eigenständiges, gehärtetes Betriebssystem auf AOSP/GrapheneOS-Basis mit Kernel-Hardening, exklusive Mikrofon/Kamera-Rechte, Verified Boot und strikten Netzwerkprofilen.",
+      "developer_tasks": [
+        {
+          "task_name": "OS-01 – GHOSTOS Build Chain Setup",
+          "expected_output": "Reproduzierbare Build-Chain im Ordner rom_ghostos/, Dokumentation + Minimal-Image für mindestens ein Pixel-Gerät.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Auf welcher Basis soll GHOSTOS starten?",
+              "answer": "Empfohlen: AOSP oder GrapheneOS als technisch stabile Grundlage."
+            },
+            {
+              "question": "Müssen Google-Dienste bereits entfernt werden?",
+              "answer": "Nein, das kommt erst im Task ROM-02/03. OS-01 fokussiert auf Buildbarkeit."
+            },
+            {
+              "question": "Wird ein flashbares Image erwartet?",
+              "answer": "Optional. Wichtig ist zuerst der funktionierende Build-Prozess."
+            }
+          ]
+        },
+        {
+          "task_name": "OS-02 – Kernel-Hardening & Ressourcen-Isolation",
+          "expected_output": "Gehärteter Kernel (SELinux enforcing, Debug-Schnittstellen entfernt) + exklusive Mikrofon/Kamera-Nutzung für SecureCall.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Wie testen wir, dass andere Apps keinen Audiozugriff erhalten?",
+              "answer": "Über Test-Apps, die Zugriff anfragen – sie müssen geblockt werden."
+            },
+            {
+              "question": "Was muss im Kernel deaktiviert werden?",
+              "answer": "Debug-Features, unnötige Treiber, seltene Netzwerkprotokolle, alles dokumentiert in BUILD_NOTES.md."
+            },
+            {
+              "question": "Ist Verified Boot verpflichtend?",
+              "answer": "Ja, für Military-Security ist Verified Boot ein Muss."
+            }
+          ]
+        },
+        {
+          "task_name": "OS-03 – Netzwerk-Restriktionen & GhostNet-Only Mode",
+          "expected_output": "OS-level Firewall, die nur GhostNet-Verbindungen erlaubt; LTE/2G/3G Profile konfigurierbar; GSM-Telefonie optional deaktivierbar.",
+          "anticipated_questions_and_answers": [
+            {
+              "question": "Wie setzen wir GhostNet-Only technisch um?",
+              "answer": "Durch systemweiten iptables/eBPF-Regeln + Policy Routing zur GhostNet-App."
+            },
+            {
+              "question": "Soll GSM komplett deaktiviert werden?",
+              "answer": "Optional. Einige Einsatzszenarien verlangen es, andere nutzen GSM bewusst als Tarnung."
+            },
+            {
+              "question": "Ist NFC/Bluetooth erlaubt?",
+              "answer": "Nein – beides wird systemweit per Policy blockiert (Security-Grunddefinition)."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "github_repository_guidelines": {
+    "license": "All Rights Reserved",
+    "read_access_info": "Source-Code ist offen lesbar, aber nicht zur Wiederverwendung freigegeben.",
+    "structural_notes": "Module liegen in: client_android/, core_crypto/, backend/, rom_ghostos/, docs/, .github/workflows/. Feature-Branches folgen dem Muster feature/<TASK-ID>. Tasks dokumentiert in docs/tasks/."
+  }
+}
