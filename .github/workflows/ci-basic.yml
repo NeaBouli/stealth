@@ -1,0 +1,25 @@
+name: Basic CI
+
+on:
+  push:
+    branches: [ "main", "dev", "feature/**" ]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint Markdown & YAML
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install linters
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint markdownlint
+
+      - name: Run YAML Lint
+        run: yamllint .
+
+      - name: Run Markdown Lint
+        run: markdownlint '**/*.md' || true
