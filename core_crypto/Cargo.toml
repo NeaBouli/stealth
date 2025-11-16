@@ -1,0 +1,14 @@
+[package]
+name = "core_crypto"
+version = "0.1.0"
+edition = "2021"
+authors = ["SecureCall Dev Team"]
+license = "proprietary"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+# Platzhalter – echte Krypto kommt später
+# zeroize = "1.6"
+# rand = "0.8"
