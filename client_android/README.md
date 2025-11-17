@@ -1,18 +1,14 @@
 # SecureCall Android Client
 
-Dieser Ordner enthält den Android-Client des SecureCall Ecosystems.
+Dies ist das Android-Hauptprojekt des SecureCall Ecosystems.
 
-## Ziele
-- Umsetzung von GhostTalk Basic / GhostShield Advanced / PhantomLine Elite
-- Audio-Pipeline:
-  Mikrofon → Opus → Crypto Engine → GhostNet Transport
-- Signaling (REST + WebSocket)
-- Security Monitor (Root-/Debug-/Recording-Detection)
-- Policy Engine (Free/Pro/Premium/OS)
-- UI & Call Control
-- Stealth-UI für Premium/OS
+## Ziel von ANDROID-01
+Ein Dummy-App-Skelett mit:
+- drei Screens (Home, Call, Settings)
+- einfache Navigation
+- lauffähigem Gradle-Build ohne Funktionalität
+- korrekt gesetzten Permissions (RECORD_AUDIO, INTERNET)
+- verschlankter, modularer Projektstruktur
 
-## Relevante Dokumente
-- docs/ARCHITECTURE_OVERVIEW.md
-- docs/SECURITY_DESIGN.md
-- docs/tasks/ANDROID-01.md
+Das Projekt wird schrittweise über ANDROID-01, ANDROID-02, ANDROID-03 aufgebaut.
+
