@@ -1,0 +1,19 @@
+{
+  "name": "securecall-signaling",
+  "version": "0.1.0",
+  "description": "SecureCall Signaling Server MVP (BACKEND-01)",
+  "private": true,
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "NODE_ENV=development node src/server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "ws": "^8.16.0",
+    "uuid": "^9.0.1"
+  }
+}
