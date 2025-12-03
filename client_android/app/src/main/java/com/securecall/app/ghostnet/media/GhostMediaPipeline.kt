@@ -73,3 +73,31 @@ object GhostMediaPipeline {
 
         stopDecoder()
     }
+
+    // PATCH 210 — AudioPlayback Start/Stop
+    private fun startPlayback() {
+        com.securecall.app.ghostnet.media.audio.AudioPlayback.start()
+    }
+
+    private fun stopPlayback() {
+        com.securecall.app.ghostnet.media.audio.AudioPlayback.stop()
+    }
+
+    // Start/Stop erweitern
+    fun start() {
+        if (running) return
+        running = true
+        Log.d(TAG, "MediaPipeline STARTED")
+
+        startDecoder()
+        startPlayback()
+    }
+
+    fun stop() {
+        if (!running) return
+        running = false
+        Log.d(TAG, "MediaPipeline STOPPED")
+
+        stopPlayback()
+        stopDecoder()
+    }

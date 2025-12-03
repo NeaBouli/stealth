@@ -178,3 +178,32 @@
         android:textSize="14sp"
         android:layout_marginTop="8dp"
         android:textColor="#666666" />
+
+    <!-- PATCH 235: GhostNet Session State -->
+    <TextView
+        android:id="@+id/sessionNetState"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="NETSESSION: IDLE"
+        android:textSize="14sp"
+        android:layout_marginTop="8dp"
+        android:textColor="#666666" />
+
+    <!-- PATCH 240: Debug-Log Bereich -->
+    <ScrollView
+        android:id="@+id/debugLogScroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:id="@+id/debugLogView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="#CCCCCC"
+            android:padding="8dp"
+            android:background="#222222"
+            android:textIsSelectable="true" />
+    </ScrollView>

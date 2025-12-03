@@ -1377,3 +1377,1515 @@ public class MainActivity extends AppCompatActivity {
 
         addDebugButton(b);
     }
+
+    // PATCH 210: Debug — Fake PCM Playback
+    private void setupFakePlaybackButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Fake Playback");
+
+        b.setOnClickListener(v -> {
+            short[] pcm = new short[128];
+            for (int i = 0; i < pcm.length; i++) {
+                pcm[i] = (short)(Math.sin(i * 0.1) * 2000);
+            }
+
+            com.securecall.app.ghostnet.media.audio.AudioPlayback.INSTANCE.play(pcm);
+            android.util.Log.d("MAIN", "Fake PCM played (log only)");
+        });
+
+        addDebugButton(b);
+    }
+
+    // PATCH 211: Debug — gesamter Pipeline-Test
+    private void setupPipelineTestButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Pipeline Test");
+        b.setOnClickListener(v -> {
+            byte[] raw = new byte[128];
+            new java.util.Random().nextBytes(raw);
+
+            com.securecall.app.ghostnet.media.MediaFrame frame =
+                new com.securecall.app.ghostnet.media.MediaFrame(raw, System.currentTimeMillis());
+
+            com.securecall.app.ghostnet.media.GhostMediaRouter.INSTANCE.route(frame);
+
+            android.util.Log.d("MAIN", "Pipeline test executed.");
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 212: Debug — Fake Sinus über echten AudioTrack
+    private void setupAudioTrackTestButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("AudioTrack Test");
+
+        b.setOnClickListener(v -> {
+            short[] pcm = new short[480]; // 10ms bei 48kHz
+            for (int i = 0; i < pcm.length; i++) {
+                pcm[i] = (short)(Math.sin(i * 0.1) * 3000);
+            }
+            com.securecall.app.ghostnet.media.audio.AudioPlayback.INSTANCE.play(pcm);
+
+            android.util.Log.d("MAIN", "AudioTrack test PCM queued.");
+        });
+
+        addDebugButton(b);
+    }
+
+    // PATCH 214: Debug — Full Codec → Playback Pipeline
+    private void setupCodecPipelineButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Codec Pipeline");
+
+        b.setOnClickListener(v -> {
+            byte[] fake = new byte[96];
+            new java.util.Random().nextBytes(fake);
+
+            com.securecall.app.ghostnet.media.decoder.AudioDecoder.INSTANCE.init();
+
+            com.securecall.app.ghostnet.media.MediaFrame frame =
+                new com.securecall.app.ghostnet.media.MediaFrame(fake, System.currentTimeMillis());
+
+            // neue Pipeline
+            com.securecall.app.ghostnet.media.GhostMediaRouter.INSTANCE.handleWithCodec(frame);
+
+            android.util.Log.d("MAIN", "Codec pipeline executed");
+        });
+
+        addDebugButton(b);
+    }
+
+    // PATCH 224: Debug — decoder reset
+    private void setupResetDecoderButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Reset Decoder");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.media.GhostMediaRouter.get().resetDecoderStub();
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 225: Debug — force decode pipeline
+    private void setupDecodePipelineButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Decode Pipeline Test");
+        b.setOnClickListener(v -> {
+            byte[] enc = new byte[32];
+            new java.util.Random().nextBytes(enc);
+            com.securecall.app.ghostnet.transport.GhostTransport.get()
+                .enqueueTestFrame(enc);
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 226: Debug — generate a beep tone
+    private void setupBeepButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Beep");
+        b.setOnClickListener(v -> {
+            int sr = 48000;
+            short[] beep = new short[480];
+            for (int i = 0; i < beep.length; i++) {
+                beep[i] = (short)(Math.sin(2 * Math.PI * 440 * i / sr) * 3000);
+            }
+            com.securecall.app.ghostnet.media.GhostMediaRouter.get()
+                .testBeep(beep);
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 227: full decode → playback test
+    private void setupFullDecodePlaybackButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Full Decode → Play");
+
+        b.setOnClickListener(v -> {
+            byte[] fakeEnc = new byte[64];
+            new java.util.Random().nextBytes(fakeEnc);
+
+            // Transport nimmt enc → Router → Decoder → Player
+            com.securecall.app.ghostnet.transport.GhostTransport.get()
+                .enqueueTestFrame(fakeEnc);
+        });
+
+        addDebugButton(b);
+    }
+
+    // PATCH 228: Debug — print transport load
+    private void setupPrintTransportLoadButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Transport Load");
+
+        b.setOnClickListener(v -> {
+            int q = com.securecall.app.ghostnet.transport.GhostTransport.get().queueSize();
+            android.util.Log.d("MAIN", "TransportQueue size = " + q);
+        });
+
+        addDebugButton(b);
+    }
+
+    // PATCH 229: Debug — Call-Statemachine steuern
+    private void setupCallStateDebugButtons() {
+        // Start Outgoing
+        android.widget.Button bStart = new android.widget.Button(this);
+        bStart.setText("Call: Start");
+        bStart.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.call.GhostCallController.startOutgoingCall();
+        });
+        addDebugButton(bStart);
+
+        // Mark Active
+        android.widget.Button bActive = new android.widget.Button(this);
+        bActive.setText("Call: Active");
+        bActive.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.call.GhostCallController.markCallActive();
+        });
+        addDebugButton(bActive);
+
+        // Terminate
+        android.widget.Button bTerm = new android.widget.Button(this);
+        bTerm.setText("Call: Terminate");
+        bTerm.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.call.GhostCallController.terminateCall();
+        });
+        addDebugButton(bTerm);
+
+        // Ended
+        android.widget.Button bEnd = new android.widget.Button(this);
+        bEnd.setText("Call: Ended");
+        bEnd.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.call.GhostCallController.markCallEnded();
+        });
+        addDebugButton(bEnd);
+
+        // Hard Reset
+        android.widget.Button bReset = new android.widget.Button(this);
+        bReset.setText("Call: Reset");
+        bReset.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.call.GhostCallController.hardReset();
+        });
+        addDebugButton(bReset);
+    }
+
+    // PATCH 229: Debug — aktuellen CallState loggen
+    private void setupPrintCallStateButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Call: Print State");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.call.GhostCallState s =
+                com.securecall.app.ghostnet.call.GhostCallController.getState();
+            android.util.Log.d("MAIN", "GhostCallState = " + s);
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 230: Debug — print call state
+    private void setupPrintCallMachineButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Print Call Machine");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.call.GhostCallState s =
+                com.securecall.app.ghostnet.call.GhostCallController.getState();
+            android.util.Log.d("MAIN", "Call Machine State = " + s);
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 231 — Debug button for quiet shutdown
+    private void setupQuietShutdownButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Quiet Shutdown");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.call.GhostCallController.performQuietShutdown();
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 233: Debug — print GhostNet session state
+    private void setupPrintSessionStateButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Print Session State");
+        b.setOnClickListener(v -> {
+            String id = com.securecall.app.ghostnet.session.GhostNetSessionManager.get().getState().name();
+            android.util.Log.d("MAIN", "GhostNetSessionState = " + id);
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 235: Update GhostNetSessionState in UI
+    private void updateSessionNetState() {
+        com.securecall.app.ghostnet.session.GhostNetSessionState st =
+            com.securecall.app.ghostnet.session.GhostNetSessionManager.get().getState();
+
+        android.widget.TextView tv = findViewById(R.id.sessionNetState);
+        if (tv == null) return;
+
+        tv.setText("NETSESSION: " + st.name());
+
+        int color;
+        switch (st) {
+            case NEGOTIATING: color = android.graphics.Color.parseColor("#FFA500"); break;
+            case ACTIVE:       color = android.graphics.Color.parseColor("#00AA00"); break;
+            case TERMINATING:  color = android.graphics.Color.parseColor("#CC0000"); break;
+            case DEAD:         color = android.graphics.Color.parseColor("#990000"); break;
+            default:           color = android.graphics.Color.parseColor("#666666");
+        }
+        tv.setTextColor(color);
+    }
+
+    // PATCH 235: hook UI session update into onResume
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateSessionNetState();
+    }
+
+    // PATCH 235: Debug — manual refresh
+    private void setupRefreshSessionNetButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Refresh NetSession");
+        b.setOnClickListener(v -> updateSessionNetState());
+        addDebugButton(b);
+    }
+
+    // PATCH 236: install session + call state observers
+    private void installStateObservers() {
+        // CallState
+        com.securecall.app.ghostnet.call.GhostCallController.addListener(
+            newState -> runOnUiThread(() -> updateSessionNetState())
+        );
+
+        // SessionState
+        com.securecall.app.ghostnet.session.GhostNetSessionManager.addListener(
+            newState -> runOnUiThread(() -> updateSessionNetState())
+        );
+    }
+
+    // PATCH 236: integrate observers at startup
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        installStateObservers();
+    }
+
+// PATCH 237: Debug — Full Reset
+private void setupFullResetButton() {
+    android.widget.Button b = new android.widget.Button(this);
+    b.setText("FULL RESET");
+    b.setOnClickListener(v -> {
+        com.securecall.app.ghostnet.call.GhostCallController.fullReset();
+        android.util.Log.d("MAIN", "Full Reset invoked");
+    });
+    addDebugButton(b);
+}
+
+// PATCH 237: hook reset button into UI debug panel
+@Override
+protected void onCreate(android.os.Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setupFullResetButton();
+}
+
+    // PATCH 238: Debug-Button – softer Transportfehler
+    private void setupSoftTransportErrorButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Soft Transport Error");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.debug.TransportErrorInjector.triggerSoftTransportError();
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 238: Debug-Button – harter Transportfehler (Full Reset)
+    private void setupHardTransportErrorButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Hard Transport Error");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.debug.TransportErrorInjector.triggerHardTransportError();
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 238: Debug-Button – Session Drop
+    private void setupSessionDropButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Session DROP");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.debug.TransportErrorInjector.triggerSessionDrop();
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 238: Debug-Button – Packet-Loss-Burst (nur Logging vorerst)
+    private void setupPacketLossBurstButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("PacketLoss Burst");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.debug.TransportErrorInjector.simulatePacketLossBurst();
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 238: zusätzliche Debug-Buttons registrieren
+    private void setupTransportErrorDebugButtons() {
+        setupSoftTransportErrorButton();
+        setupHardTransportErrorButton();
+        setupSessionDropButton();
+        setupPacketLossBurstButton();
+    }
+
+    // PATCH 238: Hook in bestehende Debug-Initialisierung
+    private void initAllDebugTools() {
+        // vorhandene Debug-Setup-Aufrufe bleiben gültig
+        setupFullResetButton();
+        setupTransportErrorDebugButtons();
+    }
+
+    // PATCH 238: Debug-Initialisierung an onCreate anhängen
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initAllDebugTools();
+    }
+
+    // PATCH 239: Debug – Dummy Recorder Start
+    private void setupStartDummyRecorderButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Dummy Rec START");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.media.DummyAudioRecorder.start();
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 239: Debug – Dummy Recorder Stop
+    private void setupStopDummyRecorderButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Dummy Rec STOP");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.media.DummyAudioRecorder.stop();
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 239: Hook in existing debug init
+    private void initDummyAudioDebugTools() {
+        setupStartDummyRecorderButton();
+        setupStopDummyRecorderButton();
+    }
+
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initDummyAudioDebugTools();
+    }
+
+    // PATCH 240: Debug-Event-Listener-Feld
+    private final com.securecall.app.debug.GhostDebugEventBus.Listener debugEventListener =
+        event -> runOnUiThread(() -> appendDebugLogLine(event));
+
+    // PATCH 240: Zeile ins Log-View anhängen
+    private void appendDebugLogLine(com.securecall.app.debug.GhostDebugEventBus.Event event) {
+        android.widget.TextView tv = findViewById(R.id.debugLogView);
+        android.widget.ScrollView scroll = findViewById(R.id.debugLogScroll);
+        if (tv == null || scroll == null) return;
+
+        String existing = tv.getText() != null ? tv.getText().toString() : "";
+        String ts = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
+            .format(new java.util.Date(event.getTimestamp()));
+        String line = "[" + ts + "][" + event.getTag() + "] " + event.getMessage();
+
+        if (!existing.isEmpty()) {
+            existing = existing + "\n" + line;
+        } else {
+            existing = line;
+        }
+
+        tv.setText(existing);
+
+        // automatisch nach unten scrollen
+        scroll.post(() -> scroll.fullScroll(android.view.View.FOCUS_DOWN));
+    }
+
+    // PATCH 240: Listener in Lifecycle einklinken
+    @Override
+    protected void onStart() {
+        super.onStart();
+        com.securecall.app.debug.GhostDebugEventBus.addListener(debugEventListener);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        com.securecall.app.debug.GhostDebugEventBus.removeListener(debugEventListener);
+    }
+
+    // PATCH 241: global GhostNet init
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        com.securecall.app.ghostnet.GhostNetSystem.init();
+    }
+
+    // PATCH 243: Debug – derive ephemeral SessionKeys und ins Debug-Event-Log schreiben
+    private void setupDeriveSessionKeysButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Derive SessionKeys");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.crypto.SessionKeys keys =
+                com.securecall.app.ghostnet.crypto.SessionKeyDerivation.INSTANCE.deriveEphemeral();
+
+            com.securecall.app.debug.GhostDebugEventBus.postSessionKeysPreview(
+                "KEYS",
+                keys.getRxKey(),
+                keys.getTxKey(),
+                keys.getSalt()
+            );
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 244: DeriveSessionKeys in Debug-Pipeline einhängen
+    private void initDebugKeyTools() {
+        setupDeriveSessionKeysButton();
+    }
+
+    // PATCH 244: integrate key-tools into global debug init
+    private void initAllDebugTools() {
+        initDebugKeyTools();
+    }
+
+    // PATCH 245: Debug – Mock Handshake
+    private void setupMockHandshakeButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Mock Handshake");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.handshake.HandshakeResult res =
+                com.securecall.app.ghostnet.handshake.HandshakeEngine.performMockHandshake();
+
+            com.securecall.app.debug.GhostDebugEventBus.post(
+                "HSK",
+                "Handshake simulated: shared=" + res.getSharedSecret().length
+                    + " localPub=" + res.getLocalEphemeralPub().length
+                    + " remotePub=" + res.getRemoteEphemeralPub().length
+            );
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 245: hook mock handshake into debug tools
+    private void initHandshakeDebugTools() {
+        setupMockHandshakeButton();
+    }
+
+    // PATCH 245: extend global debug init
+    private void initAllDebugTools() {
+        initHandshakeDebugTools();
+    }
+
+    // PATCH 248: Debug – create SessionCryptoContext via mock handshake
+    private void setupCreateCryptoContextButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Create CryptoContext");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.crypto.SessionCryptoContext ctx =
+                com.securecall.app.ghostnet.crypto.SessionCryptoContext.fromMockHandshake();
+
+            // Debug-Ausgabe ins EventBus
+            com.securecall.app.debug.GhostDebugEventBus.post(
+                "CRYPTO_CTX",
+                "created context " + ctx.debugSummary()
+            );
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 248: hook crypto-context tool
+    private void initCryptoContextDebugTools() {
+        setupCreateCryptoContextButton();
+    }
+
+    // PATCH 248: extend global debug init
+    private void initAllDebugTools() {
+        initCryptoContextDebugTools();
+    }
+
+    // PATCH 249: Debug – CryptoManager Info
+    private void setupCryptoManagerInfoButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("CryptoMgr Info");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.crypto.SessionCryptoContext ctx =
+                com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.getContext();
+
+            com.securecall.app.debug.GhostDebugEventBus.post(
+                "CRYPTO_MGR",
+                "context summary: " + ctx.debugSummary()
+            );
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 249: hook crypto-manager debug tools
+    private void initCryptoManagerDebugTools() {
+        setupCryptoManagerInfoButton();
+    }
+
+    // PATCH 249: extend global debug init
+    private void initAllDebugTools() {
+        initCryptoManagerDebugTools();
+    }
+
+    // PATCH 252: Debug – CryptoContext aus dem Transport abrufen
+    private void setupTransportCryptoQueryButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Crypto? Transport");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.crypto.SessionCryptoContext ctx =
+                com.securecall.app.ghostnet.transport.GhostTransport.get().getCryptoContext();
+
+            if (ctx == null) {
+                com.securecall.app.debug.GhostDebugEventBus.post(
+                    "CRYPTO_T", "NO CONTEXT"
+                );
+            } else {
+                com.securecall.app.debug.GhostDebugEventBus.post(
+                    "CRYPTO_T",
+                    "Transport CryptoContext: " + ctx.debugSummary()
+                );
+            }
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 252: Debug – CryptoContext aus dem MediaRouter abrufen
+    private void setupMediaCryptoQueryButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Crypto? Media");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.crypto.SessionCryptoContext ctx =
+                com.securecall.app.ghostnet.media.GhostMediaRouter.getCryptoContext();
+
+            if (ctx == null) {
+                com.securecall.app.debug.GhostDebugEventBus.post(
+                    "CRYPTO_M", "NO CONTEXT"
+                );
+            } else {
+                com.securecall.app.debug.GhostDebugEventBus.post(
+                    "CRYPTO_M",
+                    "Media CryptoContext: " + ctx.debugSummary()
+                );
+            }
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 252: combine transport+media crypto query tools
+    private void initCryptoQueryDebugTools() {
+        setupTransportCryptoQueryButton();
+        setupMediaCryptoQueryButton();
+    }
+
+    // PATCH 252: extend global debug init
+    private void initAllDebugTools() {
+        initCryptoQueryDebugTools();
+    }
+
+    // PATCH 253: Debug – CryptoContext Clear
+    private void setupClearCryptoContextButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Clear CryptoContext");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.clearContext();
+            com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Manual Clear → CryptoContext cleared");
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 253: hook clear-crypto tool
+    private void initCryptoResetDebugTools() {
+        setupClearCryptoContextButton();
+    }
+
+    // PATCH 253: extend global debug init
+    private void initAllDebugTools() {
+        initCryptoResetDebugTools();
+    }
+
+    // PATCH 254: Debug – Outbound Encrypt-Test
+    private void setupEncryptDummyFrameButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Encrypt Dummy Frame");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.transport.GhostTransport.get().debugEncryptDummyFrame();
+        });
+        addDebugButton(b);
+    }
+
+    // PATCH 254: include encrypt-dummy tool
+    private void initCryptoOutboundDebugTools() {
+        setupEncryptDummyFrameButton();
+    }
+
+    // PATCH 254: extend global debug init
+    private void initAllDebugTools() {
+        initCryptoOutboundDebugTools();
+    }
+
+    // CRYPTO-04: Debug-Tools für ECDH-Fake
+    private void setupECDHDebugButtons() {
+
+        android.widget.Button gen = new android.widget.Button(this);
+        gen.setText("ECDH: Generate Local Key");
+        gen.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.generateLocalECDHKeyPair();
+        });
+        addDebugButton(gen);
+
+        android.widget.Button setRemote = new android.widget.Button(this);
+        setRemote.setText("ECDH: Set Fake Remote Key");
+        setRemote.setOnClickListener(v -> {
+            byte[] fake = new byte[32];
+            new java.util.Random().nextBytes(fake);
+            com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.setRemotePublicKey(fake);
+        });
+        addDebugButton(setRemote);
+
+        android.widget.Button derive = new android.widget.Button(this);
+        derive.setText("ECDH: Derive Secret");
+        derive.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.deriveFakeSharedSecret();
+        });
+        addDebugButton(derive);
+    }
+
+    // CRYPTO-04: ECDH debug
+    private void initECDHDebugTools() {
+        setupECDHDebugButtons();
+    }
+
+    // CRYPTO-04: extend global init
+    private void initAllDebugTools() {
+        initECDHDebugTools();
+    }
+
+    // CRYPTO-05: Debug — HKDF aus sharedSecret ableiten
+    private void setupHkdfDebugButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("HKDF: Derive Keys");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.crypto.GhostNetCryptoManager
+                    .deriveSymmetricKeysFromSharedSecret();
+        });
+        addDebugButton(b);
+    }
+
+    // CRYPTO-06: Debug – decrypt dummy with recvKey
+    private void setupDecryptWithKeyButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Decrypt Dummy (recvKey)");
+        b.setOnClickListener(v -> {
+            byte[] fake = new byte[32];
+            new java.util.Random().nextBytes(fake);
+
+            com.securecall.app.ghostnet.media.MediaFrame frame =
+                new com.securecall.app.ghostnet.media.MediaFrame(fake, System.currentTimeMillis());
+
+            com.securecall.app.ghostnet.media.GhostMediaRouter router =
+                com.securecall.app.ghostnet.media.GhostMediaRouter.INSTANCE;
+
+            router.debugDecryptWithKey(frame);
+        });
+        addDebugButton(b);
+    }
+
+    // CRYPTO-07: Debug – Test Frame Header Build/Parse
+    private void setupTestFrameHeaderButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Test Frame Header");
+        b.setOnClickListener(v -> {
+            byte[] dummy = new byte[16];
+            new java.util.Random().nextBytes(dummy);
+
+            // Build (transport)
+            byte[] raw = com.securecall.app.ghostnet.transport.GhostTransport
+                    .get()
+                    .debugBuildHeader(dummy);
+
+            // Parse (media)
+            com.securecall.app.ghostnet.media.GhostMediaRouter
+                .INSTANCE
+                .debugParseInbound(raw);
+        });
+
+        addDebugButton(b);
+    }
+
+    // CRYPTO-07
+    private void initFrameHeaderDebugTools() {
+        setupTestFrameHeaderButton();
+    }
+
+    // CRYPTO-07 extend global init
+    private void initAllDebugTools() {
+        initFrameHeaderDebugTools();
+    }
+
+    // CRYPTO-08: Debug – Nonce-Manager + Header
+    private void setupTestNonceManagerButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Test Nonce Manager");
+        b.setOnClickListener(v -> {
+            byte[] dummy = new byte[8];
+            new java.util.Random().nextBytes(dummy);
+
+            // Header mit NonceManager bauen
+            byte[] raw = com.securecall.app.ghostnet.transport.GhostTransport
+                    .get()
+                    .debugBuildHeaderNonceManaged(dummy);
+
+            // Header wieder parsen
+            com.securecall.app.ghostnet.media.GhostMediaRouter
+                .INSTANCE
+                .debugParseInbound(raw);
+        });
+        addDebugButton(b);
+    }
+
+    // CRYPTO-08: Erweiterung Debug-Init
+    private void initNonceDebugTools() {
+        setupTestNonceManagerButton();
+    }
+
+    // CRYPTO-08: Hook in globale Debug-Initialisierung (falls vorhanden)
+    private void initAllDebugTools() {
+        initFrameHeaderDebugTools();
+        initNonceDebugTools();
+    }
+
+    // CRYPTO-09: Debug – spam test for nonce guard
+    private void setupTestNonceSpamButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Nonce Spam Test");
+        b.setOnClickListener(v -> {
+            for (int i = 0; i < 50; i++) {
+                byte[] d = new byte[4];
+                new java.util.Random().nextBytes(d);
+
+                com.securecall.app.ghostnet.transport.GhostTransport
+                        .get()
+                        .buildHeaderForOutboundNonceManaged_debugWrap(d);
+            }
+        });
+        addDebugButton(b);
+    }
+
+    private void initNonceSpamDebugTools() {
+        setupTestNonceSpamButton();
+    }
+
+    private void initAllDebugTools() {
+        initNonceSpamDebugTools();
+    }
+
+    // CRYPTO-10: Debug – CiphertextFrame Pipeline testen
+    private void setupTestCiphertextFrameButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Test CiphertextFrame");
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.media.crypto.CiphertextFrame cf =
+                com.securecall.app.ghostnet.transport.GhostTransport
+                    .get()
+                    .debugBuildCiphertextFrameDummy();
+
+            com.securecall.app.ghostnet.media.GhostMediaRouter
+                .INSTANCE
+                .debugInspectCiphertextFrame(cf);
+        });
+        addDebugButton(b);
+    }
+
+    // CRYPTO-10: Crypto-Debug-Init
+    private void initCryptoFrameDebugTools() {
+        setupTestCiphertextFrameButton();
+    }
+
+    // CRYPTO-10: Kombination in bestehende Debug-Init integrieren
+    private void initAllCryptoDebugTools() {
+        initCryptoFrameDebugTools();
+    }
+
+    // CRYPTO-11: Debug – WireFormat roundtrip
+    private void setupTestWireFormatButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Test WireFormat");
+        b.setOnClickListener(v -> {
+            // build
+            byte[] raw = com.securecall.app.ghostnet.transport.GhostTransport
+                    .get()
+                    .debugBuildWireFrameDummy();
+
+            // parse
+            com.securecall.app.ghostnet.media.GhostMediaRouter
+                .INSTANCE
+                .debugParseWireFrame(raw);
+        });
+
+        addDebugButton(b);
+    }
+
+    private void initWireFormatDebugTools() {
+        setupTestWireFormatButton();
+    }
+
+    private void initAllDebugTools() {
+        initWireFormatDebugTools();
+    }
+
+    // CRYPTO-12: Debug – WireFrame + Validator testen
+    private void setupValidateWireFormatButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Validate WireFrame");
+        b.setOnClickListener(v -> {
+            // Dummy-WireFrame aus dem Transport
+            byte[] raw = com.securecall.app.ghostnet.transport.GhostTransport
+                    .get()
+                    .debugBuildWireFrameDummy();
+
+            // Validierung im MediaRouter
+            com.securecall.app.ghostnet.media.GhostMediaRouter
+                    .INSTANCE
+                    .debugValidateWireFrame(raw);
+        });
+        addDebugButton(b);
+    }
+
+    private void initWireValidationDebugTools() {
+        setupValidateWireFormatButton();
+    }
+
+    // CRYPTO-13: Debug – Replay Detection Test
+    private void setupReplayDetectionTestButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Replay Test");
+        b.setOnClickListener(v -> {
+
+            java.util.ArrayList<byte[]> list =
+                com.securecall.app.ghostnet.transport.GhostTransport
+                    .get()
+                    .debugGenerateWireFrameListForReplayTest();
+
+            for (byte[] raw : list) {
+                com.securecall.app.ghostnet.media.GhostMediaRouter
+                    .INSTANCE
+                    .debugParseWireFrame_withReplay(raw);
+            }
+        });
+        addDebugButton(b);
+    }
+
+    private void initReplayDebugTools() {
+        setupReplayDetectionTestButton();
+    }
+
+    // CRYPTO-14: Security Mode Buttons
+    private void setupSecurityModeButtons() {
+
+        addDebugButton(makeModeButton("SEC: OFF", () ->
+            com.securecall.app.ghostnet.security.SecurityStateMachine.setMode(
+                com.securecall.app.ghostnet.security.SecurityMode.OFF)));
+
+        addDebugButton(makeModeButton("SEC: LOG_ONLY", () ->
+            com.securecall.app.ghostnet.security.SecurityStateMachine.setMode(
+                com.securecall.app.ghostnet.security.SecurityMode.LOG_ONLY)));
+
+        addDebugButton(makeModeButton("SEC: STRICT", () ->
+            com.securecall.app.ghostnet.security.SecurityStateMachine.setMode(
+                com.securecall.app.ghostnet.security.SecurityMode.STRICT)));
+
+        addDebugButton(makeModeButton("SEC: MANDATORY", () ->
+            com.securecall.app.ghostnet.security.SecurityStateMachine.setMode(
+                com.securecall.app.ghostnet.security.SecurityMode.MANDATORY)));
+
+        addDebugButton(makeModeButton("SEC: LOCKDOWN", () ->
+            com.securecall.app.ghostnet.security.SecurityStateMachine.setMode(
+                com.securecall.app.ghostnet.security.SecurityMode.LOCKDOWN)));
+    }
+
+    private android.widget.Button makeModeButton(String text, Runnable action) {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText(text);
+        b.setOnClickListener(v -> action.run());
+        return b;
+    }
+
+    private void initSecurityModeDebugTools() {
+        setupSecurityModeButtons();
+    }
+
+    // CRYPTO-16 Debug: test replay detector
+    private void setupReplayDetectorButtons() {
+
+        // NONCE FORWARD (increasing)
+        android.widget.Button bF = new android.widget.Button(this);
+        bF.setText("Nonce Forward");
+        bF.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.security.ReplayDetector.checkAndReport(100);
+        });
+        addDebugButton(bF);
+
+        // NONCE BACKWARD (smaller nonce)
+        android.widget.Button bB = new android.widget.Button(this);
+        bB.setText("Nonce Backward");
+        bB.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.security.ReplayDetector.checkAndReport(50);
+        });
+        addDebugButton(bB);
+
+        // REPLAY (same nonce again)
+        android.widget.Button bR = new android.widget.Button(this);
+        bR.setText("Nonce Replay");
+        bR.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.security.ReplayDetector.checkAndReport(100);
+        });
+        addDebugButton(bR);
+    }
+
+    // CRYPTO-16: call from debug-initializer
+    private void initReplayDebugTools() {
+        setupReplayDetectorButtons();
+    }
+
+    // CRYPTO-16: insert into onResume or your existing debug initializer
+    private void initAllCryptoDebugTools() {
+        initReplayDebugTools();
+        // weitere initX() folgen später
+    }
+
+    // CRYPTO-17: Debug Button – random header test
+    private void setupWireHeaderTestButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Test WireHeader");
+        b.setOnClickListener(v -> {
+            byte[] raw = new byte[16];
+            new java.util.Random().nextBytes(raw);
+            com.securecall.app.ghostnet.media.GhostMediaRouter router =
+                com.securecall.app.ghostnet.media.GhostMediaRouter.getInstance();
+
+            router.debugParseWireHeader(raw);
+        });
+        addDebugButton(b);
+    }
+
+    private void initWireHeaderDebugTools() {
+        setupWireHeaderTestButton();
+    }
+
+    private void initAllHeaderDebugTools() {
+        initWireHeaderDebugTools();
+    }
+
+    // CRYPTO-18: Debug Button – Entire inbound pipeline test
+    private void setupPipelineTestButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Pipeline Test");
+
+        b.setOnClickListener(v -> {
+            byte[] raw = new byte[32];
+            new java.util.Random().nextBytes(raw);
+
+            com.securecall.app.ghostnet.media.GhostMediaRouter
+                    .INSTANCE
+                    .processInboundRaw(raw);
+        });
+
+        addDebugButton(b);
+    }
+
+    private void initMediaPipelineDebugTools() {
+        setupPipelineTestButton();
+    }
+
+    // CRYPTO-19: Debug Button – Wire Roundtrip Test
+    private void setupWireRoundtripButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Wire Roundtrip");
+
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.media.GhostMediaRouter.INSTANCE
+                    .debugEncodeRoundtrip(32);
+        });
+
+        addDebugButton(b);
+    }
+
+    private void initWireRoundtripDebugTools() {
+        setupWireRoundtripButton();
+    }
+
+    private void initAllCryptoDebugTools() {
+        initWireHeaderDebugTools();
+        initMediaPipelineDebugTools();
+        initWireRoundtripDebugTools();
+    }
+
+    // CRYPTO-20: Debug Button – Send Outbound WireFrame
+    private void setupSendTestWireFrameButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Send WireFrame");
+
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.transport.GhostTransport.get()
+                .sendTestWireFrame(32);
+        });
+
+        addDebugButton(b);
+    }
+
+    private void initOutboundWireDebugTools() {
+        setupSendTestWireFrameButton();
+    }
+
+    private void initAllCryptoDebugTools() {
+        initWireHeaderDebugTools();
+        initMediaPipelineDebugTools();
+        initWireRoundtripDebugTools();
+        initOutboundWireDebugTools();
+    }
+
+    // CRYPTO-22: Debug – Send AudioFrame
+    private void setupSendAudioFrameButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Send AudioFrame");
+
+        b.setOnClickListener(v -> {
+            byte[] dummy = new byte[64];
+            new java.util.Random().nextBytes(dummy);
+            com.securecall.app.ghostnet.transport.GhostTransport.get()
+                .sendAudioFrame(dummy);
+        });
+
+        addDebugButton(b);
+    }
+
+    // CRYPTO-22: Debug – Send ControlFrame
+    private void setupSendControlFrameButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Send ControlFrame");
+
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.transport.GhostTransport.get()
+                .sendControlFrame(200, "call-end");
+        });
+
+        addDebugButton(b);
+    }
+
+    // CRYPTO-22: Debug – Send KeepAlive
+    private void setupSendKeepAliveButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Send KeepAlive");
+
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.transport.GhostTransport.get()
+                .sendKeepAlive();
+        });
+
+        addDebugButton(b);
+    }
+
+    private void initFrameTypeDebugTools() {
+        setupSendAudioFrameButton();
+        setupSendControlFrameButton();
+        setupSendKeepAliveButton();
+    }
+
+    private void initAllCryptoDebugTools() {
+        initWireHeaderDebugTools();
+        initMediaPipelineDebugTools();
+        initWireRoundtripDebugTools();
+        initOutboundWireDebugTools();
+        initFrameTypeDebugTools();   // << NEW
+    }
+
+    // CRYPTO-23: Debug – AudioFrame über WireCryptoStub schicken
+    private void setupSendAudioFrameCryptoStubButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("AudioFrame (CryptoStub)");
+
+        b.setOnClickListener(v -> {
+            byte[] dummy = new byte[64];
+            new java.util.Random().nextBytes(dummy);
+            com.securecall.app.ghostnet.transport.GhostTransport.get()
+                .sendAudioFrameWithCryptoStub(dummy);
+        });
+
+        addDebugButton(b);
+    }
+
+    // CRYPTO-23: Erweiterung der Crypto-Debug-Tools
+    private void initCryptoStubDebugTools() {
+        setupSendAudioFrameCryptoStubButton();
+    }
+
+    // CRYPTO-23: Hook – Crypto-Stub-Tools mit initialisieren
+    private void initAllCryptoDebugToolsWithStub() {
+        initAllCryptoDebugTools();
+        initCryptoStubDebugTools();
+    }
+
+    // CRYPTO-26: Debug – ControlFrame-End (structured)
+    private void setupSendControlFrameEndButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("ControlFrame END");
+
+        b.setOnClickListener(v -> {
+            com.securecall.app.ghostnet.transport.GhostTransport.get()
+                .sendControlFrame(200, "call-end");
+        });
+
+        addDebugButton(b);
+    }
+
+    private void initStructuredControlDebugTools() {
+        setupSendControlFrameEndButton();
+    }
+
+    private void initAllCryptoDebugToolsWithStructuredFrames() {
+        initAllCryptoDebugToolsWithStub();
+        initStructuredControlDebugTools();
+    }
+
+    // CRYPTO-27: Debug – einfacher SessionCipher-Test
+    private void setupSessionCipherDebugButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Test SessionCipher");
+
+        b.setOnClickListener(v -> {
+            byte[] sample = new byte[16];
+            new java.util.Random().nextBytes(sample);
+
+            com.securecall.app.ghostnet.crypto.SessionCipherContext ctx =
+                new com.securecall.app.ghostnet.crypto.SessionCipherContext(
+                    "debug-session",
+                    1,
+                    sample, // rxKey placeholder
+                    sample  // txKey placeholder
+                );
+
+            byte[] enc = com.securecall.app.ghostnet.crypto.SessionCipherEngine.encrypt(ctx, sample);
+            byte[] dec = com.securecall.app.ghostnet.crypto.SessionCipherEngine.decrypt(ctx, enc);
+
+            android.util.Log.d("MAIN", "SessionCipherDebug: encSize=" + enc.length + " decSize=" + dec.length);
+        });
+
+        addDebugButton(b);
+    }
+
+    private void initSessionCipherDebugTools() {
+        setupSessionCipherDebugButton();
+    }
+
+    // CRYPTO-28: SessionCipherBinding Test-Button
+    private void setupTestSessionBindingButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Test Session Binding");
+
+        b.setOnClickListener(v -> {
+            byte[] test = new byte[32];
+            new java.util.Random().nextBytes(test);
+
+            com.securecall.app.ghostnet.crypto.SessionCipherContext ctx =
+                new com.securecall.app.ghostnet.crypto.SessionCipherContext(
+                    "session-test",
+                    1,
+                    test,
+                    test
+                );
+
+            com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession = ctx;
+
+            com.securecall.app.ghostnet.media.MediaFrame f =
+                new com.securecall.app.ghostnet.media.MediaFrame(test, System.currentTimeMillis());
+
+            byte[] out = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.decryptFrame(f);
+
+            android.util.Log.d("MAIN", "bindingTest resultSize=" + out.length);
+        });
+
+        addDebugButton(b);
+    }
+
+    // CRYPTO-29: Debug — PCM -> Encrypt -> GhostTransport-Stub
+    private void setupEncryptPcmAndSendButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("PCM -> Encrypt -> Transport");
+
+        b.setOnClickListener(v -> {
+            // Dummy-PCM-Daten (64 Bytes)
+            byte[] pcm = new byte[64];
+            new java.util.Random().nextBytes(pcm);
+
+            // Aufruf der neuen Stub-Methode
+            com.securecall.app.ghostnet.transport.GhostTransport.get()
+                .enqueueEncryptedFrameFromPcm(pcm);
+        });
+
+        addDebugButton(b);
+    }
+
+    // CRYPTO-29: Aufruf des neuen Debug-Buttons
+    private void setupCrypto29Buttons() {
+        setupEncryptPcmAndSendButton();
+    }
+
+    // CRYPTO-29: globaler Hook für alle Crypto-29 Buttons
+    private void initCrypto29DebugTools() {
+        // ruft die zuvor definierte Methode auf
+        setupCrypto29Buttons();
+    }
+
+    // CRYPTO-29: Hook am Ende von onCreate() → Buttons erscheinen immer
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initCrypto29DebugTools();
+    }
+
+    // CRYPTO-30: Debug — Dummy PCM senden
+    private void setupSendPcmButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("Send Dummy PCM");
+
+        b.setOnClickListener(v -> {
+            byte[] pcm = new byte[80];
+            new java.util.Random().nextBytes(pcm);
+            com.securecall.app.ghostnet.transport.GhostTransport.get().sendPcm(pcm);
+        });
+
+        addDebugButton(b);
+    }
+
+    private void initCrypto30DebugTools() {
+        setupSendPcmButton();
+    }
+
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initCrypto30DebugTools();
+    }
+
+    // CRYPTO-31: Debug — NetworkSender-Stub testen
+    private void setupNetworkSenderDebugButtons() {
+        // Start-Button
+        {
+            android.widget.Button b = new android.widget.Button(this);
+            b.setText("Start NetSender");
+            b.setOnClickListener(v ->
+                com.securecall.app.ghostnet.transport.net.GhostNetworkSender.start()
+            );
+            addDebugButton(b);
+        }
+
+        // Dummy-Frame senden
+        {
+            android.widget.Button b = new android.widget.Button(this);
+            b.setText("Send Dummy EncryptedFrame");
+            b.setOnClickListener(v -> {
+                byte[] data = new byte[48];
+                new java.util.Random().nextBytes(data);
+                com.securecall.app.ghostnet.transport.EncryptedFrame frame =
+                    new com.securecall.app.ghostnet.transport.EncryptedFrame(data);
+                com.securecall.app.ghostnet.transport.net.GhostNetworkSender.enqueue(frame);
+            });
+            addDebugButton(b);
+        }
+    }
+
+    private void initCrypto31DebugTools() {
+        setupNetworkSenderDebugButtons();
+    }
+
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initCrypto31DebugTools();
+    }
+
+    // CRYPTO-32: FullPath-Test (PCM -> Encrypt -> TransportThread -> NetworkSender)
+    private void setupFullPathTestButton() {
+        android.widget.Button b = new android.widget.Button(this);
+        b.setText("FULL PATH TEST");
+
+        b.setOnClickListener(v -> {
+            byte[] pcm = new byte[96];
+            new java.util.Random().nextBytes(pcm);
+            com.securecall.app.ghostnet.transport.GhostTransport.get().sendPcmWithNetwork(pcm);
+        });
+
+        addDebugButton(b);
+    }
+
+    private void initCrypto32DebugTools() {
+        setupFullPathTestButton();
+    }
+
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initCrypto32DebugTools();
+    }
+
+    // CRYPTO-33: Debug — Inbound-Pipeline testen
+    private void setupInboundDebugButtons() {
+
+        // Start inbound pipeline
+        {
+            android.widget.Button b = new android.widget.Button(this);
+            b.setText("Start Inbound Pipeline");
+            b.setOnClickListener(v ->
+                com.securecall.app.ghostnet.transport.GhostTransport.get().startInboundPipeline()
+            );
+            addDebugButton(b);
+        }
+
+        // Dummy inbound
+        {
+            android.widget.Button b = new android.widget.Button(this);
+            b.setText("Inject Dummy Inbound");
+            b.setOnClickListener(v -> {
+                byte[] dummy = new byte[40];
+                new java.util.Random().nextBytes(dummy);
+                com.securecall.app.ghostnet.transport.net.GhostNetworkReceiver.injectIncomingDummy(dummy);
+            });
+            addDebugButton(b);
+        }
+    }
+
+    private void initCrypto33InboundTools() {
+        setupInboundDebugButtons();
+    }
+
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initCrypto33InboundTools();
+    }
+
+    // CRYPTO-36: Debug — send Audio/Control/KeepAlive via FrameHeaderV1
+    private void setupFrameHeaderV1DebugButtons() {
+
+        // AUDIO
+        {
+            android.widget.Button b = new android.widget.Button(this);
+            b.setText("Send AUDIO v1");
+            b.setOnClickListener(v -> {
+                byte[] audio = new byte[80];
+                new java.util.Random().nextBytes(audio);
+                com.securecall.app.ghostnet.transport.GhostTransport.get().sendAudioFrameV1(audio);
+            });
+            addDebugButton(b);
+        }
+
+        // CONTROL
+        {
+            android.widget.Button b = new android.widget.Button(this);
+            b.setText("Send CONTROL v1");
+            b.setOnClickListener(v ->
+                com.securecall.app.ghostnet.transport.GhostTransport.get()
+                    .sendControlFrameV1(200, "TEST")
+            );
+            addDebugButton(b);
+        }
+
+        // KEEPALIVE
+        {
+            android.widget.Button b = new android.widget.Button(this);
+            b.setText("Send KEEPALIVE v1");
+            b.setOnClickListener(v ->
+                com.securecall.app.ghostnet.transport.GhostTransport.get().sendKeepAliveFrameV1()
+            );
+            addDebugButton(b);
+        }
+    }
+
+    private void initCrypto36DebugTools() {
+        setupFrameHeaderV1DebugButtons();
+    }
+
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initCrypto36DebugTools();
+    }
+
+    // CRYPTO-37: Debug inbound for AUDIO / CONTROL / KEEPALIVE
+    private void setupInboundFlagTestButtons() {
+
+        // AUDIO inbound
+        {
+            android.widget.Button b = new android.widget.Button(this);
+            b.setText("Inject Inbound AUDIO");
+            b.setOnClickListener(v -> {
+                byte[] p = new byte[60];
+                new java.util.Random().nextBytes(p);
+
+                com.securecall.app.ghostnet.transport.EncryptedFrame frame =
+                    new com.securecall.app.ghostnet.transport.EncryptedFrame(
+                        com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding
+                            .encryptAudioFrameV1(p)
+                    );
+
+                com.securecall.app.ghostnet.transport.net.GhostNetworkReceiver
+                    .injectIncomingDummy(frame.data);
+            });
+            addDebugButton(b);
+        }
+
+        // CONTROL inbound
+        {
+            android.widget.Button b = new android.widget.Button(this);
+            b.setText("Inject Inbound CONTROL");
+            b.setOnClickListener(v -> {
+                byte[] p = "200:OK".getBytes();
+                com.securecall.app.ghostnet.transport.EncryptedFrame frame =
+                    new com.securecall.app.ghostnet.transport.EncryptedFrame(
+                        com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding
+                            .encryptControlFrameV1(p)
+                    );
+
+                com.securecall.app.ghostnet.transport.net.GhostNetworkReceiver
+                    .injectIncomingDummy(frame.data);
+            });
+            addDebugButton(b);
+        }
+
+        // KEEPALIVE inbound
+        {
+            android.widget.Button b = new android.widget.Button(this);
+            b.setText("Inject Inbound KEEPALIVE");
+            b.setOnClickListener(v -> {
+                byte[] p = new byte[] {0x00};
+                com.securecall.app.ghostnet.transport.EncryptedFrame frame =
+                    new com.securecall.app.ghostnet.transport.EncryptedFrame(
+                        com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding
+                            .encryptKeepAliveFrameV1(p)
+                    );
+
+                com.securecall.app.ghostnet.transport.net.GhostNetworkReceiver
+                    .injectIncomingDummy(frame.data);
+            });
+            addDebugButton(b);
+        }
+    }
+
+    private void initCrypto37InboundFlagsTests() {
+        setupInboundFlagTestButtons();
+    }
+
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initCrypto37InboundFlagsTests();
+    }
