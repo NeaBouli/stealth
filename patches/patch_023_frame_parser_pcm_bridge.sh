@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+
+echo "== patch_023: bridge inbound frame parser to media router stub =="
+
+cat <<'KOT' > client_android/app/src/main/java/com/securecall/app/ghostnet/frame/FrameParserStub.kt
 package com.securecall.app.ghostnet.frame
 
 import android.util.Log
@@ -63,3 +69,7 @@ object FrameParserStub {
         )
     }
 }
+KOT
+
+echo "[OK] Updated FrameParserStub.kt to forward AUDIO payload to MediaRouterInboundStub"
+echo "== patch_023 done =="
