@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+
+echo "== patch_031: replace AudioPlaybackStub with AudioTrack-based implementation =="
+
+cat <<'KOT' > client_android/app/src/main/java/com/securecall/app/ghostnet/media/AudioPlaybackStub.kt
 package com.securecall.app.ghostnet.media
 
 import android.media.AudioAttributes
@@ -122,3 +128,7 @@ object AudioPlaybackStub {
         }
     }
 }
+KOT
+
+echo "[OK] Replaced AudioPlaybackStub.kt with AudioTrack-based implementation"
+echo "== patch_031 done =="
