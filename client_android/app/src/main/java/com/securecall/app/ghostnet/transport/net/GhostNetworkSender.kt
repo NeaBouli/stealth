@@ -101,19 +101,6 @@ fun sendRawNetworkFrame(data: ByteArray) {
  * Inbound network stub. Platform code should push raw frames here via offerInboundFrame().
  * TransportThreadInbound polls via GhostNetworkReceiver.pollInboundFrame().
  */
-object GhostNetworkReceiver {
-
-    private const val TAG = "GHOST_NET_RECEIVER"
-    private val inboundQueue = LinkedBlockingQueue<ByteArray>()
-
-    fun offerInboundFrame(raw: ByteArray) {
-        inboundQueue.offer(raw)
-        Log.d(TAG, "offerInboundFrame(): got inbound raw frame size=${raw.size}")
-    }
-
-    fun pollInboundFrame(): ByteArray? = inboundQueue.poll()
-}
-
 // CRYPTO-40: Outbound FrameV1 helpers
 
 fun sendAudioFrameV1(pcm: ByteArray) {
