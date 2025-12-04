@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+
+echo "== patch_013: add TransportThreadInbound stub =="
+
+cat <<'KOT' > client_android/app/src/main/java/com/securecall/app/ghostnet/transport/thread/TransportThreadInbound.kt
 package com.securecall.app.ghostnet.transport.thread
 
 import android.util.Log
@@ -36,3 +42,7 @@ class TransportThreadInbound : Thread("InboundThread") {
         interrupt()
     }
 }
+KOT
+
+echo "[OK] Created TransportThreadInbound.kt stub"
+echo "== patch_013 done =="
