@@ -4,7 +4,7 @@ import android.util.Log
 
 /**
  * AUDIO-10:
- * Minimal stub for audio playback pipeline.
+ * Minimal stub for the audio playback pipeline.
  *
  * Responsibilities (later):
  * - receive decoded PCM frames,
