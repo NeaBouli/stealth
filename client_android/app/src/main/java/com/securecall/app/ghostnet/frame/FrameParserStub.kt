@@ -3,22 +3,24 @@ package com.securecall.app.ghostnet.frame
 import android.util.Log
 
 /**
- * CRYPTO-41:
- * Temporary inbound frame parser stub.
+ * CRYPTO-41 / INBOUND-STUB:
+ * Very small stub parser for inbound frames.
  *
- * This does NOT implement the final FrameHeaderV1 format.
- * It only:
- *  - reads the first byte as "version",
- *  - reads the second byte as "typeByte",
- *  - treats the rest as payload.
+ * Layout (stub):
+ *  - byte 0: version
+ *  - byte 1: typeByte
+ *  - bytes 2..N-1: payload (treated as PCM for now)
  *
- * Later this will be replaced by proper parsing using FrameHeaderUtils + FrameBodyParser.
+ * This is intentionally simple and will be replaced once
+ * FrameHeaderV1 + full parsing is implemented.
  */
 data class ParsedFrameStub(
     val version: Int,
     val typeByte: Int,
-    val payloadSize: Int
-)
+    val payload: ByteArray
+) {
+    val payloadSize: Int get() = payload.size
+}
 
 object FrameParserStub {
 
@@ -26,20 +28,20 @@ object FrameParserStub {
 
     fun parse(raw: ByteArray): ParsedFrameStub? {
         if (raw.size < 2) {
-            Log.w(TAG, "parse(): raw too short size=${raw.size}")
+            Log.w(TAG, "parse(): frame too short size=${raw.size}")
             return null
         }
 
         val version = raw[0].toInt() and 0xFF
-        val type = raw[1].toInt() and 0xFF
-        val payloadSize = raw.size - 2
+        val typeByte = raw[1].toInt() and 0xFF
+        val payload = raw.copyOfRange(2, raw.size)
 
-        Log.d(TAG, "parse(): v=$version type=$type payloadSize=$payloadSize")
+        Log.d(TAG, "parse(): v=$version typeByte=$typeByte payloadSize=${payload.size}")
 
         return ParsedFrameStub(
             version = version,
-            typeByte = type,
-            payloadSize = payloadSize
+            typeByte = typeByte,
+            payload = payload
         )
     }
 }
