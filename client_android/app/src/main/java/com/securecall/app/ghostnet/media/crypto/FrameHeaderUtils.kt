@@ -46,3 +46,30 @@ object FrameHeaderUtils {
 
     fun headerSize(): Int = HEADER_SIZE
 }
+
+// CRYPTO-39: Mapping FrameType → Flags + Encrypt-Helfer für FrameV1
+fun flagsForFrameType(type: com.securecall.app.ghostnet.frame.FrameType): Int {
+    return when (type) {
+        com.securecall.app.ghostnet.frame.FrameType.AUDIO ->
+            com.securecall.app.ghostnet.frame.header.FrameFlags.AUDIO
+        com.securecall.app.ghostnet.frame.FrameType.CONTROL ->
+            com.securecall.app.ghostnet.frame.header.FrameFlags.CONTROL
+        com.securecall.app.ghostnet.frame.FrameType.KEEPALIVE ->
+            com.securecall.app.ghostnet.frame.header.FrameFlags.KEEPALIVE
+        else -> 0
+    }
+}
+
+// CRYPTO-39: generischer FrameV1-Encrypt für einen FrameType
+fun encryptFrameV1ForType(
+    ctx: com.securecall.app.ghostnet.crypto.SessionCipherContext,
+    type: com.securecall.app.ghostnet.frame.FrameType,
+    body: ByteArray
+): ByteArray {
+    val flags = flagsForFrameType(type)
+    return com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.encryptFrameV1(
+        ctx,
+        body,
+        flags
+    )
+}

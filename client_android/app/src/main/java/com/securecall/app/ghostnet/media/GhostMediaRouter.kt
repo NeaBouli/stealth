@@ -564,3 +564,22 @@ fun resetMedia() {
     // CRYPTO-37: am Ende der inbound-Pipeline:
     val type = extractHeaderAndType(raw)
     dispatchByFrameType(type, raw)
+
+    // CRYPTO-38: Body extrahieren (ab Byte 4)
+    private fun extractBodyV1(data: ByteArray): ByteArray {
+        if (data.size <= 4) return ByteArray(0)
+        return data.copyOfRange(4, data.size)
+    }
+
+    // CRYPTO-38: BodyParsing-Funktion
+    private fun parseBody(type: com.securecall.app.ghostnet.frame.FrameType, body: ByteArray): Any? {
+        return com.securecall.app.ghostnet.frame.body.FrameBodyParser.parse(type, body)
+    }
+
+    // CRYPTO-38: FrameBodyParser in den finalen Inbound-Flow integrieren
+    val body = extractBodyV1(raw)
+    val parsedBody = parseBody(type, body)
+
+    if (parsedBody != null) {
+        android.util.Log.d("FRAME_PIPE", "ParsedBody = " + parsedBody.toString())
+    }

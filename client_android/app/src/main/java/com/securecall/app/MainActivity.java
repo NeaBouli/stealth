@@ -2889,3 +2889,20 @@ protected void onCreate(android.os.Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initCrypto37InboundFlagsTests();
     }
+
+// CRYPTO-40: Debug – send CONTROL "CALL-INVITE"
+private void setupSendCallInviteButton() {
+    android.widget.Button b = new android.widget.Button(this);
+    b.setText("Send CALL-INVITE");
+    b.setOnClickListener(v -> {
+        var ctx = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession;
+        if (ctx != null) {
+            com.securecall.app.ghostnet.transport.GhostTransport.get()
+                .getNetworkSender()
+                .sendControlFrameV1(100, "CALL-INVITE");
+        } else {
+            android.util.Log.w("DEBUG", "No active session – cannot send");
+        }
+    });
+    addDebugButton(b);
+}

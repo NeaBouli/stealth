@@ -61,3 +61,52 @@ object GhostNetworkSender {
         }
     }
 }
+
+// CRYPTO-40: Outbound FrameV1 - AUDIO
+fun sendAudioFrameV1(pcm: ByteArray) {
+    val ctx = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession ?: return
+    val frame = com.securecall.app.ghostnet.media.crypto.MediaEncryptor.buildAndEncryptAudioFrameV1(
+        ctx, pcm
+    )
+    enqueueOutbound(frame)
+}
+
+// CRYPTO-40: Outbound FrameV1 - CONTROL
+fun sendControlFrameV1(code: Int, text: String) {
+    val ctx = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession ?: return
+    val frame = com.securecall.app.ghostnet.media.crypto.MediaEncryptor.buildAndEncryptControlFrameV1(
+        ctx, code, text
+    )
+    enqueueOutbound(frame)
+}
+
+// CRYPTO-40: Outbound FrameV1 - KEEPALIVE
+fun sendKeepAliveFrameV1() {
+    val ctx = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession ?: return
+    val frame = com.securecall.app.ghostnet.media.crypto.MediaEncryptor.buildAndEncryptKeepAliveFrameV1(
+        ctx
+    )
+    enqueueOutbound(frame)
+}
+
+// CRYPTO-40: generische Outbound-Queue
+private val outboundQueue = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
+
+fun enqueueOutbound(data: ByteArray) {
+    outboundQueue.offer(data)
+}
+
+// vom TransportThreadOutbound abgeholt:
+fun dequeueOutbound(): ByteArray? {
+    return outboundQueue.poll()
+}
+
+// CRYPTO-40: tatsächliches Senden über Transport
+fun sendRawNetworkFrame(data: ByteArray) {
+    try {
+        network.send(data)   // hängt von deiner implementierten Netzwerk-Klasse ab
+        android.util.Log.d("OUTBOUND", "sent ${data.size} bytes")
+    } catch (t: Throwable) {
+        android.util.Log.e("OUTBOUND", "sendRawNetworkFrame(): failed", t)
+    }
+}
