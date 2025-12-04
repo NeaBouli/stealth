@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+
+echo "== patch_029: normalize GhostNetworkSender + Receiver stubs =="
+
+cat <<'KOT' > client_android/app/src/main/java/com/securecall/app/ghostnet/transport/net/GhostNetworkSender.kt
 package com.securecall.app.ghostnet.transport.net
 
 import android.util.Log
@@ -142,3 +148,7 @@ fun sendKeepAliveFrameV1() {
     )
     enqueueOutbound(frame)
 }
+KOT
+
+echo "[OK] Rewrote GhostNetworkSender.kt to canonical stub version"
+echo "== patch_029 done =="
