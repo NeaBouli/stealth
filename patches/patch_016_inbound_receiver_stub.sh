@@ -1,3 +1,10 @@
+#!/bin/bash
+set -e
+
+echo "== patch_016: wire inbound transport to a GhostNetworkReceiver stub =="
+
+# 1) Update GhostNetworkSender.kt to add GhostNetworkReceiver stub
+cat <<'KOT' > client_android/app/src/main/java/com/securecall/app/ghostnet/transport/net/GhostNetworkSender.kt
 package com.securecall.app.ghostnet.transport.net
 
 import android.util.Log
@@ -144,3 +151,58 @@ object GhostNetworkReceiver {
         return inboundQueue.poll()
     }
 }
+KOT
+
+# 2) Update TransportThreadInbound.kt to poll from GhostNetworkReceiver
+cat <<'KOT' > client_android/app/src/main/java/com/securecall/app/ghostnet/transport/thread/TransportThreadInbound.kt
+package com.securecall.app.ghostnet.transport.thread
+
+import android.util.Log
+import com.securecall.app.ghostnet.transport.net.GhostNetworkReceiver
+
+/**
+ * CRYPTO-40 / NET-10:
+ * Inbound transport thread (stub).
+ *
+ * This will later:
+ * - read raw frames from the network layer,
+ * - hand them to the frame parser,
+ * - dispatch decoded frames to the media router.
+ *
+ * For now it only provides a compilable skeleton
+ * with a real poll() hook into GhostNetworkReceiver.
+ */
+class TransportThreadInbound : Thread("InboundThread") {
+
+    @Volatile
+    private var running = true
+
+    override fun run() {
+        Log.d("INBOUND", "TransportThreadInbound RUN (stub)")
+        while (running) {
+            try {
+                val raw = GhostNetworkReceiver.pollInboundFrame()
+                if (raw != null) {
+                    Log.d("INBOUND", "got inbound raw frame size=${raw.size}")
+                    // TODO:
+                    // 1) parse header + body (FrameHeaderUtils + FrameBodyParser)
+                    // 2) dispatch to GhostMediaRouter
+                }
+                sleep(10)
+            } catch (t: Throwable) {
+                Log.e("INBOUND", "Inbound stub error", t)
+            }
+        }
+        Log.d("INBOUND", "TransportThreadInbound STOP (stub)")
+    }
+
+    fun stopThread() {
+        running = false
+        interrupt()
+    }
+}
+KOT
+
+echo "[OK] Updated GhostNetworkSender.kt with GhostNetworkReceiver stub"
+echo "[OK] Updated TransportThreadInbound.kt to poll inbound frames"
+echo "== patch_016 done =="
