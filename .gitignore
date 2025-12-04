@@ -1,0 +1,2 @@
+# Ignore local Opus workspace (not part of repo)
+native/securecall_opus/
