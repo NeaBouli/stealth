@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+
+echo "== patch_036: add LAUNCHER intent and exported=true to MainActivity =="
+
+cat <<'MANI' > client_android/app/src/main/AndroidManifest.xml
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.securecall.app">
@@ -41,3 +47,7 @@
     </application>
 
 </manifest>
+MANI
+
+echo "[OK] Wrote client_android/app/src/main/AndroidManifest.xml"
+echo "== patch_036 done =="

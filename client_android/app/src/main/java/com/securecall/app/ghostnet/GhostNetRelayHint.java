@@ -1,18 +1,30 @@
+package com.securecall.app.ghostnet;
 
-    // BACKEND-28: RelayHint Validierung
+/**
+ * Minimal relay hint value object for GhostNet.
+ */
+public class GhostNetRelayHint {
+
+    public final String host;
+    public final int port;
+
+    public GhostNetRelayHint(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
     public boolean isValid() {
         if (host == null || host.isEmpty()) return false;
         if (port <= 0 || port > 65535) return false;
         return true;
     }
 
-    // BACKEND-28: kompaktes Format für Debugging
     public String asCompactString() {
         return host + ":" + port;
     }
 
-    // BACKEND-28: Override für bessere toString-Ausgabe
     @Override
     public String toString() {
-        return "GhostNetRelayHint{host='" + host + "', port=" + port + "}";
+        return "GhostNetRelayHint(" + asCompactString() + ")";
     }
+}

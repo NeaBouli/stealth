@@ -1,2 +1,7 @@
 # Ignore local Opus workspace (not part of repo)
 native/securecall_opus/
+client_android/.gradle/
+client_android/build/
+client_android/app/.cxx/
+client_android/app/build/
+client_android/local.properties

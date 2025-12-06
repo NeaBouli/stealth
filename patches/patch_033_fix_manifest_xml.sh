@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+
+echo "== patch_033: fix AndroidManifest (root + services inside application) =="
+
+cat <<'MANI' > client_android/app/src/main/AndroidManifest.xml
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.securecall.app">
@@ -26,18 +32,14 @@
             android:enabled="true"
             android:exported="false" />
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
+        <activity android:name=".MainActivity" />
         <activity android:name=".SettingsActivity" />
         <activity android:name=".CallActivity" />
 
     </application>
 
 </manifest>
+MANI
+
+echo "[OK] Wrote client_android/app/src/main/AndroidManifest.xml"
+echo "== patch_033 done =="

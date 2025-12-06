@@ -1,3 +1,13 @@
+#!/bin/bash
+set -e
+
+echo "== patch_038: restore ghostnet media Kotlin stubs =="
+
+# Sicherstellen, dass das Package-Verzeichnis existiert
+mkdir -p client_android/app/src/main/java/com/securecall/app/ghostnet/media
+
+# 1) AudioPlaybackStub.kt – AudioTrack-basierte, einfache Playback-Queue
+cat <<'KOT' > client_android/app/src/main/java/com/securecall/app/ghostnet/media/AudioPlaybackStub.kt
 package com.securecall.app.ghostnet.media
 
 import android.media.AudioAttributes
@@ -98,3 +108,30 @@ object AudioPlaybackStub {
         worker = t
     }
 }
+KOT
+
+# 2) MediaRouterInboundStub.kt – Einstiegspunkt für decoded PCM
+cat <<'KOT' > client_android/app/src/main/java/com/securecall/app/ghostnet/media/MediaRouterInboundStub.kt
+package com.securecall.app.ghostnet.media
+
+import android.util.Log
+
+/**
+ * Minimal inbound media router:
+ * - receives decoded PCM frames,
+ * - forwards them to AudioPlaybackStub.
+ */
+object MediaRouterInboundStub {
+
+    private const val TAG = "MEDIA_ROUTER_INBOUND"
+
+    @JvmStatic
+    fun handleDecodedPcm(pcm: ByteArray) {
+        Log.d(TAG, "handleDecodedPcm(): got \${pcm.size} bytes of PCM, forwarding to AudioPlaybackStub")
+        AudioPlaybackStub.enqueuePcm(pcm)
+    }
+}
+KOT
+
+echo "[OK] restored Kotlin media stubs (AudioPlaybackStub + MediaRouterInboundStub)"
+echo "== patch_038 done =="

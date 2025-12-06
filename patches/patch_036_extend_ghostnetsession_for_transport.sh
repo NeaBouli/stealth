@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+
+echo "== patch_036: extend GhostNetSession for GhostNetTransport expectations =="
+
+cat <<'JAVA' > client_android/app/src/main/java/com/securecall/app/ghostnet/GhostNetSession.java
 package com.securecall.app.ghostnet;
 
 import java.util.ArrayList;
@@ -206,3 +212,7 @@ public class GhostNetSession {
         return getRemotePeerIdStatic();
     }
 }
+JAVA
+
+echo "[OK] Rewrote GhostNetSession.java with transport-compatible stubs"
+echo "== patch_036 done =="

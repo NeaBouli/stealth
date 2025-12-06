@@ -1,3 +1,46 @@
+#!/bin/bash
+set -e
+
+echo "== patch_035: rewrite GhostNet core Java classes as clean stubs =="
+
+# 1) GhostNetRelayHint.java
+cat <<'JAVA' > client_android/app/src/main/java/com/securecall/app/ghostnet/GhostNetRelayHint.java
+package com.securecall.app.ghostnet;
+
+/**
+ * Minimal relay hint value object for GhostNet.
+ */
+public class GhostNetRelayHint {
+
+    public final String host;
+    public final int port;
+
+    public GhostNetRelayHint(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
+    public boolean isValid() {
+        if (host == null || host.isEmpty()) return false;
+        if (port <= 0 || port > 65535) return false;
+        return true;
+    }
+
+    public String asCompactString() {
+        return host + ":" + port;
+    }
+
+    @Override
+    public String toString() {
+        return "GhostNetRelayHint(" + asCompactString() + ")";
+    }
+}
+JAVA
+
+echo "[OK] Wrote GhostNetRelayHint.java"
+
+# 2) GhostNetSession.java
+cat <<'JAVA' > client_android/app/src/main/java/com/securecall/app/ghostnet/GhostNetSession.java
 package com.securecall.app.ghostnet;
 
 import java.util.ArrayList;
@@ -7,18 +50,13 @@ import java.util.List;
 /**
  * Minimal session model and state machine stub for GhostNet.
  *
- * This keeps a simple static session model, but also provides instance
- * helpers that GhostNetTransport can call (getSessionId(), activate(), etc.).
+ * This is intentionally simple but keeps the public surface usable.
  */
 public class GhostNetSession {
 
-    // Static session data
     private static String sessionId;
-    private static String remotePeerId;
     private static List<GhostNetRelayHint> relayHints;
     private static long lastHandshakeTs;
-
-    // ---------- Static API ----------
 
     public static synchronized String getSafeSessionId() {
         return sessionId != null ? sessionId : "";
@@ -44,7 +82,6 @@ public class GhostNetSession {
 
     public static synchronized void resetSession() {
         sessionId = null;
-        remotePeerId = null;
         relayHints = null;
         lastHandshakeTs = 0L;
         sessionState = State.INIT;
@@ -52,7 +89,6 @@ public class GhostNetSession {
 
     public static synchronized void softReset() {
         sessionId = null;
-        remotePeerId = null;
         relayHints = null;
     }
 
@@ -66,16 +102,7 @@ public class GhostNetSession {
         setSessionData(id, relays);
     }
 
-    // Extra static helpers used by transport-like code
-    public static synchronized void setRemotePeerIdStatic(String peerId) {
-        remotePeerId = peerId;
-    }
-
-    public static synchronized String getRemotePeerIdStatic() {
-        return remotePeerId;
-    }
-
-    // ---------- State machine ----------
+    // Simple state machine
 
     public enum State {
         INIT,
@@ -174,35 +201,38 @@ public class GhostNetSession {
         notifyDead();
         notifyStateListeners(sessionState);
     }
+}
+JAVA
 
-    // ---------- Instance helpers for GhostNetTransport ----------
+echo "[OK] Wrote GhostNetSession.java"
 
-    /**
-     * Transport code often uses an instance of GhostNetSession.
-     * These instance methods simply delegate to the static state above.
-     */
+# 3) GhostDebugEventBus.java
+cat <<'JAVA' > client_android/app/src/main/java/com/securecall/app/debug/GhostDebugEventBus.java
+package com.securecall.app.debug;
 
-    public String getSessionId() {
-        return getSafeSessionId();
+import android.util.Log;
+
+/**
+ * Minimal debug event bus stub.
+ */
+public class GhostDebugEventBus {
+
+    private static final String TAG = "GHOST_DEBUG";
+
+    public static void post(String tag, String msg) {
+        Log.d(tag != null ? tag : TAG, msg != null ? msg : "");
     }
 
-    public void activate() {
-        markActive();
-    }
-
-    public void deactivate() {
-        markDead();
-    }
-
-    public boolean isActive() {
-        return getState() == State.ACTIVE;
-    }
-
-    public void setRemotePeerId(String peerId) {
-        setRemotePeerIdStatic(peerId);
-    }
-
-    public String getRemotePeerId() {
-        return getRemotePeerIdStatic();
+    public static void postSessionKeysPreview(String tagPrefix, byte[] rx, byte[] tx, byte[] salt) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("rx=").append(rx != null ? rx.length : 0)
+          .append(" tx=").append(tx != null ? tx.length : 0)
+          .append(" salt=").append(salt != null ? salt.length : 0);
+        post(tagPrefix != null ? tagPrefix : "SESS_KEYS", sb.toString());
     }
 }
+JAVA
+
+echo "[OK] Wrote GhostDebugEventBus.java"
+
+echo "== patch_035 done =="
