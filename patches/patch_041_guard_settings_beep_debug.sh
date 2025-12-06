@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+
+echo "== patch_041: guard Settings beep with BuildConfig.DEBUG =="
+
+cat <<'JAVA' > client_android/app/src/main/java/com/securecall/app/MainActivity.java
 package com.securecall.app;
 
 import android.content.Intent;
@@ -49,3 +55,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 }
+JAVA
+
+echo "[OK] Wrote MainActivity.java with debug-only beep"
+echo "== patch_041 done =="
