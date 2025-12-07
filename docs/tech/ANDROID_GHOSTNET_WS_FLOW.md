@@ -1,73 +1,108 @@
-# Android GhostNet WebSocket Flow (Skeleton)
+# Android GhostNet WebSocket Flow (Draft)
 
-Status: DEV / Debug Only
+This document describes how the Android client talks to the local
+GhostNet echo server via WebSocket, using the FrameV1 wire format.
 
-## Ziel
+It is intentionally simple and log-heavy so that future developers
+can extend it into a full GhostNet transport layer.
 
-Dieser Flow beschreibt die minimale WebSocket-Basis für GhostNet:
+---
 
-- Android-Client:
-  - nutzt `GhostNetWebSocketClient` (OkHttp-basiert),
-  - kann Binärframes (`byte[]`) senden.
-- Backend:
-  - einfacher Node.js-WebSocket-Server (`ghostnet_echo_server.js`),
-  - spiegelt eingehende Frames unverändert zurück.
+## 1. Components
 
-Noch NICHT implementiert:
+- **GhostNetWebSocketClient**
+  - Package: `com.securecall.app.ghostnet.transport.ws`
+  - Uses OkHttp WebSocket
+  - Provides:
+    - `connect()` / `connect(String url)`
+    - `disconnect()`
+    - `sendText(String text)`
+    - `sendBinary(byte[] data)`
+    - `sendControlHello()` – sends a FrameV1 control frame
 
-- FrameV1-Parsing / -Aufbau,
-- Crypto (Handshake, Keying, Opus),
-- Integration in GhostNetworkSender/GhostNetworkReceiver.
+- **GhostNet Echo Server**
+  - File: `backend/ghostnet_echo_server.js`
+  - Uses `ws` npm package
+  - For each binary message:
+    - parses a FrameV1 header (if at least 12 bytes),
+    - logs VERSION / TYPE / FLAGS / KEY_ID / SESSION_ID / LENGTH,
+    - echoes the full binary frame back to the client.
 
-## Komponenten
+---
 
-### 1. Android – GhostNetWebSocketClient
+## 2. Default topology
 
-Package:
+For local development:
 
-- `com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient`
+- Echo server:
+  - runs on your dev machine
+  - default: `ws://0.0.0.0:8080`
+  - can be changed via `GHOSTNET_ECHO_PORT` env var
 
-Funktionen:
+- Android client:
+  - uses `GhostNetWebSocketClient.DEFAULT_URL`:
 
-- `getInstance()` – Singleton-Access
-- `connect(String url)` – baut Verbindung auf (z.B. `ws://10.0.2.2:8080`)
-- `isConnected()` – einfacher Status
-- `sendFrame(byte[] data)` – sendet Binärpayload
-- `close()` – schließt Verbindung
+    - Emulator: `ws://10.0.2.2:8080` (maps to host loopback)
+    - Real device: use your host LAN IP, e.g. `ws://192.168.0.10:8080`
 
-Logging-Tag: `GHOST_WS`
+Future work may move this to a configuration screen or build-time
+flavor, but for now a hardcoded URL is sufficient.
 
-### 2. Backend – ghostnet_echo_server.js
+---
 
-Pfad:
+## 3. CONTROL_HELLO frame (TYPE=CONTROL)
 
-- `backend/ghostnet_echo_server.js`
+The first practical use of FrameV1 is a simple "CONTROL_HELLO" frame
+that can be sent after connect.
 
-Funktionen:
+Header layout (12 bytes, unencrypted):
 
-- startet einen WebSocket-Server (Port `8080` oder `GHOSTNET_ECHO_PORT`),
-- loggt eingehende Nachrichten,
-- sendet sie 1:1 zurück.
+- VERSION    = 0x01
+- TYPE       = 0x02 (CONTROL)
+- FLAGS      = 0x00
+- KEY_ID     = 0x00
+- SESSION_ID = 0x00000001 (placeholder)
+- LENGTH     = 0x00000000 (no payload)
 
-Start (im `backend`-Ordner):
+In the current implementation:
 
-```bash
-npm install ws   # einmalig
-node ghostnet_echo_server.js
-Nächste Schritte (für zukünftige Patches)
-GhostNetworkSender
-sendRawNetworkFrame(byte[]) → GhostNetWebSocketClient.sendFrame(...)
+- `GhostNetWebSocketClient.sendControlHello()` builds this header.
+- No payload is attached (payload length = 0).
+- The echo server logs the header fields and sends the frame back.
 
-GhostNetworkReceiver
-WebSocket onMessage(ByteString) → Inject in bestehende Inbound-Queue
+This is enough to verify:
 
-E2E-Test-Idee
-Debug-Frame bauen (z.B. einfacher Header + PCM),
+1. WebSocket connectivity works.
+2. FrameV1 header is well-formed.
+3. Server and client see the same TYPE/VERSION/SESSION_ID/LENGTH.
 
-über WebSocket zum Echo-Server senden,
+---
 
-Antwort zurück in MediaRouterInboundStub leiten,
+## 4. Example usage from UI code (future work)
 
-Beep aus dem Netzwerk hören.
+The UI (e.g. Start Call button) can later trigger:
 
-Bis dahin dient dieser Patch nur als Transport-Skelett, um später sauber anschließen zu können.
+```java
+GhostNetWebSocketClient client = GhostNetWebSocketClient.getInstance();
+client.connect();            // uses default URL
+client.sendControlHello();   // sends CONTROL_HELLO (FrameV1)
+This wiring is not part of this patch and should be done as part
+of the Track A1 / Start Call integration, so that UI and transport
+concerns stay separate.
+
+5. Next steps
+Track A1:
+
+Wire the Start Call button to connect + sendControlHello().
+
+Log lifecycle and failures clearly with the GHOSTNET_WS tag.
+
+Track A2:
+
+Add KEEPALIVE (PING/PONG) FrameV1 handling (TYPE=KEEPALIVE).
+
+Track B (later):
+
+Introduce AUDIO_OPUS_FRAME (TYPE=AUDIO) and route decoded PCM
+into MediaRouterInboundStub.handleDecodedPcm(...).
+
