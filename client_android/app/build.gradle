@@ -23,7 +23,9 @@ android {
     }
 }
 
-dependencies {\n    implementation 'com.squareup.okhttp3:okhttp:4.12.0'\n
+dependencies {
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 }
