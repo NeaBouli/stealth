@@ -62,6 +62,7 @@ public class GhostNetWebSocketClient {
             @Override
             public void onOpen(WebSocket ws, Response response) {
                 Log.d(TAG, "onOpen(): " + response);
+                sendKeepalive();
             }
 
             @Override
