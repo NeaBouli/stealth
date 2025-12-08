@@ -11,203 +11,114 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
 
-/**
- * GhostNetWebSocketClient
- *
- * Minimal, log-heavy WebSocket client used for:
- * - connecting to the GhostNet echo server
- * - sending FrameV1 CONTROL_HELLO frames (TYPE=CONTROL)
- *
- * IMPORTANT:
- *  - This class does NOT start itself.
- *  - UI code (e.g. Start Call button) should call:
- *
- *      GhostNetWebSocketClient client = GhostNetWebSocketClient.getInstance();
- *      client.connect();            // uses DEFAULT_URL
- *      client.sendControlHello();   // sends FrameV1 CONTROL_HELLO with LENGTH=0
- *
- *  - For emulator, DEFAULT_URL works (10.0.2.2).
- *  - For real devices, you may have to point to your LAN IP instead.
- */
-public class GhostNetWebSocketClient extends WebSocketListener {
+public class GhostNetWebSocketClient {
 
     private static final String TAG = "GHOSTNET_WS";
 
-    /**
-     * Default URL:
-     *  - Emulator:    ws://10.0.2.2:8080
-     *  - Real device: replace with your Mac/Server LAN IP, e.g. ws://192.168.0.10:8080
-     */
-    private static final String DEFAULT_URL = "ws://10.0.2.2:8080";
-
-    private static GhostNetWebSocketClient instance;
+    private static GhostNetWebSocketClient INSTANCE;
 
     private final OkHttpClient client;
     private WebSocket webSocket;
-    private String currentUrl;
-    private boolean isConnecting;
+    private boolean isConnectingOrOpen = false;
 
     private GhostNetWebSocketClient() {
         client = new OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(0, TimeUnit.MILLISECONDS)
                 .build();
+        Log.d(TAG, "GhostNetWebSocketClient(): instance created");
     }
 
     public static synchronized GhostNetWebSocketClient getInstance() {
-        if (instance == null) {
-            instance = new GhostNetWebSocketClient();
+        if (INSTANCE == null) {
+            INSTANCE = new GhostNetWebSocketClient();
+            Log.d(TAG, "getInstance(): created new instance");
+        } else {
+            Log.d(TAG, "getInstance(): reusing existing instance");
         }
-        return instance;
-    }
-
-    public synchronized void connect() {
-        connect(DEFAULT_URL);
+        return INSTANCE;
     }
 
     public synchronized void connect(String url) {
-        if (webSocket != null) {
-            Log.d(TAG, "connect(): already have WebSocket, url=" + currentUrl);
+        Log.d(TAG, "connect() called with url=" + url);
+
+        if (url == null || url.isEmpty()) {
+            Log.d(TAG, "connect(): url is null/empty, aborting");
             return;
         }
-        isConnecting = true;
-        currentUrl = url;
-        Log.d(TAG, "connect(): opening WebSocket to " + url);
+
+        if (isConnectingOrOpen && webSocket != null) {
+            Log.d(TAG, "connect(): already connecting/open, reusing existing socket");
+            return;
+        }
 
         Request request = new Request.Builder()
                 .url(url)
                 .build();
 
-        // This will trigger onOpen/onFailure callbacks in this listener.
-        webSocket = client.newWebSocket(request, this);
+        Log.d(TAG, "connect(): creating new WebSocket via OkHttp");
+
+        isConnectingOrOpen = true;
+        webSocket = client.newWebSocket(request, new WebSocketListener() {
+            @Override
+            public void onOpen(WebSocket ws, Response response) {
+                Log.d(TAG, "onOpen(): " + response);
+            }
+
+            @Override
+            public void onMessage(WebSocket ws, String text) {
+                Log.d(TAG, "onMessage(text): " + text);
+            }
+
+            @Override
+            public void onMessage(WebSocket ws, ByteString bytes) {
+                Log.d(TAG, "onMessage(bytes, len=" + bytes.size() + "): " + bytes.hex());
+            }
+
+            @Override
+            public void onClosing(WebSocket ws, int code, String reason) {
+                Log.d(TAG, "onClosing(): code=" + code + " reason=" + reason);
+                isConnectingOrOpen = false;
+            }
+
+            @Override
+            public void onClosed(WebSocket ws, int code, String reason) {
+                Log.d(TAG, "onClosed(): code=" + code + " reason=" + reason);
+                isConnectingOrOpen = false;
+            }
+
+            @Override
+            public void onFailure(WebSocket ws, Throwable t, Response response) {
+                Log.d(TAG, "onFailure(): " + t + " response=" + response, t);
+                isConnectingOrOpen = false;
+            }
+        });
+
+        Log.d(TAG, "connect(): async WebSocket creation requested");
     }
 
-    public synchronized void disconnect() {
-        if (webSocket != null) {
-            Log.d(TAG, "disconnect(): closing WebSocket");
-            webSocket.close(1000, "client disconnect");
-            webSocket = null;
-        }
-        isConnecting = false;
-    }
-
-    public synchronized boolean isConnected() {
-        return webSocket != null && !isConnecting;
-    }
-
-    public synchronized void sendBinary(byte[] data) {
-        if (webSocket == null) {
-            Log.w(TAG, "sendBinary(): no active WebSocket, dropping frame (" + data.length + " bytes)");
-            return;
-        }
-        webSocket.send(ByteString.of(data, 0, data.length));
-        Log.d(TAG, "sendBinary(): sent " + data.length + " bytes");
-    }
-
-    public synchronized void sendText(String text) {
-        if (webSocket == null) {
-            Log.w(TAG, "sendText(): no active WebSocket, dropping text: " + text);
-            return;
-        }
-        webSocket.send(text);
-        Log.d(TAG, "sendText(): \"" + text + "\"");
-    }
-
-    /**
-     * Build and send a FrameV1 CONTROL_HELLO frame.
-     *
-     * Layout (12-byte header, no payload):
-     *  VERSION    = 0x01
-     *  TYPE       = 0x02 (CONTROL)
-     *  FLAGS      = 0x00
-     *  KEY_ID     = 0x00
-     *  SESSION_ID = 0x00000001 (placeholder)
-     *  LENGTH     = 0x00000000 (no payload)
-     */
     public synchronized void sendControlHello() {
-        byte[] frame = buildControlHelloFrame();
-        Log.d(TAG, "sendControlHello(): sending CONTROL_HELLO, frameLen=" + frame.length);
-        sendBinary(frame);
-    }
+        Log.d(TAG, "sendControlHello() called");
 
-    private byte[] buildControlHelloFrame() {
-        byte version = 0x01;
-        byte type = 0x02;  // CONTROL
-        byte flags = 0x00;
-        byte keyId = 0x00;
-        int sessionId = 1; // placeholder
-        int length = 0;    // no payload
-
-        byte[] frame = new byte[12];
-
-        frame[0] = version;
-        frame[1] = type;
-        frame[2] = flags;
-        frame[3] = keyId;
-
-        // SESSION_ID (little-endian)
-        frame[4] = (byte) (sessionId & 0xFF);
-        frame[5] = (byte) ((sessionId >> 8) & 0xFF);
-        frame[6] = (byte) ((sessionId >> 16) & 0xFF);
-        frame[7] = (byte) ((sessionId >> 24) & 0xFF);
-
-        // LENGTH (little-endian)
-        frame[8]  = (byte) (length & 0xFF);
-        frame[9]  = (byte) ((length >> 8) & 0xFF);
-        frame[10] = (byte) ((length >> 16) & 0xFF);
-        frame[11] = (byte) ((length >> 24) & 0xFF);
-
-        return frame;
-    }
-
-    // --- WebSocketListener callbacks ---
-
-    @Override
-    public void onOpen(WebSocket webSocket, Response response) {
-        Log.d(TAG, "onOpen(): WebSocket connected, url=" + currentUrl);
-        synchronized (this) {
-            isConnecting = false;
+        if (webSocket == null) {
+            Log.d(TAG, "sendControlHello(): webSocket is null, nothing to send");
+            return;
         }
+
+        String payload = "{\"type\":\"CONTROL_HELLO\",\"ts\":" + System.currentTimeMillis() + "}";
+        boolean ok = webSocket.send(payload);
+        Log.d(TAG, "sendControlHello(): sent text payload, ok=" + ok + " payload=" + payload);
     }
 
-    @Override
-    public void onMessage(WebSocket webSocket, String text) {
-        Log.d(TAG, "onMessage(text): \"" + text + "\"");
-    }
+    public synchronized void sendKeepalive() {
+        Log.d(TAG, "sendKeepalive() called");
 
-    @Override
-    public void onMessage(WebSocket webSocket, ByteString bytes) {
-        byte[] data = bytes.toByteArray();
-        Log.d(TAG, "onMessage(binary): received " + data.length + " bytes from server");
-        // NOTE:
-        // For now, we only log the incoming data length.
-        // Parsing / routing of FrameV1 is a separate milestone.
-    }
-
-    @Override
-    public void onClosing(WebSocket webSocket, int code, String reason) {
-        Log.d(TAG, "onClosing(): code=" + code + ", reason=" + reason);
-        webSocket.close(code, reason);
-    }
-
-    @Override
-    public void onClosed(WebSocket webSocket, int code, String reason) {
-        Log.d(TAG, "onClosed(): code=" + code + ", reason=" + reason);
-        synchronized (this) {
-            if (this.webSocket == webSocket) {
-                this.webSocket = null;
-            }
-            isConnecting = false;
+        if (webSocket == null) {
+            Log.d(TAG, "sendKeepalive(): webSocket is null, nothing to send");
+            return;
         }
-    }
 
-    @Override
-    public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-        Log.e(TAG, "onFailure(): " + t.getMessage(), t);
-        synchronized (this) {
-            if (this.webSocket == webSocket) {
-                this.webSocket = null;
-            }
-            isConnecting = false;
-        }
+        String payload = "{\"type\":\"KEEPALIVE\",\"ts\":" + System.currentTimeMillis() + "}";
+        boolean ok = webSocket.send(payload);
+        Log.d(TAG, "sendKeepalive(): sent KEEPALIVE text, ok=" + ok + " payload=" + payload);
     }
 }
