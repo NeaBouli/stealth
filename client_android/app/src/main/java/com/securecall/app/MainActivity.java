@@ -3,6 +3,7 @@ package com.securecall.app;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -63,4 +64,17 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(this, SettingsActivity.class));
         });
     }
+    
+    protected void onDestroy() {
+        
+        Log.d("GHOSTNET_WS", "MainActivity.onDestroy(): requesting GhostNet disconnect");
+        GhostNetWebSocketClient client = GhostNetWebSocketClient.getInstance();
+        if (client != null) {
+            client.disconnect();
+        }
+super.onDestroy();
+        Log.d("GHOSTNET_WS", "MainActivity.onDestroy(): requesting GhostNet disconnect");
+        GhostNetWebSocketClient.getInstance().disconnect();
+    }
+
 }

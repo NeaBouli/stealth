@@ -122,4 +122,18 @@ public class GhostNetWebSocketClient {
         boolean ok = webSocket.send(payload);
         Log.d(TAG, "sendKeepalive(): sent KEEPALIVE text, ok=" + ok + " payload=" + payload);
     }
+    public void disconnect() {
+        Log.d("GHOSTNET_WS", "disconnect() called");
+        if (webSocket != null) {
+            try {
+                webSocket.close(1000, "Client disconnect");
+                Log.d("GHOSTNET_WS", "disconnect(): close() requested");
+            } catch (Exception e) {
+                Log.d("GHOSTNET_WS", "disconnect(): exception while closing", e);
+            } finally {
+                webSocket = null;
+            }
+        }
+    }
+
 }
