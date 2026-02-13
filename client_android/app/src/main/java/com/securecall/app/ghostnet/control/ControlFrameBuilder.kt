@@ -1,12 +1,9 @@
 package com.securecall.app.ghostnet.control
 
-// BACKEND-51 / ANDROID-03:
-// Erzeugt ControlFrames gemäß unserem FrameFormat.
-// Format:
-//   [0] = 0x02  (ControlFrame)
-//   [1] = opcode
-//   [2..] = payload (optional)
-
+/**
+ * BACKEND-51:
+ * Erzeugt ControlFrames.
+ */
 object ControlFrameBuilder {
 
     const val OPCODE_MUTE     = 0x01
@@ -16,12 +13,10 @@ object ControlFrameBuilder {
 
     fun build(opcode: Int, payload: ByteArray? = null): ByteArray {
         val p = payload ?: ByteArray(0)
-
         val out = ByteArray(2 + p.size)
-        out[0] = 0x02.toByte()                  // ControlFrame Marker
+        out[0] = 0x02.toByte()
         out[1] = opcode.toByte()
         for (i in p.indices) out[2 + i] = p[i]
-
         return out
     }
 
@@ -30,15 +25,3 @@ object ControlFrameBuilder {
     fun ping(): ByteArray     = build(OPCODE_PING)
     fun pong(): ByteArray     = build(OPCODE_PONG)
 }
-
-    // BACKEND-62: ControlFrame Header-Konstanten
-    private const val PING = 0x01
-    private const val PONG = 0x02
-
-    fun ping(): ByteArray {
-        return byteArrayOf(PING.toByte()) // später Payload
-    }
-
-    fun pong(): ByteArray {
-        return byteArrayOf(PONG.toByte())
-    }

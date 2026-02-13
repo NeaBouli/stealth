@@ -5,19 +5,6 @@ import android.util.Log
 /**
  * CRYPTO-27:
  * Stub-Implementierung für das Session-Ciphering.
- *
- * Ziel:
- *  - zentrale Stelle für Encrypt/Decrypt mit SessionCipherContext
- *  - Integration eines Key-Version-Headers (SessionCipherHeader)
- *
- * Derzeit:
- *  - KEINE echte Kryptografie
- *  - Logging + Rückgabe der Originaldaten
- *
- * Später:
- *  - JNI/Rust Binding (XChaCha20-Poly1305 oder AES-GCM)
- *  - Header in den Ciphertext prefixen (magic + keyId + nonce)
- *  - MAC-Verification etc.
  */
 object SessionCipherEngine {
 
@@ -35,13 +22,7 @@ object SessionCipherEngine {
             "encrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, nonce=$nonce, plainSize=${plain.size}, headerMagic=${header.magic}"
         )
 
-        // !!! PLACEHOLDER !!!
-        // Später:
-        //  1) Header → ByteArray serialisieren
-        //  2) plain → AEAD encrypt(txKey, nonce)
-        //  3) result = headerBytes + ciphertext
-        //
-        // Jetzt: wir geben einfach das Plaintext-Array zurück.
+        // PLACEHOLDER — later: AEAD encrypt
         return plain
     }
 
@@ -54,15 +35,9 @@ object SessionCipherEngine {
             "decrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, cipherSize=${cipher.size}"
         )
 
-        // !!! PLACEHOLDER !!!
-        // Später:
-        //  1) Header vom Anfang des Ciphertext abtrennen & prüfen (magic, keyId, nonce)
-        //  2) Ciphertext-Teil via AEAD mit rxKey entschlüsseln
-        //
-        // Jetzt: wir geben einfach den "Ciphertext" unverändert zurück.
+        // PLACEHOLDER — later: AEAD decrypt
         return cipher
     }
-}
 
     // CRYPTO-34: HeaderV1 Builder
     fun buildFrameHeaderV1(ctx: SessionCipherContext, flags: Int, nonce: Long): ByteArray {
@@ -76,21 +51,19 @@ object SessionCipherEngine {
         return header.toBytes()
     }
 
-    // CRYPTO-34: vollständige Stub-EncryptPipeline
+    // CRYPTO-34: Stub-EncryptPipeline
     fun encryptFrameV1(
         ctx: SessionCipherContext,
         plain: ByteArray,
         flags: Int
     ): ByteArray {
         val nonce = ctx.nextNonce()
-
         val header = buildFrameHeaderV1(ctx, flags, nonce)
-        val encryptedPayload = encrypt(ctx, plain)  // Stub
-
+        val encryptedPayload = encrypt(ctx, plain)
         return header + encryptedPayload
     }
 
-    // CRYPTO-34: Stub-DecryptPipeline (Header auslesen)
+    // CRYPTO-34: Stub-DecryptPipeline
     fun decryptFrameV1(
         ctx: SessionCipherContext,
         cipher: ByteArray
@@ -106,40 +79,29 @@ object SessionCipherEngine {
         Log.d(TAG, "decryptFrameV1(): flags=${header.flags} keyId=${header.keyId} prefix=${header.noncePrefix}")
 
         val payload = cipher.copyOfRange(4, cipher.size)
-        return decrypt(ctx, payload)  // Stub
+        return decrypt(ctx, payload)
     }
 
-    // CRYPTO-35: Flag-spezifische Encrypt-Wrapper für FrameHeaderV1
+    // CRYPTO-35: Flag-spezifische Encrypt-Wrapper
 
     fun encryptAudioFrameV1(
         ctx: SessionCipherContext,
         plain: ByteArray
     ): ByteArray {
-        return encryptFrameV1(
-            ctx,
-            plain,
-            com.securecall.app.ghostnet.frame.header.FrameFlags.AUDIO
-        )
+        return encryptFrameV1(ctx, plain, com.securecall.app.ghostnet.frame.header.FrameFlags.AUDIO)
     }
 
     fun encryptControlFrameV1(
         ctx: SessionCipherContext,
         plain: ByteArray
     ): ByteArray {
-        return encryptFrameV1(
-            ctx,
-            plain,
-            com.securecall.app.ghostnet.frame.header.FrameFlags.CONTROL
-        )
+        return encryptFrameV1(ctx, plain, com.securecall.app.ghostnet.frame.header.FrameFlags.CONTROL)
     }
 
     fun encryptKeepAliveFrameV1(
         ctx: SessionCipherContext,
         plain: ByteArray
     ): ByteArray {
-        return encryptFrameV1(
-            ctx,
-            plain,
-            com.securecall.app.ghostnet.frame.header.FrameFlags.KEEPALIVE
-        )
+        return encryptFrameV1(ctx, plain, com.securecall.app.ghostnet.frame.header.FrameFlags.KEEPALIVE)
     }
+}

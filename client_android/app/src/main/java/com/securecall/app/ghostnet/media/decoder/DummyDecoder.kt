@@ -16,20 +16,18 @@ object DummyDecoder {
         val pcm = ShortArray(raw.size)
 
         for (i in raw.indices) {
-            pcm[i] = (raw[i].toInt() * 128).toShort() // Fake PCM
+            pcm[i] = (raw[i].toInt() * 128).toShort()
         }
 
+        postDecodeEvent(raw.size, pcm.size)
         return pcm
     }
-}
 
     // PATCH 240: Debug-Event nach Decode
     private fun postDecodeEvent(rawSize: Int, pcmSize: Int) {
         com.securecall.app.debug.GhostDebugEventBus.post(
             "DECODER",
-            "decoded rawSize=" + rawSize + " -> pcmSize=" + pcmSize
+            "decoded rawSize=$rawSize -> pcmSize=$pcmSize"
         )
     }
-
-        // PATCH 240: EventBus Meldung
-        postDecodeEvent(raw.size, pcm.size)
+}

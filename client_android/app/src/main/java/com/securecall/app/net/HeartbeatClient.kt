@@ -7,12 +7,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * BACKEND-22 — WebSocket Heartbeat Listener (Android)
- *
- * - Antwortet automatisch auf Ping
- * - Updated lastSeen Timestamp
- * - Minimaler MVP für späteren GhostNet Transport
  */
-
 class HeartbeatClient(
     private val url: String,
     private val listener: Listener
@@ -30,10 +25,15 @@ class HeartbeatClient(
     private var ws: WebSocket? = null
     private var lastSeen: Long = System.currentTimeMillis()
 
+    // BACKEND-22: Reconnect Backoff + Idle Ping
+    private var reconnectDelay = 1000L
+    private val maxReconnectDelay = 15000L
+    private var idlePingTimer: java.util.Timer? = null
+
     fun connect() {
         val client = OkHttpClient.Builder()
             .readTimeout(0, TimeUnit.MILLISECONDS)
-            .pingInterval(5, TimeUnit.SECONDS)   // Client sendet automatisch Ping
+            .pingInterval(5, TimeUnit.SECONDS)
             .build()
 
         val req = Request.Builder().url(url).build()
@@ -45,6 +45,7 @@ class HeartbeatClient(
     }
 
     fun close() {
+        stopIdlePing()
         ws?.close(1000, "client_close")
     }
 
@@ -52,6 +53,8 @@ class HeartbeatClient(
 
     override fun onOpen(webSocket: WebSocket, response: Response) {
         Log.d("HB", "WebSocket connected")
+        resetBackoff()
+        startIdlePing()
         listener.onConnected()
     }
 
@@ -66,13 +69,14 @@ class HeartbeatClient(
     }
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+        stopIdlePing()
         listener.onError(t)
+        scheduleReconnect()
     }
 
     override fun onPing(webSocket: WebSocket, bytes: ByteString) {
         lastSeen = System.currentTimeMillis()
         listener.onPing()
-        // Antwort an den Server
         webSocket.sendPong(bytes)
     }
 
@@ -80,16 +84,9 @@ class HeartbeatClient(
         lastSeen = System.currentTimeMillis()
         listener.onPong()
     }
-}
-
-    // BACKEND-22: Reconnect Backoff + Idle Ping
-    private var reconnectDelay = 1000L
-    private val maxReconnectDelay = 15000L
-    private var idlePingTimer: java.util.Timer? = null
 
     private fun scheduleReconnect() {
-        android.util.Log.d("HB", "Reconnect scheduled in ${reconnectDelay}ms")
-
+        Log.d("HB", "Reconnect scheduled in ${reconnectDelay}ms")
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
             connect()
             reconnectDelay = kotlin.math.min(reconnectDelay * 2, maxReconnectDelay)
@@ -116,15 +113,4 @@ class HeartbeatClient(
         idlePingTimer?.cancel()
         idlePingTimer = null
     }
-
-    override fun onOpen(webSocket: WebSocket, response: Response) {
-        resetBackoff()
-        startIdlePing()
-        listener.onConnected()
-    }
-
-    override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-        stopIdlePing()
-        listener.onError(t)
-        scheduleReconnect()
-    }
+}

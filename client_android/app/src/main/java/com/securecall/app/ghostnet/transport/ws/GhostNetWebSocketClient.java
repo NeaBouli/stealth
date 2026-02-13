@@ -1,6 +1,11 @@
 package com.securecall.app.ghostnet.transport.ws;
 
+
 import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
+
+import com.securecall.app.ghostnet.call.CallSessionManager;
 
 import java.util.concurrent.TimeUnit;
 
@@ -14,6 +19,43 @@ import okio.ByteString;
 public class GhostNetWebSocketClient {
 
     private static final String TAG = "GHOSTNET_WS";
+    private static final long KEEPALIVE_INTERVAL_MS = 5000L;
+
+    private final Handler keepaliveHandler = new Handler(Looper.getMainLooper());
+    private final Runnable keepaliveRunnable = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                sendKeepalive();
+            } finally {
+                if (connectionState == ConnectionState.CONNECTED) {
+                    keepaliveHandler.postDelayed(this, KEEPALIVE_INTERVAL_MS);
+                }
+            }
+        }
+    };
+
+
+    public enum ConnectionState {
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED
+    }
+
+    private volatile ConnectionState connectionState = ConnectionState.DISCONNECTED;
+
+    private void setConnectionState(ConnectionState newState) {
+        Log.d(TAG, "setConnectionState(): " + connectionState + " -> " + newState);
+        connectionState = newState;
+    }
+
+    public boolean isConnected() {
+        return connectionState == ConnectionState.CONNECTED;
+    }
+
+    public ConnectionState getConnectionState() {
+        return connectionState;
+    }
 
     private static GhostNetWebSocketClient INSTANCE;
 
@@ -56,12 +98,16 @@ public class GhostNetWebSocketClient {
                 .build();
 
         Log.d(TAG, "connect(): creating new WebSocket via OkHttp");
+        setConnectionState(ConnectionState.CONNECTING);
 
         isConnectingOrOpen = true;
         webSocket = client.newWebSocket(request, new WebSocketListener() {
             @Override
             public void onOpen(WebSocket ws, Response response) {
+            startKeepaliveLoop();
                 Log.d(TAG, "onOpen(): " + response);
+                CallSessionManager.getInstance().onWebSocketConnected();
+                setConnectionState(ConnectionState.CONNECTED);
                 sendKeepalive();
             }
 
@@ -79,18 +125,25 @@ public class GhostNetWebSocketClient {
             public void onClosing(WebSocket ws, int code, String reason) {
                 Log.d(TAG, "onClosing(): code=" + code + " reason=" + reason);
                 isConnectingOrOpen = false;
+                setConnectionState(ConnectionState.DISCONNECTED);
             }
 
             @Override
             public void onClosed(WebSocket ws, int code, String reason) {
+            stopKeepaliveLoop();
                 Log.d(TAG, "onClosed(): code=" + code + " reason=" + reason);
+                CallSessionManager.getInstance().onWebSocketClosed(code, reason);
                 isConnectingOrOpen = false;
+                setConnectionState(ConnectionState.DISCONNECTED);
             }
 
             @Override
             public void onFailure(WebSocket ws, Throwable t, Response response) {
+            stopKeepaliveLoop();
                 Log.d(TAG, "onFailure(): " + t + " response=" + response, t);
+                CallSessionManager.getInstance().onWebSocketError(t);
                 isConnectingOrOpen = false;
+                setConnectionState(ConnectionState.DISCONNECTED);
             }
         });
 
@@ -98,19 +151,31 @@ public class GhostNetWebSocketClient {
     }
 
     public synchronized void sendControlHello() {
-        Log.d(TAG, "sendControlHello() called");
+	Log.d(TAG, "sendControlHello() called");
 
-        if (webSocket == null) {
-            Log.d(TAG, "sendControlHello(): webSocket is null, nothing to send");
-            return;
+	if (webSocket == null) {
+		Log.d(TAG, "sendControlHello(): webSocket is null, nothing to send");
+		return;
+	}
+
+	long ts = System.currentTimeMillis();
+	String payload = "{\"type\":\"CONTROL_HELLO\",\"ts\":" + ts + "}";
+	boolean ok = webSocket.send(payload);
+	Log.d(TAG, "sendControlHello(): sent text payload, ok=" + ok + " payload=" + payload);
+}
+
+    private void startKeepaliveLoop() {
+        keepaliveHandler.removeCallbacks(keepaliveRunnable);
+        if (connectionState == ConnectionState.CONNECTED) {
+            keepaliveHandler.postDelayed(keepaliveRunnable, KEEPALIVE_INTERVAL_MS);
         }
-
-        String payload = "{\"type\":\"CONTROL_HELLO\",\"ts\":" + System.currentTimeMillis() + "}";
-        boolean ok = webSocket.send(payload);
-        Log.d(TAG, "sendControlHello(): sent text payload, ok=" + ok + " payload=" + payload);
     }
 
-    public synchronized void sendKeepalive() {
+    private void stopKeepaliveLoop() {
+        keepaliveHandler.removeCallbacks(keepaliveRunnable);
+    }
+
+public synchronized void sendKeepalive() {
         Log.d(TAG, "sendKeepalive() called");
 
         if (webSocket == null) {
@@ -123,7 +188,7 @@ public class GhostNetWebSocketClient {
         Log.d(TAG, "sendKeepalive(): sent KEEPALIVE text, ok=" + ok + " payload=" + payload);
     }
     public void disconnect() {
-        Log.d("GHOSTNET_WS", "disconnect() called");
+        stopKeepaliveLoop();        Log.d("GHOSTNET_WS", "disconnect() called");
         if (webSocket != null) {
             try {
                 webSocket.close(1000, "Client disconnect");
@@ -136,4 +201,20 @@ public class GhostNetWebSocketClient {
         }
     }
 
+    public void sendControlBye() {
+        Log.d(TAG, "sendControlBye(): called, state=" + connectionState);
+        if (connectionState != ConnectionState.CONNECTED) {
+            Log.d(TAG, "sendControlBye(): not connected, skipping CONTROL_BYE send");
+            return;
+        }
+        if (webSocket == null) {
+            Log.d(TAG, "sendControlBye(): no active websocket");
+            return;
+        }
+        long ts = System.currentTimeMillis();
+        String payload = "{\"type\":\"CONTROL_BYE\",\"ts\":" + ts + "}";
+        Log.d(TAG, "sendControlBye(): sending CONTROL_BYE, payload=" + payload);
+        boolean ok = webSocket.send(payload);
+        Log.d(TAG, "sendControlBye(): send() returned " + ok);
+    }
 }

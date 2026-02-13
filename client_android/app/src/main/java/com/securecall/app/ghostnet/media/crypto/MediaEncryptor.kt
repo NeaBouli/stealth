@@ -6,10 +6,7 @@ import com.securecall.app.ghostnet.crypto.SessionCipherEngine
 
 /**
  * CRYPTO-28:
- * Einfacher Stub für die Encrypt-Seite.
- *
- * Später:
- *   PCM → encode() → encrypt() → TransportFrame
+ * Stub für die Encrypt-Seite.
  */
 object MediaEncryptor {
 
@@ -19,57 +16,41 @@ object MediaEncryptor {
         Log.d(TAG, "encrypt(): pcmSize=${pcm.size}")
         return SessionCipherEngine.encrypt(ctx, pcm)
     }
-}
 
-// CRYPTO-39: AUDIO-FrameV1 Builder
-fun buildAndEncryptAudioFrameV1(
-    ctx: com.securecall.app.ghostnet.crypto.SessionCipherContext,
-    pcm: ByteArray
-): ByteArray {
-    // später: Opus-Encoding/Jitterbuffer etc.
-    val type = com.securecall.app.ghostnet.frame.FrameType.AUDIO
-    return com.securecall.app.ghostnet.media.crypto.FrameHeaderUtils.encryptFrameV1ForType(
-        ctx,
-        type,
-        pcm
-    )
-}
+    fun encrypt(pcm: ByteArray, ctx: com.securecall.app.ghostnet.crypto.SessionCryptoContext?): ByteArray {
+        Log.d(TAG, "encrypt(): pcmSize=${pcm.size} (SessionCryptoContext)")
+        return pcm
+    }
 
-// CRYPTO-39: CONTROL-FrameV1 Builder
-fun buildAndEncryptControlFrameV1(
-    ctx: com.securecall.app.ghostnet.crypto.SessionCipherContext,
-    code: Int,
-    text: String
-): ByteArray {
-    val payload = "$code:$text".toByteArray()
-    val type = com.securecall.app.ghostnet.frame.FrameType.CONTROL
-    return com.securecall.app.ghostnet.media.crypto.FrameHeaderUtils.encryptFrameV1ForType(
-        ctx,
-        type,
-        payload
-    )
-}
+    fun encrypt(frame: com.securecall.app.ghostnet.media.MediaFrame): ByteArray {
+        Log.d(TAG, "encrypt(): frame size=${frame.data.size}")
+        return frame.data
+    }
 
-// CRYPTO-39: KEEPALIVE-FrameV1 Builder (MVP: leerer Body)
-fun buildAndEncryptKeepAliveFrameV1(
-    ctx: com.securecall.app.ghostnet.crypto.SessionCipherContext
-): ByteArray {
-    val payload = ByteArray(0)
-    val type = com.securecall.app.ghostnet.frame.FrameType.KEEPALIVE
-    return com.securecall.app.ghostnet.media.crypto.FrameHeaderUtils.encryptFrameV1ForType(
-        ctx,
-        type,
-        payload
-    )
-}
+    fun encryptWithKey(pcm: ByteArray, ctx: com.securecall.app.ghostnet.crypto.SessionCryptoContext?): ByteArray {
+        Log.d(TAG, "encryptWithKey(): pcmSize=${pcm.size}")
+        return pcm
+    }
 
-// CRYPTO-39: Debug-Helfer – Dummy CALL-INVITE Control-Frame
-fun buildDummyCallInviteFrameV1(
-    ctx: com.securecall.app.ghostnet.crypto.SessionCipherContext
-): ByteArray {
-    return buildAndEncryptControlFrameV1(
-        ctx,
-        100,
-        "CALL-INVITE"
-    )
+    // CRYPTO-39: FrameV1 Builders
+    fun buildAndEncryptAudioFrameV1(ctx: SessionCipherContext, pcm: ByteArray): ByteArray {
+        val type = com.securecall.app.ghostnet.frame.FrameType.AUDIO
+        return FrameHeaderUtils.encryptFrameV1ForType(ctx, type, pcm)
+    }
+
+    fun buildAndEncryptControlFrameV1(ctx: SessionCipherContext, code: Int, text: String): ByteArray {
+        val payload = "$code:$text".toByteArray()
+        val type = com.securecall.app.ghostnet.frame.FrameType.CONTROL
+        return FrameHeaderUtils.encryptFrameV1ForType(ctx, type, payload)
+    }
+
+    fun buildAndEncryptKeepAliveFrameV1(ctx: SessionCipherContext): ByteArray {
+        val payload = ByteArray(0)
+        val type = com.securecall.app.ghostnet.frame.FrameType.KEEPALIVE
+        return FrameHeaderUtils.encryptFrameV1ForType(ctx, type, payload)
+    }
+
+    fun buildDummyCallInviteFrameV1(ctx: SessionCipherContext): ByteArray {
+        return buildAndEncryptControlFrameV1(ctx, 100, "CALL-INVITE")
+    }
 }

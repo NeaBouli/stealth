@@ -16,22 +16,19 @@ class GhostNetSession(
     fun setState(newState: GhostNetSessionState) {
         Log.d("GHOST_SESSION", "Session $sessionId: $state → $newState")
         state = newState
+
+        // PATCH 236: notify listeners
+        GhostNetSessionManager.notifyListeners(newState)
+
+        // PATCH 237: auto-clean when session becomes DEAD
+        if (newState == GhostNetSessionState.DEAD) {
+            Log.e("SESSION", "Session moved to DEAD → auto reset")
+            // PATCH 253: Crypto-Kontext löschen
+            com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.clearContext()
+            com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Session DEAD → CryptoContext cleared")
+            GhostNetSessionManager.resetSession()
+        }
     }
 
     fun getState(): GhostNetSessionState = state
 }
-
-        // PATCH 236: event hook
-        com.securecall.app.ghostnet.session.GhostNetSessionManager.notifyListeners(newState)
-
-// PATCH 237: auto-clean when session becomes DEAD
-if (newState == com.securecall.app.ghostnet.session.GhostNetSessionState.DEAD) {
-    android.util.Log.e("SESSION", "Session moved to DEAD → auto reset")
-    com.securecall.app.ghostnet.session.GhostNetSessionManager.resetSession()
-}
-
-        // PATCH 253: Crypto-Kontext löschen, wenn Session endet
-        if (newState == com.securecall.app.ghostnet.session.GhostNetSessionState.DEAD) {
-            com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.clearContext()
-            com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Session DEAD → CryptoContext cleared")
-        }

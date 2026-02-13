@@ -4,7 +4,7 @@ import android.util.Log
 import java.util.concurrent.ConcurrentLinkedQueue
 
 // BACKEND-34 / ANDROID-03:
-// Placeholder für AudioFrame-Queue (noch ohne echte Frames)
+// Placeholder für AudioFrame-Queue
 class TransportFrameQueue {
 
     companion object {
@@ -20,13 +20,11 @@ class TransportFrameQueue {
 
     private val queue = ConcurrentLinkedQueue<ByteArray>()
 
-    // Frame hinzufügen
     fun enqueue(frame: ByteArray) {
         queue.add(frame)
         Log.d("FRAME_QUEUE", "Frame enqueued (size=${frame.size}) queue=${queue.size}")
     }
 
-    // nächstes Frame abrufen
     fun dequeue(): ByteArray? {
         val f = queue.poll()
         if (f != null) {
@@ -41,11 +39,10 @@ class TransportFrameQueue {
         queue.clear()
         Log.d("FRAME_QUEUE", "Queue cleared")
     }
-}
 
     // BACKEND-38: Overload für AudioFrame
     fun enqueue(frame: com.securecall.app.ghostnet.transport.frame.AudioFrame) {
-        queue.add(frame.data)  // aktuell speichern wir nur Rohdaten
+        queue.add(frame.data)
         Log.d("FRAME_QUEUE", "AudioFrame enqueued (type=${frame.type}) size=${frame.data.size}")
     }
 
@@ -54,3 +51,4 @@ class TransportFrameQueue {
         queue.add(frame.data)
         Log.d("FRAME_QUEUE", "enqueueFrame(): ${frame}")
     }
+}

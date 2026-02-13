@@ -6,20 +6,14 @@ import java.util.concurrent.LinkedBlockingQueue
 
 /**
  * CRYPTO-31 / NET-10:
- * Network send/receive stubs for GhostNet.
- *
- * Responsibilities:
- *  - GhostNetworkSender: queue of outbound EncryptedFrame (high level).
- *  - outboundQueue + sendRawNetworkFrame(): raw wire bytes toward network layer.
- *  - GhostNetworkReceiver: simple inbound queue for raw frames (used by TransportThreadInbound).
- *
- * Real WebSocket/QUIC/sRTP wiring will be added later on the platform side.
+ * Network send stubs for GhostNet.
  */
 object GhostNetworkSender {
 
     private const val TAG = "GHOST_NET_SENDER"
 
     private val queue = LinkedBlockingQueue<EncryptedFrame>()
+    private val outboundQueue = LinkedBlockingQueue<ByteArray>()
 
     @Volatile
     private var running = false
@@ -57,7 +51,6 @@ object GhostNetworkSender {
             try {
                 val frame = queue.poll()
                 if (frame != null) {
-                    // Later: encode to wire format and push into outboundQueue/sendRawNetworkFrame
                     Log.d(TAG, "loop(): would send encrypted frame size=${frame.data.size}")
                 }
                 Thread.sleep(5)
@@ -66,66 +59,38 @@ object GhostNetworkSender {
             }
         }
     }
-}
 
-/**
- * CRYPTO-40:
- * Generic outbound queue for already-encoded wire frames (ByteArray).
- * TransportThreadOutbound will dequeue from here and call sendRawNetworkFrame().
- */
-private val outboundQueue = LinkedBlockingQueue<ByteArray>()
-
-fun enqueueOutbound(data: ByteArray) {
-    outboundQueue.offer(data)
-}
-
-fun dequeueOutbound(): ByteArray? = outboundQueue.poll()
-
-/**
- * CRYPTO-40:
- * Actual network send (stub).
- *
- * For now we only log. Real WebSocket/UDP/QUIC wiring will be provided by
- * a platform-specific network layer that calls into this function.
- */
-fun sendRawNetworkFrame(data: ByteArray) {
-    try {
-        Log.d("OUTBOUND", "stub sendRawNetworkFrame(): ${data.size} bytes (no real network yet)")
-    } catch (t: Throwable) {
-        Log.e("OUTBOUND", "sendRawNetworkFrame(): failed", t)
+    // CRYPTO-40: outbound wire frame queue
+    fun enqueueOutbound(data: ByteArray) {
+        outboundQueue.offer(data)
     }
-}
 
-/**
- * NET-10:
- * Inbound network stub. Platform code should push raw frames here via offerInboundFrame().
- * TransportThreadInbound polls via GhostNetworkReceiver.pollInboundFrame().
- */
-// CRYPTO-40: Outbound FrameV1 helpers
+    fun dequeueOutbound(): ByteArray? = outboundQueue.poll()
 
-fun sendAudioFrameV1(pcm: ByteArray) {
-    val ctx = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession ?: return
-    val frame = com.securecall.app.ghostnet.media.crypto.MediaEncryptor.buildAndEncryptAudioFrameV1(
-        ctx,
-        pcm
-    )
-    enqueueOutbound(frame)
-}
+    fun sendRawNetworkFrame(data: ByteArray) {
+        try {
+            Log.d("OUTBOUND", "stub sendRawNetworkFrame(): ${data.size} bytes (no real network yet)")
+        } catch (t: Throwable) {
+            Log.e("OUTBOUND", "sendRawNetworkFrame(): failed", t)
+        }
+    }
 
-fun sendControlFrameV1(code: Int, text: String) {
-    val ctx = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession ?: return
-    val frame = com.securecall.app.ghostnet.media.crypto.MediaEncryptor.buildAndEncryptControlFrameV1(
-        ctx,
-        code,
-        text
-    )
-    enqueueOutbound(frame)
-}
+    // CRYPTO-40: Outbound FrameV1 helpers
+    fun sendAudioFrameV1(pcm: ByteArray) {
+        val ctx = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession ?: return
+        val frame = com.securecall.app.ghostnet.media.crypto.MediaEncryptor.buildAndEncryptAudioFrameV1(ctx, pcm)
+        enqueueOutbound(frame)
+    }
 
-fun sendKeepAliveFrameV1() {
-    val ctx = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession ?: return
-    val frame = com.securecall.app.ghostnet.media.crypto.MediaEncryptor.buildAndEncryptKeepAliveFrameV1(
-        ctx
-    )
-    enqueueOutbound(frame)
+    fun sendControlFrameV1(code: Int, text: String) {
+        val ctx = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession ?: return
+        val frame = com.securecall.app.ghostnet.media.crypto.MediaEncryptor.buildAndEncryptControlFrameV1(ctx, code, text)
+        enqueueOutbound(frame)
+    }
+
+    fun sendKeepAliveFrameV1() {
+        val ctx = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding.activeSession ?: return
+        val frame = com.securecall.app.ghostnet.media.crypto.MediaEncryptor.buildAndEncryptKeepAliveFrameV1(ctx)
+        enqueueOutbound(frame)
+    }
 }

@@ -29,7 +29,10 @@ object DummyAudioRecorder {
                 val frame = MediaFrame(data, ts)
 
                 // in Transport schieben
-                com.securecall.app.ghostnet.transport.GhostTransport.get().enqueueTestFrame(data)
+                com.securecall.app.ghostnet.transport.GhostTransport.enqueueTestFrame(data)
+
+                // PATCH 240: EventBus Meldung
+                postDebugEventGenerated(data.size)
 
                 Thread.sleep(25) // ca. 40 FPS
             }
@@ -44,7 +47,6 @@ object DummyAudioRecorder {
         running = false
         thread?.interrupt()
     }
-}
 
     // PATCH 240: Debug-Event posten
     private fun postDebugEventGenerated(size: Int) {
@@ -53,6 +55,4 @@ object DummyAudioRecorder {
             "generated test frame size=$size"
         )
     }
-
-            // PATCH 240: EventBus Meldung nach Frame-Erzeugung
-            postDebugEventGenerated(data.size)
+}

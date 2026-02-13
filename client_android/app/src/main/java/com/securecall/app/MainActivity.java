@@ -10,8 +10,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.securecall.app.ghostnet.media.MediaRouterInboundStub;
 import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
+import com.securecall.app.ghostnet.call.CallSessionManager;
 
 public class MainActivity extends AppCompatActivity {
+
+    private boolean inCall = false;
 
     private static final String TAG_UI = "MEDIA_ROUTER_INBOUND";
     private static final String TAG_WS = "GHOSTNET_WS";
@@ -24,16 +27,23 @@ public class MainActivity extends AppCompatActivity {
         Button btnCall = findViewById(R.id.btnCall);
         Button btnSettings = findViewById(R.id.btnSettings);
 
-        // --- CALL BUTTON: jetzt mit GhostNet-WS-Connect ---
+        // --- CALL BUTTON: jetzt mit GhostNet-WS-Connect (harte Toggle-Logik) ---
         btnCall.setOnClickListener(v -> {
-            Log.d(TAG_WS, "UI: CALL_CLICK – connecting to GhostNet");
-
             GhostNetWebSocketClient client = GhostNetWebSocketClient.getInstance();
-            client.connect("ws://127.0.0.1:8080");
-            client.sendControlHello();
 
-            // Danach wie bisher CallActivity öffnen
-            startActivity(new Intent(this, CallActivity.class));
+            if (!inCall) {
+                Log.d("GHOSTNET_WS", "UI: CALL_CLICK – connecting to GhostNet (enter IN CALL)");
+                client.connect("ws://127.0.0.1:8080");
+                client.sendControlHello();
+                btnCall.setText("IN CALL");
+                inCall = true;
+            } else {
+                Log.d("GHOSTNET_WS", "UI: CALL_CLICK – sending CONTROL_BYE + disconnect (leave IN CALL)");
+                client.sendControlBye();
+                client.disconnect();
+                btnCall.setText("START CALL");
+                inCall = false;
+            }
         });
 
         // --- SETTINGS BUTTON: Debug-Beep + Settings-Screen ---
@@ -64,17 +74,12 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(this, SettingsActivity.class));
         });
     }
-    
+
+    @Override
     protected void onDestroy() {
-        
-        Log.d("GHOSTNET_WS", "MainActivity.onDestroy(): requesting GhostNet disconnect");
-        GhostNetWebSocketClient client = GhostNetWebSocketClient.getInstance();
-        if (client != null) {
-            client.disconnect();
-        }
-super.onDestroy();
         Log.d("GHOSTNET_WS", "MainActivity.onDestroy(): requesting GhostNet disconnect");
         GhostNetWebSocketClient.getInstance().disconnect();
+        super.onDestroy();
     }
 
 }

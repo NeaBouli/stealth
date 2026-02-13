@@ -3,12 +3,8 @@ package com.securecall.app.call
 import android.util.Log
 
 /**
- * PATCH 203:
+ * PATCH 203 / 205:
  * Globaler Manager für Call-Lifecycle.
- *
- * MVP:
- *  - kein Audio / Media
- *  - nur Logik
  */
 object CallController {
 
@@ -40,18 +36,19 @@ object CallController {
 
     fun acceptCall() {
         if (state == CallState.RINGING || state == CallState.OUTGOING) {
-            Log.d(TAG, "acceptCall(): transitioning → ACTIVE")
+            Log.d(TAG, "acceptCall() → ACTIVE")
             state = CallState.ACTIVE
+            notifySessionActive()
         } else {
             Log.w(TAG, "acceptCall(): invalid state=$state")
         }
     }
 
     fun endCall() {
-        Log.d(TAG, "endCall(): call terminated")
+        Log.d(TAG, "endCall(): → ENDED")
         state = CallState.ENDED
+        notifySessionEnded()
     }
-}
 
     // PATCH 205: Session-Lifecycle anstoßen
     private fun notifySessionActive() {
@@ -69,20 +66,4 @@ object CallController {
             Log.e(TAG, "notifySessionEnded() failed", t)
         }
     }
-
-    // Übergänge anpassen
-    override fun acceptCall() {
-        if (state == CallState.RINGING || state == CallState.OUTGOING) {
-            Log.d(TAG, "acceptCall() → ACTIVE")
-            state = CallState.ACTIVE
-            notifySessionActive()
-        } else {
-            Log.w(TAG, "acceptCall(): invalid state=$state")
-        }
-    }
-
-    override fun endCall() {
-        Log.d(TAG, "endCall(): → ENDED")
-        state = CallState.ENDED
-        notifySessionEnded()
-    }
+}

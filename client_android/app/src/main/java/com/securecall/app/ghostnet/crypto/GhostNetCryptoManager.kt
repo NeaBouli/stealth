@@ -5,29 +5,13 @@ import android.util.Log
 /**
  * PATCH 249:
  * Zentraler Manager für alle Crypto-Kontexte pro Session.
- *
- * Aktuell:
- *   - Platzhalter-Implementierung
- *   - Kann aus Mock-Handshake einen CryptoContext erzeugen
- *   - Bietet getContext() an
- *
- * Später (CRYPTO-03..05):
- *   - echte X25519/Noise-Handshakes
- *   - HKDF
- *   - XChaCha20-Poly1305
- *   - Key Rotation
- *   - Outbound/Inbound Pipelines
  */
-
 object GhostNetCryptoManager {
 
     private const val TAG = "CRYPTO_MGR"
 
     private var currentContext: SessionCryptoContext? = null
 
-    /**
-     * Erzeugt einen neuen Kontext via Mock-Handshake.
-     */
     fun createNewContext(): SessionCryptoContext {
         Log.d(TAG, "createNewContext(): using MockHandshake → SessionCryptoContext")
         val ctx = SessionCryptoContext.fromMockHandshake()
@@ -35,10 +19,6 @@ object GhostNetCryptoManager {
         return ctx
     }
 
-    /**
-     * Getter für den aktuellen Kontext.
-     * Falls keiner existiert, wird einer erzeugt.
-     */
     fun getContext(): SessionCryptoContext {
         if (currentContext == null) {
             Log.w(TAG, "getContext(): no context present → auto-create")
@@ -47,14 +27,10 @@ object GhostNetCryptoManager {
         return currentContext!!
     }
 
-    /**
-     * Löscht den aktuellen Kontext (z.B. bei Session-Ende).
-     */
     fun clearContext() {
         Log.w(TAG, "clearContext(): CryptoContext removed")
         currentContext = null
     }
-}
 
     // CRYPTO-04: neues Keypair erzeugen
     fun generateLocalECDHKeyPair() {
@@ -63,7 +39,7 @@ object GhostNetCryptoManager {
         com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Local ECDH Keypair generated (FAKE)")
     }
 
-    // CRYPTO-04: Remote-Key setzen (z.B. später aus Signaling)
+    // CRYPTO-04: Remote-Key setzen
     fun setRemotePublicKey(pub: ByteArray) {
         val ctx = getContext()
         ctx.remotePublicKey = pub
@@ -79,7 +55,6 @@ object GhostNetCryptoManager {
             com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "deriveSharedSecret FAILED: missing keys")
             return
         }
-
         ctx.sharedSecret = FakeX25519.deriveSharedSecret(local, remote)
         com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Shared Secret derived (FAKE)")
     }
@@ -97,7 +72,6 @@ object GhostNetCryptoManager {
             return
         }
 
-        // Wir wollen 3 x 32 Byte: masterKey, sendKey, recvKey
         val outLen = 96
         val allKeys = HkdfSha256.deriveKeys(
             sharedSecret = secret,
@@ -106,11 +80,12 @@ object GhostNetCryptoManager {
         )
 
         ctx.masterKey = allKeys.copyOfRange(0, 32)
-        ctx.sendKey   = allKeys.copyOfRange(32, 64)
-        ctx.recvKey   = allKeys.copyOfRange(64, 96)
+        ctx.sendKey = allKeys.copyOfRange(32, 64)
+        ctx.recvKey = allKeys.copyOfRange(64, 96)
 
         com.securecall.app.debug.GhostDebugEventBus.post(
             "CRYPTO",
             "HKDF derived: master/send/recv ready (CRYPTO-05)"
         )
     }
+}
