@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.securecall.app.ghostnet.call.CallSessionManager;
+import com.securecall.app.ghostnet.media.AudioPlaybackStub;
 
 import java.util.concurrent.TimeUnit;
 
@@ -118,7 +119,9 @@ public class GhostNetWebSocketClient {
 
             @Override
             public void onMessage(WebSocket ws, ByteString bytes) {
-                Log.d(TAG, "onMessage(bytes, len=" + bytes.size() + "): " + bytes.hex());
+                Log.d(TAG, "onMessage(binary, len=" + bytes.size() + ")");
+                // Forward received PCM to audio playback
+                AudioPlaybackStub.enqueuePcm(bytes.toByteArray());
             }
 
             @Override
@@ -187,6 +190,17 @@ public synchronized void sendKeepalive() {
         boolean ok = webSocket.send(payload);
         Log.d(TAG, "sendKeepalive(): sent KEEPALIVE text, ok=" + ok + " payload=" + payload);
     }
+
+    /**
+     * Send raw binary data (PCM audio frames) over WebSocket.
+     */
+    public synchronized void sendBinary(byte[] data) {
+        if (webSocket == null || connectionState != ConnectionState.CONNECTED) {
+            return;
+        }
+        webSocket.send(ByteString.of(data, 0, data.length));
+    }
+
     public void disconnect() {
         stopKeepaliveLoop();        Log.d("GHOSTNET_WS", "disconnect() called");
         if (webSocket != null) {

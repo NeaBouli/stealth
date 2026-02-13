@@ -49,8 +49,14 @@ wss.on("connection", (ws) => {
     hb.updateClient(id);
   });
 
-  ws.on("message", (data) => {
+  ws.on("message", (data, isBinary) => {
     hb.updateClient(id);
+
+    // Binary frames (audio PCM): echo back as-is
+    if (isBinary) {
+      ws.send(data, { binary: true });
+      return;
+    }
 
     let msg = null;
     try {

@@ -1,13 +1,19 @@
 package com.securecall.app;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 import android.widget.Button;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import com.securecall.app.audio.capture.AudioCapturePlaceholder;
 import com.securecall.app.ghostnet.media.MediaRouterInboundStub;
 import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
 import com.securecall.app.ghostnet.call.CallSessionManager;
@@ -15,30 +21,45 @@ import com.securecall.app.ghostnet.call.CallSessionManager;
 public class MainActivity extends AppCompatActivity {
 
     private boolean inCall = false;
+    private AudioCapturePlaceholder audioCapture;
 
     private static final String TAG_UI = "MEDIA_ROUTER_INBOUND";
     private static final String TAG_WS = "GHOSTNET_WS";
+    private static final int REQUEST_RECORD_AUDIO = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        audioCapture = new AudioCapturePlaceholder();
+
         Button btnCall = findViewById(R.id.btnCall);
         Button btnSettings = findViewById(R.id.btnSettings);
 
-        // --- CALL BUTTON: jetzt mit GhostNet-WS-Connect (harte Toggle-Logik) ---
+        // --- CALL BUTTON: WS connect + audio capture ---
         btnCall.setOnClickListener(v -> {
             GhostNetWebSocketClient client = GhostNetWebSocketClient.getInstance();
 
             if (!inCall) {
-                Log.d("GHOSTNET_WS", "UI: CALL_CLICK – connecting to GhostNet (enter IN CALL)");
+                Log.d(TAG_WS, "UI: CALL_CLICK – connecting to GhostNet (enter IN CALL)");
                 client.connect("ws://127.0.0.1:8080");
                 client.sendControlHello();
                 btnCall.setText("IN CALL");
                 inCall = true;
+
+                // Request mic permission, then start capture
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    audioCapture.start();
+                } else {
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{Manifest.permission.RECORD_AUDIO},
+                            REQUEST_RECORD_AUDIO);
+                }
             } else {
-                Log.d("GHOSTNET_WS", "UI: CALL_CLICK – sending CONTROL_BYE + disconnect (leave IN CALL)");
+                Log.d(TAG_WS, "UI: CALL_CLICK – sending CONTROL_BYE + disconnect (leave IN CALL)");
+                audioCapture.stop();
                 client.sendControlBye();
                 client.disconnect();
                 btnCall.setText("START CALL");
@@ -76,8 +97,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_RECORD_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG_WS, "RECORD_AUDIO permission granted – starting capture");
+                audioCapture.start();
+            } else {
+                Log.w(TAG_WS, "RECORD_AUDIO permission denied");
+                Toast.makeText(this, "Mikrofon-Berechtigung benötigt", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         Log.d("GHOSTNET_WS", "MainActivity.onDestroy(): requesting GhostNet disconnect");
+        audioCapture.stop();
         GhostNetWebSocketClient.getInstance().disconnect();
         super.onDestroy();
     }
