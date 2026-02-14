@@ -5,6 +5,16 @@ const { v4: uuidv4 } = require("uuid");
 
 const HeartbeatManager = require("./heartbeat");
 
+// --- STUN/TURN Configuration (BACKEND-02) ---
+const ICE_SERVERS = [
+  { urls: process.env.STUN_URL || "stun:stun.l.google.com:19302" },
+  {
+    urls: process.env.TURN_URL || "turn:turn.securecall.local:3478",
+    username: process.env.TURN_USER || "securecall",
+    credential: process.env.TURN_PASS || "securecall-dev"
+  }
+];
+
 // --- App Setup ---
 const app = express();
 const server = http.createServer(app);
@@ -91,6 +101,11 @@ app.get("/routing/list", (req, res) => {
   res.json({
     routes: Array.from(routingTable.values())
   });
+});
+
+// --- ICE Servers API (BACKEND-02) ---
+app.get("/ice-servers", (req, res) => {
+  res.json({ iceServers: ICE_SERVERS });
 });
 
 // --- Clients Debug API ---
@@ -318,6 +333,140 @@ wss.on("connection", (ws) => {
     }
 
     // ===========================
+    // WEBRTC_OFFER — SDP Offer an Peer weiterleiten (BACKEND-02)
+    // ===========================
+    if (msg.type === "WEBRTC_OFFER") {
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "not_registered"
+        }));
+      }
+
+      if (!msg.sessionId || !routingTable.has(msg.sessionId)) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "session_not_found"
+        }));
+      }
+
+      if (!msg.sdp) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "missing_sdp",
+          message: "Field 'sdp' is required for WEBRTC_OFFER"
+        }));
+      }
+
+      const peerClientId = getSessionPeer(msg.sessionId, myClientId);
+      if (peerClientId) {
+        sendToClient(peerClientId, {
+          type: "WEBRTC_OFFER",
+          sessionId: msg.sessionId,
+          from: myClientId,
+          sdp: msg.sdp
+        });
+        console.log("[WEBRTC] OFFER:", myClientId, "->", peerClientId);
+      }
+
+      return ws.send(JSON.stringify({
+        type: "WEBRTC_OFFER_ACK",
+        ok: true,
+        sessionId: msg.sessionId
+      }));
+    }
+
+    // ===========================
+    // WEBRTC_ANSWER — SDP Answer an Peer weiterleiten (BACKEND-02)
+    // ===========================
+    if (msg.type === "WEBRTC_ANSWER") {
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "not_registered"
+        }));
+      }
+
+      if (!msg.sessionId || !routingTable.has(msg.sessionId)) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "session_not_found"
+        }));
+      }
+
+      if (!msg.sdp) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "missing_sdp",
+          message: "Field 'sdp' is required for WEBRTC_ANSWER"
+        }));
+      }
+
+      const peerClientId = getSessionPeer(msg.sessionId, myClientId);
+      if (peerClientId) {
+        sendToClient(peerClientId, {
+          type: "WEBRTC_ANSWER",
+          sessionId: msg.sessionId,
+          from: myClientId,
+          sdp: msg.sdp
+        });
+        console.log("[WEBRTC] ANSWER:", myClientId, "->", peerClientId);
+      }
+
+      return ws.send(JSON.stringify({
+        type: "WEBRTC_ANSWER_ACK",
+        ok: true,
+        sessionId: msg.sessionId
+      }));
+    }
+
+    // ===========================
+    // ICE_CANDIDATE — ICE-Kandidat an Peer weiterleiten (BACKEND-02)
+    // ===========================
+    if (msg.type === "ICE_CANDIDATE") {
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "not_registered"
+        }));
+      }
+
+      if (!msg.sessionId || !routingTable.has(msg.sessionId)) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "session_not_found"
+        }));
+      }
+
+      if (!msg.candidate) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "missing_candidate",
+          message: "Field 'candidate' is required for ICE_CANDIDATE"
+        }));
+      }
+
+      const peerClientId = getSessionPeer(msg.sessionId, myClientId);
+      if (peerClientId) {
+        sendToClient(peerClientId, {
+          type: "ICE_CANDIDATE",
+          sessionId: msg.sessionId,
+          from: myClientId,
+          candidate: msg.candidate
+        });
+      }
+
+      return ws.send(JSON.stringify({
+        type: "ICE_CANDIDATE_ACK",
+        ok: true,
+        sessionId: msg.sessionId
+      }));
+    }
+
+    // ===========================
     // GHOST_PREPARE — GhostNet Pre-Handshake (BACKEND-23)
     // ===========================
     if (msg.type === "GHOST_PREPARE") {
@@ -328,6 +477,7 @@ wss.on("connection", (ws) => {
         type: "GHOST_ACK",
         sessionId: msg.sessionId,
         ghostNetId,
+        iceServers: ICE_SERVERS,
         relayHints: [
           { host: "relay1.securecall.local", port: 443 },
           { host: "relay2.securecall.local", port: 8443 }

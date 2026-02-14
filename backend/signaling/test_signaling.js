@@ -4,7 +4,8 @@
  * Signaling Server — Integration Test
  *
  * Testet: REGISTER, CALL_INVITE Forwarding, CALL_ACCEPT Forwarding,
- *         CALL_END Forwarding, Binary Audio Forwarding, Error Cases.
+ *         CALL_END Forwarding, Binary Audio Forwarding, Error Cases,
+ *         ICE Servers API, WEBRTC_OFFER/ANSWER, ICE_CANDIDATE Forwarding.
  *
  * Nutzung:
  *   1. Server starten:  npm start
@@ -12,8 +13,27 @@
  */
 
 const WebSocket = require("ws");
+const http = require("http");
 
 const SERVER_URL = "ws://localhost:8080/signal";
+const HTTP_BASE = "http://localhost:8080";
+
+// --- Helper: HTTP GET ---
+function httpGet(path) {
+  return new Promise((resolve, reject) => {
+    http.get(`${HTTP_BASE}${path}`, (res) => {
+      let body = "";
+      res.on("data", (chunk) => body += chunk);
+      res.on("end", () => {
+        try {
+          resolve(JSON.parse(body));
+        } catch {
+          reject(new Error("Invalid JSON from " + path));
+        }
+      });
+    }).on("error", reject);
+  });
+}
 
 let passed = 0;
 let failed = 0;
@@ -270,9 +290,139 @@ async function runTests() {
   assert(bobDisconnect.reason === "peer_disconnected", "Reason is peer_disconnected");
 
   // -----------------------------------------
+  // Test 11: GET /ice-servers
+  // -----------------------------------------
+  console.log("\n--- Test 11: GET /ice-servers ---");
+  const iceRes = await httpGet("/ice-servers");
+  assert(Array.isArray(iceRes.iceServers), "iceServers is an array");
+  assert(iceRes.iceServers.length >= 2, "At least 2 ICE servers");
+  assert(iceRes.iceServers[0].urls.startsWith("stun:"), "First entry is STUN");
+  assert(iceRes.iceServers[1].urls.startsWith("turn:"), "Second entry is TURN");
+  assert(typeof iceRes.iceServers[1].username === "string", "TURN has username");
+  assert(typeof iceRes.iceServers[1].credential === "string", "TURN has credential");
+
+  // -----------------------------------------
+  // Test 12: WEBRTC_OFFER Forwarding
+  // -----------------------------------------
+  console.log("\n--- Test 12: WEBRTC_OFFER Forwarding ---");
+
+  // Neuen Call aufbauen (alice reconnect nötig nach disconnect in Test 10)
+  const alice2 = await createClient("Alice2");
+  alice2.send({ type: "REGISTER", clientId: "alice2" });
+  await alice2.waitForMessage(); // REGISTERED
+
+  const bob2 = await createClient("Bob2");
+  bob2.send({ type: "REGISTER", clientId: "bob2" });
+  await bob2.waitForMessage(); // REGISTERED
+
+  alice2.send({ type: "CALL_INVITE", to: "bob2" });
+  const inv3Ack = await alice2.waitForMessage();
+  const session3 = inv3Ack.sessionId;
+  await bob2.waitForMessage(); // Bob bekommt INVITE
+
+  bob2.send({ type: "CALL_ACCEPT", sessionId: session3 });
+  await bob2.waitForMessage(); // Bob ACK
+  await alice2.waitForMessage(); // Alice ACCEPT
+
+  // Jetzt SDP Offer senden
+  const fakeSdp = "v=0\r\no=- 123 1 IN IP4 127.0.0.1\r\ns=SecureCall\r\n";
+  alice2.send({ type: "WEBRTC_OFFER", sessionId: session3, sdp: fakeSdp });
+
+  // Alice bekommt ACK
+  const offerAck = await alice2.waitForMessage();
+  assert(offerAck.type === "WEBRTC_OFFER_ACK", "Alice receives WEBRTC_OFFER_ACK");
+  assert(offerAck.ok === true, "OFFER ACK is ok");
+
+  // Bob bekommt den Offer
+  const bobOffer = await bob2.waitForMessage();
+  assert(bobOffer.type === "WEBRTC_OFFER", "Bob receives forwarded WEBRTC_OFFER");
+  assert(bobOffer.sessionId === session3, "Same sessionId in OFFER");
+  assert(bobOffer.from === "alice2", "OFFER from alice2");
+  assert(bobOffer.sdp === fakeSdp, "SDP data matches");
+
+  // -----------------------------------------
+  // Test 13: WEBRTC_ANSWER Forwarding
+  // -----------------------------------------
+  console.log("\n--- Test 13: WEBRTC_ANSWER Forwarding ---");
+  const answerSdp = "v=0\r\no=- 456 1 IN IP4 127.0.0.1\r\ns=SecureCall-Answer\r\n";
+  bob2.send({ type: "WEBRTC_ANSWER", sessionId: session3, sdp: answerSdp });
+
+  // Bob bekommt ACK
+  const answerAck = await bob2.waitForMessage();
+  assert(answerAck.type === "WEBRTC_ANSWER_ACK", "Bob receives WEBRTC_ANSWER_ACK");
+  assert(answerAck.ok === true, "ANSWER ACK is ok");
+
+  // Alice bekommt den Answer
+  const aliceAnswer = await alice2.waitForMessage();
+  assert(aliceAnswer.type === "WEBRTC_ANSWER", "Alice receives forwarded WEBRTC_ANSWER");
+  assert(aliceAnswer.sessionId === session3, "Same sessionId in ANSWER");
+  assert(aliceAnswer.from === "bob2", "ANSWER from bob2");
+  assert(aliceAnswer.sdp === answerSdp, "Answer SDP data matches");
+
+  // -----------------------------------------
+  // Test 14: ICE_CANDIDATE Forwarding (bidirektional)
+  // -----------------------------------------
+  console.log("\n--- Test 14: ICE_CANDIDATE Forwarding ---");
+  const iceCandidate1 = { candidate: "candidate:1 1 udp 2130706431 192.168.1.1 5000 typ host", sdpMid: "0", sdpMLineIndex: 0 };
+  alice2.send({ type: "ICE_CANDIDATE", sessionId: session3, candidate: iceCandidate1 });
+
+  // Alice bekommt ACK
+  const iceAck1 = await alice2.waitForMessage();
+  assert(iceAck1.type === "ICE_CANDIDATE_ACK", "Alice receives ICE_CANDIDATE_ACK");
+
+  // Bob bekommt den Kandidaten
+  const bobIce = await bob2.waitForMessage();
+  assert(bobIce.type === "ICE_CANDIDATE", "Bob receives forwarded ICE_CANDIDATE");
+  assert(bobIce.from === "alice2", "ICE from alice2");
+  assert(bobIce.candidate.candidate === iceCandidate1.candidate, "ICE candidate data matches");
+
+  // Auch Bob -> Alice
+  const iceCandidate2 = { candidate: "candidate:2 1 udp 1694498815 10.0.0.1 6000 typ srflx", sdpMid: "0", sdpMLineIndex: 0 };
+  bob2.send({ type: "ICE_CANDIDATE", sessionId: session3, candidate: iceCandidate2 });
+
+  const iceAck2 = await bob2.waitForMessage();
+  assert(iceAck2.type === "ICE_CANDIDATE_ACK", "Bob receives ICE_CANDIDATE_ACK");
+
+  const aliceIce = await alice2.waitForMessage();
+  assert(aliceIce.type === "ICE_CANDIDATE", "Alice receives forwarded ICE_CANDIDATE");
+  assert(aliceIce.from === "bob2", "ICE from bob2");
+  assert(aliceIce.candidate.candidate === iceCandidate2.candidate, "Reverse ICE candidate matches");
+
+  // -----------------------------------------
+  // Test 15: WEBRTC_OFFER ohne Session — Fehler
+  // -----------------------------------------
+  console.log("\n--- Test 15: WEBRTC_OFFER ohne gueltige Session ---");
+  alice2.send({ type: "WEBRTC_OFFER", sessionId: "nonexistent-session", sdp: "fake" });
+  const noSession = await alice2.waitForMessage();
+  assert(noSession.type === "ERROR", "Error for invalid session");
+  assert(noSession.error === "session_not_found", "Correct error code");
+
+  // -----------------------------------------
+  // Test 16: WEBRTC_OFFER ohne SDP — Fehler
+  // -----------------------------------------
+  console.log("\n--- Test 16: WEBRTC_OFFER ohne SDP ---");
+  alice2.send({ type: "WEBRTC_OFFER", sessionId: session3 });
+  const noSdp = await alice2.waitForMessage();
+  assert(noSdp.type === "ERROR", "Error for missing SDP");
+  assert(noSdp.error === "missing_sdp", "Correct error code for missing SDP");
+
+  // -----------------------------------------
+  // Test 17: GHOST_ACK enthaelt iceServers
+  // -----------------------------------------
+  console.log("\n--- Test 17: GHOST_ACK enthaelt iceServers ---");
+  alice2.send({ type: "GHOST_PREPARE", sessionId: session3 });
+  const ghostAck = await alice2.waitForMessage();
+  assert(ghostAck.type === "GHOST_ACK", "Receives GHOST_ACK");
+  assert(Array.isArray(ghostAck.iceServers), "GHOST_ACK contains iceServers");
+  assert(ghostAck.iceServers[0].urls.startsWith("stun:"), "iceServers has STUN entry");
+
+  // Cleanup
+  alice2.close();
+  bob2.close();
+
+  // -----------------------------------------
   // Ergebnis
   // -----------------------------------------
-  bob.close();
 
   console.log(`\n=== Ergebnis: ${passed} passed, ${failed} failed ===`);
 
