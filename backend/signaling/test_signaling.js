@@ -5,7 +5,8 @@
  *
  * Testet: REGISTER, CALL_INVITE Forwarding, CALL_ACCEPT Forwarding,
  *         CALL_END Forwarding, Binary Audio Forwarding, Error Cases,
- *         ICE Servers API, WEBRTC_OFFER/ANSWER, ICE_CANDIDATE Forwarding.
+ *         ICE Servers API, WEBRTC_OFFER/ANSWER, ICE_CANDIDATE Forwarding,
+ *         Public Key Directory (PKD).
  *
  * Nutzung:
  *   1. Server starten:  npm start
@@ -18,21 +19,37 @@ const http = require("http");
 const SERVER_URL = "ws://localhost:8080/signal";
 const HTTP_BASE = "http://localhost:8080";
 
-// --- Helper: HTTP GET ---
-function httpGet(path) {
+// --- Helper: HTTP Request ---
+function httpRequest(method, path, data) {
   return new Promise((resolve, reject) => {
-    http.get(`${HTTP_BASE}${path}`, (res) => {
+    const url = new URL(`${HTTP_BASE}${path}`);
+    const options = {
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname,
+      method,
+      headers: { "Content-Type": "application/json" }
+    };
+
+    const req = http.request(options, (res) => {
       let body = "";
       res.on("data", (chunk) => body += chunk);
       res.on("end", () => {
         try {
-          resolve(JSON.parse(body));
+          resolve({ status: res.statusCode, body: JSON.parse(body) });
         } catch {
           reject(new Error("Invalid JSON from " + path));
         }
       });
-    }).on("error", reject);
+    });
+    req.on("error", reject);
+    if (data) req.write(JSON.stringify(data));
+    req.end();
   });
+}
+
+function httpGet(path) {
+  return httpRequest("GET", path).then(r => r.body);
 }
 
 let passed = 0;
@@ -419,6 +436,83 @@ async function runTests() {
   // Cleanup
   alice2.close();
   bob2.close();
+
+  // -----------------------------------------
+  // Test 18: POST /key/register
+  // -----------------------------------------
+  console.log("\n--- Test 18: POST /key/register ---");
+  const reg1 = await httpRequest("POST", "/key/register", { publicKey: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A..." });
+  assert(reg1.status === 201, "Status 201 Created");
+  assert(typeof reg1.body.keyId === "string", "keyId is returned");
+  assert(reg1.body.keyId.length === 32, "keyId is 128-bit hex (32 chars)");
+  assert(reg1.body.publicKey === "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...", "publicKey matches");
+
+  const testKeyId = reg1.body.keyId;
+
+  // -----------------------------------------
+  // Test 19: GET /key/:id
+  // -----------------------------------------
+  console.log("\n--- Test 19: GET /key/:id ---");
+  const get1 = await httpRequest("GET", `/key/${testKeyId}`);
+  assert(get1.status === 200, "Status 200 OK");
+  assert(get1.body.keyId === testKeyId, "keyId matches");
+  assert(get1.body.publicKey === "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...", "publicKey matches");
+  assert(typeof get1.body.created === "number", "created timestamp present");
+
+  // -----------------------------------------
+  // Test 20: GET /key/:id — nicht gefunden
+  // -----------------------------------------
+  console.log("\n--- Test 20: GET /key/:id nicht gefunden ---");
+  const get404 = await httpRequest("GET", "/key/nonexistent123456");
+  assert(get404.status === 404, "Status 404 for unknown keyId");
+  assert(get404.body.error === "key_not_found", "Correct error code");
+
+  // -----------------------------------------
+  // Test 21: PUT /key/:id — Key Rotation
+  // -----------------------------------------
+  console.log("\n--- Test 21: PUT /key/:id Key Rotation ---");
+  const rotated = await httpRequest("PUT", `/key/${testKeyId}`, { publicKey: "NEW_ROTATED_PUBLIC_KEY_XYZ" });
+  assert(rotated.status === 200, "Status 200 for rotation");
+  assert(rotated.body.keyId === testKeyId, "keyId unchanged after rotation");
+  assert(rotated.body.publicKey === "NEW_ROTATED_PUBLIC_KEY_XYZ", "publicKey updated");
+
+  // Verify rotation persisted
+  const getRotated = await httpRequest("GET", `/key/${testKeyId}`);
+  assert(getRotated.body.publicKey === "NEW_ROTATED_PUBLIC_KEY_XYZ", "Rotation persisted");
+
+  // -----------------------------------------
+  // Test 22: DELETE /key/:id
+  // -----------------------------------------
+  console.log("\n--- Test 22: DELETE /key/:id ---");
+  const del = await httpRequest("DELETE", `/key/${testKeyId}`);
+  assert(del.status === 200, "Status 200 for delete");
+  assert(del.body.ok === true, "Delete returns ok");
+
+  // Verify deleted
+  const getDeleted = await httpRequest("GET", `/key/${testKeyId}`);
+  assert(getDeleted.status === 404, "Key gone after delete");
+
+  // -----------------------------------------
+  // Test 23: POST /key/register — ohne publicKey
+  // -----------------------------------------
+  console.log("\n--- Test 23: POST /key/register ohne publicKey ---");
+  const regNoKey = await httpRequest("POST", "/key/register", {});
+  assert(regNoKey.status === 400, "Status 400 for missing publicKey");
+  assert(regNoKey.body.error === "missing_public_key", "Correct error code");
+
+  // -----------------------------------------
+  // Test 24: PUT /key/:id — nicht gefunden
+  // -----------------------------------------
+  console.log("\n--- Test 24: PUT /key/:id nicht gefunden ---");
+  const rot404 = await httpRequest("PUT", "/key/nonexistent123456", { publicKey: "test" });
+  assert(rot404.status === 404, "Status 404 for rotation of unknown key");
+
+  // -----------------------------------------
+  // Test 25: DELETE /key/:id — nicht gefunden
+  // -----------------------------------------
+  console.log("\n--- Test 25: DELETE /key/:id nicht gefunden ---");
+  const del404 = await httpRequest("DELETE", "/key/nonexistent123456");
+  assert(del404.status === 404, "Status 404 for delete of unknown key");
 
   // -----------------------------------------
   // Ergebnis

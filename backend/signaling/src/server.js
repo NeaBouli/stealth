@@ -4,6 +4,7 @@ const WebSocket = require("ws");
 const { v4: uuidv4 } = require("uuid");
 
 const HeartbeatManager = require("./heartbeat");
+const pkd = require("./pkd");
 
 // --- STUN/TURN Configuration (BACKEND-02) ---
 const ICE_SERVERS = [
@@ -17,6 +18,7 @@ const ICE_SERVERS = [
 
 // --- App Setup ---
 const app = express();
+app.use(express.json());
 const server = http.createServer(app);
 
 // --- Client Registry ---
@@ -119,6 +121,52 @@ app.get("/clients/list", (req, res) => {
     });
   }
   res.json({ clients: list });
+});
+
+// --- Public Key Directory API (BACKEND-05) ---
+app.post("/key/register", (req, res) => {
+  const { publicKey } = req.body || {};
+  if (!publicKey || typeof publicKey !== "string") {
+    return res.status(400).json({
+      error: "missing_public_key",
+      message: "Field 'publicKey' is required"
+    });
+  }
+
+  const entry = pkd.registerKey(publicKey);
+  res.status(201).json({ keyId: entry.keyId, publicKey: entry.publicKey, created: entry.created });
+});
+
+app.get("/key/:id", (req, res) => {
+  const entry = pkd.getKey(req.params.id);
+  if (!entry) {
+    return res.status(404).json({ error: "key_not_found" });
+  }
+  res.json({ keyId: entry.keyId, publicKey: entry.publicKey, created: entry.created });
+});
+
+app.put("/key/:id", (req, res) => {
+  const { publicKey } = req.body || {};
+  if (!publicKey || typeof publicKey !== "string") {
+    return res.status(400).json({
+      error: "missing_public_key",
+      message: "Field 'publicKey' is required"
+    });
+  }
+
+  const entry = pkd.rotateKey(req.params.id, publicKey);
+  if (!entry) {
+    return res.status(404).json({ error: "key_not_found" });
+  }
+  res.json({ keyId: entry.keyId, publicKey: entry.publicKey, updated: entry.updated });
+});
+
+app.delete("/key/:id", (req, res) => {
+  const deleted = pkd.deleteKey(req.params.id);
+  if (!deleted) {
+    return res.status(404).json({ error: "key_not_found" });
+  }
+  res.json({ ok: true });
 });
 
 // --- WebSocket Setup ---
