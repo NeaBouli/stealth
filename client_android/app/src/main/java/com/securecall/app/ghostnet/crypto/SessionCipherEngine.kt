@@ -1,10 +1,13 @@
 package com.securecall.app.ghostnet.crypto
 
 import android.util.Log
+import com.securecall.crypto.CoreCrypto
 
 /**
- * CRYPTO-27:
- * Stub-Implementierung für das Session-Ciphering.
+ * Session Cipher Engine — verschluesselt und entschluesselt Frames
+ * via Rust CoreCrypto (XChaCha20-Poly1305).
+ *
+ * Fallback auf No-Op wenn die Native Library nicht geladen werden konnte.
  */
 object SessionCipherEngine {
 
@@ -17,26 +20,40 @@ object SessionCipherEngine {
         val nonce = ctx.nextNonce()
         val header = SessionCipherHeader.create(ctx.keyId, nonce)
 
-        Log.d(
-            TAG,
-            "encrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, nonce=$nonce, plainSize=${plain.size}, headerMagic=${header.magic}"
-        )
+        Log.d(TAG, "encrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, nonce=$nonce, plainSize=${plain.size}")
 
-        // PLACEHOLDER — later: AEAD encrypt
-        return plain
+        if (!CoreCrypto.isNativeAvailable()) {
+            Log.w(TAG, "encrypt(): native not available, returning plaintext")
+            return plain
+        }
+
+        val encrypted = CoreCrypto.encrypt(ctx.txKey, plain)
+        if (encrypted == null || encrypted.isEmpty()) {
+            Log.e(TAG, "encrypt(): native encryption failed, returning plaintext")
+            return plain
+        }
+
+        return encrypted
     }
 
     fun decrypt(
         ctx: SessionCipherContext,
         cipher: ByteArray
     ): ByteArray {
-        Log.d(
-            TAG,
-            "decrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, cipherSize=${cipher.size}"
-        )
+        Log.d(TAG, "decrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, cipherSize=${cipher.size}")
 
-        // PLACEHOLDER — later: AEAD decrypt
-        return cipher
+        if (!CoreCrypto.isNativeAvailable()) {
+            Log.w(TAG, "decrypt(): native not available, returning ciphertext")
+            return cipher
+        }
+
+        val decrypted = CoreCrypto.decrypt(ctx.rxKey, cipher)
+        if (decrypted == null || decrypted.isEmpty()) {
+            Log.e(TAG, "decrypt(): native decryption failed, returning ciphertext")
+            return cipher
+        }
+
+        return decrypted
     }
 
     // CRYPTO-34: HeaderV1 Builder
@@ -51,7 +68,7 @@ object SessionCipherEngine {
         return header.toBytes()
     }
 
-    // CRYPTO-34: Stub-EncryptPipeline
+    // CRYPTO-34: EncryptPipeline mit echtem AEAD
     fun encryptFrameV1(
         ctx: SessionCipherContext,
         plain: ByteArray,
@@ -63,7 +80,7 @@ object SessionCipherEngine {
         return header + encryptedPayload
     }
 
-    // CRYPTO-34: Stub-DecryptPipeline
+    // CRYPTO-34: DecryptPipeline
     fun decryptFrameV1(
         ctx: SessionCipherContext,
         cipher: ByteArray

@@ -5,3 +5,6 @@ client_android/build/
 client_android/app/.cxx/
 client_android/app/build/
 client_android/local.properties
+
+# Rust build artifacts
+core_crypto/target/
