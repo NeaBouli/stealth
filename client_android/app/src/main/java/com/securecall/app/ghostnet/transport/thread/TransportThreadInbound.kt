@@ -3,7 +3,6 @@ package com.securecall.app.ghostnet.transport.thread
 import android.util.Log
 import com.securecall.app.ghostnet.transport.net.GhostNetworkReceiver
 import com.securecall.app.ghostnet.frame.FrameParserStub
-import com.securecall.app.ghostnet.media.MediaRouterInboundStub
 
 /**
  * CRYPTO-40 / NET-10:
@@ -28,8 +27,9 @@ class TransportThreadInbound : Thread("InboundThread") {
         Log.d("INBOUND", "TransportThreadInbound RUN (stub)")
         while (running) {
             try {
-                val raw = GhostNetworkReceiver.pollInboundFrame()
-                if (raw != null) {
+                val frame = GhostNetworkReceiver.poll()
+                if (frame != null) {
+                    val raw = frame.data
                     Log.d("INBOUND", "got inbound raw frame size=${raw.size}")
 
                     val parsed = FrameParserStub.parse(raw)
@@ -38,9 +38,7 @@ class TransportThreadInbound : Thread("InboundThread") {
                             "INBOUND",
                             "parsed frame v=${parsed.version} typeByte=${parsed.typeByte} payload=${parsed.payloadSize}"
                         )
-
-                        // For now: treat any parsed payload as PCM and forward
-                        MediaRouterInboundStub.handleDecodedPcm(parsed.payload)
+                        // FrameParserStub.parse() already dispatches audio to MediaRouterInboundStub
                     }
 
                     // TODO (later):

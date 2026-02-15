@@ -25,10 +25,10 @@ object GhostNetSystem {
         val callState = com.securecall.app.ghostnet.call.GhostCallController.getState()
         Log.d(TAG, "Call controller initial state: $callState")
 
-        com.securecall.app.ghostnet.media.GhostMediaRouter.get()
+        com.securecall.app.ghostnet.media.GhostMediaRouter
         Log.d(TAG, "MediaRouter loaded")
 
-        com.securecall.app.ghostnet.transport.GhostTransport.get()
+        com.securecall.app.ghostnet.transport.GhostTransport
         Log.d(TAG, "Transport object created")
 
         com.securecall.app.debug.GhostDebugEventBus.post("SYSTEM", "GhostNetSystem initialized")

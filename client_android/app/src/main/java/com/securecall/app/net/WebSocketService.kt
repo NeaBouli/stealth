@@ -313,13 +313,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     val localPub = com.securecall.app.ghostnet.keys.GhostNetKeyMaterial.getLocalPub()
                     val answer = com.securecall.app.net.signal.KeyAnswer(localPub).toJson()
                     client?.send(answer)
-                    com.securecall.app.ghostnet.session.GhostNetSession.get()
-                        .acceptIncomingHandshake(remotePub)
+                    com.securecall.app.ghostnet.handshake.HandshakeController.acceptIncoming(remotePub)
                 }
                 "key-answer" -> {
                     Log.d("WS_SERVICE", "Received key-answer → completing handshake")
-                    com.securecall.app.ghostnet.session.GhostNetSession.get()
-                        .startOutgoingHandshake(remotePub)
+                    com.securecall.app.ghostnet.handshake.HandshakeController.startOutgoing(remotePub)
                 }
             }
         } catch (t: Throwable) {

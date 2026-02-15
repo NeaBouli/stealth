@@ -321,9 +321,7 @@ object GhostTransport {
     fun startInboundPipeline() {
         if (inboundThread != null) return
         inboundThread =
-            com.securecall.app.ghostnet.transport.thread.TransportThreadInbound { frame ->
-                com.securecall.app.ghostnet.media.GhostMediaRouter.handleInboundMediaFrame(frame)
-            }.apply { start() }
+            com.securecall.app.ghostnet.transport.thread.TransportThreadInbound().apply { start() }
         Log.d("GHOST_TRANSPORT", "Inbound pipeline STARTED")
     }
 

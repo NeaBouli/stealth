@@ -18,7 +18,6 @@
         android:layout_height="wrap_content"
         android:text="Settings"
         android:layout_marginTop="16dp"/>
-</LinearLayout>
 
     <!-- BACKEND-22: Debug Button für Signaling-Test -->
     <Button
@@ -90,16 +89,6 @@
         android:textColor="#AA0000"
         android:textSize="14sp"/>
 
-    <!-- BACKEND-24: GhostNet Status -->
-    <TextView
-        android:id="@+id/ghostStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="GhostNet: Not ready"
-        android:layout_marginTop="16dp"
-        android:textColor="#AA0000"
-        android:textSize="14sp"/>
-
     <!-- BACKEND-24: GhostNet Relay Debug Button -->
     <Button
         android:id="@+id/btnGhostHints"
@@ -156,18 +145,16 @@
         android:textColor="#FFFFFF"
         android:layout_marginTop="10dp" />
 
-<!-- BACKEND-35: Root Layout Container für Debug-Buttons -->
-<LinearLayout
-    android:id="@+id/rootLayout"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp"
-    android:layout_marginTop="12dp">
-
-    <!-- Platzhalter, der Inhalt kommt dynamisch durch Java/Kotlin-Patches -->
-
-</LinearLayout>
+    <!-- BACKEND-35: Root Layout Container für Debug-Buttons -->
+    <LinearLayout
+        android:id="@+id/rootLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:layout_marginTop="12dp">
+        <!-- Platzhalter, der Inhalt kommt dynamisch durch Java/Kotlin-Patches -->
+    </LinearLayout>
 
     <!-- BACKEND-41: GhostNet Session Status -->
     <TextView
@@ -207,3 +194,5 @@
             android:background="#222222"
             android:textIsSelectable="true" />
     </ScrollView>
+
+</LinearLayout>

@@ -74,17 +74,6 @@ class HeartbeatClient(
         scheduleReconnect()
     }
 
-    override fun onPing(webSocket: WebSocket, bytes: ByteString) {
-        lastSeen = System.currentTimeMillis()
-        listener.onPing()
-        webSocket.sendPong(bytes)
-    }
-
-    override fun onPong(webSocket: WebSocket, bytes: ByteString) {
-        lastSeen = System.currentTimeMillis()
-        listener.onPong()
-    }
-
     private fun scheduleReconnect() {
         Log.d("HB", "Reconnect scheduled in ${reconnectDelay}ms")
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({

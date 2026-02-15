@@ -35,6 +35,7 @@ object FrameParser {
             FrameType.AUDIO -> AudioFrame(data)
             FrameType.CONTROL -> parseControl(data)
             FrameType.KEEPALIVE -> KeepAliveFrame()
+            FrameType.UNKNOWN -> null
         }
     }
 

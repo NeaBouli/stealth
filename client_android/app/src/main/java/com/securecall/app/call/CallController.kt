@@ -53,7 +53,7 @@ object CallController {
     // PATCH 205: Session-Lifecycle anstoßen
     private fun notifySessionActive() {
         try {
-            com.securecall.app.ghostnet.session.GhostNetSession.get().onCallActive()
+            com.securecall.app.ghostnet.session.GhostNetSessionManager.get().setState(com.securecall.app.ghostnet.session.GhostNetSessionState.ACTIVE)
         } catch (t: Throwable) {
             Log.e(TAG, "notifySessionActive() failed", t)
         }
@@ -61,7 +61,7 @@ object CallController {
 
     private fun notifySessionEnded() {
         try {
-            com.securecall.app.ghostnet.session.GhostNetSession.get().onCallEnded()
+            com.securecall.app.ghostnet.session.GhostNetSessionManager.get().setState(com.securecall.app.ghostnet.session.GhostNetSessionState.DEAD)
         } catch (t: Throwable) {
             Log.e(TAG, "notifySessionEnded() failed", t)
         }

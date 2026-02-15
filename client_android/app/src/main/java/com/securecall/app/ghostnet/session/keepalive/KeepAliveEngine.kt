@@ -3,7 +3,7 @@ package com.securecall.app.ghostnet.session.keepalive
 import android.util.Log
 import java.util.Timer
 import java.util.TimerTask
-import com.securecall.app.ghostnet.session.GhostNetSession
+import com.securecall.app.ghostnet.session.GhostNetSessionManager
 import com.securecall.app.ghostnet.session.GhostNetSessionState
 
 // BACKEND-54 / ANDROID-03:
@@ -27,7 +27,7 @@ object KeepAliveEngine {
 
         timer?.schedule(object : TimerTask() {
             override fun run() {
-                val state = GhostNetSession.get().getState()
+                val state = GhostNetSessionManager.get().getState()
                 if (state != GhostNetSessionState.ACTIVE) return
 
                 val now = System.currentTimeMillis()
@@ -35,13 +35,12 @@ object KeepAliveEngine {
                 // Timeout prüfen
                 if (now - lastPongTimestamp > TIMEOUT_MS) {
                     Log.w(TAG, "KeepAlive timeout → setting session DEAD")
-                    GhostNetSession.get().setState(GhostNetSessionState.DEAD)
+                    GhostNetSessionManager.get().setState(GhostNetSessionState.DEAD)
                     return
                 }
 
                 // PING senden
-                com.securecall.app.ghostnet.transport.GhostTransport.get()
-                    .sendPingWithTimestamp()
+                com.securecall.app.ghostnet.transport.GhostTransport.sendKeepAlive()
             }
         }, INTERVAL_MS, INTERVAL_MS)
     }
