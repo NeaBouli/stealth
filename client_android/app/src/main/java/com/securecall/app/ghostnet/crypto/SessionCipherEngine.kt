@@ -23,14 +23,14 @@ object SessionCipherEngine {
         Log.d(TAG, "encrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, nonce=$nonce, plainSize=${plain.size}")
 
         if (!CoreCrypto.isNativeAvailable()) {
-            Log.w(TAG, "encrypt(): native not available, returning plaintext")
-            return plain
+            Log.e(TAG, "encrypt(): FATAL — native crypto not available, refusing to send plaintext")
+            throw SecurityException("Native crypto engine not available — cannot encrypt")
         }
 
         val encrypted = CoreCrypto.encrypt(ctx.txKey, plain)
         if (encrypted == null || encrypted.isEmpty()) {
-            Log.e(TAG, "encrypt(): native encryption failed, returning plaintext")
-            return plain
+            Log.e(TAG, "encrypt(): FATAL — native encryption returned null/empty")
+            throw SecurityException("Encryption failed — refusing to send plaintext")
         }
 
         return encrypted
@@ -43,14 +43,14 @@ object SessionCipherEngine {
         Log.d(TAG, "decrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, cipherSize=${cipher.size}")
 
         if (!CoreCrypto.isNativeAvailable()) {
-            Log.w(TAG, "decrypt(): native not available, returning ciphertext")
-            return cipher
+            Log.e(TAG, "decrypt(): FATAL — native crypto not available, refusing to return ciphertext as plaintext")
+            throw SecurityException("Native crypto engine not available — cannot decrypt")
         }
 
         val decrypted = CoreCrypto.decrypt(ctx.rxKey, cipher)
         if (decrypted == null || decrypted.isEmpty()) {
-            Log.e(TAG, "decrypt(): native decryption failed, returning ciphertext")
-            return cipher
+            Log.e(TAG, "decrypt(): FATAL — native decryption returned null/empty")
+            throw SecurityException("Decryption failed — data may be corrupted or tampered")
         }
 
         return decrypted

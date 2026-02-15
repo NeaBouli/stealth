@@ -19,51 +19,62 @@ class ReplayDetectorTest {
 
     @Test
     fun check_initializesOnFirstNonce() {
-        ReplayDetector.check(42)
+        assertTrue(ReplayDetector.check(42))
         assertEquals(42L, getLastNonce())
     }
 
     @Test
     fun check_acceptsIncreasingNonces() {
-        ReplayDetector.check(1)
-        ReplayDetector.check(2)
-        ReplayDetector.check(3)
+        assertTrue(ReplayDetector.check(1))
+        assertTrue(ReplayDetector.check(2))
+        assertTrue(ReplayDetector.check(3))
         assertEquals(3L, getLastNonce())
     }
 
     @Test
-    fun check_detectsReplay_doesNotUpdateLastNonce() {
-        ReplayDetector.check(5)
-        ReplayDetector.check(5)
+    fun check_detectsReplay_returnsFalse() {
+        assertTrue(ReplayDetector.check(5))
+        assertFalse(ReplayDetector.check(5))
         assertEquals(5L, getLastNonce())
     }
 
     @Test
-    fun check_detectsBackward_doesNotUpdateLastNonce() {
-        ReplayDetector.check(10)
-        ReplayDetector.check(5)
+    fun check_detectsBackward_returnsFalse() {
+        assertTrue(ReplayDetector.check(10))
+        assertFalse(ReplayDetector.check(5))
         assertEquals(10L, getLastNonce())
     }
 
     @Test
     fun check_acceptsLargeGaps() {
-        ReplayDetector.check(1)
-        ReplayDetector.check(1_000_000)
+        assertTrue(ReplayDetector.check(1))
+        assertTrue(ReplayDetector.check(1_000_000))
         assertEquals(1_000_000L, getLastNonce())
     }
 
     @Test
     fun checkWithSecurity_initializesOnFirstNonce() {
-        ReplayDetector.checkWithSecurity(99)
+        assertTrue(ReplayDetector.checkWithSecurity(99))
         assertEquals(99L, getLastNonce())
     }
 
     @Test
-    fun checkWithSecurity_detectsReplay() {
-        ReplayDetector.checkWithSecurity(5)
-        ReplayDetector.checkWithSecurity(5)
-        // Replay detected — lastNonce not advanced
+    fun checkWithSecurity_detectsReplay_returnsFalse() {
+        assertTrue(ReplayDetector.checkWithSecurity(5))
+        assertFalse(ReplayDetector.checkWithSecurity(5))
         assertEquals(5L, getLastNonce())
+    }
+
+    @Test
+    fun isReplay_returnsTrueForDuplicate() {
+        ReplayDetector.check(10)
+        assertTrue(ReplayDetector.isReplay(10))
+    }
+
+    @Test
+    fun isReplay_returnsFalseForNew() {
+        ReplayDetector.check(10)
+        assertFalse(ReplayDetector.isReplay(11))
     }
 
     @Test

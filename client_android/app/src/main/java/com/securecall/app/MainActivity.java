@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
 
             if (!inCall) {
                 Log.d(TAG_WS, "UI: CALL_CLICK – connecting to GhostNet (enter IN CALL)");
-                client.connect("ws://127.0.0.1:8080/signal");
+                client.connect(BuildConfig.SIGNAL_WS_URL);
                 client.sendControlHello();
                 btnCall.setText("IN CALL");
                 inCall = true;

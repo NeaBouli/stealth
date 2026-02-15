@@ -12,47 +12,57 @@ object ReplayDetector {
 
     private var lastNonce: Long = -1L
 
-    fun check(nonce: Long) {
-        when {
+    fun check(nonce: Long): Boolean {
+        return when {
             lastNonce < 0L -> {
                 lastNonce = nonce
                 Log.d(TAG, "Init nonce=$nonce")
+                true
             }
             nonce == lastNonce -> {
                 Log.w(TAG, "REPLAY DETECTED: nonce=$nonce (same as last)")
+                false
             }
             nonce < lastNonce -> {
                 Log.e(TAG, "BACKWARD NONCE: nonce=$nonce < last=$lastNonce")
+                false
             }
-            nonce > lastNonce -> {
+            else -> {
                 Log.d(TAG, "Nonce OK: $nonce (last was $lastNonce)")
                 lastNonce = nonce
+                true
             }
         }
     }
+
+    fun isReplay(nonce: Long): Boolean = !check(nonce)
 
     fun reset() {
         lastNonce = -1L
     }
 
     // CRYPTO-14: Security-aware check
-    fun checkWithSecurity(nonce: Long) {
-        when {
+    fun checkWithSecurity(nonce: Long): Boolean {
+        return when {
             lastNonce < 0L -> {
                 lastNonce = nonce
                 Log.d(TAG, "Init nonce=$nonce")
+                true
             }
             nonce == lastNonce -> {
                 Log.w(TAG, "REPLAY DETECTED: nonce=$nonce")
                 handleSecurity(nonce, "REPLAY")
+                false
             }
             nonce < lastNonce -> {
                 Log.e(TAG, "BACKWARD NONCE: nonce=$nonce < last=$lastNonce")
                 handleSecurity(nonce, "BACKWARD")
+                false
             }
-            nonce > lastNonce -> {
+            else -> {
                 Log.d(TAG, "Nonce OK: $nonce")
                 lastNonce = nonce
+                true
             }
         }
     }

@@ -29,6 +29,7 @@ object GhostNetCryptoManager {
 
     fun clearContext() {
         Log.w(TAG, "clearContext(): CryptoContext removed")
+        currentContext?.wipe()
         currentContext = null
     }
 

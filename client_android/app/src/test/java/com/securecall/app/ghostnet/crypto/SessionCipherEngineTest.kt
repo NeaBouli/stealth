@@ -14,18 +14,16 @@ class SessionCipherEngineTest {
         txKey = ByteArray(32) { 0xBB.toByte() }
     )
 
-    @Test
-    fun encrypt_withoutNative_returnsPlaintext() {
+    @Test(expected = SecurityException::class)
+    fun encrypt_withoutNative_throwsSecurityException() {
         val plain = "hello world".toByteArray()
-        val result = SessionCipherEngine.encrypt(makeCtx(), plain)
-        assertArrayEquals(plain, result)
+        SessionCipherEngine.encrypt(makeCtx(), plain)
     }
 
-    @Test
-    fun decrypt_withoutNative_returnsCiphertext() {
+    @Test(expected = SecurityException::class)
+    fun decrypt_withoutNative_throwsSecurityException() {
         val cipher = "encrypted data".toByteArray()
-        val result = SessionCipherEngine.decrypt(makeCtx(), cipher)
-        assertArrayEquals(cipher, result)
+        SessionCipherEngine.decrypt(makeCtx(), cipher)
     }
 
     @Test
@@ -53,11 +51,10 @@ class SessionCipherEngineTest {
         assertEquals(1.toByte(), header[2])
     }
 
-    @Test
-    fun encryptFrameV1_withoutNative_returnsHeaderPlusPlain() {
+    @Test(expected = SecurityException::class)
+    fun encryptFrameV1_withoutNative_throwsSecurityException() {
         val plain = ByteArray(10) { it.toByte() }
-        val result = SessionCipherEngine.encryptFrameV1(makeCtx(), plain, 0x01)
-        assertEquals(4 + plain.size, result.size)
+        SessionCipherEngine.encryptFrameV1(makeCtx(), plain, 0x01)
     }
 
     @Test
@@ -67,21 +64,18 @@ class SessionCipherEngineTest {
         assertArrayEquals(short, result)
     }
 
-    @Test
-    fun encryptAudioFrameV1_usesAudioFlag() {
-        val result = SessionCipherEngine.encryptAudioFrameV1(makeCtx(), "audio".toByteArray())
-        assertEquals(FrameFlags.AUDIO.toByte(), result[1])
+    @Test(expected = SecurityException::class)
+    fun encryptAudioFrameV1_withoutNative_throwsSecurityException() {
+        SessionCipherEngine.encryptAudioFrameV1(makeCtx(), "audio".toByteArray())
     }
 
-    @Test
-    fun encryptControlFrameV1_usesControlFlag() {
-        val result = SessionCipherEngine.encryptControlFrameV1(makeCtx(), "ctrl".toByteArray())
-        assertEquals(FrameFlags.CONTROL.toByte(), result[1])
+    @Test(expected = SecurityException::class)
+    fun encryptControlFrameV1_withoutNative_throwsSecurityException() {
+        SessionCipherEngine.encryptControlFrameV1(makeCtx(), "ctrl".toByteArray())
     }
 
-    @Test
-    fun encryptKeepAliveFrameV1_usesKeepAliveFlag() {
-        val result = SessionCipherEngine.encryptKeepAliveFrameV1(makeCtx(), "ka".toByteArray())
-        assertEquals(FrameFlags.KEEPALIVE.toByte(), result[1])
+    @Test(expected = SecurityException::class)
+    fun encryptKeepAliveFrameV1_withoutNative_throwsSecurityException() {
+        SessionCipherEngine.encryptKeepAliveFrameV1(makeCtx(), "ka".toByteArray())
     }
 }

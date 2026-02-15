@@ -16,7 +16,6 @@ const HKDF_INFO_AEAD: &[u8] = b"SecureCall-AEAD-Key-v1";
 #[derive(ZeroizeOnDrop)]
 pub struct SessionState {
     /// Der abgeleitete 256-Bit AEAD-Schluessel.
-    #[zeroize(skip)]
     aead_key: AeadKey,
     /// Session aktiv?
     active: bool,

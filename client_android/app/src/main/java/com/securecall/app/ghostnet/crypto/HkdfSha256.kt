@@ -17,11 +17,17 @@ object HkdfSha256 {
     private const val TAG = "HKDF_SHA256"
     private const val HMAC_ALG = "HmacSHA256"
 
-    fun deriveKeys(sharedSecret: ByteArray, info: String, outLen: Int): ByteArray {
+    private val DEFAULT_SALT: ByteArray by lazy {
+        val mac = Mac.getInstance(HMAC_ALG)
+        mac.init(SecretKeySpec("SecureCall-HKDF-Salt-v1".toByteArray(Charsets.UTF_8), HMAC_ALG))
+        mac.doFinal("SecureCall-HKDF-Salt-v1".toByteArray(Charsets.UTF_8))
+    }
+
+    fun deriveKeys(sharedSecret: ByteArray, info: String, outLen: Int, salt: ByteArray? = null): ByteArray {
         Log.d(TAG, "deriveKeys(): secretLen=${sharedSecret.size}, info=$info, outLen=$outLen")
 
-        val salt = ByteArray(32) { 0x00 } // neutraler Salt (kann später gehärtet werden)
-        val prk = hkdfExtract(salt, sharedSecret)
+        val effectiveSalt = salt ?: DEFAULT_SALT
+        val prk = hkdfExtract(effectiveSalt, sharedSecret)
         return hkdfExpand(prk, info.toByteArray(Charsets.UTF_8), outLen)
     }
 

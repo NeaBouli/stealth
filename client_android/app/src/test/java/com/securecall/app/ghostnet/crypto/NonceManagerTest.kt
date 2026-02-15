@@ -34,15 +34,13 @@ class NonceManagerTest {
         }
     }
 
-    @Test
-    fun nextNonce_overflowResets() {
+    @Test(expected = SecurityException::class)
+    fun nextNonce_overflowThrowsSecurityException() {
         val field = NonceManager::class.java.getDeclaredField("counter")
         field.isAccessible = true
         (field.get(NonceManager) as AtomicLong).set(Long.MAX_VALUE)
 
-        val value = NonceManager.nextNonce()
-        // Overflow detected → reset to 1
-        assertEquals(1L, value)
+        NonceManager.nextNonce()
     }
 
     @Test

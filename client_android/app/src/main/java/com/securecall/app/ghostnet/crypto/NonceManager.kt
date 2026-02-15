@@ -19,11 +19,10 @@ object NonceManager {
     fun nextNonce(): Long {
         val value = counter.getAndIncrement()
 
-        // Overflow-Handling: niemals 0 oder negatives
+        // Overflow-Handling: nonce reuse with same key is catastrophic for AEAD
         if (value <= 0L || value == Long.MAX_VALUE) {
-            Log.w(TAG, "nextNonce(): overflow detected, resetting counter to 1")
-            counter.set(1L)
-            return 1L
+            Log.e(TAG, "nextNonce(): FATAL — nonce counter overflow, refusing to reuse nonces")
+            throw SecurityException("Nonce counter overflow — session key must be rotated")
         }
 
         return value

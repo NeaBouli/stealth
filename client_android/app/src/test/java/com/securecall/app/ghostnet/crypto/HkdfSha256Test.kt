@@ -59,4 +59,21 @@ class HkdfSha256Test {
         val result = HkdfSha256.deriveKeys(testSecret, "info", 256)
         assertEquals(256, result.size)
     }
+
+    @Test
+    fun deriveKeys_customSalt_differentOutput() {
+        val customSalt = ByteArray(32) { 0xFF.toByte() }
+        val r1 = HkdfSha256.deriveKeys(testSecret, "info", 32)
+        val r2 = HkdfSha256.deriveKeys(testSecret, "info", 32, customSalt)
+        assertFalse(r1.contentEquals(r2))
+    }
+
+    @Test
+    fun deriveKeys_defaultSaltNotAllZero() {
+        // Verify that the default salt produces different output than an all-zero salt
+        val zeroSalt = ByteArray(32) { 0x00 }
+        val withZero = HkdfSha256.deriveKeys(testSecret, "info", 32, zeroSalt)
+        val withDefault = HkdfSha256.deriveKeys(testSecret, "info", 32)
+        assertFalse(withZero.contentEquals(withDefault))
+    }
 }

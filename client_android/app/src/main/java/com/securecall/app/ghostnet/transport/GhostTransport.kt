@@ -178,7 +178,7 @@ object GhostTransport {
 
     fun debugBuildCiphertextFrameDummy(): com.securecall.app.ghostnet.media.crypto.CiphertextFrame {
         val data = ByteArray(64)
-        java.util.Random().nextBytes(data)
+        java.security.SecureRandom().nextBytes(data)
         val frame = com.securecall.app.ghostnet.media.MediaFrame(data, System.currentTimeMillis())
         return buildCiphertextFrameFromMedia(frame)
     }
@@ -208,7 +208,7 @@ object GhostTransport {
     fun sendTestWireFrame(payloadSize: Int = 32) {
         try {
             val payload = ByteArray(payloadSize)
-            java.util.Random().nextBytes(payload)
+            java.security.SecureRandom().nextBytes(payload)
             val nonce = System.currentTimeMillis()
             val header = com.securecall.app.ghostnet.crypto.header.WireEncoder.buildHeaderWithNonce(nonce)
             val raw = com.securecall.app.ghostnet.crypto.header.WireEncoder.encode(header, payload)

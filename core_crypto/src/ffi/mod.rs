@@ -7,6 +7,8 @@
 use std::ptr;
 use std::slice;
 
+use zeroize::Zeroize;
+
 use crate::aead::{self, AeadKey};
 use crate::identity::IdentityKeyPair;
 use crate::session;
@@ -35,16 +37,20 @@ pub unsafe extern "C" fn core_crypto_encrypt(
         return -1;
     }
 
-    let key_bytes: [u8; 32] = {
-        let mut buf = [0u8; 32];
-        ptr::copy_nonoverlapping(key_ptr, buf.as_mut_ptr(), 32);
-        buf
-    };
-    let key = AeadKey::from_bytes(key_bytes);
+    let mut key_buf = [0u8; 32];
+    ptr::copy_nonoverlapping(key_ptr, key_buf.as_mut_ptr(), 32);
+    let key = AeadKey::from_bytes(key_buf);
+    key_buf.zeroize();
+
     let plaintext = slice::from_raw_parts(in_ptr, in_len);
+    let capacity = *out_len;
 
     match aead::encrypt_frame_aead(&key, plaintext) {
         Ok(encrypted) => {
+            if encrypted.len() > capacity {
+                *out_len = encrypted.len();
+                return -2; // buffer too small
+            }
             ptr::copy_nonoverlapping(encrypted.as_ptr(), out_ptr, encrypted.len());
             *out_len = encrypted.len();
             0
@@ -66,16 +72,20 @@ pub unsafe extern "C" fn core_crypto_decrypt(
         return -1;
     }
 
-    let key_bytes: [u8; 32] = {
-        let mut buf = [0u8; 32];
-        ptr::copy_nonoverlapping(key_ptr, buf.as_mut_ptr(), 32);
-        buf
-    };
-    let key = AeadKey::from_bytes(key_bytes);
+    let mut key_buf = [0u8; 32];
+    ptr::copy_nonoverlapping(key_ptr, key_buf.as_mut_ptr(), 32);
+    let key = AeadKey::from_bytes(key_buf);
+    key_buf.zeroize();
+
     let ciphertext = slice::from_raw_parts(in_ptr, in_len);
+    let capacity = *out_len;
 
     match aead::decrypt_frame_aead(&key, ciphertext) {
         Ok(decrypted) => {
+            if decrypted.len() > capacity {
+                *out_len = decrypted.len();
+                return -2; // buffer too small
+            }
             ptr::copy_nonoverlapping(decrypted.as_ptr(), out_ptr, decrypted.len());
             *out_len = decrypted.len();
             0
@@ -136,6 +146,7 @@ pub extern "system" fn Java_com_securecall_crypto_CoreCrypto_encrypt<'local>(
         let mut key_arr = [0u8; 32];
         key_arr.copy_from_slice(&key_bytes);
         let aead_key = AeadKey::from_bytes(key_arr);
+        key_arr.zeroize();
 
         aead::encrypt_frame_aead(&aead_key, &data_bytes)
             .map_err(|_| "encryption failed".into())
@@ -174,6 +185,7 @@ pub extern "system" fn Java_com_securecall_crypto_CoreCrypto_decrypt<'local>(
         let mut key_arr = [0u8; 32];
         key_arr.copy_from_slice(&key_bytes);
         let aead_key = AeadKey::from_bytes(key_arr);
+        key_arr.zeroize();
 
         aead::decrypt_frame_aead(&aead_key, &data_bytes)
             .map_err(|_| "decryption failed".into())
@@ -212,10 +224,12 @@ pub extern "system" fn Java_com_securecall_crypto_CoreCrypto_deriveSessionKey<'l
         let mut priv_arr = [0u8; 32];
         priv_arr.copy_from_slice(&priv_bytes);
         let secret = x25519_dalek::StaticSecret::from(priv_arr);
+        priv_arr.zeroize();
 
         let mut pub_arr = [0u8; 32];
         pub_arr.copy_from_slice(&pub_bytes);
         let peer_public = x25519_dalek::PublicKey::from(pub_arr);
+        pub_arr.zeroize();
 
         let shared = secret.diffie_hellman(&peer_public);
 
@@ -257,9 +271,10 @@ pub extern "system" fn Java_com_securecall_crypto_CoreCrypto_generateKeyPair<'lo
     combined[..32].copy_from_slice(&secret.to_bytes());
     combined[32..].copy_from_slice(public.as_bytes());
 
-    // Vergessen wir den unused kp
     drop(kp);
 
-    env.byte_array_from_slice(&combined)
-        .unwrap_or_else(|_| JByteArray::default())
+    let result = env.byte_array_from_slice(&combined)
+        .unwrap_or_else(|_| JByteArray::default());
+    combined.zeroize();
+    result
 }

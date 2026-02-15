@@ -214,7 +214,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     // BACKEND-23: GHOST_PREPARE senden
     fun sendGhostPrepare(sessionId: String) {
-        val keyMaterial = com.securecall.app.crypto.EphemeralKeyProvider.generateKeyMaterial()
+        val keyMaterial = com.securecall.app.crypto.EphemeralKeyProvider.generateKeyMaterialBase64()
         val json = """
             {
               "type": "GHOST_PREPARE",

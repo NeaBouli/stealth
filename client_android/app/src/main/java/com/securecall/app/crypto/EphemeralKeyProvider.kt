@@ -11,9 +11,16 @@ import android.util.Base64
 
 object EphemeralKeyProvider {
 
-    fun generateKeyMaterial(): String {
+    fun generateKeyMaterial(): ByteArray {
         val keyBytes = ByteArray(32)
         java.security.SecureRandom().nextBytes(keyBytes)
-        return Base64.encodeToString(keyBytes, Base64.NO_WRAP)
+        return keyBytes
+    }
+
+    fun generateKeyMaterialBase64(): String {
+        val keyBytes = generateKeyMaterial()
+        val encoded = Base64.encodeToString(keyBytes, Base64.NO_WRAP)
+        keyBytes.fill(0)
+        return encoded
     }
 }

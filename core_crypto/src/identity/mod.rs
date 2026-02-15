@@ -46,6 +46,15 @@ impl IdentityKeyPair {
     }
 }
 
+impl Drop for IdentityKeyPair {
+    fn drop(&mut self) {
+        // Overwrite secret key with zeros on drop.
+        // StaticSecret stores key as [u8; 32] internally.
+        let zero_secret = StaticSecret::from([0u8; 32]);
+        self.secret = zero_secret;
+    }
+}
+
 impl SharedSecret {
     /// Gibt das rohe Shared Secret als Byte-Array zurueck.
     pub fn as_bytes(&self) -> &[u8; 32] {

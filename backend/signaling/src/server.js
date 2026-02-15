@@ -5,16 +5,32 @@ const { v4: uuidv4 } = require("uuid");
 
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
+const rateLimit = require("./rate_limit");
 
 // --- STUN/TURN Configuration (BACKEND-02) ---
+// SECURITY: TURN credentials must be set via environment variables
+if (process.env.NODE_ENV === "production" && (!process.env.TURN_USER || !process.env.TURN_PASS)) {
+  console.error("[FATAL] TURN_USER and TURN_PASS environment variables are required in production");
+  process.exit(1);
+}
+
 const ICE_SERVERS = [
   { urls: process.env.STUN_URL || "stun:stun.l.google.com:19302" },
-  {
-    urls: process.env.TURN_URL || "turn:turn.securecall.local:3478",
-    username: process.env.TURN_USER || "securecall",
-    credential: process.env.TURN_PASS || "securecall-dev"
-  }
+  ...(process.env.TURN_URL ? [{
+    urls: process.env.TURN_URL,
+    username: process.env.TURN_USER,
+    credential: process.env.TURN_PASS
+  }] : [])
 ];
+
+// --- Security Configuration ---
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || null;
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").filter(Boolean);
+const MAX_CONNS_PER_IP = parseInt(process.env.MAX_CONNS_PER_IP || "10", 10);
+const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
+
+// Per-IP connection tracking
+const ipConnections = new Map();
 
 // --- App Setup ---
 const app = express();
@@ -98,20 +114,32 @@ app.get("/", (req, res) => {
   });
 });
 
-// --- Routing Debug API ---
-app.get("/routing/list", (req, res) => {
+// --- Admin Auth Middleware ---
+function requireAdmin(req, res, next) {
+  if (!ADMIN_API_KEY) {
+    return res.status(403).json({ error: "admin_api_disabled" });
+  }
+  const provided = req.headers["x-admin-key"] || req.query.admin_key;
+  if (provided !== ADMIN_API_KEY) {
+    return res.status(401).json({ error: "unauthorized" });
+  }
+  next();
+}
+
+// --- Routing Debug API (admin-only) ---
+app.get("/routing/list", requireAdmin, (req, res) => {
   res.json({
     routes: Array.from(routingTable.values())
   });
 });
 
 // --- ICE Servers API (BACKEND-02) ---
-app.get("/ice-servers", (req, res) => {
+app.get("/ice-servers", requireAdmin, (req, res) => {
   res.json({ iceServers: ICE_SERVERS });
 });
 
-// --- Clients Debug API ---
-app.get("/clients/list", (req, res) => {
+// --- Clients Debug API (admin-only) ---
+app.get("/clients/list", requireAdmin, (req, res) => {
   const list = [];
   for (const [connId, client] of clients) {
     list.push({
@@ -131,6 +159,9 @@ app.post("/key/register", (req, res) => {
       error: "missing_public_key",
       message: "Field 'publicKey' is required"
     });
+  }
+  if (publicKey.length > 256) {
+    return res.status(400).json({ error: "public_key_too_large" });
   }
 
   const entry = pkd.registerKey(publicKey);
@@ -153,6 +184,9 @@ app.put("/key/:id", (req, res) => {
       message: "Field 'publicKey' is required"
     });
   }
+  if (publicKey.length > 256) {
+    return res.status(400).json({ error: "public_key_too_large" });
+  }
 
   const entry = pkd.rotateKey(req.params.id, publicKey);
   if (!entry) {
@@ -170,13 +204,37 @@ app.delete("/key/:id", (req, res) => {
 });
 
 // --- WebSocket Setup ---
-const wss = new WebSocket.Server({ server, path: "/signal" });
+const wss = new WebSocket.Server({
+  server,
+  path: "/signal",
+  maxPayload: 64 * 1024, // 64 KB max message size
+  verifyClient: (info, done) => {
+    // Origin validation
+    if (ALLOWED_ORIGINS.length > 0) {
+      const origin = info.origin || info.req.headers.origin;
+      if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+        return done(false, 403, "Origin not allowed");
+      }
+    }
+    // Per-IP connection limit
+    const ip = info.req.socket.remoteAddress;
+    const count = ipConnections.get(ip) || 0;
+    if (count >= MAX_CONNS_PER_IP) {
+      return done(false, 429, "Too many connections from this IP");
+    }
+    done(true);
+  }
+});
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws, req) => {
   const connId = uuidv4();
-  console.log("[SIGNAL] connected:", connId);
+  const ip = req.socket.remoteAddress;
+  console.log("[SIGNAL] connected:", connId, "ip:", ip);
 
-  clients.set(connId, { ws, lastSeen: Date.now(), clientId: null });
+  // Track per-IP connections
+  ipConnections.set(ip, (ipConnections.get(ip) || 0) + 1);
+
+  clients.set(connId, { ws, lastSeen: Date.now(), clientId: null, ip });
 
   ws.on("pong", () => {
     hb.updateClient(connId);
@@ -185,12 +243,15 @@ wss.on("connection", (ws) => {
   ws.on("message", (data, isBinary) => {
     hb.updateClient(connId);
 
+    // Rate limiting
+    if (!rateLimit.registerEvent(connId)) {
+      ws.send(JSON.stringify({ type: "ERROR", error: "rate_limited" }));
+      return;
+    }
+
     // --- Binary frames (audio PCM): forward to peer ---
     if (isBinary) {
-      if (!forwardBinaryToPeer(connId, data)) {
-        // No active session — echo back as fallback (MVP)
-        ws.send(data, { binary: true });
-      }
+      forwardBinaryToPeer(connId, data);
       return;
     }
 
@@ -210,6 +271,14 @@ wss.on("connection", (ws) => {
           type: "ERROR",
           error: "missing_client_id",
           message: "Field 'clientId' is required"
+        }));
+      }
+
+      if (!CLIENT_ID_REGEX.test(msg.clientId)) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "invalid_client_id",
+          message: "clientId must be 1-64 alphanumeric characters, hyphens, or underscores"
         }));
       }
 
@@ -326,6 +395,15 @@ wss.on("connection", (ws) => {
         }));
       }
 
+      // Verify sender is the intended callee
+      if (session.to !== myClientId) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "not_callee",
+          message: "Only the intended callee can accept this call"
+        }));
+      }
+
       session.state = "ACTIVE";
       session.updated = Date.now();
 
@@ -358,6 +436,16 @@ wss.on("connection", (ws) => {
       const myClientId = getClientId(connId);
 
       if (msg.sessionId && routingTable.has(msg.sessionId)) {
+        const session = routingTable.get(msg.sessionId);
+        // Verify sender is a participant
+        if (session.from !== myClientId && session.to !== myClientId) {
+          return ws.send(JSON.stringify({
+            type: "ERROR",
+            error: "not_participant",
+            message: "Only call participants can end this call"
+          }));
+        }
+
         const peerClientId = getSessionPeer(msg.sessionId, myClientId);
 
         routingTable.delete(msg.sessionId);
@@ -548,8 +636,22 @@ wss.on("connection", (ws) => {
   ws.on("close", () => {
     const client = clients.get(connId);
     const clientId = client ? client.clientId : null;
+    const clientIp = client ? client.ip : null;
 
     console.log("[SIGNAL] disconnected:", connId, clientId ? `(${clientId})` : "");
+
+    // Decrement per-IP connection count
+    if (clientIp) {
+      const count = ipConnections.get(clientIp) || 1;
+      if (count <= 1) {
+        ipConnections.delete(clientIp);
+      } else {
+        ipConnections.set(clientIp, count - 1);
+      }
+    }
+
+    // Clean up rate limit bucket
+    rateLimit.clear(connId);
 
     // clientId Mapping aufräumen
     if (clientId) {

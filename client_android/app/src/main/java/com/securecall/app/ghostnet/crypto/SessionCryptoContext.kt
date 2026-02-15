@@ -41,6 +41,17 @@ class SessionCryptoContext(
         return cipher
     }
 
+    fun wipe() {
+        sharedSecret?.fill(0)
+        masterKey?.fill(0)
+        sendKey?.fill(0)
+        recvKey?.fill(0)
+        sharedSecret = null
+        masterKey = null
+        sendKey = null
+        recvKey = null
+    }
+
     fun debugSummary(): String {
         return "rx=${keys.rxKey.size}, tx=${keys.txKey.size}, salt=${keys.salt.size}"
     }

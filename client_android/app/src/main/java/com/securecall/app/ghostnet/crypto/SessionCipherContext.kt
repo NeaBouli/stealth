@@ -27,4 +27,10 @@ data class SessionCipherContext(
         nonceCounter += 1
         return nonceCounter
     }
+
+    fun wipe() {
+        rxKey.fill(0)
+        txKey.fill(0)
+        nonceCounter = 0L
+    }
 }
