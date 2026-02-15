@@ -16,6 +16,85 @@ android {
         buildConfigField "String", "SIGNAL_WS_URL", "\"wss://signal.securecall.app/signal\""
     }
 
+    flavorDimensions "tier"
+
+    productFlavors {
+        free {
+            dimension "tier"
+            applicationIdSuffix ".free"
+            versionNameSuffix "-free"
+
+            buildConfigField "String", "TIER", "\"FREE\""
+            buildConfigField "int", "MAX_CALL_DURATION_MINUTES", "15"
+            buildConfigField "int", "MAX_CONTACTS", "10"
+            buildConfigField "boolean", "DEVICE_ATTESTATION_REQUIRED", "false"
+            buildConfigField "boolean", "ROOT_DETECTION_BLOCKS", "false"
+            buildConfigField "boolean", "CERTIFICATE_PINNING", "false"
+            buildConfigField "boolean", "CALL_RECORDING_ALLOWED", "true"
+            buildConfigField "boolean", "TELEMETRY_ENABLED", "true"
+            buildConfigField "boolean", "THIRD_PARTY_ANALYTICS", "true"
+            buildConfigField "String", "RECONNECT_STRATEGY", "\"basic\""
+            buildConfigField "boolean", "MULTI_DEVICE_SUPPORT", "false"
+            buildConfigField "boolean", "SCREEN_CAPTURE_DETECTION", "false"
+            buildConfigField "boolean", "DEBUGGER_DETECTION", "false"
+            buildConfigField "boolean", "EMULATOR_DETECTION", "false"
+            buildConfigField "boolean", "HARDWARE_KEYSTORE_REQUIRED", "false"
+            buildConfigField "String", "LOGGING_LEVEL", "\"DEBUG\""
+            buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
+            buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
+        }
+
+        pro {
+            dimension "tier"
+            applicationIdSuffix ".pro"
+            versionNameSuffix "-pro"
+
+            buildConfigField "String", "TIER", "\"PRO\""
+            buildConfigField "int", "MAX_CALL_DURATION_MINUTES", "0"
+            buildConfigField "int", "MAX_CONTACTS", "0"
+            buildConfigField "boolean", "DEVICE_ATTESTATION_REQUIRED", "true"
+            buildConfigField "boolean", "ROOT_DETECTION_BLOCKS", "true"
+            buildConfigField "boolean", "CERTIFICATE_PINNING", "true"
+            buildConfigField "boolean", "CALL_RECORDING_ALLOWED", "false"
+            buildConfigField "boolean", "TELEMETRY_ENABLED", "false"
+            buildConfigField "boolean", "THIRD_PARTY_ANALYTICS", "false"
+            buildConfigField "String", "RECONNECT_STRATEGY", "\"aggressive\""
+            buildConfigField "boolean", "MULTI_DEVICE_SUPPORT", "true"
+            buildConfigField "boolean", "SCREEN_CAPTURE_DETECTION", "false"
+            buildConfigField "boolean", "DEBUGGER_DETECTION", "false"
+            buildConfigField "boolean", "EMULATOR_DETECTION", "false"
+            buildConfigField "boolean", "HARDWARE_KEYSTORE_REQUIRED", "false"
+            buildConfigField "String", "LOGGING_LEVEL", "\"WARN\""
+            buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
+            buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
+        }
+
+        premium {
+            dimension "tier"
+            applicationIdSuffix ".premium"
+            versionNameSuffix "-premium"
+
+            buildConfigField "String", "TIER", "\"PREMIUM\""
+            buildConfigField "int", "MAX_CALL_DURATION_MINUTES", "0"
+            buildConfigField "int", "MAX_CONTACTS", "0"
+            buildConfigField "boolean", "DEVICE_ATTESTATION_REQUIRED", "true"
+            buildConfigField "boolean", "ROOT_DETECTION_BLOCKS", "true"
+            buildConfigField "boolean", "CERTIFICATE_PINNING", "true"
+            buildConfigField "boolean", "CALL_RECORDING_ALLOWED", "false"
+            buildConfigField "boolean", "TELEMETRY_ENABLED", "false"
+            buildConfigField "boolean", "THIRD_PARTY_ANALYTICS", "false"
+            buildConfigField "String", "RECONNECT_STRATEGY", "\"aggressive\""
+            buildConfigField "boolean", "MULTI_DEVICE_SUPPORT", "true"
+            buildConfigField "boolean", "SCREEN_CAPTURE_DETECTION", "true"
+            buildConfigField "boolean", "DEBUGGER_DETECTION", "true"
+            buildConfigField "boolean", "EMULATOR_DETECTION", "true"
+            buildConfigField "boolean", "HARDWARE_KEYSTORE_REQUIRED", "true"
+            buildConfigField "String", "LOGGING_LEVEL", "\"ERROR_ONLY\""
+            buildConfigField "boolean", "NO_FALLBACK_MODE", "true"
+            buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "true"
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
