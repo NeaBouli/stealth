@@ -1,0 +1,77 @@
+StealthX Source Available License v1.0
+
+Copyright (c) 2024-2026 StealthX / SecureCall. All Rights Reserved.
+
+TERMS AND CONDITIONS
+
+1. GRANT OF RIGHTS
+
+   Subject to the terms of this License, the copyright holder grants you a
+   limited, non-exclusive, non-transferable, non-sublicensable, revocable
+   right to:
+
+   a) VIEW the source code contained in this repository for the sole purpose
+      of security review, auditing, and personal education.
+
+   b) REPORT security vulnerabilities, bugs, or other issues found during
+      review to the copyright holder via the designated channels.
+
+2. RESTRICTIONS
+
+   You may NOT, under any circumstances:
+
+   a) COMPILE, BUILD, or otherwise create executable software from this
+      source code, in whole or in part.
+
+   b) DISTRIBUTE, PUBLISH, or make available any portion of this source code
+      or derivative works thereof, whether modified or unmodified.
+
+   c) MODIFY, ADAPT, or create derivative works based on this source code.
+
+   d) USE this source code, in whole or in part, for any commercial purpose,
+      including but not limited to selling, licensing, or incorporating into
+      commercial products or services.
+
+   e) FORK this repository for any purpose other than submitting issues or
+      viewing the code as hosted on the original repository.
+
+   f) REVERSE ENGINEER any compiled or distributed version of the software
+      beyond what is expressly permitted by applicable law.
+
+   g) REMOVE or alter any copyright notices, license terms, or attribution
+      contained in the source code.
+
+3. SECURITY RESEARCH
+
+   Security researchers who discover vulnerabilities in this code are
+   encouraged to report them responsibly to: security@stealthx.app
+
+   Responsible disclosure of security vulnerabilities found through review
+   of this source code is expressly permitted and appreciated.
+
+4. NO WARRANTY
+
+   THIS SOURCE CODE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+   IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES,
+   OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+   ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOURCE CODE OR THE USE OR
+   OTHER DEALINGS IN THE SOURCE CODE.
+
+5. TERMINATION
+
+   This License is effective until terminated. Your rights under this License
+   will terminate automatically without notice if you fail to comply with any
+   of its terms. Upon termination, you must destroy all copies of the source
+   code in your possession.
+
+6. GOVERNING LAW
+
+   This License shall be governed by and construed in accordance with the
+   laws of the Federal Republic of Germany, without regard to its conflict
+   of law provisions.
+
+For licensing inquiries: legal@stealthx.app
+For security reports: security@stealthx.app
