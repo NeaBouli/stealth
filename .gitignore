@@ -8,3 +8,12 @@ client_android/local.properties
 
 # Rust build artifacts
 core_crypto/target/
+
+# Signing keys and credentials
+*.keystore
+*.jks
+signing.properties
+client_android/keystore/
+
+# ProGuard/R8 mapping files
+client_android/app/build/outputs/mapping/

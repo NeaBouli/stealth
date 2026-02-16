@@ -45,6 +45,11 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        // Phase 8: Hide debug UI elements in release builds
+        if (!BuildConfig.DEBUG) {
+            hideDebugViews();
+        }
+
         audioCapture = new AudioCapturePlaceholder();
 
         Button btnCall = findViewById(R.id.btnCall);
@@ -175,6 +180,35 @@ public class MainActivity extends AppCompatActivity {
                 || android.os.Build.BRAND.startsWith("generic")
                 || android.os.Build.DEVICE.startsWith("generic")
                 || "google_sdk".equals(android.os.Build.PRODUCT);
+    }
+
+    private void hideDebugViews() {
+        int[] debugViewIds = {
+            R.id.btnWsTest,
+            R.id.btnCallInvite,
+            R.id.btnCallAccept,
+            R.id.btnCallEnd,
+            R.id.btnGhostPrep,
+            R.id.btnGhostHints,
+            R.id.btnShowGhostDebug,
+            R.id.btnForceReconnect,
+            R.id.btnSimulateGhostHandshake,
+            R.id.wsStatus,
+            R.id.wsLastSeen,
+            R.id.ghostStatus,
+            R.id.ghostDebugPanel,
+            R.id.ghostStateBar,
+            R.id.sessionStatus,
+            R.id.sessionNetState,
+            R.id.rootLayout,
+            R.id.debugLogScroll
+        };
+        for (int id : debugViewIds) {
+            android.view.View v = findViewById(id);
+            if (v != null) {
+                v.setVisibility(android.view.View.GONE);
+            }
+        }
     }
 
     @Override

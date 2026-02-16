@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'
 
 android {
     compileSdkVersion 33
@@ -9,8 +10,8 @@ android {
         applicationId "com.securecall.app"
         minSdkVersion 23
         targetSdkVersion 33
-        versionCode 1
-        versionName "0.1-alpha"
+        versionCode 2
+        versionName "0.2-beta"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -105,9 +106,30 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("SECURECALL_STORE_FILE") ?: findProperty("SECURECALL_STORE_FILE") ?: "release.keystore")
+            storePassword System.getenv("SECURECALL_STORE_PASSWORD") ?: findProperty("SECURECALL_STORE_PASSWORD") ?: ""
+            keyAlias System.getenv("SECURECALL_KEY_ALIAS") ?: findProperty("SECURECALL_KEY_ALIAS") ?: ""
+            keyPassword System.getenv("SECURECALL_KEY_PASSWORD") ?: findProperty("SECURECALL_KEY_PASSWORD") ?: ""
+        }
+    }
+
     buildTypes {
         release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+            firebaseCrashlytics {
+                mappingFileUploadEnabled true
+            }
+        }
+        debug {
             minifyEnabled false
+            firebaseCrashlytics {
+                mappingFileUploadEnabled false
+            }
         }
     }
 
@@ -137,6 +159,7 @@ dependencies {
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
     implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-crashlytics-ktx'
 
     // Unit Tests (JVM)
     testImplementation 'junit:junit:4.13.2'
