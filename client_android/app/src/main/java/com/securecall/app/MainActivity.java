@@ -19,6 +19,7 @@ import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
 import com.securecall.app.ghostnet.call.CallSessionManager;
 import com.securecall.app.security.SecurityEnforcer;
 import com.securecall.app.init.AppInit;
+import com.securecall.app.fcm.FcmTokenManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Security checks at startup — SecurityEnforcer enforces per tier
         runSecurityChecks();
+
+        // Register FCM token for push notifications
+        FcmTokenManager.INSTANCE.ensureTokenRegistered(this);
 
         setContentView(R.layout.activity_main);
 

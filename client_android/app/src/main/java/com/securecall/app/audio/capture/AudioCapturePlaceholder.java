@@ -5,12 +5,12 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
+import com.securecall.app.ghostnet.media.codec.OpusEncoder;
 import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
 
 /**
- * Real AudioRecord-based microphone capture.
- * 48 kHz, mono, 16-bit PCM.
- * Sends raw PCM chunks over WebSocket as binary frames.
+ * Real AudioRecord-based microphone capture with Opus encoding.
+ * 48 kHz, mono, 16-bit PCM → Opus encoded frames.
  */
 public class AudioCapturePlaceholder {
 
@@ -19,9 +19,8 @@ public class AudioCapturePlaceholder {
     private static final int SAMPLE_RATE = 48000;
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
-    // 10ms at 48kHz mono 16-bit = 960 bytes
-    private static final int BUFFER_SAMPLES = 480;
-    private static final int BUFFER_BYTES = BUFFER_SAMPLES * 2;
+    // 20ms at 48kHz mono = 960 samples (Opus frame size)
+    private static final int FRAME_SAMPLES = 960;
 
     private volatile boolean running = false;
     private Thread thread = null;
@@ -39,7 +38,7 @@ public class AudioCapturePlaceholder {
             return;
         }
 
-        int bufSize = Math.max(minBuf, BUFFER_BYTES * 4);
+        int bufSize = Math.max(minBuf, FRAME_SAMPLES * 2 * 4);
 
         try {
             audioRecord = new AudioRecord(
@@ -61,24 +60,31 @@ public class AudioCapturePlaceholder {
             return;
         }
 
+        // Initialize Opus encoder
+        OpusEncoder.INSTANCE.init(SAMPLE_RATE, 1);
+
         running = true;
         audioRecord.startRecording();
 
         thread = new Thread(() -> {
-            Log.d(TAG, "Capture thread started (sr=" + SAMPLE_RATE + ", buf=" + bufSize + ")");
-            byte[] buffer = new byte[BUFFER_BYTES];
+            Log.d(TAG, "Capture thread started (sr=" + SAMPLE_RATE + ", frame=" + FRAME_SAMPLES + " samples)");
+            short[] buffer = new short[FRAME_SAMPLES];
 
             while (running) {
-                int read = audioRecord.read(buffer, 0, buffer.length);
-                if (read > 0) {
-                    byte[] chunk;
-                    if (read == buffer.length) {
-                        chunk = buffer.clone();
-                    } else {
-                        chunk = new byte[read];
-                        System.arraycopy(buffer, 0, chunk, 0, read);
+                int read = audioRecord.read(buffer, 0, FRAME_SAMPLES);
+                if (read == FRAME_SAMPLES) {
+                    byte[] encoded = OpusEncoder.INSTANCE.encode(buffer);
+                    if (encoded.length > 0) {
+                        GhostNetWebSocketClient.getInstance().sendBinary(encoded);
                     }
-                    GhostNetWebSocketClient.getInstance().sendBinary(chunk);
+                } else if (read > 0) {
+                    // Partial frame — pad with silence and encode
+                    short[] padded = new short[FRAME_SAMPLES];
+                    System.arraycopy(buffer, 0, padded, 0, read);
+                    byte[] encoded = OpusEncoder.INSTANCE.encode(padded);
+                    if (encoded.length > 0) {
+                        GhostNetWebSocketClient.getInstance().sendBinary(encoded);
+                    }
                 } else if (read < 0) {
                     Log.e(TAG, "AudioRecord.read() returned " + read);
                     break;
@@ -89,7 +95,7 @@ public class AudioCapturePlaceholder {
         }, "AudioCaptureThread");
         thread.start();
 
-        Log.d(TAG, "Audio capture STARTED");
+        Log.d(TAG, "Audio capture STARTED (Opus encoding enabled)");
     }
 
     public void stop() {
@@ -113,6 +119,9 @@ public class AudioCapturePlaceholder {
             thread.interrupt();
             thread = null;
         }
+
+        // Release Opus encoder
+        OpusEncoder.INSTANCE.release();
 
         Log.d(TAG, "Audio capture STOPPED");
     }

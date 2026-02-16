@@ -7,6 +7,10 @@ const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
 const rateLimit = require("./rate_limit");
 const subscriptions = require("./subscriptions");
+const fcm = require("./fcm");
+
+// Initialize Firebase Cloud Messaging
+fcm.initFcm();
 
 // --- STUN/TURN Configuration (BACKEND-02) ---
 // SECURITY: TURN credentials must be set via environment variables
@@ -67,6 +71,10 @@ const clientIds = new Map();
 // --- Routing Table (Sessions) ---
 const routingTable = new Map();
 // sessionId -> { sessionId, from, to, state, created, updated }
+
+// --- FCM Token Storage ---
+// clientId -> fcmToken
+const fcmTokens = new Map();
 
 // --- Helper: send JSON to a clientId ---
 function sendToClient(clientId, payload) {
@@ -377,43 +385,69 @@ wss.on("connection", (ws, req) => {
         }));
       }
 
-      // Prüfen ob Ziel online ist
-      if (!clientIds.has(msg.to)) {
-        return ws.send(JSON.stringify({
-          type: "ERROR",
-          error: "peer_not_found",
-          message: `Client '${sanitize(msg.to)}' is not online`
-        }));
-      }
-
       const sessionId = uuidv4();
-      routingTable.set(sessionId, {
-        sessionId,
-        from: myClientId,
-        to: msg.to,
-        state: "INVITE",
-        created: Date.now(),
-        updated: Date.now()
-      });
 
-      console.log("[ROUTING] INVITE:", myClientId, "->", msg.to, "session:", sessionId);
+      // Check if peer is online
+      if (clientIds.has(msg.to)) {
+        // Peer is online — normal flow
+        routingTable.set(sessionId, {
+          sessionId,
+          from: myClientId,
+          to: msg.to,
+          state: "INVITE",
+          created: Date.now(),
+          updated: Date.now()
+        });
 
-      // Bestätigung an Caller
-      ws.send(JSON.stringify({
-        type: "CALL_INVITE_ACK",
-        ok: true,
-        sessionId,
-        from: myClientId,
-        to: msg.to
-      }));
+        console.log("[ROUTING] INVITE:", myClientId, "->", msg.to, "session:", sessionId);
 
-      // Weiterleiten an Empfänger
-      sendToClient(msg.to, {
-        type: "CALL_INVITE",
-        sessionId,
-        from: myClientId,
-        to: msg.to
-      });
+        ws.send(JSON.stringify({
+          type: "CALL_INVITE_ACK",
+          ok: true,
+          sessionId,
+          from: myClientId,
+          to: msg.to
+        }));
+
+        sendToClient(msg.to, {
+          type: "CALL_INVITE",
+          sessionId,
+          from: myClientId,
+          to: msg.to
+        });
+      } else {
+        // Peer is offline — try FCM push
+        const fcmToken = fcmTokens.get(msg.to);
+        if (fcmToken && fcm.isInitialized()) {
+          routingTable.set(sessionId, {
+            sessionId,
+            from: myClientId,
+            to: msg.to,
+            state: "INVITE_PENDING_PUSH",
+            created: Date.now(),
+            updated: Date.now()
+          });
+
+          console.log("[ROUTING] INVITE (offline, sending push):", myClientId, "->", msg.to, "session:", sessionId);
+
+          fcm.sendCallInvitePush(fcmToken, sessionId, myClientId);
+
+          ws.send(JSON.stringify({
+            type: "CALL_INVITE_ACK",
+            ok: true,
+            sessionId,
+            from: myClientId,
+            to: msg.to,
+            pushSent: true
+          }));
+        } else {
+          return ws.send(JSON.stringify({
+            type: "ERROR",
+            error: "peer_not_found",
+            message: `Client '${sanitize(msg.to)}' is not online`
+          }));
+        }
+      }
 
       return;
     }
@@ -695,6 +729,35 @@ wss.on("connection", (ws, req) => {
       ws.send(JSON.stringify(reply));
       console.log("[GHOST] ACK sent:", ghostNetId);
       return;
+    }
+
+    // ===========================
+    // REGISTER_FCM_TOKEN — Store FCM token for push notifications
+    // ===========================
+    if (msg.type === "REGISTER_FCM_TOKEN") {
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "not_registered",
+          message: "You must REGISTER before sending REGISTER_FCM_TOKEN"
+        }));
+      }
+
+      if (!msg.fcmToken || typeof msg.fcmToken !== "string") {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "missing_fcm_token"
+        }));
+      }
+
+      fcmTokens.set(myClientId, msg.fcmToken);
+      console.log("[FCM] Token registered for:", myClientId);
+
+      return ws.send(JSON.stringify({
+        type: "REGISTER_FCM_TOKEN_ACK",
+        ok: true
+      }));
     }
 
     // ===========================

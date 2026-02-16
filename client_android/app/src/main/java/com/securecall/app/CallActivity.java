@@ -18,6 +18,20 @@ public class CallActivity extends AppCompatActivity {
 
         Log.d(TAG, "CallActivity created");
 
+        // Handle incoming call from FCM notification
+        if (getIntent().getBooleanExtra("fromNotification", false)) {
+            String sessionId = getIntent().getStringExtra("sessionId");
+            String callerName = getIntent().getStringExtra("callerName");
+            Log.d(TAG, "Launched from notification: session=" + sessionId + ", caller=" + callerName);
+
+            com.securecall.app.net.WebSocketService ws =
+                    com.securecall.app.net.WebSocketService.Companion.getInstance();
+            if (ws != null && sessionId != null && !sessionId.isEmpty()) {
+                ws.sendCallAccept(sessionId);
+                Log.d(TAG, "CALL_ACCEPT sent for session " + sessionId);
+            }
+        }
+
         transport = new GhostNetTransport();
 
         Log.d(TAG, "Starting GhostNetTransport...");

@@ -49,9 +49,9 @@ object GhostMediaRouter {
         return com.securecall.app.ghostnet.media.crypto.MediaDecryptor.decrypt(frame)
     }
 
-    // PATCH 239: decode via DummyDecoder
+    // Phase 7: decode via real OpusDecoder
     private fun decode(raw: ByteArray): ShortArray {
-        return com.securecall.app.ghostnet.media.decoder.DummyDecoder.decode(raw)
+        return com.securecall.app.ghostnet.media.codec.OpusDecoder.decode(raw)
     }
 
     // PATCH 230: safe decode with error handling
@@ -154,8 +154,11 @@ object GhostMediaRouter {
 
     // ===================== Decoder Management =====================
 
-    // PATCH 224: ensure decoder
+    // Phase 7: ensure Opus decoder is initialised
     private fun ensureDecoder() {
+        if (!com.securecall.app.ghostnet.media.codec.OpusDecoder.isInitialised()) {
+            com.securecall.app.ghostnet.media.codec.OpusDecoder.init(48000, 1)
+        }
         decoderCtx.prepareNativeDecoder(48000, 1)
     }
 
@@ -195,6 +198,7 @@ object GhostMediaRouter {
         Log.d(TAG, "quietShutdown(): stopping media")
         audioPlayer.stop()
         audioPlayer.release()
+        com.securecall.app.ghostnet.media.codec.OpusDecoder.release()
         decoderCtx.freeNativeDecoder()
     }
 
