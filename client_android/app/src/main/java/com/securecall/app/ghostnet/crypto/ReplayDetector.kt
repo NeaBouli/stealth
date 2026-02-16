@@ -1,6 +1,7 @@
 package com.securecall.app.ghostnet.crypto
 
 import android.util.Log
+import com.securecall.app.BuildConfig
 
 /**
  * CRYPTO-13:
@@ -16,7 +17,7 @@ object ReplayDetector {
         return when {
             lastNonce < 0L -> {
                 lastNonce = nonce
-                Log.d(TAG, "Init nonce=$nonce")
+                if (BuildConfig.DEBUG) Log.d(TAG, "Init nonce=$nonce")
                 true
             }
             nonce == lastNonce -> {
@@ -28,7 +29,7 @@ object ReplayDetector {
                 false
             }
             else -> {
-                Log.d(TAG, "Nonce OK: $nonce (last was $lastNonce)")
+                if (BuildConfig.DEBUG) Log.d(TAG, "Nonce OK: $nonce (last was $lastNonce)")
                 lastNonce = nonce
                 true
             }
@@ -46,7 +47,7 @@ object ReplayDetector {
         return when {
             lastNonce < 0L -> {
                 lastNonce = nonce
-                Log.d(TAG, "Init nonce=$nonce")
+                if (BuildConfig.DEBUG) Log.d(TAG, "Init nonce=$nonce")
                 true
             }
             nonce == lastNonce -> {
@@ -60,7 +61,7 @@ object ReplayDetector {
                 false
             }
             else -> {
-                Log.d(TAG, "Nonce OK: $nonce")
+                if (BuildConfig.DEBUG) Log.d(TAG, "Nonce OK: $nonce")
                 lastNonce = nonce
                 true
             }

@@ -28,7 +28,11 @@ object GhostControlRouter {
     }
 
     private fun isControlFrame(frame: ByteArray): Boolean {
-        return frame.isNotEmpty()
+        if (frame.size < 4) return false
+        // Parse FrameHeaderV1 — control frames have CONTROL flag set
+        val header = com.securecall.app.ghostnet.frame.header.FrameHeaderV1.parse(frame)
+        return header != null &&
+            header.flags == com.securecall.app.ghostnet.frame.header.FrameFlags.CONTROL
     }
 
     private fun dispatchControl(frame: ByteArray) {

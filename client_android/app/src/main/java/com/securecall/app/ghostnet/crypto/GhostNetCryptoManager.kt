@@ -1,6 +1,7 @@
 package com.securecall.app.ghostnet.crypto
 
 import android.util.Log
+import com.securecall.app.BuildConfig
 
 /**
  * PATCH 249:
@@ -13,7 +14,7 @@ object GhostNetCryptoManager {
     private var currentContext: SessionCryptoContext? = null
 
     fun createNewContext(): SessionCryptoContext {
-        Log.d(TAG, "createNewContext(): using MockHandshake → SessionCryptoContext")
+        if (BuildConfig.DEBUG) Log.d(TAG, "createNewContext(): using MockHandshake → SessionCryptoContext")
         val ctx = SessionCryptoContext.fromMockHandshake()
         currentContext = ctx
         return ctx
@@ -33,11 +34,18 @@ object GhostNetCryptoManager {
         currentContext = null
     }
 
-    // CRYPTO-04: neues Keypair erzeugen
+    // CRYPTO-04: neues Keypair erzeugen (via Rust JNI)
     fun generateLocalECDHKeyPair() {
         val ctx = getContext()
-        ctx.localKeyPair = FakeX25519.generateKeyPair()
-        com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Local ECDH Keypair generated (FAKE)")
+        val raw = com.securecall.crypto.CoreCrypto.generateKeyPair()
+        if (raw == null || raw.size != 64) {
+            throw SecurityException("Failed to generate X25519 keypair via native crypto")
+        }
+        val priv = raw.copyOfRange(0, 32)
+        val pub = raw.copyOfRange(32, 64)
+        ctx.localKeyPair = X25519KeyPair(priv, pub)
+        raw.fill(0)
+        com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Local ECDH Keypair generated (native)")
     }
 
     // CRYPTO-04: Remote-Key setzen
@@ -47,8 +55,8 @@ object GhostNetCryptoManager {
         com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Remote PublicKey set (len=${pub.size})")
     }
 
-    // CRYPTO-04: Shared Secret ableiten
-    fun deriveFakeSharedSecret() {
+    // CRYPTO-04: Shared Secret ableiten (via Rust JNI)
+    fun deriveSharedSecret() {
         val ctx = getContext()
         val local = ctx.localKeyPair?.privateKey
         val remote = ctx.remotePublicKey
@@ -56,8 +64,12 @@ object GhostNetCryptoManager {
             com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "deriveSharedSecret FAILED: missing keys")
             return
         }
-        ctx.sharedSecret = FakeX25519.deriveSharedSecret(local, remote)
-        com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Shared Secret derived (FAKE)")
+        val derived = com.securecall.crypto.CoreCrypto.deriveSessionKey(local, remote)
+        if (derived == null || derived.size != 32) {
+            throw SecurityException("X25519 DH key derivation failed via native crypto")
+        }
+        ctx.sharedSecret = derived
+        com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Shared Secret derived (native X25519)")
     }
 
     // CRYPTO-05: Symmetrische Schlüssel aus sharedSecret ableiten

@@ -1,7 +1,9 @@
 package com.securecall.app.ghostnet;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -100,52 +102,84 @@ public class GhostNetSession {
         void onDead();
     }
 
-    private static final List<StateListener> stateListeners = new ArrayList<>();
-    private static final List<LifecycleListener> lifecycleListeners = new ArrayList<>();
+    private static final List<WeakReference<StateListener>> stateListeners = new ArrayList<>();
+    private static final List<WeakReference<LifecycleListener>> lifecycleListeners = new ArrayList<>();
 
     public static synchronized void addStateListener(StateListener l) {
-        if (l != null && !stateListeners.contains(l)) {
-            stateListeners.add(l);
+        if (l == null) return;
+        // Avoid duplicates
+        for (WeakReference<StateListener> ref : stateListeners) {
+            if (ref.get() == l) return;
         }
+        stateListeners.add(new WeakReference<>(l));
     }
 
     public static synchronized void removeStateListener(StateListener l) {
-        stateListeners.remove(l);
+        Iterator<WeakReference<StateListener>> it = stateListeners.iterator();
+        while (it.hasNext()) {
+            StateListener ref = it.next().get();
+            if (ref == null || ref == l) it.remove();
+        }
     }
 
     private static void notifyStateListeners(State s) {
-        for (StateListener l : new ArrayList<>(stateListeners)) {
-            try {
-                l.onStateChanged(s);
-            } catch (Exception ignored) {
+        List<StateListener> snapshot = new ArrayList<>();
+        synchronized (GhostNetSession.class) {
+            Iterator<WeakReference<StateListener>> it = stateListeners.iterator();
+            while (it.hasNext()) {
+                StateListener ref = it.next().get();
+                if (ref == null) { it.remove(); continue; }
+                snapshot.add(ref);
             }
+        }
+        for (StateListener l : snapshot) {
+            try { l.onStateChanged(s); } catch (Exception ignored) {}
         }
     }
 
     public static synchronized void addLifecycleListener(LifecycleListener l) {
-        if (l != null && !lifecycleListeners.contains(l)) {
-            lifecycleListeners.add(l);
+        if (l == null) return;
+        for (WeakReference<LifecycleListener> ref : lifecycleListeners) {
+            if (ref.get() == l) return;
         }
+        lifecycleListeners.add(new WeakReference<>(l));
     }
 
     public static synchronized void removeLifecycleListener(LifecycleListener l) {
-        lifecycleListeners.remove(l);
+        Iterator<WeakReference<LifecycleListener>> it = lifecycleListeners.iterator();
+        while (it.hasNext()) {
+            LifecycleListener ref = it.next().get();
+            if (ref == null || ref == l) it.remove();
+        }
+    }
+
+    private static List<LifecycleListener> getActiveLifecycleListeners() {
+        List<LifecycleListener> snapshot = new ArrayList<>();
+        synchronized (GhostNetSession.class) {
+            Iterator<WeakReference<LifecycleListener>> it = lifecycleListeners.iterator();
+            while (it.hasNext()) {
+                LifecycleListener ref = it.next().get();
+                if (ref == null) { it.remove(); continue; }
+                snapshot.add(ref);
+            }
+        }
+        return snapshot;
     }
 
     private static void notifyPrepared() {
-        for (LifecycleListener l : new ArrayList<>(lifecycleListeners)) {
+        for (LifecycleListener l : getActiveLifecycleListeners()) {
             try { l.onPrepared(); } catch (Exception ignored) {}
         }
     }
 
     private static void notifyActivated() {
-        for (LifecycleListener l : new ArrayList<>(lifecycleListeners)) {
+        for (LifecycleListener l : getActiveLifecycleListeners()) {
             try { l.onActivated(); } catch (Exception ignored) {}
         }
     }
 
     private static void notifyDead() {
-        for (LifecycleListener l : new ArrayList<>(lifecycleListeners)) {
+        for (LifecycleListener l : getActiveLifecycleListeners()) {
             try { l.onDead(); } catch (Exception ignored) {}
         }
     }

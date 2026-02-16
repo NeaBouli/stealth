@@ -106,10 +106,17 @@ object GhostMediaRouter {
         return com.securecall.app.ghostnet.media.crypto.MediaDecryptor.decryptFrameV1(frame)
     }
 
-    // CRYPTO-24: Wire-level decrypt
+    // CRYPTO-24: Wire-level decrypt — uses real AEAD via SessionCipherEngine
     private fun decryptWirePayload(cipher: ByteArray): ByteArray {
         return try {
-            com.securecall.app.ghostnet.crypto.WireCryptoStub.decryptPayload(cipher)
+            val binding = com.securecall.app.ghostnet.crypto.binding.SessionCipherBinding
+            val session = binding.activeSession
+            if (session != null) {
+                com.securecall.app.ghostnet.crypto.SessionCipherEngine.decrypt(session, cipher)
+            } else {
+                Log.e("WIRE_CRYPTO", "decryptWirePayload(): no active session")
+                cipher
+            }
         } catch (t: Throwable) {
             Log.e("WIRE_CRYPTO", "decryptWirePayload() error", t)
             cipher
@@ -354,7 +361,7 @@ object GhostMediaRouter {
         try {
             val payload = ByteArray(payloadSize)
             kotlin.random.Random.Default.nextBytes(payload)
-            val nonce = System.currentTimeMillis()
+            val nonce = com.securecall.app.ghostnet.crypto.NonceManager.nextNonce()
             val header = com.securecall.app.ghostnet.crypto.header.WireEncoder
                 .buildHeaderWithNonce(nonce)
             val encoded = com.securecall.app.ghostnet.crypto.header.WireEncoder

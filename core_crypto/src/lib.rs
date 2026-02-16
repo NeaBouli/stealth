@@ -21,13 +21,18 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 /// Wird automatisch gezeroed wenn er aus dem Scope faellt.
 #[derive(Zeroize, ZeroizeOnDrop)]
 pub struct SessionKey {
-    pub bytes: [u8; 32],
+    pub(crate) bytes: [u8; 32],
 }
 
 impl SessionKey {
     /// Erzeugt einen SessionKey aus 32 Byte Schlüsselmaterial.
     pub fn from_bytes(bytes: [u8; 32]) -> Self {
         Self { bytes }
+    }
+
+    /// Gibt eine Referenz auf das rohe Key-Material zurueck.
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        &self.bytes
     }
 
     /// Erzeugt einen zufaelligen SessionKey.

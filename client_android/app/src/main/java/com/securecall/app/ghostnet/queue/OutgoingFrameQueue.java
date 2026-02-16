@@ -3,14 +3,14 @@ package com.securecall.app.ghostnet.queue;
 import android.util.Log;
 import com.securecall.app.ghostnet.frames.GhostFrame;
 
-import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class OutgoingFrameQueue {
 
     private static final String TAG = "OutgoingFrameQueue";
 
-    private final Queue<GhostFrame> queue = new LinkedList<>();
+    private final Queue<GhostFrame> queue = new ConcurrentLinkedQueue<>();
 
     public void add(GhostFrame frame) {
         queue.add(frame);

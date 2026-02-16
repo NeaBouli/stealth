@@ -1,6 +1,7 @@
 package com.securecall.app.ghostnet.crypto
 
 import android.util.Log
+import com.securecall.app.BuildConfig
 import com.securecall.app.ghostnet.handshake.HandshakeEngine
 import com.securecall.app.ghostnet.handshake.HandshakeResult
 import java.security.SecureRandom
@@ -41,7 +42,7 @@ object SessionKeyDerivation {
      * Wird aktuell unabhängig von einem Handshake genutzt.
      */
     fun deriveEphemeral(): SessionKeys {
-        Log.d(TAG, "deriveEphemeral(): PLACEHOLDER – generating random keys")
+        if (BuildConfig.DEBUG) Log.d(TAG, "deriveEphemeral(): PLACEHOLDER – generating random keys")
 
         val salt = ByteArray(32)
         val rx = ByteArray(32)
@@ -102,7 +103,7 @@ object SessionKeyDerivation {
      * Dient als Architektur-Vorlage für den echten Kryptopfad.
      */
     fun deriveFromMockHandshake(): SessionKeys {
-        Log.d(TAG, "deriveFromMockHandshake(): starting mock handshake → key derivation")
+        if (BuildConfig.DEBUG) Log.d(TAG, "deriveFromMockHandshake(): starting mock handshake → key derivation")
 
         val result: HandshakeResult = HandshakeEngine.performMockHandshake()
 

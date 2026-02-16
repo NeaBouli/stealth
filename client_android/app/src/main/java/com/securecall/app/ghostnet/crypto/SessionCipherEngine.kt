@@ -1,6 +1,7 @@
 package com.securecall.app.ghostnet.crypto
 
 import android.util.Log
+import com.securecall.app.BuildConfig
 import com.securecall.crypto.CoreCrypto
 
 /**
@@ -20,7 +21,7 @@ object SessionCipherEngine {
         val nonce = ctx.nextNonce()
         val header = SessionCipherHeader.create(ctx.keyId, nonce)
 
-        Log.d(TAG, "encrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, nonce=$nonce, plainSize=${plain.size}")
+        if (BuildConfig.DEBUG) Log.d(TAG, "encrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, nonce=$nonce, plainSize=${plain.size}")
 
         if (!CoreCrypto.isNativeAvailable()) {
             Log.e(TAG, "encrypt(): FATAL — native crypto not available, refusing to send plaintext")
@@ -40,7 +41,7 @@ object SessionCipherEngine {
         ctx: SessionCipherContext,
         cipher: ByteArray
     ): ByteArray {
-        Log.d(TAG, "decrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, cipherSize=${cipher.size}")
+        if (BuildConfig.DEBUG) Log.d(TAG, "decrypt(): sessionId=${ctx.sessionId}, keyId=${ctx.keyId}, cipherSize=${cipher.size}")
 
         if (!CoreCrypto.isNativeAvailable()) {
             Log.e(TAG, "decrypt(): FATAL — native crypto not available, refusing to return ciphertext as plaintext")
@@ -93,7 +94,7 @@ object SessionCipherEngine {
             return cipher
         }
 
-        Log.d(TAG, "decryptFrameV1(): flags=${header.flags} keyId=${header.keyId} prefix=${header.noncePrefix}")
+        if (BuildConfig.DEBUG) Log.d(TAG, "decryptFrameV1(): flags=${header.flags} keyId=${header.keyId} prefix=${header.noncePrefix}")
 
         val payload = cipher.copyOfRange(4, cipher.size)
         return decrypt(ctx, payload)

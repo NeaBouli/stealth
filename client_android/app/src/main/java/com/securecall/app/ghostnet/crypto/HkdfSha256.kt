@@ -1,6 +1,7 @@
 package com.securecall.app.ghostnet.crypto
 
 import android.util.Log
+import com.securecall.app.BuildConfig
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -24,7 +25,7 @@ object HkdfSha256 {
     }
 
     fun deriveKeys(sharedSecret: ByteArray, info: String, outLen: Int, salt: ByteArray? = null): ByteArray {
-        Log.d(TAG, "deriveKeys(): secretLen=${sharedSecret.size}, info=$info, outLen=$outLen")
+        if (BuildConfig.DEBUG) Log.d(TAG, "deriveKeys(): secretLen=${sharedSecret.size}, info=$info, outLen=$outLen")
 
         val effectiveSalt = salt ?: DEFAULT_SALT
         val prk = hkdfExtract(effectiveSalt, sharedSecret)

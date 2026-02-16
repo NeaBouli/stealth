@@ -209,7 +209,7 @@ object GhostTransport {
         try {
             val payload = ByteArray(payloadSize)
             java.security.SecureRandom().nextBytes(payload)
-            val nonce = System.currentTimeMillis()
+            val nonce = com.securecall.app.ghostnet.crypto.NonceManager.nextNonce()
             val header = com.securecall.app.ghostnet.crypto.header.WireEncoder.buildHeaderWithNonce(nonce)
             val raw = com.securecall.app.ghostnet.crypto.header.WireEncoder.encode(header, payload)
             Log.d("OUT_WIRE", "sendTestWireFrame(): encodedSize=${raw.size}, nonce=$nonce")
@@ -224,7 +224,7 @@ object GhostTransport {
         try {
             val frame = com.securecall.app.ghostnet.frame.AudioFrame(pcm)
             val payload = com.securecall.app.ghostnet.frame.FrameSerializer.encodeAudio(frame)
-            val nonce = System.currentTimeMillis()
+            val nonce = com.securecall.app.ghostnet.crypto.NonceManager.nextNonce()
             val header = com.securecall.app.ghostnet.crypto.header.WireEncoder.buildHeaderWithNonce(nonce)
             val raw = com.securecall.app.ghostnet.crypto.header.WireEncoder.encode(header, payload)
             Log.d("OUT_AUDIO", "sendAudioFrame(): pcm=${pcm.size}, payload=${payload.size}, nonce=$nonce")
@@ -239,7 +239,7 @@ object GhostTransport {
         try {
             val frame = com.securecall.app.ghostnet.frame.ControlFrame(code, info)
             val payload = com.securecall.app.ghostnet.frame.FrameSerializer.encodeControl(frame)
-            val nonce = System.currentTimeMillis()
+            val nonce = com.securecall.app.ghostnet.crypto.NonceManager.nextNonce()
             val header = com.securecall.app.ghostnet.crypto.header.WireEncoder.buildHeaderWithNonce(nonce)
             val raw = com.securecall.app.ghostnet.crypto.header.WireEncoder.encode(header, payload)
             Log.d("OUT_CTRL", "sendControlFrame(): code=$code info=$info nonce=$nonce")
@@ -254,7 +254,7 @@ object GhostTransport {
         try {
             val frame = com.securecall.app.ghostnet.frame.KeepAliveFrame()
             val payload = com.securecall.app.ghostnet.frame.FrameSerializer.encodeKeepAlive(frame)
-            val nonce = System.currentTimeMillis()
+            val nonce = com.securecall.app.ghostnet.crypto.NonceManager.nextNonce()
             val header = com.securecall.app.ghostnet.crypto.header.WireEncoder.buildHeaderWithNonce(nonce)
             val raw = com.securecall.app.ghostnet.crypto.header.WireEncoder.encode(header, payload)
             Log.d("OUT_KEEPALIVE", "sendKeepAlive(): nonce=$nonce")
@@ -264,22 +264,8 @@ object GhostTransport {
         }
     }
 
-    // CRYPTO-23: AudioFrame über WireCryptoStub
-    fun sendAudioFrameWithCryptoStub(pcm: ByteArray) {
-        try {
-            val frame = com.securecall.app.ghostnet.frame.AudioFrame(pcm)
-            val payloadPlain = com.securecall.app.ghostnet.frame.FrameSerializer.encodeAudio(frame)
-            val payloadEnc = com.securecall.app.ghostnet.crypto.WireCryptoStub.encryptPayload(payloadPlain)
-            val nonce = System.currentTimeMillis()
-            val header = com.securecall.app.ghostnet.crypto.header.WireEncoder.buildHeaderWithNonce(nonce)
-            val raw = com.securecall.app.ghostnet.crypto.header.WireEncoder.encode(header, payloadEnc)
-            Log.d("OUT_AUDIO_CRYPTO",
-                "sendAudioFrameWithCryptoStub(): pcm=${pcm.size}, plain=${payloadPlain.size}, enc=${payloadEnc.size}, nonce=$nonce")
-            com.securecall.app.ghostnet.media.GhostMediaRouter.processInboundRaw(raw)
-        } catch (t: Throwable) {
-            Log.e("OUT_AUDIO_CRYPTO", "Error sending AudioFrame via WireCryptoStub", t)
-        }
-    }
+    // CRYPTO-23: Removed — WireCryptoStub was a no-op placeholder.
+    // Use sendAudioFrameV1() for real encryption via Rust CoreCrypto.
 
     // ===================== CRYPTO-29+: Encrypted Frame Pipeline =====================
 

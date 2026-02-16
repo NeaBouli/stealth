@@ -10,7 +10,6 @@ use std::slice;
 use zeroize::Zeroize;
 
 use crate::aead::{self, AeadKey};
-use crate::identity::IdentityKeyPair;
 use crate::session;
 use crate::utils;
 
@@ -233,6 +232,11 @@ pub extern "system" fn Java_com_securecall_crypto_CoreCrypto_deriveSessionKey<'l
 
         let shared = secret.diffie_hellman(&peer_public);
 
+        // Low-order point check
+        if shared.as_bytes().iter().all(|&b| b == 0) {
+            return Err("low-order point detected — aborting DH".into());
+        }
+
         // HKDF-SHA256 Key Derivation
         let derived = session::derive_key(
             shared.as_bytes(),
@@ -261,17 +265,12 @@ pub extern "system" fn Java_com_securecall_crypto_CoreCrypto_generateKeyPair<'lo
     env: JNIEnv<'local>,
     _class: JClass<'local>,
 ) -> JByteArray<'local> {
-    let kp = IdentityKeyPair::generate();
-    // Wir brauchen den private key als Bytes — reconstruct from StaticSecret
-    // Da IdentityKeyPair den secret kapselt, generieren wir direkt:
     let secret = x25519_dalek::StaticSecret::random_from_rng(rand_core::OsRng);
     let public = x25519_dalek::PublicKey::from(&secret);
 
     let mut combined = [0u8; 64];
     combined[..32].copy_from_slice(&secret.to_bytes());
     combined[32..].copy_from_slice(public.as_bytes());
-
-    drop(kp);
 
     let result = env.byte_array_from_slice(&combined)
         .unwrap_or_else(|_| JByteArray::default());

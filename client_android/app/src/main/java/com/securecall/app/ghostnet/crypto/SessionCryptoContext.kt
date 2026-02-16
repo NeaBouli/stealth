@@ -1,6 +1,7 @@
 package com.securecall.app.ghostnet.crypto
 
 import android.util.Log
+import com.securecall.app.BuildConfig
 
 /**
  * PATCH 247:
@@ -25,19 +26,19 @@ class SessionCryptoContext(
 
         @JvmStatic
         fun fromMockHandshake(): SessionCryptoContext {
-            Log.d(TAG, "fromMockHandshake(): creating context via mock handshake")
+            if (BuildConfig.DEBUG) Log.d(TAG, "fromMockHandshake(): creating context via mock handshake")
             val sk = SessionKeyDerivation.deriveFromMockHandshake()
             return SessionCryptoContext(sk)
         }
     }
 
     fun encryptOutbound(plain: ByteArray): ByteArray {
-        Log.d("SESS_CRYPTO_CTX", "encryptOutbound(): size=${plain.size} (NO REAL ENCRYPTION)")
+        if (BuildConfig.DEBUG) Log.d("SESS_CRYPTO_CTX", "encryptOutbound(): size=${plain.size} (NO REAL ENCRYPTION)")
         return plain
     }
 
     fun decryptInbound(cipher: ByteArray): ByteArray {
-        Log.d("SESS_CRYPTO_CTX", "decryptInbound(): size=${cipher.size} (NO REAL DECRYPTION)")
+        if (BuildConfig.DEBUG) Log.d("SESS_CRYPTO_CTX", "decryptInbound(): size=${cipher.size} (NO REAL DECRYPTION)")
         return cipher
     }
 

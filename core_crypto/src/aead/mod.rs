@@ -81,6 +81,68 @@ pub enum AeadError {
     EncryptionFailed,
     DecryptionFailed,
     DataTooShort,
+    ReplayedNonce,
+}
+
+/// Replay-Schutz mit Sliding-Window-Ansatz (RFC 6479).
+///
+/// Verfolgt die letzten 64 Nonces ueber eine Bitmap und lehnt
+/// bereits gesehene oder zu alte Nonces ab.
+pub struct ReplayDetector {
+    /// Hoechste bisher akzeptierte Nonce.
+    highest: u64,
+    /// Bitmap der letzten 64 Nonces relativ zu `highest`.
+    bitmap: u64,
+}
+
+impl ReplayDetector {
+    /// Erzeugt einen neuen ReplayDetector ohne bisherige Nonces.
+    pub fn new() -> Self {
+        Self {
+            highest: 0,
+            bitmap: 0,
+        }
+    }
+
+    /// Prueft und registriert eine Nonce.
+    ///
+    /// Gibt `Ok(())` zurueck, wenn die Nonce neu ist, oder
+    /// `Err(AeadError::ReplayedNonce)` bei einer Wiederholung
+    /// bzw. einer Nonce, die ausserhalb des Fensters liegt.
+    pub fn check_nonce(&mut self, nonce: u64) -> Result<(), AeadError> {
+        const WINDOW_SIZE: u64 = 64;
+
+        if nonce == 0 {
+            return Err(AeadError::ReplayedNonce);
+        }
+
+        if nonce > self.highest {
+            // Nonce liegt vor dem Fenster — Bitmap verschieben
+            let diff = nonce - self.highest;
+            if diff >= WINDOW_SIZE {
+                self.bitmap = 0;
+            } else {
+                self.bitmap <<= diff;
+            }
+            self.bitmap |= 1;
+            self.highest = nonce;
+            Ok(())
+        } else {
+            // Nonce liegt innerhalb oder hinter dem Fenster
+            let diff = self.highest - nonce;
+            if diff >= WINDOW_SIZE {
+                // Zu alt — ausserhalb des Fensters
+                return Err(AeadError::ReplayedNonce);
+            }
+            let bit = 1u64 << diff;
+            if self.bitmap & bit != 0 {
+                // Bereits gesehen
+                return Err(AeadError::ReplayedNonce);
+            }
+            self.bitmap |= bit;
+            Ok(())
+        }
+    }
 }
 
 #[cfg(test)]

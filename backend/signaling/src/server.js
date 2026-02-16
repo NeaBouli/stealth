@@ -35,6 +35,25 @@ const ipConnections = new Map();
 // --- App Setup ---
 const app = express();
 app.use(express.json());
+
+// CORS configuration
+app.use((req, res, next) => {
+  const allowedOrigins = ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : ["*"];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Admin-Key");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
+function sanitize(str) {
+  if (typeof str !== "string") return "";
+  return str.replace(/[<>"'&]/g, "").substring(0, 64);
+}
+
 const server = http.createServer(app);
 
 // --- Client Registry ---
@@ -251,7 +270,9 @@ wss.on("connection", (ws, req) => {
 
     // --- Binary frames (audio PCM): forward to peer ---
     if (isBinary) {
-      forwardBinaryToPeer(connId, data);
+      if (!forwardBinaryToPeer(connId, data)) {
+        // Silently drop — do not echo back
+      }
       return;
     }
 
@@ -260,6 +281,12 @@ wss.on("connection", (ws, req) => {
       msg = JSON.parse(data.toString());
     } catch {
       return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_json" }));
+    }
+
+    if (msg.__proto__ || msg.constructor !== undefined) {
+      delete msg.__proto__;
+      delete msg.constructor;
+      delete msg.prototype;
     }
 
     // ===========================
@@ -282,6 +309,9 @@ wss.on("connection", (ws, req) => {
         }));
       }
 
+      // TODO: Implement challenge-response auth using PKD public keys
+      // For now, accept registration if clientId is valid and not taken
+
       // Prüfen ob clientId bereits vergeben
       if (clientIds.has(msg.clientId)) {
         const existingConnId = clientIds.get(msg.clientId);
@@ -289,7 +319,7 @@ wss.on("connection", (ws, req) => {
           return ws.send(JSON.stringify({
             type: "ERROR",
             error: "client_id_taken",
-            message: `clientId '${msg.clientId}' is already registered`
+            message: `clientId '${sanitize(msg.clientId)}' is already registered`
           }));
         }
         // Alte Zuordnung aufräumen falls connId nicht mehr existiert
@@ -338,7 +368,7 @@ wss.on("connection", (ws, req) => {
         return ws.send(JSON.stringify({
           type: "ERROR",
           error: "peer_not_found",
-          message: `Client '${msg.to}' is not online`
+          message: `Client '${sanitize(msg.to)}' is not online`
         }));
       }
 
@@ -495,6 +525,10 @@ wss.on("connection", (ws, req) => {
         }));
       }
 
+      if (typeof msg.sdp !== "string" || msg.sdp.length > 10000) {
+        return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_sdp" }));
+      }
+
       const peerClientId = getSessionPeer(msg.sessionId, myClientId);
       if (peerClientId) {
         sendToClient(peerClientId, {
@@ -538,6 +572,10 @@ wss.on("connection", (ws, req) => {
           error: "missing_sdp",
           message: "Field 'sdp' is required for WEBRTC_ANSWER"
         }));
+      }
+
+      if (typeof msg.sdp !== "string" || msg.sdp.length > 10000) {
+        return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_sdp" }));
       }
 
       const peerClientId = getSessionPeer(msg.sessionId, myClientId);
@@ -585,6 +623,10 @@ wss.on("connection", (ws, req) => {
         }));
       }
 
+      if (typeof msg.candidate !== "object" && typeof msg.candidate !== "string") {
+        return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_candidate" }));
+      }
+
       const peerClientId = getSessionPeer(msg.sessionId, myClientId);
       if (peerClientId) {
         sendToClient(peerClientId, {
@@ -606,6 +648,22 @@ wss.on("connection", (ws, req) => {
     // GHOST_PREPARE — GhostNet Pre-Handshake (BACKEND-23)
     // ===========================
     if (msg.type === "GHOST_PREPARE") {
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "not_registered",
+          message: "You must REGISTER before sending GHOST_PREPARE"
+        }));
+      }
+
+      if (!msg.sessionId || !routingTable.has(msg.sessionId)) {
+        return ws.send(JSON.stringify({
+          type: "ERROR",
+          error: "session_not_found"
+        }));
+      }
+
       console.log("[GHOST] PREPARE received for session:", msg.sessionId);
 
       const ghostNetId = uuidv4();

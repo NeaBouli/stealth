@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
+import com.securecall.app.BuildConfig
 
 /**
  * BACKEND-22..58 / PATCH 201..204:
@@ -14,7 +15,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     private val binder = LocalBinder()
     private var client: HeartbeatClient? = null
-    private val wsUrl: String = "ws://10.0.2.2:8080/signal"
+    private val wsUrl: String = BuildConfig.SIGNAL_WS_URL
 
     // BACKEND-22: Status-Callbacks
     var statusCallbackOnline: (() -> Unit)? = null

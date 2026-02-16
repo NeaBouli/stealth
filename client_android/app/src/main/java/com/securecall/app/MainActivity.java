@@ -17,6 +17,7 @@ import com.securecall.app.audio.capture.AudioCapturePlaceholder;
 import com.securecall.app.ghostnet.media.MediaRouterInboundStub;
 import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
 import com.securecall.app.ghostnet.call.CallSessionManager;
+import com.securecall.app.security.SecurityEnforcer;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,6 +31,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Security checks at startup — SecurityEnforcer enforces per tier
+        runSecurityChecks();
+
         setContentView(R.layout.activity_main);
 
         audioCapture = new AudioCapturePlaceholder();
@@ -109,6 +114,43 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Mikrofon-Berechtigung benötigt", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    private void runSecurityChecks() {
+        // Root detection
+        if (isRooted()) {
+            SecurityEnforcer.INSTANCE.handle(SecurityEnforcer.Violation.ROOT_DETECTED);
+        }
+        // Emulator detection
+        if (isEmulator()) {
+            SecurityEnforcer.INSTANCE.handle(SecurityEnforcer.Violation.EMULATOR_DETECTED);
+        }
+        // Debugger detection
+        if (android.os.Debug.isDebuggerConnected()) {
+            SecurityEnforcer.INSTANCE.handle(SecurityEnforcer.Violation.DEBUGGER_ATTACHED);
+        }
+    }
+
+    private boolean isRooted() {
+        String[] paths = {"/system/app/Superuser.apk", "/sbin/su", "/system/bin/su",
+                "/system/xbin/su", "/data/local/xbin/su", "/data/local/bin/su",
+                "/system/sd/xbin/su", "/system/bin/failsafe/su", "/data/local/su"};
+        for (String path : paths) {
+            if (new java.io.File(path).exists()) return true;
+        }
+        return false;
+    }
+
+    private boolean isEmulator() {
+        return android.os.Build.FINGERPRINT.startsWith("generic")
+                || android.os.Build.FINGERPRINT.startsWith("unknown")
+                || android.os.Build.MODEL.contains("google_sdk")
+                || android.os.Build.MODEL.contains("Emulator")
+                || android.os.Build.MODEL.contains("Android SDK built for x86")
+                || android.os.Build.MANUFACTURER.contains("Genymotion")
+                || android.os.Build.BRAND.startsWith("generic")
+                || android.os.Build.DEVICE.startsWith("generic")
+                || "google_sdk".equals(android.os.Build.PRODUCT);
     }
 
     @Override
