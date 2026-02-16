@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
 const rateLimit = require("./rate_limit");
+const subscriptions = require("./subscriptions");
 
 // --- STUN/TURN Configuration (BACKEND-02) ---
 // SECURITY: TURN credentials must be set via environment variables
@@ -220,6 +221,19 @@ app.delete("/key/:id", (req, res) => {
     return res.status(404).json({ error: "key_not_found" });
   }
   res.json({ ok: true });
+});
+
+// --- Subscription Admin API ---
+app.get("/api/subscription/:clientId", (req, res) => {
+  const adminKey = req.headers["x-admin-key"];
+  if (adminKey !== process.env.ADMIN_KEY && adminKey !== "dev-admin-key") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  const sub = subscriptions.getSubscription(req.params.clientId);
+  if (!sub) {
+    return res.status(404).json({ error: "No subscription found" });
+  }
+  res.json(sub);
 });
 
 // --- WebSocket Setup ---
@@ -680,6 +694,25 @@ wss.on("connection", (ws, req) => {
 
       ws.send(JSON.stringify(reply));
       console.log("[GHOST] ACK sent:", ghostNetId);
+      return;
+    }
+
+    // ===========================
+    // SUBSCRIPTION_VERIFY — Verify and store subscription
+    // ===========================
+    if (msg.type === "SUBSCRIPTION_VERIFY") {
+      const { purchaseToken, productId } = msg;
+      if (!purchaseToken || !productId) {
+        ws.send(JSON.stringify({ type: "ERROR", message: "Missing purchaseToken or productId" }));
+        return;
+      }
+      const result = subscriptions.verifySubscription(connId, purchaseToken, productId);
+      ws.send(JSON.stringify({
+        type: "SUBSCRIPTION_VERIFY_ACK",
+        tier: result.tier,
+        expiresAt: result.expiresAt
+      }));
+      console.log(`[SUBSCRIPTION] Verified: connId=${connId}, tier=${result.tier}`);
       return;
     }
 

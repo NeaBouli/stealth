@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1A1A2E"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upgrade SecureCall"
+            android:textSize="24sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Unlock advanced security and unlimited calls"
+            android:textSize="14sp"
+            android:textColor="#AAAAAA"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Current Tier -->
+        <TextView
+            android:id="@+id/tvCurrentTier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Current Plan: Free"
+            android:textSize="16sp"
+            android:textColor="#00FFAA"
+            android:gravity="center"
+            android:padding="12dp"
+            android:background="#222244"
+            android:layout_marginBottom="24dp" />
+
+        <!-- PRO Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="PRO"
+            android:textSize="20sp"
+            android:textColor="#FFD700"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Unlimited calls &amp; contacts\nCertificate pinning\nDevice attestation\nMulti-device support\nNo telemetry"
+            android:textSize="13sp"
+            android:textColor="#CCCCCC"
+            android:lineSpacingMultiplier="1.3"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnProMonthly"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pro Monthly — €9.99/mo"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnProYearly"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pro Yearly — €99.99/yr (save 17%)"
+            android:layout_marginBottom="24dp" />
+
+        <!-- PREMIUM Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="PREMIUM"
+            android:textSize="20sp"
+            android:textColor="#FF4444"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="All PRO features plus:\nHardware keystore required\nScreen capture detection\nDebugger detection\nEmulator blocking\nAggressive key rotation\nZero-fallback mode"
+            android:textSize="13sp"
+            android:textColor="#CCCCCC"
+            android:lineSpacingMultiplier="1.3"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnPremiumMonthly"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Premium Monthly — €29.99/mo"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnPremiumYearly"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Premium Yearly — €299.99/yr (save 17%)"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Restore -->
+        <Button
+            android:id="@+id/btnRestore"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Restore Purchase"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Status -->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="13sp"
+            android:textColor="#AAAAAA"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+    </LinearLayout>
+</ScrollView>

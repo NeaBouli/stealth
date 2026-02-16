@@ -262,6 +262,15 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             }
         } catch (_: Throwable) {}
 
+        // Subscription verification
+        try {
+            val obj = org.json.JSONObject(json)
+            if (obj.optString("type") == "SUBSCRIPTION_VERIFY_ACK") {
+                handleSubscriptionVerifyAck(obj)
+                return
+            }
+        } catch (_: Throwable) {}
+
         // Standard signaling
         handleIncomingMessage(json)
         handleIncomingCallEnd(json)
@@ -323,6 +332,22 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             }
         } catch (t: Throwable) {
             Log.e("WS_SERVICE", "handleKeyExchange() failed", t)
+        }
+    }
+
+    // Phase 6: SUBSCRIPTION_VERIFY_ACK handling
+    private fun handleSubscriptionVerifyAck(obj: org.json.JSONObject) {
+        try {
+            val tierStr = obj.getString("tier")
+            val expiresAt = obj.optLong("expiresAt", 0L)
+            val tier = com.securecall.app.billing.SubscriptionTier.fromName(tierStr)
+            Log.d("WS_SERVICE", "SUBSCRIPTION_VERIFY_ACK: tier=$tierStr, expiresAt=$expiresAt")
+
+            val ctx = applicationContext
+            val manager = com.securecall.app.billing.SubscriptionManager(ctx)
+            manager.updateFromServerVerification(tier, expiresAt)
+        } catch (t: Throwable) {
+            Log.e("WS_SERVICE", "handleSubscriptionVerifyAck() failed", t)
         }
     }
 

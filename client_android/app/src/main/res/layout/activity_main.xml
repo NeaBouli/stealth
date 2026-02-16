@@ -19,6 +19,15 @@
         android:text="Settings"
         android:layout_marginTop="16dp"/>
 
+    <!-- Phase 6: Upgrade Button (visible only in FREE flavor) -->
+    <Button
+        android:id="@+id/btnUpgrade"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Upgrade to Pro"
+        android:layout_marginTop="8dp"
+        android:visibility="gone" />
+
     <!-- BACKEND-22: Debug Button für Signaling-Test -->
     <Button
         android:id="@+id/btnWsTest"

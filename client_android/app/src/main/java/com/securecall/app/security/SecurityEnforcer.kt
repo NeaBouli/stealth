@@ -1,13 +1,13 @@
 package com.securecall.app.security
 
 import android.util.Log
-import com.securecall.app.config.FeatureFlags
+import com.securecall.app.config.FeatureProviderRegistry
 
 /**
  * Central security policy enforcer.
  *
- * Reacts to security violations according to the current tier's
- * enforcement level (WARN / BLOCK / TERMINATE).
+ * Reads feature flags via FeatureProviderRegistry so that runtime
+ * tier changes (e.g. FREE→PRO via In-App-Purchase) take effect immediately.
  */
 object SecurityEnforcer {
 
@@ -35,12 +35,13 @@ object SecurityEnforcer {
      * Evaluate a security violation and return the required action.
      */
     fun evaluate(violation: Violation): Action {
-        // Check if the specific detection is enabled for this tier
+        val fp = FeatureProviderRegistry.get()
+
         if (!isDetectionEnabled(violation)) {
             return Action.ALLOW
         }
 
-        return when (FeatureFlags.SECURITY_ENFORCEMENT) {
+        return when (fp.securityEnforcement) {
             "TERMINATE" -> Action.TERMINATE
             "BLOCK" -> Action.BLOCK
             else -> Action.WARN
@@ -49,22 +50,21 @@ object SecurityEnforcer {
 
     /**
      * Handle a violation: log it and execute the enforcement action.
-     *
-     * @return the action that was taken
      */
     fun handle(violation: Violation): Action {
+        val fp = FeatureProviderRegistry.get()
         val action = evaluate(violation)
 
         when (action) {
             Action.ALLOW -> { /* no-op */ }
             Action.WARN -> {
-                Log.w(TAG, "Security warning: $violation [tier=${FeatureFlags.TIER}]")
+                Log.w(TAG, "Security warning: $violation [tier=${fp.tier}]")
             }
             Action.BLOCK -> {
-                Log.e(TAG, "Security violation BLOCKED: $violation [tier=${FeatureFlags.TIER}]")
+                Log.e(TAG, "Security violation BLOCKED: $violation [tier=${fp.tier}]")
             }
             Action.TERMINATE -> {
-                Log.e(TAG, "Security violation — TERMINATING: $violation [tier=${FeatureFlags.TIER}]")
+                Log.e(TAG, "Security violation — TERMINATING: $violation [tier=${fp.tier}]")
                 terminateApp()
             }
         }
@@ -74,17 +74,18 @@ object SecurityEnforcer {
 
     /**
      * Check whether the given violation's detection is enabled
-     * in the current flavor's FeatureFlags.
+     * via the current FeatureProvider.
      */
     private fun isDetectionEnabled(violation: Violation): Boolean {
+        val fp = FeatureProviderRegistry.get()
         return when (violation) {
-            Violation.ROOT_DETECTED -> FeatureFlags.ROOT_DETECTION_BLOCKS
-            Violation.EMULATOR_DETECTED -> FeatureFlags.EMULATOR_DETECTION
-            Violation.DEBUGGER_ATTACHED -> FeatureFlags.DEBUGGER_DETECTION
-            Violation.SCREEN_CAPTURE -> FeatureFlags.SCREEN_CAPTURE_DETECTION
-            Violation.DEVICE_ATTESTATION_FAILED -> FeatureFlags.DEVICE_ATTESTATION_REQUIRED
-            Violation.CERTIFICATE_PINNING_FAILED -> FeatureFlags.CERTIFICATE_PINNING
-            Violation.HARDWARE_KEYSTORE_UNAVAILABLE -> FeatureFlags.HARDWARE_KEYSTORE_REQUIRED
+            Violation.ROOT_DETECTED -> fp.rootDetectionBlocks
+            Violation.EMULATOR_DETECTED -> fp.emulatorDetection
+            Violation.DEBUGGER_ATTACHED -> fp.debuggerDetection
+            Violation.SCREEN_CAPTURE -> fp.screenCaptureDetection
+            Violation.DEVICE_ATTESTATION_FAILED -> fp.deviceAttestationRequired
+            Violation.CERTIFICATE_PINNING_FAILED -> fp.certificatePinning
+            Violation.HARDWARE_KEYSTORE_UNAVAILABLE -> fp.hardwareKeystoreRequired
             Violation.INTEGRITY_CHECK_FAILED -> true // always enabled
         }
     }

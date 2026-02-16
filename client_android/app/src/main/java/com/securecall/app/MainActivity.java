@@ -18,6 +18,7 @@ import com.securecall.app.ghostnet.media.MediaRouterInboundStub;
 import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
 import com.securecall.app.ghostnet.call.CallSessionManager;
 import com.securecall.app.security.SecurityEnforcer;
+import com.securecall.app.init.AppInit;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,6 +32,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Initialize flavor-specific FeatureProvider
+        AppInit.INSTANCE.init(this);
 
         // Security checks at startup — SecurityEnforcer enforces per tier
         runSecurityChecks();
@@ -99,6 +103,22 @@ public class MainActivity extends AppCompatActivity {
 
             startActivity(new Intent(this, SettingsActivity.class));
         });
+
+        // --- UPGRADE BUTTON: only visible in FREE flavor ---
+        Button btnUpgrade = findViewById(R.id.btnUpgrade);
+        if (btnUpgrade != null && BuildConfig.BILLING_ENABLED) {
+            btnUpgrade.setVisibility(android.view.View.VISIBLE);
+            btnUpgrade.setOnClickListener(v -> {
+                try {
+                    Class<?> upgradeClass = Class.forName("com.securecall.app.billing.UpgradeActivity");
+                    startActivity(new Intent(this, upgradeClass));
+                } catch (ClassNotFoundException e) {
+                    Log.w(TAG_UI, "UpgradeActivity not available in this flavor");
+                }
+            });
+        } else if (btnUpgrade != null) {
+            btnUpgrade.setVisibility(android.view.View.GONE);
+        }
     }
 
     @Override

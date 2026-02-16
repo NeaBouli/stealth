@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- FREE tier: no additional restrictions -->
+
+    <uses-permission android:name="com.android.vending.BILLING" />
+
+    <application>
+        <activity
+            android:name="com.securecall.app.billing.UpgradeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
+    </application>
 </manifest>

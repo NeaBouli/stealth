@@ -42,6 +42,13 @@ android {
             buildConfigField "String", "LOGGING_LEVEL", "\"DEBUG\""
             buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
+
+            // Billing (In-App-Purchase)
+            buildConfigField "boolean", "BILLING_ENABLED", "true"
+            buildConfigField "String", "SKU_PRO_MONTHLY", "\"securecall_pro_monthly\""
+            buildConfigField "String", "SKU_PRO_YEARLY", "\"securecall_pro_yearly\""
+            buildConfigField "String", "SKU_PREMIUM_MONTHLY", "\"securecall_premium_monthly\""
+            buildConfigField "String", "SKU_PREMIUM_YEARLY", "\"securecall_premium_yearly\""
         }
 
         pro {
@@ -67,6 +74,7 @@ android {
             buildConfigField "String", "LOGGING_LEVEL", "\"WARN\""
             buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
+            buildConfigField "boolean", "BILLING_ENABLED", "false"
         }
 
         premium {
@@ -92,6 +100,7 @@ android {
             buildConfigField "String", "LOGGING_LEVEL", "\"ERROR_ONLY\""
             buildConfigField "boolean", "NO_FALLBACK_MODE", "true"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "true"
+            buildConfigField "boolean", "BILLING_ENABLED", "false"
         }
     }
 
@@ -120,6 +129,9 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // Google Play Billing (FREE flavor only)
+    freeImplementation 'com.android.billingclient:billing-ktx:6.1.0'
 
     // Unit Tests (JVM)
     testImplementation 'junit:junit:4.13.2'
