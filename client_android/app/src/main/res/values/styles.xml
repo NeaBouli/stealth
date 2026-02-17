@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Card styles -->
+    <style name="Widget.SecureCall.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="cardCornerRadius">@dimen/card_corner_radius</item>
+        <item name="cardElevation">@dimen/card_elevation</item>
+        <item name="contentPadding">@dimen/card_padding</item>
+    </style>
+
+    <!-- FAB styles -->
+    <style name="Widget.SecureCall.FAB.Call" parent="Widget.Material3.ExtendedFloatingActionButton.Primary">
+        <item name="backgroundTint">@color/call_active_green</item>
+    </style>
+    <style name="Widget.SecureCall.FAB.EndCall" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="backgroundTint">@color/call_end_red</item>
+    </style>
+
+    <!-- TopAppBar -->
+    <style name="Widget.SecureCall.TopAppBar" parent="">
+        <item name="titleTextColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- BottomNav -->
+    <style name="Widget.SecureCall.BottomNav" parent="Widget.Material3.BottomNavigationView">
+        <item name="backgroundTint">?attr/colorSurface</item>
+    </style>
+
+    <!-- Circle shape for avatars -->
+    <style name="ShapeAppearance.SecureCall.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+</resources>

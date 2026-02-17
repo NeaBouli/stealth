@@ -1,207 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:fitsSystemWindows="true">
 
-    <Button
-        android:id="@+id/btnCall"
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Start Call" />
+        android:fitsSystemWindows="true">
 
-    <Button
-        android:id="@+id/btnSettings"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Settings"
-        android:layout_marginTop="16dp"/>
-
-    <!-- Phase 6: Upgrade Button (visible only in FREE flavor) -->
-    <Button
-        android:id="@+id/btnUpgrade"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Upgrade to Pro"
-        android:layout_marginTop="8dp"
-        android:visibility="gone" />
-
-    <!-- BACKEND-22: Debug Button für Signaling-Test -->
-    <Button
-        android:id="@+id/btnWsTest"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="WS Test Message"
-        android:layout_marginTop="24dp" />
-
-    <!-- BACKEND-22: WebSocket Status-Anzeige -->
-    <TextView
-        android:id="@+id/wsStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="WS: OFFLINE"
-        android:textSize="14sp"
-        android:layout_marginTop="16dp"
-        android:textColor="#CC0000" />
-
-    <!-- BACKEND-22: Heartbeat LastSeen Anzeige -->
-    <TextView
-        android:id="@+id/wsLastSeen"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="LastSeen: n/a"
-        android:textSize="13sp"
-        android:layout_marginTop="8dp"
-        android:textColor="#666666" />
-
-    <!-- BACKEND-22: CALL_INVITE Debug Button -->
-    <Button
-        android:id="@+id/btnCallInvite"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Start Call Invite"
-        android:layout_marginTop="16dp" />
-
-    <!-- BACKEND-22: CALL_ACCEPT Debug Button -->
-    <Button
-        android:id="@+id/btnCallAccept"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Send Call Accept"
-        android:layout_marginTop="16dp" />
-
-    <!-- BACKEND-22: CALL_END Debug Button -->
-    <Button
-        android:id="@+id/btnCallEnd"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="End Call"
-        android:layout_marginTop="16dp" />
-
-    <!-- BACKEND-23: GHOST_PREPARE Debug Button -->
-    <Button
-        android:id="@+id/btnGhostPrep"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Ghost Prepare"
-        android:layout_marginTop="16dp" />
-
-    <!-- BACKEND-24: GhostNet Status -->
-    <TextView
-        android:id="@+id/ghostStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="GhostNet: Not ready"
-        android:layout_marginTop="16dp"
-        android:textColor="#AA0000"
-        android:textSize="14sp"/>
-
-    <!-- BACKEND-24: GhostNet Relay Debug Button -->
-    <Button
-        android:id="@+id/btnGhostHints"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Show Ghost Hints"
-        android:layout_marginTop="16dp" />
-
-    <!-- BACKEND-24: Ghost Debug Panel -->
-    <TextView
-        android:id="@+id/ghostDebugPanel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Ghost Debug Panel: idle"
-        android:padding="12dp"
-        android:background="#111111"
-        android:textColor="#00FFAA"
-        android:textSize="12sp"
-        android:layout_marginTop="20dp" />
-
-    <Button
-        android:id="@+id/btnShowGhostDebug"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Show Ghost Debug"
-        android:layout_marginTop="10dp" />
-
-    <!-- BACKEND-26: WS-Reconnect Debug Button -->
-    <Button
-        android:id="@+id/btnForceReconnect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Force Reconnect"
-        android:layout_marginTop="12dp" />
-
-    <!-- BACKEND-27: Button zum Simulieren eines Ghost Pre-Handshake -->
-    <Button
-        android:id="@+id/btnSimulateGhostHandshake"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Simulate Ghost Handshake"
-        android:layout_marginTop="12dp" />
-
-    <!-- BACKEND-30: Ghost State Anzeige -->
-    <TextView
-        android:id="@+id/ghostStateBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="STATE: INIT"
-        android:textSize="14sp"
-        android:padding="10dp"
-        android:gravity="center"
-        android:background="#444444"
-        android:textColor="#FFFFFF"
-        android:layout_marginTop="10dp" />
-
-    <!-- BACKEND-35: Root Layout Container für Debug-Buttons -->
-    <LinearLayout
-        android:id="@+id/rootLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="8dp"
-        android:layout_marginTop="12dp">
-        <!-- Platzhalter, der Inhalt kommt dynamisch durch Java/Kotlin-Patches -->
-    </LinearLayout>
-
-    <!-- BACKEND-41: GhostNet Session Status -->
-    <TextView
-        android:id="@+id/sessionStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="SESSION: IDLE"
-        android:textSize="14sp"
-        android:layout_marginTop="8dp"
-        android:textColor="#666666" />
-
-    <!-- PATCH 235: GhostNet Session State -->
-    <TextView
-        android:id="@+id/sessionNetState"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="NETSESSION: IDLE"
-        android:textSize="14sp"
-        android:layout_marginTop="8dp"
-        android:textColor="#666666" />
-
-    <!-- PATCH 240: Debug-Log Bereich -->
-    <ScrollView
-        android:id="@+id/debugLogScroll"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="16dp">
-
-        <TextView
-            android:id="@+id/debugLogView"
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topAppBar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:textColor="#CCCCCC"
-            android:padding="8dp"
-            android:background="#222222"
-            android:textIsSelectable="true" />
-    </ScrollView>
+            android:layout_height="?attr/actionBarSize"
+            app:title="StealthX"
+            app:titleTextAppearance="?attr/textAppearanceTitleLarge"
+            app:menu="@menu/top_app_bar_menu" />
 
-</LinearLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+    <!-- FAB for New Call -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabNewCall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="96dp"
+        android:text="@string/new_call"
+        app:icon="@drawable/ic_call"
+        style="@style/Widget.SecureCall.FAB.Call"
+        android:textColor="@android:color/white"
+        app:iconTint="@android:color/white"
+        android:contentDescription="@string/new_call" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:menu="@menu/bottom_nav_menu" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

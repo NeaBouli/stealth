@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="@string/settings_account">
+        <Preference
+            android:key="pref_tier"
+            android:title="@string/settings_tier"
+            android:selectable="false"
+            android:icon="@drawable/ic_shield" />
+
+        <Preference
+            android:key="pref_upgrade"
+            android:title="@string/upgrade_to_pro"
+            android:icon="@drawable/ic_add" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/settings_security">
+        <Preference
+            android:key="pref_cert_pinning"
+            android:title="@string/pref_cert_pinning"
+            android:selectable="false"
+            android:icon="@drawable/ic_lock" />
+        <Preference
+            android:key="pref_device_attestation"
+            android:title="@string/pref_device_attestation"
+            android:selectable="false"
+            android:icon="@drawable/ic_shield" />
+        <Preference
+            android:key="pref_hardware_keystore"
+            android:title="@string/pref_hardware_keystore"
+            android:selectable="false"
+            android:icon="@drawable/ic_lock" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/settings_appearance">
+        <ListPreference
+            android:key="pref_dark_mode"
+            android:title="@string/settings_dark_mode"
+            android:entries="@array/dark_mode_entries"
+            android:entryValues="@array/dark_mode_values"
+            android:defaultValue="system"
+            android:icon="@drawable/ic_settings" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/settings_about">
+        <Preference
+            android:key="pref_version"
+            android:title="@string/settings_version"
+            android:selectable="false" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SecureCall</string>
+
+    <!-- Navigation -->
+    <string name="nav_calls">Anrufe</string>
+    <string name="nav_contacts">Kontakte</string>
+    <string name="nav_settings">Einstellungen</string>
+
+    <!-- Main -->
+    <string name="new_call">Neuer Anruf</string>
+    <string name="upgrade_to_pro">Auf Pro upgraden</string>
+
+    <!-- Call screen -->
+    <string name="call_connecting">Verbinde\u2026</string>
+    <string name="call_ringing">Klingelt\u2026</string>
+    <string name="call_active">Anruf aktiv</string>
+    <string name="call_ended">Anruf beendet</string>
+    <string name="call_encrypted">Ende-zu-Ende verschl\u00FCsselt</string>
+    <string name="call_unknown_caller">Unbekannt</string>
+
+    <!-- Contacts -->
+    <string name="contacts_empty">Noch keine Kontakte</string>
+    <string name="contacts_add">Kontakt hinzuf\u00FCgen</string>
+    <string name="contacts_search">Kontakte suchen</string>
+    <string name="contact_name_hint">Name</string>
+    <string name="contact_id_hint">Telefon oder SecureCall-ID</string>
+
+    <!-- Call History -->
+    <string name="calls_empty">Keine Anrufe</string>
+    <string name="calls_today">Heute</string>
+    <string name="calls_yesterday">Gestern</string>
+
+    <!-- Settings -->
+    <string name="settings_account">Konto</string>
+    <string name="settings_security">Sicherheit</string>
+    <string name="settings_notifications">Benachrichtigungen</string>
+    <string name="settings_appearance">Darstellung</string>
+    <string name="settings_about">\u00DCber</string>
+    <string name="settings_dark_mode">Dunkler Modus</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_tier">Aktueller Plan</string>
+    <string name="enabled">Aktiviert</string>
+    <string name="disabled">Deaktiviert</string>
+    <string name="pref_cert_pinning">Zertifikat-Pinning</string>
+    <string name="pref_device_attestation">Ger\u00E4te-Attestierung</string>
+    <string name="pref_hardware_keystore">Hardware-Keystore</string>
+
+    <!-- Dark mode options -->
+    <string-array name="dark_mode_entries">
+        <item>Systemstandard</item>
+        <item>Hell</item>
+        <item>Dunkel</item>
+    </string-array>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title_1">Ende-zu-Ende verschl\u00FCsselte Anrufe</string>
+    <string name="onboarding_desc_1">Jeder Anruf wird mit milit\u00E4rischer Verschl\u00FCsselung gesch\u00FCtzt. Niemand kann mith\u00F6ren.</string>
+    <string name="onboarding_title_2">Zero-Knowledge Architektur</string>
+    <string name="onboarding_desc_2">Wir haben niemals Zugriff auf Ihre Anrufe oder Daten. Ihre Privatsph\u00E4re ist absolut.</string>
+    <string name="onboarding_title_3">Milit\u00E4rische Sicherheit</string>
+    <string name="onboarding_desc_3">Root-Erkennung, Zertifikat-Pinning, Hardware-Keystore und aggressive Schl\u00FCsselrotation.</string>
+    <string name="onboarding_title_4">Los geht\u0027s</string>
+    <string name="onboarding_desc_4">Starten Sie jetzt sichere Anrufe. Ihre Gespr\u00E4che bleiben Ihre.</string>
+    <string name="onboarding_skip">\u00DCberspringen</string>
+    <string name="onboarding_next">Weiter</string>
+    <string name="onboarding_done">Los geht\u0027s</string>
+
+    <!-- Content Descriptions -->
+    <string name="cd_caller_avatar">Anrufer-Avatar</string>
+    <string name="cd_encrypted">Anruf ist verschl\u00FCsselt</string>
+    <string name="cd_mute">Stummschalten</string>
+    <string name="cd_end_call">Anruf beenden</string>
+    <string name="cd_speaker">Lautsprecher</string>
+    <string name="cd_settings">Einstellungen \u00F6ffnen</string>
+    <string name="cd_add_contact">Neuen Kontakt hinzuf\u00FCgen</string>
+    <string name="cd_search">Suchen</string>
+    <string name="cd_call_incoming">Eingehender Anruf</string>
+    <string name="cd_call_outgoing">Ausgehender Anruf</string>
+    <string name="cd_call_missed">Verpasster Anruf</string>
+    <string name="cd_app_logo">StealthX Logo</string>
+
+    <!-- Permissions -->
+    <string name="permission_mic_required">Mikrofon-Berechtigung ben\u00F6tigt</string>
+</resources>

@@ -2,131 +2,141 @@ package com.securecall.app;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
-import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.splashscreen.SplashScreen;
+import androidx.fragment.app.Fragment;
+
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 
 import com.securecall.app.audio.capture.AudioCapturePlaceholder;
-import com.securecall.app.ghostnet.media.MediaRouterInboundStub;
 import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
-import com.securecall.app.ghostnet.call.CallSessionManager;
 import com.securecall.app.security.SecurityEnforcer;
 import com.securecall.app.init.AppInit;
 import com.securecall.app.fcm.FcmTokenManager;
+import com.securecall.app.ui.CallsFragment;
+import com.securecall.app.ui.ContactsFragment;
+import com.securecall.app.ui.SettingsFragment;
+import com.securecall.app.ui.onboarding.OnboardingActivity;
 
 public class MainActivity extends AppCompatActivity {
 
     private boolean inCall = false;
     private AudioCapturePlaceholder audioCapture;
 
-    private static final String TAG_UI = "MEDIA_ROUTER_INBOUND";
-    private static final String TAG_WS = "GHOSTNET_WS";
+    private static final String TAG = "MainActivity";
     private static final int REQUEST_RECORD_AUDIO = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Splash screen (must be before super.onCreate)
+        SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
 
         // Initialize flavor-specific FeatureProvider
         AppInit.INSTANCE.init(this);
 
-        // Security checks at startup — SecurityEnforcer enforces per tier
+        // Security checks at startup
         runSecurityChecks();
 
         // Register FCM token for push notifications
         FcmTokenManager.INSTANCE.ensureTokenRegistered(this);
 
-        setContentView(R.layout.activity_main);
-
-        // Phase 8: Hide debug UI elements in release builds
-        if (!BuildConfig.DEBUG) {
-            hideDebugViews();
+        // Check if onboarding needed
+        SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+        if (!prefs.getBoolean("onboarding_complete", false)) {
+            startActivity(new Intent(this, OnboardingActivity.class));
+            finish();
+            return;
         }
+
+        setContentView(R.layout.activity_main);
 
         audioCapture = new AudioCapturePlaceholder();
 
-        Button btnCall = findViewById(R.id.btnCall);
-        Button btnSettings = findViewById(R.id.btnSettings);
+        // Setup toolbar
+        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_settings) {
+                showFragment(new SettingsFragment());
+                BottomNavigationView nav = findViewById(R.id.bottomNav);
+                nav.setSelectedItemId(R.id.nav_settings);
+                return true;
+            }
+            return false;
+        });
 
-        // --- CALL BUTTON: WS connect + audio capture ---
-        btnCall.setOnClickListener(v -> {
-            GhostNetWebSocketClient client = GhostNetWebSocketClient.getInstance();
+        // Setup bottom navigation
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_calls) {
+                showFragment(new CallsFragment());
+                return true;
+            } else if (id == R.id.nav_contacts) {
+                showFragment(new ContactsFragment());
+                return true;
+            } else if (id == R.id.nav_settings) {
+                showFragment(new SettingsFragment());
+                return true;
+            }
+            return false;
+        });
 
-            if (!inCall) {
-                Log.d(TAG_WS, "UI: CALL_CLICK – connecting to GhostNet (enter IN CALL)");
-                client.connect(BuildConfig.SIGNAL_WS_URL);
-                client.sendControlHello();
-                btnCall.setText("IN CALL");
-                inCall = true;
+        // FAB for new call
+        ExtendedFloatingActionButton fab = findViewById(R.id.fabNewCall);
+        fab.setOnClickListener(v -> handleCallToggle(fab));
 
-                // Request mic permission, then start capture
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                        == PackageManager.PERMISSION_GRANTED) {
-                    audioCapture.start();
-                } else {
-                    ActivityCompat.requestPermissions(this,
-                            new String[]{Manifest.permission.RECORD_AUDIO},
-                            REQUEST_RECORD_AUDIO);
-                }
+        // Default fragment
+        if (savedInstanceState == null) {
+            bottomNav.setSelectedItemId(R.id.nav_calls);
+        }
+    }
+
+    private void showFragment(Fragment fragment) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.nav_host_fragment, fragment)
+                .commit();
+    }
+
+    private void handleCallToggle(ExtendedFloatingActionButton fab) {
+        GhostNetWebSocketClient client = GhostNetWebSocketClient.getInstance();
+
+        if (!inCall) {
+            Log.d(TAG, "Starting call — connecting to GhostNet");
+            client.connect(BuildConfig.SIGNAL_WS_URL);
+            client.sendControlHello();
+            fab.setText(R.string.call_active);
+            fab.setIconResource(R.drawable.ic_call_end);
+            inCall = true;
+
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                    == PackageManager.PERMISSION_GRANTED) {
+                audioCapture.start();
             } else {
-                Log.d(TAG_WS, "UI: CALL_CLICK – sending CONTROL_BYE + disconnect (leave IN CALL)");
-                audioCapture.stop();
-                client.sendControlBye();
-                client.disconnect();
-                btnCall.setText("START CALL");
-                inCall = false;
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.RECORD_AUDIO},
+                        REQUEST_RECORD_AUDIO);
             }
-        });
-
-        // --- SETTINGS BUTTON: Debug-Beep + Settings-Screen ---
-        btnSettings.setOnClickListener(v -> {
-            Log.d(TAG_UI, "UI: SETTINGS_CLICK");
-
-            if (BuildConfig.DEBUG) {
-                final int sampleRate = 48000;
-                final int durationMs = 250;
-                final double freqHz = 440.0;
-
-                int numSamples = sampleRate * durationMs / 1000;
-                byte[] pcm = new byte[numSamples * 2]; // 16-bit mono LE
-
-                for (int i = 0; i < numSamples; i++) {
-                    double t = (double) i / (double) sampleRate;
-                    double sample = Math.sin(2.0 * Math.PI * freqHz * t);
-                    short s = (short) (sample * 32767.0);
-
-                    int idx = i * 2;
-                    pcm[idx] = (byte) (s & 0xFF);
-                    pcm[idx + 1] = (byte) ((s >> 8) & 0xFF);
-                }
-
-                MediaRouterInboundStub.handleDecodedPcm(pcm);
-            }
-
-            startActivity(new Intent(this, SettingsActivity.class));
-        });
-
-        // --- UPGRADE BUTTON: only visible in FREE flavor ---
-        Button btnUpgrade = findViewById(R.id.btnUpgrade);
-        if (btnUpgrade != null && BuildConfig.BILLING_ENABLED) {
-            btnUpgrade.setVisibility(android.view.View.VISIBLE);
-            btnUpgrade.setOnClickListener(v -> {
-                try {
-                    Class<?> upgradeClass = Class.forName("com.securecall.app.billing.UpgradeActivity");
-                    startActivity(new Intent(this, upgradeClass));
-                } catch (ClassNotFoundException e) {
-                    Log.w(TAG_UI, "UpgradeActivity not available in this flavor");
-                }
-            });
-        } else if (btnUpgrade != null) {
-            btnUpgrade.setVisibility(android.view.View.GONE);
+        } else {
+            Log.d(TAG, "Ending call — disconnecting from GhostNet");
+            audioCapture.stop();
+            client.sendControlBye();
+            client.disconnect();
+            fab.setText(R.string.new_call);
+            fab.setIconResource(R.drawable.ic_call);
+            inCall = false;
         }
     }
 
@@ -136,25 +146,20 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_RECORD_AUDIO) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG_WS, "RECORD_AUDIO permission granted – starting capture");
                 audioCapture.start();
             } else {
-                Log.w(TAG_WS, "RECORD_AUDIO permission denied");
-                Toast.makeText(this, "Mikrofon-Berechtigung benötigt", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.permission_mic_required, Toast.LENGTH_SHORT).show();
             }
         }
     }
 
     private void runSecurityChecks() {
-        // Root detection
         if (isRooted()) {
             SecurityEnforcer.INSTANCE.handle(SecurityEnforcer.Violation.ROOT_DETECTED);
         }
-        // Emulator detection
         if (isEmulator()) {
             SecurityEnforcer.INSTANCE.handle(SecurityEnforcer.Violation.EMULATOR_DETECTED);
         }
-        // Debugger detection
         if (android.os.Debug.isDebuggerConnected()) {
             SecurityEnforcer.INSTANCE.handle(SecurityEnforcer.Violation.DEBUGGER_ATTACHED);
         }
@@ -182,41 +187,12 @@ public class MainActivity extends AppCompatActivity {
                 || "google_sdk".equals(android.os.Build.PRODUCT);
     }
 
-    private void hideDebugViews() {
-        int[] debugViewIds = {
-            R.id.btnWsTest,
-            R.id.btnCallInvite,
-            R.id.btnCallAccept,
-            R.id.btnCallEnd,
-            R.id.btnGhostPrep,
-            R.id.btnGhostHints,
-            R.id.btnShowGhostDebug,
-            R.id.btnForceReconnect,
-            R.id.btnSimulateGhostHandshake,
-            R.id.wsStatus,
-            R.id.wsLastSeen,
-            R.id.ghostStatus,
-            R.id.ghostDebugPanel,
-            R.id.ghostStateBar,
-            R.id.sessionStatus,
-            R.id.sessionNetState,
-            R.id.rootLayout,
-            R.id.debugLogScroll
-        };
-        for (int id : debugViewIds) {
-            android.view.View v = findViewById(id);
-            if (v != null) {
-                v.setVisibility(android.view.View.GONE);
-            }
-        }
-    }
-
     @Override
     protected void onDestroy() {
-        Log.d("GHOSTNET_WS", "MainActivity.onDestroy(): requesting GhostNet disconnect");
-        audioCapture.stop();
+        if (audioCapture != null) {
+            audioCapture.stop();
+        }
         GhostNetWebSocketClient.getInstance().disconnect();
         super.onDestroy();
     }
-
 }

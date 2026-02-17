@@ -1,4 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SecureCall</string>
+
+    <!-- Navigation -->
+    <string name="nav_calls">Calls</string>
+    <string name="nav_contacts">Contacts</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Main -->
+    <string name="new_call">New Call</string>
+    <string name="upgrade_to_pro">Upgrade to Pro</string>
+
+    <!-- Call screen -->
+    <string name="call_connecting">Connecting\u2026</string>
+    <string name="call_ringing">Ringing\u2026</string>
+    <string name="call_active">Call Active</string>
+    <string name="call_ended">Call Ended</string>
+    <string name="call_encrypted">End-to-end encrypted</string>
+    <string name="call_unknown_caller">Unknown</string>
+
+    <!-- Contacts -->
+    <string name="contacts_empty">No contacts yet</string>
+    <string name="contacts_add">Add Contact</string>
+    <string name="contacts_search">Search contacts</string>
+    <string name="contact_name_hint">Name</string>
+    <string name="contact_id_hint">Phone or SecureCall ID</string>
+
+    <!-- Call History -->
+    <string name="calls_empty">No recent calls</string>
+    <string name="calls_today">Today</string>
+    <string name="calls_yesterday">Yesterday</string>
+
+    <!-- Settings -->
+    <string name="settings_account">Account</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_about">About</string>
+    <string name="settings_dark_mode">Dark Mode</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_tier">Current Plan</string>
+    <string name="enabled">Enabled</string>
+    <string name="disabled">Disabled</string>
+    <string name="pref_cert_pinning">Certificate Pinning</string>
+    <string name="pref_device_attestation">Device Attestation</string>
+    <string name="pref_hardware_keystore">Hardware Keystore</string>
+
+    <!-- Dark mode options -->
+    <string-array name="dark_mode_entries">
+        <item>System Default</item>
+        <item>Light</item>
+        <item>Dark</item>
+    </string-array>
+    <string-array name="dark_mode_values">
+        <item>system</item>
+        <item>light</item>
+        <item>dark</item>
+    </string-array>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title_1">End-to-End Encrypted Calls</string>
+    <string name="onboarding_desc_1">Every call is protected with military-grade encryption. Nobody can listen in.</string>
+    <string name="onboarding_title_2">Zero-Knowledge Architecture</string>
+    <string name="onboarding_desc_2">We never have access to your calls or data. Your privacy is absolute.</string>
+    <string name="onboarding_title_3">Military-Grade Security</string>
+    <string name="onboarding_desc_3">Root detection, certificate pinning, hardware keystore, and aggressive key rotation.</string>
+    <string name="onboarding_title_4">Get Started</string>
+    <string name="onboarding_desc_4">Start making secure calls now. Your conversations stay yours.</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_done">Get Started</string>
+
+    <!-- Content Descriptions (Accessibility) -->
+    <string name="cd_caller_avatar">Caller avatar</string>
+    <string name="cd_encrypted">Call is encrypted</string>
+    <string name="cd_mute">Toggle mute</string>
+    <string name="cd_end_call">End call</string>
+    <string name="cd_speaker">Toggle speaker</string>
+    <string name="cd_settings">Open settings</string>
+    <string name="cd_add_contact">Add new contact</string>
+    <string name="cd_search">Search</string>
+    <string name="cd_call_incoming">Incoming call</string>
+    <string name="cd_call_outgoing">Outgoing call</string>
+    <string name="cd_call_missed">Missed call</string>
+    <string name="cd_app_logo">StealthX Logo</string>
+
+    <!-- Permissions -->
+    <string name="permission_mic_required">Microphone permission required</string>
 </resources>

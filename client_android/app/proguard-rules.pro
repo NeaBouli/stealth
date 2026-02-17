@@ -37,6 +37,17 @@
 -dontwarn kotlin.**
 -dontwarn kotlinx.**
 
+# ---- Material Components ----
+-keep class com.google.android.material.** { *; }
+-dontwarn com.google.android.material.**
+
+# ---- ViewBinding ----
+-keep class **.databinding.** { *; }
+
+# ---- Preference ----
+-keep class androidx.preference.** { *; }
+-dontwarn androidx.preference.**
+
 # ---- Log stripping (release only) ----
 # Remove verbose, debug, and info log calls at compile time
 -assumenosideeffects class android.util.Log {
