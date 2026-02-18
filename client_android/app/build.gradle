@@ -15,12 +15,8 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField "String", "SIGNAL_WS_URL", "\"wss://signal.securecall.app/signal\""
-
-        // STUN/TURN servers for WebRTC ICE
-        buildConfigField "String", "STUN_URL", "\"stun:stun.l.google.com:19302\""
-        buildConfigField "String", "TURN_URL", "\"turn:turn.securecall.app:3478\""
-        buildConfigField "String", "TURNS_URL", "\"turns:turn.securecall.app:5349\""
+        // Server URLs are defined per buildType (debug/release)
+        // See buildTypes block below for SIGNAL_WS_URL, STUN_URL, TURN_URL, TURNS_URL
     }
 
     flavorDimensions "tier"
@@ -129,12 +125,22 @@ android {
             firebaseCrashlytics {
                 mappingFileUploadEnabled true
             }
+            // Production server URLs
+            buildConfigField "String", "SIGNAL_WS_URL", "\"wss://signal.stealthx.app/signal\""
+            buildConfigField "String", "STUN_URL", "\"stun:stun.l.google.com:19302\""
+            buildConfigField "String", "TURN_URL", "\"turn:turn.stealthx.app:3478\""
+            buildConfigField "String", "TURNS_URL", "\"turns:turn.stealthx.app:5349\""
         }
         debug {
             minifyEnabled false
             firebaseCrashlytics {
                 mappingFileUploadEnabled false
             }
+            // Development server URLs (Android emulator localhost)
+            buildConfigField "String", "SIGNAL_WS_URL", "\"ws://10.0.2.2:8080/signal\""
+            buildConfigField "String", "STUN_URL", "\"stun:stun.l.google.com:19302\""
+            buildConfigField "String", "TURN_URL", "\"turn:10.0.2.2:3478\""
+            buildConfigField "String", "TURNS_URL", "\"turns:10.0.2.2:5349\""
         }
     }
 

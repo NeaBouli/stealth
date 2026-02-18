@@ -22,6 +22,10 @@ client_android/app/build/outputs/mapping/
 deploy/.env
 deploy/certbot/
 deploy/backups/
+deployment/.env
+
+# Performance test results
+tools/perf_results/
 
 # Node.js
 node_modules/
