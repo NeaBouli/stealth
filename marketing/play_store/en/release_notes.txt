@@ -1,0 +1,18 @@
+SecureCall v0.2-beta — First Public Beta!
+
+New:
+• End-to-end encrypted voice calls (XChaCha20-Poly1305)
+• Material Design 3 user interface
+• Three tiers: Free, Pro, and Premium
+• Opus audio codec for crystal-clear calls
+• In-app purchases for Pro/Premium upgrades
+• GhostNet relay network (Premium)
+• Contacts & call history
+• Dark mode support
+
+Security:
+• Independently audited crypto code
+• Perfect Forward Secrecy
+• Zero-knowledge architecture
+
+Feedback? support@stealthx.app

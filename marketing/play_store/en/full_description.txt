@@ -1,0 +1,80 @@
+SecureCall — Your voice belongs to you.
+
+SecureCall is the first phone app built from the ground up for maximum privacy. Every call is end-to-end encrypted with military-grade cryptography that even intelligence agencies cannot break.
+
+🔒 SECURITY AT THE HIGHEST LEVEL
+
+• End-to-end encryption with XChaCha20-Poly1305 (AEAD)
+• Key exchange via X25519 (Elliptic Curve Diffie-Hellman)
+• Double Ratchet protocol for Perfect Forward Secrecy
+• Every call uses a unique session key
+• Cryptography engine written entirely in Rust — memory-safe, no buffer overflows
+• Independently audited
+
+📞 CRYSTAL-CLEAR CALLS
+
+• Opus audio codec for natural voice quality
+• Optimized for low latency, even on poor connections
+• Works over WiFi and cellular networks
+
+🛡️ ZERO METADATA
+
+• No call logs on our servers
+• No contact list uploads
+• No tracking, no ads
+• Your IP address is masked through GhostNet relays
+
+📖 SOURCE AVAILABLE
+
+The complete source code is available on GitHub. Anyone can verify the security — trust through transparency.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 FREE VERSION
+• End-to-end encrypted calls
+• Standard audio quality (Opus)
+• Anonymous crash reports (Crashlytics, can be disabled)
+• Perfect for trying out
+
+⭐ PRO VERSION
+• Everything in FREE
+• HD audio quality
+• Zero telemetry — absolutely no tracking
+• Priority support
+• Support the development
+
+💎 PREMIUM VERSION
+• Everything in PRO
+• GhostNet relay network (IP masking)
+• Multi-hop routing for maximum anonymity
+• Decentralized relay network
+• Future-proof post-quantum cryptography (in development)
+• Highest security tier
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TECHNICAL DETAILS
+
+Encryption: XChaCha20-Poly1305 (AEAD)
+Key Exchange: X25519 (ECDH)
+Forward Secrecy: Double Ratchet Protocol
+Audio: Opus Codec (6-510 kbps)
+Transport: WebRTC/QUIC with DTLS
+Crypto Engine: Rust (memory-safe)
+Network: GhostNet P2P Relay (Premium)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PERMISSIONS
+
+• Microphone: For voice calls (only during active calls)
+• Internet: For encrypted connections
+• Contacts: To display names (optional, data never leaves your device)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SecureCall is built by StealthX — a team that believes privacy is a fundamental right.
+
+Privacy Policy: https://stealthx.app/privacy
+Source Code: https://github.com/stealthx/securecall
+Support: support@stealthx.app

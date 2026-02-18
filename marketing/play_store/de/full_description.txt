@@ -1,0 +1,80 @@
+SecureCall — Deine Stimme gehört nur dir.
+
+SecureCall ist die erste Telefon-App, die von Grund auf für maximale Privatsphäre entwickelt wurde. Jeder Anruf wird Ende-zu-Ende verschlüsselt — mit militärischer Kryptografie, die selbst Geheimdienste nicht knacken können.
+
+🔒 SICHERHEIT AUF HÖCHSTEM NIVEAU
+
+• Ende-zu-Ende-Verschlüsselung mit XChaCha20-Poly1305 (AEAD)
+• Schlüsselaustausch über X25519 (Elliptic Curve Diffie-Hellman)
+• Double-Ratchet-Protokoll für Perfect Forward Secrecy
+• Jeder Anruf hat einen einzigartigen Sitzungsschlüssel
+• Kryptografie-Engine komplett in Rust geschrieben — speichersicher, keine Buffer Overflows
+• Unabhängig auditiert
+
+📞 KRISTALLKLARE ANRUFE
+
+• Opus-Audio-Codec für natürliche Sprachqualität
+• Optimiert für niedrige Latenz, auch bei schlechter Verbindung
+• Funktioniert über WLAN und Mobilfunk
+
+🛡️ ZERO METADATA
+
+• Keine Anrufprotokolle auf unseren Servern
+• Keine Kontaktlisten-Uploads
+• Kein Tracking, keine Werbung
+• Deine IP-Adresse wird durch GhostNet-Relays verschleiert
+
+📖 SOURCE AVAILABLE
+
+Der komplette Quellcode ist auf GitHub einsehbar. Jeder kann die Sicherheit verifizieren — Vertrauen durch Transparenz.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 FREE VERSION
+• Ende-zu-Ende verschlüsselte Anrufe
+• Basis-Audiqualität (Opus)
+• Anonyme Crash-Reports (Crashlytics, abschaltbar)
+• Perfekt zum Ausprobieren
+
+⭐ PRO VERSION
+• Alles aus FREE
+• HD-Audio-Qualität
+• Keine Telemetrie — absolut kein Tracking
+• Bevorzugter Support
+• Unterstütze die Entwicklung
+
+💎 PREMIUM VERSION
+• Alles aus PRO
+• GhostNet-Relay-Netzwerk (IP-Verschleierung)
+• Multi-Hop-Routing für maximale Anonymität
+• Dezentrales Relay-Netzwerk
+• Zukunftssichere Post-Quantum-Kryptografie (in Entwicklung)
+• Höchste Sicherheitsstufe
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TECHNISCHE DETAILS
+
+Verschlüsselung: XChaCha20-Poly1305 (AEAD)
+Schlüsselaustausch: X25519 (ECDH)
+Forward Secrecy: Double Ratchet Protocol
+Audio: Opus Codec (6-510 kbps)
+Transport: WebRTC/QUIC mit DTLS
+Krypto-Engine: Rust (speichersicher)
+Netzwerk: GhostNet P2P Relay (Premium)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BERECHTIGUNGEN
+
+• Mikrofon: Für Sprachanrufe (nur während aktiver Anrufe)
+• Internet: Für verschlüsselte Verbindungen
+• Kontakte: Zum Anzeigen von Namen (optional, Daten verlassen das Gerät nie)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SecureCall wird entwickelt von StealthX — einem Team, das glaubt, dass Privatsphäre ein Grundrecht ist.
+
+Datenschutzrichtlinie: https://stealthx.app/privacy
+Quellcode: https://github.com/stealthx/securecall
+Support: support@stealthx.app
