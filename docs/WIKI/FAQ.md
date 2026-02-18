@@ -57,8 +57,8 @@ Yes. An internal security audit was conducted in February 2026. All 7 Critical a
 
 ## Tier Comparison
 
-| Feature | Free | Pro ($4.99/mo) | Premium ($9.99/mo) |
-|---------|------|----------------|-------------------|
+| Feature | Free | Pro ($4.99/mo or $15 Lifetime) | Premium ($9.99/mo or $25 Lifetime) |
+|---------|------|-------------------------------|-----------------------------------|
 | E2E Encrypted Calls | Yes | Yes | Yes |
 | Audio Quality | Standard | HD (48kHz Opus) | HD (48kHz Opus) |
 | Contacts | 10 max | Unlimited | Unlimited |
@@ -72,8 +72,20 @@ Yes. An internal security audit was conducted in February 2026. All 7 Critical a
 
 ## Billing
 
+### What are Forever Licenses?
+Forever Licenses are **one-time purchases** that give you lifetime access to Pro or Premium — no subscription needed. Only 100 licenses are available per tier. The price starts low and increases automatically with each sale:
+
+- **PRO Lifetime:** Starts at $15, rises to $50 at sellout (100 licenses)
+- **PREMIUM Lifetime:** Starts at $25, rises to $100 at sellout (100 licenses)
+
+Once sold out, only monthly/yearly subscriptions remain. The remaining license count and next price are shown live in the app's Upgrade screen.
+
+### Lifetime vs. Subscription — what should I choose?
+- **Lifetime:** Pay once, own forever. Best value for long-term users. Includes all future updates. Available only while licenses last.
+- **Subscription:** Pay monthly or yearly. Cancel anytime. Always available.
+
 ### How do I upgrade or cancel?
-Subscriptions are managed through Google Play. To cancel: Google Play → Subscriptions → SecureCall → Cancel. Features remain active until end of billing period.
+Subscriptions are managed through Google Play. To cancel: Google Play → Subscriptions → SecureCall → Cancel. Features remain active until end of billing period. Lifetime purchases never expire.
 
 ### Do you see my payment information?
 No. All payments are processed through Google Play Billing. We never see your credit card or billing details.
