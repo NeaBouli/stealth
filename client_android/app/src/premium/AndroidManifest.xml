@@ -5,8 +5,7 @@
     <application
         android:usesCleartextTraffic="false"
         android:allowBackup="false"
-        android:debuggable="false"
-        tools:replace="android:usesCleartextTraffic,android:debuggable">
+        tools:replace="android:usesCleartextTraffic">
     </application>
 
 </manifest>
