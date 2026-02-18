@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Architecture — SecureCall</title>
+    <meta name="description" content="SecureCall security architecture: XChaCha20-Poly1305 encryption, X25519 key exchange, Double Ratchet forward secrecy, Rust crypto engine.">
+    <meta name="theme-color" content="#0B0B0F">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://stealthx.app/security.html">
+
+    <meta property="og:title" content="Security Architecture — SecureCall">
+    <meta property="og:description" content="How SecureCall protects your voice calls with military-grade cryptography.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://stealthx.app/security.html">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <!-- ─── Navigation ──────────────────────────────────────── -->
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="/" class="nav-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="/#features">Features</a>
+                <a href="/#security">Security</a>
+                <a href="/#pricing">Pricing</a>
+                <a href="faq.html">FAQ</a>
+                <a href="https://github.com/nicokimmel/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="/#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ─── Content ─────────────────────────────────────────── -->
+    <div class="page-content">
+        <a href="/" class="back-link">&larr; Back to Home</a>
+
+        <h1>Security Architecture</h1>
+        <p class="page-meta">How SecureCall protects your voice calls &middot; Last updated February 2026</p>
+
+        <h2>Cryptographic Primitives</h2>
+        <p>SecureCall uses proven, peer-reviewed cryptographic primitives. We do not invent our own cryptography &mdash; we use established algorithms implemented in a memory-safe language.</p>
+
+        <table>
+            <tr><th>Component</th><th>Algorithm</th><th>Details</th></tr>
+            <tr><td><strong>Symmetric Encryption</strong></td><td>XChaCha20-Poly1305</td><td>256-bit AEAD cipher with 192-bit extended nonce</td></tr>
+            <tr><td><strong>Key Exchange</strong></td><td>X25519</td><td>Elliptic Curve Diffie-Hellman on Curve25519</td></tr>
+            <tr><td><strong>Forward Secrecy</strong></td><td>Double Ratchet</td><td>Per-session key derivation with ratcheting</td></tr>
+            <tr><td><strong>Key Derivation</strong></td><td>HKDF-SHA256</td><td>HMAC-based key derivation function</td></tr>
+            <tr><td><strong>Transport</strong></td><td>DTLS-SRTP</td><td>Encrypted peer-to-peer media transport</td></tr>
+            <tr><td><strong>Audio Codec</strong></td><td>Opus</td><td>48kHz, adaptive bitrate 6-510 kbps</td></tr>
+        </table>
+
+        <h2>Architecture Overview</h2>
+
+        <h3>Key Generation</h3>
+        <p>When you install SecureCall, your device generates an <strong>X25519 key pair</strong> using a cryptographically secure random number generator (CSPRNG). The private key never leaves your device. The public key is used to establish encrypted channels with your contacts.</p>
+
+        <h3>Call Establishment</h3>
+        <ol>
+            <li>Caller sends encrypted signaling message via our relay server</li>
+            <li>Both parties perform X25519 Diffie-Hellman key exchange</li>
+            <li>Shared secret is derived using HKDF-SHA256</li>
+            <li>Double Ratchet initializes with the shared secret</li>
+            <li>Direct peer-to-peer connection is established via WebRTC</li>
+            <li>Voice frames are encrypted with XChaCha20-Poly1305 before transmission</li>
+        </ol>
+
+        <h3>Perfect Forward Secrecy</h3>
+        <p>The <strong>Double Ratchet</strong> protocol ensures that each call session uses unique encryption keys. Even if an attacker compromises your long-term key, they cannot decrypt past or future calls. Each voice frame uses a fresh key derived from the ratchet state.</p>
+
+        <h3>Signaling Server</h3>
+        <p>Our signaling server facilitates call setup but <strong>cannot decrypt any content</strong>. It only sees:</p>
+        <ul>
+            <li>Encrypted signaling payloads (opaque to the server)</li>
+            <li>Temporary connection identifiers (not linked to identity)</li>
+            <li>IP addresses (transient; not logged; masked for Premium users)</li>
+        </ul>
+        <p>Once a peer-to-peer connection is established, voice data flows directly between devices without touching our servers.</p>
+
+        <h2>Rust Crypto Engine</h2>
+        <p>The cryptographic core of SecureCall is written in <strong>Rust</strong>, a systems programming language that guarantees memory safety at compile time. This eliminates entire classes of vulnerabilities:</p>
+        <ul>
+            <li><strong>No buffer overflows</strong> &mdash; Rust prevents out-of-bounds memory access</li>
+            <li><strong>No use-after-free</strong> &mdash; The ownership system ensures memory is properly managed</li>
+            <li><strong>No data races</strong> &mdash; Thread safety is enforced by the compiler</li>
+            <li><strong>No null pointer dereferences</strong> &mdash; Rust uses Option types instead of null</li>
+        </ul>
+        <p>The Rust crypto engine is compiled to a native library and called from the Android app via JNI (Java Native Interface).</p>
+
+        <h2>Anti-Recording Protection</h2>
+        <p>SecureCall includes active protection against call recording attempts (Pro and Premium tiers):</p>
+        <ul>
+            <li><strong>FLAG_SECURE</strong> &mdash; Prevents screenshots and screen recording of the call screen</li>
+            <li><strong>Audio Focus Lock</strong> &mdash; Exclusive audio focus prevents other apps from recording</li>
+            <li><strong>Screen Recording Detection</strong> &mdash; Detects active screen capture via API 34+ callbacks and process monitoring</li>
+            <li><strong>Microphone Monitoring</strong> &mdash; Detects if other apps are accessing the microphone during calls</li>
+            <li><strong>Spy App Detection</strong> &mdash; Identifies known surveillance apps via accessibility service and package scanning</li>
+            <li><strong>Call Recording App Detection</strong> &mdash; Scans for installed call recording applications</li>
+        </ul>
+        <p>When a threat is detected, the response depends on your tier:</p>
+        <table>
+            <tr><th>Tier</th><th>Response</th></tr>
+            <tr><td>Free</td><td>Warning notification</td></tr>
+            <tr><td>Pro</td><td>Block threat + alert dialog</td></tr>
+            <tr><td>Premium</td><td>Automatically terminate call</td></tr>
+        </table>
+
+        <h2>Audit &amp; Source Code</h2>
+        <p>SecureCall's complete source code is publicly available for security review:</p>
+        <ul>
+            <li><strong>Repository:</strong> <a href="https://github.com/nicokimmel/stealth" target="_blank" rel="noopener">github.com/nicokimmel/stealth</a></li>
+            <li><strong>Crypto Engine:</strong> <code>core_crypto/</code> directory (Rust)</li>
+            <li><strong>Android App:</strong> <code>client_android/</code> directory (Kotlin/Java)</li>
+            <li><strong>Signaling Server:</strong> <code>backend/signaling/</code> directory (Node.js)</li>
+        </ul>
+        <p>We welcome security researchers to review our code and report vulnerabilities responsibly. Contact: <a href="mailto:security@stealthx.app">security@stealthx.app</a></p>
+
+        <h2>What We Cannot Do</h2>
+        <p>Due to our architecture, we are <strong>technically unable</strong> to:</p>
+        <ul>
+            <li>Decrypt or listen to your calls</li>
+            <li>Provide call content to law enforcement (we don't have it)</li>
+            <li>Identify who you called or when (no metadata logging)</li>
+            <li>Associate calls with real identities</li>
+            <li>Insert backdoors without the change being visible in our public source code</li>
+        </ul>
+    </div>
+
+    <!-- ─── Footer ──────────────────────────────────────────── -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="/">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

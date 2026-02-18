@@ -1,0 +1,4 @@
+# Netlify redirects
+/github    https://github.com/nicokimmel/stealth    301
+/source    https://github.com/nicokimmel/stealth    301
+/*         /404.html                                 404
