@@ -43,36 +43,35 @@ class ScreenRecordingDetector(private val context: Context) {
     }
 
     /**
-     * API 34+ (Android 14): Register screen capture callback.
+     * API 34+ (Android 14): Register screen capture callback via reflection.
+     * All API 34 types are accessed through reflection to avoid compile-time
+     * dependency on SDK 34.
      */
     private fun startScreenCaptureCallback(activity: Activity) {
         if (Build.VERSION.SDK_INT >= 34) {
             try {
-                val cb = Consumer<Int> { state ->
-                    // state != 0 means capture is active
-                    val capturing = state != 0
-                    if (capturing != isRecording) {
-                        isRecording = capturing
-                        Log.w(TAG, "Screen capture state changed: recording=$capturing")
-                        onRecordingStateChanged?.invoke(capturing)
-                    }
-                }
-                // Use reflection to call registerScreenCaptureCallback on API 34+
-                val method = Activity::class.java.getMethod(
-                    "registerScreenCaptureCallback",
-                    java.util.concurrent.Executor::class.java,
-                    Activity.ScreenCaptureCallback::class.java
-                )
-                val screenCaptureCallback = object : Activity.ScreenCaptureCallback {
-                    override fun onScreenCaptured() {
+                // Find the ScreenCaptureCallback interface via reflection
+                val callbackClass = Class.forName("android.app.Activity\$ScreenCaptureCallback")
+                // Create a dynamic proxy implementing ScreenCaptureCallback
+                val proxy = java.lang.reflect.Proxy.newProxyInstance(
+                    callbackClass.classLoader,
+                    arrayOf(callbackClass)
+                ) { _, method, _ ->
+                    if (method.name == "onScreenCaptured") {
                         isRecording = true
                         Log.w(TAG, "Screen capture DETECTED via callback")
                         onRecordingStateChanged?.invoke(true)
                     }
+                    null
                 }
-                method.invoke(activity, activity.mainExecutor, screenCaptureCallback)
-                callback = screenCaptureCallback
-                Log.d(TAG, "Registered API 34 ScreenCaptureCallback")
+                val method = Activity::class.java.getMethod(
+                    "registerScreenCaptureCallback",
+                    java.util.concurrent.Executor::class.java,
+                    callbackClass
+                )
+                method.invoke(activity, activity.mainExecutor, proxy)
+                callback = proxy
+                Log.d(TAG, "Registered API 34 ScreenCaptureCallback via reflection")
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to register ScreenCaptureCallback, using fallback", e)
                 isRecording = checkProcessBasedRecording()
@@ -139,9 +138,10 @@ class ScreenRecordingDetector(private val context: Context) {
     fun stopMonitoring(activity: Activity) {
         if (Build.VERSION.SDK_INT >= 34 && callback != null) {
             try {
+                val callbackClass = Class.forName("android.app.Activity\$ScreenCaptureCallback")
                 val method = Activity::class.java.getMethod(
                     "unregisterScreenCaptureCallback",
-                    Activity.ScreenCaptureCallback::class.java
+                    callbackClass
                 )
                 method.invoke(activity, callback)
             } catch (e: Exception) {

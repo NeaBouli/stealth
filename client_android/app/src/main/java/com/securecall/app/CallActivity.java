@@ -162,11 +162,13 @@ public class CallActivity extends AppCompatActivity {
         // Set up security status change listener
         secureCallMonitor.setOnSecurityStatusChanged(status -> {
             runOnUiThread(() -> updateSecurityUI(status));
+            return kotlin.Unit.INSTANCE;
         });
 
         // Set up critical threat listener
         secureCallMonitor.setOnCriticalThreat(threat -> {
             runOnUiThread(() -> handleCriticalThreat(threat));
+            return kotlin.Unit.INSTANCE;
         });
 
         // Start continuous monitoring
@@ -232,7 +234,7 @@ public class CallActivity extends AppCompatActivity {
 
             case "PRO":
                 // Show blocking dialog
-                new AlertDialog.Builder(this, R.style.Theme_SecureCall_Dialog)
+                new AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
                         .setTitle(R.string.security_threat_title)
                         .setMessage(getString(R.string.security_threat_message, threat.getDescription()))
                         .setIcon(R.drawable.ic_shield)
