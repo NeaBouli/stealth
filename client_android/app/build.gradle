@@ -16,6 +16,11 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField "String", "SIGNAL_WS_URL", "\"wss://signal.securecall.app/signal\""
+
+        // STUN/TURN servers for WebRTC ICE
+        buildConfigField "String", "STUN_URL", "\"stun:stun.l.google.com:19302\""
+        buildConfigField "String", "TURN_URL", "\"turn:turn.securecall.app:3478\""
+        buildConfigField "String", "TURNS_URL", "\"turns:turn.securecall.app:5349\""
     }
 
     flavorDimensions "tier"

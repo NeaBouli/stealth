@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — SecureCall</title>
+    <meta name="description" content="SecureCall Privacy Policy. Learn how we protect your data and privacy.">
+    <meta name="theme-color" content="#0A0A0A">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <style>
+        .legal-content {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 140px 24px 80px;
+        }
+        .legal-content h1 {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .legal-meta {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 48px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid var(--border);
+        }
+        .legal-content h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 48px 0 16px;
+        }
+        .legal-content h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 32px 0 12px;
+        }
+        .legal-content p {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.8;
+        }
+        .legal-content ul {
+            color: var(--text-secondary);
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+        .legal-content li {
+            margin-bottom: 8px;
+            line-height: 1.7;
+        }
+        .legal-content strong {
+            color: var(--text-primary);
+        }
+        .legal-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 24px;
+        }
+        .legal-content th,
+        .legal-content td {
+            text-align: left;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            font-size: 14px;
+        }
+        .legal-content th {
+            background: var(--bg-card);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .legal-content td {
+            color: var(--text-secondary);
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">&#x1f512;</span>
+                <span>SecureCall</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="/#features">Features</a>
+                <a href="/#security">Security</a>
+                <a href="/#pricing">Pricing</a>
+                <a href="https://github.com/stealthx/securecall" target="_blank" rel="noopener">Source Code</a>
+                <a href="/#download" class="btn btn-primary btn-sm">Download</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="legal-content">
+        <a href="/" class="back-link">&larr; Back to Home</a>
+
+        <h1>Privacy Policy</h1>
+        <div class="legal-meta">
+            Effective Date: February 18, 2026 &middot; Last Updated: February 18, 2026
+        </div>
+
+        <p>StealthX ("we", "us", "our") operates the SecureCall mobile application (the "App"). This Privacy Policy describes how we collect, use, and protect your information.</p>
+
+        <h2>Our Commitment</h2>
+        <p>SecureCall is built on the principle that privacy is a fundamental right. We collect the absolute minimum data necessary to provide our service, and in most cases, we collect no data at all.</p>
+
+        <h2>Data Collection by Tier</h2>
+
+        <h3>FREE Version</h3>
+        <table>
+            <tr><th>Data Type</th><th>Collected</th><th>Details</th></tr>
+            <tr><td>Call content</td><td>No</td><td>End-to-end encrypted; we cannot access it</td></tr>
+            <tr><td>Call metadata</td><td>No</td><td>No call logs stored on servers</td></tr>
+            <tr><td>Contacts</td><td>No</td><td>Contact data never leaves your device</td></tr>
+            <tr><td>Crash reports</td><td>Yes (opt-out)</td><td>Anonymous crash data via Firebase Crashlytics</td></tr>
+            <tr><td>Analytics</td><td>No</td><td>No usage analytics or behavioral tracking</td></tr>
+            <tr><td>IP address</td><td>Transient</td><td>Visible to signaling server during call setup only; not logged</td></tr>
+        </table>
+
+        <h3>PRO Version</h3>
+        <table>
+            <tr><th>Data Type</th><th>Collected</th><th>Details</th></tr>
+            <tr><td>Call content</td><td>No</td><td>End-to-end encrypted</td></tr>
+            <tr><td>Call metadata</td><td>No</td><td>No call logs stored</td></tr>
+            <tr><td>Crash reports</td><td>No</td><td>Crashlytics disabled</td></tr>
+            <tr><td>Analytics</td><td>No</td><td>Zero telemetry</td></tr>
+            <tr><td>IP address</td><td>Transient</td><td>Visible during signaling only; not logged</td></tr>
+        </table>
+
+        <h3>PREMIUM Version</h3>
+        <table>
+            <tr><th>Data Type</th><th>Collected</th><th>Details</th></tr>
+            <tr><td>Call content</td><td>No</td><td>End-to-end encrypted</td></tr>
+            <tr><td>All metadata</td><td>No</td><td>Zero data collection</td></tr>
+            <tr><td>IP address</td><td>No</td><td>Masked via GhostNet relay network</td></tr>
+        </table>
+
+        <h2>How Encryption Works</h2>
+        <ul>
+            <li>All voice calls are encrypted end-to-end using <strong>XChaCha20-Poly1305</strong> (AEAD encryption)</li>
+            <li>Key exchange uses <strong>X25519</strong> (Elliptic Curve Diffie-Hellman)</li>
+            <li><strong>Perfect Forward Secrecy</strong> ensures past communications remain secure even if keys are compromised</li>
+            <li>Encryption keys are generated on your device and never transmitted to our servers</li>
+            <li>We have <strong>zero ability</strong> to decrypt your calls</li>
+        </ul>
+
+        <h2>Data That Reaches Our Servers</h2>
+        <p>The only data that passes through our infrastructure:</p>
+        <ul>
+            <li><strong>Signaling data</strong> — Encrypted call setup messages (routed via temporary identifiers)</li>
+            <li><strong>Encrypted audio packets</strong> — Opaque encrypted data; we cannot read or listen to it</li>
+        </ul>
+        <p>We do <strong>not</strong> store signaling data or audio packets after the call ends.</p>
+
+        <h2>Third-Party Services</h2>
+        <p><strong>FREE Version Only:</strong> Firebase Crashlytics (Google) collects anonymous crash reports. You can opt out in Settings.</p>
+        <p><strong>PRO and PREMIUM Versions:</strong> No third-party services. Zero external data sharing.</p>
+        <p><strong>All Versions:</strong> Google Play Billing handles payment processing. We never see your payment details.</p>
+
+        <h2>Data Sharing</h2>
+        <p>We do <strong>not</strong> sell, trade, rent, or share your personal data with anyone. Period.</p>
+
+        <h2>Your Rights (GDPR)</h2>
+        <p>Under the EU General Data Protection Regulation, you have the right to access, rectify, erase, port, object to, and restrict processing of your data. Since we collect virtually no personal data, most of these rights are satisfied by default.</p>
+
+        <h2>Data Deletion</h2>
+        <p>To delete all data: open SecureCall Settings, select "Delete All Data", and uninstall the app. Since we don't store data on our servers, uninstalling removes all traces.</p>
+
+        <h2>Children's Privacy</h2>
+        <p>SecureCall is not intended for children under 18. We do not knowingly collect data from children.</p>
+
+        <h2>Open Source Transparency</h2>
+        <p>Our source code is publicly available for inspection at <a href="https://github.com/stealthx/securecall" target="_blank" rel="noopener">github.com/stealthx/securecall</a>. You don't have to trust our claims — you can verify them yourself.</p>
+
+        <h2>Contact</h2>
+        <p>For privacy-related inquiries: <a href="mailto:privacy@stealthx.app">privacy@stealthx.app</a></p>
+        <p>StealthX &middot; Germany</p>
+        <p><em>This privacy policy complies with the EU General Data Protection Regulation (GDPR) and the German Bundesdatenschutzgesetz (BDSG).</em></p>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="/">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -17,3 +17,12 @@ client_android/keystore/
 
 # ProGuard/R8 mapping files
 client_android/app/build/outputs/mapping/
+
+# Deployment secrets
+deploy/.env
+deploy/certbot/
+deploy/backups/
+
+# Node.js
+node_modules/
+npm-debug.log*

@@ -1,0 +1,89 @@
+version: "3.8"
+
+services:
+  # ─── Signaling Server ───────────────────────────────────────
+  signaling:
+    build:
+      context: ../backend/signaling
+      dockerfile: Dockerfile
+    container_name: securecall-signaling
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - ADMIN_API_KEY=${ADMIN_API_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://signal.securecall.app,https://stealthx.app}
+      - MAX_CONNS_PER_IP=${MAX_CONNS_PER_IP:-10}
+      - STUN_URL=${STUN_URL:-stun:stun.l.google.com:19302}
+      - TURN_URL=${TURN_URL:-turn:turn.securecall.app:3478}
+      - TURN_USER=${TURN_USER}
+      - TURN_PASS=${TURN_PASS}
+      - FIREBASE_SERVICE_ACCOUNT_KEY=${FIREBASE_SERVICE_ACCOUNT_KEY:-}
+    networks:
+      - securecall-net
+    expose:
+      - "8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ─── Nginx Reverse Proxy + SSL ──────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: securecall-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - ../website:/var/www/website:ro
+    depends_on:
+      - signaling
+    networks:
+      - securecall-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ─── Certbot (Let's Encrypt) ────────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    container_name: securecall-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+  # ─── TURN Server (coturn) ──────────────────────────────────
+  coturn:
+    image: coturn/coturn:latest
+    container_name: securecall-turn
+    restart: unless-stopped
+    ports:
+      - "3478:3478"        # TURN/STUN TCP
+      - "3478:3478/udp"    # TURN/STUN UDP
+      - "5349:5349"        # TURN/STUN TLS
+      - "5349:5349/udp"    # TURN/STUN DTLS
+      - "49152-49200:49152-49200/udp"  # TURN relay ports
+    volumes:
+      - ./coturn/turnserver.conf:/etc/turnserver.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+    networks:
+      - securecall-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  securecall-net:
+    driver: bridge
