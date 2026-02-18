@@ -53,6 +53,19 @@ The complete source code is available on GitHub. Anyone can verify the security 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+LIMITED TIME OFFER
+
+Forever Licenses — Not a subscription!
+
+PRO Lifetime: Starting at $15 (100 available)
+PREMIUM Lifetime: Starting at $25 (100 available)
+
+Price increases automatically as licenses sell out!
+First buyers get the best deal. Once sold out, price returns to monthly subscription.
+Buy now before the price goes up!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 TECHNICAL DETAILS
 
 Encryption: XChaCha20-Poly1305 (AEAD)
@@ -75,6 +88,6 @@ PERMISSIONS
 
 SecureCall is built by StealthX — a team that believes privacy is a fundamental right.
 
-Privacy Policy: https://stealthx.app/privacy
-Source Code: https://github.com/stealthx/securecall
+Privacy Policy: https://neabouli.github.io/stealth/privacy.html
+Source Code: https://github.com/NeaBouli/stealth
 Support: https://github.com/NeaBouli/stealth/issues

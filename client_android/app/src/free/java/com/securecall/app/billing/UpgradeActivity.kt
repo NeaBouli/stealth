@@ -3,6 +3,7 @@ package com.securecall.app.billing
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +26,20 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
     private lateinit var tvCurrentTier: TextView
     private lateinit var tvStatus: TextView
 
+    // Lifetime offer views
+    private lateinit var tvProLicensesLeft: TextView
+    private lateinit var tvPremiumLicensesLeft: TextView
+    private lateinit var tvProNextPrice: TextView
+    private lateinit var tvPremiumNextPrice: TextView
+    private lateinit var progressProSold: ProgressBar
+    private lateinit var progressPremiumSold: ProgressBar
+    private lateinit var btnProLifetime: Button
+    private lateinit var btnPremiumLifetime: Button
+
+    // Simulated sold counts (in production, fetch from backend)
+    private var proSold = 0
+    private var premiumSold = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_upgrade)
@@ -34,20 +49,37 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         tvCurrentTier = findViewById(R.id.tvCurrentTier)
         tvStatus = findViewById(R.id.tvStatus)
 
+        // Lifetime offer views
+        tvProLicensesLeft = findViewById(R.id.tvProLicensesLeft)
+        tvPremiumLicensesLeft = findViewById(R.id.tvPremiumLicensesLeft)
+        tvProNextPrice = findViewById(R.id.tvProNextPrice)
+        tvPremiumNextPrice = findViewById(R.id.tvPremiumNextPrice)
+        progressProSold = findViewById(R.id.progressProSold)
+        progressPremiumSold = findViewById(R.id.progressPremiumSold)
+        btnProLifetime = findViewById(R.id.btnProLifetime)
+        btnPremiumLifetime = findViewById(R.id.btnPremiumLifetime)
+
         updateCurrentTierDisplay()
+        updateLifetimePricing()
 
         billingManager = BillingManager(this, this)
         billingManager.init()
 
-        // PRO buttons
+        // Lifetime buttons
+        btnProLifetime.setOnClickListener {
+            launchPurchase(BuildConfig.SKU_PRO_LIFETIME)
+        }
+        btnPremiumLifetime.setOnClickListener {
+            launchPurchase(BuildConfig.SKU_PREMIUM_LIFETIME)
+        }
+
+        // Subscription buttons
         findViewById<Button>(R.id.btnProMonthly).setOnClickListener {
             launchPurchase(BuildConfig.SKU_PRO_MONTHLY)
         }
         findViewById<Button>(R.id.btnProYearly).setOnClickListener {
             launchPurchase(BuildConfig.SKU_PRO_YEARLY)
         }
-
-        // PREMIUM buttons
         findViewById<Button>(R.id.btnPremiumMonthly).setOnClickListener {
             launchPurchase(BuildConfig.SKU_PREMIUM_MONTHLY)
         }
@@ -64,6 +96,26 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         }
     }
 
+    private fun updateLifetimePricing() {
+        // PRO
+        val proRemaining = PricingCalculator.getRemainingLicenses("PRO", proSold)
+        val proPrice = PricingCalculator.calculateProPrice(proSold)
+        val proNextPrice = PricingCalculator.calculateProPrice(proSold + 1)
+        tvProLicensesLeft.text = "Only $proRemaining PRO licenses left!"
+        btnProLifetime.text = "Buy PRO Lifetime — ${PricingCalculator.formatPrice(proPrice)}"
+        tvProNextPrice.text = "Next buyer pays: ${PricingCalculator.formatPrice(proNextPrice)}"
+        progressProSold.progress = proSold
+
+        // PREMIUM
+        val premiumRemaining = PricingCalculator.getRemainingLicenses("PREMIUM", premiumSold)
+        val premiumPrice = PricingCalculator.calculatePremiumPrice(premiumSold)
+        val premiumNextPrice = PricingCalculator.calculatePremiumPrice(premiumSold + 1)
+        tvPremiumLicensesLeft.text = "Only $premiumRemaining PREMIUM licenses left!"
+        btnPremiumLifetime.text = "Buy PREMIUM Lifetime — ${PricingCalculator.formatPrice(premiumPrice)}"
+        tvPremiumNextPrice.text = "Next buyer pays: ${PricingCalculator.formatPrice(premiumNextPrice)}"
+        progressPremiumSold.progress = premiumSold
+    }
+
     private fun launchPurchase(sku: String) {
         val details = billingManager.getProductDetails(sku)
         if (details == null) {
@@ -72,14 +124,24 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
             return
         }
 
-        val offerToken = details.subscriptionOfferDetails?.firstOrNull()?.offerToken
-        if (offerToken == null) {
-            tvStatus.text = "No offer available"
-            return
+        // Lifetime products are INAPP, subscriptions are SUBS
+        if (sku.contains("lifetime")) {
+            val offerDetails = details.oneTimePurchaseOfferDetails
+            if (offerDetails == null) {
+                tvStatus.text = "No offer available"
+                return
+            }
+            tvStatus.text = "Launching purchase..."
+            billingManager.launchInAppPurchaseFlow(details)
+        } else {
+            val offerToken = details.subscriptionOfferDetails?.firstOrNull()?.offerToken
+            if (offerToken == null) {
+                tvStatus.text = "No offer available"
+                return
+            }
+            tvStatus.text = "Launching purchase..."
+            billingManager.launchPurchaseFlow(details, offerToken)
         }
-
-        tvStatus.text = "Launching purchase..."
-        billingManager.launchPurchaseFlow(details, offerToken)
     }
 
     private fun updateCurrentTierDisplay() {
@@ -98,18 +160,15 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
 
     override fun onPurchaseCompleted(tier: SubscriptionTier, token: String) {
         runOnUiThread {
-            // Update local subscription state
             subscriptionManager.updateSubscription(
                 tier = tier,
                 purchaseToken = token,
-                expiresAt = 0L, // Will be set by server verification
-                productId = "" // Simplified
+                expiresAt = 0L,
+                productId = ""
             )
 
-            // Refresh FeatureProvider
             FeatureProviderRegistry.set(RuntimeFeatureProvider(this))
 
-            // Send verification to backend
             sendVerificationToBackend(token)
 
             updateCurrentTierDisplay()
