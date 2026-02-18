@@ -10,7 +10,8 @@ import com.securecall.app.R
 import com.securecall.app.data.Contact
 
 class ContactAdapter(
-    private val contacts: List<Contact>
+    private val contacts: List<Contact>,
+    private val onCallClick: ((Contact) -> Unit)? = null
 ) : RecyclerView.Adapter<ContactAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -34,7 +35,11 @@ class ContactAdapter(
         holder.itemView.contentDescription = contact.name
 
         holder.btnCall.setOnClickListener {
-            // Will be wired to call initiation in future
+            onCallClick?.invoke(contact)
+        }
+
+        holder.itemView.setOnClickListener {
+            onCallClick?.invoke(contact)
         }
     }
 

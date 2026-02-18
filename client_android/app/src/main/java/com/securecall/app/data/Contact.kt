@@ -7,7 +7,8 @@ data class Contact(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
     val phoneOrId: String,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val isPhoneContact: Boolean = false
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)

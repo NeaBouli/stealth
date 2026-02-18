@@ -1,5 +1,7 @@
 package com.securecall.app.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.ListPreference
@@ -21,6 +23,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Version
         findPreference<Preference>("pref_version")?.summary = BuildConfig.VERSION_NAME
 
+        // Build number
+        findPreference<Preference>("pref_build")?.summary = BuildConfig.VERSION_CODE.toString()
+
         // Dark mode
         findPreference<ListPreference>("pref_dark_mode")?.setOnPreferenceChangeListener { _, newValue ->
             when (newValue as String) {
@@ -41,12 +46,40 @@ class SettingsFragment : PreferenceFragmentCompat() {
             findPreference<Preference>("pref_hardware_keystore")?.summary =
                 if (fp.hardwareKeystoreRequired) getString(R.string.enabled) else getString(R.string.disabled)
 
-            // ─── Anti-Recording Settings ────────────────────────
             configureAntiRecordingSettings(fp)
         }
 
         // Upgrade button (only for FREE tier)
         findPreference<Preference>("pref_upgrade")?.isVisible = BuildConfig.BILLING_ENABLED
+
+        // About section links
+        setupAboutLinks()
+
+        // Licenses placeholder
+        findPreference<Preference>("pref_licenses")?.summary = "Apache 2.0, MIT, BSD"
+    }
+
+    private fun setupAboutLinks() {
+        findPreference<Preference>("pref_github")?.setOnPreferenceClickListener {
+            openUrl("https://github.com/NeaBouli/stealth")
+            true
+        }
+        findPreference<Preference>("pref_wiki")?.setOnPreferenceClickListener {
+            openUrl("https://github.com/NeaBouli/stealth/wiki")
+            true
+        }
+        findPreference<Preference>("pref_report_bug")?.setOnPreferenceClickListener {
+            openUrl("https://github.com/NeaBouli/stealth/issues")
+            true
+        }
+        findPreference<Preference>("pref_privacy")?.setOnPreferenceClickListener {
+            openUrl("https://neabouli.github.io/stealth/privacy.html")
+            true
+        }
+    }
+
+    private fun openUrl(url: String) {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
     /**
@@ -68,7 +101,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 summary = getString(R.string.pref_block_screenshots_premium)
             } else {
                 isEnabled = true
-                // PRO defaults ON, FREE defaults OFF
                 if (!preferenceManager.sharedPreferences!!.contains("pref_block_screenshots")) {
                     isChecked = isPro
                 }

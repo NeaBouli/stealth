@@ -1,6 +1,7 @@
 package com.securecall.app;
 
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -28,14 +29,27 @@ public class CallActivity extends AppCompatActivity {
     private SecureCallMonitor secureCallMonitor;
     private boolean isMuted = false;
     private boolean isSpeaker = false;
+    private boolean isCallActive = false;
 
     // Security status UI
     private ImageView securityStatusIcon;
     private TextView securityStatusText;
+    private FloatingActionButton fabEndCall;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Debug: log all intent extras
+        Log.d(TAG, "onCreate — intent extras:");
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            for (String key : extras.keySet()) {
+                Log.d(TAG, "  " + key + " = " + extras.get(key));
+            }
+        } else {
+            Log.d(TAG, "  (no extras)");
+        }
 
         // ─── FLAG_SECURE: Prevent screenshots & screen recording ────
         applyFlagSecure();
@@ -46,15 +60,18 @@ public class CallActivity extends AppCompatActivity {
         TextView callerNameView = findViewById(R.id.callerName);
         Chronometer callTimer = findViewById(R.id.callTimer);
         FloatingActionButton fabMute = findViewById(R.id.fabMute);
-        FloatingActionButton fabEndCall = findViewById(R.id.fabEndCall);
+        fabEndCall = findViewById(R.id.fabEndCall);
         FloatingActionButton fabSpeaker = findViewById(R.id.fabSpeaker);
 
         // Security status views
         securityStatusIcon = findViewById(R.id.securityStatusIcon);
         securityStatusText = findViewById(R.id.securityStatusText);
 
-        // Handle incoming call from FCM notification
+        // Handle caller info
         String callerName = getIntent().getStringExtra("callerName");
+        String phoneNumber = getIntent().getStringExtra("phoneNumber");
+        Log.d(TAG, "Call to: " + callerName + " (" + phoneNumber + ")");
+
         if (callerName != null && !callerName.isEmpty()) {
             callerNameView.setText(callerName);
         }
@@ -77,16 +94,20 @@ public class CallActivity extends AppCompatActivity {
         transport = new GhostNetTransport();
         transport.start();
 
-        // Update connection state
+        // Initial state: connecting (green button to indicate call starting)
         connectionState.setText(R.string.call_connecting);
+        updateCallButton(false);
 
         // Start timer after a short delay (simulating connection)
         connectionState.postDelayed(() -> {
+            isCallActive = true;
             connectionState.setText(R.string.call_active);
             connectionState.setTextColor(getResources().getColor(R.color.call_active_green, getTheme()));
             callTimer.setBase(SystemClock.elapsedRealtime());
             callTimer.setVisibility(View.VISIBLE);
             callTimer.start();
+            // Switch to red end-call button
+            updateCallButton(true);
         }, 2000);
 
         // Mute toggle
@@ -94,15 +115,22 @@ public class CallActivity extends AppCompatActivity {
             isMuted = !isMuted;
             fabMute.setImageResource(isMuted ? R.drawable.ic_mic_off : R.drawable.ic_mic);
             fabMute.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(
+                    ColorStateList.valueOf(
                             getResources().getColor(
                                     isMuted ? R.color.stealthx_red_dark : R.color.stealthx_gray,
                                     getTheme())));
             fabMute.setContentDescription(getString(isMuted ? R.string.cd_mute : R.string.cd_mute));
         });
 
-        // End call
-        fabEndCall.setOnClickListener(v -> endCall());
+        // End call / Start call button
+        fabEndCall.setOnClickListener(v -> {
+            if (isCallActive) {
+                Log.d(TAG, "End call button pressed");
+                endCall();
+            } else {
+                Log.d(TAG, "Call button pressed — already connecting");
+            }
+        });
 
         // Speaker toggle
         fabSpeaker.setOnClickListener(v -> {
@@ -112,7 +140,7 @@ public class CallActivity extends AppCompatActivity {
                 audioManager.setSpeakerphoneOn(isSpeaker);
             }
             fabSpeaker.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(
+                    ColorStateList.valueOf(
                             getResources().getColor(
                                     isSpeaker ? R.color.stealthx_blue_dark : R.color.stealthx_gray,
                                     getTheme())));
@@ -120,27 +148,40 @@ public class CallActivity extends AppCompatActivity {
     }
 
     /**
+     * Update call button color and icon based on call state.
+     * Active: RED (end call)
+     * Idle/Connecting: GREEN (call in progress)
+     */
+    private void updateCallButton(boolean active) {
+        if (fabEndCall == null) return;
+        if (active) {
+            fabEndCall.setBackgroundTintList(
+                    ColorStateList.valueOf(getResources().getColor(R.color.call_end_red, getTheme())));
+            fabEndCall.setImageResource(R.drawable.ic_call_end);
+            fabEndCall.setContentDescription(getString(R.string.call_end));
+        } else {
+            fabEndCall.setBackgroundTintList(
+                    ColorStateList.valueOf(getResources().getColor(R.color.call_active_green, getTheme())));
+            fabEndCall.setImageResource(R.drawable.ic_call);
+            fabEndCall.setContentDescription(getString(R.string.call_start));
+        }
+    }
+
+    /**
      * Apply FLAG_SECURE based on tier and user preferences.
-     *
-     * - FREE:    Optional (user can disable in settings)
-     * - PRO:     Default ON (user can disable)
-     * - PREMIUM: ENFORCED (cannot be disabled)
      */
     private void applyFlagSecure() {
         boolean shouldApply;
         try {
             String tier = FeatureProviderRegistry.INSTANCE.get().getTier();
             if ("PREMIUM".equals(tier)) {
-                // PREMIUM: Always enforced, no opt-out
                 shouldApply = true;
             } else {
-                // FREE/PRO: Check user preference
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                boolean defaultValue = "PRO".equals(tier); // PRO defaults ON, FREE defaults OFF
+                boolean defaultValue = "PRO".equals(tier);
                 shouldApply = prefs.getBoolean("pref_block_screenshots", defaultValue);
             }
         } catch (Exception e) {
-            // Fallback: enable FLAG_SECURE
             shouldApply = true;
         }
 
@@ -159,28 +200,21 @@ public class CallActivity extends AppCompatActivity {
     private void initSecurityMonitor() {
         secureCallMonitor = new SecureCallMonitor(this);
 
-        // Set up security status change listener
         secureCallMonitor.setOnSecurityStatusChanged(status -> {
             runOnUiThread(() -> updateSecurityUI(status));
             return kotlin.Unit.INSTANCE;
         });
 
-        // Set up critical threat listener
         secureCallMonitor.setOnCriticalThreat(threat -> {
             runOnUiThread(() -> handleCriticalThreat(threat));
             return kotlin.Unit.INSTANCE;
         });
 
-        // Start continuous monitoring
         secureCallMonitor.startContinuousMonitoring(this);
     }
 
     /**
      * Update the security status indicator in the UI.
-     *
-     * Green lock:  All checks passed
-     * Yellow lock: Warnings present
-     * Red lock:    Critical security issues
      */
     private void updateSecurityUI(SecureCallMonitor.SecurityStatus status) {
         if (securityStatusIcon == null || securityStatusText == null) return;
@@ -211,10 +245,6 @@ public class CallActivity extends AppCompatActivity {
 
     /**
      * Handle critical security threats based on tier.
-     *
-     * FREE:    Show warning toast
-     * PRO:     Show blocking dialog
-     * PREMIUM: Handled by SecurityEnforcer (terminate)
      */
     private void handleCriticalThreat(SecureCallMonitor.Threat threat) {
         String tier;
@@ -226,14 +256,12 @@ public class CallActivity extends AppCompatActivity {
 
         switch (tier) {
             case "FREE":
-                // Show warning toast
                 Toast.makeText(this,
                         getString(R.string.security_warning_recording, threat.getDescription()),
                         Toast.LENGTH_LONG).show();
                 break;
 
             case "PRO":
-                // Show blocking dialog
                 new AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
                         .setTitle(R.string.security_threat_title)
                         .setMessage(getString(R.string.security_threat_message, threat.getDescription()))
@@ -245,8 +273,6 @@ public class CallActivity extends AppCompatActivity {
                 break;
 
             case "PREMIUM":
-                // PREMIUM: SecurityEnforcer.handle() already terminates the app
-                // This is a fallback in case it didn't trigger
                 Log.e(TAG, "PREMIUM: Critical threat — terminating call");
                 endCall();
                 break;
@@ -254,6 +280,8 @@ public class CallActivity extends AppCompatActivity {
     }
 
     private void endCall() {
+        Log.d(TAG, "endCall() — stopping call");
+        isCallActive = false;
         Chronometer callTimer = findViewById(R.id.callTimer);
         if (callTimer != null) {
             callTimer.stop();

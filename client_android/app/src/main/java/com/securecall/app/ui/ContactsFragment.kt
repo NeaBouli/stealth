@@ -1,18 +1,26 @@
 package com.securecall.app.ui
 
+import android.Manifest
 import android.app.AlertDialog
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.securecall.app.CallActivity
 import com.securecall.app.R
 import com.securecall.app.data.Contact
 import com.securecall.app.data.ContactRepository
@@ -24,6 +32,21 @@ class ContactsFragment : Fragment() {
     private lateinit var emptyState: View
     private lateinit var searchInput: EditText
     private var allContacts: List<Contact> = emptyList()
+
+    companion object {
+        private const val TAG = "ContactsFragment"
+    }
+
+    private val requestContactsPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                Log.d(TAG, "READ_CONTACTS permission granted")
+                loadContacts()
+            } else {
+                Log.w(TAG, "READ_CONTACTS permission denied")
+                loadContacts() // Still load app contacts
+            }
+        }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_contacts, container, false)
@@ -49,7 +72,13 @@ class ContactsFragment : Fragment() {
             }
         })
 
-        loadContacts()
+        // Request contacts permission if not granted
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED) {
+            requestContactsPermission.launch(Manifest.permission.READ_CONTACTS)
+        } else {
+            loadContacts()
+        }
     }
 
     override fun onResume() {
@@ -58,8 +87,55 @@ class ContactsFragment : Fragment() {
     }
 
     private fun loadContacts() {
-        allContacts = ContactRepository.getAll(requireContext())
+        val appContacts = ContactRepository.getAll(requireContext())
+        val phoneContacts = loadPhoneContacts()
+        // Merge: app contacts first, then phone contacts not already in app contacts
+        val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
+        val uniquePhoneContacts = phoneContacts.filter { pc ->
+            pc.phoneOrId.replace("\\s".toRegex(), "") !in appPhoneNumbers
+        }
+        allContacts = appContacts + uniquePhoneContacts
         updateList(allContacts)
+    }
+
+    private fun loadPhoneContacts(): List<Contact> {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED) {
+            return emptyList()
+        }
+
+        val contacts = mutableListOf<Contact>()
+        val seen = mutableSetOf<String>()
+
+        try {
+            val cursor = requireContext().contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                ),
+                null, null,
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+            )
+
+            cursor?.use {
+                val nameIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                val numberIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                while (it.moveToNext()) {
+                    val name = it.getString(nameIdx) ?: continue
+                    val number = it.getString(numberIdx) ?: continue
+                    val normalized = number.replace("\\s".toRegex(), "")
+                    if (normalized !in seen) {
+                        seen.add(normalized)
+                        contacts.add(Contact(name = name, phoneOrId = number, isPhoneContact = true))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load phone contacts", e)
+        }
+
+        return contacts
     }
 
     private fun filterContacts(query: String) {
@@ -81,8 +157,19 @@ class ContactsFragment : Fragment() {
         } else {
             recycler.visibility = View.VISIBLE
             emptyState.visibility = View.GONE
-            recycler.adapter = ContactAdapter(contacts)
+            recycler.adapter = ContactAdapter(contacts) { contact ->
+                startCall(contact)
+            }
         }
+    }
+
+    private fun startCall(contact: Contact) {
+        Log.d(TAG, "Starting call to: ${contact.name}")
+        val intent = Intent(requireContext(), CallActivity::class.java).apply {
+            putExtra("callerName", contact.name)
+            putExtra("phoneNumber", contact.phoneOrId)
+        }
+        startActivity(intent)
     }
 
     private fun showAddContactDialog() {

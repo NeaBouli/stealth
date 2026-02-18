@@ -93,9 +93,12 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
 
-        // FAB for new call
+        // FAB for new call — navigate to contacts to pick a recipient
         ExtendedFloatingActionButton fab = findViewById(R.id.fabNewCall);
-        fab.setOnClickListener(v -> handleCallToggle(fab));
+        fab.setOnClickListener(v -> {
+            Log.d(TAG, "New Call FAB clicked — navigating to contacts");
+            bottomNav.setSelectedItemId(R.id.nav_contacts);
+        });
 
         // Default fragment
         if (savedInstanceState == null) {

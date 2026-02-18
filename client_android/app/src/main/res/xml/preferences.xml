@@ -76,7 +76,38 @@
         <Preference
             android:key="pref_version"
             android:title="@string/settings_version"
-            android:selectable="false" />
+            android:selectable="false"
+            android:icon="@drawable/ic_shield" />
+        <Preference
+            android:key="pref_build"
+            android:title="@string/settings_build"
+            android:selectable="false"
+            android:icon="@drawable/ic_settings" />
+        <Preference
+            android:key="pref_github"
+            android:title="@string/settings_github"
+            android:summary="@string/settings_github_summary"
+            android:icon="@drawable/ic_lock" />
+        <Preference
+            android:key="pref_wiki"
+            android:title="@string/settings_wiki"
+            android:summary="@string/settings_wiki_summary"
+            android:icon="@drawable/ic_search" />
+        <Preference
+            android:key="pref_report_bug"
+            android:title="@string/settings_report_bug"
+            android:summary="@string/settings_report_bug_summary"
+            android:icon="@drawable/ic_settings" />
+        <Preference
+            android:key="pref_privacy"
+            android:title="@string/settings_privacy"
+            android:summary="@string/settings_privacy_summary"
+            android:icon="@drawable/ic_shield" />
+        <Preference
+            android:key="pref_licenses"
+            android:title="@string/settings_licenses"
+            android:selectable="false"
+            android:icon="@drawable/ic_lock" />
     </PreferenceCategory>
 
 </PreferenceScreen>
