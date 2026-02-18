@@ -33,6 +33,35 @@
             android:icon="@drawable/ic_lock" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="@string/settings_anti_recording">
+        <SwitchPreferenceCompat
+            android:key="pref_block_screenshots"
+            android:title="@string/pref_block_screenshots"
+            android:summary="@string/pref_block_screenshots_summary"
+            android:defaultValue="true"
+            android:icon="@drawable/ic_shield" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_exclusive_mic"
+            android:title="@string/pref_exclusive_mic"
+            android:summary="@string/pref_exclusive_mic_summary"
+            android:defaultValue="true"
+            android:icon="@drawable/ic_mic" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_detect_recording"
+            android:title="@string/pref_detect_recording"
+            android:summary="@string/pref_detect_recording_summary"
+            android:defaultValue="true"
+            android:icon="@drawable/ic_lock" />
+
+        <Preference
+            android:key="pref_security_level"
+            android:title="@string/pref_security_level"
+            android:selectable="false"
+            android:icon="@drawable/ic_shield" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/settings_appearance">
         <ListPreference
             android:key="pref_dark_mode"

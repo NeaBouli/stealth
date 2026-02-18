@@ -18,6 +18,9 @@ object SecurityEnforcer {
         EMULATOR_DETECTED,
         DEBUGGER_ATTACHED,
         SCREEN_CAPTURE,
+        MICROPHONE_HIJACK,
+        SPY_APP_DETECTED,
+        CALL_RECORDING_APP,
         DEVICE_ATTESTATION_FAILED,
         CERTIFICATE_PINNING_FAILED,
         HARDWARE_KEYSTORE_UNAVAILABLE,
@@ -83,6 +86,9 @@ object SecurityEnforcer {
             Violation.EMULATOR_DETECTED -> fp.emulatorDetection
             Violation.DEBUGGER_ATTACHED -> fp.debuggerDetection
             Violation.SCREEN_CAPTURE -> fp.screenCaptureDetection
+            Violation.MICROPHONE_HIJACK -> fp.screenCaptureDetection
+            Violation.SPY_APP_DETECTED -> fp.screenCaptureDetection
+            Violation.CALL_RECORDING_APP -> !fp.callRecordingAllowed
             Violation.DEVICE_ATTESTATION_FAILED -> fp.deviceAttestationRequired
             Violation.CERTIFICATE_PINNING_FAILED -> fp.certificatePinning
             Violation.HARDWARE_KEYSTORE_UNAVAILABLE -> fp.hardwareKeystoreRequired

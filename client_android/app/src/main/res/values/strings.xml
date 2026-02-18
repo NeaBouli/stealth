@@ -87,4 +87,27 @@
 
     <!-- Permissions -->
     <string name="permission_mic_required">Microphone permission required</string>
+
+    <!-- Security Monitor -->
+    <string name="security_status_secure">Secure</string>
+    <string name="security_status_warning">%1$d warning(s)</string>
+    <string name="security_status_critical">%1$d threat(s) detected</string>
+    <string name="security_warning_recording">Security Warning: %1$s</string>
+    <string name="security_threat_title">Security Threat Detected</string>
+    <string name="security_threat_message">%1$s\n\nFor your security, we recommend ending this call.</string>
+    <string name="security_end_call">End Call</string>
+    <string name="security_continue_call">Continue</string>
+    <string name="cd_security_status">Security status indicator</string>
+
+    <!-- Security Settings -->
+    <string name="settings_anti_recording">Anti-Recording Protection</string>
+    <string name="pref_block_screenshots">Block Screenshots</string>
+    <string name="pref_block_screenshots_summary">Prevent screenshots and screen recording during calls</string>
+    <string name="pref_block_screenshots_premium">Always enabled (Premium)</string>
+    <string name="pref_exclusive_mic">Exclusive Microphone</string>
+    <string name="pref_exclusive_mic_summary">Prevent other apps from recording during calls</string>
+    <string name="pref_detect_recording">Detect Screen Recording</string>
+    <string name="pref_detect_recording_summary">Monitor for screen recording during calls</string>
+    <string name="pref_security_level">Security Level</string>
+    <string name="always_on">Always On</string>
 </resources>

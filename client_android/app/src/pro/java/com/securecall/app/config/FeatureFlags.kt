@@ -18,7 +18,7 @@ object FeatureFlags {
     const val DEVICE_ATTESTATION_REQUIRED = true
     const val ROOT_DETECTION_BLOCKS = true        // warning, not hard block
     const val CERTIFICATE_PINNING = true
-    const val SCREEN_CAPTURE_DETECTION = false
+    const val SCREEN_CAPTURE_DETECTION = true     // block recording
     const val DEBUGGER_DETECTION = false
     const val EMULATOR_DETECTION = false
     const val HARDWARE_KEYSTORE_REQUIRED = false

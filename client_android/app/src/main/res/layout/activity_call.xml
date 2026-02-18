@@ -87,6 +87,36 @@
             android:layout_marginStart="@dimen/spacing_xs" />
     </LinearLayout>
 
+    <!-- Security Status Indicator -->
+    <LinearLayout
+        android:id="@+id/securityStatusBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="@dimen/spacing_xs"
+        app:layout_constraintTop_toBottomOf="@id/encryptionIndicator"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="@dimen/spacing_sm">
+
+        <ImageView
+            android:id="@+id/securityStatusIcon"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:src="@drawable/ic_shield"
+            android:contentDescription="@string/cd_security_status" />
+
+        <TextView
+            android:id="@+id/securityStatusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/security_status_secure"
+            android:textColor="@color/call_active_green"
+            android:textSize="11sp"
+            android:layout_marginStart="4dp" />
+    </LinearLayout>
+
     <!-- Bottom action buttons -->
     <LinearLayout
         android:id="@+id/callActions"
