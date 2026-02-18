@@ -8,7 +8,7 @@ set -euo pipefail
 
 SIGNAL_URL="${SIGNAL_URL:-https://signal.securecall.app/}"
 WEBSITE_URL="${WEBSITE_URL:-https://stealthx.app/}"
-ALERT_EMAIL="${ALERT_EMAIL:-admin@stealthx.app}"
+ALERT_EMAIL="${ALERT_EMAIL:-admin@example.com}"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 FAILURES=0
 

@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Thank you for taking the time to report a bug.
-        **Important:** For security vulnerabilities, please email security@stealthx.app instead.
+        **Important:** For security vulnerabilities, please use the Security Vulnerability issue template instead.
 
   - type: textarea
     id: description

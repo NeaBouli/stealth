@@ -115,6 +115,7 @@ button{font-family:inherit;cursor:pointer}
 .nav-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;color:var(--text-primary);letter-spacing:-0.02em}
 .nav-logo:hover{color:var(--text-primary)}
 .nav-logo svg{width:28px;height:28px;color:var(--accent)}
+.nav-logo-img{width:32px;height:32px;border-radius:var(--radius-sm);object-fit:contain}
 .nav-links{display:flex;align-items:center;gap:8px}
 .nav-links a{color:var(--text-secondary);font-size:14px;font-weight:500;padding:8px 14px;border-radius:var(--radius-sm);transition:all var(--duration) var(--ease)}
 .nav-links a:hover,.nav-links a.active{color:var(--text-primary);background:var(--bg-surface)}

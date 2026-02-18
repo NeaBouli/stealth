@@ -1,8 +1,7 @@
 <!-- markdownlint-disable MD033 MD041 -->
 <div align="center">
 
-<!-- TODO: Replace with actual logo -->
-<img src="https://via.placeholder.com/200x200?text=SecureCall" alt="SecureCall Logo" width="120" />
+<img src="logo.png" alt="SecureCall Logo" width="120" />
 
 # SecureCall
 
@@ -10,18 +9,19 @@
 
 *Powered by the StealthX Platform*
 
-[![Source Available - Not Open Source](https://img.shields.io/badge/Source%20Available-Not%20Open%20Source-red.svg)](LICENSE)
-[![License: Source Available](https://img.shields.io/badge/License-Source%20Available-blue.svg)](LICENSE)
-[![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg)](https://developer.android.com)
-[![Crypto: XChaCha20-Poly1305](https://img.shields.io/badge/Crypto-XChaCha20--Poly1305-purple.svg)](docs/SECURITY_DESIGN.md)
-[![Security Audit](https://img.shields.io/badge/Security-Audited-orange.svg)](docs/SECURITY_AUDIT_REPORT.md)
+[![Source Available](https://img.shields.io/badge/Source-Available-blue.svg)](LICENSE)
+[![Platform: Android](https://img.shields.io/badge/Platform-Android-34A853.svg)](https://developer.android.com)
+[![Crypto: XChaCha20-Poly1305](https://img.shields.io/badge/Crypto-XChaCha20--Poly1305-7C6CFF.svg)](docs/SECURITY_DESIGN.md)
+[![Security: Audited](https://img.shields.io/badge/Security-Audited-orange.svg)](docs/SECURITY_AUDIT_REPORT.md)
+[![Rust Crypto Engine](https://img.shields.io/badge/Engine-Rust-DEA584.svg)](core_crypto/)
+[![GitHub Pages](https://img.shields.io/badge/Website-Live-34D399.svg)](https://neabouli.github.io/stealth/)
 
 ---
 
 **SecureCall is a voice communication app built from the ground up for privacy.**
 No metadata. No compromises. Every call is encrypted end-to-end using military-grade cryptography.
 
-[Download](#download) | [Features](#features) | [Security](#security) | [FAQ](#faq) | [Deutsch](#deutsch)
+[Website](https://neabouli.github.io/stealth/) | [Features](#features) | [Security](#security) | [Documentation](#documentation) | [FAQ](#faq)
 
 </div>
 
@@ -32,45 +32,9 @@ No metadata. No compromises. Every call is encrypted end-to-end using military-g
 - **End-to-End Encryption** -- Every voice call is encrypted using XChaCha20-Poly1305 (AEAD). Keys never leave your device.
 - **X25519 Key Exchange** -- Ephemeral Diffie-Hellman key agreement ensures perfect forward secrecy. Each call uses a unique session key.
 - **Zero-Knowledge Architecture** -- The server facilitates connections but cannot decrypt calls. No call content, no metadata, no logs.
-- **GhostNet Transport** -- Custom transport protocol with encrypted frame headers, replay protection, and nonce management.
+- **Anti-Recording Protection** -- Active detection of screen recording, microphone hijacking, and spy apps (Pro/Premium).
 - **Rust Crypto Core** -- All cryptographic operations run in a native Rust library via JNI -- no Java crypto, no OpenSSL.
-- **Open Source Transparency** -- The complete source code is publicly available for independent security review.
-
-## Screenshots
-
-<!-- TODO: Add actual screenshots -->
-<div align="center">
-<table>
-<tr>
-<td><img src="https://via.placeholder.com/250x500?text=Home+Screen" alt="Home Screen" width="200"/></td>
-<td><img src="https://via.placeholder.com/250x500?text=In+Call" alt="In Call" width="200"/></td>
-<td><img src="https://via.placeholder.com/250x500?text=Settings" alt="Settings" width="200"/></td>
-</tr>
-</table>
-</div>
-
-## Download
-
-<!-- TODO: Replace with actual Play Store link -->
-<div align="center">
-
-<a href="#">
-<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" width="200"/>
-</a>
-
-*Coming soon to Google Play*
-
-</div>
-
-## Building from Source
-
-> **This repository is Source Available, not Open Source.**
->
-> You may NOT build, distribute, or sell this app yourself.
-> Download the official app from Google Play Store only.
-> The source code is published for security auditing and transparency.
-
-See the [LICENSE](LICENSE) for full terms.
+- **Source Available** -- The complete source code is publicly available for independent security review.
 
 ## Architecture
 
@@ -93,20 +57,41 @@ Security is not a feature -- it's the foundation. Our approach:
 - **Formal security audit** -- Read the full [Security Audit Report](docs/SECURITY_AUDIT_REPORT.md).
 - **Security design** -- Review our [Security Design Document](docs/SECURITY_DESIGN.md).
 
-Found a vulnerability? Please report it responsibly: **security@stealthx.app**
+Found a vulnerability? Please report it via [GitHub Issues](https://github.com/NeaBouli/stealth/issues).
 
 See [SECURITY.md](SECURITY.md) for our full security policy.
 
-## Why Source-Available?
+## Documentation
 
-We believe encryption software must be transparent. You should never have to trust a black box with your private conversations.
+Complete documentation is available in the [Wiki](https://github.com/NeaBouli/stealth/wiki) and the `docs/WIKI/` directory:
 
-By making our source code publicly available, we enable:
-- **Independent security audits** by researchers and the community
-- **Verification** that our encryption works as advertised
-- **Trust through transparency**, not through marketing
+| Category | Pages |
+|----------|-------|
+| **User Docs** | [Installation Guide](docs/WIKI/Installation-Guide.md) · [User Manual](docs/WIKI/User-Manual.md) · [FAQ](docs/WIKI/FAQ.md) |
+| **Security** | [Security Design](docs/WIKI/Security-Design.md) · [Audit Report](docs/WIKI/Security-Audit.md) · [Encryption Architecture](docs/WIKI/Encryption-Architecture.md) |
+| **Developer** | [Architecture](docs/WIKI/Architecture.md) · [Build Instructions](docs/WIKI/Build-Instructions.md) · [API Docs](docs/WIKI/API-Documentation.md) |
+| **Project** | [Roadmap](docs/WIKI/Roadmap.md) · [Changelog](docs/WIKI/Changelog.md) · [Known Issues](docs/WIKI/Known-Issues.md) |
 
-This repository uses a [Source Available License](LICENSE). The code may be viewed and audited, but may not be compiled, distributed, or used commercially. See the [FAQ](#faq) for details.
+## Download
+
+<!-- TODO: Replace with actual Play Store link when published -->
+<div align="center">
+
+*Coming soon to Google Play*
+
+**Website:** [neabouli.github.io/stealth](https://neabouli.github.io/stealth/)
+
+</div>
+
+## Building from Source
+
+> **This repository is Source Available, not Open Source.**
+>
+> You may NOT build, distribute, or sell this app yourself.
+> Download the official app from Google Play Store only.
+> The source code is published for security auditing and transparency.
+
+See the [LICENSE](LICENSE) for full terms.
 
 ## FAQ
 
@@ -137,6 +122,7 @@ The signaling server only facilitates connection establishment. It relays encryp
 - **Key Exchange:** X25519 (Curve25519 Diffie-Hellman)
 - **Key Derivation:** HKDF-SHA256
 - **Encryption:** XChaCha20-Poly1305 (AEAD)
+- **Forward Secrecy:** Double Ratchet protocol
 - **Implementation:** Native Rust via JNI (no Java/Android crypto APIs)
 
 </details>
@@ -144,14 +130,7 @@ The signaling server only facilitates connection establishment. It relays encryp
 <details>
 <summary><strong>How can I report a security issue?</strong></summary>
 
-Please email **security@stealthx.app** with details. Do not open a public GitHub issue for security vulnerabilities. See [SECURITY.md](SECURITY.md) for our full disclosure policy.
-
-</details>
-
-<details>
-<summary><strong>Can I contribute code?</strong></summary>
-
-We do not accept code contributions (pull requests) at this time. However, we welcome bug reports, feature requests, and security findings via GitHub Issues. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Please [open a GitHub Issue](https://github.com/NeaBouli/stealth/issues). See [SECURITY.md](SECURITY.md) for our full disclosure policy.
 
 </details>
 
@@ -170,7 +149,7 @@ SecureCall ist eine Sprachkommunikations-App, die von Grund auf fuer Privatsphae
 - [Sicherheitsaudit-Bericht](docs/SECURITY_AUDIT_REPORT.md)
 - [Architektur-Uebersicht](docs/ARCHITECTURE_OVERVIEW.md)
 - [Sicherheitsdesign](docs/SECURITY_DESIGN.md)
-- [Sicherheitsmeldungen: security@stealthx.app](SECURITY.md)
+- [Issue melden](https://github.com/NeaBouli/stealth/issues)
 
 ---
 

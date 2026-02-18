@@ -8,7 +8,7 @@ We welcome the following contributions via [GitHub Issues](https://github.com/Ne
 
 - **Bug Reports** -- If you find a bug in the app, please report it using our [Bug Report template](https://github.com/NeaBouli/stealth/issues/new?template=bug_report.yml).
 - **Feature Requests** -- Have an idea for a new feature? Submit it using our [Feature Request template](https://github.com/NeaBouli/stealth/issues/new?template=feature_request.yml).
-- **Security Vulnerabilities** -- If you discover a security issue, please report it **privately** to **security@stealthx.app**. Do not open a public issue for security vulnerabilities. See [SECURITY.md](SECURITY.md) for our full disclosure policy.
+- **Security Vulnerabilities** -- If you discover a security issue, please report it via **[GitHub Issues](https://github.com/NeaBouli/stealth/issues)**. See [SECURITY.md](SECURITY.md) for our full disclosure policy.
 
 ## What We Do Not Accept
 
@@ -32,6 +32,6 @@ All interactions in this repository are governed by our [Code of Conduct](CODE_O
 
 ## Contact
 
-- **Security issues:** security@stealthx.app
-- **General inquiries:** info@stealthx.app
-- **Legal / Licensing:** legal@stealthx.app
+- **Security issues:** [Open an issue](https://github.com/NeaBouli/stealth/issues)
+- **General inquiries:** [Open an issue](https://github.com/NeaBouli/stealth/issues)
+- **Legal / Licensing:** [Open an issue](https://github.com/NeaBouli/stealth/issues)

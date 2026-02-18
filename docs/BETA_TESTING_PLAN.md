@@ -88,7 +88,7 @@ Provide testers with a feedback form covering:
 
 ### Feedback Channels
 - Google Form (primary)
-- Email: beta@stealthx.app
+- GitHub Issues: https://github.com/NeaBouli/stealth/issues
 - GitHub Issues (for bugs)
 
 ### Monitoring
@@ -132,7 +132,7 @@ Proceed to open beta only if:
 - [ ] Privacy Policy live and accessible
 - [ ] Store listing finalized (all languages)
 - [ ] Screenshots current and accurate
-- [ ] Support email monitored (support@stealthx.app)
+- [ ] Support channel monitored (https://github.com/NeaBouli/stealth/issues)
 - [ ] Hotfix process documented and tested
 - [ ] Server capacity sufficient for launch
 - [ ] Staged rollout plan ready (5% → 100%)

@@ -127,7 +127,7 @@ Source Code: https://github.com/stealthx/securecall
 
 For privacy-related inquiries:
 
-- **Email:** privacy@stealthx.app
+- **GitHub Issues:** [Open an issue](https://github.com/NeaBouli/stealth/issues)
 - **Website:** https://stealthx.app/privacy
 - **GitHub:** https://github.com/stealthx/securecall
 

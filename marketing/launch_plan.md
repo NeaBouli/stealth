@@ -151,7 +151,7 @@ SecureCall is available in three tiers: Free (basic encryption), Pro (zero telem
 **About StealthX**
 StealthX is a German privacy technology company building tools for secure communication.
 
-**Contact:** press@stealthx.app
+**Contact:** https://github.com/NeaBouli/stealth/issues
 **Website:** https://stealthx.app
 
 ### Media Outreach Targets

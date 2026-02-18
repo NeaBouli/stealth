@@ -77,4 +77,4 @@ SecureCall is built by StealthX — a team that believes privacy is a fundamenta
 
 Privacy Policy: https://stealthx.app/privacy
 Source Code: https://github.com/stealthx/securecall
-Support: support@stealthx.app
+Support: https://github.com/NeaBouli/stealth/issues

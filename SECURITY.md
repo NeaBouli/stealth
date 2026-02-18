@@ -7,7 +7,7 @@ If you discover a security vulnerability in SecureCall or the StealthX platform,
 
 Instead, report it privately to:
 
-**security@stealthx.app**
+**[Open an issue](https://github.com/NeaBouli/stealth/issues)**
 
 Please include:
 

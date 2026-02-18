@@ -4,7 +4,7 @@
 # ═══════════════════════════════════════════════════════════
 set -euo pipefail
 
-ADMIN_EMAIL="${1:-admin@stealthx.app}"
+ADMIN_EMAIL="${1:-admin@example.com}"
 
 echo "╔══════════════════════════════════════════╗"
 echo "║   SSL Certificate Setup                  ║"

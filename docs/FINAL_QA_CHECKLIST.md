@@ -213,7 +213,7 @@ Mark each item with `[x]` when verified.
 - [ ] Release notes written
 - [ ] Content rating questionnaire ready
 - [ ] Privacy Policy URL works
-- [ ] Contact email monitored (support@stealthx.app)
+- [ ] Contact channel monitored (https://github.com/NeaBouli/stealth/issues)
 
 ---
 

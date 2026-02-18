@@ -164,7 +164,7 @@ DOMAIN=securecall.app
 SIGNAL_DOMAIN=signal.securecall.app
 TURN_DOMAIN=turn.securecall.app
 WEBSITE_DOMAIN=stealthx.app
-ADMIN_EMAIL=admin@stealthx.app
+ADMIN_EMAIL=admin@example.com
 
 # Generate secure values:
 ADMIN_API_KEY=$(openssl rand -hex 32)
@@ -204,7 +204,7 @@ docker run --rm -p 80:80 \
   -v $(pwd)/certbot/www:/var/www/certbot \
   certbot/certbot certonly \
   --standalone \
-  --email admin@stealthx.app \
+  --email admin@example.com \
   --agree-tos \
   --no-eff-email \
   -d signal.securecall.app
@@ -214,7 +214,7 @@ docker run --rm -p 80:80 \
   -v $(pwd)/certbot/www:/var/www/certbot \
   certbot/certbot certonly \
   --standalone \
-  --email admin@stealthx.app \
+  --email admin@example.com \
   --agree-tos \
   --no-eff-email \
   -d stealthx.app -d www.stealthx.app

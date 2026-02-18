@@ -77,4 +77,4 @@ SecureCall wird entwickelt von StealthX — einem Team, das glaubt, dass Privats
 
 Datenschutzrichtlinie: https://stealthx.app/privacy
 Quellcode: https://github.com/stealthx/securecall
-Support: support@stealthx.app
+Support: https://github.com/NeaBouli/stealth/issues

@@ -131,7 +131,7 @@ sudo systemctl reload nginx
 ### Step 4: Install SSL Certificates
 
 ```bash
-bash deployment/ssl_setup.sh admin@stealthx.app
+bash deployment/ssl_setup.sh admin@example.com
 ```
 
 Verify:

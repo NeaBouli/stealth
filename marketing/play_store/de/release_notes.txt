@@ -15,4 +15,4 @@ Sicherheit:
 • Perfect Forward Secrecy
 • Zero-Knowledge-Architektur
 
-Feedback? support@stealthx.app
+Feedback? Erstelle ein Issue: https://github.com/NeaBouli/stealth/issues
