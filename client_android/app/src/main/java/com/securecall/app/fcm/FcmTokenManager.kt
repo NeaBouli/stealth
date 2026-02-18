@@ -12,15 +12,19 @@ object FcmTokenManager {
     private const val KEY_TOKEN = "fcm_token"
 
     fun ensureTokenRegistered(context: Context) {
-        FirebaseMessaging.getInstance().token
-            .addOnSuccessListener { token ->
-                Log.d(TAG, "FCM token obtained")
-                saveToken(context, token)
-                sendTokenToBackend(token)
-            }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to get FCM token", e)
-            }
+        try {
+            FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { token ->
+                    Log.d(TAG, "FCM token obtained")
+                    saveToken(context, token)
+                    sendTokenToBackend(token)
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to get FCM token", e)
+                }
+        } catch (e: Exception) {
+            Log.w(TAG, "Firebase not initialized, skipping FCM token registration", e)
+        }
     }
 
     fun onTokenRefreshed(context: Context, token: String) {
