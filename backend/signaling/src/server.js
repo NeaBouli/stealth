@@ -832,8 +832,54 @@ wss.on("connection", (ws, req) => {
   });
 });
 
+// --- Production Error Handling ---
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[ERROR] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[ERROR] Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// --- Health Check Endpoint ---
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// --- Metrics Endpoint ---
+app.get("/metrics", (req, res) => {
+  const used = process.memoryUsage();
+  res.json({
+    memory: {
+      rss: Math.round(used.rss / 1024 / 1024) + " MB",
+      heapTotal: Math.round(used.heapTotal / 1024 / 1024) + " MB",
+      heapUsed: Math.round(used.heapUsed / 1024 / 1024) + " MB"
+    },
+    uptime: Math.round(process.uptime()) + " seconds",
+    activeConnections: wss.clients.size,
+    registeredClients: clientIds.size,
+    activeSessions: routingTable.size
+  });
+});
+
 // --- Start Server ---
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
-  console.log("[SIGNAL] listening on", PORT);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`[SIGNAL] Server running on port ${PORT}`);
+  console.log(`[SIGNAL] WebSocket endpoint: ws://0.0.0.0:${PORT}/signal`);
+  console.log(`[SIGNAL] Health check: http://0.0.0.0:${PORT}/health`);
+});
+
+// --- Graceful Shutdown ---
+process.on('SIGTERM', () => {
+  console.log('[SIGNAL] SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('[SIGNAL] Server closed');
+    process.exit(0);
+  });
 });
