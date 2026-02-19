@@ -9,7 +9,7 @@ RUN apk add --no-cache dumb-init
 COPY package.json package-lock.json* ./
 
 # Production dependencies only
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 # Copy application code
 COPY src/ ./src/
