@@ -13,10 +13,9 @@ const fcm = require("./fcm");
 fcm.initFcm();
 
 // --- STUN/TURN Configuration (BACKEND-02) ---
-// SECURITY: TURN credentials must be set via environment variables
+// SECURITY: TURN credentials should be set via environment variables
 if (process.env.NODE_ENV === "production" && (!process.env.TURN_USER || !process.env.TURN_PASS)) {
-  console.error("[FATAL] TURN_USER and TURN_PASS environment variables are required in production");
-  process.exit(1);
+  console.warn("[WARN] TURN_USER and TURN_PASS not set — TURN relay disabled. Set via Railway Dashboard.");
 }
 
 const ICE_SERVERS = [

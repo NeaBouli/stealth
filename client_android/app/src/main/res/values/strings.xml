@@ -101,6 +101,12 @@
     <string name="dialer_invite_share">Join me on SecureCall for encrypted voice calls! Download: https://neabouli.github.io/stealth/</string>
     <string name="dialer_invite_via">Invite via\u2026</string>
 
+    <!-- Server URLs -->
+    <string name="server_url_production">wss://protective-healing-production.up.railway.app/signal</string>
+    <string name="server_url_debug">ws://10.0.2.2:8080/signal</string>
+    <string name="stun_server">stun:stun.l.google.com:19302</string>
+    <string name="turn_server">turn:a.relay.metered.ca:443?transport=tcp</string>
+
     <!-- Content Descriptions (Accessibility) -->
     <string name="cd_caller_avatar">Caller avatar</string>
     <string name="cd_encrypted">Call is encrypted</string>
