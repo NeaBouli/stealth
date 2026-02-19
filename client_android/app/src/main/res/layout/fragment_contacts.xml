@@ -25,6 +25,7 @@
                 android:layout_height="wrap_content"
                 android:hint="@string/contacts_search"
                 android:inputType="text"
+                android:imeOptions="actionSearch"
                 android:minHeight="@dimen/touch_target_min" />
         </com.google.android.material.textfield.TextInputLayout>
 

@@ -48,7 +48,7 @@ Two deployment options are available:
 
 ### 1. Purchase Domain
 
-Purchase `stealthx.app` (or your domain) from a registrar.
+Purchase `neabouli.github.io/stealth` (or your domain) from a registrar.
 
 ### 2. DNS Records
 
@@ -64,9 +64,9 @@ Add these A records pointing to your VPS IP:
 ### 3. Verify DNS
 
 ```bash
-dig stealthx.app +short
-dig signal.stealthx.app +short
-dig turn.stealthx.app +short
+dig neabouli.github.io/stealth +short
+dig signal.securecall.app +short
+dig turn.securecall.app +short
 ```
 
 All should return your VPS IP.
@@ -80,7 +80,7 @@ All should return your VPS IP.
 ssh root@YOUR_VPS_IP
 
 # Clone repository
-git clone https://github.com/stealthx/securecall.git /opt/securecall-repo
+git clone https://github.com/NeaBouli/stealth.git /opt/securecall-repo
 cd /opt/securecall-repo
 
 # Run setup script
@@ -110,12 +110,12 @@ pm2 status
 
 ```bash
 # Copy configs
-sudo cp deployment/nginx_config/signal.stealthx.app.conf /etc/nginx/sites-available/
-sudo cp deployment/nginx_config/stealthx.app.conf /etc/nginx/sites-available/
+sudo cp deployment/nginx_config/signal.securecall.app.conf /etc/nginx/sites-available/
+sudo cp deployment/nginx_config/neabouli.github.io/stealth.conf /etc/nginx/sites-available/
 
 # Enable sites
-sudo ln -sf /etc/nginx/sites-available/signal.stealthx.app.conf /etc/nginx/sites-enabled/
-sudo ln -sf /etc/nginx/sites-available/stealthx.app.conf /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/signal.securecall.app.conf /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/neabouli.github.io/stealth.conf /etc/nginx/sites-enabled/
 
 # Remove default
 sudo rm -f /etc/nginx/sites-enabled/default
@@ -136,10 +136,10 @@ bash deployment/ssl_setup.sh admin@example.com
 
 Verify:
 ```bash
-curl -I https://signal.stealthx.app/
+curl -I https://signal.securecall.app/
 # Should return: HTTP/2 200
 
-curl -I https://stealthx.app/
+curl -I https://neabouli.github.io/stealth/
 # Should return: HTTP/2 200
 ```
 
@@ -158,8 +158,8 @@ Set:
 - `static-auth-secret=YOUR_TURN_PASS` (from Step 2 output)
 
 Uncomment TLS lines after SSL cert is obtained:
-- `cert=/etc/letsencrypt/live/turn.stealthx.app/fullchain.pem`
-- `pkey=/etc/letsencrypt/live/turn.stealthx.app/privkey.pem`
+- `cert=/etc/letsencrypt/live/turn.securecall.app/fullchain.pem`
+- `pkey=/etc/letsencrypt/live/turn.securecall.app/privkey.pem`
 
 ```bash
 # Start coturn
@@ -178,19 +178,19 @@ bash deployment/monitoring_setup.sh
 
 ```bash
 # Signaling health
-curl https://signal.stealthx.app/
+curl https://signal.securecall.app/
 # → {"status":"ok",...}
 
 # Website
-curl -I https://stealthx.app/
+curl -I https://neabouli.github.io/stealth/
 # → HTTP/2 200
 
 # WebSocket test (requires wscat or websocat)
-npx wscat -c wss://signal.stealthx.app/signal
+npx wscat -c wss://signal.securecall.app/signal
 # → Connected
 
 # TURN test
-turnutils_uclient -t turn.stealthx.app -u securecall -w YOUR_TURN_PASS
+turnutils_uclient -t turn.securecall.app -u securecall -w YOUR_TURN_PASS
 # → Allocation successful
 
 # PM2 processes
@@ -210,7 +210,7 @@ sudo ufw status
 - **Logs**: `pm2 logs securecall-signaling`
 - **Health checks**: Every 5 min via cron
 - **UptimeRobot**: Set up free monitoring at https://uptimerobot.com
-  - Monitor URL: `https://signal.stealthx.app/`
+  - Monitor URL: `https://signal.securecall.app/`
   - Check interval: 5 minutes
   - Alert: Email/Slack
 

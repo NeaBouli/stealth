@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="16dp">
+
+    <!-- Phone number display -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="16dp">
+
+        <EditText
+            android:id="@+id/phoneNumberDisplay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="28sp"
+            android:textColor="?attr/colorOnSurface"
+            android:hint="@string/dialer_enter_number"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
+            android:inputType="phone"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:background="@android:color/transparent"
+            android:paddingEnd="48dp"
+            android:paddingStart="48dp"
+            android:minHeight="48dp" />
+
+        <ImageButton
+            android:id="@+id/btnBackspace"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical|end"
+            android:src="@drawable/ic_backspace"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/dialer_backspace"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- Dial pad grid -->
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:columnCount="3"
+        android:rowCount="4"
+        android:layout_gravity="center"
+        android:useDefaultMargins="true">
+
+        <!-- Row 1: 1 2 3 -->
+        <Button android:id="@+id/btn1" style="@style/Widget.SecureCall.DialButton"
+            android:text="1" android:tag="1" />
+        <Button android:id="@+id/btn2" style="@style/Widget.SecureCall.DialButton"
+            android:text="2\nABC" android:tag="2" />
+        <Button android:id="@+id/btn3" style="@style/Widget.SecureCall.DialButton"
+            android:text="3\nDEF" android:tag="3" />
+
+        <!-- Row 2: 4 5 6 -->
+        <Button android:id="@+id/btn4" style="@style/Widget.SecureCall.DialButton"
+            android:text="4\nGHI" android:tag="4" />
+        <Button android:id="@+id/btn5" style="@style/Widget.SecureCall.DialButton"
+            android:text="5\nJKL" android:tag="5" />
+        <Button android:id="@+id/btn6" style="@style/Widget.SecureCall.DialButton"
+            android:text="6\nMNO" android:tag="6" />
+
+        <!-- Row 3: 7 8 9 -->
+        <Button android:id="@+id/btn7" style="@style/Widget.SecureCall.DialButton"
+            android:text="7\nPQRS" android:tag="7" />
+        <Button android:id="@+id/btn8" style="@style/Widget.SecureCall.DialButton"
+            android:text="8\nTUV" android:tag="8" />
+        <Button android:id="@+id/btn9" style="@style/Widget.SecureCall.DialButton"
+            android:text="9\nWXYZ" android:tag="9" />
+
+        <!-- Row 4: * 0 # -->
+        <Button android:id="@+id/btnStar" style="@style/Widget.SecureCall.DialButton"
+            android:text="*" android:tag="*" />
+        <Button android:id="@+id/btn0" style="@style/Widget.SecureCall.DialButton"
+            android:text="0\n+" android:tag="0" />
+        <Button android:id="@+id/btnHash" style="@style/Widget.SecureCall.DialButton"
+            android:text="#" android:tag="#" />
+    </GridLayout>
+
+    <!-- Call button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabCall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="96dp"
+        android:src="@drawable/ic_call"
+        android:contentDescription="@string/call_start"
+        app:backgroundTint="@color/call_active_green"
+        app:tint="@android:color/white"
+        app:fabSize="normal" />
+
+</LinearLayout>

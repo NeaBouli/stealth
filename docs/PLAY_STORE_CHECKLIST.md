@@ -5,7 +5,7 @@
 - [ ] Google Play Developer Account created (one-time fee: €25)
 - [ ] Developer profile completed (name, address, email, phone)
 - [ ] Release keystore generated and securely stored
-- [ ] Privacy Policy hosted at public URL (https://stealthx.app/privacy)
+- [ ] Privacy Policy hosted at public URL (https://neabouli.github.io/stealth/privacy.html)
 
 ## App Setup (repeat for each flavor: FREE, PRO, PREMIUM)
 

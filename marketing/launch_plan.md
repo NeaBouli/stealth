@@ -2,7 +2,7 @@
 
 ## Pre-Launch (2-4 weeks before)
 
-### Landing Page — stealthx.app
+### Landing Page — neabouli.github.io/stealth
 
 **Pages needed:**
 - `/` — Hero section, features, download CTA
@@ -152,7 +152,7 @@ SecureCall is available in three tiers: Free (basic encryption), Pro (zero telem
 StealthX is a German privacy technology company building tools for secure communication.
 
 **Contact:** https://github.com/NeaBouli/stealth/issues
-**Website:** https://stealthx.app
+**Website:** https://neabouli.github.io/stealth
 
 ### Media Outreach Targets
 
@@ -193,7 +193,7 @@ StealthX is a German privacy technology company building tools for secure commun
 - Respond to every Play Store review
 - Engage with Reddit/HN comments
 - Create FAQ based on common questions
-- Start a blog on stealthx.app with technical posts
+- Start a blog on neabouli.github.io/stealth with technical posts
 - Consider a Matrix/Signal group for the community
 
 ### Metrics to Track

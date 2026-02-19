@@ -26,6 +26,7 @@ import com.securecall.app.init.AppInit;
 import com.securecall.app.fcm.FcmTokenManager;
 import com.securecall.app.ui.CallsFragment;
 import com.securecall.app.ui.ContactsFragment;
+import com.securecall.app.ui.DialerFragment;
 import com.securecall.app.ui.SettingsFragment;
 import com.securecall.app.ui.onboarding.OnboardingActivity;
 
@@ -85,6 +86,9 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             } else if (id == R.id.nav_contacts) {
                 showFragment(new ContactsFragment());
+                return true;
+            } else if (id == R.id.nav_dialer) {
+                showFragment(new DialerFragment());
                 return true;
             } else if (id == R.id.nav_settings) {
                 showFragment(new SettingsFragment());

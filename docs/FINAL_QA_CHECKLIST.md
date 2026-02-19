@@ -185,8 +185,8 @@ Mark each item with `[x]` when verified.
 
 ## 13. Backend / Server Tests
 
-- [ ] Signaling server health: `curl https://signal.stealthx.app/`
-- [ ] WebSocket connects: `wscat -c wss://signal.stealthx.app/signal`
+- [ ] Signaling server health: `curl https://signal.securecall.app/`
+- [ ] WebSocket connects: `wscat -c wss://signal.securecall.app/signal`
 - [ ] STUN server responds
 - [ ] TURN server allocates relay (test behind NAT)
 - [ ] SSL certificate valid (no warnings)
@@ -196,7 +196,7 @@ Mark each item with `[x]` when verified.
 
 ## 14. Privacy & Compliance
 
-- [ ] Privacy Policy accessible at stealthx.app/privacy
+- [ ] Privacy Policy accessible at neabouli.github.io/stealth/privacy.html
 - [ ] Privacy Policy matches actual data practices
 - [ ] GDPR data deletion option works
 - [ ] FREE: Crashlytics opt-out toggle works

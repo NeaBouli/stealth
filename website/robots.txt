@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://stealthx.app/sitemap.xml
+Sitemap: https://neabouli.github.io/stealth/sitemap.xml

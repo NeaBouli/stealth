@@ -41,7 +41,7 @@ Welcome to the SecureCall documentation! SecureCall is an Android app for end-to
 | | |
 |---|---|
 | **Download** | [Google Play](https://play.google.com/store/apps/details?id=com.securecall.app.free) |
-| **Website** | [stealthx.app](https://neabouli.github.io/stealth/) |
+| **Website** | [neabouli.github.io/stealth](https://neabouli.github.io/stealth/) |
 | **Source Code** | [GitHub](https://github.com/NeaBouli/stealth) |
 | **Report a Bug** | [GitHub Issues](https://github.com/NeaBouli/stealth/issues) |
 | **License** | [Source Available](https://github.com/NeaBouli/stealth/blob/main/LICENSE) |

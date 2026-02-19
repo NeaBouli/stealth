@@ -121,15 +121,15 @@ We may update this Privacy Policy from time to time. Changes will be posted in t
 
 Our source code is publicly available for inspection. You don't have to trust our claims — you can verify them yourself.
 
-Source Code: https://github.com/stealthx/securecall
+Source Code: https://github.com/NeaBouli/stealth
 
 ## Contact
 
 For privacy-related inquiries:
 
 - **GitHub Issues:** [Open an issue](https://github.com/NeaBouli/stealth/issues)
-- **Website:** https://stealthx.app/privacy
-- **GitHub:** https://github.com/stealthx/securecall
+- **Website:** https://neabouli.github.io/stealth/privacy.html
+- **GitHub:** https://github.com/NeaBouli/stealth
 
 ---
 

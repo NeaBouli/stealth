@@ -13,8 +13,8 @@ Complete guide for deploying the SecureCall backend infrastructure on a VPS.
                     │            │             │
               ┌─────▼──┐  ┌─────▼──┐    ┌─────▼──┐
               │ :443   │  │ :443   │    │ :3478  │
-              │ stealthx│  │ signal.│    │ turn.  │
-              │ .app   │  │ secure │    │ secure │
+              │ GitHub │  │ signal.│    │ turn.  │
+              │ Pages  │  │ secure │    │ secure │
               │(Website)│  │ call   │    │ call   │
               └────┬───┘  │ .app   │    │ .app   │
                    │      │(Signal)│    │(TURN)  │
@@ -33,7 +33,7 @@ Complete guide for deploying the SecureCall backend infrastructure on a VPS.
 
 - **VPS**: Ubuntu 22.04 LTS (recommended), 2 vCPU, 2 GB RAM minimum
 - **Domains**:
-  - `stealthx.app` (landing page)
+  - `neabouli.github.io/stealth` (landing page)
   - `signal.securecall.app` (signaling server)
   - `turn.securecall.app` (TURN server)
 - **DNS access** for A/AAAA records
@@ -119,7 +119,7 @@ sudo systemctl restart sshd
 
 Add these DNS records at your domain registrar:
 
-### For stealthx.app
+### For neabouli.github.io/stealth
 
 | Type | Name | Value | TTL |
 |------|------|-------|-----|
@@ -136,7 +136,7 @@ Add these DNS records at your domain registrar:
 Verify DNS propagation:
 ```bash
 dig signal.securecall.app +short
-dig stealthx.app +short
+dig neabouli.github.io/stealth +short
 ```
 
 ## Step 3: Clone & Configure
@@ -147,7 +147,7 @@ dig stealthx.app +short
 cd /opt
 sudo mkdir securecall && sudo chown $USER:$USER securecall
 cd securecall
-git clone https://github.com/stealthx/securecall.git .
+git clone https://github.com/NeaBouli/stealth.git .
 ```
 
 ### 3.2 Configure Environment
@@ -163,7 +163,7 @@ Fill in:
 DOMAIN=securecall.app
 SIGNAL_DOMAIN=signal.securecall.app
 TURN_DOMAIN=turn.securecall.app
-WEBSITE_DOMAIN=stealthx.app
+WEBSITE_DOMAIN=neabouli.github.io/stealth
 ADMIN_EMAIL=admin@example.com
 
 # Generate secure values:
@@ -217,7 +217,7 @@ docker run --rm -p 80:80 \
   --email admin@example.com \
   --agree-tos \
   --no-eff-email \
-  -d stealthx.app -d www.stealthx.app
+  -d neabouli.github.io/stealth -d www.neabouli.github.io/stealth
 ```
 
 ### 4.2 Auto-Renewal
@@ -254,7 +254,7 @@ curl https://signal.securecall.app/
 npx wscat -c wss://signal.securecall.app/signal
 
 # Check website
-curl -I https://stealthx.app/
+curl -I https://neabouli.github.io/stealth/
 
 # Check TURN
 turnutils_uclient -t -u securecall -w YOUR_TURN_PASS turn.securecall.app

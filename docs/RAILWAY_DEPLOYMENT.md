@@ -65,8 +65,8 @@ Service → Variables → "New Variable":
 4. Diese URL kopieren — wird für die Android App benötigt
 
 **Custom Domain (optional):**
-1. "Add Custom Domain" → `signal.stealthx.app` eingeben
-2. DNS CNAME Record setzen: `signal.stealthx.app → [railway-domain].up.railway.app`
+1. "Add Custom Domain" → `signal.securecall.app` eingeben
+2. DNS CNAME Record setzen: `signal.securecall.app → [railway-domain].up.railway.app`
 
 ## Schritt 7: Health Check verifizieren
 

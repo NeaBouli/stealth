@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://stealthx.app/</loc>
+        <loc>https://neabouli.github.io/stealth/</loc>
         <lastmod>2026-02-18</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
     </url>
     <url>
-        <loc>https://stealthx.app/security.html</loc>
+        <loc>https://neabouli.github.io/stealth/security.html</loc>
         <lastmod>2026-02-18</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://stealthx.app/faq.html</loc>
+        <loc>https://neabouli.github.io/stealth/faq.html</loc>
         <lastmod>2026-02-18</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://stealthx.app/privacy.html</loc>
+        <loc>https://neabouli.github.io/stealth/privacy.html</loc>
         <lastmod>2026-02-18</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>

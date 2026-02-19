@@ -87,7 +87,7 @@ stealth/
 │       ├── rateLimit.js            # Rate limiting
 │       └── validator.js            # Input validation
 │
-├── website/                 # Landing page (stealthx.app)
+├── website/                 # Landing page (neabouli.github.io/stealth)
 ├── docs/                    # Documentation
 ├── deploy/                  # Docker deployment
 ├── deployment/              # PM2 bare-metal deployment

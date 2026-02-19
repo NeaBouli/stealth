@@ -12,7 +12,7 @@ services:
       - NODE_ENV=production
       - PORT=8080
       - ADMIN_API_KEY=${ADMIN_API_KEY}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://signal.securecall.app,https://stealthx.app}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://signal.securecall.app,https://neabouli.github.io/stealth}
       - MAX_CONNS_PER_IP=${MAX_CONNS_PER_IP:-10}
       - STUN_URL=${STUN_URL:-stun:stun.l.google.com:19302}
       - TURN_URL=${TURN_URL:-turn:turn.securecall.app:3478}

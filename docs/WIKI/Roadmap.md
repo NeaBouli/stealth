@@ -16,7 +16,7 @@
 - [x] Security Audit (48 findings, all Critical/High fixed)
 - [x] R8/ProGuard optimization
 - [x] Crashlytics integration (Free tier, opt-out)
-- [x] Landing page website (stealthx.app)
+- [x] Landing page website (neabouli.github.io/stealth)
 - [x] Complete documentation & Wiki
 
 ## In Progress

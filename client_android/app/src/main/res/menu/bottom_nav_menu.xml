@@ -9,6 +9,10 @@
         android:icon="@drawable/ic_contacts"
         android:title="@string/nav_contacts" />
     <item
+        android:id="@+id/nav_dialer"
+        android:icon="@drawable/ic_dialpad"
+        android:title="@string/nav_dialer" />
+    <item
         android:id="@+id/nav_settings"
         android:icon="@drawable/ic_settings"
         android:title="@string/nav_settings" />

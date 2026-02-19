@@ -12,7 +12,7 @@ The SecureCall signaling server uses WebSocket for real-time communication and H
 
 ### WebSocket Protocol
 
-**Connection:** `wss://signal.stealthx.app/signal`
+**Connection:** `wss://signal.securecall.app/signal`
 
 All messages are JSON-encoded and follow this format:
 

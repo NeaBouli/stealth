@@ -83,6 +83,19 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_done">Get Started</string>
 
+    <!-- Dialer -->
+    <string name="nav_dialer">Dialer</string>
+    <string name="dialer_enter_number">Enter number</string>
+    <string name="dialer_backspace">Delete</string>
+    <string name="dialer_invite_title">Invite to SecureCall</string>
+    <string name="dialer_invite_message">%1$s doesn\'t have SecureCall yet. Send an invitation?</string>
+    <string name="dialer_send_sms">Send SMS</string>
+    <string name="dialer_share_link">Share Link</string>
+    <string name="dialer_no_sms_app">No SMS app found</string>
+    <string name="dialer_invite_sms">Join me on SecureCall for encrypted voice calls! Download: https://neabouli.github.io/stealth/</string>
+    <string name="dialer_invite_share">Join me on SecureCall for encrypted voice calls! Download: https://neabouli.github.io/stealth/</string>
+    <string name="dialer_invite_via">Invite via\u2026</string>
+
     <!-- Content Descriptions (Accessibility) -->
     <string name="cd_caller_avatar">Caller avatar</string>
     <string name="cd_encrypted">Call is encrypted</string>

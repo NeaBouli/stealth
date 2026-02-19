@@ -48,12 +48,12 @@ Nach dem nächsten Push zu `main`:
 
 ### 1.3 Custom Domain (optional, kostet ~12 EUR/Jahr)
 
-Falls du `stealthx.app` kaufen möchtest:
+Falls du `neabouli.github.io/stealth` kaufen möchtest:
 1. Domain registrieren bei Namecheap (~12 EUR/Jahr) oder Cloudflare (~11 EUR/Jahr)
 2. DNS: CNAME `www` → `neabouli.github.io`
-3. GitHub Pages Settings → Custom Domain → `stealthx.app`
+3. GitHub Pages Settings → Custom Domain → `neabouli.github.io/stealth`
 4. "Enforce HTTPS" aktivieren
-5. `website/CNAME` Datei erstellen mit Inhalt: `stealthx.app`
+5. `website/CNAME` Datei erstellen mit Inhalt: `neabouli.github.io/stealth`
 
 ### Checkliste
 
