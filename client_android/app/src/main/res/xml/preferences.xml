@@ -62,6 +62,15 @@
             android:icon="@drawable/ic_shield" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="@string/settings_privacy_calls">
+        <SwitchPreferenceCompat
+            android:key="pref_call_history"
+            android:title="@string/pref_call_history"
+            android:summary="@string/pref_call_history_summary"
+            android:defaultValue="true"
+            android:icon="@drawable/ic_call_history" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/settings_appearance">
         <ListPreference
             android:key="pref_dark_mode"

@@ -4,15 +4,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center_horizontal"
-    android:padding="16dp">
+    android:gravity="center_horizontal">
 
     <!-- Phone number display -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:layout_marginBottom="16dp">
+        android:paddingHorizontal="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp">
 
         <EditText
             android:id="@+id/phoneNumberDisplay"
@@ -42,15 +42,27 @@
             android:visibility="gone" />
     </FrameLayout>
 
-    <!-- Dial pad grid -->
-    <GridLayout
+    <!-- Contact suggestions (shown when typing) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/contactSuggestions"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:visibility="gone"
+        android:paddingHorizontal="8dp"
+        android:clipToPadding="false" />
+
+    <!-- Dial pad grid -->
+    <GridLayout
+        android:id="@+id/dialPad"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3"
         android:columnCount="3"
         android:rowCount="4"
+        android:paddingHorizontal="24dp"
         android:layout_gravity="center"
-        android:useDefaultMargins="true">
+        android:useDefaultMargins="false">
 
         <!-- Row 1: 1 2 3 -->
         <Button android:id="@+id/btn1" style="@style/Widget.SecureCall.DialButton"
@@ -90,7 +102,7 @@
         android:id="@+id/fabCall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:layout_marginBottom="96dp"
         android:src="@drawable/ic_call"
         android:contentDescription="@string/call_start"

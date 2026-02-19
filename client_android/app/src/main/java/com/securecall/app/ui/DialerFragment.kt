@@ -12,16 +12,29 @@ import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.securecall.app.CallActivity
 import com.securecall.app.R
+import com.securecall.app.data.Contact
 import com.securecall.app.data.ContactRepository
+import com.securecall.app.ui.adapter.ContactAdapter
 
 class DialerFragment : Fragment() {
 
     private lateinit var phoneDisplay: EditText
     private lateinit var btnBackspace: ImageButton
+    private lateinit var contactSuggestions: RecyclerView
+    private lateinit var dialPad: View
     private var phoneNumber = StringBuilder()
+    private var allContacts: List<Contact> = emptyList()
+
+    // T9 mapping: digit → letters
+    private val t9Map = mapOf(
+        '2' to "abc", '3' to "def", '4' to "ghi", '5' to "jkl",
+        '6' to "mno", '7' to "pqrs", '8' to "tuv", '9' to "wxyz"
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -32,6 +45,13 @@ class DialerFragment : Fragment() {
 
         phoneDisplay = view.findViewById(R.id.phoneNumberDisplay)
         btnBackspace = view.findViewById(R.id.btnBackspace)
+        contactSuggestions = view.findViewById(R.id.contactSuggestions)
+        dialPad = view.findViewById(R.id.dialPad)
+
+        contactSuggestions.layoutManager = LinearLayoutManager(requireContext())
+
+        // Load contacts
+        allContacts = ContactRepository.getAll(requireContext())
 
         // Wire dial pad buttons
         val dialButtons = listOf(
@@ -76,9 +96,55 @@ class DialerFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        allContacts = ContactRepository.getAll(requireContext())
+        if (phoneNumber.isNotEmpty()) filterContacts()
+    }
+
     private fun updateDisplay() {
         phoneDisplay.setText(phoneNumber.toString())
         btnBackspace.visibility = if (phoneNumber.isNotEmpty()) View.VISIBLE else View.GONE
+        filterContacts()
+    }
+
+    private fun filterContacts() {
+        val digits = phoneNumber.toString()
+        if (digits.isEmpty()) {
+            contactSuggestions.visibility = View.GONE
+            return
+        }
+
+        val matches = allContacts.filter { contact ->
+            // Match by phone number (contains typed digits)
+            val normalizedPhone = normalizePhone(contact.phoneOrId)
+            normalizedPhone.contains(digits) ||
+            // Match by T9 name search
+            matchesT9(contact.name, digits)
+        }
+
+        if (matches.isNotEmpty()) {
+            contactSuggestions.adapter = ContactAdapter(matches) { contact ->
+                // Start call with selected contact
+                val intent = Intent(requireContext(), CallActivity::class.java).apply {
+                    putExtra("callerName", contact.name)
+                    putExtra("phoneNumber", contact.phoneOrId)
+                }
+                startActivity(intent)
+            }
+            contactSuggestions.visibility = View.VISIBLE
+        } else {
+            contactSuggestions.visibility = View.GONE
+        }
+    }
+
+    private fun matchesT9(name: String, digits: String): Boolean {
+        val nameLower = name.lowercase()
+        // Convert name to T9 digits and check if typed digits are a prefix
+        val nameDigits = nameLower.map { ch ->
+            t9Map.entries.find { it.value.contains(ch) }?.key ?: ch
+        }.joinToString("")
+        return nameDigits.startsWith(digits) || nameDigits.contains(digits)
     }
 
     private fun handleCall() {
