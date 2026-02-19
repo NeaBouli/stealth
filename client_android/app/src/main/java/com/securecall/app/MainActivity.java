@@ -17,6 +17,8 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import android.view.View;
+
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 
 import com.securecall.app.audio.capture.AudioCapturePlaceholder;
@@ -79,26 +81,31 @@ public class MainActivity extends AppCompatActivity {
 
         // Setup bottom navigation
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        ExtendedFloatingActionButton fab = findViewById(R.id.fabNewCall);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_calls) {
                 showFragment(new CallsFragment());
+                fab.setVisibility(View.VISIBLE);
                 return true;
             } else if (id == R.id.nav_contacts) {
                 showFragment(new ContactsFragment());
+                fab.setVisibility(View.VISIBLE);
                 return true;
             } else if (id == R.id.nav_dialer) {
                 showFragment(new DialerFragment());
+                // Hide fabNewCall so the dialer's own fabCall is accessible
+                fab.setVisibility(View.GONE);
                 return true;
             } else if (id == R.id.nav_settings) {
                 showFragment(new SettingsFragment());
+                fab.setVisibility(View.GONE);
                 return true;
             }
             return false;
         });
 
         // FAB for new call — navigate to contacts to pick a recipient
-        ExtendedFloatingActionButton fab = findViewById(R.id.fabNewCall);
         fab.setOnClickListener(v -> {
             Log.d(TAG, "New Call FAB clicked — navigating to contacts");
             bottomNav.setSelectedItemId(R.id.nav_contacts);
