@@ -72,6 +72,20 @@ class ContactsFragment : Fragment() {
             }
         })
 
+        // Hide bottom nav and main FAB when search is focused so contacts stay visible above keyboard
+        searchInput.setOnFocusChangeListener { _, hasFocus ->
+            val activity = activity ?: return@setOnFocusChangeListener
+            val bottomNav = activity.findViewById<View>(R.id.bottomNav)
+            val fab = activity.findViewById<View>(R.id.fabNewCall)
+            if (hasFocus) {
+                bottomNav?.visibility = View.GONE
+                fab?.visibility = View.GONE
+            } else {
+                bottomNav?.visibility = View.VISIBLE
+                fab?.visibility = View.VISIBLE
+            }
+        }
+
         // Request contacts permission if not granted
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_CONTACTS)
             != PackageManager.PERMISSION_GRANTED) {

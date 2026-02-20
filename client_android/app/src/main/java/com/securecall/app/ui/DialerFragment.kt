@@ -1,8 +1,12 @@
 package com.securecall.app.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.provider.ContactsContract
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +15,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -50,8 +55,8 @@ class DialerFragment : Fragment() {
 
         contactSuggestions.layoutManager = LinearLayoutManager(requireContext())
 
-        // Load contacts
-        allContacts = ContactRepository.getAll(requireContext())
+        // Load contacts (app + phone contacts, same as ContactsFragment)
+        loadAllContacts()
 
         // Wire dial pad buttons
         val dialButtons = listOf(
@@ -98,7 +103,7 @@ class DialerFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        allContacts = ContactRepository.getAll(requireContext())
+        loadAllContacts()
         if (phoneNumber.isNotEmpty()) filterContacts()
     }
 
@@ -154,10 +159,9 @@ class DialerFragment : Fragment() {
             return
         }
 
-        // Check if a saved contact matches this number
-        val contacts = ContactRepository.getAll(requireContext())
+        // Check if a saved or phone contact matches this number
         val normalized = normalizePhone(number)
-        val match = contacts.find { normalizePhone(it.phoneOrId) == normalized }
+        val match = allContacts.find { normalizePhone(it.phoneOrId) == normalized }
 
         if (match != null) {
             // Known contact — start encrypted call
@@ -210,5 +214,55 @@ class DialerFragment : Fragment() {
 
     private fun normalizePhone(number: String): String {
         return number.replace(Regex("[^0-9+]"), "")
+    }
+
+    private fun loadAllContacts() {
+        val appContacts = ContactRepository.getAll(requireContext())
+        val phoneContacts = loadPhoneContacts()
+        val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
+        val uniquePhoneContacts = phoneContacts.filter { pc ->
+            pc.phoneOrId.replace("\\s".toRegex(), "") !in appPhoneNumbers
+        }
+        allContacts = appContacts + uniquePhoneContacts
+    }
+
+    private fun loadPhoneContacts(): List<Contact> {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED) {
+            return emptyList()
+        }
+
+        val contacts = mutableListOf<Contact>()
+        val seen = mutableSetOf<String>()
+
+        try {
+            val cursor = requireContext().contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                ),
+                null, null,
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+            )
+
+            cursor?.use {
+                val nameIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                val numberIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                while (it.moveToNext()) {
+                    val name = it.getString(nameIdx) ?: continue
+                    val number = it.getString(numberIdx) ?: continue
+                    val normalized = number.replace("\\s".toRegex(), "")
+                    if (normalized !in seen) {
+                        seen.add(normalized)
+                        contacts.add(Contact(name = name, phoneOrId = number, isPhoneContact = true))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DialerFragment", "Failed to load phone contacts", e)
+        }
+
+        return contacts
     }
 }
