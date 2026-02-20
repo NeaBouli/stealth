@@ -71,7 +71,21 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.d("WS_SERVICE", "WebSocket connected")
         reconnectAttempts = 0
         startHeartbeatMonitor()
+        registerClient()
         statusCallbackOnline?.invoke()
+    }
+
+    private fun registerClient() {
+        val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
+        var clientId = prefs.getString("client_id", null)
+        if (clientId == null) {
+            clientId = "android-" + java.util.UUID.randomUUID().toString().substring(0, 8)
+            prefs.edit().putString("client_id", clientId).apply()
+            Log.d("WS_SERVICE", "Generated new clientId: $clientId")
+        }
+        val json = """{"type":"REGISTER","clientId":"$clientId"}"""
+        client?.send(json)
+        Log.d("WS_SERVICE", "REGISTER sent: $clientId")
     }
 
     override fun onDisconnected() {

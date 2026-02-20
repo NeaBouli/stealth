@@ -778,6 +778,11 @@ wss.on("connection", (ws, req) => {
       return;
     }
 
+    // HEARTBEAT — client keepalive, just acknowledge
+    if (msg.type === "HEARTBEAT") {
+      return; // silently accept
+    }
+
     // Fallback: unknown message type
     ws.send(JSON.stringify({
       type: "ERROR",

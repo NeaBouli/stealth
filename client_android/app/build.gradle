@@ -140,8 +140,8 @@ android {
             firebaseCrashlytics {
                 mappingFileUploadEnabled false
             }
-            // Development server URLs (Android emulator localhost)
-            buildConfigField "String", "SIGNAL_WS_URL", "\"ws://10.0.2.2:8080/signal\""
+            // Development server URLs (use production for physical device testing)
+            buildConfigField "String", "SIGNAL_WS_URL", "\"wss://protective-healing-production.up.railway.app/signal\""
             buildConfigField "String", "STUN_URL", "\"stun:stun.l.google.com:19302\""
             buildConfigField "String", "TURN_URL", "\"turn:a.relay.metered.ca:443?transport=tcp\""
             buildConfigField "String", "TURNS_URL", "\"turns:a.relay.metered.ca:443?transport=tcp\""

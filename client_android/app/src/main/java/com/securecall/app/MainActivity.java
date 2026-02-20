@@ -55,6 +55,9 @@ public class MainActivity extends AppCompatActivity {
         // Register FCM token for push notifications
         FcmTokenManager.INSTANCE.ensureTokenRegistered(this);
 
+        // Start WebSocket signaling service (connects to backend)
+        startService(new Intent(this, com.securecall.app.net.WebSocketService.class));
+
         // Check if onboarding needed
         SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
         if (!prefs.getBoolean("onboarding_complete", false)) {

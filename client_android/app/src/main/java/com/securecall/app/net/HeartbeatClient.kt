@@ -92,7 +92,7 @@ class HeartbeatClient(
         idlePingTimer?.scheduleAtFixedRate(object : java.util.TimerTask() {
             override fun run() {
                 try {
-                    ws?.send("ping_idle")
+                    ws?.send("{\"type\":\"HEARTBEAT\"}")
                 } catch (_: Exception) {}
             }
         }, 8000, 8000)
