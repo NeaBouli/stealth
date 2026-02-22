@@ -93,6 +93,27 @@ Complete documentation is available in the [Wiki](https://github.com/NeaBouli/st
 
 See the [LICENSE](LICENSE) for full terms.
 
+## Third-Party Services & Transparency
+
+SecureCall uses the following third-party services. **All voice data is encrypted end-to-end on your device before any data leaves it.** No third party can read, intercept, or decrypt your call content.
+
+| Service | Purpose | Data Access |
+|---------|---------|-------------|
+| **Railway.app** | Cloud hosting for the signaling server | Relays encrypted signaling messages only. Cannot decrypt calls. No call logs stored. |
+| **Metered.ca** | TURN relay server for NAT traversal | Relays encrypted media packets when direct peer-to-peer connection fails. Cannot decrypt content. |
+| **Google STUN** | NAT discovery (public IP detection) | Receives IP address only for connection setup. No call data transmitted. Standard WebRTC protocol. |
+| **Firebase Cloud Messaging** | Push notifications for incoming calls | Delivers notification metadata only (caller name, session ID). No call content is transmitted via FCM. |
+| **GitHub Pages** | Project website hosting | Static website only. No user data collected or processed. |
+
+**Key guarantees:**
+
+- The signaling server is **zero-knowledge** -- it facilitates connections but cannot decrypt any call content.
+- TURN relay servers only see encrypted packets -- decryption keys exist only on the two call participants' devices.
+- Firebase is used solely for push notification delivery when the app is in the background. Analytics and Crashlytics are disabled.
+- No user data, call metadata, or communication content is shared with, sold to, or accessible by any third party.
+
+For the full privacy policy, see [Privacy Policy](https://neabouli.github.io/stealth/privacy.html).
+
 ## FAQ
 
 <details>

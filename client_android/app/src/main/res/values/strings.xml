@@ -94,12 +94,22 @@
     <string name="dialer_backspace">Delete</string>
     <string name="dialer_invite_title">Invite to SecureCall</string>
     <string name="dialer_invite_message">%1$s doesn\'t have SecureCall yet. Send an invitation?</string>
+    <string name="dialer_send_messenger">Via Messenger</string>
     <string name="dialer_send_sms">Send SMS</string>
     <string name="dialer_share_link">Share Link</string>
     <string name="dialer_no_sms_app">No SMS app found</string>
+    <string name="dialer_no_messenger">No messenger app found, opening share sheet\u2026</string>
     <string name="dialer_invite_sms">Join me on SecureCall for encrypted voice calls! Download: https://neabouli.github.io/stealth/</string>
     <string name="dialer_invite_share">Join me on SecureCall for encrypted voice calls! Download: https://neabouli.github.io/stealth/</string>
     <string name="dialer_invite_via">Invite via\u2026</string>
+
+    <!-- Background Service -->
+    <string name="pref_background_service">Background Service</string>
+    <string name="pref_background_service_summary">Keep connection active for incoming calls when app is minimized</string>
+    <string name="notif_channel_background">Background Service</string>
+    <string name="notif_channel_background_desc">Keeps SecureCall ready for incoming calls</string>
+    <string name="notif_background_title">SecureCall active</string>
+    <string name="notif_background_text">Ready for incoming calls</string>
 
     <!-- Server URLs -->
     <string name="server_url_production">wss://protective-healing-production.up.railway.app/signal</string>

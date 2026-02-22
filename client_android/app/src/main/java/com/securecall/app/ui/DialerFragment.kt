@@ -177,17 +177,52 @@ class DialerFragment : Fragment() {
     }
 
     private fun showInviteDialog(number: String) {
+        val items = arrayOf(
+            getString(R.string.dialer_send_messenger),
+            getString(R.string.dialer_share_link),
+            getString(R.string.dialer_send_sms)
+        )
         AlertDialog.Builder(requireContext())
             .setTitle(getString(R.string.dialer_invite_title))
             .setMessage(getString(R.string.dialer_invite_message, number))
-            .setPositiveButton(getString(R.string.dialer_send_sms)) { _, _ ->
-                sendSmsInvite(number)
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> sendViaMessenger(number)
+                    1 -> shareInviteLink()
+                    2 -> sendSmsInvite(number)
+                }
             }
-            .setNegativeButton(getString(R.string.dialer_share_link)) { _, _ ->
-                shareInviteLink()
-            }
-            .setNeutralButton(android.R.string.cancel, null)
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun sendViaMessenger(number: String) {
+        val message = getString(R.string.dialer_invite_sms)
+        // Try messengers in priority order: WhatsApp > Telegram > Signal
+        val messengers = listOf(
+            "com.whatsapp" to "com.whatsapp.ContactPicker",
+            "org.telegram.messenger" to null,
+            "org.thoughtcrime.securesms" to null
+        )
+        val pm = requireContext().packageManager
+        for ((pkg, _) in messengers) {
+            try {
+                pm.getPackageInfo(pkg, 0)
+                // Package found — open share intent targeted at this app
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, message)
+                    setPackage(pkg)
+                }
+                startActivity(intent)
+                return
+            } catch (_: PackageManager.NameNotFoundException) {
+                // Not installed, try next
+            }
+        }
+        // No messenger found — fall back to share sheet
+        Toast.makeText(requireContext(), getString(R.string.dialer_no_messenger), Toast.LENGTH_SHORT).show()
+        shareInviteLink()
     }
 
     private fun sendSmsInvite(number: String) {

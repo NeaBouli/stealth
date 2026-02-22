@@ -38,6 +38,7 @@
         <item name="android:layout_columnWeight">1</item>
         <item name="android:layout_rowWeight">1</item>
         <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/stealthx_red</item>
         <item name="android:lineSpacingMultiplier">1.1</item>
         <item name="android:gravity">center</item>
         <item name="android:insetTop">0dp</item>

@@ -64,6 +64,13 @@
 
     <PreferenceCategory android:title="@string/settings_privacy_calls">
         <SwitchPreferenceCompat
+            android:key="pref_background_service"
+            android:title="@string/pref_background_service"
+            android:summary="@string/pref_background_service_summary"
+            android:defaultValue="true"
+            android:icon="@drawable/ic_shield" />
+
+        <SwitchPreferenceCompat
             android:key="pref_call_history"
             android:title="@string/pref_call_history"
             android:summary="@string/pref_call_history_summary"

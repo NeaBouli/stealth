@@ -37,10 +37,6 @@ class ContactAdapter(
         holder.btnCall.setOnClickListener {
             onCallClick?.invoke(contact)
         }
-
-        holder.itemView.setOnClickListener {
-            onCallClick?.invoke(contact)
-        }
     }
 
     override fun getItemCount() = contacts.size

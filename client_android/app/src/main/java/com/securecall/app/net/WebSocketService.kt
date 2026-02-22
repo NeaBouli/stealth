@@ -1,11 +1,20 @@
 package com.securecall.app.net
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.preference.PreferenceManager
 import com.securecall.app.BuildConfig
+import com.securecall.app.MainActivity
+import com.securecall.app.R
 
 /**
  * BACKEND-22..58 / PATCH 201..204:
@@ -39,10 +48,21 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         return binder
     }
 
+    companion object {
+        @Volatile
+        var instance: WebSocketService? = null
+        private const val CHANNEL_ID = "securecall_foreground"
+        private const val NOTIFICATION_ID = 1001
+    }
+
     override fun onCreate() {
         super.onCreate()
         Log.d("WS_SERVICE", "onCreate")
         instance = this
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        if (prefs.getBoolean("pref_background_service", true)) {
+            startForegroundWithNotification()
+        }
         client = HeartbeatClient(wsUrl, this)
         client?.connect()
     }
@@ -104,7 +124,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.e("WS_SERVICE", "WebSocket error", t)
         errorCallback?.invoke(t)
         statusCallbackOffline?.invoke()
-        scheduleReconnect()
+        // Reconnect is handled by HeartbeatClient — do NOT call scheduleReconnect() here
     }
 
     override fun onPing() {
@@ -374,8 +394,43 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         }
     }
 
-    companion object {
-        @Volatile
-        var instance: WebSocketService? = null
+    fun updateForegroundMode(enabled: Boolean) {
+        if (enabled) {
+            startForegroundWithNotification()
+        } else {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        }
+    }
+
+    private fun startForegroundWithNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                getString(R.string.notif_channel_background),
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = getString(R.string.notif_channel_background_desc)
+                setShowBadge(false)
+            }
+            val nm = getSystemService(NotificationManager::class.java)
+            nm.createNotificationChannel(channel)
+        }
+
+        val openIntent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.notif_background_title))
+            .setContentText(getString(R.string.notif_background_text))
+            .setSmallIcon(R.drawable.ic_lock)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setSilent(true)
+            .build()
+
+        startForeground(NOTIFICATION_ID, notification)
     }
 }

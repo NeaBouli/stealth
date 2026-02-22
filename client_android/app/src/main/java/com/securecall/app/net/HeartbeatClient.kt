@@ -27,15 +27,21 @@ class HeartbeatClient(
 
     // BACKEND-22: Reconnect Backoff + Idle Ping
     private var reconnectDelay = 1000L
-    private val maxReconnectDelay = 15000L
+    private val maxReconnectDelay = 30000L
     private var idlePingTimer: java.util.Timer? = null
+    @Volatile private var isConnecting = false
+
+    private val client = OkHttpClient.Builder()
+        .readTimeout(0, TimeUnit.MILLISECONDS)
+        .pingInterval(5, TimeUnit.SECONDS)
+        .build()
 
     fun connect() {
-        val client = OkHttpClient.Builder()
-            .readTimeout(0, TimeUnit.MILLISECONDS)
-            .pingInterval(5, TimeUnit.SECONDS)
-            .build()
-
+        if (isConnecting) {
+            Log.d("HB", "Already connecting, skipping duplicate connect()")
+            return
+        }
+        isConnecting = true
         val req = Request.Builder().url(url).build()
         ws = client.newWebSocket(req, this)
     }
@@ -53,6 +59,7 @@ class HeartbeatClient(
 
     override fun onOpen(webSocket: WebSocket, response: Response) {
         Log.d("HB", "WebSocket connected")
+        isConnecting = false
         resetBackoff()
         startIdlePing()
         listener.onConnected()
@@ -69,8 +76,10 @@ class HeartbeatClient(
     }
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+        isConnecting = false
         stopIdlePing()
         listener.onError(t)
+        // HeartbeatClient owns reconnect — WebSocketService.onError() must NOT also reconnect
         scheduleReconnect()
     }
 

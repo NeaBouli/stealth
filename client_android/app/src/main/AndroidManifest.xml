@@ -13,6 +13,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Phone Contacts -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Foreground Service for incoming calls in background -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
 
     <application
         android:name=".SecureCallApplication"
@@ -46,7 +49,8 @@
         <service
             android:name="com.securecall.app.net.WebSocketService"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="phoneCall" />
 
         <activity
             android:name=".MainActivity"

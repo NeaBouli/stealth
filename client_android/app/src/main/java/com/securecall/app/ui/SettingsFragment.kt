@@ -49,6 +49,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
             configureAntiRecordingSettings(fp)
         }
 
+        // Background service toggle
+        findPreference<SwitchPreferenceCompat>("pref_background_service")?.setOnPreferenceChangeListener { _, newValue ->
+            val enabled = newValue as Boolean
+            val ws = com.securecall.app.net.WebSocketService.instance
+            ws?.updateForegroundMode(enabled)
+            true
+        }
+
         // Upgrade button (only for FREE tier)
         findPreference<Preference>("pref_upgrade")?.isVisible = BuildConfig.BILLING_ENABLED
 
