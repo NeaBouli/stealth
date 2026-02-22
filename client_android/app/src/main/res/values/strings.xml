@@ -93,7 +93,7 @@
     <string name="dialer_enter_number">Enter number</string>
     <string name="dialer_backspace">Delete</string>
     <string name="dialer_invite_title">Invite to SecureCall</string>
-    <string name="dialer_invite_message">%1$s doesn\'t have SecureCall yet. Send an invitation?</string>
+    <string name="dialer_invite_message">Invite %1$s to SecureCall</string>
     <string name="dialer_send_messenger">Via Messenger</string>
     <string name="dialer_send_sms">Send SMS</string>
     <string name="dialer_share_link">Share Link</string>

@@ -183,8 +183,7 @@ class DialerFragment : Fragment() {
             getString(R.string.dialer_send_sms)
         )
         AlertDialog.Builder(requireContext())
-            .setTitle(getString(R.string.dialer_invite_title))
-            .setMessage(getString(R.string.dialer_invite_message, number))
+            .setTitle(getString(R.string.dialer_invite_message, number))
             .setItems(items) { _, which ->
                 when (which) {
                     0 -> sendViaMessenger(number)
