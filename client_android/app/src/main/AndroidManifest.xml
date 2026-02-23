@@ -67,6 +67,11 @@
         <activity
             android:name=".CallActivity"
             android:theme="@style/Theme.SecureCall.Call" />
+        <activity
+            android:name=".IncomingCallActivity"
+            android:theme="@style/Theme.SecureCall.Call"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true" />
         <activity android:name=".ui.onboarding.OnboardingActivity" />
 
         <!-- FCM Messaging Service -->

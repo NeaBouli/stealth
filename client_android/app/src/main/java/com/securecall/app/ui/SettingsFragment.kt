@@ -60,6 +60,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Upgrade button (only for FREE tier)
         findPreference<Preference>("pref_upgrade")?.isVisible = BuildConfig.BILLING_ENABLED
 
+        // SecureCall ID (tap to copy)
+        val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+        val clientId = prefs.getString("client_id", "Not registered")
+        findPreference<Preference>("pref_client_id")?.apply {
+            summary = clientId
+            setOnPreferenceClickListener {
+                val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                        as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("SecureCall ID", clientId))
+                android.widget.Toast.makeText(requireContext(), "Copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                true
+            }
+        }
+
         // About section links
         setupAboutLinks()
 

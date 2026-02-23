@@ -13,6 +13,12 @@
             android:key="pref_upgrade"
             android:title="@string/upgrade_to_pro"
             android:icon="@drawable/ic_add" />
+
+        <Preference
+            android:key="pref_client_id"
+            android:title="@string/settings_client_id"
+            android:selectable="true"
+            android:icon="@drawable/ic_contacts" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/settings_security">

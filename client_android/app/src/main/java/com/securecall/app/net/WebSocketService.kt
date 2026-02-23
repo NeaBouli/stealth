@@ -31,9 +31,27 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     var statusCallbackOffline: (() -> Unit)? = null
     var errorCallback: ((Throwable) -> Unit)? = null
 
+    // Call signaling state and callbacks (private backing fields)
+    private var _currentSessionId: String? = null
+    private var _onIncomingCall: ((String, String) -> Unit)? = null
+    private var _onCallAccepted: ((String) -> Unit)? = null
+    private var _onCallEnded: ((String) -> Unit)? = null
+    private var _onCallError: ((String, String) -> Unit)? = null
+
+    fun getCurrentSessionId(): String? = _currentSessionId
+    fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
+    fun setOnCallEnded(cb: ((String) -> Unit)?) { _onCallEnded = cb }
+    fun setOnCallError(cb: ((String, String) -> Unit)?) { _onCallError = cb }
+    fun clearSession() { _currentSessionId = null }
+
+    fun getLocalClientId(): String? {
+        val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
+        return prefs.getString("client_id", null)
+    }
+
     // BACKEND-25: Heartbeat Überwachung
     private val heartbeatIntervalMs = 5000L
-    private val heartbeatTimeoutMs = 15000L
+    private val heartbeatTimeoutMs = 30000L
     private var heartbeatTimer: java.util.Timer? = null
 
     // BACKEND-26: Reconnect-Backoff
@@ -92,7 +110,20 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         reconnectAttempts = 0
         startHeartbeatMonitor()
         registerClient()
+        setupCallSignalingCallbacks()
         statusCallbackOnline?.invoke()
+    }
+
+    private fun setupCallSignalingCallbacks() {
+        _onIncomingCall = { sessionId, fromClientId ->
+            Log.d("WS_SERVICE", "Launching IncomingCallActivity: session=$sessionId, from=$fromClientId")
+            val intent = android.content.Intent(this@WebSocketService, com.securecall.app.IncomingCallActivity::class.java).apply {
+                putExtra("sessionId", sessionId)
+                putExtra("callerClientId", fromClientId)
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            startActivity(intent)
+        }
     }
 
     private fun registerClient() {
@@ -314,13 +345,36 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private fun handleIncomingMessage(json: String) {
         try {
             val obj = org.json.JSONObject(json)
-            when (obj.getString("type")) {
+            when (obj.optString("type")) {
                 "CALL_INVITE" -> {
                     val sessionId = obj.optString("sessionId", "")
-                    Log.d("WS_SERVICE", "Incoming CALL_INVITE, sessionId=$sessionId")
+                    val from = obj.optString("from", "")
+                    Log.d("WS_SERVICE", "Incoming CALL_INVITE, sessionId=$sessionId, from=$from")
+                    _currentSessionId = sessionId
+                    _onIncomingCall?.invoke(sessionId, from)
+                }
+                "CALL_INVITE_ACK" -> {
+                    val ok = obj.optBoolean("ok", false)
+                    val sessionId = obj.optString("sessionId", "")
+                    Log.d("WS_SERVICE", "CALL_INVITE_ACK ok=$ok, sessionId=$sessionId")
+                    if (ok) _currentSessionId = sessionId
                 }
                 "CALL_ACCEPT" -> {
-                    Log.d("WS_SERVICE", "Remote accepted call")
+                    val sessionId = obj.optString("sessionId", "")
+                    Log.d("WS_SERVICE", "Remote accepted call, sessionId=$sessionId")
+                    _onCallAccepted?.invoke(sessionId)
+                }
+                "CALL_ACCEPT_ACK" -> {
+                    Log.d("WS_SERVICE", "CALL_ACCEPT_ACK received")
+                }
+                "CALL_END_ACK" -> {
+                    Log.d("WS_SERVICE", "CALL_END_ACK received")
+                }
+                "ERROR" -> {
+                    val error = obj.optString("error", "")
+                    val message = obj.optString("message", error)
+                    Log.e("WS_SERVICE", "Server error: $error — $message")
+                    _onCallError?.invoke(error, message)
                 }
             }
         } catch (_: Exception) {}
@@ -329,8 +383,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private fun handleIncomingCallEnd(json: String) {
         try {
             val obj = org.json.JSONObject(json)
-            if (obj.getString("type") == "CALL_END") {
-                Log.d("WS_SERVICE", "CALL_END received from remote")
+            if (obj.optString("type") == "CALL_END") {
+                val sessionId = obj.optString("sessionId", "")
+                Log.d("WS_SERVICE", "CALL_END received, sessionId=$sessionId")
+                _currentSessionId = null
+                _onCallEnded?.invoke(sessionId)
             }
         } catch (_: Exception) {}
     }

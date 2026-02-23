@@ -86,16 +86,9 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
             callerNameView.setText(callerName);
         }
 
-        if (getIntent().getBooleanExtra("fromNotification", false)) {
-            String sessionId = getIntent().getStringExtra("sessionId");
-            Log.d(TAG, "Launched from notification: session=" + sessionId + ", caller=" + callerName);
-
-            com.securecall.app.net.WebSocketService ws =
-                    com.securecall.app.net.WebSocketService.Companion.getInstance();
-            if (ws != null && sessionId != null && !sessionId.isEmpty()) {
-                ws.sendCallAccept(sessionId);
-            }
-        }
+        String sessionId = getIntent().getStringExtra("sessionId");
+        boolean isIncoming = getIntent().getBooleanExtra("isIncoming", false);
+        boolean fromNotification = getIntent().getBooleanExtra("fromNotification", false);
 
         // ─── Proximity Sensor (screen off at ear) ─────────────────
         initProximitySensor();
@@ -103,25 +96,54 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
         // ─── Initialize Security Monitor ────────────────────────
         initSecurityMonitor();
 
-        // Start transport
-        transport = new GhostNetTransport();
-        transport.start();
+        com.securecall.app.net.WebSocketService ws =
+                com.securecall.app.net.WebSocketService.Companion.getInstance();
 
-        // Initial state: connecting (green button to indicate call starting)
-        connectionState.setText(R.string.call_connecting);
-        updateCallButton(false);
+        if (fromNotification) {
+            // FCM push path — accept and start
+            Log.d(TAG, "Launched from notification: session=" + sessionId + ", caller=" + callerName);
+            if (ws != null && sessionId != null && !sessionId.isEmpty()) {
+                ws.sendCallAccept(sessionId);
+            }
+            startTransportAndTimer(connectionState, callTimer);
+        } else if (isIncoming) {
+            // Already accepted from IncomingCallActivity
+            Log.d(TAG, "Incoming call accepted: session=" + sessionId);
+            startTransportAndTimer(connectionState, callTimer);
+        } else {
+            // Outgoing call — send CALL_INVITE, wait for CALL_ACCEPT
+            String targetId = phoneNumber;
+            connectionState.setText(R.string.call_ringing);
 
-        // Start timer after a short delay (simulating connection)
-        connectionState.postDelayed(() -> {
-            isCallActive = true;
-            connectionState.setText(R.string.call_active);
-            connectionState.setTextColor(getResources().getColor(R.color.call_active_green, getTheme()));
-            callTimer.setBase(SystemClock.elapsedRealtime());
-            callTimer.setVisibility(View.VISIBLE);
-            callTimer.start();
-            // Switch to red end-call button
-            updateCallButton(true);
-        }, 2000);
+            if (ws != null && targetId != null && !targetId.isEmpty()) {
+                ws.setOnCallAccepted(acceptedSessionId -> {
+                    Log.d(TAG, "Remote accepted, session=" + acceptedSessionId);
+                    runOnUiThread(() -> startTransportAndTimer(connectionState, callTimer));
+                    return kotlin.Unit.INSTANCE;
+                });
+                ws.setOnCallError((error, message) -> {
+                    Log.e(TAG, "Call error: " + error + " — " + message);
+                    runOnUiThread(() -> {
+                        connectionState.setText("Call failed: " + error);
+                        connectionState.setTextColor(getResources().getColor(R.color.stealthx_red, getTheme()));
+                        connectionState.postDelayed(this::endCall, 3000);
+                    });
+                    return kotlin.Unit.INSTANCE;
+                });
+                ws.sendCallInvite(targetId);
+            } else {
+                connectionState.setText("Connection error");
+            }
+        }
+
+        // Listen for remote hangup in all cases
+        if (ws != null) {
+            ws.setOnCallEnded(endedSessionId -> {
+                Log.d(TAG, "Remote ended call, session=" + endedSessionId);
+                runOnUiThread(this::endCall);
+                return kotlin.Unit.INSTANCE;
+            });
+        }
 
         // Mute toggle
         fabMute.setOnClickListener(v -> {
@@ -344,8 +366,39 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
+    private void startTransportAndTimer(TextView connectionState, Chronometer callTimer) {
+        transport = new GhostNetTransport();
+        transport.start();
+        connectionState.setText(R.string.call_connecting);
+        updateCallButton(false);
+        connectionState.postDelayed(() -> {
+            isCallActive = true;
+            connectionState.setText(R.string.call_active);
+            connectionState.setTextColor(getResources().getColor(R.color.call_active_green, getTheme()));
+            callTimer.setBase(SystemClock.elapsedRealtime());
+            callTimer.setVisibility(View.VISIBLE);
+            callTimer.start();
+            updateCallButton(true);
+        }, 2000);
+    }
+
     private void endCall() {
         Log.d(TAG, "endCall() — stopping call");
+
+        // Send CALL_END signaling and clear callbacks
+        com.securecall.app.net.WebSocketService ws =
+                com.securecall.app.net.WebSocketService.Companion.getInstance();
+        if (ws != null) {
+            String sid = ws.getCurrentSessionId();
+            if (sid != null && !sid.isEmpty()) {
+                ws.sendCallEnd(sid);
+            }
+            ws.clearSession();
+            ws.setOnCallAccepted(null);
+            ws.setOnCallEnded(null);
+            ws.setOnCallError(null);
+        }
+
         isCallActive = false;
         Chronometer callTimer = findViewById(R.id.callTimer);
         if (callTimer != null) {

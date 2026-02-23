@@ -117,6 +117,14 @@
     <string name="stun_server">stun:stun.l.google.com:19302</string>
     <string name="turn_server">turn:a.relay.metered.ca:443?transport=tcp</string>
 
+    <!-- Incoming Call -->
+    <string name="incoming_call_title">Incoming Secure Call</string>
+    <string name="call_accept">Accept</string>
+    <string name="call_decline">Decline</string>
+
+    <!-- Settings -->
+    <string name="settings_client_id">Your SecureCall ID</string>
+
     <!-- Content Descriptions (Accessibility) -->
     <string name="cd_caller_avatar">Caller avatar</string>
     <string name="cd_encrypted">Call is encrypted</string>
