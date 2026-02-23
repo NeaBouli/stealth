@@ -114,6 +114,7 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
             // Outgoing call — send CALL_INVITE, wait for CALL_ACCEPT
             String targetId = phoneNumber;
             connectionState.setText(R.string.call_ringing);
+            updateCallButton(true);
 
             if (ws != null && targetId != null && !targetId.isEmpty()) {
                 ws.setOnCallAccepted(acceptedSessionId -> {
@@ -157,14 +158,10 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
             fabMute.setContentDescription(getString(isMuted ? R.string.cd_mute : R.string.cd_mute));
         });
 
-        // End call / Start call button
+        // End call button — always active (works during ringing, connecting, and active)
         fabEndCall.setOnClickListener(v -> {
-            if (isCallActive) {
-                Log.d(TAG, "End call button pressed");
-                endCall();
-            } else {
-                Log.d(TAG, "Call button pressed — already connecting");
-            }
+            Log.d(TAG, "End call button pressed");
+            endCall();
         });
 
         // Speaker toggle
