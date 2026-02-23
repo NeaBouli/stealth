@@ -8,7 +8,7 @@
  */
 
 const HEARTBEAT_INTERVAL = 5000;       // alle 5 Sekunden Ping
-const SESSION_TIMEOUT = 30000;         // Session läuft 30s ohne Aktivität ab
+const SESSION_TIMEOUT = 60000;         // Session + Client timeout (60s)
 
 class HeartbeatManager {
   constructor(routingTable, clients) {

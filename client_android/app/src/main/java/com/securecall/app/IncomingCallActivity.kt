@@ -15,6 +15,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
     private var sessionId: String = ""
     private var callerClientId: String = ""
+    private var accepted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +41,7 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun acceptCall() {
+        accepted = true
         Log.d(TAG, "Accepting call, session=$sessionId")
         val ws = com.securecall.app.net.WebSocketService.instance
         ws?.sendCallAccept(sessionId)
@@ -62,6 +64,9 @@ class IncomingCallActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        com.securecall.app.net.WebSocketService.instance?.setOnCallEnded(null)
+        // Only clear callback if we didn't accept — CallActivity sets its own onCallEnded
+        if (!accepted) {
+            com.securecall.app.net.WebSocketService.instance?.setOnCallEnded(null)
+        }
     }
 }
