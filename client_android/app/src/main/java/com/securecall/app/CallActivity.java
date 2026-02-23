@@ -24,13 +24,13 @@ import androidx.preference.PreferenceManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.securecall.app.config.FeatureProviderRegistry;
-import com.securecall.app.ghostnet.GhostNetTransport;
+import com.securecall.app.audio.capture.AudioCapturePlaceholder;
 import com.securecall.app.security.SecureCallMonitor;
 
 public class CallActivity extends AppCompatActivity implements SensorEventListener {
 
     private static final String TAG = "CallActivity";
-    private GhostNetTransport transport;
+    private AudioCapturePlaceholder audioCapture;
     private SecureCallMonitor secureCallMonitor;
     private boolean isMuted = false;
     private boolean isSpeaker = false;
@@ -156,6 +156,11 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
                                     isMuted ? R.color.stealthx_red_dark : R.color.stealthx_gray,
                                     getTheme())));
             fabMute.setContentDescription(getString(isMuted ? R.string.cd_mute : R.string.cd_mute));
+            // Mute/unmute audio capture
+            if (audioCapture != null) {
+                if (isMuted) audioCapture.stop();
+                else audioCapture.start();
+            }
         });
 
         // End call button — always active (works during ringing, connecting, and active)
@@ -364,8 +369,6 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void startTransportAndTimer(TextView connectionState, Chronometer callTimer) {
-        transport = new GhostNetTransport();
-        transport.start();
         connectionState.setText(R.string.call_connecting);
         updateCallButton(false);
         connectionState.postDelayed(() -> {
@@ -376,6 +379,10 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
             callTimer.setVisibility(View.VISIBLE);
             callTimer.start();
             updateCallButton(true);
+
+            // Start audio capture + send
+            audioCapture = new AudioCapturePlaceholder();
+            audioCapture.start();
         }, 2000);
     }
 
@@ -397,12 +404,20 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
         }
 
         isCallActive = false;
+
+        // Stop audio capture
+        if (audioCapture != null) {
+            audioCapture.stop();
+            audioCapture = null;
+        }
+        // Stop audio playback
+        com.securecall.app.net.WebSocketService wsAudio =
+                com.securecall.app.net.WebSocketService.Companion.getInstance();
+        if (wsAudio != null) wsAudio.stopAudioPlayback();
+
         Chronometer callTimer = findViewById(R.id.callTimer);
         if (callTimer != null) {
             callTimer.stop();
-        }
-        if (transport != null) {
-            transport.stop();
         }
         if (secureCallMonitor != null) {
             secureCallMonitor.stopMonitoring(this);
@@ -414,8 +429,9 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (transport != null) {
-            transport.stop();
+        if (audioCapture != null) {
+            audioCapture.stop();
+            audioCapture = null;
         }
         if (secureCallMonitor != null) {
             secureCallMonitor.stopMonitoring(this);

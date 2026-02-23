@@ -17,6 +17,7 @@ class HeartbeatClient(
         fun onConnected()
         fun onDisconnected()
         fun onMessage(text: String)
+        fun onBinaryMessage(data: ByteArray)
         fun onError(t: Throwable)
         fun onPing()
         fun onPong()
@@ -50,6 +51,10 @@ class HeartbeatClient(
         ws?.send(text)
     }
 
+    fun sendBinary(data: ByteArray): Boolean {
+        return ws?.send(ByteString.of(*data)) ?: false
+    }
+
     fun close() {
         stopIdlePing()
         ws?.close(1000, "client_close")
@@ -68,6 +73,11 @@ class HeartbeatClient(
     override fun onMessage(webSocket: WebSocket, text: String) {
         lastSeen = System.currentTimeMillis()
         listener.onMessage(text)
+    }
+
+    override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
+        lastSeen = System.currentTimeMillis()
+        listener.onBinaryMessage(bytes.toByteArray())
     }
 
     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {

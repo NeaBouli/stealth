@@ -6,7 +6,7 @@ import android.media.MediaRecorder;
 import android.util.Log;
 
 import com.securecall.app.ghostnet.media.codec.OpusEncoder;
-import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
+import com.securecall.app.net.WebSocketService;
 
 /**
  * Real AudioRecord-based microphone capture with Opus encoding.
@@ -75,7 +75,8 @@ public class AudioCapturePlaceholder {
                 if (read == FRAME_SAMPLES) {
                     byte[] encoded = OpusEncoder.INSTANCE.encode(buffer);
                     if (encoded.length > 0) {
-                        GhostNetWebSocketClient.getInstance().sendBinary(encoded);
+                        WebSocketService ws = WebSocketService.Companion.getInstance();
+                        if (ws != null) ws.sendBinary(encoded);
                     }
                 } else if (read > 0) {
                     // Partial frame — pad with silence and encode
@@ -83,7 +84,8 @@ public class AudioCapturePlaceholder {
                     System.arraycopy(buffer, 0, padded, 0, read);
                     byte[] encoded = OpusEncoder.INSTANCE.encode(padded);
                     if (encoded.length > 0) {
-                        GhostNetWebSocketClient.getInstance().sendBinary(encoded);
+                        WebSocketService ws = WebSocketService.Companion.getInstance();
+                        if (ws != null) ws.sendBinary(encoded);
                     }
                 } else if (read < 0) {
                     Log.e(TAG, "AudioRecord.read() returned " + read);

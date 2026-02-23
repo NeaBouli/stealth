@@ -38,6 +38,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private var _onCallEnded: ((String) -> Unit)? = null
     private var _onCallError: ((String, String) -> Unit)? = null
 
+    // Audio playback pipeline
+    private var audioPlayer: com.securecall.app.ghostnet.media.playback.GhostAudioPlayer? = null
+    private var opusDecoderInitialized = false
+
     fun getCurrentSessionId(): String? = _currentSessionId
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
     fun setOnCallEnded(cb: ((String) -> Unit)?) { _onCallEnded = cb }
@@ -89,6 +93,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.d("WS_SERVICE", "onDestroy")
         instance = null
         stopHeartbeatMonitor()
+        stopAudioPlayback()
         client?.close()
         super.onDestroy()
     }
@@ -97,6 +102,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     fun sendMessage(text: String) {
         client?.send(text)
+    }
+
+    fun sendBinary(data: ByteArray): Boolean {
+        return client?.sendBinary(data) ?: false
     }
 
     fun lastSeen(): Long {
@@ -166,6 +175,30 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onPong() {
         Log.d("WS_SERVICE", "Pong received")
+    }
+
+    override fun onBinaryMessage(data: ByteArray) {
+        if (!opusDecoderInitialized) {
+            com.securecall.app.ghostnet.media.codec.OpusDecoder.init(48000, 1)
+            opusDecoderInitialized = true
+        }
+        if (audioPlayer == null) {
+            audioPlayer = com.securecall.app.ghostnet.media.playback.GhostAudioPlayer(48000, 1)
+        }
+        val pcm = com.securecall.app.ghostnet.media.codec.OpusDecoder.decode(data)
+        if (pcm.isNotEmpty()) {
+            audioPlayer?.write(pcm)
+        }
+    }
+
+    fun stopAudioPlayback() {
+        audioPlayer?.stop()
+        audioPlayer?.release()
+        audioPlayer = null
+        if (opusDecoderInitialized) {
+            com.securecall.app.ghostnet.media.codec.OpusDecoder.release()
+            opusDecoderInitialized = false
+        }
     }
 
     // ===================== Reconnect =====================
