@@ -44,6 +44,7 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     private boolean isMuted = false;
     private boolean isSpeaker = false;
     private boolean isCallActive = false;
+    private boolean isEnding = false;
 
     // Proximity sensor
     private SensorManager sensorManager;
@@ -133,6 +134,8 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
                 });
                 ws.setOnCallError((error, message) -> {
                     Log.e(TAG, "Call error: " + error + " — " + message);
+                    // Clear callback to prevent repeated error handling
+                    ws.setOnCallError(null);
                     runOnUiThread(() -> {
                         connectionState.setText("Call failed: " + error);
                         connectionState.setTextColor(getResources().getColor(R.color.stealthx_red, getTheme()));
@@ -426,6 +429,8 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void endCall() {
+        if (isEnding) return;
+        isEnding = true;
         Log.d(TAG, "endCall() — stopping call");
 
         // Send CALL_END signaling and clear callbacks
