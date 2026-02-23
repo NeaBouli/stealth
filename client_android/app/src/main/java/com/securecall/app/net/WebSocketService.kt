@@ -42,11 +42,23 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private var audioPlayer: com.securecall.app.ghostnet.media.playback.GhostAudioPlayer? = null
     private var opusDecoderInitialized = false
 
+    // E2E encryption state (X25519 + XChaCha20-Poly1305)
+    private var localPrivKey: ByteArray? = null
+    private var remotePubKey: ByteArray? = null
+    private var sessionKey: ByteArray? = null
+
     fun getCurrentSessionId(): String? = _currentSessionId
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
     fun setOnCallEnded(cb: ((String) -> Unit)?) { _onCallEnded = cb }
     fun setOnCallError(cb: ((String, String) -> Unit)?) { _onCallError = cb }
-    fun clearSession() { _currentSessionId = null }
+    fun clearSession() {
+        _currentSessionId = null
+        localPrivKey?.fill(0)
+        localPrivKey = null
+        remotePubKey = null
+        sessionKey?.fill(0)
+        sessionKey = null
+    }
 
     fun getLocalClientId(): String? {
         val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
@@ -105,7 +117,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     fun sendBinary(data: ByteArray): Boolean {
-        return client?.sendBinary(data) ?: false
+        val key = sessionKey
+        val toSend = if (key != null && com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
+            com.securecall.crypto.CoreCrypto.encrypt(key, data) ?: data
+        } else {
+            data
+        }
+        return client?.sendBinary(toSend) ?: false
     }
 
     fun lastSeen(): Long {
@@ -178,6 +196,19 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     override fun onBinaryMessage(data: ByteArray) {
+        val key = sessionKey
+        val audioData = if (key != null && com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
+            try {
+                com.securecall.crypto.CoreCrypto.decrypt(key, data)
+            } catch (e: Exception) {
+                Log.w("WS_SERVICE", "E2E decrypt failed, dropping frame", e)
+                return
+            }
+        } else {
+            data
+        }
+        if (audioData == null || audioData.isEmpty()) return
+
         if (!opusDecoderInitialized) {
             com.securecall.app.ghostnet.media.codec.OpusDecoder.init(48000, 1)
             opusDecoderInitialized = true
@@ -185,7 +216,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         if (audioPlayer == null) {
             audioPlayer = com.securecall.app.ghostnet.media.playback.GhostAudioPlayer(48000, 1)
         }
-        val pcm = com.securecall.app.ghostnet.media.codec.OpusDecoder.decode(data)
+        val pcm = com.securecall.app.ghostnet.media.codec.OpusDecoder.decode(audioData)
         if (pcm.isNotEmpty()) {
             audioPlayer?.write(pcm)
         }
@@ -281,23 +312,31 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // ===================== Call Signaling =====================
 
     fun sendCallInvite(targetId: String) {
-        val json = """
-            {
-              "type": "CALL_INVITE",
-              "to": "$targetId"
-            }
-        """.trimIndent()
+        var pubKeyB64 = ""
+        if (com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
+            val keypair = com.securecall.crypto.CoreCrypto.generateKeyPair()
+            localPrivKey = keypair.copyOfRange(0, 32)
+            pubKeyB64 = android.util.Base64.encodeToString(keypair.copyOfRange(32, 64), android.util.Base64.NO_WRAP)
+            Log.d("WS_SERVICE", "Generated X25519 keypair for outgoing call")
+        } else {
+            Log.w("WS_SERVICE", "Native crypto unavailable — call will be unencrypted")
+        }
+        val json = """{"type":"CALL_INVITE","to":"$targetId","pubKey":"$pubKeyB64"}"""
         client?.send(json)
         Log.d("WS_SERVICE", "CALL_INVITE sent to $targetId")
     }
 
     fun sendCallAccept(sessionId: String) {
-        val json = """
-            {
-              "type": "CALL_ACCEPT",
-              "sessionId": "$sessionId"
-            }
-        """.trimIndent()
+        var pubKeyB64 = ""
+        val remotePub = remotePubKey
+        if (com.securecall.crypto.CoreCrypto.isNativeAvailable() && remotePub != null) {
+            val keypair = com.securecall.crypto.CoreCrypto.generateKeyPair()
+            localPrivKey = keypair.copyOfRange(0, 32)
+            pubKeyB64 = android.util.Base64.encodeToString(keypair.copyOfRange(32, 64), android.util.Base64.NO_WRAP)
+            sessionKey = com.securecall.crypto.CoreCrypto.deriveSessionKey(localPrivKey, remotePub)
+            Log.d("WS_SERVICE", "E2E session key derived (callee)")
+        }
+        val json = """{"type":"CALL_ACCEPT","sessionId":"$sessionId","pubKey":"$pubKeyB64"}"""
         client?.send(json)
         Log.d("WS_SERVICE", "CALL_ACCEPT sent for session $sessionId")
     }
@@ -384,6 +423,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 "CALL_INVITE" -> {
                     val sessionId = obj.optString("sessionId", "")
                     val from = obj.optString("from", "")
+                    val pubKeyB64 = obj.optString("pubKey", "")
+                    if (pubKeyB64.isNotEmpty()) {
+                        remotePubKey = android.util.Base64.decode(pubKeyB64, android.util.Base64.NO_WRAP)
+                        Log.d("WS_SERVICE", "Stored caller's X25519 public key")
+                    }
                     Log.d("WS_SERVICE", "Incoming CALL_INVITE, sessionId=$sessionId, from=$from")
                     _currentSessionId = sessionId
                     _onIncomingCall?.invoke(sessionId, from)
@@ -396,6 +440,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 }
                 "CALL_ACCEPT" -> {
                     val sessionId = obj.optString("sessionId", "")
+                    val pubKeyB64 = obj.optString("pubKey", "")
+                    if (pubKeyB64.isNotEmpty() && localPrivKey != null && com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
+                        val remotePub = android.util.Base64.decode(pubKeyB64, android.util.Base64.NO_WRAP)
+                        sessionKey = com.securecall.crypto.CoreCrypto.deriveSessionKey(localPrivKey, remotePub)
+                        Log.d("WS_SERVICE", "E2E session key derived (caller)")
+                    }
                     Log.d("WS_SERVICE", "Remote accepted call, sessionId=$sessionId")
                     _onCallAccepted?.invoke(sessionId)
                 }

@@ -412,7 +412,8 @@ wss.on("connection", (ws, req) => {
           type: "CALL_INVITE",
           sessionId,
           from: myClientId,
-          to: msg.to
+          to: msg.to,
+          pubKey: msg.pubKey
         });
       } else {
         // Peer is offline — try FCM push
@@ -499,7 +500,8 @@ wss.on("connection", (ws, req) => {
         sendToClient(peerClientId, {
           type: "CALL_ACCEPT",
           sessionId: msg.sessionId,
-          from: myClientId
+          from: myClientId,
+          pubKey: msg.pubKey
         });
       }
 
