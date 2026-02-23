@@ -6,7 +6,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 
 **Sprint status:** All changes are **committed and pushed** to `origin/main`. Real peer-to-peer audio transport is working — Opus-encoded voice relayed through the signaling WebSocket, tested bidirectionally between S10 and emulator with live microphone audio.
 
-**The 14 completed changes (all committed):**
+**The 16 completed changes (all committed):**
 
 1. **Contact auto-call fix** -- Removed `itemView.setOnClickListener` from `ContactAdapter.kt`. Only the phone icon (`btnCallContact`) now triggers calls; tapping the contact row does nothing.
 2. **Messenger invite dialog** -- `DialerFragment.kt` now shows a 3-option dialog (Via Messenger, Share Link, Send SMS) when dialing an unknown number.
@@ -22,6 +22,8 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 12. **IncomingCallActivity race condition fix** *(Commit `fe2b9fd`)* -- `onDestroy()` no longer clears `onCallEnded` callback when transitioning to CallActivity. Uses `accepted` flag to only clear on decline/caller-hangup.
 13. **Heartbeat timeout increase** -- Client-side timeout changed from 15s to 30s.
 14. **Real audio transport** *(Commit `228c30c`)* -- Wired peer-to-peer voice audio through the signaling WebSocket binary relay. See details below.
+15. **Runtime RECORD_AUDIO permission** *(Commit `4fe8c77`)* -- CallActivity now requests microphone permission at runtime before starting audio capture. If permission is denied, shows a Toast and skips capture (call still connects, just no outgoing audio). Permission result handled in `onRequestPermissionsResult()`.
+16. **endCall() idempotency guard** *(Commit `10fe6b0`)* -- Added `isEnding` boolean guard to prevent `endCall()` from firing multiple times. Also clears the `onCallError` callback after the first error to prevent repeated error-triggered endCall scheduling. Previously, server `rate_limited` errors would each schedule a separate `postDelayed(this::endCall, 3000)`, causing dozens of duplicate teardowns.
 
 **End-to-end call signaling details (change #8):**
 - `WebSocketService.kt`: Added call signaling callbacks (`_onCallAccepted`, `_onCallEnded`, `_onCallError`), session tracking, incoming call activity launch, message parsing for CALL_INVITE/CALL_INVITE_ACK/CALL_ACCEPT/CALL_END/ERROR. Uses private backing fields with explicit setter methods for Java interop.
@@ -48,7 +50,8 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **Remote hangup:** When one side ends the call, the other side receives CALL_END and automatically closes CallActivity.
 - **Heartbeat stability:** Connections remain stable for 65+ seconds with zero timeouts or reconnects.
 - **Error handling:** `peer_not_found` (target offline), `peer_disconnected` (caller dropped), `session_not_found` (stale session) all handled correctly
-- **Note:** RECORD_AUDIO permission must be granted (`adb shell pm grant com.securecall.app.free android.permission.RECORD_AUDIO`) — the app does not yet request it at runtime.
+- **Runtime permission:** RECORD_AUDIO is now requested at runtime when the call goes active. Tested: permission revoked → call started → dialog appeared → granted → audio capture started immediately.
+- **endCall() guard:** Verified `endCall()` fires exactly once in all scenarios: error (peer_not_found), rate limiting (multiple server errors), and normal call flow. Proximity sensor does NOT trigger endCall — it only manages the wake lock.
 
 ## Architecture Decisions
 
@@ -61,6 +64,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **Server session/client timeout:** 60s (in `heartbeat.js`). Server sends native `ws.ping()` every 5s, tracks `lastSeen` via pong and message handlers. Sessions and clients that don't communicate for 60s are terminated.
 - **Call signaling flow:** Outgoing: CallActivity sends CALL_INVITE via WebSocketService → server routes to target → target's WebSocketService launches IncomingCallActivity → user accepts → CALL_ACCEPT sent back → caller's CallActivity starts audio capture. End call: either side sends CALL_END → server forwards and cleans up session → remote side receives CALL_END and auto-closes. All callbacks use private backing fields (`_onCallAccepted`, etc.) with explicit setter methods to avoid Kotlin/Java JVM signature clashes. IncomingCallActivity uses an `accepted` flag to prevent clearing `onCallEnded` when transitioning to CallActivity.
 - **Audio transport via WebSocket binary relay:** Audio uses the same signaling WebSocket (not a separate connection). `AudioCapturePlaceholder` captures mic at 48kHz mono, encodes with native Opus (32kbps via JNI), sends as binary WebSocket frames through `WebSocketService.sendBinary()`. Server's `forwardBinaryToPeer()` routes binary frames to the peer in the active session. Receiving side: `HeartbeatClient.onMessage(ByteString)` → `WebSocketService.onBinaryMessage()` → `OpusDecoder.decode()` → `GhostAudioPlayer.write()`. No encryption on audio frames yet (MVP). Server relay adds ~50-200ms latency vs direct P2P.
+- **endCall() idempotency:** `endCall()` uses an `isEnding` boolean guard to ensure it runs at most once per call session. The `onCallError` callback is cleared after first invocation (`ws.setOnCallError(null)`) to prevent server error floods (e.g., `rate_limited`) from scheduling multiple delayed `endCall()` calls. The proximity sensor does NOT call `endCall()` — it only manages `PROXIMITY_SCREEN_OFF_WAKE_LOCK`.
 - **Kotlin/Java interop:** CallActivity is Java, WebSocketService is Kotlin. Kotlin `var` properties auto-generate getters/setters that clash with explicit methods of the same name. Solution: private backing fields (`_fieldName`) with explicit public setter methods. Java lambdas for Kotlin `(String) -> Unit` must return `kotlin.Unit.INSTANCE`.
 - **Feature flags via BuildConfig:** Tier-specific behavior is controlled by `BuildConfig` fields set in `build.gradle` per flavor, accessed at runtime through `FeatureProvider` interface and `FeatureProviderRegistry` singleton.
 - **Firebase disabled:** Firebase initialization is disabled via manifest (`FirebaseInitProvider` set to `enabled="false"`). Crashlytics and Analytics collection are both disabled. FCM push notifications won't work until Firebase is properly configured with real credentials.
@@ -85,7 +89,7 @@ stealth/                              # Monorepo root
 │   │       ├── cpp/CMakeLists.txt    # JNI bridge to Rust crypto
 │   │       ├── java/com/securecall/app/
 │   │       │   ├── MainActivity.kt
-│   │       │   ├── CallActivity.java          # MODIFIED: signaling, audio capture lifecycle, mute
+│   │       │   ├── CallActivity.java          # MODIFIED: signaling, audio, runtime permission, endCall guard
 │   │       │   ├── IncomingCallActivity.kt    # NEW: incoming call ringing screen (with accepted flag fix)
 │   │       │   ├── SecureCallApplication.kt
 │   │       │   ├── net/
@@ -152,7 +156,7 @@ stealth/                              # Monorepo root
 8. ~~**Session timeout fix**~~ -- DONE. Increased to 60s. IncomingCallActivity race condition fixed.
 9. ~~**Railway redeploy**~~ -- DONE. Auto-deployed via GitHub push.
 10. ~~**Real audio transport**~~ -- DONE. Opus-encoded audio relayed via signaling WebSocket binary frames. Tested bidirectionally with live mic audio.
-11. **Runtime RECORD_AUDIO permission.** The app doesn't request mic permission at runtime. Currently granted manually via `adb shell pm grant`. Add a runtime permission request in CallActivity before starting audio capture.
+11. ~~**Runtime RECORD_AUDIO permission.**~~ DONE. CallActivity requests RECORD_AUDIO at runtime before starting audio capture. Commit `4fe8c77`.
 12. **Contact name resolution.** IncomingCallActivity shows raw clientId (e.g., `android-ded42f50`) instead of the contact name. Look up clientId in ContactRepository to show the saved name.
 13. **E2E audio encryption.** Audio frames are currently sent unencrypted over the WebSocket relay. Add XChaCha20-Poly1305 encryption using the existing Rust crypto JNI before sending, and decrypt on receive.
 14. **Firebase setup.** Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
@@ -166,11 +170,11 @@ stealth/                              # Monorepo root
 1. ~~**Railway server 429 block**~~ -- RESOLVED.
 2. ~~**Heartbeat timeout cycling**~~ -- RESOLVED. Server sends `HEARTBEAT_ACK`, client updates `lastSeen` on send. Connections stable 65+ seconds. Server-side fix needs Railway redeploy but client-side fix works independently.
 3. **Firebase disabled.** Firebase initialization is disabled in the manifest (placeholder credentials). FCM push notifications for incoming calls will not work. Crashlytics and Analytics are also disabled.
-4. **Emulator instability.** The Pixel 5 AVD shows frequent "System UI isn't responding" dialogs during testing. App-related testing should prioritize the physical S10 device.
+4. **Emulator instability.** The Pixel 5 AVD (Android 16 API 36) shows frequent "System UI isn't responding" dialogs during testing. `eth0` often stays DOWN after boot — fix with `su 0 ndc network create 100 && ndc network interface add 100 eth0 && ndc network default set 100` or `su 0 ip link set eth0 down && ip link set eth0 up` then add IP/route manually. App-related testing should prioritize the physical S10 device.
 5. **TURN credentials in source.** The Metered.ca TURN username and password are hardcoded in `build.gradle`. These should be rotated and fetched from the server at runtime.
 6. **Release keystore in repo.** `securecall-release-key.jks` is in the repo root. Passwords are read from environment variables, but the keystore file itself is committed.
 7. **No automated tests.** Unit test dependencies are configured but no tests were added for the new changes.
-8. **No runtime mic permission request.** App requires `RECORD_AUDIO` but doesn't request it at runtime. Must be granted manually via adb or system settings. Without it, `AudioRecord` fails to initialize and no audio is captured.
+8. ~~**No runtime mic permission request.**~~ RESOLVED. CallActivity now requests RECORD_AUDIO at runtime. Commit `4fe8c77`.
 9. **Android AlertDialog gotcha.** `setMessage()` and `setItems()` are mutually exclusive -- `setMessage` suppresses the item list. Fixed in commit `a0b9872`.
 10. **Kotlin/Java interop gotcha.** Kotlin `var` properties auto-generate getters/setters that clash with explicit methods of the same name. Use private backing fields + explicit methods. Java lambdas for Kotlin function types must return `kotlin.Unit.INSTANCE`.
 11. **Activity lifecycle race condition.** `IncomingCallActivity.onDestroy()` runs after `CallActivity.onCreate()` when accepting a call. Any callbacks set in `onDestroy()` to `null` will overwrite what `CallActivity.onCreate()` just set. Fixed with `accepted` flag guard.
@@ -203,11 +207,10 @@ stealth/                              # Monorepo root
 
 ## Next Immediate Step
 
-Call signaling, heartbeat, and real audio transport are complete and tested. Next priorities:
+Call signaling, heartbeat, real audio transport, runtime permissions, and call lifecycle are complete and tested. Next priorities:
 
-1. **Runtime RECORD_AUDIO permission** -- Add permission request in CallActivity before starting audio capture. Without it, AudioRecord fails to initialize.
-2. **E2E audio encryption** -- Encrypt Opus frames with XChaCha20-Poly1305 (via existing Rust JNI crypto) before sending, decrypt on receive. Currently audio is unencrypted over the server relay.
-3. **Contact name resolution for incoming calls** -- Look up caller's clientId in ContactRepository to show saved name instead of raw `android-xxxxxxxx`.
-4. **Audio stream type** -- Change GhostAudioPlayer from `STREAM_MUSIC` to `STREAM_VOICE_CALL` for proper earpiece routing.
-5. **Jitter buffer** -- Wire existing `JitterBuffer.kt` between OpusDecoder and GhostAudioPlayer to smooth out network jitter.
-6. **Direct P2P audio (WebRTC)** -- Migrate from server relay to WebRTC data channels for lower latency. Server already has WEBRTC_OFFER/ANSWER/ICE_CANDIDATE support.
+1. **E2E audio encryption** -- Encrypt Opus frames with XChaCha20-Poly1305 (via existing Rust JNI crypto) before sending, decrypt on receive. Currently audio is unencrypted over the server relay.
+2. **Contact name resolution for incoming calls** -- Look up caller's clientId in ContactRepository to show saved name instead of raw `android-xxxxxxxx`.
+3. **Audio stream type** -- Change GhostAudioPlayer from `STREAM_MUSIC` to `STREAM_VOICE_CALL` for proper earpiece routing.
+4. **Jitter buffer** -- Wire existing `JitterBuffer.kt` between OpusDecoder and GhostAudioPlayer to smooth out network jitter.
+5. **Direct P2P audio (WebRTC)** -- Migrate from server relay to WebRTC data channels for lower latency. Server already has WEBRTC_OFFER/ANSWER/ICE_CANDIDATE support.
