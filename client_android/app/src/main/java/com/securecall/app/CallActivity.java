@@ -1,6 +1,8 @@
 package com.securecall.app;
 
+import android.Manifest;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -18,8 +20,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -30,7 +35,11 @@ import com.securecall.app.security.SecureCallMonitor;
 public class CallActivity extends AppCompatActivity implements SensorEventListener {
 
     private static final String TAG = "CallActivity";
+    private static final int REQUEST_RECORD_AUDIO = 1001;
     private AudioCapturePlaceholder audioCapture;
+    // Saved refs for starting audio after permission grant
+    private TextView pendingConnectionState;
+    private Chronometer pendingCallTimer;
     private SecureCallMonitor secureCallMonitor;
     private boolean isMuted = false;
     private boolean isSpeaker = false;
@@ -380,10 +389,40 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
             callTimer.start();
             updateCallButton(true);
 
-            // Start audio capture + send
+            // Start audio capture (requires RECORD_AUDIO permission)
+            startAudioCaptureWithPermission(connectionState, callTimer);
+        }, 2000);
+    }
+
+    private void startAudioCaptureWithPermission(TextView connectionState, Chronometer callTimer) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED) {
             audioCapture = new AudioCapturePlaceholder();
             audioCapture.start();
-        }, 2000);
+        } else {
+            pendingConnectionState = connectionState;
+            pendingCallTimer = callTimer;
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_RECORD_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "RECORD_AUDIO permission granted");
+                audioCapture = new AudioCapturePlaceholder();
+                audioCapture.start();
+            } else {
+                Log.w(TAG, "RECORD_AUDIO permission denied");
+                Toast.makeText(this, "Microphone permission required for calls", Toast.LENGTH_LONG).show();
+            }
+            pendingConnectionState = null;
+            pendingCallTimer = null;
+        }
     }
 
     private void endCall() {
