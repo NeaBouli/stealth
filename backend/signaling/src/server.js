@@ -778,9 +778,9 @@ wss.on("connection", (ws, req) => {
       return;
     }
 
-    // HEARTBEAT — client keepalive, just acknowledge
+    // HEARTBEAT — client keepalive, reply so client's onMessage updates lastSeen
     if (msg.type === "HEARTBEAT") {
-      return; // silently accept
+      return ws.send(JSON.stringify({ type: "HEARTBEAT_ACK" }));
     }
 
     // Fallback: unknown message type

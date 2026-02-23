@@ -101,7 +101,12 @@ class HeartbeatClient(
         idlePingTimer?.scheduleAtFixedRate(object : java.util.TimerTask() {
             override fun run() {
                 try {
-                    ws?.send("{\"type\":\"HEARTBEAT\"}")
+                    val sent = ws?.send("{\"type\":\"HEARTBEAT\"}") ?: false
+                    if (sent) {
+                        // Successful send confirms socket is writable;
+                        // OkHttp's pingInterval handles dead-connection detection
+                        lastSeen = System.currentTimeMillis()
+                    }
                 } catch (_: Exception) {}
             }
         }, 8000, 8000)

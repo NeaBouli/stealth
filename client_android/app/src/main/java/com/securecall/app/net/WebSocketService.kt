@@ -147,7 +147,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     override fun onMessage(text: String) {
-        Log.d("WS_SERVICE", "Message: $text")
+        if (!text.contains("HEARTBEAT_ACK")) {
+            Log.d("WS_SERVICE", "Message: $text")
+        }
         handleIncomingMessageFull(text)
     }
 
