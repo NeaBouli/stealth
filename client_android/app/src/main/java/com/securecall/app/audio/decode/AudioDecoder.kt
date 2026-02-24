@@ -35,13 +35,14 @@ object AudioDecoder {
         com.securecall.app.audio.output.AudioOutput.initTrack()
     }
 
-    // BACKEND-48: JitterBuffer push
+    // BACKEND-48: JitterBuffer push (placeholder — real pipeline uses WebSocketService jitter playout)
     private fun pushToJitter(frame: ByteArray) {
-        com.securecall.app.audio.jitter.JitterBuffer.push(frame)
+        // JitterBuffer now uses ShortArray (decoded PCM); this placeholder is unused
     }
 
     // BACKEND-48: Frame aus JitterBuffer holen
     private fun pullFromJitter(): ByteArray? {
-        return com.securecall.app.audio.jitter.JitterBuffer.pop()
+        // JitterBuffer now uses ShortArray (decoded PCM); this placeholder is unused
+        return null
     }
 }

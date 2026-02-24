@@ -1,35 +1,38 @@
 package com.securecall.app.audio.jitter
 
 import android.util.Log
-import java.util.LinkedList
 
 // BACKEND-48 / ANDROID-03:
-// Platzhalter-JitterBuffer (FIFO + Debug)
-// Später: Zeitstempel, Latenz-Kompensation, Packet Reordering.
+// JitterBuffer — buffers decoded PCM frames and releases at steady rate.
+// Pre-buffers PREFILL frames before playback starts to absorb network jitter.
 object JitterBuffer {
 
     private val TAG = "JITTER_BUFFER"
-    private val buffer: LinkedList<ByteArray> = LinkedList()
+    private val buffer: java.util.LinkedList<ShortArray> = java.util.LinkedList()
 
-    private const val MAX_SIZE = 32  // Placeholder-Kapazität
+    private const val MAX_SIZE = 32
+    const val PREFILL = 3  // 3 frames × 20ms = 60ms pre-buffer
 
     @Synchronized
-    fun push(frame: ByteArray) {
+    fun push(frame: ShortArray) {
         if (buffer.size >= MAX_SIZE) {
-            buffer.removeFirst() // ältestes Frame verwerfen
-            Log.w(TAG, "Buffer overflow → dropped oldest frame")
+            buffer.removeFirst()
+            Log.w(TAG, "Overflow — dropped oldest frame")
         }
         buffer.addLast(frame)
-        Log.d(TAG, "push(): size=${buffer.size}")
     }
 
     @Synchronized
-    fun pop(): ByteArray? {
-        if (buffer.isEmpty()) return null
-        val out = buffer.removeFirst()
-        Log.d(TAG, "pop(): delivered frame, remaining=${buffer.size}")
-        return out
+    fun pop(): ShortArray? {
+        return if (buffer.isEmpty()) null else buffer.removeFirst()
     }
 
+    @Synchronized
     fun size(): Int = buffer.size
+
+    @Synchronized
+    fun clear() {
+        buffer.clear()
+        Log.d(TAG, "Buffer cleared")
+    }
 }

@@ -41,6 +41,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // Audio playback pipeline
     private var audioPlayer: com.securecall.app.ghostnet.media.playback.GhostAudioPlayer? = null
     private var opusDecoderInitialized = false
+    private var jitterPlaybackThread: Thread? = null
+    @Volatile private var jitterPlaybackRunning = false
 
     // E2E encryption state (X25519 + XChaCha20-Poly1305)
     private var localPrivKey: ByteArray? = null
@@ -213,16 +215,47 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             com.securecall.app.ghostnet.media.codec.OpusDecoder.init(48000, 1)
             opusDecoderInitialized = true
         }
-        if (audioPlayer == null) {
-            audioPlayer = com.securecall.app.ghostnet.media.playback.GhostAudioPlayer(48000, 1)
-        }
         val pcm = com.securecall.app.ghostnet.media.codec.OpusDecoder.decode(audioData)
         if (pcm.isNotEmpty()) {
-            audioPlayer?.write(pcm)
+            com.securecall.app.audio.jitter.JitterBuffer.push(pcm)
+            startJitterPlayback()
         }
     }
 
+    private fun startJitterPlayback() {
+        if (jitterPlaybackRunning) return
+        jitterPlaybackRunning = true
+        if (audioPlayer == null) {
+            audioPlayer = com.securecall.app.ghostnet.media.playback.GhostAudioPlayer(48000, 1)
+        }
+        val player = audioPlayer ?: return
+        val silence = ShortArray(960) // 20ms silence at 48kHz mono
+        jitterPlaybackThread = Thread({
+            Log.d("WS_SERVICE", "Jitter playout thread started, prefill=${com.securecall.app.audio.jitter.JitterBuffer.PREFILL}")
+            // Wait for prefill before starting playback
+            while (jitterPlaybackRunning && com.securecall.app.audio.jitter.JitterBuffer.size() < com.securecall.app.audio.jitter.JitterBuffer.PREFILL) {
+                try { Thread.sleep(5) } catch (_: InterruptedException) { return@Thread }
+            }
+            Log.d("WS_SERVICE", "Jitter prefill reached, starting playout")
+            while (jitterPlaybackRunning) {
+                val frame = com.securecall.app.audio.jitter.JitterBuffer.pop()
+                if (frame != null) {
+                    player.write(frame)
+                } else {
+                    player.write(silence)
+                }
+                try { Thread.sleep(20) } catch (_: InterruptedException) { return@Thread }
+            }
+            Log.d("WS_SERVICE", "Jitter playout thread stopped")
+        }, "jitter-playout")
+        jitterPlaybackThread?.start()
+    }
+
     fun stopAudioPlayback() {
+        jitterPlaybackRunning = false
+        jitterPlaybackThread?.interrupt()
+        jitterPlaybackThread = null
+        com.securecall.app.audio.jitter.JitterBuffer.clear()
         audioPlayer?.stop()
         audioPlayer?.release()
         audioPlayer = null
