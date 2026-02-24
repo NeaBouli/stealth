@@ -6,7 +6,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 
 **Sprint status:** All changes are **committed and pushed** to `origin/main`. Direct P2P audio transport is working via WebRTC DataChannel — Opus-encoded voice with E2E encryption, tested bidirectionally between S10 and emulator with ICE CONNECTED + DataChannel OPEN.
 
-**The 21 completed changes (all committed):**
+**The 23 completed changes (all committed):**
 
 1. **Contact auto-call fix** -- Removed `itemView.setOnClickListener` from `ContactAdapter.kt`. Only the phone icon (`btnCallContact`) now triggers calls; tapping the contact row does nothing.
 2. **Messenger invite dialog** -- `DialerFragment.kt` now shows a 3-option dialog (Via Messenger, Share Link, Send SMS) when dialing an unknown number.
@@ -30,6 +30,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 20. **Jitter buffer** *(Commit `a6cd8c1`)* -- Wired `JitterBuffer` between OpusDecoder and GhostAudioPlayer. Decoded PCM frames are buffered (max 32, ShortArray) and drained by a dedicated playout thread at a steady 20ms rate. 60ms pre-buffer (3 frames) before playback starts. Writes silence on buffer underrun.
 21. **WebRTC DataChannel P2P audio** *(Commit `27941e8`)* -- Added WebRTC PeerConnection with DataChannel for direct P2P audio transport, replacing server relay. After call accept, caller creates SDP offer with DataChannel (ordered=false, maxRetransmits=0), callee answers. ICE candidates trickle via existing signaling. Audio routes through DataChannel when open, automatic fallback to WebSocket relay if P2P fails. E2E encryption maintained. See details below.
 22. **WebRTC signaling race condition fix** *(Commit `0f7284a`)* -- WEBRTC_OFFER and ICE_CANDIDATE messages arrive via WebSocket before `PeerConnectionFactory.init()` completes on the callee. Added pending queues (`pendingOffer`, `pendingAnswer`, `pendingIceCandidates`) in `WebRtcManager.kt` that buffer incoming signaling messages and drain them automatically once PeerConnection is created. Without this fix, the callee silently drops the offer and never creates an SDP answer, so the DataChannel never opens.
+23. **Server rate-limit fix for P2P audio** *(Commit `dbad77c`)* -- Binary audio frames (50fps Opus) were flooding the signaling rate limiter (40 msgs/10s), killing the DataChannel after ~2.5s. Three-part fix: (1) `server.js`: moved binary frame handling BEFORE `rateLimit.registerEvent()` so audio frames bypass the signaling rate limit; (2) `rate_limit.js`: added separate `registerBinaryEvent()` with 1000/10s limit (defense in depth against binary flooding); (3) `WebSocketService.kt`: removed WS binary fallback — `sendBinary()` returns `false` when DataChannel is not open instead of falling back to `client?.sendBinary()`. Audio only flows via P2P DataChannel now. Brief silence (~2-3s) during ICE negotiation is expected; UI shows "Connecting..." during this time.
 
 **End-to-end call signaling details (change #8):**
 - `WebSocketService.kt`: Added call signaling callbacks (`_onCallAccepted`, `_onCallEnded`, `_onCallError`), session tracking, incoming call activity launch, message parsing for CALL_INVITE/CALL_INVITE_ACK/CALL_ACCEPT/CALL_END/ERROR. Uses private backing fields with explicit setter methods for Java interop.
@@ -79,7 +80,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **Earpiece routing:** AudioTrack initialized with `STREAM_VOICE_CALL` (confirmed by `prepare(): done`). Audio routes to earpiece with voice call volume controls.
 - **WebRTC P2P DataChannel:** Full P2P connection established between emulator and S10. Caller (emulator): `PeerConnection created` → `DataChannel 'audio' created` → `SDP created: OFFER` → ICE candidates gathered (host + srflx) → `WEBRTC_ANSWER` received → `ICE connection state: CONNECTED` → `DataChannel state: OPEN`. Callee (S10): `PeerConnection created` → `WEBRTC_OFFER` received → `SDP created: ANSWER` → ICE candidates gathered → `ICE connection state: CONNECTED` → `DataChannel received (callee): audio` → `DataChannel state: OPEN`. Audio frames flowing P2P through DataChannel with E2E encryption, bypassing server relay.
 - **WebRTC pending queue fix:** Verified callee correctly queues WEBRTC_OFFER + ICE candidates when they arrive before PeerConnection init completes: `Queuing remote offer (PeerConnection not ready)` → `PeerConnection created` → `Draining 6 pending ICE candidates` → SDP answer created → ICE CONNECTED → DataChannel OPEN. Both S10 (caller) and emulator (callee) establish P2P successfully.
-- **S10 → Emulator call (latest test):** Full end-to-end verified with S10 as caller. S10 sent CALL_INVITE with X25519 pubKey → Emulator showed IncomingCallActivity with "S10" → Accepted within 4s → CALL_ACCEPT with pubKey → E2E session key derived both sides → WebRTC: S10 created DataChannel + SDP OFFER → Emulator queued offer (pending queue working) → PeerConnection created → drained 6 ICE candidates → SDP ANSWER sent → ICE CONNECTED → DataChannel OPEN on both sides → P2P audio active. DataChannel closed after ~2.5s due to server rate-limiting ICE candidate messages, audio seamlessly fell back to WebSocket relay and continued playing at steady 20ms intervals. Jitter buffer prefilled and playout thread running on both devices.
+- **S10 → Emulator call (rate-limit fix verified):** Full 2+ minute call with DataChannel OPEN the entire duration. Zero `rate_limited` errors. S10 (caller) sent CALL_INVITE → Emulator accepted → WebRTC: DataChannel + SDP offer/answer exchange → ICE CONNECTED → DataChannel OPEN → P2P audio flowing at steady 20ms intervals for entire call. Binary audio frames correctly exempted from signaling rate limit on server. No WS relay fallback triggered. Clean teardown on call end.
 
 ## Architecture Decisions
 
@@ -91,7 +92,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **Single reconnect owner:** Only `HeartbeatClient.onFailure()` triggers reconnect. `WebSocketService.onError()` notifies callbacks but does NOT reconnect. This prevents the double-reconnect exponential explosion bug.
 - **Server session/client timeout:** 60s (in `heartbeat.js`). Server sends native `ws.ping()` every 5s, tracks `lastSeen` via pong and message handlers. Sessions and clients that don't communicate for 60s are terminated.
 - **Call signaling flow:** Outgoing: CallActivity sends CALL_INVITE via WebSocketService → server routes to target → target's WebSocketService launches IncomingCallActivity → user accepts → CALL_ACCEPT sent back → caller's CallActivity starts audio capture. End call: either side sends CALL_END → server forwards and cleans up session → remote side receives CALL_END and auto-closes. All callbacks use private backing fields (`_onCallAccepted`, etc.) with explicit setter methods to avoid Kotlin/Java JVM signature clashes. IncomingCallActivity uses an `accepted` flag to prevent clearing `onCallEnded` when transitioning to CallActivity.
-- **Audio transport via WebRTC DataChannel (P2P) with WebSocket fallback:** After call is accepted, both sides establish a WebRTC PeerConnection with a DataChannel (`ordered=false, maxRetransmits=0`). `WebRtcManager` handles SDP offer/answer exchange and ICE candidate trickling via the existing signaling WebSocket. Once the DataChannel opens, `sendBinary()` routes encrypted Opus frames directly P2P, bypassing the server. If the DataChannel is not open (ICE failed, symmetric NAT, etc.), audio falls back to the WebSocket binary relay transparently. ICE servers: Google STUN + Metered.ca TURN/TURNS from BuildConfig. Receiving side: DataChannel `onMessage` → `WebSocketService.onBinaryMessage()` → decrypt → `OpusDecoder.decode()` → `JitterBuffer.push()` → playout thread → `GhostAudioPlayer.write()`. All audio frames are E2E encrypted with XChaCha20-Poly1305 regardless of transport.
+- **Audio transport via WebRTC DataChannel (P2P only):** After call is accepted, both sides establish a WebRTC PeerConnection with a DataChannel (`ordered=false, maxRetransmits=0`). `WebRtcManager` handles SDP offer/answer exchange and ICE candidate trickling via the existing signaling WebSocket. Once the DataChannel opens, `sendBinary()` routes encrypted Opus frames directly P2P, bypassing the server. If the DataChannel is not open yet, audio frames are silently dropped (no WS relay fallback — this prevents binary frames from flooding the signaling rate limiter). Brief silence (~2-3s) during ICE negotiation while UI shows "Connecting...". ICE servers: Google STUN + Metered.ca TURN/TURNS from BuildConfig. Receiving side: DataChannel `onMessage` → `WebSocketService.onBinaryMessage()` → decrypt → `OpusDecoder.decode()` → `JitterBuffer.push()` → playout thread → `GhostAudioPlayer.write()`. All audio frames are E2E encrypted with XChaCha20-Poly1305.
 - **Jitter buffer:** `JitterBuffer` (singleton, synchronized) buffers decoded PCM `ShortArray` frames (max 32). A dedicated `jitter-playout` thread drains one frame every 20ms (matching Opus 960-sample frame duration at 48kHz). Pre-buffers 3 frames (60ms) before starting playback. On underrun, writes 960 zero samples (silence) to maintain steady output. Thread and buffer are cleared in `stopAudioPlayback()`.
 - **E2E audio encryption:** X25519 public keys are piggybacked on existing CALL_INVITE/CALL_ACCEPT messages (no extra round-trips). Both sides derive a shared session key via X25519 DH + HKDF-SHA256 using `CoreCrypto.deriveSessionKey()`. Every Opus frame is encrypted with `CoreCrypto.encrypt(sessionKey, data)` → [nonce(24B)|ciphertext|tag(16B)] before sending, and decrypted with `CoreCrypto.decrypt()` on receive. Session keys are derived before any audio flows. Key material (`localPrivKey`, `sessionKey`) is zeroed via `ByteArray.fill(0)` in `clearSession()`. Graceful fallback: if `CoreCrypto.isNativeAvailable()` is false, audio passes through unencrypted.
 - **endCall() idempotency:** `endCall()` uses an `isEnding` boolean guard to ensure it runs at most once per call session. The `onCallError` callback is cleared after first invocation (`ws.setOnCallError(null)`) to prevent server error floods (e.g., `rate_limited`) from scheduling multiple delayed `endCall()` calls. The proximity sensor does NOT call `endCall()` — it only manages `PROXIMITY_SCREEN_OFF_WAKE_LOCK`.
@@ -156,7 +157,8 @@ stealth/                              # Monorepo root
 │
 ├── backend/                          # Node.js signaling server (Railway)
 │   └── signaling/src/
-│       ├── server.js                 # MODIFIED: HEARTBEAT_ACK, pubKey forwarding in call signaling
+│       ├── server.js                 # MODIFIED: HEARTBEAT_ACK, pubKey forwarding, binary before rate limit
+│       ├── rate_limit.js             # MODIFIED: separate binary rate limit (1000/10s)
 │       └── heartbeat.js              # MODIFIED: session timeout 30s→60s
 ├── core_crypto/                      # Rust crypto library (XChaCha20, X25519, HKDF)
 ├── docs/                             # Security audit, architecture, wiki pages
@@ -195,7 +197,7 @@ stealth/                              # Monorepo root
 13. ~~**E2E audio encryption.**~~ DONE. X25519 key exchange + XChaCha20-Poly1305 per-frame encryption. Commit `a97faa0`.
 14. **Firebase setup.** Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
 15. **TURN credential rotation.** Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
-16. ~~**Direct P2P audio (WebRTC).**~~ DONE. WebRTC DataChannel with automatic WS relay fallback. Commit `27941e8`. Pending queue race condition fix in `0f7284a`.
+16. ~~**Direct P2P audio (WebRTC).**~~ DONE. WebRTC DataChannel (P2P only, no WS relay fallback). Commit `27941e8`. Pending queue fix `0f7284a`. Rate-limit fix `dbad77c`.
 17. ~~**Audio stream type.**~~ DONE. GhostAudioPlayer changed to `STREAM_VOICE_CALL`. Commit `0096e74`.
 18. ~~**Jitter buffer.**~~ DONE. JitterBuffer wired between OpusDecoder and GhostAudioPlayer with 60ms prefill playout thread. Commit `a6cd8c1`.
 
@@ -208,7 +210,7 @@ stealth/                              # Monorepo root
 5. **TURN credentials in source.** The Metered.ca TURN username and password are hardcoded in `build.gradle`. These should be rotated and fetched from the server at runtime.
 6. **Release keystore in repo.** `securecall-release-key.jks` is in the repo root. Passwords are read from environment variables, but the keystore file itself is committed.
 7. **No automated tests.** Unit test dependencies are configured but no tests were added for the new changes.
-8a. **Server rate-limiting kills DataChannel.** ICE candidate trickling sends many rapid messages through the signaling WebSocket, triggering the server's rate limiter. This causes the server to close the WebSocket, which tears down the DataChannel after ~2.5s. Audio falls back to WS relay seamlessly, but P2P is short-lived. Fix: either batch ICE candidates, increase server rate limit for ICE messages, or use `iceCandidatePoolSize` to reduce trickling.
+8a. ~~**Server rate-limiting kills DataChannel.**~~ RESOLVED. Root cause was binary audio frames (50fps Opus) flooding the signaling rate limit, not ICE candidates. Fixed in commit `dbad77c`: binary frames exempted from signaling rate limit on server, separate binary rate limit added (1000/10s), WS relay fallback removed from client. DataChannel now stays OPEN for entire call duration.
 8. ~~**No runtime mic permission request.**~~ RESOLVED. CallActivity now requests RECORD_AUDIO at runtime. Commit `4fe8c77`.
 9. **Android AlertDialog gotcha.** `setMessage()` and `setItems()` are mutually exclusive -- `setMessage` suppresses the item list. Fixed in commit `a0b9872`.
 10. **Kotlin/Java interop gotcha.** Kotlin `var` properties auto-generate getters/setters that clash with explicit methods of the same name. Use private backing fields + explicit methods. Java lambdas for Kotlin function types must return `kotlin.Unit.INSTANCE`.
@@ -216,7 +218,7 @@ stealth/                              # Monorepo root
 
 ## Explicit Non-Goals
 
-- Backend changes are minimal: `HEARTBEAT_ACK` response and `pubKey` forwarding in `server.js`, session timeout increase in `heartbeat.js`. No structural or architectural backend changes.
+- Backend changes are minimal: `HEARTBEAT_ACK` response, `pubKey` forwarding, binary-before-rate-limit reorder in `server.js`; separate binary rate limit in `rate_limit.js`; session timeout increase in `heartbeat.js`. No structural or architectural backend changes.
 - No Rust crypto changes. `core_crypto/` is stable and untouched (the `.rustc_info.json` change is a build cache artifact).
 - No Pro or Premium flavor builds. Only `free` debug is being built and tested.
 - No CI/CD pipeline changes. GitHub Actions workflows exist but are not being modified.
@@ -242,9 +244,8 @@ stealth/                              # Monorepo root
 
 ## Next Immediate Step
 
-Call signaling, heartbeat, real audio transport, E2E encryption, earpiece routing, contact name resolution, jitter buffer, WebRTC P2P, runtime permissions, and call lifecycle are complete and tested. Next priorities:
+Call signaling, heartbeat, real audio transport, E2E encryption, earpiece routing, contact name resolution, jitter buffer, WebRTC P2P, runtime permissions, rate-limit fix, and call lifecycle are all complete and tested. P2P DataChannel stays OPEN for entire call duration (2+ minutes verified). Next priorities:
 
-1. **Fix server rate-limiting for ICE candidates** -- ICE candidate trickling sends many rapid messages, triggering the server rate limiter and killing the DataChannel after ~2.5s. Options: batch ICE candidates into fewer messages, increase server rate limit for ICE_CANDIDATE type, or use `iceCandidatePoolSize` to pre-gather candidates before the offer.
-2. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
-3. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
-4. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling).
+1. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
+2. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
+3. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling).
