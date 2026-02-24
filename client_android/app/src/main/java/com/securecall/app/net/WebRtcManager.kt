@@ -30,6 +30,11 @@ class WebRtcManager(
     var isDataChannelOpen = false
         private set
 
+    // Pending queues for messages that arrive before init() completes
+    private var pendingOffer: String? = null
+    private var pendingAnswer: String? = null
+    private val pendingIceCandidates = mutableListOf<JSONObject>()
+
     fun init() {
         factory = PeerConnectionFactory.builder()
             .setOptions(PeerConnectionFactory.Options())
@@ -54,6 +59,22 @@ class WebRtcManager(
 
         peerConnection = factory?.createPeerConnection(rtcConfig, pcObserver)
         Log.d(TAG, "PeerConnection created")
+
+        // Drain any messages that arrived before init completed
+        pendingOffer?.let { sdp ->
+            pendingOffer = null
+            onRemoteOffer(sdp)
+        }
+        pendingAnswer?.let { sdp ->
+            pendingAnswer = null
+            onRemoteAnswer(sdp)
+        }
+        if (pendingIceCandidates.isNotEmpty()) {
+            Log.d(TAG, "Draining ${pendingIceCandidates.size} pending ICE candidates")
+            val candidates = pendingIceCandidates.toList()
+            pendingIceCandidates.clear()
+            candidates.forEach { onRemoteIceCandidate(it) }
+        }
     }
 
     /** Caller: create DataChannel + SDP offer */
@@ -71,27 +92,44 @@ class WebRtcManager(
 
     /** Callee: receive remote offer, set it, create answer */
     fun onRemoteOffer(sdp: String) {
+        val pc = peerConnection
+        if (pc == null) {
+            Log.d(TAG, "Queuing remote offer (PeerConnection not ready)")
+            pendingOffer = sdp
+            return
+        }
         val desc = SessionDescription(SessionDescription.Type.OFFER, sdp)
-        peerConnection?.setRemoteDescription(setSdpObserver("setRemoteOffer"), desc)
-        peerConnection?.createAnswer(sdpObserver, MediaConstraints())
+        pc.setRemoteDescription(setSdpObserver("setRemoteOffer"), desc)
+        pc.createAnswer(sdpObserver, MediaConstraints())
         Log.d(TAG, "Remote offer set, creating answer")
     }
 
     /** Caller: receive remote answer */
     fun onRemoteAnswer(sdp: String) {
+        val pc = peerConnection
+        if (pc == null) {
+            Log.d(TAG, "Queuing remote answer (PeerConnection not ready)")
+            pendingAnswer = sdp
+            return
+        }
         val desc = SessionDescription(SessionDescription.Type.ANSWER, sdp)
-        peerConnection?.setRemoteDescription(setSdpObserver("setRemoteAnswer"), desc)
+        pc.setRemoteDescription(setSdpObserver("setRemoteAnswer"), desc)
         Log.d(TAG, "Remote answer set")
     }
 
     /** Add remote ICE candidate */
     fun onRemoteIceCandidate(json: JSONObject) {
+        val pc = peerConnection
+        if (pc == null) {
+            pendingIceCandidates.add(json)
+            return
+        }
         val candidate = IceCandidate(
             json.optString("sdpMid", ""),
             json.optInt("sdpMLineIndex", 0),
             json.optString("candidate", "")
         )
-        peerConnection?.addIceCandidate(candidate)
+        pc.addIceCandidate(candidate)
     }
 
     /** Send data via DataChannel */
