@@ -55,7 +55,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 **Testing:** APK tested on S10 (serial `RF8N313QMFL`, clientId `android-ded42f50`) and Pixel 5 emulator (clientId `android-33068922`). Full bidirectional call signaling, audio, and E2E encryption verified:
 - **S10 → Emulator:** CALL_INVITE → IncomingCallActivity → Accept → CALL_ACCEPT → CallActivity with timer → End call from S10 → Emulator receives CALL_END and closes
 - **Emulator → S10:** CALL_INVITE → IncomingCallActivity on S10 → Accept → CALL_ACCEPT → CallActivity with timer → End call from emulator → S10 receives CALL_END and closes
-- **Bidirectional audio:** Both devices show `AUDIO_CAPTURE: Capture thread started` (mic recording) and `AUDIO_PLAYER: write(): wrote=960 samples` (receiving peer audio). Full pipeline: OpusEncoder init → capture thread → binary WebSocket send → remote decode → AudioTrack playback.
+- **Bidirectional audio:** Both devices show `AUDIO_CAPTURE: Capture thread started` (mic recording) and `AUDIO_PLAYER: write(): wrote=960 samples` (receiving peer audio). Full pipeline: OpusEncoder init → capture thread → binary WebSocket send → remote decrypt → OpusDecode → JitterBuffer (60ms prefill) → playout thread (20ms) → AudioTrack (earpiece).
 - **End call works in all states:** ringing, connecting, and active. Both caller and callee can end.
 - **Remote hangup:** When one side ends the call, the other side receives CALL_END and automatically closes CallActivity.
 - **Heartbeat stability:** Connections remain stable for 65+ seconds with zero timeouts or reconnects.
@@ -63,6 +63,9 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **Runtime permission:** RECORD_AUDIO is now requested at runtime when the call goes active. Tested: permission revoked → call started → dialog appeared → granted → audio capture started immediately.
 - **endCall() guard:** Verified `endCall()` fires exactly once in all scenarios: error (peer_not_found), rate limiting (multiple server errors), and normal call flow. Proximity sensor does NOT trigger endCall — it only manages the wake lock.
 - **E2E encryption:** Full key exchange verified — caller generates X25519 keypair and includes pubKey in CALL_INVITE, callee stores it and derives session key on accept, caller derives matching session key from CALL_ACCEPT pubKey. Both sides log `E2E session key derived`. Bidirectional encrypted audio: all Opus frames encrypted/decrypted successfully (zero `E2E decrypt failed` errors). Tested with native crypto on both arm64-v8a (S10) and x86_64 (emulator).
+- **Contact name resolution:** S10 incoming call screen shows saved contact name "Emulator" (resolved from `android-33068922` via ContactRepository) instead of raw clientId. Name is also passed through to CallActivity.
+- **Jitter buffer:** Both devices: `Jitter playout thread started, prefill=3` → `Jitter prefill reached, starting playout` → `AUDIO_PLAYER: write(): wrote=960 samples` at steady 20ms intervals. Playout thread (separate from WS reader thread) drains buffer smoothly.
+- **Earpiece routing:** AudioTrack initialized with `STREAM_VOICE_CALL` (confirmed by `prepare(): done`). Audio routes to earpiece with voice call volume controls.
 
 ## Architecture Decisions
 
