@@ -283,17 +283,23 @@ wss.on("connection", (ws, req) => {
   ws.on("message", (data, isBinary) => {
     hb.updateClient(connId);
 
-    // Rate limiting
-    if (!rateLimit.registerEvent(connId)) {
-      ws.send(JSON.stringify({ type: "ERROR", error: "rate_limited" }));
+    // --- Binary frames (audio relay): handle before rate limit ---
+    // Binary audio at 50fps would instantly exhaust the signaling rate
+    // limit (40/10s). forwardBinaryToPeer() already validates: registered
+    // client + ACTIVE session + valid peer.
+    if (isBinary) {
+      if (!rateLimit.registerBinaryEvent(connId)) {
+        return; // silently drop — client flooding binary frames
+      }
+      if (!forwardBinaryToPeer(connId, data)) {
+        // Silently drop — no active session or peer not connected
+      }
       return;
     }
 
-    // --- Binary frames (audio PCM): forward to peer ---
-    if (isBinary) {
-      if (!forwardBinaryToPeer(connId, data)) {
-        // Silently drop — do not echo back
-      }
+    // Rate limiting (JSON signaling messages only)
+    if (!rateLimit.registerEvent(connId)) {
+      ws.send(JSON.stringify({ type: "ERROR", error: "rate_limited" }));
       return;
     }
 

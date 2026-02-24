@@ -130,12 +130,14 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         } else {
             data
         }
-        // Prefer P2P DataChannel, fallback to WS relay
+        // Send via P2P DataChannel only — no WS relay fallback.
+        // During call setup, audio frames before DataChannel opens would
+        // flood the signaling WebSocket and trigger server rate limits.
         val rtc = webRtcManager
         if (rtc != null && rtc.isDataChannelOpen) {
             return rtc.send(toSend)
         }
-        return client?.sendBinary(toSend) ?: false
+        return false
     }
 
     fun lastSeen(): Long {
