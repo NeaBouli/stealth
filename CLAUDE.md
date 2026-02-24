@@ -79,6 +79,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **Earpiece routing:** AudioTrack initialized with `STREAM_VOICE_CALL` (confirmed by `prepare(): done`). Audio routes to earpiece with voice call volume controls.
 - **WebRTC P2P DataChannel:** Full P2P connection established between emulator and S10. Caller (emulator): `PeerConnection created` → `DataChannel 'audio' created` → `SDP created: OFFER` → ICE candidates gathered (host + srflx) → `WEBRTC_ANSWER` received → `ICE connection state: CONNECTED` → `DataChannel state: OPEN`. Callee (S10): `PeerConnection created` → `WEBRTC_OFFER` received → `SDP created: ANSWER` → ICE candidates gathered → `ICE connection state: CONNECTED` → `DataChannel received (callee): audio` → `DataChannel state: OPEN`. Audio frames flowing P2P through DataChannel with E2E encryption, bypassing server relay.
 - **WebRTC pending queue fix:** Verified callee correctly queues WEBRTC_OFFER + ICE candidates when they arrive before PeerConnection init completes: `Queuing remote offer (PeerConnection not ready)` → `PeerConnection created` → `Draining 6 pending ICE candidates` → SDP answer created → ICE CONNECTED → DataChannel OPEN. Both S10 (caller) and emulator (callee) establish P2P successfully.
+- **S10 → Emulator call (latest test):** Full end-to-end verified with S10 as caller. S10 sent CALL_INVITE with X25519 pubKey → Emulator showed IncomingCallActivity with "S10" → Accepted within 4s → CALL_ACCEPT with pubKey → E2E session key derived both sides → WebRTC: S10 created DataChannel + SDP OFFER → Emulator queued offer (pending queue working) → PeerConnection created → drained 6 ICE candidates → SDP ANSWER sent → ICE CONNECTED → DataChannel OPEN on both sides → P2P audio active. DataChannel closed after ~2.5s due to server rate-limiting ICE candidate messages, audio seamlessly fell back to WebSocket relay and continued playing at steady 20ms intervals. Jitter buffer prefilled and playout thread running on both devices.
 
 ## Architecture Decisions
 
@@ -207,6 +208,7 @@ stealth/                              # Monorepo root
 5. **TURN credentials in source.** The Metered.ca TURN username and password are hardcoded in `build.gradle`. These should be rotated and fetched from the server at runtime.
 6. **Release keystore in repo.** `securecall-release-key.jks` is in the repo root. Passwords are read from environment variables, but the keystore file itself is committed.
 7. **No automated tests.** Unit test dependencies are configured but no tests were added for the new changes.
+8a. **Server rate-limiting kills DataChannel.** ICE candidate trickling sends many rapid messages through the signaling WebSocket, triggering the server's rate limiter. This causes the server to close the WebSocket, which tears down the DataChannel after ~2.5s. Audio falls back to WS relay seamlessly, but P2P is short-lived. Fix: either batch ICE candidates, increase server rate limit for ICE messages, or use `iceCandidatePoolSize` to reduce trickling.
 8. ~~**No runtime mic permission request.**~~ RESOLVED. CallActivity now requests RECORD_AUDIO at runtime. Commit `4fe8c77`.
 9. **Android AlertDialog gotcha.** `setMessage()` and `setItems()` are mutually exclusive -- `setMessage` suppresses the item list. Fixed in commit `a0b9872`.
 10. **Kotlin/Java interop gotcha.** Kotlin `var` properties auto-generate getters/setters that clash with explicit methods of the same name. Use private backing fields + explicit methods. Java lambdas for Kotlin function types must return `kotlin.Unit.INSTANCE`.
@@ -242,6 +244,7 @@ stealth/                              # Monorepo root
 
 Call signaling, heartbeat, real audio transport, E2E encryption, earpiece routing, contact name resolution, jitter buffer, WebRTC P2P, runtime permissions, and call lifecycle are complete and tested. Next priorities:
 
-1. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
-2. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
-3. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling).
+1. **Fix server rate-limiting for ICE candidates** -- ICE candidate trickling sends many rapid messages, triggering the server rate limiter and killing the DataChannel after ~2.5s. Options: batch ICE candidates into fewer messages, increase server rate limit for ICE_CANDIDATE type, or use `iceCandidatePoolSize` to pre-gather candidates before the offer.
+2. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
+3. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
+4. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling).
