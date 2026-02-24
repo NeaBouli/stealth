@@ -1,0 +1,206 @@
+package com.securecall.app.net
+
+import android.util.Log
+import com.securecall.app.BuildConfig
+import org.json.JSONObject
+import org.webrtc.*
+import java.nio.ByteBuffer
+
+/**
+ * Manages a WebRTC PeerConnection + DataChannel for P2P audio transport.
+ * DataChannel is used instead of audio tracks because we have our own
+ * Opus codec + E2E encryption pipeline.
+ */
+class WebRtcManager(
+    private val onLocalSdp: (type: String, sdp: String) -> Unit,
+    private val onLocalIceCandidate: (JSONObject) -> Unit,
+    private val onDataReceived: (ByteArray) -> Unit
+) {
+
+    companion object {
+        private const val TAG = "WEBRTC"
+        private const val DC_LABEL = "audio"
+    }
+
+    private var factory: PeerConnectionFactory? = null
+    private var peerConnection: PeerConnection? = null
+    private var dataChannel: DataChannel? = null
+
+    @Volatile
+    var isDataChannelOpen = false
+        private set
+
+    fun init() {
+        factory = PeerConnectionFactory.builder()
+            .setOptions(PeerConnectionFactory.Options())
+            .createPeerConnectionFactory()
+
+        val iceServers = listOf(
+            PeerConnection.IceServer.builder(BuildConfig.STUN_URL).createIceServer(),
+            PeerConnection.IceServer.builder(BuildConfig.TURN_URL)
+                .setUsername(BuildConfig.TURN_USERNAME)
+                .setPassword(BuildConfig.TURN_PASSWORD)
+                .createIceServer(),
+            PeerConnection.IceServer.builder(BuildConfig.TURNS_URL)
+                .setUsername(BuildConfig.TURN_USERNAME)
+                .setPassword(BuildConfig.TURN_PASSWORD)
+                .createIceServer()
+        )
+
+        val rtcConfig = PeerConnection.RTCConfiguration(iceServers).apply {
+            sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
+            continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
+        }
+
+        peerConnection = factory?.createPeerConnection(rtcConfig, pcObserver)
+        Log.d(TAG, "PeerConnection created")
+    }
+
+    /** Caller: create DataChannel + SDP offer */
+    fun createOffer() {
+        val dcInit = DataChannel.Init().apply {
+            ordered = false
+            maxRetransmits = 0
+        }
+        dataChannel = peerConnection?.createDataChannel(DC_LABEL, dcInit)
+        dataChannel?.registerObserver(dcObserver)
+        Log.d(TAG, "DataChannel '$DC_LABEL' created (caller)")
+
+        peerConnection?.createOffer(sdpObserver, MediaConstraints())
+    }
+
+    /** Callee: receive remote offer, set it, create answer */
+    fun onRemoteOffer(sdp: String) {
+        val desc = SessionDescription(SessionDescription.Type.OFFER, sdp)
+        peerConnection?.setRemoteDescription(setSdpObserver("setRemoteOffer"), desc)
+        peerConnection?.createAnswer(sdpObserver, MediaConstraints())
+        Log.d(TAG, "Remote offer set, creating answer")
+    }
+
+    /** Caller: receive remote answer */
+    fun onRemoteAnswer(sdp: String) {
+        val desc = SessionDescription(SessionDescription.Type.ANSWER, sdp)
+        peerConnection?.setRemoteDescription(setSdpObserver("setRemoteAnswer"), desc)
+        Log.d(TAG, "Remote answer set")
+    }
+
+    /** Add remote ICE candidate */
+    fun onRemoteIceCandidate(json: JSONObject) {
+        val candidate = IceCandidate(
+            json.optString("sdpMid", ""),
+            json.optInt("sdpMLineIndex", 0),
+            json.optString("candidate", "")
+        )
+        peerConnection?.addIceCandidate(candidate)
+    }
+
+    /** Send data via DataChannel */
+    fun send(data: ByteArray): Boolean {
+        val dc = dataChannel ?: return false
+        if (!isDataChannelOpen) return false
+        val buf = DataChannel.Buffer(ByteBuffer.wrap(data), true)
+        return dc.send(buf)
+    }
+
+    /** Tear down everything */
+    fun close() {
+        Log.d(TAG, "Closing WebRTC")
+        isDataChannelOpen = false
+        try { dataChannel?.close() } catch (_: Exception) {}
+        try { peerConnection?.close() } catch (_: Exception) {}
+        try { factory?.dispose() } catch (_: Exception) {}
+        dataChannel = null
+        peerConnection = null
+        factory = null
+    }
+
+    // ===================== PeerConnection Observer =====================
+
+    private val pcObserver = object : PeerConnection.Observer {
+        override fun onIceCandidate(candidate: IceCandidate) {
+            Log.d(TAG, "Local ICE candidate: ${candidate.sdp.take(60)}...")
+            val json = JSONObject().apply {
+                put("candidate", candidate.sdp)
+                put("sdpMid", candidate.sdpMid)
+                put("sdpMLineIndex", candidate.sdpMLineIndex)
+            }
+            onLocalIceCandidate(json)
+        }
+
+        override fun onIceConnectionChange(state: PeerConnection.IceConnectionState) {
+            Log.d(TAG, "ICE connection state: $state")
+        }
+
+        override fun onDataChannel(dc: DataChannel) {
+            // Callee receives the DataChannel here
+            Log.d(TAG, "DataChannel received (callee): ${dc.label()}")
+            dataChannel = dc
+            dc.registerObserver(dcObserver)
+        }
+
+        override fun onSignalingChange(state: PeerConnection.SignalingState) {
+            Log.d(TAG, "Signaling state: $state")
+        }
+
+        override fun onIceConnectionReceivingChange(receiving: Boolean) {}
+        override fun onIceGatheringChange(state: PeerConnection.IceGatheringState) {}
+        override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
+        override fun onAddStream(stream: MediaStream?) {}
+        override fun onRemoveStream(stream: MediaStream?) {}
+        override fun onRenegotiationNeeded() {}
+        override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {}
+    }
+
+    // ===================== DataChannel Observer =====================
+
+    private val dcObserver = object : DataChannel.Observer {
+        override fun onBufferedAmountChange(previousAmount: Long) {}
+
+        override fun onStateChange() {
+            val state = dataChannel?.state()
+            Log.d(TAG, "DataChannel state: $state")
+            isDataChannelOpen = (state == DataChannel.State.OPEN)
+            if (isDataChannelOpen) {
+                Log.d(TAG, "DataChannel opened — P2P audio transport active")
+            }
+        }
+
+        override fun onMessage(buffer: DataChannel.Buffer) {
+            if (buffer.binary) {
+                val data = ByteArray(buffer.data.remaining())
+                buffer.data.get(data)
+                onDataReceived(data)
+            }
+        }
+    }
+
+    // ===================== SDP Observer =====================
+
+    private val sdpObserver = object : SdpObserver {
+        override fun onCreateSuccess(desc: SessionDescription) {
+            Log.d(TAG, "SDP created: ${desc.type}")
+            peerConnection?.setLocalDescription(setSdpObserver("setLocal"), desc)
+            onLocalSdp(desc.type.canonicalForm(), desc.description)
+        }
+
+        override fun onCreateFailure(error: String?) {
+            Log.e(TAG, "SDP create failed: $error")
+        }
+
+        override fun onSetSuccess() {}
+        override fun onSetFailure(error: String?) {
+            Log.e(TAG, "SDP set failed: $error")
+        }
+    }
+
+    private fun setSdpObserver(label: String) = object : SdpObserver {
+        override fun onCreateSuccess(desc: SessionDescription?) {}
+        override fun onCreateFailure(error: String?) {}
+        override fun onSetSuccess() {
+            Log.d(TAG, "$label success")
+        }
+        override fun onSetFailure(error: String?) {
+            Log.e(TAG, "$label failed: $error")
+        }
+    }
+}

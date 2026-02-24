@@ -49,6 +49,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private var remotePubKey: ByteArray? = null
     private var sessionKey: ByteArray? = null
 
+    // WebRTC P2P DataChannel transport
+    private var webRtcManager: WebRtcManager? = null
+
     fun getCurrentSessionId(): String? = _currentSessionId
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
     fun setOnCallEnded(cb: ((String) -> Unit)?) { _onCallEnded = cb }
@@ -60,6 +63,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         remotePubKey = null
         sessionKey?.fill(0)
         sessionKey = null
+        webRtcManager?.close()
+        webRtcManager = null
     }
 
     fun getLocalClientId(): String? {
@@ -124,6 +129,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             com.securecall.crypto.CoreCrypto.encrypt(key, data) ?: data
         } else {
             data
+        }
+        // Prefer P2P DataChannel, fallback to WS relay
+        val rtc = webRtcManager
+        if (rtc != null && rtc.isDataChannelOpen) {
+            return rtc.send(toSend)
         }
         return client?.sendBinary(toSend) ?: false
     }
@@ -372,6 +382,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         val json = """{"type":"CALL_ACCEPT","sessionId":"$sessionId","pubKey":"$pubKeyB64"}"""
         client?.send(json)
         Log.d("WS_SERVICE", "CALL_ACCEPT sent for session $sessionId")
+        // Callee prepares for WebRTC (will receive offer from caller)
+        startWebRtc(sessionId, isOfferer = false)
     }
 
     fun sendCallEnd(sessionId: String) {
@@ -398,6 +410,38 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         """.trimIndent()
         client?.send(json)
         Log.d("WS_SERVICE", "GHOST_PREPARE sent for $sessionId")
+    }
+
+    // ===================== WebRTC P2P =====================
+
+    private fun startWebRtc(sessionId: String, isOfferer: Boolean) {
+        Log.d("WS_SERVICE", "Starting WebRTC (offerer=$isOfferer) for session=$sessionId")
+        val mgr = WebRtcManager(
+            onLocalSdp = { type, sdp -> sendWebRtcSdp(sessionId, type, sdp) },
+            onLocalIceCandidate = { candidate -> sendIceCandidate(sessionId, candidate) },
+            onDataReceived = { data -> onBinaryMessage(data) }
+        )
+        webRtcManager = mgr
+        mgr.init()
+        if (isOfferer) mgr.createOffer()
+    }
+
+    private fun sendWebRtcSdp(sessionId: String, type: String, sdp: String) {
+        val msgType = if (type == "offer") "WEBRTC_OFFER" else "WEBRTC_ANSWER"
+        val obj = org.json.JSONObject()
+        obj.put("type", msgType)
+        obj.put("sessionId", sessionId)
+        obj.put("sdp", sdp)
+        client?.send(obj.toString())
+        Log.d("WS_SERVICE", "$msgType sent for session=$sessionId")
+    }
+
+    private fun sendIceCandidate(sessionId: String, candidate: org.json.JSONObject) {
+        val obj = org.json.JSONObject()
+        obj.put("type", "ICE_CANDIDATE")
+        obj.put("sessionId", sessionId)
+        obj.put("candidate", candidate)
+        client?.send(obj.toString())
     }
 
     // ===================== Incoming Message Handling =====================
@@ -481,12 +525,29 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     }
                     Log.d("WS_SERVICE", "Remote accepted call, sessionId=$sessionId")
                     _onCallAccepted?.invoke(sessionId)
+                    // Caller initiates WebRTC P2P
+                    startWebRtc(sessionId, isOfferer = true)
                 }
                 "CALL_ACCEPT_ACK" -> {
                     Log.d("WS_SERVICE", "CALL_ACCEPT_ACK received")
                 }
                 "CALL_END_ACK" -> {
                     Log.d("WS_SERVICE", "CALL_END_ACK received")
+                }
+                "WEBRTC_OFFER" -> {
+                    val sdp = obj.optString("sdp", "")
+                    if (sdp.isNotEmpty()) webRtcManager?.onRemoteOffer(sdp)
+                }
+                "WEBRTC_ANSWER" -> {
+                    val sdp = obj.optString("sdp", "")
+                    if (sdp.isNotEmpty()) webRtcManager?.onRemoteAnswer(sdp)
+                }
+                "WEBRTC_OFFER_ACK", "WEBRTC_ANSWER_ACK", "ICE_CANDIDATE_ACK" -> {
+                    // Server acknowledgments — no action needed
+                }
+                "ICE_CANDIDATE" -> {
+                    val candidate = obj.optJSONObject("candidate")
+                    if (candidate != null) webRtcManager?.onRemoteIceCandidate(candidate)
                 }
                 "ERROR" -> {
                     val error = obj.optString("error", "")

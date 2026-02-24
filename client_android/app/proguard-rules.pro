@@ -55,3 +55,7 @@
     public static int d(...);
     public static int i(...);
 }
+
+# ---- WebRTC ----
+-keep class org.webrtc.** { *; }
+-dontwarn org.webrtc.**
