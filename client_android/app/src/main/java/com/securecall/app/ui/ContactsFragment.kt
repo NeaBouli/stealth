@@ -12,6 +12,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.activity.result.contract.ActivityResultContracts
@@ -69,6 +70,12 @@ class ContactsFragment : Fragment() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 filterContacts(s?.toString() ?: "")
+                // When text is cleared (e.g. via X button), dismiss keyboard and restore nav
+                if (s.isNullOrEmpty() && searchInput.hasFocus()) {
+                    searchInput.clearFocus()
+                    val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                    imm?.hideSoftInputFromWindow(searchInput.windowToken, 0)
+                }
             }
         })
 
@@ -178,12 +185,58 @@ class ContactsFragment : Fragment() {
     }
 
     private fun startCall(contact: Contact) {
+        // Only call contacts with a SecureCall ID (starts with "android-").
+        // Phone numbers can't be routed by the signaling server.
+        if (!isSecureCallId(contact.phoneOrId)) {
+            Log.d(TAG, "Contact ${contact.name} has phone number, showing invite")
+            showInviteDialog(contact)
+            return
+        }
         Log.d(TAG, "Starting call to: ${contact.name}")
         val intent = Intent(requireContext(), CallActivity::class.java).apply {
             putExtra("callerName", contact.name)
             putExtra("phoneNumber", contact.phoneOrId)
         }
         startActivity(intent)
+    }
+
+    private fun isSecureCallId(id: String): Boolean {
+        return id.startsWith("android-")
+    }
+
+    private fun showInviteDialog(contact: Contact) {
+        val ctx = requireContext()
+        val message = getString(R.string.dialer_invite_sms)
+        val items = arrayOf(
+            getString(R.string.dialer_share_link),
+            getString(R.string.dialer_send_sms)
+        )
+        android.app.AlertDialog.Builder(ctx)
+            .setTitle(getString(R.string.dialer_invite_message, contact.name))
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> {
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, message)
+                        }
+                        startActivity(Intent.createChooser(intent, getString(R.string.dialer_invite_via)))
+                    }
+                    1 -> {
+                        try {
+                            val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = android.net.Uri.parse("smsto:${contact.phoneOrId}")
+                                putExtra("sms_body", message)
+                            }
+                            startActivity(smsIntent)
+                        } catch (_: Exception) {
+                            android.widget.Toast.makeText(ctx, getString(R.string.dialer_no_sms_app), android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun showAddContactDialog() {

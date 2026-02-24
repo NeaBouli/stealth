@@ -1,5 +1,6 @@
 package com.securecall.app
 
+import android.app.NotificationManager
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -41,13 +42,21 @@ class IncomingCallActivity : AppCompatActivity() {
         ws?.setOnCallEnded { endedSessionId ->
             if (endedSessionId == sessionId) {
                 Log.d(TAG, "Caller ended call while ringing")
+                saveMissedCall()
+                dismissIncomingCallNotification()
                 runOnUiThread { finish() }
             }
         }
     }
 
+    private fun dismissIncomingCallNotification() {
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.cancel(1002) // INCOMING_CALL_NOTIFICATION_ID
+    }
+
     private fun acceptCall() {
         accepted = true
+        dismissIncomingCallNotification()
         Log.d(TAG, "Accepting call, session=$sessionId")
         val ws = com.securecall.app.net.WebSocketService.instance
         ws?.sendCallAccept(sessionId)
@@ -55,6 +64,7 @@ class IncomingCallActivity : AppCompatActivity() {
         val intent = Intent(this, CallActivity::class.java).apply {
             putExtra("sessionId", sessionId)
             putExtra("callerName", callerDisplayName)
+            putExtra("phoneNumber", callerClientId)
             putExtra("isIncoming", true)
         }
         startActivity(intent)
@@ -62,10 +72,27 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun declineCall() {
+        dismissIncomingCallNotification()
         Log.d(TAG, "Declining call, session=$sessionId")
+        saveMissedCall()
         val ws = com.securecall.app.net.WebSocketService.instance
         if (sessionId.isNotEmpty()) ws?.sendCallEnd(sessionId)
         finish()
+    }
+
+    private fun saveMissedCall() {
+        try {
+            val record = com.securecall.app.data.CallRecord(
+                contactName = callerDisplayName,
+                contactId = callerClientId,
+                type = com.securecall.app.data.CallType.MISSED,
+                durationSeconds = 0
+            )
+            com.securecall.app.data.CallHistoryRepository.add(this, record)
+            Log.d(TAG, "Missed call saved: $callerDisplayName")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save missed call", e)
+        }
     }
 
     override fun onDestroy() {

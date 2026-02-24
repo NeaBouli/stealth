@@ -30,6 +30,9 @@ import androidx.preference.PreferenceManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.securecall.app.config.FeatureProviderRegistry;
 import com.securecall.app.audio.capture.AudioCapturePlaceholder;
+import com.securecall.app.data.CallHistoryRepository;
+import com.securecall.app.data.CallRecord;
+import com.securecall.app.data.CallType;
 import com.securecall.app.security.SecureCallMonitor;
 
 public class CallActivity extends AppCompatActivity implements SensorEventListener {
@@ -45,6 +48,10 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     private boolean isSpeaker = false;
     private boolean isCallActive = false;
     private boolean isEnding = false;
+    private long callStartTimeMs = 0;
+    private boolean isIncomingCall = false;
+    private String callContactName = "";
+    private String callContactId = "";
 
     // Proximity sensor
     private SensorManager sensorManager;
@@ -99,6 +106,11 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
         String sessionId = getIntent().getStringExtra("sessionId");
         boolean isIncoming = getIntent().getBooleanExtra("isIncoming", false);
         boolean fromNotification = getIntent().getBooleanExtra("fromNotification", false);
+
+        // Track call metadata for history logging
+        isIncomingCall = isIncoming || fromNotification;
+        callContactName = (callerName != null && !callerName.isEmpty()) ? callerName : "Unknown";
+        callContactId = phoneNumber != null ? phoneNumber : "";
 
         // ─── Proximity Sensor (screen off at ear) ─────────────────
         initProximitySensor();
@@ -385,6 +397,7 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
         updateCallButton(false);
         connectionState.postDelayed(() -> {
             isCallActive = true;
+            callStartTimeMs = System.currentTimeMillis();
             connectionState.setText(R.string.call_active);
             connectionState.setTextColor(getResources().getColor(R.color.call_active_green, getTheme()));
             callTimer.setBase(SystemClock.elapsedRealtime());
@@ -445,6 +458,24 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
             ws.setOnCallAccepted(null);
             ws.setOnCallEnded(null);
             ws.setOnCallError(null);
+        }
+
+        // Save call to history
+        try {
+            int durationSecs = 0;
+            if (callStartTimeMs > 0) {
+                durationSecs = (int) ((System.currentTimeMillis() - callStartTimeMs) / 1000);
+            }
+            CallType callType = isIncomingCall ? CallType.INCOMING : CallType.OUTGOING;
+            CallRecord record = new CallRecord(
+                java.util.UUID.randomUUID().toString(),
+                callContactName, callContactId, callType,
+                System.currentTimeMillis(), durationSecs, true
+            );
+            CallHistoryRepository.INSTANCE.add(this, record);
+            Log.d(TAG, "Call history saved: " + callType + " " + callContactName + " " + durationSecs + "s");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to save call history", e);
         }
 
         isCallActive = false;

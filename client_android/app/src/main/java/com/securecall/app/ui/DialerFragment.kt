@@ -130,12 +130,16 @@ class DialerFragment : Fragment() {
 
         if (matches.isNotEmpty()) {
             contactSuggestions.adapter = ContactAdapter(matches) { contact ->
-                // Start call with selected contact
-                val intent = Intent(requireContext(), CallActivity::class.java).apply {
-                    putExtra("callerName", contact.name)
-                    putExtra("phoneNumber", contact.phoneOrId)
+                // Only call contacts with a SecureCall ID; phone numbers can't be routed
+                if (contact.phoneOrId.startsWith("android-")) {
+                    val intent = Intent(requireContext(), CallActivity::class.java).apply {
+                        putExtra("callerName", contact.name)
+                        putExtra("phoneNumber", contact.phoneOrId)
+                    }
+                    startActivity(intent)
+                } else {
+                    showInviteDialog(contact.phoneOrId)
                 }
-                startActivity(intent)
             }
             contactSuggestions.visibility = View.VISIBLE
         } else {
@@ -226,13 +230,13 @@ class DialerFragment : Fragment() {
 
     private fun sendSmsInvite(number: String) {
         val message = getString(R.string.dialer_invite_sms)
-        val intent = Intent(Intent.ACTION_SENDTO).apply {
-            data = Uri.parse("smsto:$number")
-            putExtra("sms_body", message)
-        }
-        if (intent.resolveActivity(requireContext().packageManager) != null) {
+        try {
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse("smsto:$number")
+                putExtra("sms_body", message)
+            }
             startActivity(intent)
-        } else {
+        } catch (_: Exception) {
             Toast.makeText(requireContext(), getString(R.string.dialer_no_sms_app), Toast.LENGTH_SHORT).show()
         }
     }

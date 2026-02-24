@@ -93,19 +93,30 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         @Volatile
         var instance: WebSocketService? = null
         private const val CHANNEL_ID = "securecall_foreground"
+        private const val CHANNEL_INCOMING = "securecall_incoming_call"
         private const val NOTIFICATION_ID = 1001
+        private const val INCOMING_CALL_NOTIFICATION_ID = 1002
     }
 
     override fun onCreate() {
         super.onCreate()
         Log.d("WS_SERVICE", "onCreate")
         instance = this
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        if (prefs.getBoolean("pref_background_service", true)) {
-            startForegroundWithNotification()
-        }
+        // Always start as foreground to survive background/kill
+        startForegroundWithNotification()
+        createIncomingCallChannel()
         client = HeartbeatClient(wsUrl, this)
         client?.connect()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // START_STICKY: system restarts service if killed
+        return START_STICKY
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Log.d("WS_SERVICE", "App swiped away — service continues in background")
     }
 
     override fun onDestroy() {
@@ -157,13 +168,65 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     private fun setupCallSignalingCallbacks() {
         _onIncomingCall = { sessionId, fromClientId ->
-            Log.d("WS_SERVICE", "Launching IncomingCallActivity: session=$sessionId, from=$fromClientId")
-            val intent = android.content.Intent(this@WebSocketService, com.securecall.app.IncomingCallActivity::class.java).apply {
-                putExtra("sessionId", sessionId)
-                putExtra("callerClientId", fromClientId)
-                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
+            Log.d("WS_SERVICE", "Incoming call: session=$sessionId, from=$fromClientId")
+            showIncomingCallNotification(sessionId, fromClientId)
+        }
+    }
+
+    private fun showIncomingCallNotification(sessionId: String, fromClientId: String) {
+        // Resolve caller name from contacts
+        val callerName = com.securecall.app.data.ContactRepository.getAll(this)
+            .find { it.phoneOrId == fromClientId }?.name ?: fromClientId
+
+        val intent = android.content.Intent(this, com.securecall.app.IncomingCallActivity::class.java).apply {
+            putExtra("sessionId", sessionId)
+            putExtra("callerClientId", fromClientId)
+            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        // Always launch activity directly (works when app is in foreground or background)
+        try {
             startActivity(intent)
+            Log.d("WS_SERVICE", "IncomingCallActivity launched directly for $callerName")
+        } catch (e: Exception) {
+            Log.e("WS_SERVICE", "Failed to launch IncomingCallActivity directly", e)
+        }
+
+        // Also show high-priority notification as backup (for lock screen / DND / Android 10+ restrictions)
+        val fullScreenPending = android.app.PendingIntent.getActivity(
+            this, 0, intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_INCOMING)
+            .setSmallIcon(R.drawable.ic_call)
+            .setContentTitle(getString(R.string.incoming_call_title))
+            .setContentText(callerName)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setFullScreenIntent(fullScreenPending, true)
+            .setAutoCancel(true)
+            .setOngoing(true)
+            .build()
+
+        val nm = getSystemService(android.app.NotificationManager::class.java)
+        nm.notify(INCOMING_CALL_NOTIFICATION_ID, notification)
+        Log.d("WS_SERVICE", "Incoming call notification shown for $callerName")
+    }
+
+    private fun createIncomingCallChannel() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                CHANNEL_INCOMING,
+                "Incoming Calls",
+                android.app.NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for incoming secure calls"
+                setShowBadge(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            }
+            val nm = getSystemService(android.app.NotificationManager::class.java)
+            nm.createNotificationChannel(channel)
         }
     }
 
