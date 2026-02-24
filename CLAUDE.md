@@ -6,7 +6,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 
 **Sprint status:** All changes are **committed and pushed** to `origin/main`. Real peer-to-peer audio transport is working — Opus-encoded voice relayed through the signaling WebSocket, tested bidirectionally between S10 and emulator with live microphone audio.
 
-**The 16 completed changes (all committed):**
+**The 17 completed changes (all committed):**
 
 1. **Contact auto-call fix** -- Removed `itemView.setOnClickListener` from `ContactAdapter.kt`. Only the phone icon (`btnCallContact`) now triggers calls; tapping the contact row does nothing.
 2. **Messenger invite dialog** -- `DialerFragment.kt` now shows a 3-option dialog (Via Messenger, Share Link, Send SMS) when dialing an unknown number.
@@ -24,6 +24,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 14. **Real audio transport** *(Commit `228c30c`)* -- Wired peer-to-peer voice audio through the signaling WebSocket binary relay. See details below.
 15. **Runtime RECORD_AUDIO permission** *(Commit `4fe8c77`)* -- CallActivity now requests microphone permission at runtime before starting audio capture. If permission is denied, shows a Toast and skips capture (call still connects, just no outgoing audio). Permission result handled in `onRequestPermissionsResult()`.
 16. **endCall() idempotency guard** *(Commit `10fe6b0`)* -- Added `isEnding` boolean guard to prevent `endCall()` from firing multiple times. Also clears the `onCallError` callback after the first error to prevent repeated error-triggered endCall scheduling. Previously, server `rate_limited` errors would each schedule a separate `postDelayed(this::endCall, 3000)`, causing dozens of duplicate teardowns.
+17. **E2E audio encryption** *(Commit `a97faa0`)* -- X25519 key exchange piggybacked on CALL_INVITE/CALL_ACCEPT signaling, session key derived via HKDF-SHA256, every Opus frame encrypted with XChaCha20-Poly1305 (40 bytes overhead: 24B nonce + 16B auth tag). Server forwards `pubKey` field transparently. Graceful fallback to unencrypted if native crypto unavailable. Key material zeroed on call end. See details below.
 
 **End-to-end call signaling details (change #8):**
 - `WebSocketService.kt`: Added call signaling callbacks (`_onCallAccepted`, `_onCallEnded`, `_onCallError`), session tracking, incoming call activity launch, message parsing for CALL_INVITE/CALL_INVITE_ACK/CALL_ACCEPT/CALL_END/ERROR. Uses private backing fields with explicit setter methods for Java interop.
@@ -42,7 +43,13 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **Audio flow:** Mic → AudioRecord (48kHz mono) → OpusEncoder (32kbps, native JNI) → WebSocket binary → Server `forwardBinaryToPeer()` → Peer WebSocket → OpusDecoder (native JNI) → GhostAudioPlayer (AudioTrack) → Speaker
 - **No server changes needed** -- `server.js` already relays binary frames between active session peers.
 
-**Testing:** APK tested on S10 (serial `RF8N313QMFL`, clientId `android-ded42f50`) and Pixel 5 emulator (clientId `android-be16bcbf`). Full bidirectional call signaling and audio verified:
+**E2E audio encryption details (change #17):**
+- `server.js`: Added `pubKey: msg.pubKey` to forwarded CALL_INVITE and CALL_ACCEPT objects (2 lines). Server never reads the key — just passes it through.
+- `WebSocketService.kt`: Added crypto state fields (`localPrivKey`, `remotePubKey`, `sessionKey`). `sendCallInvite()` generates X25519 keypair and includes pubKey in JSON. CALL_INVITE handler extracts and stores caller's public key. `sendCallAccept()` generates keypair, derives session key (callee), includes pubKey. CALL_ACCEPT handler extracts callee's pubKey and derives session key (caller). `sendBinary()` encrypts with `CoreCrypto.encrypt()` before sending. `onBinaryMessage()` decrypts with `CoreCrypto.decrypt()` before Opus decode (drops frame on decrypt failure). `clearSession()` zeroes all key material via `ByteArray.fill(0)`.
+- **Key exchange flow:** Caller sends CALL_INVITE with X25519 pubKey → Callee stores it, generates own keypair, derives session key from privB+pubA, sends CALL_ACCEPT with pubKey → Caller derives session key from privA+pubB. Both sides have identical session keys before any audio flows.
+- **Fallback:** If `CoreCrypto.isNativeAvailable()` returns false, audio is sent/received unencrypted (log warning).
+
+**Testing:** APK tested on S10 (serial `RF8N313QMFL`, clientId `android-ded42f50`) and Pixel 5 emulator (clientId `android-33068922`). Full bidirectional call signaling, audio, and E2E encryption verified:
 - **S10 → Emulator:** CALL_INVITE → IncomingCallActivity → Accept → CALL_ACCEPT → CallActivity with timer → End call from S10 → Emulator receives CALL_END and closes
 - **Emulator → S10:** CALL_INVITE → IncomingCallActivity on S10 → Accept → CALL_ACCEPT → CallActivity with timer → End call from emulator → S10 receives CALL_END and closes
 - **Bidirectional audio:** Both devices show `AUDIO_CAPTURE: Capture thread started` (mic recording) and `AUDIO_PLAYER: write(): wrote=960 samples` (receiving peer audio). Full pipeline: OpusEncoder init → capture thread → binary WebSocket send → remote decode → AudioTrack playback.
@@ -52,6 +59,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **Error handling:** `peer_not_found` (target offline), `peer_disconnected` (caller dropped), `session_not_found` (stale session) all handled correctly
 - **Runtime permission:** RECORD_AUDIO is now requested at runtime when the call goes active. Tested: permission revoked → call started → dialog appeared → granted → audio capture started immediately.
 - **endCall() guard:** Verified `endCall()` fires exactly once in all scenarios: error (peer_not_found), rate limiting (multiple server errors), and normal call flow. Proximity sensor does NOT trigger endCall — it only manages the wake lock.
+- **E2E encryption:** Full key exchange verified — caller generates X25519 keypair and includes pubKey in CALL_INVITE, callee stores it and derives session key on accept, caller derives matching session key from CALL_ACCEPT pubKey. Both sides log `E2E session key derived`. Bidirectional encrypted audio: all Opus frames encrypted/decrypted successfully (zero `E2E decrypt failed` errors). Tested with native crypto on both arm64-v8a (S10) and x86_64 (emulator).
 
 ## Architecture Decisions
 
@@ -63,7 +71,8 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **Single reconnect owner:** Only `HeartbeatClient.onFailure()` triggers reconnect. `WebSocketService.onError()` notifies callbacks but does NOT reconnect. This prevents the double-reconnect exponential explosion bug.
 - **Server session/client timeout:** 60s (in `heartbeat.js`). Server sends native `ws.ping()` every 5s, tracks `lastSeen` via pong and message handlers. Sessions and clients that don't communicate for 60s are terminated.
 - **Call signaling flow:** Outgoing: CallActivity sends CALL_INVITE via WebSocketService → server routes to target → target's WebSocketService launches IncomingCallActivity → user accepts → CALL_ACCEPT sent back → caller's CallActivity starts audio capture. End call: either side sends CALL_END → server forwards and cleans up session → remote side receives CALL_END and auto-closes. All callbacks use private backing fields (`_onCallAccepted`, etc.) with explicit setter methods to avoid Kotlin/Java JVM signature clashes. IncomingCallActivity uses an `accepted` flag to prevent clearing `onCallEnded` when transitioning to CallActivity.
-- **Audio transport via WebSocket binary relay:** Audio uses the same signaling WebSocket (not a separate connection). `AudioCapturePlaceholder` captures mic at 48kHz mono, encodes with native Opus (32kbps via JNI), sends as binary WebSocket frames through `WebSocketService.sendBinary()`. Server's `forwardBinaryToPeer()` routes binary frames to the peer in the active session. Receiving side: `HeartbeatClient.onMessage(ByteString)` → `WebSocketService.onBinaryMessage()` → `OpusDecoder.decode()` → `GhostAudioPlayer.write()`. No encryption on audio frames yet (MVP). Server relay adds ~50-200ms latency vs direct P2P.
+- **Audio transport via WebSocket binary relay:** Audio uses the same signaling WebSocket (not a separate connection). `AudioCapturePlaceholder` captures mic at 48kHz mono, encodes with native Opus (32kbps via JNI), sends as binary WebSocket frames through `WebSocketService.sendBinary()`. Server's `forwardBinaryToPeer()` routes binary frames to the peer in the active session. Receiving side: `HeartbeatClient.onMessage(ByteString)` → `WebSocketService.onBinaryMessage()` → `OpusDecoder.decode()` → `GhostAudioPlayer.write()`. All audio frames are E2E encrypted with XChaCha20-Poly1305 (40 bytes overhead per frame). Server relay adds ~50-200ms latency vs direct P2P.
+- **E2E audio encryption:** X25519 public keys are piggybacked on existing CALL_INVITE/CALL_ACCEPT messages (no extra round-trips). Both sides derive a shared session key via X25519 DH + HKDF-SHA256 using `CoreCrypto.deriveSessionKey()`. Every Opus frame is encrypted with `CoreCrypto.encrypt(sessionKey, data)` → [nonce(24B)|ciphertext|tag(16B)] before sending, and decrypted with `CoreCrypto.decrypt()` on receive. Session keys are derived before any audio flows. Key material (`localPrivKey`, `sessionKey`) is zeroed via `ByteArray.fill(0)` in `clearSession()`. Graceful fallback: if `CoreCrypto.isNativeAvailable()` is false, audio passes through unencrypted.
 - **endCall() idempotency:** `endCall()` uses an `isEnding` boolean guard to ensure it runs at most once per call session. The `onCallError` callback is cleared after first invocation (`ws.setOnCallError(null)`) to prevent server error floods (e.g., `rate_limited`) from scheduling multiple delayed `endCall()` calls. The proximity sensor does NOT call `endCall()` — it only manages `PROXIMITY_SCREEN_OFF_WAKE_LOCK`.
 - **Kotlin/Java interop:** CallActivity is Java, WebSocketService is Kotlin. Kotlin `var` properties auto-generate getters/setters that clash with explicit methods of the same name. Solution: private backing fields (`_fieldName`) with explicit public setter methods. Java lambdas for Kotlin `(String) -> Unit` must return `kotlin.Unit.INSTANCE`.
 - **Feature flags via BuildConfig:** Tier-specific behavior is controlled by `BuildConfig` fields set in `build.gradle` per flavor, accessed at runtime through `FeatureProvider` interface and `FeatureProviderRegistry` singleton.
@@ -94,7 +103,7 @@ stealth/                              # Monorepo root
 │   │       │   ├── SecureCallApplication.kt
 │   │       │   ├── net/
 │   │       │   │   ├── HeartbeatClient.kt      # MODIFIED: reconnect fix, lastSeen on send, binary WS support
-│   │       │   │   ├── WebSocketService.kt     # MODIFIED: foreground, call signaling, audio receive pipeline
+│   │       │   │   ├── WebSocketService.kt     # MODIFIED: foreground, call signaling, audio, E2E encryption
 │   │       │   │   └── signal/                 # Call & key exchange message builders
 │   │       │   ├── ui/
 │   │       │   │   ├── CallsFragment.kt
@@ -122,7 +131,7 @@ stealth/                              # Monorepo root
 │
 ├── backend/                          # Node.js signaling server (Railway)
 │   └── signaling/src/
-│       ├── server.js                 # MODIFIED: HEARTBEAT_ACK response
+│       ├── server.js                 # MODIFIED: HEARTBEAT_ACK, pubKey forwarding in call signaling
 │       └── heartbeat.js              # MODIFIED: session timeout 30s→60s
 ├── core_crypto/                      # Rust crypto library (XChaCha20, X25519, HKDF)
 ├── docs/                             # Security audit, architecture, wiki pages
@@ -158,7 +167,7 @@ stealth/                              # Monorepo root
 10. ~~**Real audio transport**~~ -- DONE. Opus-encoded audio relayed via signaling WebSocket binary frames. Tested bidirectionally with live mic audio.
 11. ~~**Runtime RECORD_AUDIO permission.**~~ DONE. CallActivity requests RECORD_AUDIO at runtime before starting audio capture. Commit `4fe8c77`.
 12. **Contact name resolution.** IncomingCallActivity shows raw clientId (e.g., `android-ded42f50`) instead of the contact name. Look up clientId in ContactRepository to show the saved name.
-13. **E2E audio encryption.** Audio frames are currently sent unencrypted over the WebSocket relay. Add XChaCha20-Poly1305 encryption using the existing Rust crypto JNI before sending, and decrypt on receive.
+13. ~~**E2E audio encryption.**~~ DONE. X25519 key exchange + XChaCha20-Poly1305 per-frame encryption. Commit `a97faa0`.
 14. **Firebase setup.** Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
 15. **TURN credential rotation.** Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
 16. **Direct P2P audio (WebRTC).** Current audio goes through the server relay (~50-200ms added latency). Migrate to WebRTC data channels or direct UDP with ICE/TURN for lower latency. Server already supports WEBRTC_OFFER/ANSWER/ICE_CANDIDATE relay.
@@ -181,7 +190,7 @@ stealth/                              # Monorepo root
 
 ## Explicit Non-Goals
 
-- Backend changes are minimal: `HEARTBEAT_ACK` response in `server.js` and session timeout increase in `heartbeat.js`. No structural or architectural backend changes.
+- Backend changes are minimal: `HEARTBEAT_ACK` response and `pubKey` forwarding in `server.js`, session timeout increase in `heartbeat.js`. No structural or architectural backend changes.
 - No Rust crypto changes. `core_crypto/` is stable and untouched (the `.rustc_info.json` change is a build cache artifact).
 - No Pro or Premium flavor builds. Only `free` debug is being built and tested.
 - No CI/CD pipeline changes. GitHub Actions workflows exist but are not being modified.
@@ -201,16 +210,15 @@ stealth/                              # Monorepo root
 - **Error handling:** Non-critical failures use `catch (_: Exception) {}`. Critical errors use `Log.e(TAG, message, throwable)`.
 - **adb on this machine:** Not in PATH. Full path required: `/Users/gio/Library/Android/sdk/platform-tools/adb`. Emulator: `~/Library/Android/sdk/emulator/emulator`. AVD name: `Pixel_5`.
 - **S10 serial:** `RF8N313QMFL`. Package name on device: `com.securecall.app.free`. ClientId: `android-ded42f50`.
-- **Emulator:** `emulator-5554`. ClientId: `android-be16bcbf`.
+- **Emulator:** `emulator-5554`. ClientId changes on each wipe (last: `android-33068922`).
 - **App launch command:** `adb -s RF8N313QMFL shell am start -n com.securecall.app.free/com.securecall.app.MainActivity`
 - **Contacts storage:** SharedPreferences file `securecall_contacts` with key `contacts_json` (JSON array). Fields: `id`, `name`, `phoneOrId`, `createdAt`, `isPhoneContact`.
 
 ## Next Immediate Step
 
-Call signaling, heartbeat, real audio transport, runtime permissions, and call lifecycle are complete and tested. Next priorities:
+Call signaling, heartbeat, real audio transport, E2E encryption, runtime permissions, and call lifecycle are complete and tested. Next priorities:
 
-1. **E2E audio encryption** -- Encrypt Opus frames with XChaCha20-Poly1305 (via existing Rust JNI crypto) before sending, decrypt on receive. Currently audio is unencrypted over the server relay.
-2. **Contact name resolution for incoming calls** -- Look up caller's clientId in ContactRepository to show saved name instead of raw `android-xxxxxxxx`.
-3. **Audio stream type** -- Change GhostAudioPlayer from `STREAM_MUSIC` to `STREAM_VOICE_CALL` for proper earpiece routing.
-4. **Jitter buffer** -- Wire existing `JitterBuffer.kt` between OpusDecoder and GhostAudioPlayer to smooth out network jitter.
-5. **Direct P2P audio (WebRTC)** -- Migrate from server relay to WebRTC data channels for lower latency. Server already has WEBRTC_OFFER/ANSWER/ICE_CANDIDATE support.
+1. **Contact name resolution for incoming calls** -- Look up caller's clientId in ContactRepository to show saved name instead of raw `android-xxxxxxxx`.
+2. **Audio stream type** -- Change GhostAudioPlayer from `STREAM_MUSIC` to `STREAM_VOICE_CALL` for proper earpiece routing.
+3. **Jitter buffer** -- Wire existing `JitterBuffer.kt` between OpusDecoder and GhostAudioPlayer to smooth out network jitter.
+4. **Direct P2P audio (WebRTC)** -- Migrate from server relay to WebRTC data channels for lower latency. Server already has WEBRTC_OFFER/ANSWER/ICE_CANDIDATE support.

@@ -35,7 +35,7 @@ class GhostAudioPlayer(
         )
 
         audioTrack = AudioTrack(
-            AudioManager.STREAM_MUSIC,
+            AudioManager.STREAM_VOICE_CALL,
             sampleRate,
             channelConfig,
             AudioFormat.ENCODING_PCM_16BIT,

@@ -15,6 +15,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
     private var sessionId: String = ""
     private var callerClientId: String = ""
+    private var callerDisplayName: String = ""
     private var accepted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,7 +26,12 @@ class IncomingCallActivity : AppCompatActivity() {
         callerClientId = intent.getStringExtra("callerClientId") ?: ""
         Log.d(TAG, "Incoming call: session=$sessionId, from=$callerClientId")
 
-        findViewById<TextView>(R.id.incomingCallerName).text = callerClientId
+        // Look up caller's clientId in contacts to show saved name
+        callerDisplayName = com.securecall.app.data.ContactRepository.getAll(this)
+            .find { it.phoneOrId == callerClientId }?.name ?: callerClientId
+        Log.d(TAG, "Caller display name: $callerDisplayName")
+
+        findViewById<TextView>(R.id.incomingCallerName).text = callerDisplayName
 
         findViewById<FloatingActionButton>(R.id.fabAcceptCall).setOnClickListener { acceptCall() }
         findViewById<FloatingActionButton>(R.id.fabDeclineCall).setOnClickListener { declineCall() }
@@ -48,7 +54,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
         val intent = Intent(this, CallActivity::class.java).apply {
             putExtra("sessionId", sessionId)
-            putExtra("callerName", callerClientId)
+            putExtra("callerName", callerDisplayName)
             putExtra("isIncoming", true)
         }
         startActivity(intent)
