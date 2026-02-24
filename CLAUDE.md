@@ -6,7 +6,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 
 **Sprint status:** All changes are **committed and pushed** to `origin/main`. Real peer-to-peer audio transport is working — Opus-encoded voice relayed through the signaling WebSocket, tested bidirectionally between S10 and emulator with live microphone audio.
 
-**The 17 completed changes (all committed):**
+**The 19 completed changes (all committed):**
 
 1. **Contact auto-call fix** -- Removed `itemView.setOnClickListener` from `ContactAdapter.kt`. Only the phone icon (`btnCallContact`) now triggers calls; tapping the contact row does nothing.
 2. **Messenger invite dialog** -- `DialerFragment.kt` now shows a 3-option dialog (Via Messenger, Share Link, Send SMS) when dialing an unknown number.
@@ -25,6 +25,8 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 15. **Runtime RECORD_AUDIO permission** *(Commit `4fe8c77`)* -- CallActivity now requests microphone permission at runtime before starting audio capture. If permission is denied, shows a Toast and skips capture (call still connects, just no outgoing audio). Permission result handled in `onRequestPermissionsResult()`.
 16. **endCall() idempotency guard** *(Commit `10fe6b0`)* -- Added `isEnding` boolean guard to prevent `endCall()` from firing multiple times. Also clears the `onCallError` callback after the first error to prevent repeated error-triggered endCall scheduling. Previously, server `rate_limited` errors would each schedule a separate `postDelayed(this::endCall, 3000)`, causing dozens of duplicate teardowns.
 17. **E2E audio encryption** *(Commit `a97faa0`)* -- X25519 key exchange piggybacked on CALL_INVITE/CALL_ACCEPT signaling, session key derived via HKDF-SHA256, every Opus frame encrypted with XChaCha20-Poly1305 (40 bytes overhead: 24B nonce + 16B auth tag). Server forwards `pubKey` field transparently. Graceful fallback to unencrypted if native crypto unavailable. Key material zeroed on call end. See details below.
+18. **Earpiece audio routing** *(Commit `0096e74`)* -- `GhostAudioPlayer` changed from `STREAM_MUSIC` to `STREAM_VOICE_CALL` for proper earpiece routing and voice call volume controls.
+19. **Contact name resolution for incoming calls** *(Commit `0096e74`)* -- `IncomingCallActivity` looks up caller's `clientId` in `ContactRepository` by matching `phoneOrId`. Shows saved contact name on ringing screen and passes it through to `CallActivity`. Falls back to raw clientId if no contact matches.
 
 **End-to-end call signaling details (change #8):**
 - `WebSocketService.kt`: Added call signaling callbacks (`_onCallAccepted`, `_onCallEnded`, `_onCallError`), session tracking, incoming call activity launch, message parsing for CALL_INVITE/CALL_INVITE_ACK/CALL_ACCEPT/CALL_END/ERROR. Uses private backing fields with explicit setter methods for Java interop.
@@ -99,7 +101,7 @@ stealth/                              # Monorepo root
 │   │       ├── java/com/securecall/app/
 │   │       │   ├── MainActivity.kt
 │   │       │   ├── CallActivity.java          # MODIFIED: signaling, audio, runtime permission, endCall guard
-│   │       │   ├── IncomingCallActivity.kt    # NEW: incoming call ringing screen (with accepted flag fix)
+│   │       │   ├── IncomingCallActivity.kt    # NEW: incoming call ringing screen (accepted flag fix, contact name resolution)
 │   │       │   ├── SecureCallApplication.kt
 │   │       │   ├── net/
 │   │       │   │   ├── HeartbeatClient.kt      # MODIFIED: reconnect fix, lastSeen on send, binary WS support
@@ -114,6 +116,8 @@ stealth/                              # Monorepo root
 │   │       │   │       └── ContactAdapter.kt   # MODIFIED: removed row click
 │   │       │   ├── config/                     # FeatureProvider, FeatureProviderRegistry
 │   │       │   ├── audio/                      # AudioCapturePlaceholder (MODIFIED: sends via WS), Opus codec, jitter
+│   │       │   ├── ghostnet/media/playback/
+│   │       │   │   └── GhostAudioPlayer.kt   # MODIFIED: STREAM_VOICE_CALL
 │   │       │   ├── billing/                    # Subscription tiers, licensing
 │   │       │   ├── call/                       # CallController
 │   │       │   ├── crypto/                     # EphemeralKeyProvider
@@ -166,12 +170,12 @@ stealth/                              # Monorepo root
 9. ~~**Railway redeploy**~~ -- DONE. Auto-deployed via GitHub push.
 10. ~~**Real audio transport**~~ -- DONE. Opus-encoded audio relayed via signaling WebSocket binary frames. Tested bidirectionally with live mic audio.
 11. ~~**Runtime RECORD_AUDIO permission.**~~ DONE. CallActivity requests RECORD_AUDIO at runtime before starting audio capture. Commit `4fe8c77`.
-12. **Contact name resolution.** IncomingCallActivity shows raw clientId (e.g., `android-ded42f50`) instead of the contact name. Look up clientId in ContactRepository to show the saved name.
+12. ~~**Contact name resolution.**~~ DONE. IncomingCallActivity resolves caller clientId via ContactRepository. Commit `0096e74`.
 13. ~~**E2E audio encryption.**~~ DONE. X25519 key exchange + XChaCha20-Poly1305 per-frame encryption. Commit `a97faa0`.
 14. **Firebase setup.** Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
 15. **TURN credential rotation.** Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
 16. **Direct P2P audio (WebRTC).** Current audio goes through the server relay (~50-200ms added latency). Migrate to WebRTC data channels or direct UDP with ICE/TURN for lower latency. Server already supports WEBRTC_OFFER/ANSWER/ICE_CANDIDATE relay.
-17. **Audio stream type.** GhostAudioPlayer uses `STREAM_MUSIC` — should use `STREAM_VOICE_CALL` for earpiece routing and proper volume control during calls.
+17. ~~**Audio stream type.**~~ DONE. GhostAudioPlayer changed to `STREAM_VOICE_CALL`. Commit `0096e74`.
 18. **Jitter buffer.** No jitter buffer on the receive path — network jitter causes audio glitches. Wire `JitterBuffer.kt` (exists, 32-frame FIFO) between decoder and player.
 
 ## Known Issues
@@ -216,9 +220,9 @@ stealth/                              # Monorepo root
 
 ## Next Immediate Step
 
-Call signaling, heartbeat, real audio transport, E2E encryption, runtime permissions, and call lifecycle are complete and tested. Next priorities:
+Call signaling, heartbeat, real audio transport, E2E encryption, earpiece routing, contact name resolution, runtime permissions, and call lifecycle are complete and tested. Next priorities:
 
-1. **Contact name resolution for incoming calls** -- Look up caller's clientId in ContactRepository to show saved name instead of raw `android-xxxxxxxx`.
-2. **Audio stream type** -- Change GhostAudioPlayer from `STREAM_MUSIC` to `STREAM_VOICE_CALL` for proper earpiece routing.
-3. **Jitter buffer** -- Wire existing `JitterBuffer.kt` between OpusDecoder and GhostAudioPlayer to smooth out network jitter.
-4. **Direct P2P audio (WebRTC)** -- Migrate from server relay to WebRTC data channels for lower latency. Server already has WEBRTC_OFFER/ANSWER/ICE_CANDIDATE support.
+1. **Jitter buffer** -- Wire existing `JitterBuffer.kt` between OpusDecoder and GhostAudioPlayer to smooth out network jitter.
+2. **Direct P2P audio (WebRTC)** -- Migrate from server relay to WebRTC data channels for lower latency. Server already has WEBRTC_OFFER/ANSWER/ICE_CANDIDATE support.
+3. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
+4. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
