@@ -14,7 +14,8 @@ import java.nio.ByteBuffer
 class WebRtcManager(
     private val onLocalSdp: (type: String, sdp: String) -> Unit,
     private val onLocalIceCandidate: (JSONObject) -> Unit,
-    private val onDataReceived: (ByteArray) -> Unit
+    private val onDataReceived: (ByteArray) -> Unit,
+    private val onPeerDisconnect: (() -> Unit)? = null
 ) {
 
     companion object {
@@ -167,6 +168,11 @@ class WebRtcManager(
 
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState) {
             Log.d(TAG, "ICE connection state: $state")
+            if (state == PeerConnection.IceConnectionState.FAILED ||
+                state == PeerConnection.IceConnectionState.DISCONNECTED) {
+                Log.d(TAG, "ICE $state — peer disconnected, triggering call teardown")
+                onPeerDisconnect?.invoke()
+            }
         }
 
         override fun onDataChannel(dc: DataChannel) {
@@ -200,6 +206,9 @@ class WebRtcManager(
             isDataChannelOpen = (state == DataChannel.State.OPEN)
             if (isDataChannelOpen) {
                 Log.d(TAG, "DataChannel opened — P2P audio transport active")
+            } else if (state == DataChannel.State.CLOSED) {
+                Log.d(TAG, "DataChannel closed — peer disconnected, triggering call teardown")
+                onPeerDisconnect?.invoke()
             }
         }
 

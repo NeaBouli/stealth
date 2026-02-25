@@ -533,10 +533,7 @@ wss.on("connection", (ws, req) => {
 
         const peerClientId = getSessionPeer(msg.sessionId, myClientId);
 
-        routingTable.delete(msg.sessionId);
-        console.log("[ROUTING] END:", msg.sessionId, "by", myClientId);
-
-        // Weiterleiten an Peer
+        // Forward to peer BEFORE deleting session (prevents race condition)
         if (peerClientId) {
           sendToClient(peerClientId, {
             type: "CALL_END",
@@ -544,6 +541,9 @@ wss.on("connection", (ws, req) => {
             from: myClientId
           });
         }
+
+        routingTable.delete(msg.sessionId);
+        console.log("[ROUTING] END:", msg.sessionId, "by", myClientId);
       }
 
       return ws.send(JSON.stringify({

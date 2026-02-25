@@ -484,7 +484,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         val mgr = WebRtcManager(
             onLocalSdp = { type, sdp -> sendWebRtcSdp(sessionId, type, sdp) },
             onLocalIceCandidate = { candidate -> sendIceCandidate(sessionId, candidate) },
-            onDataReceived = { data -> onBinaryMessage(data) }
+            onDataReceived = { data -> onBinaryMessage(data) },
+            onPeerDisconnect = {
+                Log.d("WS_SERVICE", "WebRTC peer disconnected — ending call")
+                _onCallEnded?.invoke(sessionId)
+            }
         )
         webRtcManager = mgr
         mgr.init()
