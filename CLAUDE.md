@@ -6,7 +6,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 
 **Sprint status:** All changes are **committed and pushed** to `origin/main`. Direct P2P audio transport is working via WebRTC DataChannel — Opus-encoded voice with E2E encryption, tested bidirectionally between S10 and emulator with ICE CONNECTED + DataChannel OPEN.
 
-**The 23 completed changes (all committed):**
+**The 25 completed changes (all committed):**
 
 1. **Contact auto-call fix** -- Removed `itemView.setOnClickListener` from `ContactAdapter.kt`. Only the phone icon (`btnCallContact`) now triggers calls; tapping the contact row does nothing.
 2. **Messenger invite dialog** -- `DialerFragment.kt` now shows a 3-option dialog (Via Messenger, Share Link, Send SMS) when dialing an unknown number.
@@ -30,7 +30,9 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 20. **Jitter buffer** *(Commit `a6cd8c1`)* -- Wired `JitterBuffer` between OpusDecoder and GhostAudioPlayer. Decoded PCM frames are buffered (max 32, ShortArray) and drained by a dedicated playout thread at a steady 20ms rate. 60ms pre-buffer (3 frames) before playback starts. Writes silence on buffer underrun.
 21. **WebRTC DataChannel P2P audio** *(Commit `27941e8`)* -- Added WebRTC PeerConnection with DataChannel for direct P2P audio transport, replacing server relay. After call accept, caller creates SDP offer with DataChannel (ordered=false, maxRetransmits=0), callee answers. ICE candidates trickle via existing signaling. Audio routes through DataChannel when open, automatic fallback to WebSocket relay if P2P fails. E2E encryption maintained. See details below.
 22. **WebRTC signaling race condition fix** *(Commit `0f7284a`)* -- WEBRTC_OFFER and ICE_CANDIDATE messages arrive via WebSocket before `PeerConnectionFactory.init()` completes on the callee. Added pending queues (`pendingOffer`, `pendingAnswer`, `pendingIceCandidates`) in `WebRtcManager.kt` that buffer incoming signaling messages and drain them automatically once PeerConnection is created. Without this fix, the callee silently drops the offer and never creates an SDP answer, so the DataChannel never opens.
-23. **Server rate-limit fix for P2P audio** *(Commit `dbad77c`)* -- Binary audio frames (50fps Opus) were flooding the signaling rate limiter (40 msgs/10s), killing the DataChannel after ~2.5s. Three-part fix: (1) `server.js`: moved binary frame handling BEFORE `rateLimit.registerEvent()` so audio frames bypass the signaling rate limit; (2) `rate_limit.js`: added separate `registerBinaryEvent()` with 1000/10s limit (defense in depth against binary flooding); (3) `WebSocketService.kt`: removed WS binary fallback — `sendBinary()` returns `false` when DataChannel is not open instead of falling back to `client?.sendBinary()`. Audio only flows via P2P DataChannel now. Brief silence (~2-3s) during ICE negotiation is expected; UI shows "Connecting..." during this time.
+23. **Server rate-limit fix for P2P audio** *(Commit `dbad77c`)*
+24. **CALL_END forwarding fix** *(Commit `0fbe701`)* -- Server's CALL_END handler deleted the session from `routingTable` BEFORE forwarding CALL_END to the peer. Moved `sendToClient()` before `routingTable.delete()` in `server.js`.
+25. **Auto-hangup on peer disconnect** *(Commit `0fbe701`)* -- `WebRtcManager.kt`: Added `onPeerDisconnect` callback fired on ICE DISCONNECTED/FAILED and DataChannel CLOSED. `WebSocketService.kt`: Wired callback to invoke `_onCallEnded`. Calls now auto-end on both sides when either peer hangs up, even if the CALL_END message is delayed or lost. -- Binary audio frames (50fps Opus) were flooding the signaling rate limiter (40 msgs/10s), killing the DataChannel after ~2.5s. Three-part fix: (1) `server.js`: moved binary frame handling BEFORE `rateLimit.registerEvent()` so audio frames bypass the signaling rate limit; (2) `rate_limit.js`: added separate `registerBinaryEvent()` with 1000/10s limit (defense in depth against binary flooding); (3) `WebSocketService.kt`: removed WS binary fallback — `sendBinary()` returns `false` when DataChannel is not open instead of falling back to `client?.sendBinary()`. Audio only flows via P2P DataChannel now. Brief silence (~2-3s) during ICE negotiation is expected; UI shows "Connecting..." during this time.
 
 **End-to-end call signaling details (change #8):**
 - `WebSocketService.kt`: Added call signaling callbacks (`_onCallAccepted`, `_onCallEnded`, `_onCallError`), session tracking, incoming call activity launch, message parsing for CALL_INVITE/CALL_INVITE_ACK/CALL_ACCEPT/CALL_END/ERROR. Uses private backing fields with explicit setter methods for Java interop.
@@ -64,7 +66,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **No server changes:** Server already relays WEBRTC_OFFER (lines 553-597), WEBRTC_ANSWER (lines 602-646), and ICE_CANDIDATE (lines 651-694).
 - **Audio flow with P2P:** Mic → OpusEncoder → E2E encrypt → DataChannel P2P → peer decrypt → OpusDecode → JitterBuffer → GhostAudioPlayer (earpiece). Falls back to WebSocket relay transparently if DataChannel is not open.
 
-**Testing:** APK tested on S10 (serial `RF8N313QMFL`, clientId `android-ded42f50`) and Pixel 5 emulator (clientId `android-33068922`). Full bidirectional call signaling, audio, and E2E encryption verified:
+**Testing:** APK tested on 4 devices: S10 (`RF8N313QMFL`, `android-ded42f50`), S7 (`ce10160adc00152604`, `android-168bd2f9`), Tab S4 (`ce12182c68644439037e`, `android-5260e744`), and Pixel 5 emulator (`emulator-5554`, `android-33068922`). Full bidirectional call signaling, audio, E2E encryption, and auto-hangup verified across all device pairs:
 - **S10 → Emulator:** CALL_INVITE → IncomingCallActivity → Accept → CALL_ACCEPT → CallActivity with timer → End call from S10 → Emulator receives CALL_END and closes
 - **Emulator → S10:** CALL_INVITE → IncomingCallActivity on S10 → Accept → CALL_ACCEPT → CallActivity with timer → End call from emulator → S10 receives CALL_END and closes
 - **Bidirectional audio:** Both devices show `AUDIO_CAPTURE: Capture thread started` (mic recording) and `AUDIO_PLAYER: write(): wrote=960 samples` (receiving peer audio). Full pipeline: OpusEncoder init → capture thread → binary WebSocket send → remote decrypt → OpusDecode → JitterBuffer (60ms prefill) → playout thread (20ms) → AudioTrack (earpiece).
@@ -81,6 +83,15 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **WebRTC P2P DataChannel:** Full P2P connection established between emulator and S10. Caller (emulator): `PeerConnection created` → `DataChannel 'audio' created` → `SDP created: OFFER` → ICE candidates gathered (host + srflx) → `WEBRTC_ANSWER` received → `ICE connection state: CONNECTED` → `DataChannel state: OPEN`. Callee (S10): `PeerConnection created` → `WEBRTC_OFFER` received → `SDP created: ANSWER` → ICE candidates gathered → `ICE connection state: CONNECTED` → `DataChannel received (callee): audio` → `DataChannel state: OPEN`. Audio frames flowing P2P through DataChannel with E2E encryption, bypassing server relay.
 - **WebRTC pending queue fix:** Verified callee correctly queues WEBRTC_OFFER + ICE candidates when they arrive before PeerConnection init completes: `Queuing remote offer (PeerConnection not ready)` → `PeerConnection created` → `Draining 6 pending ICE candidates` → SDP answer created → ICE CONNECTED → DataChannel OPEN. Both S10 (caller) and emulator (callee) establish P2P successfully.
 - **S10 → Emulator call (rate-limit fix verified):** Full 2+ minute call with DataChannel OPEN the entire duration. Zero `rate_limited` errors. S10 (caller) sent CALL_INVITE → Emulator accepted → WebRTC: DataChannel + SDP offer/answer exchange → ICE CONNECTED → DataChannel OPEN → P2P audio flowing at steady 20ms intervals for entire call. Binary audio frames correctly exempted from signaling rate limit on server. No WS relay fallback triggered. Clean teardown on call end.
+- **4-device cross-call testing (Commit `0fbe701`):** Tested calls across S7↔Tab S4, S10↔S7, Emu↔S10, S10↔Emu, S7↔Emu. All calls: P2P DataChannel OPEN, bidirectional audio, clean auto-hangup on both sides via `onPeerDisconnect` callback. Belt-and-suspenders approach: P2P disconnect fires first (ICE DISCONNECTED → `onPeerDisconnect`), server CALL_END arrives as confirmation.
+- **7-test comprehensive suite (Tab S4 + Emulator):**
+  1. **Tab→Emu accept+end from Tab:** PASSED. 42s call, P2P audio, clean auto-hangup on both sides.
+  2. **Emu→Tab accept+end from Emu:** PASSED. 128s call, P2P audio, clean auto-hangup.
+  3. **Tab→Emu decline from Emu:** PASSED. Emulator declined, CALL_END sent, missed call saved (0s). Tablet received CALL_END.
+  4. **Emu→Tab decline from Tab:** PASSED. Tablet declined, CALL_END sent and received.
+  5. **Background call notification:** PASSED. App backgrounded on tablet, foreground service running, WebSocket received CALL_INVITE, IncomingCallActivity launched, notification shown with title "Incoming Secure Call" from "Emulator" (importance=HIGH, fullscreenIntent set). Note: fullscreenIntent doesn't bring activity to foreground over launcher on unlocked Samsung tablets — shows as notification instead (known Android behavior).
+  6. **Call history:** PASSED. Both devices: 10+ entries with correct OUTGOING/INCOMING/MISSED types, contact names, durations, and `encrypted=true`.
+  7. **Unknown number invite dialog:** PASSED. Dialed random number on tablet, dialog appeared: "Invite 22378 to SecureCall" with options "Via Messenger", "Share Link", "Send SMS".
 
 ## Architecture Decisions
 
@@ -215,6 +226,8 @@ stealth/                              # Monorepo root
 9. **Android AlertDialog gotcha.** `setMessage()` and `setItems()` are mutually exclusive -- `setMessage` suppresses the item list. Fixed in commit `a0b9872`.
 10. **Kotlin/Java interop gotcha.** Kotlin `var` properties auto-generate getters/setters that clash with explicit methods of the same name. Use private backing fields + explicit methods. Java lambdas for Kotlin function types must return `kotlin.Unit.INSTANCE`.
 11. **Activity lifecycle race condition.** `IncomingCallActivity.onDestroy()` runs after `CallActivity.onCreate()` when accepting a call. Any callbacks set in `onDestroy()` to `null` will overwrite what `CallActivity.onCreate()` just set. Fixed with `accepted` flag guard.
+12. **IncomingCallActivity doesn't auto-dismiss on caller cancel.** If the caller ends the call before the callee accepts/declines, IncomingCallActivity stays visible. The callee must manually tap Decline to dismiss it. The `onCallEnded` callback doesn't fire because the session was never fully established from IncomingCallActivity's perspective.
+13. **Background fullscreenIntent on Samsung.** On unlocked Samsung devices, `fullScreenIntent` notifications don't bring the activity to the foreground over the launcher — they show as a heads-up/status bar notification instead. The IncomingCallActivity IS launched and in the task stack, but the user must tap the notification to bring it forward. This is a known Android/Samsung restriction for background activity launches.
 
 ## Explicit Non-Goals
 
@@ -237,15 +250,20 @@ stealth/                              # Monorepo root
 - **Comments:** Older code has German comments (e.g., `// BACKEND-22: Heartbeat Ueberwachung`). New code uses English. Ticket references like `BACKEND-22`, `PATCH 201` appear throughout.
 - **Error handling:** Non-critical failures use `catch (_: Exception) {}`. Critical errors use `Log.e(TAG, message, throwable)`.
 - **adb on this machine:** Not in PATH. Full path required: `/Users/gio/Library/Android/sdk/platform-tools/adb`. Emulator: `~/Library/Android/sdk/emulator/emulator`. AVD name: `Pixel_5`.
-- **S10 serial:** `RF8N313QMFL`. Package name on device: `com.securecall.app.free`. ClientId: `android-ded42f50`.
-- **Emulator:** `emulator-5554`. ClientId changes on each wipe (last: `android-33068922`).
-- **App launch command:** `adb -s RF8N313QMFL shell am start -n com.securecall.app.free/com.securecall.app.MainActivity`
+- **S10 serial:** `RF8N313QMFL`. ClientId: `android-ded42f50`.
+- **S7 serial:** `ce10160adc00152604`. ClientId: `android-168bd2f9`.
+- **Tab S4 serial:** `ce12182c68644439037e`. ClientId: `android-5260e744`. Landscape mode (2560x1492).
+- **Emulator:** `emulator-5554`. ClientId: `android-33068922` (changes on wipe).
+- **Package name:** `com.securecall.app.free` (all devices).
+- **App launch command:** `adb -s <serial> shell am start -n com.securecall.app.free/com.securecall.app.MainActivity`
 - **Contacts storage:** SharedPreferences file `securecall_contacts` with key `contacts_json` (JSON array). Fields: `id`, `name`, `phoneOrId`, `createdAt`, `isPhoneContact`.
 
 ## Next Immediate Step
 
-Call signaling, heartbeat, real audio transport, E2E encryption, earpiece routing, contact name resolution, jitter buffer, WebRTC P2P, runtime permissions, rate-limit fix, and call lifecycle are all complete and tested. P2P DataChannel stays OPEN for entire call duration (2+ minutes verified). Next priorities:
+All core features are complete, committed, and tested across 4 devices (S10, S7, Tab S4, Emulator). 7-test comprehensive suite passed on Tab S4 + Emulator: accept/end from both sides, decline from both sides, background notification, call history, and invite dialog. Next priorities:
 
-1. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
-2. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
-3. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling).
+1. **Fix IncomingCallActivity auto-dismiss** -- When caller cancels before callee accepts, IncomingCallActivity should auto-dismiss (listen for CALL_END in IncomingCallActivity).
+2. **Fix background fullscreen intent** -- On Samsung, use `SYSTEM_ALERT_WINDOW` permission or telecom `ConnectionService` to bring IncomingCallActivity to foreground from background.
+3. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
+4. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
+5. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling).
