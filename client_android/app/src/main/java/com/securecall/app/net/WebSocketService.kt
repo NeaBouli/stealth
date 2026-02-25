@@ -635,6 +635,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 val sessionId = obj.optString("sessionId", "")
                 Log.d("WS_SERVICE", "CALL_END received, sessionId=$sessionId")
                 _currentSessionId = null
+                // Dismiss IncomingCallActivity if it's showing (caller cancelled during ringing)
+                com.securecall.app.IncomingCallActivity.dismissIfActive(sessionId)
+                // Also dismiss the incoming call notification directly
+                val nm = getSystemService(android.app.NotificationManager::class.java)
+                nm.cancel(INCOMING_CALL_NOTIFICATION_ID)
                 _onCallEnded?.invoke(sessionId)
             }
         } catch (_: Exception) {}

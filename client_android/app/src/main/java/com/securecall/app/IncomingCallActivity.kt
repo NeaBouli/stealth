@@ -12,6 +12,20 @@ class IncomingCallActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "INCOMING_CALL"
+
+        @Volatile
+        var activeInstance: IncomingCallActivity? = null
+
+        /** Called by WebSocketService when CALL_END arrives during ringing. */
+        fun dismissIfActive(sessionId: String) {
+            val activity = activeInstance ?: return
+            if (activity.sessionId == sessionId) {
+                Log.d(TAG, "Caller cancelled call — auto-dismissing")
+                activity.saveMissedCall()
+                activity.dismissIncomingCallNotification()
+                activity.runOnUiThread { activity.finish() }
+            }
+        }
     }
 
     private var sessionId: String = ""
@@ -22,10 +36,21 @@ class IncomingCallActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_incoming_call)
+        activeInstance = this
 
         sessionId = intent.getStringExtra("sessionId") ?: ""
         callerClientId = intent.getStringExtra("callerClientId") ?: ""
         Log.d(TAG, "Incoming call: session=$sessionId, from=$callerClientId")
+
+        // Check if this call was already cancelled before we launched
+        val ws = com.securecall.app.net.WebSocketService.instance
+        if (ws?.getCurrentSessionId() == null && sessionId.isNotEmpty()) {
+            Log.d(TAG, "Call already cancelled before IncomingCallActivity created")
+            saveMissedCallFromIntent()
+            dismissIncomingCallNotification()
+            finish()
+            return
+        }
 
         // Look up caller's clientId in contacts to show saved name
         callerDisplayName = com.securecall.app.data.ContactRepository.getAll(this)
@@ -37,11 +62,10 @@ class IncomingCallActivity : AppCompatActivity() {
         findViewById<FloatingActionButton>(R.id.fabAcceptCall).setOnClickListener { acceptCall() }
         findViewById<FloatingActionButton>(R.id.fabDeclineCall).setOnClickListener { declineCall() }
 
-        // If caller hangs up while ringing, close this screen
-        val ws = com.securecall.app.net.WebSocketService.instance
+        // Backup: also use callback for caller hangup during ringing
         ws?.setOnCallEnded { endedSessionId ->
             if (endedSessionId == sessionId) {
-                Log.d(TAG, "Caller ended call while ringing")
+                Log.d(TAG, "Caller ended call while ringing (callback)")
                 saveMissedCall()
                 dismissIncomingCallNotification()
                 runOnUiThread { finish() }
@@ -95,8 +119,20 @@ class IncomingCallActivity : AppCompatActivity() {
         }
     }
 
+    /** Save missed call when dismissing due to race condition (before contact name resolved). */
+    private fun saveMissedCallFromIntent() {
+        val name = com.securecall.app.data.ContactRepository.getAll(this)
+            .find { it.phoneOrId == callerClientId }?.name ?: callerClientId
+        callerDisplayName = name
+        saveMissedCall()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        // Only clear activeInstance if WE are the current instance (avoids race with new instance)
+        if (activeInstance === this) {
+            activeInstance = null
+        }
         // Only clear callback if we didn't accept — CallActivity sets its own onCallEnded
         if (!accepted) {
             com.securecall.app.net.WebSocketService.instance?.setOnCallEnded(null)
