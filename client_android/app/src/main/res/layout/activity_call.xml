@@ -87,13 +87,16 @@
             android:layout_marginStart="@dimen/spacing_xs" />
     </LinearLayout>
 
-    <!-- Security Status Indicator -->
+    <!-- Security Status Indicator (clickable for details) -->
     <LinearLayout
         android:id="@+id/securityStatusBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground"
         android:padding="@dimen/spacing_xs"
         app:layout_constraintTop_toBottomOf="@id/encryptionIndicator"
         app:layout_constraintStart_toStartOf="parent"

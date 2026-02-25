@@ -62,6 +62,7 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     private ImageView securityStatusIcon;
     private TextView securityStatusText;
     private FloatingActionButton fabEndCall;
+    private SecureCallMonitor.SecurityStatus lastSecurityStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +94,7 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
         // Security status views
         securityStatusIcon = findViewById(R.id.securityStatusIcon);
         securityStatusText = findViewById(R.id.securityStatusText);
+        findViewById(R.id.securityStatusBar).setOnClickListener(v -> showSecurityDetailsDialog());
 
         // Handle caller info
         String callerName = getIntent().getStringExtra("callerName");
@@ -279,6 +281,7 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
      */
     private void updateSecurityUI(SecureCallMonitor.SecurityStatus status) {
         if (securityStatusIcon == null || securityStatusText == null) return;
+        lastSecurityStatus = status;
 
         switch (status.getLevel()) {
             case GREEN:
@@ -302,6 +305,37 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
                 securityStatusText.setTextColor(getResources().getColor(R.color.stealthx_red_dark, getTheme()));
                 break;
         }
+    }
+
+    /**
+     * Show a dialog explaining the current security warnings/threats.
+     */
+    private void showSecurityDetailsDialog() {
+        if (lastSecurityStatus == null || lastSecurityStatus.getThreats().isEmpty()) {
+            // GREEN — nothing to show
+            Toast.makeText(this, R.string.security_status_secure, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        StringBuilder message = new StringBuilder();
+        for (SecureCallMonitor.Threat threat : lastSecurityStatus.getThreats()) {
+            String icon = threat.getSeverity() == SecureCallMonitor.Severity.CRITICAL ? "\u26a0" : "\u26ab";
+            message.append(icon).append(" ").append(threat.getDescription()).append("\n");
+            for (String detail : threat.getDetails()) {
+                message.append("    \u2022 ").append(detail).append("\n");
+            }
+        }
+
+        int titleRes = lastSecurityStatus.getLevel() == SecureCallMonitor.SecurityLevel.RED
+                ? R.string.security_threat_title
+                : R.string.security_warnings_title;
+
+        new AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
+                .setTitle(titleRes)
+                .setMessage(message.toString().trim())
+                .setIcon(R.drawable.ic_shield)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
     }
 
     /**

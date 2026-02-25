@@ -147,6 +147,7 @@
     <string name="security_status_warning">%1$d warning(s)</string>
     <string name="security_status_critical">%1$d threat(s) detected</string>
     <string name="security_warning_recording">Security Warning: %1$s</string>
+    <string name="security_warnings_title">Security Warnings</string>
     <string name="security_threat_title">Security Threat Detected</string>
     <string name="security_threat_message">%1$s\n\nFor your security, we recommend ending this call.</string>
     <string name="security_end_call">End Call</string>
