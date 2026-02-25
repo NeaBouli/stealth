@@ -75,6 +75,15 @@ const routingTable = new Map();
 // clientId -> fcmToken
 const fcmTokens = new Map();
 
+// --- Phone Number Registry ---
+// normalized phone number -> clientId
+const phoneNumbers = new Map();
+
+function normalizePhone(num) {
+  if (typeof num !== "string") return "";
+  return num.replace(/[^0-9+]/g, "");
+}
+
 // --- Helper: send JSON to a clientId ---
 function sendToClient(clientId, payload) {
   const connId = clientIds.get(clientId);
@@ -358,9 +367,22 @@ wss.on("connection", (ws, req) => {
       // Falls vorher schon eine andere clientId registriert war, alte entfernen
       if (client.clientId) {
         clientIds.delete(client.clientId);
+        // Clean up old phone mapping for previous clientId
+        if (client.phoneNumber) {
+          phoneNumbers.delete(client.phoneNumber);
+        }
       }
       client.clientId = msg.clientId;
       clientIds.set(msg.clientId, connId);
+
+      // Store phone number if provided
+      const phone = normalizePhone(msg.phoneNumber);
+      if (phone.length >= 4) {
+        // Remove any existing mapping for this phone (e.g. stale from another client)
+        phoneNumbers.set(phone, msg.clientId);
+        client.phoneNumber = phone;
+        console.log("[REGISTER] Phone:", phone, "->", msg.clientId);
+      }
 
       console.log("[REGISTER]", msg.clientId, "->", connId);
       return ws.send(JSON.stringify({
@@ -392,33 +414,43 @@ wss.on("connection", (ws, req) => {
 
       const sessionId = uuidv4();
 
+      // Resolve target: try clientId first, then phone number lookup
+      let targetClientId = msg.to;
+      if (!clientIds.has(targetClientId)) {
+        const phoneLookup = phoneNumbers.get(normalizePhone(targetClientId));
+        if (phoneLookup) {
+          console.log("[ROUTING] Phone resolved:", targetClientId, "->", phoneLookup);
+          targetClientId = phoneLookup;
+        }
+      }
+
       // Check if peer is online
-      if (clientIds.has(msg.to)) {
+      if (clientIds.has(targetClientId)) {
         // Peer is online — normal flow
         routingTable.set(sessionId, {
           sessionId,
           from: myClientId,
-          to: msg.to,
+          to: targetClientId,
           state: "INVITE",
           created: Date.now(),
           updated: Date.now()
         });
 
-        console.log("[ROUTING] INVITE:", myClientId, "->", msg.to, "session:", sessionId);
+        console.log("[ROUTING] INVITE:", myClientId, "->", targetClientId, "session:", sessionId);
 
         ws.send(JSON.stringify({
           type: "CALL_INVITE_ACK",
           ok: true,
           sessionId,
           from: myClientId,
-          to: msg.to
+          to: targetClientId
         }));
 
-        sendToClient(msg.to, {
+        sendToClient(targetClientId, {
           type: "CALL_INVITE",
           sessionId,
           from: myClientId,
-          to: msg.to,
+          to: targetClientId,
           pubKey: msg.pubKey
         });
       } else {
@@ -786,6 +818,31 @@ wss.on("connection", (ws, req) => {
       return;
     }
 
+    // ===========================
+    // PHONE_LOOKUP — Resolve phone number to clientId
+    // ===========================
+    if (msg.type === "PHONE_LOOKUP") {
+      if (!msg.phoneNumber || typeof msg.phoneNumber !== "string") {
+        return ws.send(JSON.stringify({
+          type: "PHONE_LOOKUP_RESULT",
+          phoneNumber: "",
+          clientId: null,
+          online: false
+        }));
+      }
+
+      const normalized = normalizePhone(msg.phoneNumber);
+      const resolvedClientId = phoneNumbers.get(normalized) || null;
+      const online = resolvedClientId ? clientIds.has(resolvedClientId) : false;
+
+      return ws.send(JSON.stringify({
+        type: "PHONE_LOOKUP_RESULT",
+        phoneNumber: msg.phoneNumber,
+        clientId: resolvedClientId,
+        online
+      }));
+    }
+
     // HEARTBEAT — client keepalive, reply so client's onMessage updates lastSeen
     if (msg.type === "HEARTBEAT") {
       return ws.send(JSON.stringify({ type: "HEARTBEAT_ACK" }));
@@ -818,6 +875,11 @@ wss.on("connection", (ws, req) => {
 
     // Clean up rate limit bucket
     rateLimit.clear(connId);
+
+    // Clean up phone number mapping
+    if (client && client.phoneNumber) {
+      phoneNumbers.delete(client.phoneNumber);
+    }
 
     // clientId Mapping aufräumen
     if (clientId) {

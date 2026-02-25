@@ -52,6 +52,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // WebRTC P2P DataChannel transport
     private var webRtcManager: WebRtcManager? = null
 
+    // Phone lookup callback
+    private var _phoneLookupCallback: ((String?) -> Unit)? = null
+
     fun getCurrentSessionId(): String? = _currentSessionId
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
     fun setOnCallEnded(cb: ((String) -> Unit)?) { _onCallEnded = cb }
@@ -155,6 +158,14 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         return client?.getLastSeen() ?: 0L
     }
 
+    /** Look up a phone number on the server to resolve it to a clientId. */
+    fun lookupPhone(phoneNumber: String, callback: (clientId: String?) -> Unit) {
+        _phoneLookupCallback = callback
+        val json = """{"type":"PHONE_LOOKUP","phoneNumber":"$phoneNumber"}"""
+        client?.send(json)
+        Log.d("WS_SERVICE", "PHONE_LOOKUP sent: $phoneNumber")
+    }
+
     // ===================== HeartbeatClient.Listener =====================
 
     override fun onConnected() {
@@ -238,9 +249,42 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             prefs.edit().putString("client_id", clientId).apply()
             Log.d("WS_SERVICE", "Generated new clientId: $clientId")
         }
-        val json = """{"type":"REGISTER","clientId":"$clientId"}"""
+        // Read device phone number if permission is granted
+        val phoneNumber = getDevicePhoneNumber()
+        val json = if (phoneNumber != null) {
+            """{"type":"REGISTER","clientId":"$clientId","phoneNumber":"$phoneNumber"}"""
+        } else {
+            """{"type":"REGISTER","clientId":"$clientId"}"""
+        }
         client?.send(json)
-        Log.d("WS_SERVICE", "REGISTER sent: $clientId")
+        Log.d("WS_SERVICE", "REGISTER sent: $clientId, phone: ${phoneNumber ?: "none"}")
+    }
+
+    @android.annotation.SuppressLint("MissingPermission")
+    private fun getDevicePhoneNumber(): String? {
+        return try {
+            val hasPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                checkSelfPermission(android.Manifest.permission.READ_PHONE_NUMBERS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            } else {
+                checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+            if (!hasPermission) {
+                Log.d("WS_SERVICE", "No phone number permission")
+                return null
+            }
+            val tm = getSystemService(android.content.Context.TELEPHONY_SERVICE) as? android.telephony.TelephonyManager
+            val number = tm?.line1Number
+            if (number.isNullOrBlank()) {
+                Log.d("WS_SERVICE", "Device phone number unavailable")
+                null
+            } else {
+                Log.d("WS_SERVICE", "Device phone number: $number")
+                number
+            }
+        } catch (e: Exception) {
+            Log.w("WS_SERVICE", "Failed to read phone number", e)
+            null
+        }
     }
 
     override fun onDisconnected() {
@@ -552,6 +596,19 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             val obj = org.json.JSONObject(json)
             if (obj.optString("type") == "SUBSCRIPTION_VERIFY_ACK") {
                 handleSubscriptionVerifyAck(obj)
+                return
+            }
+        } catch (_: Throwable) {}
+
+        // Phone lookup result
+        try {
+            val obj = org.json.JSONObject(json)
+            if (obj.optString("type") == "PHONE_LOOKUP_RESULT") {
+                val clientId = obj.optString("clientId", "")
+                    .let { if (it.isEmpty() || it == "null") null else it }
+                Log.d("WS_SERVICE", "PHONE_LOOKUP_RESULT: clientId=$clientId")
+                _phoneLookupCallback?.invoke(clientId)
+                _phoneLookupCallback = null
                 return
             }
         } catch (_: Throwable) {}

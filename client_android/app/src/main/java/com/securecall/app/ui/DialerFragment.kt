@@ -130,7 +130,6 @@ class DialerFragment : Fragment() {
 
         if (matches.isNotEmpty()) {
             contactSuggestions.adapter = ContactAdapter(matches) { contact ->
-                // Only call contacts with a SecureCall ID; phone numbers can't be routed
                 if (contact.phoneOrId.startsWith("android-")) {
                     val intent = Intent(requireContext(), CallActivity::class.java).apply {
                         putExtra("callerName", contact.name)
@@ -138,7 +137,8 @@ class DialerFragment : Fragment() {
                     }
                     startActivity(intent)
                 } else {
-                    showInviteDialog(contact.phoneOrId)
+                    // Phone number — try server lookup first
+                    resolveAndCall(contact.name, contact.phoneOrId)
                 }
             }
             contactSuggestions.visibility = View.VISIBLE
@@ -167,16 +167,40 @@ class DialerFragment : Fragment() {
         val normalized = normalizePhone(number)
         val match = allContacts.find { normalizePhone(it.phoneOrId) == normalized }
 
-        if (match != null) {
-            // Known contact — start encrypted call
+        if (match != null && match.phoneOrId.startsWith("android-")) {
+            // Known SecureCall contact — start call directly
             val intent = Intent(requireContext(), CallActivity::class.java).apply {
                 putExtra("callerName", match.name)
                 putExtra("phoneNumber", match.phoneOrId)
             }
             startActivity(intent)
         } else {
-            // Unknown number — offer invite
-            showInviteDialog(number)
+            // Phone number — try server lookup to resolve to clientId
+            val displayName = match?.name ?: number
+            resolveAndCall(displayName, number)
+        }
+    }
+
+    /** Query server for phone→clientId. If found, start call; otherwise show invite. */
+    private fun resolveAndCall(displayName: String, phoneNumber: String) {
+        val ws = com.securecall.app.net.WebSocketService.instance
+        if (ws == null) {
+            showInviteDialog(phoneNumber)
+            return
+        }
+        ws.lookupPhone(phoneNumber) { clientId ->
+            activity?.runOnUiThread {
+                if (clientId != null) {
+                    Log.d("DialerFragment", "Phone resolved: $phoneNumber -> $clientId")
+                    val intent = Intent(requireContext(), CallActivity::class.java).apply {
+                        putExtra("callerName", displayName)
+                        putExtra("phoneNumber", clientId)
+                    }
+                    startActivity(intent)
+                } else {
+                    showInviteDialog(phoneNumber)
+                }
+            }
         }
     }
 

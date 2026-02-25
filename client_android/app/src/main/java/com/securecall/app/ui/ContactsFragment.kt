@@ -185,23 +185,37 @@ class ContactsFragment : Fragment() {
     }
 
     private fun startCall(contact: Contact) {
-        // Only call contacts with a SecureCall ID (starts with "android-").
-        // Phone numbers can't be routed by the signaling server.
-        if (!isSecureCallId(contact.phoneOrId)) {
-            Log.d(TAG, "Contact ${contact.name} has phone number, showing invite")
-            showInviteDialog(contact)
-            return
+        if (contact.phoneOrId.startsWith("android-")) {
+            // SecureCall ID — call directly
+            Log.d(TAG, "Starting call to: ${contact.name}")
+            val intent = Intent(requireContext(), CallActivity::class.java).apply {
+                putExtra("callerName", contact.name)
+                putExtra("phoneNumber", contact.phoneOrId)
+            }
+            startActivity(intent)
+        } else {
+            // Phone number — try server lookup first
+            Log.d(TAG, "Looking up phone for: ${contact.name}")
+            val ws = com.securecall.app.net.WebSocketService.instance
+            if (ws == null) {
+                showInviteDialog(contact)
+                return
+            }
+            ws.lookupPhone(contact.phoneOrId) { clientId ->
+                activity?.runOnUiThread {
+                    if (clientId != null) {
+                        Log.d(TAG, "Phone resolved: ${contact.phoneOrId} -> $clientId")
+                        val intent = Intent(requireContext(), CallActivity::class.java).apply {
+                            putExtra("callerName", contact.name)
+                            putExtra("phoneNumber", clientId)
+                        }
+                        startActivity(intent)
+                    } else {
+                        showInviteDialog(contact)
+                    }
+                }
+            }
         }
-        Log.d(TAG, "Starting call to: ${contact.name}")
-        val intent = Intent(requireContext(), CallActivity::class.java).apply {
-            putExtra("callerName", contact.name)
-            putExtra("phoneNumber", contact.phoneOrId)
-        }
-        startActivity(intent)
-    }
-
-    private fun isSecureCallId(id: String): Boolean {
-        return id.startsWith("android-")
     }
 
     private fun showInviteDialog(contact: Contact) {
