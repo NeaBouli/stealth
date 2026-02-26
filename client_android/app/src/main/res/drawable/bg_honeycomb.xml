@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Solid dark tactical background -->
+    <item>
+        <color android:color="@color/stealthx_black" />
+    </item>
+    <!-- Repeating honeycomb pattern overlay -->
+    <item>
+        <bitmap
+            android:src="@drawable/bg_honeycomb_tile"
+            android:tileMode="repeat" />
+    </item>
+</layer-list>

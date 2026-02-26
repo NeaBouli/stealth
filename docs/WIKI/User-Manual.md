@@ -1,6 +1,12 @@
-# User Manual
+> **CLASSIFICATION: RESTRICTED** | **DOCUMENT: SC-OPS** | **DIVISION: StealthX // SecureCall**
 
-## Making a Call
+---
+
+# OPERATOR MANUAL
+
+---
+#### ████ ESTABLISHING COMMS ████
+---
 
 ### Starting a Call
 1. Open SecureCall
@@ -12,7 +18,10 @@
    - **Yellow** — Potential threat detected (recording app, etc.)
    - **Red** — Active threat detected
 
-### During a Call
+---
+#### ████ ACTIVE CHANNEL OPERATIONS ████
+---
+
 - **Speaker** — Toggle between earpiece and loudspeaker
 - **Mute** — Mute your microphone
 - **End Call** — Hang up
@@ -24,7 +33,9 @@
 | Pro | Unlimited |
 | Premium | Unlimited |
 
-## Security Features
+---
+#### ████ SECURITY COUNTERMEASURES ████
+---
 
 ### Screenshot Protection (FLAG_SECURE)
 - The call screen cannot be captured by screenshots or screen recording
@@ -49,7 +60,9 @@ During a call, the security status bar shows:
 - **Yellow Warning** — Non-critical threat detected (e.g., accessibility service)
 - **Red Alert** — Critical threat detected (e.g., active screen recording)
 
-## Settings
+---
+#### ████ CONFIGURATION ████
+---
 
 ### Audio Quality
 - **Standard** (Free tier) — Good quality for most connections
@@ -64,7 +77,9 @@ During a call, the security status bar shows:
 - **Crash reports** — Anonymous crash data (Free tier only, opt-out available)
 - **Delete all data** — Erase all local data (keys, contacts, settings)
 
-## Contacts
+---
+#### ████ CONTACT REGISTRY ████
+---
 
 ### Adding a Contact
 1. Tap **"+"** in the contact list
@@ -79,7 +94,9 @@ During a call, the security status bar shows:
 | Pro | Unlimited |
 | Premium | Unlimited |
 
-## Upgrading
+---
+#### ████ UPGRADING ████
+---
 
 ### Free → Pro ($4.99/month)
 1. Open Settings → Subscription
@@ -99,4 +116,6 @@ During a call, the security status bar shows:
 
 ---
 
-[← Back to Home](Home.md)
+> DOCUMENT END // CLASSIFICATION: RESTRICTED
+
+[← Return to Operations Center](Home.md)

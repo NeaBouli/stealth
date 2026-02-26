@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/stealthx_black">
+    android:background="@drawable/bg_honeycomb">
 
     <!-- Connection state bar -->
     <TextView
@@ -14,7 +14,7 @@
         android:padding="@dimen/spacing_sm"
         android:paddingTop="@dimen/spacing_xl"
         android:text="@string/call_connecting"
-        android:textColor="@color/stealthx_blue"
+        android:textColor="@color/stealthx_red"
         android:textSize="@dimen/text_label_small"
         app:layout_constraintTop_toTopOf="parent" />
 

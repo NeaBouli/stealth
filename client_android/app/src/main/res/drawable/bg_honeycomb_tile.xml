@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="140dp"
+    android:viewportWidth="80"
+    android:viewportHeight="140">
+
+    <!-- Hexagon 1 (top-left) -->
+    <path
+        android:pathData="M20,0 L40,0 L50,17.3 L40,34.6 L20,34.6 L10,17.3 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="0.5"
+        android:strokeAlpha="0.06"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- Hexagon 2 (offset row) -->
+    <path
+        android:pathData="M50,35 L70,35 L80,52.3 L70,69.6 L50,69.6 L40,52.3 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="0.5"
+        android:strokeAlpha="0.06"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- Hexagon 3 (bottom-left, continues pattern) -->
+    <path
+        android:pathData="M20,70 L40,70 L50,87.3 L40,104.6 L20,104.6 L10,87.3 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="0.5"
+        android:strokeAlpha="0.06"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- Hexagon 4 (bottom offset) -->
+    <path
+        android:pathData="M50,105 L70,105 L80,122.3 L70,139.6 L50,139.6 L40,122.3 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="0.5"
+        android:strokeAlpha="0.06"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- Partial hex edges for seamless tiling -->
+    <path
+        android:pathData="M-10,35 L10,35 L20,52.3 L10,69.6 L-10,69.6 L-20,52.3 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="0.5"
+        android:strokeAlpha="0.06"
+        android:fillColor="@android:color/transparent" />
+
+    <path
+        android:pathData="M-10,105 L10,105 L20,122.3 L10,139.6 L-10,139.6 L-20,122.3 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="0.5"
+        android:strokeAlpha="0.06"
+        android:fillColor="@android:color/transparent" />
+</vector>

@@ -1,6 +1,12 @@
-# Security Design
+> **CLASSIFICATION: RESTRICTED** | **DOCUMENT: SC-SEC** | **DIVISION: StealthX // SecureCall**
 
-## Security Goals
+---
+
+# COMMS SECURITY BRIEFING
+
+---
+#### ████ SECURITY OBJECTIVES ████
+---
 
 SecureCall is designed around four core security principles:
 
@@ -9,7 +15,9 @@ SecureCall is designed around four core security principles:
 3. **Zero-Retention** — No call content or logs are stored on servers
 4. **Verifiable Transparency** — All source code is publicly auditable
 
-## Threat Model
+---
+#### ████ THREAT ASSESSMENT ████
+---
 
 SecureCall protects against these attacker classes:
 
@@ -27,7 +35,9 @@ SecureCall protects against these attacker classes:
 - Shoulder surfing / someone physically listening
 - Bugs in third-party code (Android OS, hardware drivers)
 
-## Architecture
+---
+#### ████ SYSTEM ARCHITECTURE ████
+---
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -56,7 +66,9 @@ SecureCall protects against these attacker classes:
 └──────────────────────────────────────────────┘
 ```
 
-## Security Enforcement by Tier
+---
+#### ████ SECURITY ENFORCEMENT BY TIER ████
+---
 
 | Threat | Free | Pro | Premium |
 |--------|------|-----|---------|
@@ -68,7 +80,9 @@ SecureCall protects against these attacker classes:
 | Crash reports | Opt-out | Disabled | Disabled |
 | IP address visible | Transient | Transient | Masked (GhostNet) |
 
-## Anti-Recording Protection
+---
+#### ████ ANTI-RECORDING PROTECTION ████
+---
 
 SecureCall uses six layers of active protection:
 
@@ -79,7 +93,9 @@ SecureCall uses six layers of active protection:
 5. **Accessibility Detection** — Identifies spy apps using accessibility services
 6. **Call Recording App Scan** — Database of 20+ known recording apps
 
-## Key Zeroization
+---
+#### ████ KEY ZEROIZATION ████
+---
 
 All cryptographic key material is:
 - Stored in `ByteArray` (not `String`) to allow explicit clearing
@@ -87,7 +103,9 @@ All cryptographic key material is:
 - Zeroed from memory immediately after use
 - Never logged or transmitted to servers
 
-## For Full Details
+---
+#### ████ FOR FULL DETAILS ████
+---
 
 - [Encryption Architecture](Encryption-Architecture.md) — Detailed crypto design
 - [Security Audit Report](Security-Audit.md) — Audit findings and fixes
@@ -95,4 +113,6 @@ All cryptographic key material is:
 
 ---
 
-[← Back to Home](Home.md)
+> DOCUMENT END // CLASSIFICATION: RESTRICTED
+
+[← Return to Operations Center](Home.md)

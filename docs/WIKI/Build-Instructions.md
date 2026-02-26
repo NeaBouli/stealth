@@ -1,4 +1,8 @@
-# Build Instructions
+> **CLASSIFICATION: RESTRICTED** | **DOCUMENT: SC-BUILD** | **DIVISION: StealthX // SecureCall**
+
+---
+
+# BUILD CLEARANCE PROCEDURES
 
 > **Important: Source-Available License**
 >
@@ -8,12 +12,16 @@
 >
 > See the [LICENSE](https://github.com/NeaBouli/stealth/blob/main/LICENSE) for full terms.
 
-## For Security Researchers Only
+---
+#### ████ FOR SECURITY RESEARCHERS ONLY ████
+---
 
 The following instructions are provided so that security researchers can verify
 the cryptographic implementation matches the published claims.
 
-### Prerequisites
+---
+#### ████ REQUIRED TOOLS ████
+---
 
 | Tool | Version | Install |
 |------|---------|---------|
@@ -31,6 +39,10 @@ rustup target add armv7-linux-androideabi
 rustup target add x86_64-linux-android
 rustup target add i686-linux-android
 ```
+
+---
+#### ████ BUILD PROCEDURES ████
+---
 
 ### Building the Rust Crypto Engine
 
@@ -60,7 +72,9 @@ npm start
 
 Server starts on `http://localhost:8080`. Health check: `http://localhost:8080/health`
 
-### Running Tests
+---
+#### ████ VERIFICATION PROCEDURES ████
+---
 
 ```bash
 # Rust tests
@@ -74,4 +88,6 @@ cd client_android
 
 ---
 
-[← Back to Home](Home.md)
+> DOCUMENT END // CLASSIFICATION: RESTRICTED
+
+[← Return to Operations Center](Home.md)

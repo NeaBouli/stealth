@@ -1,6 +1,12 @@
-# Architecture Overview
+> **CLASSIFICATION: RESTRICTED** | **DOCUMENT: SC-ARCH** | **DIVISION: StealthX // SecureCall**
 
-## System Components
+---
+
+# SYSTEM ARCHITECTURE BRIEF
+
+---
+#### ████ COMPONENT INVENTORY ████
+---
 
 SecureCall consists of three core components:
 
@@ -10,7 +16,9 @@ SecureCall consists of three core components:
 | **Crypto Engine** | Rust (via JNI) | XChaCha20-Poly1305, X25519, HKDF-SHA256, key management |
 | **Signaling Server** | Node.js / Express / WebSocket | Connection establishment, key exchange relay |
 
-## High-Level Architecture
+---
+#### ████ ARCHITECTURE OVERVIEW ████
+---
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -50,7 +58,9 @@ SecureCall consists of three core components:
 └──────────────────────────────────────────────────────────┘
 ```
 
-## Directory Structure
+---
+#### ████ DIRECTORY STRUCTURE ████
+---
 
 ```
 stealth/
@@ -95,7 +105,9 @@ stealth/
 └── tools/                   # Build & test scripts
 ```
 
-## Data Flow
+---
+#### ████ DATA FLOW ANALYSIS ████
+---
 
 ### Signaling (Call Setup)
 ```
@@ -121,7 +133,9 @@ Client A → TURN Server → Client B
 - TURN server sees only encrypted packets
 - Cannot decrypt voice content
 
-## Build Flavors
+---
+#### ████ BUILD CONFIGURATIONS ████
+---
 
 | Flavor | Package Name | Features |
 |--------|-------------|----------|
@@ -131,4 +145,6 @@ Client A → TURN Server → Client B
 
 ---
 
-[← Back to Home](Home.md)
+> DOCUMENT END // CLASSIFICATION: RESTRICTED
+
+[← Return to Operations Center](Home.md)

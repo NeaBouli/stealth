@@ -1,6 +1,12 @@
-# Encryption Architecture
+> **CLASSIFICATION: RESTRICTED** | **DOCUMENT: SC-CRYPTO** | **DIVISION: StealthX // SecureCall**
 
-## Cryptographic Primitives
+---
+
+# CRYPTOGRAPHIC OPERATIONS MANUAL
+
+---
+#### ████ CRYPTOGRAPHIC ARSENAL ████
+---
 
 SecureCall uses proven, peer-reviewed cryptographic algorithms:
 
@@ -13,7 +19,9 @@ SecureCall uses proven, peer-reviewed cryptographic algorithms:
 | **Transport** | DTLS-SRTP | Encrypted peer-to-peer media transport |
 | **Audio Codec** | Opus | 48kHz, adaptive bitrate 6-510 kbps |
 
-## Why These Algorithms?
+---
+#### ████ WHY THESE ALGORITHMS ████
+---
 
 ### XChaCha20-Poly1305 (not AES-GCM)
 - **Nonce safety:** 192-bit nonce virtually eliminates collision risk
@@ -33,7 +41,9 @@ SecureCall uses proven, peer-reviewed cryptographic algorithms:
 - **Performance:** Native speed via JNI
 - **Thread safety:** Data race protection by the compiler
 
-## Call Flow
+---
+#### ████ ENCRYPTED CHANNEL ESTABLISHMENT ████
+---
 
 ```
   Alice (Caller)                    Server                    Bob (Callee)
@@ -70,7 +80,9 @@ SecureCall uses proven, peer-reviewed cryptographic algorithms:
 6. **P2P Connection:** Direct WebRTC connection established (bypasses server)
 7. **Encrypted Audio:** Each voice frame is encrypted with a unique key from the ratchet
 
-## Perfect Forward Secrecy
+---
+#### ████ PERFECT FORWARD SECRECY ████
+---
 
 The **Double Ratchet** protocol ensures that:
 
@@ -85,7 +97,9 @@ Session 2: Key_2 ─── cannot derive ──→ Key_3
 Session 3: Key_3 ─── cannot derive ──→ Key_1
 ```
 
-## What the Server Cannot See
+---
+#### ████ WHAT THE SERVER CANNOT SEE ████
+---
 
 The signaling server **only** handles:
 
@@ -97,7 +111,9 @@ The signaling server **only** handles:
 | Contact list | No (device-only) | No |
 | IP address | During signaling only | Not logged |
 
-## Voice Frame Encryption
+---
+#### ████ VOICE FRAME ENCRYPTION PIPELINE ████
+---
 
 Each audio frame is processed as follows:
 
@@ -130,7 +146,9 @@ Each audio frame is processed as follows:
   Speaker
 ```
 
-## Source Code
+---
+#### ████ SOURCE CODE ████
+---
 
 The cryptographic implementation can be verified in the source code:
 
@@ -140,4 +158,6 @@ The cryptographic implementation can be verified in the source code:
 
 ---
 
-[← Back to Home](Home.md)
+> DOCUMENT END // CLASSIFICATION: RESTRICTED
+
+[← Return to Operations Center](Home.md)

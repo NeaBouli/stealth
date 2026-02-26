@@ -1,4 +1,8 @@
-# Changelog
+> **CLASSIFICATION: RESTRICTED** | **DOCUMENT: SC-LOG** | **DIVISION: StealthX // SecureCall**
+
+---
+
+# OPERATIONS LOG
 
 All notable changes to the SecureCall project.
 
@@ -6,7 +10,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
-## [Unreleased] — v0.2-beta
+---
+#### ████ [UNRELEASED] — v0.2-beta ████
+---
 
 ### Phase 13: Website Rebuild
 - Complete website rebuild with Material Design 3 dark theme
@@ -80,4 +86,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
-[← Back to Home](Home.md)
+> DOCUMENT END // CLASSIFICATION: RESTRICTED
+
+[← Return to Operations Center](Home.md)

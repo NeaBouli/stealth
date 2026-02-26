@@ -1,6 +1,12 @@
-# Frequently Asked Questions
+> **CLASSIFICATION: RESTRICTED** | **DOCUMENT: SC-FAQ** | **DIVISION: StealthX // SecureCall**
 
-## General
+---
+
+# INTELLIGENCE FAQ — BRIEFING
+
+---
+#### ████ GENERAL ████
+---
 
 ### What is SecureCall?
 SecureCall is an Android app for end-to-end encrypted voice calls. Every call is encrypted using XChaCha20-Poly1305 with X25519 key exchange and Double Ratchet forward secrecy. The cryptographic engine is written in Rust, and the complete source code is publicly available on GitHub.
@@ -17,7 +23,9 @@ Not yet. An iOS version is planned but not under active development. The Rust cr
 ### Why is the source code public?
 Transparency builds trust. By publishing our source code, we allow security researchers, journalists, and privacy advocates to verify that our encryption works as claimed. Security through obscurity is no security at all.
 
-## Privacy & Data
+---
+#### ████ PRIVACY & DATA ████
+---
 
 ### What data do you collect?
 - **Free:** Optional anonymous crash reports only (opt-out in Settings)
@@ -32,7 +40,9 @@ Yes. SecureCall complies with the EU GDPR and the German BDSG. Since we collect 
 ### Can law enforcement access my calls?
 No. We cannot provide call content because we do not have it. End-to-end encryption means only the two call participants possess the decryption keys.
 
-## Security
+---
+#### ████ SECURITY ████
+---
 
 ### What encryption does SecureCall use?
 - **Symmetric:** XChaCha20-Poly1305 (256-bit AEAD, 192-bit nonce)
@@ -55,7 +65,9 @@ Rust guarantees memory safety at compile time, eliminating buffer overflows, use
 ### Has SecureCall been audited?
 Yes. An internal security audit was conducted in February 2026. All 7 Critical and 18 High findings were fixed. See the [Security Audit Report](Security-Audit.md).
 
-## Tier Comparison
+---
+#### ████ TIER COMPARISON ████
+---
 
 | Feature | Free | Pro ($4.99/mo or $15 Lifetime) | Premium ($9.99/mo or $25 Lifetime) |
 |---------|------|-------------------------------|-----------------------------------|
@@ -70,7 +82,9 @@ Yes. An internal security audit was conducted in February 2026. All 7 Critical a
 | Crash Reports | Opt-out | Disabled | Disabled |
 | Telemetry | Minimal | Zero | Zero |
 
-## Billing
+---
+#### ████ BILLING ████
+---
 
 ### What are Forever Licenses?
 Forever Licenses are **one-time purchases** that give you lifetime access to Pro or Premium — no subscription needed. Only 100 licenses are available per tier. The price starts low and increases automatically with each sale:
@@ -95,4 +109,6 @@ Settings → Delete All Data → Uninstall. Since we don't store data on servers
 
 ---
 
-[← Back to Home](Home.md)
+> DOCUMENT END // CLASSIFICATION: RESTRICTED
+
+[← Return to Operations Center](Home.md)

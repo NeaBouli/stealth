@@ -1,6 +1,12 @@
-# Project Roadmap
+> **CLASSIFICATION: RESTRICTED** | **DOCUMENT: SC-ROAD** | **DIVISION: StealthX // SecureCall**
 
-## Completed (v0.2-beta)
+---
+
+# STRATEGIC DEVELOPMENT ROADMAP
+
+---
+#### ████ OBJECTIVES ACHIEVED (v0.2-beta) ████
+---
 
 - [x] End-to-End Encryption (XChaCha20-Poly1305 + X25519)
 - [x] Rust Crypto Engine with JNI bridge
@@ -19,13 +25,17 @@
 - [x] Landing page website (neabouli.github.io/stealth)
 - [x] Complete documentation & Wiki
 
-## In Progress
+---
+#### ████ ACTIVE OPERATIONS ████
+---
 
 - [ ] Beta Testing (10-20 testers)
 - [ ] Google Play Store Launch
 - [ ] Production Server Deployment
 
-## Planned (v0.3)
+---
+#### ████ PLANNED OPERATIONS (v0.3) ████
+---
 
 - [ ] WebRTC upgrade (latest spec)
 - [ ] Improved NAT traversal
@@ -34,7 +44,9 @@
 - [ ] Biometric lock (fingerprint/face to open app)
 - [ ] Widget for quick-call
 
-## Future (v1.0+)
+---
+#### ████ LONG-RANGE OBJECTIVES (v1.0+) ████
+---
 
 - [ ] iOS Client
 - [ ] Desktop Client (Linux, macOS, Windows)
@@ -44,7 +56,9 @@
 - [ ] End-to-end encrypted messaging
 - [ ] GhostOS — Hardened Android distribution
 
-## Non-Goals
+---
+#### ████ EXPLICITLY OUT OF SCOPE ████
+---
 
 These are explicitly **not** planned:
 
@@ -56,4 +70,6 @@ These are explicitly **not** planned:
 
 ---
 
-[← Back to Home](Home.md)
+> DOCUMENT END // CLASSIFICATION: RESTRICTED
+
+[← Return to Operations Center](Home.md)

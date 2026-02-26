@@ -1,6 +1,12 @@
-# Known Issues
+> **CLASSIFICATION: RESTRICTED** | **DOCUMENT: SC-DEFECT** | **DIVISION: StealthX // SecureCall**
 
-## Open Medium-Severity Security Items
+---
+
+# KNOWN DEFICIENCIES REGISTER
+
+---
+#### ████ OPEN MEDIUM-SEVERITY SECURITY ITEMS ████
+---
 
 These findings from the [Security Audit](Security-Audit.md) are tracked as GitHub Issues:
 
@@ -42,7 +48,9 @@ These findings from the [Security Audit](Security-Audit.md) are tracked as GitHu
 | [#309](https://github.com/NeaBouli/stealth/issues/309) | GHOST_PREPARE handled without auth | Medium |
 | [#310](https://github.com/NeaBouli/stealth/issues/310) | No CORS configuration on Express server | Medium |
 
-## Functional Limitations
+---
+#### ████ FUNCTIONAL LIMITATIONS ████
+---
 
 | Limitation | Description | Status |
 |------------|-------------|--------|
@@ -53,10 +61,14 @@ These findings from the [Security Audit](Security-Audit.md) are tracked as GitHu
 | 10 contacts (Free) | Free tier has contact limit | By design |
 | Cold starts (Railway) | Free hosting may have 5-10s cold starts | Expected on free tier |
 
-## Reporting New Issues
+---
+#### ████ REPORTING NEW ISSUES ████
+---
 
 Found a bug? [Open a GitHub Issue](https://github.com/NeaBouli/stealth/issues/new)
 
 ---
 
-[← Back to Home](Home.md)
+> DOCUMENT END // CLASSIFICATION: RESTRICTED
+
+[← Return to Operations Center](Home.md)

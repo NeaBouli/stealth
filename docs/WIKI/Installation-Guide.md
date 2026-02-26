@@ -1,8 +1,14 @@
-# Installation Guide
+> **CLASSIFICATION: RESTRICTED** | **DOCUMENT: SC-DEPLOY** | **DIVISION: StealthX // SecureCall**
 
-## Option 1: Google Play Store (Recommended)
+---
 
-The official and recommended way to install SecureCall.
+# FIELD DEPLOYMENT GUIDE
+
+---
+#### ████ OPTION 1: GOOGLE PLAY STORE (RECOMMENDED) ████
+---
+
+The official and recommended way to deploy SecureCall.
 
 | Version | Description | Link |
 |---------|-------------|------|
@@ -10,17 +16,21 @@ The official and recommended way to install SecureCall.
 | **SecureCall Pro** | Unlimited calls, HD audio, anti-recording | In-App Upgrade |
 | **SecureCall Premium** | Everything + GhostNet IP masking | In-App Upgrade |
 
-## Option 2: GitHub Releases (Advanced Users)
+---
+#### ████ OPTION 2: GITHUB RELEASES (ADVANCED USERS) ████
+---
 
 > **Important:** SecureCall uses a Source-Available License. Building from source is not permitted. Download the official APK from GitHub Releases instead.
 
 1. Go to [Releases](https://github.com/NeaBouli/stealth/releases)
 2. Download the latest `.apk` file
 3. On your Android device: Settings → Security → Enable "Unknown Sources"
-4. Open the downloaded APK and install
-5. Disable "Unknown Sources" after installation
+4. Open the downloaded APK and deploy
+5. Disable "Unknown Sources" after deployment
 
-## System Requirements
+---
+#### ████ MINIMUM ASSET SPECIFICATIONS ████
+---
 
 | Requirement | Minimum |
 |-------------|---------|
@@ -30,7 +40,9 @@ The official and recommended way to install SecureCall.
 | **Permissions** | Microphone (required for calls) |
 | **Network** | WiFi or mobile data |
 
-## First Launch
+---
+#### ████ INITIAL FIELD SETUP ████
+---
 
 ### 1. Grant Permissions
 
@@ -60,11 +72,13 @@ Your unique, anonymous SecureCall ID is displayed in the app. Share this ID with
 3. Wait for connection — the encryption handshake takes 1-2 seconds
 4. The lock icon turns green when the call is encrypted
 
-## Troubleshooting
+---
+#### ████ FAULT DIAGNOSIS ████
+---
 
-### App won't install
+### App won't deploy
 - Check that you have enough storage space (50 MB)
-- Ensure "Unknown Sources" is enabled (for APK installs)
+- Ensure "Unknown Sources" is enabled (for APK deployments)
 - Try restarting your device
 
 ### Microphone permission denied
@@ -83,4 +97,6 @@ Your unique, anonymous SecureCall ID is displayed in the app. Share this ID with
 
 ---
 
-[← Back to Home](Home.md)
+> DOCUMENT END // CLASSIFICATION: RESTRICTED
+
+[← Return to Operations Center](Home.md)

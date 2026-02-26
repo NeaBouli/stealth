@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Material 3 Dark Theme -->
+    <!-- Material 3 Dark Theme — military palette (identical to light) -->
     <style name="Theme.SecureCall" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/md_theme_dark_primary</item>
         <item name="colorOnPrimary">@color/md_theme_dark_onPrimary</item>
@@ -22,7 +22,7 @@
         <item name="colorOnSurfaceVariant">@color/md_theme_dark_onSurfaceVariant</item>
         <item name="colorOutline">@color/md_theme_dark_outline</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@color/md_theme_dark_surface</item>
+        <item name="android:navigationBarColor">@color/bg_tactical</item>
     </style>
 
     <!-- Splash (dark variant) -->
