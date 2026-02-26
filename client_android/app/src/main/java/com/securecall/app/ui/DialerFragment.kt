@@ -49,6 +49,7 @@ class DialerFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         phoneDisplay = view.findViewById(R.id.phoneNumberDisplay)
+        phoneDisplay.showSoftInputOnFocus = false // Use dial pad, not keyboard
         btnBackspace = view.findViewById(R.id.btnBackspace)
         contactSuggestions = view.findViewById(R.id.contactSuggestions)
         dialPad = view.findViewById(R.id.dialPad)
