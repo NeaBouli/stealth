@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intel Database — SecureCall Wiki</title>
+    <meta name="description" content="Operations center for all SecureCall documentation — security briefings, deployment guides, architecture references, and project status.">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./" class="active">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Wiki</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-HOME</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">SecureCall Intel Database</h1>
+            <p class="wiki-meta">Operations center for all SecureCall documentation &middot; Last updated February 2026</p>
+
+            <!-- GETTING STARTED -->
+            <div class="section-break">Getting Started</div>
+
+            <div class="wiki-index-grid">
+                <a href="installation-guide.html" class="wiki-index-card">
+                    <span class="card-label">Getting Started</span>
+                    <h3>Installation Guide</h3>
+                    <p>Field deployment instructions for Google Play, GitHub Releases, and APK sideloading. Includes minimum device specifications.</p>
+                </a>
+                <a href="getting-started.html" class="wiki-index-card">
+                    <span class="card-label">Getting Started</span>
+                    <h3>Quick Start</h3>
+                    <p>Get up and running in under five minutes. Grant permissions, generate keys, add contacts, and make your first encrypted call.</p>
+                </a>
+            </div>
+
+            <!-- USER GUIDE -->
+            <div class="section-break">User Guide</div>
+
+            <div class="wiki-index-grid">
+                <a href="faq.html" class="wiki-index-card">
+                    <span class="card-label">User Guide</span>
+                    <h3>FAQ</h3>
+                    <p>Frequently asked questions about SecureCall, encryption, subscriptions, compatibility, and privacy.</p>
+                </a>
+                <a href="troubleshooting.html" class="wiki-index-card">
+                    <span class="card-label">User Guide</span>
+                    <h3>Troubleshooting</h3>
+                    <p>Fault diagnosis procedures for connection failures, audio issues, permission errors, and server timeouts.</p>
+                </a>
+                <a href="privacy-policy.html" class="wiki-index-card">
+                    <span class="card-label">User Guide</span>
+                    <h3>Privacy Policy</h3>
+                    <p>Our privacy commitments, data collection practices, third-party service disclosures, and your rights.</p>
+                </a>
+            </div>
+
+            <!-- SECURITY INTELLIGENCE -->
+            <div class="section-break">Security Intelligence</div>
+
+            <div class="wiki-index-grid">
+                <a href="security-design.html" class="wiki-index-card">
+                    <span class="card-label">Security Intelligence</span>
+                    <h3>Security Design</h3>
+                    <p>Comms security briefing covering E2E encryption, threat assessment, system architecture, anti-recording layers, and key zeroization.</p>
+                </a>
+                <a href="security-audit.html" class="wiki-index-card">
+                    <span class="card-label">Security Intelligence</span>
+                    <h3>Security Audit</h3>
+                    <p>Independent audit findings, vulnerability classifications, remediation status, and cryptographic implementation review.</p>
+                </a>
+            </div>
+
+            <!-- TECHNICAL -->
+            <div class="section-break">Technical</div>
+
+            <div class="wiki-index-grid">
+                <a href="architecture.html" class="wiki-index-card">
+                    <span class="card-label">Technical</span>
+                    <h3>Architecture</h3>
+                    <p>System architecture overview including the Rust crypto engine, GhostNet transport protocol, WebSocket signaling, and JNI bridge.</p>
+                </a>
+                <a href="api-reference.html" class="wiki-index-card">
+                    <span class="card-label">Technical</span>
+                    <h3>API Reference</h3>
+                    <p>WebSocket signaling protocol, message types, key exchange flow, call signaling endpoints, and GHOST protocol specification.</p>
+                </a>
+            </div>
+
+            <!-- PROJECT STATUS -->
+            <div class="section-break">Project Status</div>
+
+            <div class="wiki-index-grid">
+                <a href="roadmap.html" class="wiki-index-card">
+                    <span class="card-label">Project Status</span>
+                    <h3>Roadmap</h3>
+                    <p>Planned features, milestone targets, and development priorities for upcoming SecureCall releases.</p>
+                </a>
+                <a href="changelog.html" class="wiki-index-card">
+                    <span class="card-label">Project Status</span>
+                    <h3>Changelog</h3>
+                    <p>Version history, release notes, bug fixes, and feature additions across all SecureCall releases.</p>
+                </a>
+            </div>
+
+            <!-- QUICK ACCESS TABLE -->
+            <div class="section-break">Quick Access</div>
+
+            <h2>External Resources</h2>
+            <p>Direct links to SecureCall platforms and official channels.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Resource</th>
+                        <th>Description</th>
+                        <th>Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Google Play</strong></td>
+                        <td>Official app listing on the Google Play Store</td>
+                        <td><a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener">Play Store</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>GitHub Repository</strong></td>
+                        <td>Source code, issues, and releases</td>
+                        <td><a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">github.com/NeaBouli/stealth</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Issue Tracker</strong></td>
+                        <td>Report bugs and request features</td>
+                        <td><a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">GitHub Issues</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Website</strong></td>
+                        <td>Official SecureCall landing page</td>
+                        <td><a href="https://neabouli.github.io/stealth/" target="_blank" rel="noopener">neabouli.github.io/stealth</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security Policy</strong></td>
+                        <td>Responsible disclosure and security contacts</td>
+                        <td><a href="https://github.com/NeaBouli/stealth/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY.md</a></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

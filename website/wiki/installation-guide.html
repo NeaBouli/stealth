@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field Deployment Guide — SecureCall Wiki</title>
+    <meta name="description" content="Complete installation and deployment guide for SecureCall — Google Play, GitHub Releases, device requirements, initial setup, and troubleshooting.">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html" class="active">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Installation Guide</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-DEPLOY</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">Field Deployment Guide</h1>
+            <p class="wiki-meta">Complete installation, setup, and deployment procedures for SecureCall &middot; Last updated February 2026</p>
+
+            <!-- SECTION 1: GOOGLE PLAY -->
+            <div class="section-break">Option 1: Google Play (Recommended)</div>
+
+            <h2>Google Play Store Deployment</h2>
+            <p>The official and recommended deployment method. Google Play ensures automatic updates, signature verification, and the smoothest installation experience. All three SecureCall tiers are available through a single listing with in-app upgrade.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Version</th>
+                        <th>Description</th>
+                        <th>Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>SecureCall (Free)</strong></td>
+                        <td>E2E encrypted calls, 10 contacts maximum, 15-minute call limit per session</td>
+                        <td><a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener">Google Play</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>SecureCall Pro</strong></td>
+                        <td>Unlimited calls and contacts, HD audio, anti-recording protection, certificate pinning</td>
+                        <td>In-App Upgrade</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SecureCall Premium</strong></td>
+                        <td>Everything in Pro + GhostNet IP masking, hardware keystore, all security detections enforced</td>
+                        <td>In-App Upgrade</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box info">
+                <strong>Recommendation:</strong> Start with the free tier to verify compatibility with your device and network. You can upgrade to Pro or Premium at any time from within the app without losing your contacts or SecureCall ID.
+            </div>
+
+            <!-- SECTION 2: GITHUB RELEASES -->
+            <div class="section-break">Option 2: GitHub Releases</div>
+
+            <h2>APK Sideloading (Advanced Users)</h2>
+            <p>For users who prefer not to use Google Play, or whose devices lack Play Services, the official APK is available from GitHub Releases. This method requires enabling sideloading on your device.</p>
+
+            <div class="info-box warning">
+                <strong>Source-Available License:</strong> SecureCall uses a Source-Available License. Building from source is <strong>not permitted</strong> under the license terms. Only official APK releases from the GitHub Releases page or Google Play are authorized for deployment. Inspect the source code for transparency, but deploy from official binaries only.
+            </div>
+
+            <h3>Sideloading Procedure</h3>
+            <ol>
+                <li>Navigate to <a href="https://github.com/NeaBouli/stealth/releases" target="_blank" rel="noopener">github.com/NeaBouli/stealth/releases</a> on your device or computer.</li>
+                <li>Download the latest <code>.apk</code> file from the Assets section of the most recent release.</li>
+                <li>On your Android device, go to <strong>Settings &rarr; Security &rarr; Install unknown apps</strong> and enable the permission for your browser or file manager.</li>
+                <li>Open the downloaded APK file and tap <strong>Install</strong>. Android will verify the package signature before proceeding.</li>
+                <li>After installation, <strong>disable "Install unknown apps"</strong> for the browser/file manager to maintain device security.</li>
+            </ol>
+
+            <p>If you downloaded the APK on a computer, transfer it to your Android device via USB cable, cloud storage, or a local network file share. Then open it from a file manager on the device.</p>
+
+            <!-- SECTION 3: MINIMUM ASSET SPECIFICATIONS -->
+            <div class="section-break">Minimum Asset Specifications</div>
+
+            <h2>Device Requirements</h2>
+            <p>SecureCall has been designed to run efficiently on a wide range of Android hardware. The following are the minimum specifications required for stable operation.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Requirement</th>
+                        <th>Minimum Specification</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Android Version</strong></td>
+                        <td>Android 10 (API 29)</td>
+                        <td>Required for scoped storage and modern security APIs. Android 14+ recommended for full screen recording detection.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Free Storage</strong></td>
+                        <td>50 MB</td>
+                        <td>Includes the app binary, native Rust library, and runtime cache. No persistent data storage beyond preferences.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RAM</strong></td>
+                        <td>2 GB</td>
+                        <td>The Rust crypto engine and audio pipeline operate in native memory. Devices with 3+ GB will have smoother multitasking.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Permissions</strong></td>
+                        <td>Microphone (required)</td>
+                        <td>Microphone access is mandatory for voice calls. The app will prompt on first launch. Notification permission is requested for call alerts.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Network</strong></td>
+                        <td>WiFi or mobile data</td>
+                        <td>A stable internet connection is required. VoIP calls consume approximately 1-2 MB per minute of call time. TURN relay is used automatically when direct connections fail.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Architecture</strong></td>
+                        <td>arm64-v8a</td>
+                        <td>The native Rust crypto library is compiled for 64-bit ARM. Virtually all modern Android devices support this architecture.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- SECTION 4: INITIAL FIELD SETUP -->
+            <div class="section-break">Initial Field Setup</div>
+
+            <h2>First-Time Configuration</h2>
+            <p>After installation, follow these five steps to complete the initial deployment and make your first encrypted call.</p>
+
+            <h3>Step 1: Grant Permissions</h3>
+            <p>When you first open SecureCall, the system will request the <strong>Microphone</strong> permission. This is required for voice calls and cannot be bypassed. Tap <strong>Allow</strong> when prompted.</p>
+            <p>On Android 13+, you will also be asked for the <strong>Notification</strong> permission. Granting this allows SecureCall to alert you to incoming calls even when the app is in the background.</p>
+
+            <h3>Step 2: Automatic Key Generation</h3>
+            <p>SecureCall automatically generates your cryptographic identity on first launch:</p>
+            <ul>
+                <li>An <strong>X25519 key pair</strong> is created entirely on your device using the native Rust crypto engine.</li>
+                <li>The <strong>private key</strong> never leaves your phone. It is stored in memory during the session and used solely for Diffie-Hellman key exchanges.</li>
+                <li>The <strong>public key</strong> is registered with the signaling server so other users can establish encrypted connections with you.</li>
+            </ul>
+            <p>This process takes less than one second and requires no user interaction. There is no account creation, no email, no phone number verification.</p>
+
+            <h3>Step 3: Get Your SecureCall ID</h3>
+            <p>Your unique, anonymous <strong>SecureCall ID</strong> is displayed in the app's main screen. This ID is the only identifier associated with your account. Share it with your contacts through any channel you trust: messaging app, in person, printed QR code, or any other method.</p>
+            <p>Your SecureCall ID is not linked to your phone number, email, name, or any other personal information.</p>
+
+            <h3>Step 4: Add Contacts</h3>
+            <ol>
+                <li>Navigate to the <strong>Contacts</strong> tab in the bottom navigation bar.</li>
+                <li>Tap the <strong>"+"</strong> button in the top-right corner.</li>
+                <li>Enter your contact's SecureCall ID in the input field.</li>
+                <li>Optionally assign a display name for local reference (stored only on your device).</li>
+                <li>The contact appears in your list, ready for encrypted calls.</li>
+            </ol>
+
+            <h3>Step 5: Make Your First Call</h3>
+            <ol>
+                <li>From the Contacts tab, locate the contact you want to call.</li>
+                <li>Tap the <strong>phone icon</strong> next to their name to initiate the call.</li>
+                <li>Wait for the connection to establish. The encryption handshake (X25519 key exchange + HKDF key derivation) takes 1-2 seconds.</li>
+                <li>The <strong>lock icon turns green</strong> when the call is fully encrypted end-to-end.</li>
+                <li>Speak freely. Your voice is encrypted with XChaCha20-Poly1305 before leaving your device.</li>
+            </ol>
+
+            <div class="info-box info">
+                <strong>Tip:</strong> Both parties must have SecureCall installed and must have added each other as contacts. The call will not connect if the recipient is offline or has not registered their public key with the signaling server.
+            </div>
+
+            <!-- SECTION 5: FAULT DIAGNOSIS -->
+            <div class="section-break">Fault Diagnosis</div>
+
+            <h2>Troubleshooting Common Issues</h2>
+            <p>If you encounter problems during installation or operation, consult the following fault diagnosis procedures.</p>
+
+            <h3>App Won't Install</h3>
+            <ul>
+                <li><strong>Insufficient storage:</strong> Verify that your device has at least 50 MB of free space. Go to Settings &rarr; Storage to check available capacity.</li>
+                <li><strong>Unknown sources disabled:</strong> For APK sideloading, ensure "Install unknown apps" is enabled for your file manager or browser. See Option 2 above for detailed steps.</li>
+                <li><strong>Incompatible architecture:</strong> SecureCall requires a 64-bit ARM device (arm64-v8a). Very old or low-end devices running 32-bit-only Android may not be compatible.</li>
+                <li><strong>Device restart:</strong> If the installation hangs or fails with a generic error, restart your device and try again. Clearing the Google Play Store cache can also resolve download issues.</li>
+            </ul>
+
+            <h3>Microphone Permission Denied</h3>
+            <ul>
+                <li>If you accidentally denied the microphone permission, you can re-enable it manually.</li>
+                <li>Navigate to <strong>Settings &rarr; Apps &rarr; SecureCall &rarr; Permissions &rarr; Microphone &rarr; Allow</strong>.</li>
+                <li>Restart SecureCall after granting the permission.</li>
+                <li>On some Samsung devices, the permission may also be controlled under <strong>Settings &rarr; Privacy &rarr; Permission Manager</strong>.</li>
+            </ul>
+
+            <h3>Can't Connect to Server</h3>
+            <ul>
+                <li><strong>Check network:</strong> Verify that your device has an active WiFi or mobile data connection. Open a browser and load any website to confirm internet access.</li>
+                <li><strong>Switch networks:</strong> Try toggling between WiFi and mobile data. Some corporate or public WiFi networks may block WebSocket connections on non-standard ports.</li>
+                <li><strong>Firewall/VPN interference:</strong> If you are using a VPN or firewall app, temporarily disable it to test if it is blocking the WebSocket connection to the signaling server.</li>
+                <li><strong>Server maintenance:</strong> The signaling server may be temporarily down for maintenance. Wait a few minutes and try again. Check the <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">GitHub Issues</a> page for any reported outages.</li>
+            </ul>
+
+            <h3>No Audio During Call</h3>
+            <ul>
+                <li><strong>Microphone permission:</strong> Double-check that the microphone permission is granted (see above).</li>
+                <li><strong>Volume level:</strong> Ensure your device volume (both media and call volume) is turned up. Try pressing the volume-up button during the call.</li>
+                <li><strong>Headset/Bluetooth:</strong> If using a Bluetooth headset, ensure it is properly connected and selected as the audio output device. Try disconnecting and reconnecting, or switch to the device speaker.</li>
+                <li><strong>Microphone conflict:</strong> Another app may be using the microphone. Close all other apps that might access the mic (voice recorders, video apps, voice assistants) and retry the call.</li>
+                <li><strong>NAT traversal:</strong> In some network configurations, direct peer-to-peer connections may fail. SecureCall will automatically fall back to TURN relay, but this may take a few additional seconds. If audio does not start within 10 seconds, hang up and retry.</li>
+            </ul>
+
+            <div class="info-box warning">
+                <strong>Still stuck?</strong> If none of the above solutions resolve your issue, please open a detailed bug report on <a href="https://github.com/NeaBouli/stealth/issues/new" target="_blank" rel="noopener">GitHub Issues</a> including your device model, Android version, and a description of the problem. Do not include any call content or private keys in bug reports.
+            </div>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

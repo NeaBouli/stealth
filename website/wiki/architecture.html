@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Architecture Brief — SecureCall Wiki</title>
+    <meta name="description" content="Technical architecture overview of the SecureCall platform">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html" class="active">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Architecture</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-ARCH</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">System Architecture Brief</h1>
+            <p class="wiki-meta">Technical architecture overview of the SecureCall platform &middot; Last updated February 2026</p>
+
+            <!-- COMPONENT INVENTORY -->
+            <div class="section-break">Component Inventory</div>
+
+            <h2>Core Components</h2>
+            <p>SecureCall is built from three tightly integrated components, each responsible for a distinct layer of the platform. The Android client handles all user-facing operations, the Rust crypto engine provides native-speed cryptographic primitives via JNI, and the Node.js signaling server coordinates call setup without ever touching media or plaintext content.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Technology</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Android Client</strong></td>
+                        <td>Kotlin / Java</td>
+                        <td>UI, audio capture, call management, security monitoring</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Crypto Engine</strong></td>
+                        <td>Rust (via JNI)</td>
+                        <td>XChaCha20-Poly1305, X25519, HKDF-SHA256, key management</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Signaling Server</strong></td>
+                        <td>Node.js / Express / WebSocket</td>
+                        <td>Connection establishment, key exchange relay</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>All cryptographic operations execute inside the Rust native library &mdash; no Java crypto APIs are used. The signaling server relays encrypted messages but cannot decrypt any content. Voice media flows peer-to-peer via WebRTC and never passes through the signaling server.</p>
+
+            <!-- ARCHITECTURE OVERVIEW -->
+            <div class="section-break">Architecture Overview</div>
+
+            <h2>System Diagram</h2>
+            <p>The following diagram illustrates how the three components interact. The Android client contains four subsystems (UI, Audio Pipeline, Security Monitor, Network Manager) that communicate with the Rust crypto engine via JNI. The signaling server handles WebSocket-based call coordination and key exchange.</p>
+
+<pre><code>&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;                    Android Client                         &#9474;
+&#9474;                                                          &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9474;
+&#9474;  &#9474;    UI    &#9474; &#9474;  Audio   &#9474; &#9474; Security &#9474; &#9474;  Network   &#9474; &#9474;
+&#9474;  &#9474;  (MD3)  &#9474; &#9474; Pipeline &#9474; &#9474; Monitor  &#9474; &#9474;  Manager   &#9474; &#9474;
+&#9474;  &#9474;         &#9474; &#9474;          &#9474; &#9474;          &#9474; &#9474;            &#9474; &#9474;
+&#9474;  &#9474; - Call  &#9474; &#9474; - Opus   &#9474; &#9474; - Screen &#9474; &#9474; - WebRTC   &#9474; &#9474;
+&#9474;  &#9474; - Dial  &#9474; &#9474; - 48kHz  &#9474; &#9474; - Mic    &#9474; &#9474; - WebSocket&#9474; &#9474;
+&#9474;  &#9474; - Cont. &#9474; &#9474; - AEC    &#9474; &#9474; - SpyApp &#9474; &#9474; - ICE/TURN &#9474; &#9474;
+&#9474;  &#9474; - Sett. &#9474; &#9474; - AGC    &#9474; &#9474; - Focus  &#9474; &#9474; - DTLS     &#9474; &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9474;
+&#9474;       &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;         &#9474;
+&#9474;                          &#9474; JNI                            &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;   &#9474;
+&#9474;  &#9474;            Rust Crypto Engine (Native .so)          &#9474;   &#9474;
+&#9474;  &#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9474;   &#9474;
+&#9474;  &#9474;  &#9474; XChaCha20&#9474; &#9474;  X25519 &#9474; &#9474;  HKDF  &#9474; &#9474; Double  &#9474; &#9474;   &#9474;
+&#9474;  &#9474;  &#9474; Poly1305 &#9474; &#9474;  ECDH   &#9474; &#9474; SHA256 &#9474; &#9474; Ratchet &#9474; &#9474;   &#9474;
+&#9474;  &#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9474;   &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;   &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                          &#9474; WSS (Signaling)
+                          &#9474; WebRTC (Media &mdash; P2P)
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;               Signaling Server (Node.js)                  &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
+&#9474;  &#9474; Session  &#9474; &#9474; Call     &#9474; &#9474;   PKD    &#9474; &#9474;   Rate     &#9474;  &#9474;
+&#9474;  &#9474; Registry &#9474; &#9474; Router   &#9474; &#9474; (Keys)   &#9474; &#9474;  Limiter   &#9474;  &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
+&#9474;  &#9474; Heartbeat&#9474; &#9474; Presence &#9474; &#9474;   FCM    &#9474; &#9474;  Validator &#9474;  &#9474;
+&#9474;  &#9474; Manager  &#9474; &#9474; Tracker  &#9474; &#9474; (Push)   &#9474; &#9474; (Input)    &#9474;  &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</code></pre>
+
+            <div class="info-box info">
+                <strong>Key design principle:</strong> The signaling server is a relay only. It facilitates connection setup but never has access to voice content, encryption keys, or plaintext data. All cryptographic operations occur exclusively on-device inside the Rust native library.
+            </div>
+
+            <!-- DIRECTORY STRUCTURE -->
+            <div class="section-break">Directory Structure</div>
+
+            <h2>Repository Layout</h2>
+            <p>SecureCall is organized as a monorepo containing the Android client, Rust crypto engine, Node.js backend, documentation, website, and deployment infrastructure. The primary development directory is <code>client_android/</code>.</p>
+
+<pre><code>stealth/
+&#9500;&#9472;&#9472; client_android/          # Android app (Kotlin/Java)
+&#9474;   &#9492;&#9472;&#9472; app/src/main/java/com/securecall/app/
+&#9474;       &#9500;&#9472;&#9472; CallActivity.java       # Main call screen
+&#9474;       &#9500;&#9472;&#9472; MainActivity.java       # Entry point
+&#9474;       &#9500;&#9472;&#9472; security/               # Security monitoring
+&#9474;       &#9474;   &#9500;&#9472;&#9472; AudioFocusManager.kt
+&#9474;       &#9474;   &#9500;&#9472;&#9472; ScreenRecordingDetector.kt
+&#9474;       &#9474;   &#9500;&#9472;&#9472; MicrophoneMonitor.kt
+&#9474;       &#9474;   &#9500;&#9472;&#9472; AccessibilityDetector.kt
+&#9474;       &#9474;   &#9500;&#9472;&#9472; CallRecordingDetector.kt
+&#9474;       &#9474;   &#9500;&#9472;&#9472; SecureCallMonitor.kt
+&#9474;       &#9474;   &#9492;&#9472;&#9472; SecurityEnforcer.kt
+&#9474;       &#9500;&#9472;&#9472; config/                 # Tier-based feature flags
+&#9474;       &#9492;&#9472;&#9472; ui/                     # UI fragments
+&#9474;
+&#9500;&#9472;&#9472; core_crypto/             # Rust crypto engine
+&#9474;   &#9492;&#9472;&#9472; src/
+&#9474;       &#9500;&#9472;&#9472; lib.rs                  # Public API
+&#9474;       &#9500;&#9472;&#9472; aead/                   # XChaCha20-Poly1305
+&#9474;       &#9500;&#9472;&#9472; identity/               # Key pairs
+&#9474;       &#9500;&#9472;&#9472; session/                # Session state
+&#9474;       &#9500;&#9472;&#9472; hkdf/                   # Key derivation
+&#9474;       &#9492;&#9472;&#9472; ffi/                    # JNI bridge
+&#9474;
+&#9500;&#9472;&#9472; backend/signaling/       # Node.js signaling server
+&#9474;   &#9492;&#9472;&#9472; src/
+&#9474;       &#9500;&#9472;&#9472; server.js               # Main entry
+&#9474;       &#9500;&#9472;&#9472; call_routing.js         # Call routing logic
+&#9474;       &#9500;&#9472;&#9472; sessions.js             # Session management
+&#9474;       &#9500;&#9472;&#9472; pkd.js                  # Public Key Directory
+&#9474;       &#9500;&#9472;&#9472; rateLimit.js            # Rate limiting
+&#9474;       &#9492;&#9472;&#9472; validator.js            # Input validation
+&#9474;
+&#9500;&#9472;&#9472; website/                 # Landing page (neabouli.github.io/stealth)
+&#9500;&#9472;&#9472; docs/                    # Documentation
+&#9500;&#9472;&#9472; deploy/                  # Docker deployment
+&#9500;&#9472;&#9472; deployment/              # PM2 bare-metal deployment
+&#9500;&#9472;&#9472; marketing/               # Play Store listings
+&#9492;&#9472;&#9472; tools/                   # Build &amp; test scripts</code></pre>
+
+            <!-- DATA FLOW ANALYSIS -->
+            <div class="section-break">Data Flow Analysis</div>
+
+            <h2>Communication Pathways</h2>
+            <p>SecureCall uses three distinct communication pathways depending on the phase of a call. Understanding these data flows is essential for evaluating the security posture of the system.</p>
+
+            <h3>Signaling (Call Setup)</h3>
+<pre><code>Client A  &#8594;  WSS  &#8594;  Signaling Server  &#8594;  WSS  &#8594;  Client B</code></pre>
+            <ul>
+                <li>Encrypted WebSocket connection (TLS) between each client and the signaling server</li>
+                <li>Server relays encrypted signaling messages (SDP offers/answers, ICE candidates, key exchange data)</li>
+                <li>Server <strong>cannot read</strong> message content &mdash; it acts as an opaque relay</li>
+                <li>Call setup typically completes in 1&ndash;2 seconds on stable connections</li>
+            </ul>
+
+            <h3>Media (Voice)</h3>
+<pre><code>Client A  &#8594;  WebRTC (P2P, DTLS-SRTP)  &#8594;  Client B</code></pre>
+            <ul>
+                <li>Direct peer-to-peer connection established via ICE negotiation</li>
+                <li>Server is <strong>not</strong> in the media path &mdash; voice data flows directly between devices</li>
+                <li>Each voice frame is individually encrypted using XChaCha20-Poly1305</li>
+                <li>Audio encoded with Opus codec at 48kHz with acoustic echo cancellation (AEC) and automatic gain control (AGC)</li>
+            </ul>
+
+            <h3>TURN Relay (When P2P Fails)</h3>
+<pre><code>Client A  &#8594;  TURN Server  &#8594;  Client B</code></pre>
+            <ul>
+                <li>Used when direct P2P is blocked by restrictive NAT or corporate firewalls (~10&ndash;15% of connections)</li>
+                <li>TURN server relays encrypted packets but <strong>cannot decrypt</strong> voice content</li>
+                <li>Time-limited TURN credentials are generated by the signaling server during call setup</li>
+                <li>Metered.ca TURN service is used with TCP transport on port 443 for maximum compatibility</li>
+            </ul>
+
+            <div class="info-box warning">
+                <strong>Important:</strong> Even when a TURN relay is used, the relay server sees only encrypted ciphertext. The encryption keys are exchanged end-to-end between the two clients and are never shared with the TURN server or the signaling server.
+            </div>
+
+            <!-- BUILD CONFIGURATIONS -->
+            <div class="section-break">Build Configurations</div>
+
+            <h2>Product Flavors</h2>
+            <p>SecureCall ships in three product tiers, each compiled as a separate build flavor with distinct package names, feature flags, and capabilities. Feature gating is controlled via <code>BuildConfig</code> fields set in <code>build.gradle</code> and accessed at runtime through the <code>FeatureProvider</code> interface.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Flavor</th>
+                        <th>Package Name</th>
+                        <th>Features</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>free</code></td>
+                        <td><code>com.securecall.app.free</code></td>
+                        <td>Basic E2E encryption, 10 contacts, 15 minute call limit</td>
+                    </tr>
+                    <tr>
+                        <td><code>pro</code></td>
+                        <td><code>com.securecall.app.pro</code></td>
+                        <td>Unlimited calls, HD audio, anti-recording detection, certificate pinning</td>
+                    </tr>
+                    <tr>
+                        <td><code>premium</code></td>
+                        <td><code>com.securecall.app.premium</code></td>
+                        <td>Everything in Pro + GhostNet IP masking, hardware keystore, auto-terminate, root detection</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Build Command</h3>
+            <p>The free debug variant is the primary development and testing target:</p>
+<pre><code># From the client_android/ directory
+./gradlew assembleFreeDebug
+
+# APK output location
+app/build/outputs/apk/free/debug/app-free-debug.apk</code></pre>
+
+            <h3>Server Endpoints</h3>
+            <p>All server URLs are hardcoded in <code>build.gradle</code> for both debug and release configurations:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>URL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>WebSocket Signaling</strong></td>
+                        <td><code>wss://protective-healing-production.up.railway.app/signal</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>STUN</strong></td>
+                        <td><code>stun:stun.l.google.com:19302</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>TURN</strong></td>
+                        <td><code>turn:a.relay.metered.ca:443?transport=tcp</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

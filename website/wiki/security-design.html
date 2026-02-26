@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comms Security Briefing — SecureCall Wiki</title>
+    <meta name="description" content="SecureCall security design document covering E2E encryption, threat assessment, system architecture, anti-recording protection, and key zeroization.">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html" class="active">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Security Design</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-SEC</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">Comms Security Briefing</h1>
+            <p class="wiki-meta">SecureCall security design, threat model, and cryptographic architecture &middot; Last updated February 2026</p>
+
+            <!-- SECTION 1: SECURITY OBJECTIVES -->
+            <div class="section-break">Security Objectives</div>
+
+            <h2>Core Security Principles</h2>
+            <p>SecureCall is designed around four foundational security principles that govern every architectural and implementation decision across the platform.</p>
+
+            <ol>
+                <li><strong>End-to-End Encryption</strong> — Only the two call participants can decrypt voice data. The signaling server, network intermediaries, and even the SecureCall team have zero access to call content. All encryption is performed on-device using a native Rust cryptographic engine.</li>
+                <li><strong>Metadata Minimization</strong> — Collect and store as little metadata as possible. The signaling server knows only the minimum information required to route a call: two anonymous IDs and a timestamp. No phone numbers, names, or contact lists are ever transmitted.</li>
+                <li><strong>Zero-Retention</strong> — No call content, audio recordings, or session logs are stored on servers. Ephemeral key material is generated per-session and destroyed immediately after the call ends. The server retains no history of past calls.</li>
+                <li><strong>Verifiable Transparency</strong> — All source code is publicly auditable under a source-available license. Users, researchers, and security professionals can inspect exactly what the app does, how encryption is implemented, and verify that no backdoors exist.</li>
+            </ol>
+
+            <!-- SECTION 2: THREAT ASSESSMENT -->
+            <div class="section-break">Threat Assessment</div>
+
+            <h2>Attacker Classes and Protections</h2>
+            <p>SecureCall is engineered to defend against the following attacker classes. Each row identifies the adversary, their capabilities, and the specific countermeasures deployed.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Attacker</th>
+                        <th>Capability</th>
+                        <th>Protection</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Network</strong></td>
+                        <td>Passive eavesdropping, man-in-the-middle interception, traffic analysis</td>
+                        <td>E2E encryption (XChaCha20-Poly1305), DTLS transport, certificate pinning (Pro/Premium)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Server Operator</strong></td>
+                        <td>Full access to signaling infrastructure, database, and server logs</td>
+                        <td>Zero-knowledge architecture, E2E encryption where server only routes opaque ciphertext</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Local (Device)</strong></td>
+                        <td>Physical access to device, malware, forensic extraction</td>
+                        <td>FLAG_SECURE, key zeroization on session end, anti-recording detection, no local call logs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>App-Level</strong></td>
+                        <td>Screen recording apps, microphone hijacking, accessibility service spyware</td>
+                        <td>Active recording detection, spy app scanning, accessibility service monitoring, audio focus lock</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>What We Cannot Protect Against</h3>
+            <p>No security system is absolute. The following attack vectors fall outside SecureCall's protection boundary:</p>
+
+            <ul>
+                <li><strong>Compromised operating system</strong> — A device with root-level access or a compromised OS kernel can intercept any application data before encryption occurs.</li>
+                <li><strong>Hardware implants or baseband attacks</strong> — Physical hardware modifications or baseband processor exploits operate below the application layer and are undetectable by software.</li>
+                <li><strong>Shoulder surfing / physical eavesdropping</strong> — Someone physically present can listen to the audio output from the speaker or headset.</li>
+                <li><strong>Bugs in third-party code</strong> — Vulnerabilities in the Android OS, hardware drivers, or system libraries are outside SecureCall's control.</li>
+            </ul>
+
+            <!-- SECTION 3: SYSTEM ARCHITECTURE -->
+            <div class="section-break">System Architecture</div>
+
+            <h2>Architectural Overview</h2>
+            <p>The SecureCall system is composed of two primary components: the Android client application and the signaling server. All cryptographic operations occur exclusively within the client's native Rust engine, accessed via JNI. The server acts solely as a message relay with zero access to plaintext data.</p>
+
+<pre><code>&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;                 Android App                  &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9474;
+&#9474;  &#9474;   UI    &#9474;  &#9474; Security &#9474;  &#9474;   Audio    &#9474; &#9474;
+&#9474;  &#9474;  (MD3)  &#9474;  &#9474; Monitor  &#9474;  &#9474;  Pipeline  &#9474; &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9474;
+&#9474;       &#9474;            &#9474;              &#9474;          &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9474;
+&#9474;  &#9474;         Call Manager / Session         &#9474; &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9474;
+&#9474;                   &#9474; JNI                     &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9474;
+&#9474;  &#9474;      Rust Crypto Engine (native)      &#9474; &#9474;
+&#9474;  &#9474;  XChaCha20-Poly1305 | X25519 | HKDF  &#9474; &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                     &#9474; WSS / WebRTC
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;           Signaling Server (Node.js)         &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9474;
+&#9474;  &#9474; Session  &#9474;  &#9474;   PKD    &#9474;  &#9474;   Rate    &#9474; &#9474;
+&#9474;  &#9474; Router   &#9474;  &#9474; (Keys)   &#9474;  &#9474;  Limiter  &#9474; &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</code></pre>
+
+            <p>The architecture enforces a strict separation of concerns: the UI layer handles user interaction, the Security Monitor performs real-time threat detection, and the Audio Pipeline manages capture, encoding, and playback. All three converge at the Call Manager, which coordinates session state and delegates cryptographic operations to the Rust engine via JNI.</p>
+
+            <!-- SECTION 4: SECURITY ENFORCEMENT BY TIER -->
+            <div class="section-break">Security Enforcement by Tier</div>
+
+            <h2>Tier-Based Security Matrix</h2>
+            <p>SecureCall offers three subscription tiers, each with escalating security enforcement. The table below details how each tier responds to specific threat conditions detected at runtime.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Threat Detected</th>
+                        <th>Free</th>
+                        <th>Pro</th>
+                        <th>Premium</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Screen recording detected</strong></td>
+                        <td>Toast warning</td>
+                        <td>Block + dialog</td>
+                        <td>Auto-terminate call</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Microphone hijack detected</strong></td>
+                        <td>Toast warning</td>
+                        <td>Block + dialog</td>
+                        <td>Auto-terminate call</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Spy app detected</strong></td>
+                        <td>Toast warning</td>
+                        <td>Block + dialog</td>
+                        <td>Auto-terminate call</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Accessibility spy detected</strong></td>
+                        <td>&mdash;</td>
+                        <td>Alert</td>
+                        <td>Auto-terminate call</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FLAG_SECURE</strong></td>
+                        <td>Optional</td>
+                        <td>Default ON</td>
+                        <td>Always enforced</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Crash reports</strong></td>
+                        <td>Opt-out</td>
+                        <td>Disabled</td>
+                        <td>Disabled</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IP address visible</strong></td>
+                        <td>Transient</td>
+                        <td>Transient</td>
+                        <td>Masked (GhostNet)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box info">
+                <strong>Note:</strong> Premium tier users benefit from GhostNet IP masking, which routes encrypted voice traffic through a custom transport layer to prevent IP address exposure to the remote peer. This is an additional privacy layer beyond the standard E2E encryption available to all tiers.
+            </div>
+
+            <!-- SECTION 5: ANTI-RECORDING PROTECTION -->
+            <div class="section-break">Anti-Recording Protection</div>
+
+            <h2>Six Layers of Active Defense</h2>
+            <p>SecureCall employs a multi-layered defense system to detect and prevent unauthorized recording of encrypted calls. These protections operate simultaneously during active calls.</p>
+
+            <ol>
+                <li>
+                    <strong>FLAG_SECURE</strong> — The Android system-level flag is applied to all call-related activities and fragments. This prevents the OS from including SecureCall in screenshots, screen recordings, recent apps thumbnails, and screen sharing sessions. On Pro tier it is enabled by default; on Premium it is always enforced and cannot be disabled.
+                </li>
+                <li>
+                    <strong>Audio Focus Lock</strong> — SecureCall requests exclusive audio focus (<code>AUDIOFOCUS_GAIN</code>) during calls, preventing other applications from simultaneously accessing the microphone input. Any app attempting to record while a call is active will receive silence or be denied access.
+                </li>
+                <li>
+                    <strong>Screen Recording Detection</strong> — On Android 14 (API 34) and above, SecureCall registers screen capture callbacks for system-level detection. On older versions, a background process monitor scans for known screen recording applications running concurrently. Detection triggers a response based on the user's tier.
+                </li>
+                <li>
+                    <strong>Microphone Monitoring</strong> — An <code>AudioRecordingCallback</code> is registered to detect when any other application gains access to the microphone hardware. If a second app begins recording during a call, the user is immediately alerted and tier-appropriate countermeasures activate.
+                </li>
+                <li>
+                    <strong>Accessibility Service Detection</strong> — Spyware commonly abuses Android accessibility services to capture screen content and keystrokes. SecureCall monitors active accessibility services and cross-references them against known spyware signatures. Suspicious services trigger alerts on Pro and call termination on Premium.
+                </li>
+                <li>
+                    <strong>Call Recording App Scan</strong> — A database of 20+ known call recording applications is checked at call start. If any are installed and running, the user is warned. The database is periodically updated to include newly discovered recording apps.
+                </li>
+            </ol>
+
+            <!-- SECTION 6: KEY ZEROIZATION -->
+            <div class="section-break">Key Zeroization</div>
+
+            <h2>Cryptographic Key Handling</h2>
+            <p>Proper key lifecycle management is critical to maintaining forward secrecy and preventing post-compromise key extraction. SecureCall implements the following key handling practices:</p>
+
+            <ul>
+                <li><strong>ByteArray storage</strong> — All key material is stored in mutable <code>ByteArray</code> objects (not immutable <code>String</code> types) to allow explicit overwriting. Java/Kotlin strings are interned and cannot be reliably cleared from memory.</li>
+                <li><strong>Rust Zeroizing wrapper</strong> — The native Rust crypto engine wraps all sensitive key material in <code>Zeroizing&lt;&gt;</code> types from the <code>zeroize</code> crate. When these wrappers go out of scope, the underlying memory is overwritten with zeros before deallocation.</li>
+                <li><strong>Immediate post-use destruction</strong> — Session keys, ephemeral Diffie-Hellman values, and derived encryption keys are zeroed from memory immediately after the call session ends. No key material persists beyond its active use window.</li>
+                <li><strong>No logging or transmission</strong> — Key material is never written to log files, crash reports, analytics events, or transmitted to any server. The signaling server never sees private keys or derived session keys.</li>
+            </ul>
+
+            <div class="info-box danger">
+                <strong>Security Notice:</strong> If you suspect your device has been compromised at the OS level (rooted by an attacker, malware with root access), SecureCall's protections may be bypassed. In this scenario, we recommend factory-resetting the device and reinstalling from a trusted source.
+            </div>
+
+            <!-- SECTION 7: FOR FULL DETAILS -->
+            <div class="section-break">For Full Details</div>
+
+            <h2>Related Documentation</h2>
+            <p>For deeper technical information on specific security topics, consult the following resources:</p>
+
+            <ul>
+                <li><a href="architecture.html">Architecture Overview</a> — Detailed system architecture, module responsibilities, and data flow diagrams.</li>
+                <li><a href="security-audit.html">Security Audit Report</a> — Independent audit findings, vulnerability classifications, remediation status, and cryptographic implementation review.</li>
+                <li><a href="https://github.com/NeaBouli/stealth/blob/main/docs/SECURITY_DESIGN.md" target="_blank" rel="noopener">Full Security Design Document</a> — Complete security design specification (German-language) covering all implementation details.</li>
+                <li><a href="https://github.com/NeaBouli/stealth/blob/main/SECURITY.md" target="_blank" rel="noopener">Security Disclosure Policy</a> — Instructions for responsibly reporting vulnerabilities.</li>
+            </ul>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

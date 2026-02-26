@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshooting Guide — SecureCall Wiki</title>
+    <meta name="description" content="Common issues and fixes for SecureCall">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html" class="active">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Troubleshooting</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-TROUBLESHOOT</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">Fault Diagnosis &amp; Troubleshooting</h1>
+            <p class="wiki-meta">Common issues and fixes for SecureCall &middot; Last updated February 2026</p>
+
+            <!-- COMMON ISSUES -->
+            <div class="section-break">Common Issues</div>
+
+            <h2>App Won't Install</h2>
+            <p>If the SecureCall APK fails to install on your device, check the following:</p>
+            <ul>
+                <li><strong>Storage space:</strong> Ensure you have at least 50 MB of free storage. Go to Settings &rarr; Storage to verify.</li>
+                <li><strong>Unknown sources:</strong> If installing via APK (not Google Play), you must enable "Install from unknown sources" for the app you are using to open the APK (e.g., your file manager or browser). Navigate to Settings &rarr; Apps &rarr; Special access &rarr; Install unknown apps.</li>
+                <li><strong>Android version:</strong> SecureCall requires Android 10 (API 29) or higher. Older devices are not supported.</li>
+                <li><strong>Conflicting installation:</strong> If a previous version is already installed with a different signing key, uninstall the old version first, then try again.</li>
+                <li><strong>Restart device:</strong> In rare cases, a device restart resolves installation failures caused by stale package manager state.</li>
+            </ul>
+
+            <div class="info-box warning">
+                <strong>Security reminder:</strong> After installing via APK sideloading, disable "Install from unknown sources" to protect your device from unintended installations.
+            </div>
+
+            <h2>Microphone Permission Denied</h2>
+            <p>SecureCall requires microphone access to function. If you denied the permission during initial setup or it was revoked:</p>
+            <ul>
+                <li>Go to <strong>Settings &rarr; Apps &rarr; SecureCall &rarr; Permissions &rarr; Microphone &rarr; Allow</strong></li>
+                <li>On some Samsung devices, the path may be Settings &rarr; Apps &rarr; SecureCall &rarr; Permissions &rarr; Microphone &rarr; "Allow only while using the app"</li>
+                <li>If the permission toggle is greyed out, check whether a Device Administration policy or parental control is blocking microphone access</li>
+                <li>Restart SecureCall after granting the permission</li>
+            </ul>
+
+            <h2>Can't Connect to Server</h2>
+            <p>If SecureCall shows a connection error or fails to register with the signaling server:</p>
+            <ul>
+                <li><strong>Check internet connectivity:</strong> Verify that WiFi or mobile data is active and working (try loading a webpage in your browser)</li>
+                <li><strong>Switch networks:</strong> Try switching between WiFi and mobile data. Some corporate or public WiFi networks block WebSocket connections on non-standard ports.</li>
+                <li><strong>Wait and retry:</strong> The signaling server runs on Railway's free tier and may experience cold starts (5&ndash;10 second delay on first request after idle periods). Wait a few seconds and try again.</li>
+                <li><strong>Force stop and restart:</strong> Go to Settings &rarr; Apps &rarr; SecureCall &rarr; Force Stop, then reopen the app. This clears any stale WebSocket connection state.</li>
+                <li><strong>Check server status:</strong> The server may be temporarily down for maintenance. You can check status by visiting the <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub repository</a> for any announcements.</li>
+            </ul>
+
+            <div class="info-box info">
+                <strong>Reconnection behavior:</strong> SecureCall automatically reconnects to the signaling server using exponential backoff (1 second to 30 seconds maximum). If you see repeated connection failures, the issue is likely network-related rather than a bug.
+            </div>
+
+            <h2>No Audio During Call</h2>
+            <p>If a call connects but you cannot hear the other party (or they cannot hear you):</p>
+            <ul>
+                <li><strong>Microphone permission:</strong> Confirm the microphone permission is granted (see above)</li>
+                <li><strong>Volume level:</strong> Press the volume up button during the call. Make sure the media/call volume is not muted.</li>
+                <li><strong>Headset or Bluetooth:</strong> If a headset or Bluetooth audio device is connected, audio may be routing to that device. Try disconnecting external audio devices.</li>
+                <li><strong>Other apps using microphone:</strong> Close any other app that might be using the microphone (voice recorders, other VoIP apps, video conferencing apps). Only one app can hold the microphone at a time.</li>
+                <li><strong>Do Not Disturb mode:</strong> On some devices, DND mode can suppress call audio. Disable DND and try again.</li>
+            </ul>
+
+            <h2>Call Drops Frequently</h2>
+            <p>If calls connect but disconnect after a short time:</p>
+            <ul>
+                <li><strong>Network stability:</strong> Voice calls require a stable connection. If you are on mobile data with weak signal, calls may drop. Move to an area with better coverage or switch to WiFi.</li>
+                <li><strong>Free tier limit:</strong> The free tier has a 15-minute call duration limit. Calls are automatically terminated when this limit is reached. Upgrade to Pro for unlimited calls.</li>
+                <li><strong>Battery optimization:</strong> Android may kill background processes to save battery. Go to Settings &rarr; Apps &rarr; SecureCall &rarr; Battery &rarr; "Don't optimize" (or "Unrestricted") to prevent this.</li>
+                <li><strong>Background service:</strong> Ensure the "Background Service" toggle is enabled in SecureCall's Settings. This keeps the WebSocket connection alive via a foreground service notification.</li>
+                <li><strong>NAT timeout:</strong> Some routers aggressively time out UDP connections. The app's keepalive pings (every 8 seconds) should prevent this, but extremely restrictive networks may still cause issues.</li>
+            </ul>
+
+            <h2>Echo or Feedback</h2>
+            <p>If you hear your own voice echoed back during a call:</p>
+            <ul>
+                <li><strong>Use headphones:</strong> Echo is most commonly caused by the other party's speaker audio being picked up by their microphone. Ask both parties to use headphones or earbuds.</li>
+                <li><strong>Lower speaker volume:</strong> Reducing the speaker volume on the device experiencing echo can eliminate the feedback loop.</li>
+                <li><strong>AEC processing:</strong> SecureCall includes Acoustic Echo Cancellation (AEC), but its effectiveness varies by device. If echo persists, switching to headphones is the most reliable fix.</li>
+            </ul>
+
+            <!-- KNOWN FUNCTIONAL LIMITATIONS -->
+            <div class="section-break">Known Functional Limitations</div>
+
+            <h2>Current Constraints</h2>
+            <p>The following are known limitations of the current SecureCall release. These are either by design (tier restrictions) or planned for future versions.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Limitation</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Android only</strong></td>
+                        <td>No iOS or desktop client available</td>
+                        <td>Planned for v1.0+</td>
+                    </tr>
+                    <tr>
+                        <td><strong>No group calls</strong></td>
+                        <td>Only 1:1 voice calls are supported</td>
+                        <td>Planned for v0.3</td>
+                    </tr>
+                    <tr>
+                        <td><strong>No messaging</strong></td>
+                        <td>Voice calls only &mdash; no text, image, or file messaging</td>
+                        <td>Planned for v1.0+</td>
+                    </tr>
+                    <tr>
+                        <td><strong>15-minute limit (Free)</strong></td>
+                        <td>Free tier has a maximum call duration of 15 minutes</td>
+                        <td>By design</td>
+                    </tr>
+                    <tr>
+                        <td><strong>10 contacts (Free)</strong></td>
+                        <td>Free tier is limited to 10 saved contacts</td>
+                        <td>By design</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cold starts (Railway)</strong></td>
+                        <td>Signaling server hosted on Railway free tier may have 5&ndash;10 second cold start delays</td>
+                        <td>Expected on free tier</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- OPEN SECURITY ITEMS -->
+            <div class="section-break">Open Security Items</div>
+
+            <h2>Security Audit Status</h2>
+            <p>An internal security audit was conducted on February 15, 2026, covering all three components of the SecureCall platform (Android client, Rust crypto engine, backend server). The audit identified a total of 48 findings across three severity levels.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Severity</th>
+                        <th>Android Client</th>
+                        <th>Rust Crypto</th>
+                        <th>Backend Server</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Critical</strong></td>
+                        <td>4</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td><strong>7</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>High</strong></td>
+                        <td>6</td>
+                        <td>3</td>
+                        <td>9</td>
+                        <td><strong>18</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Medium</strong></td>
+                        <td>8</td>
+                        <td>5</td>
+                        <td>10</td>
+                        <td><strong>23</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>All 7 Critical findings have been fixed.</strong> These included crypto stubs that were passing plaintext, a silent plaintext fallback mode, fake key exchange implementations, and hardcoded development endpoints. All critical vulnerabilities were addressed before the current release.</p>
+
+            <p><strong>All 18 High findings have been fixed.</strong> Remediations include real X25519 key exchange via FFI, SecureRandom usage, key zeroization, buffer overflow protection in the Rust FFI layer, and server-side authentication and rate limiting.</p>
+
+            <p><strong>23 Medium findings are tracked as GitHub Issues</strong> (<a href="https://github.com/NeaBouli/stealth/issues/101" target="_blank" rel="noopener">#101</a>&ndash;<a href="https://github.com/NeaBouli/stealth/issues/108" target="_blank" rel="noopener">#108</a> for Android, <a href="https://github.com/NeaBouli/stealth/issues/201" target="_blank" rel="noopener">#201</a>&ndash;<a href="https://github.com/NeaBouli/stealth/issues/205" target="_blank" rel="noopener">#205</a> for Rust, <a href="https://github.com/NeaBouli/stealth/issues/301" target="_blank" rel="noopener">#301</a>&ndash;<a href="https://github.com/NeaBouli/stealth/issues/310" target="_blank" rel="noopener">#310</a> for backend). These include items such as missing TLS certificate pinning, unsynchronized data structures, and input validation gaps.</p>
+
+            <div class="info-box danger">
+                <strong>Full audit details:</strong> For the complete security audit report including detailed finding descriptions, code references, and remediation evidence, see the <a href="security-audit.html">Security Audit</a> page.
+            </div>
+
+            <!-- DEVICE COMPATIBILITY -->
+            <div class="section-break">Device Compatibility</div>
+
+            <h2>Supported Devices</h2>
+            <p>SecureCall requires Android 10 (API level 29) or higher. The app has been tested on the following devices:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Device</th>
+                        <th>Android Version</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Samsung Galaxy S10</strong></td>
+                        <td>Android 12</td>
+                        <td>Primary test device &mdash; fully verified</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Samsung Galaxy S7</strong></td>
+                        <td>Android 10</td>
+                        <td>Tested &mdash; functional</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Samsung Galaxy Tab S4</strong></td>
+                        <td>Android 10</td>
+                        <td>Tested &mdash; functional</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Google Pixel 5 (Emulator)</strong></td>
+                        <td>Android 12</td>
+                        <td>Tested &mdash; occasional System UI instability</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Minimum Requirements</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Requirement</th>
+                        <th>Minimum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Android Version</strong></td>
+                        <td>Android 10 (API 29) or higher</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Free Space</strong></td>
+                        <td>50 MB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RAM</strong></td>
+                        <td>2 GB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Permissions</strong></td>
+                        <td>Microphone (required for calls)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Network</strong></td>
+                        <td>WiFi or mobile data</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>SecureCall should work on any Android device meeting the minimum requirements. If you experience issues on an untested device, please report it so we can investigate.</p>
+
+            <!-- REPORTING ISSUES -->
+            <div class="section-break">Reporting Issues</div>
+
+            <h2>Bug Reports &amp; Feature Requests</h2>
+            <p>If you encounter a bug that is not covered in this guide, or if you would like to request a new feature, please open an issue on GitHub:</p>
+
+            <p><strong><a href="https://github.com/NeaBouli/stealth/issues/new" target="_blank" rel="noopener">Open a GitHub Issue</a></strong></p>
+
+            <p>When reporting a bug, please include the following information to help us diagnose the problem quickly:</p>
+            <ul>
+                <li><strong>Device model</strong> and <strong>Android version</strong> (e.g., Samsung Galaxy S10, Android 12)</li>
+                <li><strong>SecureCall version</strong> (visible in the app's Settings screen)</li>
+                <li><strong>Steps to reproduce</strong> the issue</li>
+                <li><strong>Expected behavior</strong> vs. <strong>actual behavior</strong></li>
+                <li><strong>Network type</strong> (WiFi, mobile data, VPN)</li>
+                <li><strong>Screenshots or screen recordings</strong> if applicable</li>
+            </ul>
+
+            <div class="info-box info">
+                <strong>Security vulnerabilities:</strong> If you discover a security vulnerability, please do <strong>not</strong> open a public GitHub issue. Instead, follow the responsible disclosure process described in <a href="https://github.com/NeaBouli/stealth/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY.md</a>.
+            </div>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

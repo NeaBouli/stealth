@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signaling Protocol Reference — SecureCall Wiki</title>
+    <meta name="description" content="WebSocket signaling API documentation for SecureCall developers">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html" class="active">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">API Reference</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-API</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">Signaling Protocol Reference</h1>
+            <p class="wiki-meta">WebSocket signaling API documentation for SecureCall developers &middot; Last updated February 2026</p>
+
+            <!-- SIGNALING SERVER API -->
+            <div class="section-break">Signaling Server API</div>
+
+            <h2>Overview</h2>
+            <p>The SecureCall signaling server handles real-time communication between clients during call setup using WebSocket connections, and provides a simple HTTP endpoint for health monitoring. The server is deployed on Railway and acts as an opaque relay &mdash; it forwards encrypted signaling messages between clients but cannot read or modify their content.</p>
+
+            <p>The signaling server is responsible for:</p>
+            <ul>
+                <li><strong>Client registration</strong> &mdash; mapping client IDs to WebSocket connections</li>
+                <li><strong>Call routing</strong> &mdash; forwarding call initiation, acceptance, and rejection messages</li>
+                <li><strong>ICE candidate exchange</strong> &mdash; relaying WebRTC ICE candidates for NAT traversal</li>
+                <li><strong>Public Key Directory (PKD)</strong> &mdash; storing and retrieving client public keys for E2E encryption</li>
+                <li><strong>Presence tracking</strong> &mdash; monitoring client online status via heartbeats</li>
+            </ul>
+
+            <!-- HTTP ENDPOINTS -->
+            <div class="section-break">HTTP Endpoints</div>
+
+            <h2>REST API</h2>
+            <p>The signaling server exposes a single HTTP endpoint for health monitoring. This endpoint requires no authentication and is used by Railway for deployment health checks.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>GET</code></td>
+                        <td><code>/health</code></td>
+                        <td>None</td>
+                        <td>Health check &mdash; returns <code>{"status":"ok"}</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Example Request</h3>
+<pre><code>GET /health HTTP/1.1
+Host: protective-healing-production.up.railway.app
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"status":"ok"}</code></pre>
+
+            <!-- WEBSOCKET PROTOCOL -->
+            <div class="section-break">WebSocket Protocol</div>
+
+            <h2>Connection</h2>
+            <p>Clients connect to the signaling server via a secure WebSocket connection. All communication after the initial handshake uses JSON-encoded messages.</p>
+
+            <h3>Connection URL</h3>
+<pre><code>wss://protective-healing-production.up.railway.app/signal</code></pre>
+
+            <h3>Message Format</h3>
+            <p>All WebSocket messages follow a consistent JSON structure with a <code>type</code> field identifying the message kind and a <code>payload</code> object containing message-specific data:</p>
+
+<pre><code>{
+  "type": "MESSAGE_TYPE",
+  "payload": { ... }
+}</code></pre>
+
+            <div class="info-box info">
+                <strong>Connection lifecycle:</strong> After establishing the WebSocket connection, the client must send a <code>REGISTER</code> message within 60 seconds to associate its client ID with the connection. Failure to register will result in the server closing the connection.
+            </div>
+
+            <h3>Typical Call Flow</h3>
+            <p>A standard call setup follows this sequence:</p>
+            <ol>
+                <li>Both clients connect and send <code>REGISTER</code> messages</li>
+                <li>Client A sends <code>CALL_INITIATE</code> with an SDP offer targeting Client B</li>
+                <li>Server forwards the offer to Client B as <code>INCOMING_CALL</code></li>
+                <li>Client B sends <code>CALL_ACCEPT</code> with an SDP answer</li>
+                <li>Server forwards the answer to Client A as <code>CALL_ACCEPTED</code></li>
+                <li>Both clients exchange <code>ICE_CANDIDATE</code> messages via the server</li>
+                <li>WebRTC peer-to-peer connection is established &mdash; media flows directly</li>
+                <li>Either client sends <code>CALL_END</code> to terminate the call</li>
+            </ol>
+
+            <!-- MESSAGE TYPES -->
+            <div class="section-break">Message Types</div>
+
+            <h2>Client &rarr; Server Messages</h2>
+            <p>These message types are sent from the client application to the signaling server.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Payload</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>REGISTER</code></td>
+                        <td>Register client ID with server</td>
+                        <td><code>{ "clientId": "abc123" }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>CALL_INITIATE</code></td>
+                        <td>Start a call to another client</td>
+                        <td><code>{ "targetId": "xyz789", "sdpOffer": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>CALL_ACCEPT</code></td>
+                        <td>Accept an incoming call</td>
+                        <td><code>{ "callId": "...", "sdpAnswer": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>CALL_REJECT</code></td>
+                        <td>Reject an incoming call</td>
+                        <td><code>{ "callId": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>CALL_END</code></td>
+                        <td>End an active call</td>
+                        <td><code>{ "callId": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>ICE_CANDIDATE</code></td>
+                        <td>ICE candidate for NAT traversal</td>
+                        <td><code>{ "callId": "...", "candidate": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>PKD_REGISTER</code></td>
+                        <td>Register public key in directory</td>
+                        <td><code>{ "clientId": "...", "publicKey": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>PKD_LOOKUP</code></td>
+                        <td>Look up a client's public key</td>
+                        <td><code>{ "clientId": "..." }</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Server &rarr; Client Messages</h2>
+            <p>These message types are sent from the signaling server to client applications, either as responses to client requests or as notifications of events initiated by other clients.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Payload</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>REGISTERED</code></td>
+                        <td>Registration confirmed</td>
+                        <td><code>{ "clientId": "abc123" }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>INCOMING_CALL</code></td>
+                        <td>Incoming call notification</td>
+                        <td><code>{ "callId": "...", "callerId": "...", "sdpOffer": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>CALL_ACCEPTED</code></td>
+                        <td>Call was accepted by peer</td>
+                        <td><code>{ "callId": "...", "sdpAnswer": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>CALL_REJECTED</code></td>
+                        <td>Call was rejected by peer</td>
+                        <td><code>{ "callId": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>CALL_ENDED</code></td>
+                        <td>Call ended by peer</td>
+                        <td><code>{ "callId": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>ICE_CANDIDATE</code></td>
+                        <td>ICE candidate from peer</td>
+                        <td><code>{ "callId": "...", "candidate": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>PKD_RESULT</code></td>
+                        <td>Public key lookup result</td>
+                        <td><code>{ "clientId": "...", "publicKey": "..." }</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>ERROR</code></td>
+                        <td>Error message</td>
+                        <td><code>{ "code": "...", "message": "..." }</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Error Codes</h3>
+            <p>The <code>ERROR</code> message type includes a <code>code</code> field that indicates the specific error condition:</p>
+            <ul>
+                <li><code>INVALID_MESSAGE</code> &mdash; Malformed JSON or missing required fields</li>
+                <li><code>NOT_REGISTERED</code> &mdash; Client attempted an operation before registering</li>
+                <li><code>TARGET_NOT_FOUND</code> &mdash; The target client ID is not connected</li>
+                <li><code>CALL_NOT_FOUND</code> &mdash; The specified call ID does not exist</li>
+                <li><code>RATE_LIMITED</code> &mdash; Too many requests from this connection</li>
+            </ul>
+
+            <!-- CONNECTION LIMITS -->
+            <div class="section-break">Connection Limits</div>
+
+            <h2>Server Parameters</h2>
+            <p>The signaling server enforces the following limits to prevent abuse and ensure stability. Clients that exceed these limits may have their connections terminated or receive <code>ERROR</code> messages with the <code>RATE_LIMITED</code> code.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Max payload size</strong></td>
+                        <td>64 KB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Max connections per IP</strong></td>
+                        <td>Rate-limited (enforced by server)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Heartbeat interval</strong></td>
+                        <td>30 seconds</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Connection timeout</strong></td>
+                        <td>60 seconds (no heartbeat)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Client ID format</strong></td>
+                        <td><code>^[a-zA-Z0-9_-]{1,64}$</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <strong>Heartbeat requirement:</strong> The Android client sends keepalive pings every 8 seconds (via <code>HeartbeatClient</code>) to maintain the connection. If the server does not receive any message for 60 seconds, it will close the WebSocket connection. The client implements exponential backoff reconnection (1s to 30s max) to handle disconnections gracefully.
+            </div>
+
+            <!-- TURN CREDENTIALS -->
+            <div class="section-break">TURN Credentials</div>
+
+            <h2>Relay Authentication</h2>
+            <p>TURN server credentials are provisioned by the signaling server during call setup. Rather than embedding static credentials in the client application, the server generates <strong>time-limited credentials</strong> using a shared secret with the TURN provider (Metered.ca).</p>
+
+            <p>This approach ensures that:</p>
+            <ul>
+                <li>TURN credentials rotate automatically and cannot be reused after expiration</li>
+                <li>Compromised credentials have a limited window of abuse</li>
+                <li>The TURN shared secret is stored only on the server (via environment variables), not in client code</li>
+            </ul>
+
+            <h3>TURN Server Configuration</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Provider</strong></td>
+                        <td>Metered.ca</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Server</strong></td>
+                        <td><code>turn:a.relay.metered.ca:443?transport=tcp</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Transport</strong></td>
+                        <td>TCP on port 443 (maximizes firewall compatibility)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Credential type</strong></td>
+                        <td>Time-limited (HMAC-based)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

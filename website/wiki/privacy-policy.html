@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Directive — SecureCall Wiki</title>
+    <meta name="description" content="SecureCall privacy policy — GDPR compliant, zero data collection. Your voice belongs to you.">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html" class="active">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Privacy Policy</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-PRIV</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">Privacy Directive</h1>
+            <p class="wiki-meta">SecureCall privacy policy &mdash; GDPR compliant, zero data collection &middot; Last updated February 2026</p>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- OUR COMMITMENT                                      -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Our Commitment</div>
+
+            <h2>Zero-Collection Philosophy</h2>
+            <p>SecureCall is built on the fundamental principle that <strong>privacy is not a feature &mdash; it is a right</strong>. Our architecture is designed from the ground up to collect the absolute minimum data necessary to provide our service. In most cases, we collect no data at all.</p>
+
+            <p>Unlike conventional communication apps that harvest your contacts, track your usage patterns, and monetize your metadata, SecureCall operates on a zero-knowledge model. We cannot see who you call, when you call, how long you talk, or what you say. This is not a policy decision &mdash; it is a <strong>technical impossibility</strong> built into our architecture.</p>
+
+            <p>All voice calls are encrypted end-to-end using <strong>XChaCha20-Poly1305</strong> with keys generated exclusively on your device via <strong>X25519</strong> key exchange. The encryption keys never touch our servers. Even under legal compulsion, we cannot provide call content because we simply do not have it.</p>
+
+            <div class="info-box info">
+                <strong>German company, German law.</strong> StealthX is based in Germany and is subject to the EU General Data Protection Regulation (GDPR) and the German Bundesdatenschutzgesetz (BDSG) &mdash; among the strictest privacy frameworks in the world. Our zero-collection approach goes far beyond what these regulations require.
+            </div>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- DATA COLLECTION BY TIER                             -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Data Collection by Tier</div>
+
+            <h2>What Each Tier Collects</h2>
+            <p>Data collection varies by subscription tier. The higher your tier, the less data touches any external system. The table below provides a comprehensive breakdown:</p>
+
+            <h3>Free Tier</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data Type</th>
+                        <th>Collected?</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Voice content</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>End-to-end encrypted with XChaCha20-Poly1305. We cannot access or decrypt it.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Call metadata</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>No call logs are stored on servers. We do not record who called whom or when.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Contact lists</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>Contact data is stored locally on your device only and is never uploaded.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Crash reports</strong></td>
+                        <td style="color:#fbbf24;font-weight:700">Opt-out</td>
+                        <td>Anonymous crash data via Firebase Crashlytics. Contains no personal data. Can be disabled in Settings &gt; Privacy &gt; Crash Reports.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Analytics</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>No usage analytics, behavioral tracking, or telemetry of any kind.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IP address</strong></td>
+                        <td style="color:#fbbf24;font-weight:700">Transient</td>
+                        <td>Visible to the signaling server during call setup only. Not logged, not stored, not associated with identity.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Device info</strong></td>
+                        <td style="color:#fbbf24;font-weight:700">Minimal</td>
+                        <td>OS version and device model are included in crash reports only (when crash reports are enabled).</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Pro Tier</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data Type</th>
+                        <th>Collected?</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Voice content</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>End-to-end encrypted. Cannot be accessed or decrypted by anyone except call participants.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Call metadata</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>No server-side call logs. Call history exists only on your device.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Contact lists</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>Never leaves your device.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Crash reports</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>Firebase Crashlytics is completely disabled at the build level. No crash data is collected.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Analytics</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>Zero telemetry. No data collection whatsoever.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IP address</strong></td>
+                        <td style="color:#fbbf24;font-weight:700">Transient</td>
+                        <td>Visible during signaling only. Not logged or stored.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Premium Tier</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data Type</th>
+                        <th>Collected?</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Voice content</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>End-to-end encrypted. Technically impossible for anyone to intercept.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Call metadata</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>No server-side logs of any kind.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Contact lists</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>Stored locally only. Never transmitted.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Crash reports</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>Completely disabled. No external reporting services active.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Analytics</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>Absolute zero telemetry.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IP address</strong></td>
+                        <td style="color:#4ade80;font-weight:700">No</td>
+                        <td>Masked via GhostNet multi-hop relay network. Your real IP address is never exposed to our servers or the other call participant.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- WHAT WE NEVER COLLECT                               -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">What We Never Collect</div>
+
+            <h2>Absolute Exclusions</h2>
+            <p>Regardless of your subscription tier, SecureCall <strong>never</strong> collects, processes, stores, or transmits the following data:</p>
+
+            <ul>
+                <li><strong>Voice call content</strong> &mdash; All calls are encrypted end-to-end. The signaling server handles only opaque encrypted payloads. We have zero ability to decrypt or listen to any call.</li>
+                <li><strong>Call metadata</strong> &mdash; We do not log who called whom, when calls occurred, or how long they lasted. No call detail records exist on our infrastructure.</li>
+                <li><strong>Contact lists</strong> &mdash; Your contacts are stored exclusively on your device. They are never uploaded, synced, or backed up to any server.</li>
+                <li><strong>Location data</strong> &mdash; We do not request, collect, or infer your geographic location. No GPS, no cell tower triangulation, no IP-based geolocation.</li>
+                <li><strong>IP addresses (persistent)</strong> &mdash; IP addresses may be transiently visible to our signaling server during call setup (Free and Pro tiers), but they are <strong>never logged, stored, or associated with identities</strong>. Premium users have IPs masked via GhostNet.</li>
+                <li><strong>Identity information</strong> &mdash; No real names, phone numbers, email addresses, or government IDs. SecureCall uses anonymous device-generated identifiers only.</li>
+                <li><strong>Device identifiers</strong> &mdash; No IMEI, IMSI, Android ID, advertising ID, or hardware serial numbers are collected.</li>
+                <li><strong>Browsing or usage patterns</strong> &mdash; No behavioral analytics, feature usage tracking, session duration logging, or interaction patterns.</li>
+            </ul>
+
+            <div class="info-box danger">
+                <strong>Architecture, not promises.</strong> Our inability to access your data is enforced by cryptographic architecture, not by corporate policy. Even if StealthX were acquired, subpoenaed, or compromised, your call data would remain inaccessible because we never possess the decryption keys.
+            </div>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- THIRD-PARTY SERVICES                                -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Third-Party Services</div>
+
+            <h2>External Services Used</h2>
+            <p>SecureCall uses a minimal set of third-party services to provide core functionality. Each service has strictly limited access to your data:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Purpose</th>
+                        <th>Data Access</th>
+                        <th>Tiers</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Google Play Billing</strong></td>
+                        <td>Payment processing for Pro and Premium subscriptions and Lifetime licenses</td>
+                        <td>Google handles all payment details. We never see credit card numbers, billing addresses, or financial information. We receive only a purchase verification token.</td>
+                        <td>All (if purchasing)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Railway</strong></td>
+                        <td>Hosts the WebSocket signaling server for call setup and key exchange</td>
+                        <td>Handles encrypted signaling messages only. Cannot decrypt call content. Sees transient IP addresses during connection (not logged). No user accounts or data storage.</td>
+                        <td>All</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Metered.ca</strong></td>
+                        <td>TURN relay server for NAT traversal when peer-to-peer connections cannot be established</td>
+                        <td>Relays encrypted audio packets only. Cannot decrypt content (XChaCha20-Poly1305 encrypted). Sees transient connection metadata during relay sessions.</td>
+                        <td>All</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Google STUN</strong></td>
+                        <td>STUN server for connection establishment and NAT type detection</td>
+                        <td>Receives standard STUN binding requests to determine the device's public IP and NAT type. No persistent data storage. Standard WebRTC infrastructure.</td>
+                        <td>All</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Firebase Crashlytics</strong></td>
+                        <td>Anonymous crash reporting for bug identification and stability improvement</td>
+                        <td>Receives anonymous crash stack traces, OS version, and device model. Contains no personal data, no call content, no identifiers. Can be fully disabled in Settings.</td>
+                        <td>Free only (opt-out)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box info">
+                <strong>Pro and Premium tiers</strong> have Firebase Crashlytics completely disabled at the build level. No external analytics or reporting services are active.
+            </div>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- YOUR RIGHTS (GDPR)                                  -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Your Rights (GDPR)</div>
+
+            <h2>EU General Data Protection Regulation</h2>
+            <p>Under the EU GDPR and the German BDSG, you have the following rights regarding your personal data. Since SecureCall collects virtually no personal data, most of these rights are <strong>satisfied by default</strong>:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Right</th>
+                        <th>Description</th>
+                        <th>SecureCall Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Right to Access</strong></td>
+                        <td>Request what personal data we hold about you</td>
+                        <td>Satisfied by default. We hold effectively no personal data. Free tier: optional crash reports (anonymous). Pro/Premium: nothing.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Right to Rectification</strong></td>
+                        <td>Correct inaccurate personal data</td>
+                        <td>Not applicable. We do not store personal data that could be inaccurate.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Right to Erasure</strong></td>
+                        <td>Request deletion of your personal data</td>
+                        <td>Satisfied by default. All data is stored locally on your device. Use Settings &gt; Delete All Data, then uninstall.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Right to Portability</strong></td>
+                        <td>Receive your data in a portable format</td>
+                        <td>All data resides on your device in standard formats. No server-side data to export.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Right to Object</strong></td>
+                        <td>Object to processing of your personal data</td>
+                        <td>Free tier: disable crash reports in Settings to stop all data processing. Pro/Premium: no data is processed.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Right to Restrict</strong></td>
+                        <td>Restrict how your personal data is processed</td>
+                        <td>Free tier: toggle crash reports off. Pro/Premium: no data processing occurs.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Right to Withdraw Consent</strong></td>
+                        <td>Withdraw consent for data processing at any time</td>
+                        <td>Free tier: disable crash reports at any time in Settings. No other consent-based processing exists.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>If you believe your rights have not been adequately addressed, you have the right to lodge a complaint with a data protection supervisory authority in the EU member state of your residence.</p>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- DATA DELETION                                       -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Data Deletion</div>
+
+            <h2>How to Delete All Data</h2>
+            <p>SecureCall stores all user data locally on your device. No personal data exists on our servers. To completely erase all traces of SecureCall:</p>
+
+            <ol>
+                <li><strong>Open Settings</strong> &mdash; Navigate to SecureCall Settings from the main menu.</li>
+                <li><strong>Select "Delete All Data"</strong> &mdash; This permanently erases all locally stored data, including:
+                    <ul>
+                        <li>Encryption key pairs (X25519 private and public keys)</li>
+                        <li>Contact registry and display names</li>
+                        <li>Call history and duration logs</li>
+                        <li>App preferences and configuration</li>
+                        <li>Cached session data and Double Ratchet state</li>
+                    </ul>
+                </li>
+                <li><strong>Uninstall the app</strong> &mdash; After deleting data through the app, uninstall SecureCall from your device to remove all remaining application files.</li>
+            </ol>
+
+            <div class="info-box warning">
+                <strong>This action is irreversible.</strong> Once you delete your data and uninstall, your SecureCall ID, encryption keys, and contact list are permanently destroyed. There is no way to recover them. If you reinstall SecureCall, a new anonymous ID and new key pair will be generated.
+            </div>
+
+            <p>Since we do not maintain user accounts or databases of personal information on our servers, there is no server-side data to request deletion of. The "Delete All Data" function in the app, combined with uninstallation, constitutes a complete and total erasure of all SecureCall-related data.</p>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- CONTACT                                             -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Contact</div>
+
+            <h2>Privacy Inquiries</h2>
+            <p>For questions, concerns, or requests regarding this privacy policy or your personal data:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Channel</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Organization</strong></td>
+                        <td>StealthX</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Location</strong></td>
+                        <td>Germany (EU)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GitHub Issues</strong></td>
+                        <td><a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Website</strong></td>
+                        <td><a href="https://neabouli.github.io/stealth/" target="_blank" rel="noopener">neabouli.github.io/stealth</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Source Code</strong></td>
+                        <td><a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">github.com/NeaBouli/stealth</a></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>We respond to privacy-related inquiries within 30 days, as required by GDPR. For urgent security matters, please refer to our <a href="https://github.com/NeaBouli/stealth/blob/main/SECURITY.md" target="_blank" rel="noopener">Security Policy</a>.</p>
+
+            <div class="info-box info">
+                <strong>Open source transparency.</strong> You do not have to trust our privacy claims. Our complete source code is available on GitHub for independent verification. Every cryptographic operation, every network request, and every data handling path is open for inspection.
+            </div>
+
+            <p style="margin-top:32px;font-size:13px;color:var(--text-muted);font-style:italic;">
+                This privacy policy is provided in compliance with the EU General Data Protection Regulation (GDPR) and the German Bundesdatenschutzgesetz (BDSG). Effective date: February 18, 2026. Last updated: February 2026.
+            </p>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligence FAQ — SecureCall Wiki</title>
+    <meta name="description" content="Frequently asked questions about SecureCall — encryption, privacy, tiers, billing, and security.">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html" class="active">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">FAQ</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-FAQ</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">Intelligence FAQ &mdash; Briefing</h1>
+            <p class="wiki-meta">Frequently asked questions about SecureCall &middot; Last updated February 2026</p>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- GENERAL                                             -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">General</div>
+
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        What is SecureCall?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            SecureCall is an Android app for end-to-end encrypted voice calls. Every call is encrypted using <strong>XChaCha20-Poly1305</strong> with <strong>X25519</strong> key exchange and <strong>Double Ratchet</strong> forward secrecy. The cryptographic engine is written entirely in Rust for memory safety, and the complete source code is publicly available on <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>. No accounts, no phone numbers, no personal data required.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Can you listen to my calls?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            No. Calls are encrypted end-to-end. Encryption keys are generated on your device and <strong>never sent to our servers</strong>. We are technically unable to decrypt your calls, even if compelled by a court order. Our signaling server only sees encrypted payloads and temporary connection identifiers &mdash; it cannot associate calls with real identities or read any content.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Do I need a phone number or email to sign up?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            No. SecureCall generates an <strong>anonymous ID</strong> on your device. No phone number, email address, or personal information is required. You share your SecureCall ID with contacts through any channel you choose &mdash; in person, via messaging, or any other method you trust.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Is SecureCall available for iOS?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            Not yet. SecureCall is currently Android-only (Android 10+). An iOS version is planned but not under active development. The Rust crypto engine is cross-platform, so the core security and encryption will be identical when the iOS version is built.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Why is the source code public?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            Transparency builds trust. By publishing our source code, we allow anyone &mdash; security researchers, journalists, privacy advocates &mdash; to verify that our encryption works as claimed. Any backdoor would be visible in the public code. We believe that <strong>security through obscurity is no security at all</strong>. You don't have to trust us; you can verify.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- PRIVACY & DATA                                      -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Privacy &amp; Data</div>
+
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        What data do you collect?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            It depends on your tier:<br><br>
+                            <strong>Free:</strong> Optional anonymous crash reports only (opt-out in Settings). No call logs, no contacts, no analytics.<br>
+                            <strong>Pro:</strong> Nothing. Zero data collection. Crashlytics is disabled at the build level.<br>
+                            <strong>Premium:</strong> Absolutely nothing &mdash; not even your IP address, which is masked via the GhostNet relay network.<br><br>
+                            See our <a href="privacy-policy.html">Privacy Policy</a> for detailed data collection tables by tier.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Do you comply with GDPR?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            Yes. SecureCall fully complies with the <strong>EU General Data Protection Regulation (GDPR)</strong> and the <strong>German Bundesdatenschutzgesetz (BDSG)</strong>. Since we collect virtually no personal data, most GDPR rights &mdash; access, erasure, portability &mdash; are satisfied by default. StealthX is based in Germany and operates under German and EU privacy law.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Can law enforcement access my calls?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            No. We cannot provide call content because <strong>we do not have it</strong>. End-to-end encryption means only the two call participants possess the decryption keys. We cannot comply with wiretap requests because it is technically impossible for us to decrypt calls. We also do not log call metadata, so we cannot identify who called whom or when.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- SECURITY                                            -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Security</div>
+
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        What encryption does SecureCall use?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            SecureCall uses a modern, layered cryptographic stack:<br><br>
+                            <strong>Symmetric Encryption:</strong> XChaCha20-Poly1305 &mdash; 256-bit AEAD cipher with 192-bit extended nonce<br>
+                            <strong>Key Exchange:</strong> X25519 &mdash; Elliptic Curve Diffie-Hellman on Curve25519<br>
+                            <strong>Forward Secrecy:</strong> Double Ratchet protocol &mdash; per-session key derivation with ratcheting<br>
+                            <strong>Key Derivation:</strong> HKDF-SHA256 &mdash; HMAC-based key derivation function<br>
+                            <strong>Implementation:</strong> Native Rust via JNI &mdash; memory-safe, zero buffer overflows<br><br>
+                            See the <a href="security-design.html">Security Design</a> page for the full architecture.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        What is anti-recording protection?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            Pro and Premium tiers include active protection against call recording attempts:<br><br>
+                            <strong>FLAG_SECURE</strong> prevents screenshots and screen recording of the call screen.<br>
+                            <strong>Exclusive audio focus</strong> blocks other apps from accessing the microphone.<br>
+                            <strong>Continuous monitoring</strong> detects screen recording apps, microphone hijacking, and known spy/surveillance applications.<br><br>
+                            <strong>Pro</strong> blocks the threat and shows an alert dialog.<br>
+                            <strong>Premium</strong> automatically terminates the call to ensure maximum protection.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Why Rust for the crypto engine?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            Rust guarantees <strong>memory safety at compile time</strong>, eliminating buffer overflows, use-after-free, and data races &mdash; the most common sources of security vulnerabilities in cryptographic code. Unlike C/C++, Rust's ownership model ensures that memory is managed correctly without a garbage collector. The Rust crypto engine is compiled to a native library (<code>.so</code>) and accessed from Android via JNI, providing both safety and performance.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Has SecureCall been audited?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            Yes. An internal security audit was conducted in February 2026. The audit covered the Rust crypto engine, the Android client, the signaling server, and the GhostNet transport protocol. All <strong>7 Critical</strong> and <strong>18 High</strong> findings were identified and fixed. The full audit report is available on the <a href="security-audit.html">Security Audit</a> page.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- TIER COMPARISON                                     -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Tier Comparison</div>
+
+            <h2>Full Feature Comparison</h2>
+            <p>All tiers include end-to-end encryption. Here is a complete breakdown of what each tier provides:</p>
+
+            <table class="tier-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Free</th>
+                        <th>Pro ($4.99/mo or $15 Lifetime)</th>
+                        <th>Premium ($9.99/mo or $25 Lifetime)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>E2E Encrypted Calls</td>
+                        <td class="check">&#10003;</td>
+                        <td class="check">&#10003;</td>
+                        <td class="check">&#10003;</td>
+                    </tr>
+                    <tr>
+                        <td>Audio Quality</td>
+                        <td>Standard</td>
+                        <td>HD (48kHz Opus)</td>
+                        <td>HD (48kHz Opus)</td>
+                    </tr>
+                    <tr>
+                        <td>Contacts</td>
+                        <td>10 max</td>
+                        <td>Unlimited</td>
+                        <td>Unlimited</td>
+                    </tr>
+                    <tr>
+                        <td>Call Duration</td>
+                        <td>15 min max</td>
+                        <td>Unlimited</td>
+                        <td>Unlimited</td>
+                    </tr>
+                    <tr>
+                        <td>Screen Capture Detection</td>
+                        <td class="cross">&mdash;</td>
+                        <td class="check">&#10003;</td>
+                        <td class="check">&#10003;</td>
+                    </tr>
+                    <tr>
+                        <td>Anti-Recording Protection</td>
+                        <td class="cross">&mdash;</td>
+                        <td class="check">&#10003; (Block)</td>
+                        <td class="check">&#10003; (Auto-Terminate)</td>
+                    </tr>
+                    <tr>
+                        <td>Spy App Detection</td>
+                        <td class="cross">&mdash;</td>
+                        <td class="check">&#10003;</td>
+                        <td class="check">&#10003;</td>
+                    </tr>
+                    <tr>
+                        <td>GhostNet IP Masking</td>
+                        <td class="cross">&mdash;</td>
+                        <td class="cross">&mdash;</td>
+                        <td class="check">&#10003;</td>
+                    </tr>
+                    <tr>
+                        <td>Multi-Hop Relay</td>
+                        <td class="cross">&mdash;</td>
+                        <td class="cross">&mdash;</td>
+                        <td class="check">&#10003;</td>
+                    </tr>
+                    <tr>
+                        <td>Crash Reports</td>
+                        <td>Opt-out</td>
+                        <td>Disabled</td>
+                        <td>Disabled</td>
+                    </tr>
+                    <tr>
+                        <td>Telemetry</td>
+                        <td>Minimal</td>
+                        <td>Zero</td>
+                        <td>Zero</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- BILLING                                             -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Billing</div>
+
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        What are Forever Licenses?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            Forever Licenses are <strong>one-time purchases</strong> that give you lifetime access to Pro or Premium &mdash; no subscription needed. Only 100 licenses are available per tier. The price starts low and increases automatically with each sale:<br><br>
+                            <strong>PRO Lifetime:</strong> Starts at $15, rises to $50 at sellout (100 licenses total)<br>
+                            <strong>PREMIUM Lifetime:</strong> Starts at $25, rises to $100 at sellout (100 licenses total)<br><br>
+                            Once sold out, only monthly/yearly subscriptions remain. The remaining license count and next price are shown live in the app's Upgrade screen. Early buyers get the best price.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Lifetime vs. Subscription &mdash; what should I choose?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <strong>Lifetime:</strong> Pay once, own forever. Best value for long-term users. Includes all future updates. Available only while licenses last. Non-refundable.<br><br>
+                            <strong>Subscription:</strong> Pay monthly or yearly. Cancel anytime &mdash; features remain active until end of billing period. Always available, no license limits. Choose this if you want flexibility.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        How do I upgrade or cancel?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            <strong>To upgrade:</strong> Open SecureCall &gt; Settings &gt; Subscription &gt; tap the upgrade button for your desired tier. Complete the purchase via Google Play Billing.<br><br>
+                            <strong>To cancel:</strong> Open Google Play &gt; Subscriptions &gt; SecureCall &gt; Cancel. Your Pro/Premium features remain active until the end of the billing period. Lifetime purchases never expire and cannot be cancelled.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Do you see my payment information?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            No. All payments are processed through <strong>Google Play Billing</strong>. We never see your credit card number, billing address, or any other payment details. Google handles the entire transaction securely. We only receive a purchase confirmation token to verify your subscription status.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        How do I delete my data?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            Open SecureCall <strong>Settings &gt; Delete All Data</strong>, then uninstall the app. This permanently erases all local data including encryption keys, contacts, call history, and settings. Since we don't store any data on our servers, uninstalling removes all traces of SecureCall from existence. This action is irreversible.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

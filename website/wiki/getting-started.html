@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Start Guide — SecureCall Wiki</title>
+    <meta name="description" content="How to make calls, manage contacts, and configure SecureCall — the complete operator manual.">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html" class="active">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Quick Start</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-OPS</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">Operator Manual</h1>
+            <p class="wiki-meta">How to make calls, manage contacts, and configure SecureCall &middot; Last updated February 2026</p>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- ESTABLISHING COMMS                                  -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Establishing Comms</div>
+
+            <h2>Starting a Call</h2>
+            <p>Initiating an encrypted voice channel takes only a few seconds. Follow the steps below to establish a secure connection with any contact in your registry.</p>
+
+            <ol>
+                <li><strong>Open SecureCall</strong> &mdash; Launch the app from your home screen or app drawer. The main screen shows your contact list and recent calls.</li>
+                <li><strong>Select a contact</strong> &mdash; Navigate to the Contacts tab and locate the person you want to call. Tap the <strong>phone icon</strong> next to their name.</li>
+                <li><strong>Tap the Call button</strong> &mdash; A call initiation request is sent through our encrypted signaling server. The connection is being established.</li>
+                <li><strong>Wait for the connection</strong> &mdash; The call typically connects within 1&ndash;2 seconds. During this time, an X25519 key exchange occurs and the Double Ratchet is initialized.</li>
+                <li><strong>Verify the lock icon</strong> &mdash; Once connected, check the lock icon at the top of the call screen. The color indicates your encryption and threat status.</li>
+            </ol>
+
+            <h3>Lock Icon Color Meanings</h3>
+            <p>The lock icon on the call screen provides real-time security feedback. Its color changes based on the current threat assessment:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Color</th>
+                        <th>Status</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong style="color:#4ade80">Green</strong></td>
+                        <td>Secure</td>
+                        <td>Call is fully encrypted with XChaCha20-Poly1305. No threats have been detected. All security checks passed.</td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color:#fbbf24">Yellow</strong></td>
+                        <td>Warning</td>
+                        <td>A potential threat has been detected, such as an accessibility service with suspicious permissions or a known recording app installed on the device.</td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color:#D32F2F">Red</strong></td>
+                        <td>Alert</td>
+                        <td>An active threat has been detected, such as screen recording in progress or microphone hijacking by another app. Premium tier will auto-terminate the call.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box info">
+                <strong>Note:</strong> Only the phone icon triggers a call. Tapping the contact row itself opens the contact details. This prevents accidental calls when scrolling through your contact list.
+            </div>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- ACTIVE CHANNEL OPERATIONS                           -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Active Channel Operations</div>
+
+            <h2>In-Call Controls</h2>
+            <p>Once a secure channel is established, the call screen provides three primary controls for managing your active session:</p>
+
+            <ul>
+                <li><strong>Speaker</strong> &mdash; Toggle between the earpiece and the loudspeaker. The earpiece is the default for private conversations. Use the loudspeaker when privacy is not a concern or in hands-free scenarios.</li>
+                <li><strong>Mute</strong> &mdash; Mute your microphone so the other party cannot hear you. Your end remains encrypted and the call stays active. The mute state is indicated by a visual icon change.</li>
+                <li><strong>End Call</strong> &mdash; Terminate the call and destroy all session keys immediately. The Double Ratchet state is ratcheted forward, ensuring that the keys used in this session cannot decrypt future or past calls.</li>
+            </ul>
+
+            <h3>Call Duration Limits</h3>
+            <p>Call duration limits vary by tier. Free users are limited to encourage upgrading, while Pro and Premium operators have unrestricted access:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tier</th>
+                        <th>Maximum Duration</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Free</strong></td>
+                        <td>15 minutes</td>
+                        <td>A warning notification appears at 12 minutes. The call disconnects automatically at 15 minutes.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pro</strong></td>
+                        <td>Unlimited</td>
+                        <td>No time restrictions. HD Opus audio at 48kHz for the duration of the call.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Premium</strong></td>
+                        <td>Unlimited</td>
+                        <td>No time restrictions. HD Opus audio plus GhostNet IP masking throughout the session.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- SECURITY COUNTERMEASURES                            -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Security Countermeasures</div>
+
+            <h2>Screenshot Protection (FLAG_SECURE)</h2>
+            <p>SecureCall uses Android's <code>FLAG_SECURE</code> window flag to prevent the call screen from being captured by screenshots, screen recording, or screen mirroring. The level of enforcement depends on your tier:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tier</th>
+                        <th>FLAG_SECURE Behavior</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Free</strong></td>
+                        <td>Optional &mdash; can be toggled in Settings. Disabled by default.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pro</strong></td>
+                        <td>Enabled by default. Can be toggled in Settings.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Premium</strong></td>
+                        <td>Always enforced. Cannot be disabled. The call screen is always protected.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Screen Recording Detection</h2>
+            <p>SecureCall continuously monitors for active screen recording during calls. On Android 14+ (API 34), the system uses native screen capture detection callbacks. On older versions, it scans running processes for known recording applications.</p>
+            <ul>
+                <li><strong>Pro:</strong> Detects recording and shows a warning dialog. The operator can choose to continue or end the call.</li>
+                <li><strong>Premium:</strong> Automatically terminates the call immediately when screen recording is detected. No operator intervention required.</li>
+            </ul>
+
+            <h2>Spy App Detection</h2>
+            <p>SecureCall scans for known surveillance and call-recording applications installed on the device. It checks the list of installed packages against a database of known spyware, and inspects accessibility services for suspicious activity that could indicate keystroke logging or screen capture.</p>
+            <ul>
+                <li><strong>Pro:</strong> Alerts you to the presence of threats with a detailed threat report dialog.</li>
+                <li><strong>Premium:</strong> Blocks identified threats and terminates the call if a critical threat is detected.</li>
+            </ul>
+
+            <h2>Security Status Bar</h2>
+            <p>During an active call, the security status bar at the top of the screen provides continuous real-time feedback on the security posture of the session:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Indicator</th>
+                        <th>Meaning</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong style="color:#4ade80">Green Lock</strong></td>
+                        <td>All clear &mdash; no threats detected</td>
+                        <td>No action needed. Continue your call securely.</td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color:#fbbf24">Yellow Warning</strong></td>
+                        <td>Non-critical threat detected</td>
+                        <td>Review the threat notification. An accessibility service or suspicious app may be active.</td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color:#D32F2F">Red Alert</strong></td>
+                        <td>Critical threat detected</td>
+                        <td>Active screen recording or microphone hijacking detected. Premium auto-terminates; Pro shows alert.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- CONFIGURATION                                       -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Configuration</div>
+
+            <h2>Audio Quality</h2>
+            <p>SecureCall offers two audio quality modes, depending on your subscription tier:</p>
+            <ul>
+                <li><strong>Standard</strong> (Free tier) &mdash; Good audio quality suitable for most connections. Uses the Opus codec at standard bitrate. Optimized for lower bandwidth usage on cellular networks.</li>
+                <li><strong>HD Opus 48kHz</strong> (Pro/Premium) &mdash; Crystal-clear, high-definition audio quality. Uses the Opus codec at 48kHz sample rate with adaptive bitrate ranging from 6 to 510 kbps. Delivers natural, lifelike voice reproduction.</li>
+            </ul>
+
+            <h2>Anti-Recording Settings</h2>
+            <p>Navigate to <strong>Settings</strong> to configure the following anti-recording protections (availability varies by tier):</p>
+            <ul>
+                <li><strong>Screen capture detection</strong> &mdash; Detect apps that are actively recording the screen during a call. Shows alerts or auto-terminates depending on tier.</li>
+                <li><strong>Microphone monitoring</strong> &mdash; Detect if other apps are accessing the device microphone while SecureCall is active. Prevents parallel audio capture.</li>
+                <li><strong>Spy app detection</strong> &mdash; Scan the device for known surveillance apps, call recording apps, and suspicious accessibility services.</li>
+            </ul>
+
+            <h2>Privacy Settings</h2>
+            <ul>
+                <li><strong>Crash reports</strong> &mdash; Anonymous crash data is collected on the Free tier only via Firebase Crashlytics. This is opt-out: navigate to <strong>Settings &gt; Privacy &gt; Crash Reports</strong> to disable. Pro and Premium tiers have Crashlytics completely disabled at the build level.</li>
+                <li><strong>Delete all data</strong> &mdash; Erase all local data including encryption keys, contacts, call history, and all app settings. This is a destructive, irreversible operation. Navigate to <strong>Settings &gt; Delete All Data</strong>.</li>
+                <li><strong>Background service</strong> &mdash; Enable or disable the persistent background service that keeps SecureCall connected for incoming calls. Toggle in <strong>Settings &gt; Background Service</strong>. Enabled by default.</li>
+            </ul>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- CONTACT REGISTRY                                    -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Contact Registry</div>
+
+            <h2>Adding a Contact</h2>
+            <p>SecureCall uses anonymous IDs instead of phone numbers. To add a contact, the other person must share their SecureCall ID with you through any communication channel (in person, messaging app, email, etc.).</p>
+
+            <ol>
+                <li><strong>Tap "+"</strong> &mdash; In the Contacts tab, tap the add button (+ icon) in the top-right corner of the contact list.</li>
+                <li><strong>Enter SecureCall ID</strong> &mdash; Type or paste the contact's unique SecureCall identifier. This is the anonymous ID generated on their device during initial setup.</li>
+                <li><strong>Add a display name (optional)</strong> &mdash; Enter a friendly name for this contact. This name is stored locally on your device only and is never shared with our servers or the contact.</li>
+                <li><strong>Tap Save</strong> &mdash; The contact is saved to your local registry. You can now call them by tapping the phone icon next to their name.</li>
+            </ol>
+
+            <h3>Contact Limits</h3>
+            <p>The maximum number of contacts you can store depends on your subscription tier:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tier</th>
+                        <th>Contact Limit</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Free</strong></td>
+                        <td>10 contacts</td>
+                        <td>Sufficient for personal use. Upgrade to Pro for unlimited contacts.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pro</strong></td>
+                        <td>Unlimited</td>
+                        <td>No restrictions on the number of contacts you can add.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Premium</strong></td>
+                        <td>Unlimited</td>
+                        <td>No restrictions on the number of contacts you can add.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <strong>Important:</strong> Contact data is stored exclusively on your device. It is never uploaded to our servers. If you uninstall the app or use "Delete All Data," your contact list will be permanently erased and cannot be recovered.
+            </div>
+
+            <!-- ════════════════════════════════════════════════════ -->
+            <!-- UPGRADING                                           -->
+            <!-- ════════════════════════════════════════════════════ -->
+            <div class="section-break">Upgrading</div>
+
+            <h2>Free &rarr; Pro ($4.99/month or Lifetime from $15)</h2>
+            <p>Upgrade to Pro for unlimited calls, HD audio, anti-recording protection, and unlimited contacts:</p>
+            <ol>
+                <li>Open <strong>Settings &rarr; Subscription</strong></li>
+                <li>Tap <strong>"Upgrade to Pro"</strong></li>
+                <li>Choose between monthly subscription or Lifetime license (limited availability)</li>
+                <li>Complete purchase via Google Play Billing</li>
+            </ol>
+            <p>Pro features activate immediately after purchase confirmation.</p>
+
+            <h2>Pro &rarr; Premium ($9.99/month or Lifetime from $25)</h2>
+            <p>Upgrade to Premium for the maximum security posture, including GhostNet IP masking, multi-hop relay routing, automatic threat termination, and zero telemetry:</p>
+            <ol>
+                <li>Open <strong>Settings &rarr; Subscription</strong></li>
+                <li>Tap <strong>"Upgrade to Premium"</strong></li>
+                <li>Choose between monthly subscription or Lifetime license (limited availability)</li>
+                <li>Complete purchase via Google Play Billing</li>
+            </ol>
+            <p>Premium features activate immediately. If you have an existing Pro subscription, it will be prorated.</p>
+
+            <h2>Cancel Subscription</h2>
+            <p>Subscriptions are managed through Google Play. To cancel:</p>
+            <ol>
+                <li>Open <strong>Google Play &rarr; Subscriptions</strong></li>
+                <li>Select <strong>SecureCall</strong></li>
+                <li>Tap <strong>"Cancel subscription"</strong></li>
+                <li>Your Pro/Premium features remain active until the end of the current billing period</li>
+            </ol>
+
+            <div class="info-box info">
+                <strong>Lifetime licenses never expire.</strong> If you purchased a Forever License, your access is permanent regardless of subscription status. Lifetime purchases are non-refundable and include all future updates.
+            </div>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Audit Report — SecureCall Wiki</title>
+    <meta name="description" content="Internal security audit findings and remediations for the SecureCall platform covering Android client, Rust crypto engine, and backend server.">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html" class="active">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Security Audit</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-AUDIT</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">Security Audit Report</h1>
+            <p class="wiki-meta">Internal security audit findings and remediations for SecureCall &middot; Last updated February 2026</p>
+
+            <!-- SUMMARY -->
+            <div class="section-break">Summary</div>
+
+            <h2>Audit Overview</h2>
+            <p>An internal security audit was conducted on <strong>February 15, 2026</strong> covering all three components of the SecureCall platform: the Android client (Kotlin), the Rust cryptographic engine, and the Node.js signaling backend. The audit examined code quality, cryptographic correctness, transport security, authentication mechanisms, and resilience against known attack vectors.</p>
+
+            <h3>Findings Overview</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Severity</th>
+                        <th>Android Client</th>
+                        <th>Rust Crypto</th>
+                        <th>Backend Server</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Critical</strong></td>
+                        <td>4</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td><strong>7</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>High</strong></td>
+                        <td>6</td>
+                        <td>3</td>
+                        <td>9</td>
+                        <td><strong>18</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Medium</strong></td>
+                        <td>8</td>
+                        <td>5</td>
+                        <td>10</td>
+                        <td><strong>23</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total</strong></td>
+                        <td><strong>18</strong></td>
+                        <td><strong>9</strong></td>
+                        <td><strong>21</strong></td>
+                        <td><strong>48</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Remediation Status</h3>
+            <div class="info-box info">
+                <strong>All 7 Critical findings:</strong> Fixed and verified<br>
+                <strong>All 18 High findings:</strong> Fixed and verified<br>
+                <strong>23 Medium findings:</strong> Filed as GitHub Issues for tracking and scheduled remediation
+            </div>
+
+            <!-- CRITICAL FINDINGS -->
+            <div class="section-break">Critical Findings (All Fixed)</div>
+
+            <h2>Critical Vulnerability Details</h2>
+            <p>The following seven critical vulnerabilities were identified during the audit. All have been remediated and verified through code review and regression testing. Each finding represented a direct threat to the confidentiality or integrity of encrypted communications.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Component</th>
+                        <th>Issue</th>
+                        <th>Fix</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>C-01</code></td>
+                        <td>Android</td>
+                        <td>Encryption stubs were no-op (plaintext transmitted)</td>
+                        <td>Replaced with real Rust-backed implementations via JNI bridge</td>
+                    </tr>
+                    <tr>
+                        <td><code>C-02</code></td>
+                        <td>Android</td>
+                        <td>Silent plaintext fallback when crypto library unavailable</td>
+                        <td>Removed fallback path entirely; app now fails safely if crypto is unavailable</td>
+                    </tr>
+                    <tr>
+                        <td><code>C-03</code></td>
+                        <td>Android</td>
+                        <td><code>FakeX25519</code> stub with non-cryptographic key derivation</td>
+                        <td>Real X25519 via FFI bridge, proper HKDF-SHA256 key derivation</td>
+                    </tr>
+                    <tr>
+                        <td><code>C-04</code></td>
+                        <td>Android</td>
+                        <td>Hardcoded <code>ws://localhost</code> WebSocket endpoint</td>
+                        <td>Build-config WSS URLs with per-flavor configuration</td>
+                    </tr>
+                    <tr>
+                        <td><code>RC-01</code></td>
+                        <td>Rust</td>
+                        <td>Buffer overflow in FFI encrypt/decrypt functions</td>
+                        <td>Added output buffer capacity validation before all <code>ptr::copy_nonoverlapping</code> calls</td>
+                    </tr>
+                    <tr>
+                        <td><code>BC-01</code></td>
+                        <td>Backend</td>
+                        <td>Hardcoded TURN server credentials in source code</td>
+                        <td>Environment variables required; server fails to start without them</td>
+                    </tr>
+                    <tr>
+                        <td><code>BC-02</code></td>
+                        <td>Backend</td>
+                        <td>Unauthenticated debug endpoints exposed in production</td>
+                        <td>Debug endpoints removed entirely from production builds</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- KEY REMEDIATIONS -->
+            <div class="section-break">Key Remediations</div>
+
+            <h2>Android Client Remediations</h2>
+            <p>The Android client underwent the most extensive remediation effort, addressing four critical and six high-severity findings. The core issue was that encryption stubs from early development had not been fully replaced with production implementations.</p>
+            <ul>
+                <li>All crypto stubs replaced with real implementations backed by the Rust native library (<code>libcore_crypto.so</code>)</li>
+                <li>Plaintext fallback paths removed entirely &mdash; the app will not function if the crypto engine fails to load</li>
+                <li><code>FakeX25519</code> class replaced with actual X25519 key exchange via the FFI bridge</li>
+                <li>WebSocket endpoint now configurable via <code>BuildConfig</code> with WSS (TLS) enforcement for all flavors</li>
+                <li><code>java.util.Random</code> replaced with <code>java.security.SecureRandom</code> in all security-sensitive contexts</li>
+                <li>Key zeroization added throughout the codebase &mdash; ephemeral keys are cleared from memory after use</li>
+                <li>Replay detection enforced with boolean return values (previously void, silently ignoring replays)</li>
+                <li>Nonce overflow now throws <code>SecurityException</code> instead of wrapping to zero</li>
+            </ul>
+
+            <h2>Rust Crypto Engine Remediations</h2>
+            <p>The Rust crypto engine had one critical and three high-severity findings, primarily related to memory safety at the FFI boundary and incomplete key zeroization.</p>
+            <ul>
+                <li>Output buffer capacity validation added before all <code>ptr::copy_nonoverlapping</code> operations in FFI functions</li>
+                <li><code>#[zeroize(skip)]</code> annotation removed from <code>aead_key</code> field &mdash; key material is now properly zeroized on drop</li>
+                <li>All FFI intermediate values wrapped in <code>Zeroizing&lt;&gt;</code> containers to prevent key material from remaining in memory</li>
+                <li><code>ZeroizeOnDrop</code> derive macro added to <code>IdentityKeyPair</code> for automatic cleanup</li>
+            </ul>
+
+            <h2>Backend Server Remediations</h2>
+            <p>The backend server had two critical and nine high-severity findings. The critical issues were hardcoded credentials and exposed debug endpoints. High-severity findings covered authentication gaps and missing rate limiting.</p>
+            <ul>
+                <li>Hardcoded TURN credentials removed &mdash; server now requires environment variables and fails to start without them</li>
+                <li>Debug endpoints (status dumps, connection listings, test routes) removed entirely from the codebase</li>
+                <li>Authentication added to Public Key Directory (PKD) and WebSocket signaling paths</li>
+                <li>Origin validation implemented to prevent cross-origin WebSocket hijacking</li>
+                <li><code>maxPayload</code> limit set to 64 KB to prevent denial-of-service via oversized messages</li>
+                <li>Rate limiting implemented on all public endpoints</li>
+                <li>Call participant verification added &mdash; only registered users can join call rooms</li>
+                <li>Per-IP connection limits enforced to prevent resource exhaustion attacks</li>
+            </ul>
+
+            <!-- OPEN MEDIUM ITEMS -->
+            <div class="section-break">Open Medium Items</div>
+
+            <h2>Medium-Severity Findings</h2>
+            <p>All 23 medium-severity findings have been documented and filed as GitHub Issues for tracking. These items represent defense-in-depth improvements that do not pose immediate security risks but should be addressed in upcoming development cycles.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Count</th>
+                        <th>Issue Range</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Android Client</strong></td>
+                        <td>8 findings</td>
+                        <td><a href="https://github.com/NeaBouli/stealth/issues/101" target="_blank" rel="noopener">#101</a> &mdash; <a href="https://github.com/NeaBouli/stealth/issues/108" target="_blank" rel="noopener">#108</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rust Crypto</strong></td>
+                        <td>5 findings</td>
+                        <td><a href="https://github.com/NeaBouli/stealth/issues/201" target="_blank" rel="noopener">#201</a> &mdash; <a href="https://github.com/NeaBouli/stealth/issues/205" target="_blank" rel="noopener">#205</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backend Server</strong></td>
+                        <td>10 findings</td>
+                        <td><a href="https://github.com/NeaBouli/stealth/issues/301" target="_blank" rel="noopener">#301</a> &mdash; <a href="https://github.com/NeaBouli/stealth/issues/310" target="_blank" rel="noopener">#310</a></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <strong>Note:</strong> Medium findings include items such as certificate pinning enforcement, additional input sanitization, logging hygiene improvements, and enhanced error message redaction. None represent active exploitability in the current deployment.
+            </div>
+
+            <!-- FULL REPORT -->
+            <div class="section-break">Full Report</div>
+
+            <h2>Complete Audit Documentation</h2>
+            <p>The complete audit report with detailed vulnerability descriptions, reproduction steps, code references, and verification evidence is available in the project repository:</p>
+
+            <p><a href="https://github.com/NeaBouli/stealth/blob/main/docs/SECURITY_AUDIT_REPORT.md" target="_blank" rel="noopener">docs/SECURITY_AUDIT_REPORT.md</a> &mdash; Full security audit report with code-level details</p>
+
+            <p>For responsible disclosure of new security vulnerabilities, please refer to our <a href="https://github.com/NeaBouli/stealth/blob/main/SECURITY.md" target="_blank" rel="noopener">Security Policy</a>.</p>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

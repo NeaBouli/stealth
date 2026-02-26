@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategic Development Roadmap — SecureCall Wiki</title>
+    <meta name="description" content="SecureCall development roadmap — completed, active, and planned features for the encrypted voice calling platform.">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html" class="active">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Roadmap</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-ROAD</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">Strategic Development Roadmap</h1>
+            <p class="wiki-meta">SecureCall development roadmap &mdash; completed, active, and planned features &middot; Last updated February 2026</p>
+
+            <!-- OBJECTIVES ACHIEVED -->
+            <div class="section-break">Objectives Achieved (v0.2-beta)</div>
+
+            <h2>Completed Milestones</h2>
+            <p>The following objectives have been fully implemented, tested, and verified in the current <strong>v0.2-beta</strong> release. These form the foundation of the SecureCall platform.</p>
+
+            <ul class="checklist">
+                <li class="done">End-to-End Encryption (XChaCha20-Poly1305 + X25519 key exchange)</li>
+                <li class="done">Rust Crypto Engine with JNI bridge for native performance</li>
+                <li class="done">Double Ratchet forward secrecy protocol</li>
+                <li class="done">Node.js Signaling Server with WebSocket transport</li>
+                <li class="done">WebRTC peer-to-peer audio with ICE/STUN/TURN</li>
+                <li class="done">Opus audio codec (48kHz, high-fidelity voice)</li>
+                <li class="done">Anti-Recording Protection (6 independent detection layers)</li>
+                <li class="done">Material Design 3 UI with dynamic theming</li>
+                <li class="done">3 Product Tiers (Free / Pro / Premium) with feature gating</li>
+                <li class="done">In-App Purchases &amp; Subscription management</li>
+                <li class="done">Firebase Cloud Messaging for push notifications</li>
+                <li class="done">Security Audit (48 findings &mdash; all Critical and High fixed)</li>
+                <li class="done">R8/ProGuard optimization and code shrinking</li>
+                <li class="done">Crashlytics integration (Free tier, opt-out available)</li>
+                <li class="done">Landing page website (<a href="https://neabouli.github.io/stealth" target="_blank" rel="noopener">neabouli.github.io/stealth</a>)</li>
+                <li class="done">Complete documentation &amp; Wiki</li>
+            </ul>
+
+            <!-- ACTIVE OPERATIONS -->
+            <div class="section-break">Active Operations</div>
+
+            <h2>Currently In Progress</h2>
+            <p>These objectives are actively being worked on and represent the immediate priorities before the first public release.</p>
+
+            <ul class="checklist">
+                <li class="pending">Beta Testing &mdash; recruiting 10&ndash;20 testers for real-world validation on diverse devices and network conditions</li>
+                <li class="pending">Google Play Store Launch &mdash; store listing, screenshots, privacy declarations, and review submission</li>
+                <li class="pending">Production Server Deployment &mdash; scaling Railway infrastructure, monitoring, and uptime guarantees</li>
+            </ul>
+
+            <div class="info-box info">
+                <strong>Current blocker:</strong> The Railway signaling server requires a redeploy to clear a rate-limit condition caused by a now-fixed WebSocket reconnect loop. Client-side fix is in place and verified.
+            </div>
+
+            <!-- PLANNED OPERATIONS -->
+            <div class="section-break">Planned Operations (v0.3)</div>
+
+            <h2>Next Release Features</h2>
+            <p>The following features are planned for the <strong>v0.3</strong> release cycle. These extend SecureCall's capabilities while maintaining the security-first design philosophy.</p>
+
+            <ul class="checklist">
+                <li class="pending">WebRTC upgrade &mdash; migration to the latest WebRTC specification for improved compatibility and performance</li>
+                <li class="pending">Improved NAT traversal &mdash; enhanced ICE candidate gathering and fallback strategies for restrictive networks</li>
+                <li class="pending">Group Calls (Pro/Premium) &mdash; encrypted multi-party calls supporting up to 5 simultaneous participants</li>
+                <li class="pending">Encrypted call recording &mdash; local-only recording with device-bound encryption keys (Premium tier only)</li>
+                <li class="pending">Biometric lock &mdash; fingerprint or face authentication required to open the app</li>
+                <li class="pending">Widget for quick-call &mdash; home screen widget for one-tap calling to favorite contacts</li>
+            </ul>
+
+            <!-- LONG-RANGE OBJECTIVES -->
+            <div class="section-break">Long-Range Objectives (v1.0+)</div>
+
+            <h2>Future Vision</h2>
+            <p>These long-range objectives represent the strategic direction for SecureCall beyond the Android platform. Each item requires significant research and development effort and will be prioritized based on community feedback and security requirements.</p>
+
+            <ul class="checklist">
+                <li class="pending">iOS Client &mdash; native Swift implementation with shared Rust crypto engine</li>
+                <li class="pending">Desktop Client &mdash; Linux, macOS, and Windows applications for secure calls from any platform</li>
+                <li class="pending">Post-Quantum Cryptography &mdash; migration to Kyber/ML-KEM for quantum-resistant key exchange</li>
+                <li class="pending">GhostNet multi-hop relay network &mdash; onion-routed transport for metadata resistance</li>
+                <li class="pending">Federation support &mdash; self-hosted server instances with cross-server calling</li>
+                <li class="pending">End-to-end encrypted messaging &mdash; secure text communication alongside voice</li>
+                <li class="pending">GhostOS &mdash; hardened Android distribution optimized for SecureCall and privacy</li>
+            </ul>
+
+            <!-- EXPLICITLY OUT OF SCOPE -->
+            <div class="section-break">Explicitly Out of Scope</div>
+
+            <h2>Non-Goals</h2>
+            <p>The following features are explicitly <strong>not planned</strong> for SecureCall. These decisions are deliberate and rooted in our security and privacy commitments. Adding any of these would compromise the threat model or violate user trust.</p>
+
+            <ul>
+                <li><strong>Cloud backup of call history</strong> &mdash; storing call metadata on remote servers creates an unacceptable attack surface</li>
+                <li><strong>Social media integration</strong> &mdash; connecting to social platforms leaks identity information and expands the trust boundary</li>
+                <li><strong>Read receipts or "last seen" status</strong> &mdash; presence information enables surveillance and behavioral analysis</li>
+                <li><strong>Contact sync with phone contacts</strong> &mdash; uploading contact lists to servers is a privacy violation regardless of encryption</li>
+                <li><strong>Any form of analytics or tracking</strong> &mdash; we do not collect, transmit, or store any usage telemetry beyond opt-in Crashlytics on the Free tier</li>
+            </ul>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

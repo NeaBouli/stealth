@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operations Log — SecureCall Wiki</title>
+    <meta name="description" content="SecureCall version history and changelog — all notable changes, security fixes, and feature additions.">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html" class="active">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Changelog</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-LOG</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <h1 class="wiki-title">Operations Log</h1>
+            <p class="wiki-meta">SecureCall version history and changelog &middot; Last updated February 2026</p>
+
+            <div class="info-box info">
+                Format based on <a href="https://keepachangelog.com/" target="_blank" rel="noopener">Keep a Changelog</a>. All notable changes to the SecureCall project are documented here. Phases are listed in reverse chronological order.
+            </div>
+
+            <!-- UNRELEASED -->
+            <div class="section-break">[Unreleased] &mdash; v0.2-beta</div>
+
+            <!-- Phase 13 -->
+            <h3>Phase 13: Website Rebuild</h3>
+            <ul>
+                <li>Complete website rebuild with military/tactical dark theme design</li>
+                <li>New pages: <code>security.html</code>, <code>faq.html</code> with tier comparison table</li>
+                <li>Full wiki documentation system with sidebar navigation and classified banners</li>
+                <li>Responsive design with breakpoints at 1024px, 768px, and 480px</li>
+                <li>SEO optimization with <code>robots.txt</code> and <code>sitemap.xml</code></li>
+                <li>Deploy-ready configuration for GitHub Pages and Netlify</li>
+            </ul>
+
+            <!-- Phase 12 -->
+            <h3>Phase 12: Production Deployment + QA</h3>
+            <ul>
+                <li>Production deployment scripts (PM2 process manager, Nginx reverse proxy, Coturn TURN server, SSL/TLS certificates)</li>
+                <li>Final QA checklist covering 80+ test cases across 15 categories</li>
+                <li>Instrumented security tests &mdash; 10 automated tests validating crypto operations and transport security</li>
+                <li>Performance testing tools for measuring call setup latency, audio quality, and server throughput</li>
+                <li>Release AAB (Android App Bundle) build scripts for Play Store submission</li>
+            </ul>
+
+            <!-- Phase 11 -->
+            <h3>Phase 11: Backend Deployment + Landing Page</h3>
+            <ul>
+                <li>Docker deployment configuration for containerized backend services</li>
+                <li>Nginx reverse proxy with SSL termination and WebSocket upgrade support</li>
+                <li>Coturn TURN server configuration for NAT traversal in restrictive networks</li>
+                <li>Landing page website (HTML/CSS/JS) deployed to GitHub Pages</li>
+                <li>Health check endpoints and automated backup scripts</li>
+            </ul>
+
+            <!-- Critical Security Fix -->
+            <h3>Critical Security Fix: Anti-Recording Protection</h3>
+            <p>Implemented a comprehensive 6-layer anti-recording defense system to protect call confidentiality:</p>
+            <ul>
+                <li><strong>AudioFocusManager</strong> &mdash; exclusive audio focus acquisition preventing other apps from capturing audio output</li>
+                <li><strong>ScreenRecordingDetector</strong> &mdash; API 34+ native callbacks combined with process monitoring for older devices</li>
+                <li><strong>MicrophoneMonitor</strong> &mdash; <code>AudioRecordingCallback</code> detection for unauthorized microphone access during calls</li>
+                <li><strong>AccessibilityDetector</strong> &mdash; spy app detection scanning for 20+ known surveillance applications</li>
+                <li><strong>CallRecordingDetector</strong> &mdash; database of known call recording applications with real-time process scanning</li>
+                <li><strong>SecureCallMonitor</strong> &mdash; central threat monitoring coordinator aggregating signals from all detection layers</li>
+                <li><strong>FLAG_SECURE</strong> integration in <code>CallActivity</code> preventing screenshots and screen recording of the call UI</li>
+                <li>Tier-based enforcement policy: <strong>WARN</strong> (Free) / <strong>BLOCK</strong> (Pro) / <strong>TERMINATE</strong> (Premium)</li>
+            </ul>
+
+            <!-- Phase 10 -->
+            <h3>Phase 10: Play Store Preparation</h3>
+            <ul>
+                <li>Play Store listings prepared in German (DE) and English (EN) with full descriptions and feature graphics</li>
+                <li>Privacy Policy drafted for GDPR compliance with data processing disclosures</li>
+                <li>Beta testing plan with structured rollout to 10&ndash;20 initial testers</li>
+                <li>Marketing launch plan with phased feature announcements</li>
+                <li>Build release guide documenting the signing, bundling, and upload process</li>
+            </ul>
+
+            <!-- Phase 9 -->
+            <h3>Phase 9: UI/UX Modernization</h3>
+            <ul>
+                <li>Material Design 3 implementation across all screens and components</li>
+                <li>Dynamic color theming with system-aware dark/light mode support</li>
+                <li>Modern call screen with connection animations and real-time status indicators</li>
+                <li>Improved settings UI with categorized preferences and toggle controls</li>
+            </ul>
+
+            <!-- Phase 8 -->
+            <h3>Phase 8: Android Production Hardening</h3>
+            <ul>
+                <li>R8/ProGuard minification and code shrinking for reduced APK size</li>
+                <li>Firebase Crashlytics integration for crash reporting (Free tier only, opt-out available)</li>
+                <li>Debug UI gating &mdash; development-only UI elements hidden in production builds</li>
+            </ul>
+
+            <!-- Phase 7 -->
+            <h3>Phase 7: Opus Audio + FCM</h3>
+            <ul>
+                <li>Opus audio codec integration at 48kHz sampling rate for high-fidelity encrypted voice</li>
+                <li>Firebase Cloud Messaging (FCM) for push notification delivery of incoming calls</li>
+                <li>Background call notification handling with wake-lock management</li>
+            </ul>
+
+            <!-- Phase 6 -->
+            <h3>Phase 6: In-App Purchases</h3>
+            <ul>
+                <li>Google Play Billing Library integration for subscription management</li>
+                <li>Three subscription tiers: Free (limited), Pro (unlimited), Premium (maximum security)</li>
+                <li>Feature flags per tier controlled via <code>BuildConfig</code> fields and <code>FeatureProviderRegistry</code></li>
+                <li>Subscription verification via backend server with receipt validation</li>
+            </ul>
+
+            <!-- Security Audit -->
+            <h3>Security Audit</h3>
+            <ul>
+                <li>Comprehensive internal security audit conducted February 15, 2026</li>
+                <li>48 findings identified: 7 Critical, 18 High, 23 Medium</li>
+                <li>All Critical and High findings fixed and verified (see <a href="security-audit.html">Security Audit Report</a>)</li>
+                <li>23 Medium findings filed as GitHub Issues for ongoing tracking</li>
+                <li>Key fixes: crypto stubs replaced, plaintext fallback removed, buffer overflow patched, debug endpoints removed</li>
+            </ul>
+
+            <!-- Initial Release -->
+            <h3>Initial Release</h3>
+            <ul>
+                <li>Monorepo project structure established (Android client, backend, Rust crypto, website, docs)</li>
+                <li>Rust crypto engine implementing XChaCha20-Poly1305 symmetric encryption, X25519 key exchange, and HKDF-SHA256 key derivation</li>
+                <li>JNI bridge via C++ CMake configuration for calling Rust from Kotlin</li>
+                <li>Node.js signaling server with WebSocket transport for call setup and key exchange</li>
+                <li>Android client with basic UI: dialer, contacts, call history, and settings screens</li>
+                <li>CI linting workflow with GitHub Actions for automated code quality checks</li>
+                <li>Security design documentation and architecture overview</li>
+            </ul>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 StealthX. All rights reserved.</p>
+                <p><a href="../">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>
