@@ -124,6 +124,9 @@
 
     <!-- Settings -->
     <string name="settings_client_id">Your SecureCall ID</string>
+    <string name="pref_phone_number">My Phone Number</string>
+    <string name="pref_phone_number_summary">Used for others to call you by phone number</string>
+    <string name="pref_phone_number_dialog">Enter your phone number in international format (e.g. +49\u2026)</string>
 
     <!-- Content Descriptions (Accessibility) -->
     <string name="cd_caller_avatar">Caller avatar</string>

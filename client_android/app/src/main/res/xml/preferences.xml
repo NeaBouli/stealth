@@ -19,6 +19,14 @@
             android:title="@string/settings_client_id"
             android:selectable="true"
             android:icon="@drawable/ic_contacts" />
+
+        <EditTextPreference
+            android:key="pref_phone_number"
+            android:title="@string/pref_phone_number"
+            android:summary="@string/pref_phone_number_summary"
+            android:dialogTitle="@string/pref_phone_number_dialog"
+            android:inputType="phone"
+            android:icon="@drawable/ic_call" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/settings_security">

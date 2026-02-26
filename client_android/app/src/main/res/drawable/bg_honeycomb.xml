@@ -4,10 +4,28 @@
     <item>
         <color android:color="@color/stealthx_black" />
     </item>
-    <!-- Repeating honeycomb pattern overlay -->
+    <!-- Subtle radial gradient overlay for depth -->
     <item>
-        <bitmap
-            android:src="@drawable/bg_honeycomb_tile"
-            android:tileMode="repeat" />
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="600dp"
+                android:centerX="0.5"
+                android:centerY="0.3"
+                android:startColor="#10FFFFFF"
+                android:endColor="#00000000" />
+        </shape>
+    </item>
+    <!-- Thin accent line at top -->
+    <item android:top="0dp" android:bottom="-2dp">
+        <shape android:shape="rectangle">
+            <size android:height="2dp" />
+            <gradient
+                android:type="linear"
+                android:angle="0"
+                android:startColor="#00D32F2F"
+                android:centerColor="#40D32F2F"
+                android:endColor="#00D32F2F" />
+        </shape>
     </item>
 </layer-list>

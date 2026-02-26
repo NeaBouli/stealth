@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -70,6 +71,28 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         as android.content.ClipboardManager
                 clipboard.setPrimaryClip(android.content.ClipData.newPlainText("SecureCall ID", clientId))
                 android.widget.Toast.makeText(requireContext(), "Copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                true
+            }
+        }
+
+        // Phone number (manual entry for carriers that don't provide it via API)
+        findPreference<EditTextPreference>("pref_phone_number")?.apply {
+            val savedNumber = prefs.getString("manual_phone_number", null)
+            if (!savedNumber.isNullOrBlank()) {
+                summary = savedNumber
+            }
+            text = savedNumber
+            setOnPreferenceChangeListener { _, newValue ->
+                val number = (newValue as? String)?.trim()
+                if (!number.isNullOrBlank()) {
+                    prefs.edit().putString("manual_phone_number", number).apply()
+                    summary = number
+                } else {
+                    prefs.edit().remove("manual_phone_number").apply()
+                    summary = getString(R.string.pref_phone_number_summary)
+                }
+                // Re-register with server to update phone number
+                com.securecall.app.net.WebSocketService.instance?.reRegister()
                 true
             }
         }

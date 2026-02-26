@@ -260,9 +260,22 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.d("WS_SERVICE", "REGISTER sent: $clientId, phone: ${phoneNumber ?: "none"}")
     }
 
+    /** Re-register with the server (e.g. after manual phone number change in Settings). */
+    fun reRegister() {
+        registerClient()
+    }
+
     @android.annotation.SuppressLint("MissingPermission")
     private fun getDevicePhoneNumber(): String? {
         return try {
+            // Check manual phone number first (set in Settings)
+            val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
+            val manualNumber = prefs.getString("manual_phone_number", null)
+            if (!manualNumber.isNullOrBlank()) {
+                Log.d("WS_SERVICE", "Device phone number (manual): $manualNumber")
+                return manualNumber
+            }
+
             val hasPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                 checkSelfPermission(android.Manifest.permission.READ_PHONE_NUMBERS) == android.content.pm.PackageManager.PERMISSION_GRANTED
             } else {
