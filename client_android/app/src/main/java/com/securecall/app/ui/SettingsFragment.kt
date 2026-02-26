@@ -130,13 +130,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
     /**
      * Configure anti-recording protection settings based on tier.
      *
-     * - FREE:    All toggles available, defaults OFF
+     * - FREE:    All toggles locked OFF, shows "PRO feature" label
      * - PRO:     All toggles available, defaults ON
      * - PREMIUM: All forced ON, toggles disabled (not user-changeable)
      */
     private fun configureAntiRecordingSettings(fp: com.securecall.app.config.FeatureProvider) {
         val isPremium = fp.tier == "PREMIUM"
         val isPro = fp.tier == "PRO"
+        val isFree = fp.tier == "FREE"
 
         // Block Screenshots toggle
         findPreference<SwitchPreferenceCompat>("pref_block_screenshots")?.apply {
@@ -144,10 +145,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 isChecked = true
                 isEnabled = false
                 summary = getString(R.string.pref_block_screenshots_premium)
+            } else if (isFree) {
+                isChecked = false
+                isEnabled = false
+                summary = getString(R.string.pref_pro_feature)
             } else {
                 isEnabled = true
                 if (!preferenceManager.sharedPreferences!!.contains("pref_block_screenshots")) {
-                    isChecked = isPro
+                    isChecked = true
                 }
             }
         }
@@ -158,10 +163,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 isChecked = true
                 isEnabled = false
                 summary = getString(R.string.always_on)
+            } else if (isFree) {
+                isChecked = false
+                isEnabled = false
+                summary = getString(R.string.pref_pro_feature)
             } else {
                 isEnabled = true
                 if (!preferenceManager.sharedPreferences!!.contains("pref_exclusive_mic")) {
-                    isChecked = isPro
+                    isChecked = true
                 }
             }
         }
@@ -172,10 +181,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 isChecked = true
                 isEnabled = false
                 summary = getString(R.string.always_on)
+            } else if (isFree) {
+                isChecked = false
+                isEnabled = false
+                summary = getString(R.string.pref_pro_feature)
             } else {
                 isEnabled = true
                 if (!preferenceManager.sharedPreferences!!.contains("pref_detect_recording")) {
-                    isChecked = isPro
+                    isChecked = true
                 }
             }
         }
