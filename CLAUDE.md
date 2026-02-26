@@ -4,9 +4,9 @@
 
 SecureCall is an end-to-end encrypted voice calling app for Android. The monorepo contains the Android client, a Node.js signaling backend (deployed on Railway), a Rust crypto engine, and supporting infrastructure.
 
-**Sprint status:** All changes are **committed and pushed** to `origin/main`. Direct P2P audio transport is working via WebRTC DataChannel — Opus-encoded voice with E2E encryption, tested bidirectionally across all devices. Phone number → clientId resolution is live, tested bidirectionally between S7 and Tab S4.
+**Sprint status:** All changes are **committed and pushed** to `origin/main`. Direct P2P audio transport is working via WebRTC DataChannel — Opus-encoded voice with E2E encryption, tested bidirectionally across all devices. Phone number → clientId resolution is live, tested across all 3 physical devices (S10, S7, Tab S4). Incoming calls now show over the lock screen and wake the device.
 
-**The 27 completed changes (all committed):**
+**The 28 completed changes (all committed):**
 
 1. **Contact auto-call fix** -- Removed `itemView.setOnClickListener` from `ContactAdapter.kt`. Only the phone icon (`btnCallContact`) now triggers calls; tapping the contact row does nothing.
 2. **Messenger invite dialog** -- `DialerFragment.kt` now shows a 3-option dialog (Via Messenger, Share Link, Send SMS) when dialing an unknown number.
@@ -35,6 +35,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 25. **Auto-hangup on peer disconnect** *(Commit `0fbe701`)* -- `WebRtcManager.kt`: Added `onPeerDisconnect` callback fired on ICE DISCONNECTED/FAILED and DataChannel CLOSED. `WebSocketService.kt`: Wired callback to invoke `_onCallEnded`. Calls now auto-end on both sides when either peer hangs up, even if the CALL_END message is delayed or lost. -- Binary audio frames (50fps Opus) were flooding the signaling rate limiter (40 msgs/10s), killing the DataChannel after ~2.5s. Three-part fix: (1) `server.js`: moved binary frame handling BEFORE `rateLimit.registerEvent()` so audio frames bypass the signaling rate limit; (2) `rate_limit.js`: added separate `registerBinaryEvent()` with 1000/10s limit (defense in depth against binary flooding); (3) `WebSocketService.kt`: removed WS binary fallback — `sendBinary()` returns `false` when DataChannel is not open instead of falling back to `client?.sendBinary()`. Audio only flows via P2P DataChannel now. Brief silence (~2-3s) during ICE negotiation is expected; UI shows "Connecting..." during this time.
 26. **IncomingCallActivity auto-dismiss** *(Commit `a568bf3`)* -- When the caller cancels before the callee accepts, IncomingCallActivity now auto-dismisses. Three-layer approach: (1) static `activeInstance` reference so WebSocketService can call `dismissIfActive()` directly; (2) `onCallEnded` callback as backup; (3) identity-checked `onDestroy()` to only clear `activeInstance` if it's still this instance (prevents race condition with rapid back-to-back calls). Tested: Tab S4 → Emulator cancel, Emu → Tab S4 cancel, back-to-back cancels.
 27. **Phone number → clientId resolution** *(Commit `e0c0784`)* -- Server-side phone number registry: clients send their phone number during REGISTER, server stores normalized phone → clientId mapping. New `PHONE_LOOKUP` message type resolves phone numbers to clientIds. `CALL_INVITE` handler has phone fallback resolution. `DialerFragment` and `ContactsFragment` use async `lookupPhone()` before deciding call vs invite dialog. Client reads device phone number via `TelephonyManager.getLine1Number()` (requires READ_PHONE_STATE/READ_PHONE_NUMBERS permissions). Tested bidirectionally: S7 (+4915203487046) → Tab S4 (+491752536807) and Tab S4 → S7.
+28. **IncomingCallActivity lock screen fix** *(Commit `1aed31d`)* -- Added `setShowWhenLocked(true)`, `setTurnScreenOn(true)`, and `requestDismissKeyguard()` for Android 8.1+ (API 27+). Falls back to deprecated `FLAG_SHOW_WHEN_LOCKED`, `FLAG_DISMISS_KEYGUARD`, `FLAG_TURN_SCREEN_ON` for older versions. `FLAG_KEEP_SCREEN_ON` added unconditionally. Incoming calls now appear over the lock screen and wake the device. Tested: S10 → Tab S4 with Tab S4 screen locked — IncomingCallActivity appeared over lock screen.
 
 **End-to-end call signaling details (change #8):**
 - `WebSocketService.kt`: Added call signaling callbacks (`_onCallAccepted`, `_onCallEnded`, `_onCallError`), session tracking, incoming call activity launch, message parsing for CALL_INVITE/CALL_INVITE_ACK/CALL_ACCEPT/CALL_END/ERROR. Uses private backing fields with explicit setter methods for Java interop.
@@ -99,7 +100,10 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
   - S7 registered `+4915203487046` → `android-0a5f81aa`. Tab S4 registered `+491752536807` → `android-48712b87`. S10 has no SIM-stored number (graceful fallback, registers without phone).
   - **Tab S4 → S7 by phone number:** Dialed `+4915203487046` on Tab S4. PHONE_LOOKUP returned `clientId=android-0a5f81aa, online=true`. CallActivity launched, CALL_INVITE sent and ACK'd. S7 showed IncomingCallActivity. PASSED.
   - **S7 → Tab S4 by phone number:** Dialed `+491752536807` on S7. PHONE_LOOKUP returned `clientId=android-48712b87, online=true`. CallActivity launched, CALL_INVITE sent and ACK'd. Tab S4 showed IncomingCallActivity. PASSED.
+  - **S10 → S7 by phone number:** Dialed `+4915203487046` on S10. PHONE_LOOKUP returned `clientId=android-0a5f81aa, online=true`. CallActivity launched, CALL_INVITE ACK'd. S7 showed IncomingCallActivity. PASSED.
+  - **S10 → Tab S4 by phone number:** Dialed `+491752536807` on S10. PHONE_LOOKUP returned `clientId=android-48712b87, online=true`. CallActivity launched, CALL_INVITE ACK'd. Tab S4 showed IncomingCallActivity. PASSED.
   - Permissions granted via `adb shell pm grant` for testing. Runtime permission dialog not yet implemented in UI.
+- **IncomingCallActivity lock screen fix (Commit `1aed31d`):** Tab S4 screen locked with pattern lock. S10 called Tab S4's phone number. Before fix: IncomingCallActivity launched behind keyguard, `Surface is not valid`, invisible to user. After fix: IncomingCallActivity appeared over the lock screen with "Incoming Secure Call" from `android-e15eeebd`. PASSED. Device screen turned on and stayed on (`FLAG_KEEP_SCREEN_ON`).
 
 ## Architecture Decisions
 
@@ -141,7 +145,7 @@ stealth/                              # Monorepo root
 │   │       ├── java/com/securecall/app/
 │   │       │   ├── MainActivity.kt
 │   │       │   ├── CallActivity.java          # MODIFIED: signaling, audio, runtime permission, endCall guard
-│   │       │   ├── IncomingCallActivity.kt    # NEW: incoming call ringing screen (accepted flag fix, contact name resolution)
+│   │       │   ├── IncomingCallActivity.kt    # NEW: incoming call ringing screen (accepted flag fix, contact name, lock screen flags)
 │   │       │   ├── SecureCallApplication.kt
 │   │       │   ├── net/
 │   │       │   │   ├── HeartbeatClient.kt      # MODIFIED: reconnect fix, lastSeen on send, binary WS support
@@ -220,9 +224,10 @@ stealth/                              # Monorepo root
 17. ~~**Audio stream type.**~~ DONE. GhostAudioPlayer changed to `STREAM_VOICE_CALL`. Commit `0096e74`.
 18. ~~**Jitter buffer.**~~ DONE. JitterBuffer wired between OpusDecoder and GhostAudioPlayer with 60ms prefill playout thread. Commit `a6cd8c1`.
 19. ~~**IncomingCallActivity auto-dismiss.**~~ DONE. Static activeInstance + dismissIfActive() + identity-checked onDestroy(). Commit `a568bf3`.
-20. ~~**Phone number → clientId resolution.**~~ DONE. Server phone registry, PHONE_LOOKUP handler, client sends phone in REGISTER, DialerFragment/ContactsFragment async lookup. Commit `e0c0784`. Tested bidirectionally S7↔Tab S4.
-21. **Runtime phone number permission UI.** READ_PHONE_STATE/READ_PHONE_NUMBERS are granted via adb for testing. Need to add a runtime permission request dialog in the app (e.g., during onboarding or first REGISTER).
-22. **Automated tests.** Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
+20. ~~**Phone number → clientId resolution.**~~ DONE. Server phone registry, PHONE_LOOKUP handler, client sends phone in REGISTER, DialerFragment/ContactsFragment async lookup. Commit `e0c0784`. Tested bidirectionally S7↔Tab S4, S10→S7, S10→Tab S4.
+21. ~~**IncomingCallActivity over lock screen.**~~ DONE. Added show-when-locked, turn-screen-on, dismiss-keyguard, keep-screen-on flags. Commit `1aed31d`. Tested: S10 → locked Tab S4, IncomingCallActivity appeared over lock screen.
+22. **Runtime phone number permission UI.** READ_PHONE_STATE/READ_PHONE_NUMBERS are granted via adb for testing. Need to add a runtime permission request dialog in the app (e.g., during onboarding or first REGISTER).
+23. **Automated tests.** Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
 
 ## Known Issues
 
@@ -274,10 +279,10 @@ stealth/                              # Monorepo root
 
 ## Next Immediate Step
 
-All core features are complete, committed, and tested across 4 devices (S10, S7, Tab S4, Emulator). 27 changes shipped including full E2E encrypted P2P voice calls, phone number resolution, auto-dismiss, and comprehensive testing. Git history has been cleaned (test screenshots purged via `git filter-repo`). Next priorities:
+All core features are complete, committed, and tested across 4 devices (S10, S7, Tab S4, Emulator). 28 changes shipped including full E2E encrypted P2P voice calls, phone number resolution, auto-dismiss, lock screen incoming calls, and comprehensive testing. Git history has been cleaned (test screenshots purged via `git filter-repo`). Next priorities:
 
 1. **Runtime phone permission UI** -- Add a permission request dialog for READ_PHONE_STATE/READ_PHONE_NUMBERS (currently granted via adb). Could be added to onboarding flow or triggered on first REGISTER.
-2. **Fix background fullscreen intent** -- On Samsung, use `SYSTEM_ALERT_WINDOW` permission or telecom `ConnectionService` to bring IncomingCallActivity to foreground from background.
+2. ~~**Fix lock screen incoming calls**~~ -- DONE. IncomingCallActivity now shows over lock screen. Commit `1aed31d`.
 3. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
 4. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
 5. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
