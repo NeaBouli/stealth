@@ -4,9 +4,9 @@
 
 SecureCall is an end-to-end encrypted voice calling app for Android. The monorepo contains the Android client, a Node.js signaling backend (deployed on Railway), a Rust crypto engine, and supporting infrastructure.
 
-**Sprint status:** All changes are **committed and pushed** to `origin/main`. Direct P2P audio transport is working via WebRTC DataChannel — Opus-encoded voice with E2E encryption, tested bidirectionally between S10 and emulator with ICE CONNECTED + DataChannel OPEN.
+**Sprint status:** All changes are **committed and pushed** to `origin/main`. Direct P2P audio transport is working via WebRTC DataChannel — Opus-encoded voice with E2E encryption, tested bidirectionally across all devices. Phone number → clientId resolution is live, tested bidirectionally between S7 and Tab S4.
 
-**The 25 completed changes (all committed):**
+**The 27 completed changes (all committed):**
 
 1. **Contact auto-call fix** -- Removed `itemView.setOnClickListener` from `ContactAdapter.kt`. Only the phone icon (`btnCallContact`) now triggers calls; tapping the contact row does nothing.
 2. **Messenger invite dialog** -- `DialerFragment.kt` now shows a 3-option dialog (Via Messenger, Share Link, Send SMS) when dialing an unknown number.
@@ -33,6 +33,8 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 23. **Server rate-limit fix for P2P audio** *(Commit `dbad77c`)*
 24. **CALL_END forwarding fix** *(Commit `0fbe701`)* -- Server's CALL_END handler deleted the session from `routingTable` BEFORE forwarding CALL_END to the peer. Moved `sendToClient()` before `routingTable.delete()` in `server.js`.
 25. **Auto-hangup on peer disconnect** *(Commit `0fbe701`)* -- `WebRtcManager.kt`: Added `onPeerDisconnect` callback fired on ICE DISCONNECTED/FAILED and DataChannel CLOSED. `WebSocketService.kt`: Wired callback to invoke `_onCallEnded`. Calls now auto-end on both sides when either peer hangs up, even if the CALL_END message is delayed or lost. -- Binary audio frames (50fps Opus) were flooding the signaling rate limiter (40 msgs/10s), killing the DataChannel after ~2.5s. Three-part fix: (1) `server.js`: moved binary frame handling BEFORE `rateLimit.registerEvent()` so audio frames bypass the signaling rate limit; (2) `rate_limit.js`: added separate `registerBinaryEvent()` with 1000/10s limit (defense in depth against binary flooding); (3) `WebSocketService.kt`: removed WS binary fallback — `sendBinary()` returns `false` when DataChannel is not open instead of falling back to `client?.sendBinary()`. Audio only flows via P2P DataChannel now. Brief silence (~2-3s) during ICE negotiation is expected; UI shows "Connecting..." during this time.
+26. **IncomingCallActivity auto-dismiss** *(Commit `a568bf3`)* -- When the caller cancels before the callee accepts, IncomingCallActivity now auto-dismisses. Three-layer approach: (1) static `activeInstance` reference so WebSocketService can call `dismissIfActive()` directly; (2) `onCallEnded` callback as backup; (3) identity-checked `onDestroy()` to only clear `activeInstance` if it's still this instance (prevents race condition with rapid back-to-back calls). Tested: Tab S4 → Emulator cancel, Emu → Tab S4 cancel, back-to-back cancels.
+27. **Phone number → clientId resolution** *(Commit `e0c0784`)* -- Server-side phone number registry: clients send their phone number during REGISTER, server stores normalized phone → clientId mapping. New `PHONE_LOOKUP` message type resolves phone numbers to clientIds. `CALL_INVITE` handler has phone fallback resolution. `DialerFragment` and `ContactsFragment` use async `lookupPhone()` before deciding call vs invite dialog. Client reads device phone number via `TelephonyManager.getLine1Number()` (requires READ_PHONE_STATE/READ_PHONE_NUMBERS permissions). Tested bidirectionally: S7 (+4915203487046) → Tab S4 (+491752536807) and Tab S4 → S7.
 
 **End-to-end call signaling details (change #8):**
 - `WebSocketService.kt`: Added call signaling callbacks (`_onCallAccepted`, `_onCallEnded`, `_onCallError`), session tracking, incoming call activity launch, message parsing for CALL_INVITE/CALL_INVITE_ACK/CALL_ACCEPT/CALL_END/ERROR. Uses private backing fields with explicit setter methods for Java interop.
@@ -92,6 +94,12 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
   5. **Background call notification:** PASSED. App backgrounded on tablet, foreground service running, WebSocket received CALL_INVITE, IncomingCallActivity launched, notification shown with title "Incoming Secure Call" from "Emulator" (importance=HIGH, fullscreenIntent set). Note: fullscreenIntent doesn't bring activity to foreground over launcher on unlocked Samsung tablets — shows as notification instead (known Android behavior).
   6. **Call history:** PASSED. Both devices: 10+ entries with correct OUTGOING/INCOMING/MISSED types, contact names, durations, and `encrypted=true`.
   7. **Unknown number invite dialog:** PASSED. Dialed random number on tablet, dialog appeared: "Invite 22378 to SecureCall" with options "Via Messenger", "Share Link", "Send SMS".
+- **IncomingCallActivity auto-dismiss (Commit `a568bf3`):** Caller cancels → callee's IncomingCallActivity auto-dismisses within 1s. Tested: Tab S4 → Emu cancel (PASSED, logs show "Caller cancelled call — auto-dismissing"), Emu → Tab S4 cancel (PASSED), back-to-back cancel (Call 1 dismissed, Call 2 dismissed, no lifecycle race).
+- **Phone number → clientId resolution (Commit `e0c0784`):** Bidirectional phone lookup tested on 3 physical devices:
+  - S7 registered `+4915203487046` → `android-0a5f81aa`. Tab S4 registered `+491752536807` → `android-48712b87`. S10 has no SIM-stored number (graceful fallback, registers without phone).
+  - **Tab S4 → S7 by phone number:** Dialed `+4915203487046` on Tab S4. PHONE_LOOKUP returned `clientId=android-0a5f81aa, online=true`. CallActivity launched, CALL_INVITE sent and ACK'd. S7 showed IncomingCallActivity. PASSED.
+  - **S7 → Tab S4 by phone number:** Dialed `+491752536807` on S7. PHONE_LOOKUP returned `clientId=android-48712b87, online=true`. CallActivity launched, CALL_INVITE sent and ACK'd. Tab S4 showed IncomingCallActivity. PASSED.
+  - Permissions granted via `adb shell pm grant` for testing. Runtime permission dialog not yet implemented in UI.
 
 ## Architecture Decisions
 
@@ -108,6 +116,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **E2E audio encryption:** X25519 public keys are piggybacked on existing CALL_INVITE/CALL_ACCEPT messages (no extra round-trips). Both sides derive a shared session key via X25519 DH + HKDF-SHA256 using `CoreCrypto.deriveSessionKey()`. Every Opus frame is encrypted with `CoreCrypto.encrypt(sessionKey, data)` → [nonce(24B)|ciphertext|tag(16B)] before sending, and decrypted with `CoreCrypto.decrypt()` on receive. Session keys are derived before any audio flows. Key material (`localPrivKey`, `sessionKey`) is zeroed via `ByteArray.fill(0)` in `clearSession()`. Graceful fallback: if `CoreCrypto.isNativeAvailable()` is false, audio passes through unencrypted.
 - **endCall() idempotency:** `endCall()` uses an `isEnding` boolean guard to ensure it runs at most once per call session. The `onCallError` callback is cleared after first invocation (`ws.setOnCallError(null)`) to prevent server error floods (e.g., `rate_limited`) from scheduling multiple delayed `endCall()` calls. The proximity sensor does NOT call `endCall()` — it only manages `PROXIMITY_SCREEN_OFF_WAKE_LOCK`.
 - **Kotlin/Java interop:** CallActivity is Java, WebSocketService is Kotlin. Kotlin `var` properties auto-generate getters/setters that clash with explicit methods of the same name. Solution: private backing fields (`_fieldName`) with explicit public setter methods. Java lambdas for Kotlin `(String) -> Unit` must return `kotlin.Unit.INSTANCE`.
+- **Phone number → clientId resolution:** Server maintains an in-memory `phoneNumbers` Map (normalized phone → clientId). Clients send their phone number (via `TelephonyManager.getLine1Number()`) in the REGISTER message. `PHONE_LOOKUP { phoneNumber }` → `PHONE_LOOKUP_RESULT { phoneNumber, clientId, online }` resolves phone numbers. `CALL_INVITE` handler has a fallback: if `msg.to` isn't a known clientId, it tries `phoneNumbers.get(normalizePhone(msg.to))`. Phone entries are cleaned up on disconnect. `normalizePhone()` strips non-digit characters except leading `+`.
 - **Feature flags via BuildConfig:** Tier-specific behavior is controlled by `BuildConfig` fields set in `build.gradle` per flavor, accessed at runtime through `FeatureProvider` interface and `FeatureProviderRegistry` singleton.
 - **Firebase disabled:** Firebase initialization is disabled via manifest (`FirebaseInitProvider` set to `enabled="false"`). Crashlytics and Analytics collection are both disabled. FCM push notifications won't work until Firebase is properly configured with real credentials.
 
@@ -127,7 +136,7 @@ stealth/                              # Monorepo root
 │   ├── app/
 │   │   ├── build.gradle              # Flavors: free/pro/premium, deps (incl. WebRTC), server URLs
 │   │   └── src/main/
-│   │       ├── AndroidManifest.xml   # MODIFIED: foreground service + IncomingCallActivity
+│   │       ├── AndroidManifest.xml   # MODIFIED: foreground service, IncomingCallActivity, phone permissions
 │   │       ├── cpp/CMakeLists.txt    # JNI bridge to Rust crypto
 │   │       ├── java/com/securecall/app/
 │   │       │   ├── MainActivity.kt
@@ -136,13 +145,13 @@ stealth/                              # Monorepo root
 │   │       │   ├── SecureCallApplication.kt
 │   │       │   ├── net/
 │   │       │   │   ├── HeartbeatClient.kt      # MODIFIED: reconnect fix, lastSeen on send, binary WS support
-│   │       │   │   ├── WebSocketService.kt     # MODIFIED: foreground, call signaling, audio, E2E encryption, WebRTC
+│   │       │   │   ├── WebSocketService.kt     # MODIFIED: foreground, call signaling, audio, E2E encryption, WebRTC, phone registry
 │   │       │   │   ├── WebRtcManager.kt        # NEW: WebRTC PeerConnection + DataChannel for P2P audio
 │   │       │   │   └── signal/                 # Call & key exchange message builders
 │   │       │   ├── ui/
 │   │       │   │   ├── CallsFragment.kt
-│   │       │   │   ├── ContactsFragment.kt
-│   │       │   │   ├── DialerFragment.kt       # MODIFIED: messenger invite, T9 search, invite dialog fix
+│   │       │   │   ├── ContactsFragment.kt     # MODIFIED: async phone lookup before call/invite
+│   │       │   │   ├── DialerFragment.kt       # MODIFIED: messenger invite, T9 search, invite dialog fix, phone lookup
 │   │       │   │   ├── SettingsFragment.kt     # MODIFIED: background service toggle, clientId display
 │   │       │   │   └── adapter/
 │   │       │   │       └── ContactAdapter.kt   # MODIFIED: removed row click
@@ -168,7 +177,7 @@ stealth/                              # Monorepo root
 │
 ├── backend/                          # Node.js signaling server (Railway)
 │   └── signaling/src/
-│       ├── server.js                 # MODIFIED: HEARTBEAT_ACK, pubKey forwarding, binary before rate limit
+│       ├── server.js                 # MODIFIED: HEARTBEAT_ACK, pubKey forwarding, binary before rate limit, phone registry + PHONE_LOOKUP
 │       ├── rate_limit.js             # MODIFIED: separate binary rate limit (1000/10s)
 │       └── heartbeat.js              # MODIFIED: session timeout 30s→60s
 ├── core_crypto/                      # Rust crypto library (XChaCha20, X25519, HKDF)
@@ -179,8 +188,7 @@ stealth/                              # Monorepo root
 ├── marketing/                        # Marketing assets
 ├── native/                           # Native code modules
 ├── rom_ghostos/                      # Custom ROM project
-└── tools/                            # Test scripts, screenshots
-    └── test_screenshots/             # Testing screenshots from S10 + emulator
+└── tools/                            # Test scripts
 ```
 
 ### Key Server URLs (hardcoded in build.gradle for both debug and release)
@@ -211,6 +219,10 @@ stealth/                              # Monorepo root
 16. ~~**Direct P2P audio (WebRTC).**~~ DONE. WebRTC DataChannel (P2P only, no WS relay fallback). Commit `27941e8`. Pending queue fix `0f7284a`. Rate-limit fix `dbad77c`.
 17. ~~**Audio stream type.**~~ DONE. GhostAudioPlayer changed to `STREAM_VOICE_CALL`. Commit `0096e74`.
 18. ~~**Jitter buffer.**~~ DONE. JitterBuffer wired between OpusDecoder and GhostAudioPlayer with 60ms prefill playout thread. Commit `a6cd8c1`.
+19. ~~**IncomingCallActivity auto-dismiss.**~~ DONE. Static activeInstance + dismissIfActive() + identity-checked onDestroy(). Commit `a568bf3`.
+20. ~~**Phone number → clientId resolution.**~~ DONE. Server phone registry, PHONE_LOOKUP handler, client sends phone in REGISTER, DialerFragment/ContactsFragment async lookup. Commit `e0c0784`. Tested bidirectionally S7↔Tab S4.
+21. **Runtime phone number permission UI.** READ_PHONE_STATE/READ_PHONE_NUMBERS are granted via adb for testing. Need to add a runtime permission request dialog in the app (e.g., during onboarding or first REGISTER).
+22. **Automated tests.** Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
 
 ## Known Issues
 
@@ -226,14 +238,16 @@ stealth/                              # Monorepo root
 9. **Android AlertDialog gotcha.** `setMessage()` and `setItems()` are mutually exclusive -- `setMessage` suppresses the item list. Fixed in commit `a0b9872`.
 10. **Kotlin/Java interop gotcha.** Kotlin `var` properties auto-generate getters/setters that clash with explicit methods of the same name. Use private backing fields + explicit methods. Java lambdas for Kotlin function types must return `kotlin.Unit.INSTANCE`.
 11. **Activity lifecycle race condition.** `IncomingCallActivity.onDestroy()` runs after `CallActivity.onCreate()` when accepting a call. Any callbacks set in `onDestroy()` to `null` will overwrite what `CallActivity.onCreate()` just set. Fixed with `accepted` flag guard.
-12. **IncomingCallActivity doesn't auto-dismiss on caller cancel.** If the caller ends the call before the callee accepts/declines, IncomingCallActivity stays visible. The callee must manually tap Decline to dismiss it. The `onCallEnded` callback doesn't fire because the session was never fully established from IncomingCallActivity's perspective.
+12. ~~**IncomingCallActivity doesn't auto-dismiss on caller cancel.**~~ RESOLVED. Static `activeInstance` + `dismissIfActive()` + identity-checked `onDestroy()`. Commit `a568bf3`.
 13. **Background fullscreenIntent on Samsung.** On unlocked Samsung devices, `fullScreenIntent` notifications don't bring the activity to the foreground over the launcher — they show as a heads-up/status bar notification instead. The IncomingCallActivity IS launched and in the task stack, but the user must tap the notification to bring it forward. This is a known Android/Samsung restriction for background activity launches.
+14. **Phone number unavailable on some SIMs.** `TelephonyManager.getLine1Number()` returns null on SIMs that don't store the phone number (e.g., S10 test device). These devices register without a phone number and can only be called by clientId. READ_PHONE_STATE/READ_PHONE_NUMBERS permissions are currently granted via adb — no runtime permission request UI yet.
+15. **Dialer T9 suggestions shift button positions.** On S7 (Galaxy S7, Android 8), the contactSuggestions RecyclerView appearing/changing height as digits are typed shifts the dial pad button positions. Tapping buttons at static coordinates can hit the wrong button. Not a functional bug (users tap visually) but complicates automated UI testing via adb.
 
 ## Explicit Non-Goals
 
-- Backend changes are minimal: `HEARTBEAT_ACK` response, `pubKey` forwarding, binary-before-rate-limit reorder in `server.js`; separate binary rate limit in `rate_limit.js`; session timeout increase in `heartbeat.js`. No structural or architectural backend changes.
-- No Rust crypto changes. `core_crypto/` is stable and untouched (the `.rustc_info.json` change is a build cache artifact).
-- No Pro or Premium flavor builds. Only `free` debug is being built and tested.
+- Backend changes are minimal: `HEARTBEAT_ACK` response, `pubKey` forwarding, binary-before-rate-limit reorder, phone number registry + `PHONE_LOOKUP` handler in `server.js`; separate binary rate limit in `rate_limit.js`; session timeout increase in `heartbeat.js`. No structural or architectural backend changes.
+- No Rust crypto changes. `core_crypto/` is stable and untouched.
+- Both `free` and `premium` debug variants are built and tested. Premium is used for 3-device physical testing (S10, S7, Tab S4).
 - No CI/CD pipeline changes. GitHub Actions workflows exist but are not being modified.
 - No new automated tests for this sprint. Testing is manual on physical device.
 - No Firebase configuration. Push notifications remain non-functional.
@@ -242,7 +256,7 @@ stealth/                              # Monorepo root
 ## Code Conventions
 
 - **Language:** Kotlin for all app code. XML for Android resources. Rust for crypto engine.
-- **Build:** `./gradlew assembleFreeDebug` from `client_android/` directory. APK output: `app/build/outputs/apk/free/debug/app-free-debug.apk`.
+- **Build:** `./gradlew assembleFreeDebug` or `./gradlew assemblePremiumDebug` from `client_android/` directory. APK output: `app/build/outputs/apk/{flavor}/debug/app-{flavor}-debug.apk`.
 - **Package naming:** `com.securecall.app.<feature>` (e.g., `net`, `ui`, `audio`, `config`, `ghostnet`).
 - **Variable/function naming:** camelCase. Classes: PascalCase. Resource IDs: `snake_case` (e.g., `pref_background_service`, `btnCallContact`).
 - **Preference keys:** Prefixed with `pref_` (e.g., `pref_dark_mode`, `pref_block_screenshots`, `pref_background_service`).
@@ -250,20 +264,20 @@ stealth/                              # Monorepo root
 - **Comments:** Older code has German comments (e.g., `// BACKEND-22: Heartbeat Ueberwachung`). New code uses English. Ticket references like `BACKEND-22`, `PATCH 201` appear throughout.
 - **Error handling:** Non-critical failures use `catch (_: Exception) {}`. Critical errors use `Log.e(TAG, message, throwable)`.
 - **adb on this machine:** Not in PATH. Full path required: `/Users/gio/Library/Android/sdk/platform-tools/adb`. Emulator: `~/Library/Android/sdk/emulator/emulator`. AVD name: `Pixel_5`.
-- **S10 serial:** `RF8N313QMFL`. ClientId: `android-ded42f50`.
-- **S7 serial:** `ce10160adc00152604`. ClientId: `android-168bd2f9`.
-- **Tab S4 serial:** `ce12182c68644439037e`. ClientId: `android-5260e744`. Landscape mode (2560x1492).
+- **S10 serial:** `RF8N313QMFL`. ClientId: `android-e15eeebd`. No SIM-stored phone number.
+- **S7 serial:** `ce10160adc00152604`. ClientId: `android-0a5f81aa`. Phone: `+4915203487046`.
+- **Tab S4 serial:** `ce12182c68644439037e`. ClientId: `android-48712b87`. Phone: `+491752536807`. Landscape mode (2560x1492).
 - **Emulator:** `emulator-5554`. ClientId: `android-33068922` (changes on wipe).
-- **Package name:** `com.securecall.app.free` (all devices).
-- **App launch command:** `adb -s <serial> shell am start -n com.securecall.app.free/com.securecall.app.MainActivity`
+- **Package name (free):** `com.securecall.app.free`. **Package name (premium):** `com.securecall.app.premium`.
+- **App launch command:** `adb -s <serial> shell am start -n com.securecall.app.{free|premium}/com.securecall.app.MainActivity`
 - **Contacts storage:** SharedPreferences file `securecall_contacts` with key `contacts_json` (JSON array). Fields: `id`, `name`, `phoneOrId`, `createdAt`, `isPhoneContact`.
 
 ## Next Immediate Step
 
-All core features are complete, committed, and tested across 4 devices (S10, S7, Tab S4, Emulator). 7-test comprehensive suite passed on Tab S4 + Emulator: accept/end from both sides, decline from both sides, background notification, call history, and invite dialog. Next priorities:
+All core features are complete, committed, and tested across 4 devices (S10, S7, Tab S4, Emulator). 27 changes shipped including full E2E encrypted P2P voice calls, phone number resolution, auto-dismiss, and comprehensive testing. Git history has been cleaned (test screenshots purged via `git filter-repo`). Next priorities:
 
-1. **Fix IncomingCallActivity auto-dismiss** -- When caller cancels before callee accepts, IncomingCallActivity should auto-dismiss (listen for CALL_END in IncomingCallActivity).
+1. **Runtime phone permission UI** -- Add a permission request dialog for READ_PHONE_STATE/READ_PHONE_NUMBERS (currently granted via adb). Could be added to onboarding flow or triggered on first REGISTER.
 2. **Fix background fullscreen intent** -- On Samsung, use `SYSTEM_ALERT_WINDOW` permission or telecom `ConnectionService` to bring IncomingCallActivity to foreground from background.
 3. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
 4. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
-5. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling).
+5. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
