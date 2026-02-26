@@ -9,6 +9,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
+import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.SystemClock;
@@ -57,6 +58,9 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager sensorManager;
     private Sensor proximitySensor;
     private PowerManager.WakeLock proximityWakeLock;
+
+    // Ringback tone for caller while waiting
+    private ToneGenerator ringbackTone;
 
     // Security status UI
     private ImageView securityStatusIcon;
@@ -139,15 +143,18 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
             String targetId = phoneNumber;
             connectionState.setText(R.string.call_ringing);
             updateCallButton(true);
+            startRingbackTone();
 
             if (ws != null && targetId != null && !targetId.isEmpty()) {
                 ws.setOnCallAccepted(acceptedSessionId -> {
                     Log.d(TAG, "Remote accepted, session=" + acceptedSessionId);
+                    stopRingbackTone();
                     runOnUiThread(() -> startTransportAndTimer(connectionState, callTimer));
                     return kotlin.Unit.INSTANCE;
                 });
                 ws.setOnCallError((error, message) -> {
                     Log.e(TAG, "Call error: " + error + " — " + message);
+                    stopRingbackTone();
                     // Clear callback to prevent repeated error handling
                     ws.setOnCallError(null);
                     runOnUiThread(() -> {
@@ -475,9 +482,33 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
+    private void startRingbackTone() {
+        try {
+            ringbackTone = new ToneGenerator(AudioManager.STREAM_VOICE_CALL, 80);
+            ringbackTone.startTone(ToneGenerator.TONE_SUP_RINGTONE);
+            Log.d(TAG, "Ringback tone started");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start ringback tone", e);
+        }
+    }
+
+    private void stopRingbackTone() {
+        try {
+            if (ringbackTone != null) {
+                ringbackTone.stopTone();
+                ringbackTone.release();
+                ringbackTone = null;
+                Log.d(TAG, "Ringback tone stopped");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping ringback tone", e);
+        }
+    }
+
     private void endCall() {
         if (isEnding) return;
         isEnding = true;
+        stopRingbackTone();
         Log.d(TAG, "endCall() — stopping call");
 
         // Send CALL_END signaling and clear callbacks

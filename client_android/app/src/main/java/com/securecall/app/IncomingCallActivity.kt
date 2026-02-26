@@ -2,9 +2,17 @@ package com.securecall.app
 
 import android.app.KeyguardManager
 import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.MediaPlayer
+import android.media.RingtoneManager
 import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
@@ -24,6 +32,7 @@ class IncomingCallActivity : AppCompatActivity() {
             val activity = activeInstance ?: return
             if (activity.sessionId == sessionId) {
                 Log.d(TAG, "Caller cancelled call — auto-dismissing")
+                activity.stopRingtoneAndVibration()
                 activity.saveMissedCall()
                 activity.dismissIncomingCallNotification()
                 activity.runOnUiThread { activity.finish() }
@@ -35,6 +44,8 @@ class IncomingCallActivity : AppCompatActivity() {
     private var callerClientId: String = ""
     private var callerDisplayName: String = ""
     private var accepted = false
+    private var ringtonePlayer: MediaPlayer? = null
+    private var vibrator: Vibrator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,6 +93,10 @@ class IncomingCallActivity : AppCompatActivity() {
         findViewById<FloatingActionButton>(R.id.fabAcceptCall).setOnClickListener { acceptCall() }
         findViewById<FloatingActionButton>(R.id.fabDeclineCall).setOnClickListener { declineCall() }
 
+        // Start ringtone and vibration
+        startRingtone()
+        startVibration()
+
         // Backup: also use callback for caller hangup during ringing
         ws?.setOnCallEnded { endedSessionId ->
             if (endedSessionId == sessionId) {
@@ -100,6 +115,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
     private fun acceptCall() {
         accepted = true
+        stopRingtoneAndVibration()
         dismissIncomingCallNotification()
         Log.d(TAG, "Accepting call, session=$sessionId")
         val ws = com.securecall.app.net.WebSocketService.instance
@@ -116,6 +132,7 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun declineCall() {
+        stopRingtoneAndVibration()
         dismissIncomingCallNotification()
         Log.d(TAG, "Declining call, session=$sessionId")
         saveMissedCall()
@@ -147,7 +164,68 @@ class IncomingCallActivity : AppCompatActivity() {
         saveMissedCall()
     }
 
+    private fun startRingtone() {
+        try {
+            val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            ringtonePlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                setDataSource(this@IncomingCallActivity, ringtoneUri)
+                isLooping = true
+                prepare()
+                start()
+            }
+            Log.d(TAG, "Ringtone started")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start ringtone", e)
+        }
+    }
+
+    private fun startVibration() {
+        try {
+            vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                vm.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+            // Pattern: wait 0ms, vibrate 1000ms, pause 1000ms — repeat
+            val pattern = longArrayOf(0, 1000, 1000)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(pattern, 0)
+            }
+            Log.d(TAG, "Vibration started")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start vibration", e)
+        }
+    }
+
+    private fun stopRingtoneAndVibration() {
+        try {
+            ringtonePlayer?.stop()
+            ringtonePlayer?.release()
+            ringtonePlayer = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping ringtone", e)
+        }
+        try {
+            vibrator?.cancel()
+            vibrator = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping vibration", e)
+        }
+    }
+
     override fun onDestroy() {
+        stopRingtoneAndVibration()
         super.onDestroy()
         // Only clear activeInstance if WE are the current instance (avoids race with new instance)
         if (activeInstance === this) {

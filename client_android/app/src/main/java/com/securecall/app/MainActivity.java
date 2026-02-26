@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private static final int REQUEST_RECORD_AUDIO = 1001;
+    private static final int REQUEST_POST_NOTIFICATIONS = 1002;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +55,16 @@ public class MainActivity extends AppCompatActivity {
 
         // Register FCM token for push notifications
         FcmTokenManager.INSTANCE.ensureTokenRegistered(this);
+
+        // Request POST_NOTIFICATIONS permission on Android 13+ (required for foreground service)
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        REQUEST_POST_NOTIFICATIONS);
+            }
+        }
 
         // Start WebSocket signaling service as foreground service (survives background)
         Intent wsIntent = new Intent(this, com.securecall.app.net.WebSocketService.class);

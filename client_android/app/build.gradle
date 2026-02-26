@@ -111,9 +111,9 @@ android {
 
     signingConfigs {
         release {
-            storeFile file(System.getenv("SECURECALL_STORE_FILE") ?: findProperty("SECURECALL_STORE_FILE") ?: "release.keystore")
+            storeFile file(System.getenv("SECURECALL_STORE_FILE") ?: findProperty("SECURECALL_STORE_FILE") ?: "${rootProject.projectDir}/../securecall-release-key.jks")
             storePassword System.getenv("SECURECALL_STORE_PASSWORD") ?: findProperty("SECURECALL_STORE_PASSWORD") ?: ""
-            keyAlias System.getenv("SECURECALL_KEY_ALIAS") ?: findProperty("SECURECALL_KEY_ALIAS") ?: ""
+            keyAlias System.getenv("SECURECALL_KEY_ALIAS") ?: findProperty("SECURECALL_KEY_ALIAS") ?: "securecall"
             keyPassword System.getenv("SECURECALL_KEY_PASSWORD") ?: findProperty("SECURECALL_KEY_PASSWORD") ?: ""
         }
     }
