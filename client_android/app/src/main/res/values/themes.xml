@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Base theme: forced dark military aesthetic regardless of system setting -->
-    <style name="Theme.SecureCall" parent="Theme.Material3.Dark.NoActionBar">
+    <!-- Base light theme -->
+    <style name="Theme.SecureCall" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/md_theme_light_primary</item>
         <item name="colorOnPrimary">@color/md_theme_light_onPrimary</item>
         <item name="colorPrimaryContainer">@color/md_theme_light_primaryContainer</item>
@@ -22,10 +22,10 @@
         <item name="colorOnSurfaceVariant">@color/md_theme_light_onSurfaceVariant</item>
         <item name="colorOutline">@color/md_theme_light_outline</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@color/bg_tactical</item>
+        <item name="android:navigationBarColor">@color/md_theme_light_background</item>
     </style>
 
-    <!-- Call Activity immersive dark theme -->
+    <!-- Call Activity immersive dark theme (always dark) -->
     <style name="Theme.SecureCall.Call" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:colorBackground">@color/stealthx_black</item>
         <item name="colorSurface">@color/stealthx_dark_gray</item>

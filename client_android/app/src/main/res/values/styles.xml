@@ -24,7 +24,7 @@
 
     <!-- BottomNav -->
     <style name="Widget.SecureCall.BottomNav" parent="Widget.Material3.BottomNavigationView">
-        <item name="backgroundTint">@color/bg_tactical</item>
+        <item name="backgroundTint">?attr/colorSurface</item>
     </style>
 
     <!-- Circle shape for avatars -->
