@@ -11,10 +11,10 @@ import com.securecall.app.data.CallRecord
 import com.securecall.app.data.CallType
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 class CallHistoryAdapter(
-    records: List<CallRecord>
+    records: List<CallRecord>,
+    private val onItemClick: ((CallRecord) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val items = buildGroupedList(records)
@@ -46,7 +46,12 @@ class CallHistoryAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = items[position]) {
             is ListItem.Header -> (holder as HeaderVH).bind(item.label)
-            is ListItem.Record -> (holder as RecordVH).bind(item.record)
+            is ListItem.Record -> {
+                (holder as RecordVH).bind(item.record)
+                holder.itemView.setOnClickListener {
+                    onItemClick?.invoke(item.record)
+                }
+            }
         }
     }
 
