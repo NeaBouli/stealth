@@ -33,6 +33,7 @@ class ContactsFragment : Fragment() {
     private lateinit var emptyState: View
     private lateinit var searchInput: EditText
     private var allContacts: List<Contact> = emptyList()
+    private var registeredPhones: Set<String> = emptySet()
 
     companion object {
         private const val TAG = "ContactsFragment"
@@ -117,6 +118,22 @@ class ContactsFragment : Fragment() {
         }
         allContacts = appContacts + uniquePhoneContacts
         updateList(allContacts)
+        // Check which contacts are registered SecureCall users
+        checkSecureCallMembers()
+    }
+
+    private fun checkSecureCallMembers() {
+        val ws = com.securecall.app.net.WebSocketService.instance ?: return
+        val phoneNumbers = allContacts
+            .filter { !it.phoneOrId.startsWith("android-") }
+            .map { it.phoneOrId.replace("\\s".toRegex(), "") }
+        if (phoneNumbers.isEmpty()) return
+        ws.batchPhoneLookup(phoneNumbers) { registered ->
+            registeredPhones = registered
+            activity?.runOnUiThread {
+                if (isAdded) updateList(allContacts)
+            }
+        }
     }
 
     private fun loadPhoneContacts(): List<Contact> {
@@ -178,7 +195,7 @@ class ContactsFragment : Fragment() {
         } else {
             recycler.visibility = View.VISIBLE
             emptyState.visibility = View.GONE
-            recycler.adapter = ContactAdapter(contacts) { contact ->
+            recycler.adapter = ContactAdapter(contacts, registeredPhones) { contact ->
                 startCall(contact)
             }
         }

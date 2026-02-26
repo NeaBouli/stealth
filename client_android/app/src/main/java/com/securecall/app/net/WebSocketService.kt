@@ -54,6 +54,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     // Phone lookup callback
     private var _phoneLookupCallback: ((String?) -> Unit)? = null
+    // Batch phone lookup callback: returns set of registered phone numbers
+    private var _batchPhoneLookupCallback: ((Set<String>) -> Unit)? = null
 
     fun getCurrentSessionId(): String? = _currentSessionId
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
@@ -164,6 +166,18 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         val json = """{"type":"PHONE_LOOKUP","phoneNumber":"$phoneNumber"}"""
         client?.send(json)
         Log.d("WS_SERVICE", "PHONE_LOOKUP sent: $phoneNumber")
+    }
+
+    /** Batch-check which phone numbers are registered SecureCall users. */
+    fun batchPhoneLookup(phoneNumbers: List<String>, callback: (registered: Set<String>) -> Unit) {
+        _batchPhoneLookupCallback = callback
+        val arr = org.json.JSONArray(phoneNumbers)
+        val json = org.json.JSONObject().apply {
+            put("type", "BATCH_PHONE_LOOKUP")
+            put("phoneNumbers", arr)
+        }.toString()
+        client?.send(json)
+        Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP sent: ${phoneNumbers.size} numbers")
     }
 
     // ===================== HeartbeatClient.Listener =====================
@@ -622,6 +636,23 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 Log.d("WS_SERVICE", "PHONE_LOOKUP_RESULT: clientId=$clientId")
                 _phoneLookupCallback?.invoke(clientId)
                 _phoneLookupCallback = null
+                return
+            }
+            if (obj.optString("type") == "BATCH_PHONE_LOOKUP_RESULT") {
+                val results = obj.optJSONArray("results")
+                val registered = mutableSetOf<String>()
+                if (results != null) {
+                    for (i in 0 until results.length()) {
+                        val r = results.getJSONObject(i)
+                        val cId = r.optString("clientId", "")
+                        if (cId.isNotEmpty() && cId != "null") {
+                            registered.add(r.optString("phoneNumber", ""))
+                        }
+                    }
+                }
+                Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP_RESULT: ${registered.size} registered")
+                _batchPhoneLookupCallback?.invoke(registered)
+                _batchPhoneLookupCallback = null
                 return
             }
         } catch (_: Throwable) {}

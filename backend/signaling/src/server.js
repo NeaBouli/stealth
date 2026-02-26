@@ -843,6 +843,23 @@ wss.on("connection", (ws, req) => {
       }));
     }
 
+    // ===========================
+    // BATCH_PHONE_LOOKUP — Resolve multiple phone numbers at once
+    // ===========================
+    if (msg.type === "BATCH_PHONE_LOOKUP") {
+      const phoneList = Array.isArray(msg.phoneNumbers) ? msg.phoneNumbers : [];
+      const results = phoneList.slice(0, 200).map(phone => {
+        const normalized = normalizePhone(phone);
+        const resolvedClientId = phoneNumbers.get(normalized) || null;
+        const online = resolvedClientId ? clientIds.has(resolvedClientId) : false;
+        return { phoneNumber: phone, clientId: resolvedClientId, online };
+      });
+      return ws.send(JSON.stringify({
+        type: "BATCH_PHONE_LOOKUP_RESULT",
+        results
+      }));
+    }
+
     // HEARTBEAT — client keepalive, reply so client's onMessage updates lastSeen
     if (msg.type === "HEARTBEAT") {
       return ws.send(JSON.stringify({ type: "HEARTBEAT_ACK" }));
