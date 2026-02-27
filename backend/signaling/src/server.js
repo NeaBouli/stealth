@@ -87,12 +87,19 @@ function normalizePhone(num) {
 // --- Helper: send JSON to a clientId ---
 function sendToClient(clientId, payload) {
   const connId = clientIds.get(clientId);
-  if (!connId) return false;
+  if (!connId) {
+    console.log("[SEND] FAILED: no connId for clientId", clientId, "payload.type=", payload.type);
+    return false;
+  }
 
   const client = clients.get(connId);
-  if (!client || client.ws.readyState !== WebSocket.OPEN) return false;
+  if (!client || client.ws.readyState !== WebSocket.OPEN) {
+    console.log("[SEND] FAILED: client gone or ws not open for", clientId, "connId=", connId, "readyState=", client ? client.ws.readyState : "no-client", "payload.type=", payload.type);
+    return false;
+  }
 
   client.ws.send(JSON.stringify(payload));
+  console.log("[SEND] OK:", clientId, "type=", payload.type);
   return true;
 }
 
@@ -551,11 +558,14 @@ wss.on("connection", (ws, req) => {
     // ===========================
     if (msg.type === "CALL_END") {
       const myClientId = getClientId(connId);
+      console.log("[CALL_END] from connId=", connId, "clientId=", myClientId, "sessionId=", msg.sessionId);
 
       if (msg.sessionId && routingTable.has(msg.sessionId)) {
         const session = routingTable.get(msg.sessionId);
+        console.log("[CALL_END] session found:", JSON.stringify(session));
         // Verify sender is a participant
         if (session.from !== myClientId && session.to !== myClientId) {
+          console.log("[CALL_END] REJECTED: not_participant. myClientId=", myClientId, "session.from=", session.from, "session.to=", session.to);
           return ws.send(JSON.stringify({
             type: "ERROR",
             error: "not_participant",
@@ -564,18 +574,24 @@ wss.on("connection", (ws, req) => {
         }
 
         const peerClientId = getSessionPeer(msg.sessionId, myClientId);
+        console.log("[CALL_END] peerClientId=", peerClientId);
 
         // Forward to peer BEFORE deleting session (prevents race condition)
         if (peerClientId) {
-          sendToClient(peerClientId, {
+          const sent = sendToClient(peerClientId, {
             type: "CALL_END",
             sessionId: msg.sessionId,
             from: myClientId
           });
+          console.log("[CALL_END] forwarded to peer:", peerClientId, "sent=", sent);
+        } else {
+          console.log("[CALL_END] WARNING: no peer found for session");
         }
 
         routingTable.delete(msg.sessionId);
         console.log("[ROUTING] END:", msg.sessionId, "by", myClientId);
+      } else {
+        console.log("[CALL_END] session NOT found in routingTable. sessionId=", msg.sessionId, "routingTable.size=", routingTable.size);
       }
 
       return ws.send(JSON.stringify({
