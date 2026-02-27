@@ -218,7 +218,8 @@ class ContactsFragment : Fragment() {
                 showInviteDialog(contact)
                 return
             }
-            ws.lookupPhone(contact.phoneOrId) { clientId ->
+            val normalized = contact.phoneOrId.replace(Regex("[^0-9+]"), "")
+            ws.lookupPhone(normalized) { clientId ->
                 activity?.runOnUiThread {
                     if (clientId != null) {
                         Log.d(TAG, "Phone resolved: ${contact.phoneOrId} -> $clientId")

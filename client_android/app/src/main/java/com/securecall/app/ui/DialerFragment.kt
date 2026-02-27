@@ -11,6 +11,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
@@ -50,6 +52,21 @@ class DialerFragment : Fragment() {
 
         phoneDisplay = view.findViewById(R.id.phoneNumberDisplay)
         phoneDisplay.showSoftInputOnFocus = false // Use dial pad, not keyboard
+
+        // Keep StringBuilder in sync when user pastes or edits directly
+        phoneDisplay.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val displayText = s?.toString() ?: ""
+                if (displayText != phoneNumber.toString()) {
+                    phoneNumber.clear()
+                    phoneNumber.append(displayText)
+                    btnBackspace.visibility = if (phoneNumber.isNotEmpty()) View.VISIBLE else View.GONE
+                }
+            }
+        })
+
         btnBackspace = view.findViewById(R.id.btnBackspace)
         contactSuggestions = view.findViewById(R.id.contactSuggestions)
         dialPad = view.findViewById(R.id.dialPad)
@@ -158,7 +175,12 @@ class DialerFragment : Fragment() {
     }
 
     private fun handleCall() {
-        val number = phoneNumber.toString().trim()
+        // Read from EditText (source of truth) — the StringBuilder may be out of sync
+        // if the user pasted text or the fragment was recreated
+        var number = phoneNumber.toString().trim()
+        if (number.isEmpty()) {
+            number = phoneDisplay.text.toString().trim()
+        }
         if (number.isEmpty()) {
             Toast.makeText(requireContext(), getString(R.string.dialer_enter_number), Toast.LENGTH_SHORT).show()
             return
@@ -189,7 +211,8 @@ class DialerFragment : Fragment() {
             showInviteDialog(phoneNumber)
             return
         }
-        ws.lookupPhone(phoneNumber) { clientId ->
+        val normalized = normalizePhone(phoneNumber)
+        ws.lookupPhone(normalized) { clientId ->
             activity?.runOnUiThread {
                 if (clientId != null) {
                     Log.d("DialerFragment", "Phone resolved: $phoneNumber -> $clientId")
