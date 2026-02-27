@@ -169,6 +169,31 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// --- Temporary debug endpoint (remove after fixing CALL_END bug) ---
+app.get("/debug/state", (req, res) => {
+  const clientsList = [];
+  for (const [connId, client] of clients) {
+    clientsList.push({
+      connId,
+      clientId: client.clientId || null,
+      readyState: client.ws.readyState,
+      open: client.ws.readyState === WebSocket.OPEN
+    });
+  }
+  const clientIdsList = {};
+  for (const [cid, coid] of clientIds) {
+    clientIdsList[cid] = coid;
+  }
+  res.json({
+    clientsCount: clients.size,
+    clientIdsCount: clientIds.size,
+    routingTableCount: routingTable.size,
+    clients: clientsList,
+    clientIds: clientIdsList,
+    routes: Array.from(routingTable.values())
+  });
+});
+
 // --- Routing Debug API (admin-only) ---
 app.get("/routing/list", requireAdmin, (req, res) => {
   res.json({
