@@ -70,6 +70,17 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         sessionKey = null
         webRtcManager?.close()
         webRtcManager = null
+        killAllAudio()
+    }
+
+    /** Stop ALL audio resources globally — ringtone, ringback, playback. Belt-and-suspenders. */
+    fun killAllAudio() {
+        Log.d("WS_SERVICE", "killAllAudio() — stopping all audio resources")
+        try { stopAudioPlayback() } catch (e: Exception) { Log.e("WS_SERVICE", "Error in stopAudioPlayback", e) }
+        // Dismiss IncomingCallActivity ringtone+vibration if still active
+        try {
+            com.securecall.app.IncomingCallActivity.stopActiveAudio()
+        } catch (e: Exception) { Log.e("WS_SERVICE", "Error stopping IncomingCallActivity audio", e) }
     }
 
     fun getLocalClientId(): String? {
@@ -206,7 +217,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         val intent = android.content.Intent(this, com.securecall.app.IncomingCallActivity::class.java).apply {
             putExtra("sessionId", sessionId)
             putExtra("callerClientId", fromClientId)
-            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
 
         // Always launch activity directly (works when app is in foreground or background)
@@ -736,6 +747,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 val sessionId = obj.optString("sessionId", "")
                 Log.d("WS_SERVICE", "CALL_END received, sessionId=$sessionId")
                 _currentSessionId = null
+                // Kill all audio immediately — belt-and-suspenders
+                killAllAudio()
                 // Dismiss IncomingCallActivity if it's showing (caller cancelled during ringing)
                 com.securecall.app.IncomingCallActivity.dismissIfActive(sessionId)
                 // Also dismiss the incoming call notification directly

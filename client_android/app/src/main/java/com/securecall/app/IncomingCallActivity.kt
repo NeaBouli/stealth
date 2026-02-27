@@ -27,15 +27,23 @@ class IncomingCallActivity : AppCompatActivity() {
         @Volatile
         var activeInstance: IncomingCallActivity? = null
 
+        /** Stop ringtone+vibration on the active instance from any thread. */
+        fun stopActiveAudio() {
+            val activity = activeInstance ?: return
+            activity.runOnUiThread { activity.stopRingtoneAndVibration() }
+        }
+
         /** Called by WebSocketService when CALL_END arrives during ringing. */
         fun dismissIfActive(sessionId: String) {
             val activity = activeInstance ?: return
             if (activity.sessionId == sessionId) {
                 Log.d(TAG, "Caller cancelled call — auto-dismissing")
-                activity.stopRingtoneAndVibration()
                 activity.saveMissedCall()
                 activity.dismissIncomingCallNotification()
-                activity.runOnUiThread { activity.finish() }
+                activity.runOnUiThread {
+                    activity.stopRingtoneAndVibration()
+                    activity.finish()
+                }
             }
         }
     }
@@ -103,9 +111,18 @@ class IncomingCallActivity : AppCompatActivity() {
                 Log.d(TAG, "Caller ended call while ringing (callback)")
                 saveMissedCall()
                 dismissIncomingCallNotification()
-                runOnUiThread { finish() }
+                runOnUiThread {
+                    stopRingtoneAndVibration()
+                    finish()
+                }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        // fullScreenIntent may re-deliver the same intent — just ignore it
+        Log.d(TAG, "onNewIntent (ignored, already ringing)")
     }
 
     private fun dismissIncomingCallNotification() {
@@ -209,24 +226,23 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun stopRingtoneAndVibration() {
-        try {
-            ringtonePlayer?.stop()
-            ringtonePlayer?.release()
-            ringtonePlayer = null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error stopping ringtone", e)
+        val player = ringtonePlayer
+        ringtonePlayer = null
+        if (player != null) {
+            try { player.stop() } catch (e: Exception) { Log.e(TAG, "Error stopping ringtone", e) }
+            try { player.release() } catch (e: Exception) { Log.e(TAG, "Error releasing ringtone", e) }
+            Log.d(TAG, "Ringtone stopped and released")
         }
-        try {
-            vibrator?.cancel()
-            vibrator = null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error stopping vibration", e)
+        val vib = vibrator
+        vibrator = null
+        if (vib != null) {
+            try { vib.cancel() } catch (e: Exception) { Log.e(TAG, "Error stopping vibration", e) }
+            Log.d(TAG, "Vibration cancelled")
         }
     }
 
     override fun onDestroy() {
         stopRingtoneAndVibration()
-        super.onDestroy()
         // Only clear activeInstance if WE are the current instance (avoids race with new instance)
         if (activeInstance === this) {
             activeInstance = null
@@ -235,5 +251,6 @@ class IncomingCallActivity : AppCompatActivity() {
         if (!accepted) {
             com.securecall.app.net.WebSocketService.instance?.setOnCallEnded(null)
         }
+        super.onDestroy()
     }
 }

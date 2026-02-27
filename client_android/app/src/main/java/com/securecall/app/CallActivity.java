@@ -493,15 +493,12 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void stopRingbackTone() {
-        try {
-            if (ringbackTone != null) {
-                ringbackTone.stopTone();
-                ringbackTone.release();
-                ringbackTone = null;
-                Log.d(TAG, "Ringback tone stopped");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error stopping ringback tone", e);
+        ToneGenerator tone = ringbackTone;
+        ringbackTone = null;
+        if (tone != null) {
+            try { tone.stopTone(); } catch (Exception e) { Log.e(TAG, "Error stopping ringback tone", e); }
+            try { tone.release(); } catch (Exception e) { Log.e(TAG, "Error releasing ringback tone", e); }
+            Log.d(TAG, "Ringback tone stopped and released");
         }
     }
 
@@ -568,14 +565,15 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        stopRingbackTone();
         if (audioCapture != null) {
-            audioCapture.stop();
+            try { audioCapture.stop(); } catch (Exception e) { Log.e(TAG, "Error stopping audio capture", e); }
             audioCapture = null;
         }
         if (secureCallMonitor != null) {
             secureCallMonitor.stopMonitoring(this);
         }
         releaseProximitySensor();
+        super.onDestroy();
     }
 }

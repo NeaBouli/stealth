@@ -75,13 +75,6 @@ const routingTable = new Map();
 // clientId -> fcmToken
 const fcmTokens = new Map();
 
-// --- Debug event log (temporary) ---
-const debugEvents = [];
-function debugLog(event) {
-  debugEvents.push({ ts: new Date().toISOString(), event });
-  if (debugEvents.length > 200) debugEvents.shift();
-}
-
 // --- Phone Number Registry ---
 // normalized phone number -> clientId
 const phoneNumbers = new Map();
@@ -94,22 +87,12 @@ function normalizePhone(num) {
 // --- Helper: send JSON to a clientId ---
 function sendToClient(clientId, payload) {
   const connId = clientIds.get(clientId);
-  if (!connId) {
-    console.log("[SEND] FAILED: no connId for clientId", clientId, "payload.type=", payload.type);
-    debugLog(`SEND FAILED (no connId): ${clientId} type=${payload.type}`);
-    return false;
-  }
+  if (!connId) return false;
 
   const client = clients.get(connId);
-  if (!client || client.ws.readyState !== WebSocket.OPEN) {
-    console.log("[SEND] FAILED: client gone or ws not open for", clientId, "connId=", connId, "readyState=", client ? client.ws.readyState : "no-client", "payload.type=", payload.type);
-    debugLog(`SEND FAILED (ws not open): ${clientId} connId=${connId} readyState=${client ? client.ws.readyState : "no-client"} type=${payload.type}`);
-    return false;
-  }
+  if (!client || client.ws.readyState !== WebSocket.OPEN) return false;
 
   client.ws.send(JSON.stringify(payload));
-  console.log("[SEND] OK:", clientId, "type=", payload.type);
-  debugLog(`SEND OK: ${clientId} type=${payload.type}`);
   return true;
 }
 
@@ -178,35 +161,6 @@ function requireAdmin(req, res, next) {
   }
   next();
 }
-
-// --- Temporary debug endpoint (remove after fixing CALL_END bug) ---
-app.get("/debug/events", (req, res) => {
-  res.json({ events: debugEvents.slice(-50) });
-});
-
-app.get("/debug/state", (req, res) => {
-  const clientsList = [];
-  for (const [connId, client] of clients) {
-    clientsList.push({
-      connId,
-      clientId: client.clientId || null,
-      readyState: client.ws.readyState,
-      open: client.ws.readyState === WebSocket.OPEN
-    });
-  }
-  const clientIdsList = {};
-  for (const [cid, coid] of clientIds) {
-    clientIdsList[cid] = coid;
-  }
-  res.json({
-    clientsCount: clients.size,
-    clientIdsCount: clientIds.size,
-    routingTableCount: routingTable.size,
-    clients: clientsList,
-    clientIds: clientIdsList,
-    routes: Array.from(routingTable.values())
-  });
-});
 
 // --- Routing Debug API (admin-only) ---
 app.get("/routing/list", requireAdmin, (req, res) => {
@@ -597,15 +551,11 @@ wss.on("connection", (ws, req) => {
     // ===========================
     if (msg.type === "CALL_END") {
       const myClientId = getClientId(connId);
-      console.log("[CALL_END] from connId=", connId, "clientId=", myClientId, "sessionId=", msg.sessionId);
-      debugLog(`CALL_END from ${myClientId} sessionId=${msg.sessionId}`);
 
       if (msg.sessionId && routingTable.has(msg.sessionId)) {
         const session = routingTable.get(msg.sessionId);
-        console.log("[CALL_END] session found:", JSON.stringify(session));
         // Verify sender is a participant
         if (session.from !== myClientId && session.to !== myClientId) {
-          console.log("[CALL_END] REJECTED: not_participant. myClientId=", myClientId, "session.from=", session.from, "session.to=", session.to);
           return ws.send(JSON.stringify({
             type: "ERROR",
             error: "not_participant",
@@ -614,24 +564,18 @@ wss.on("connection", (ws, req) => {
         }
 
         const peerClientId = getSessionPeer(msg.sessionId, myClientId);
-        console.log("[CALL_END] peerClientId=", peerClientId);
 
         // Forward to peer BEFORE deleting session (prevents race condition)
         if (peerClientId) {
-          const sent = sendToClient(peerClientId, {
+          sendToClient(peerClientId, {
             type: "CALL_END",
             sessionId: msg.sessionId,
             from: myClientId
           });
-          console.log("[CALL_END] forwarded to peer:", peerClientId, "sent=", sent);
-        } else {
-          console.log("[CALL_END] WARNING: no peer found for session");
         }
 
         routingTable.delete(msg.sessionId);
         console.log("[ROUTING] END:", msg.sessionId, "by", myClientId);
-      } else {
-        console.log("[CALL_END] session NOT found in routingTable. sessionId=", msg.sessionId, "routingTable.size=", routingTable.size);
       }
 
       return ws.send(JSON.stringify({
@@ -935,7 +879,6 @@ wss.on("connection", (ws, req) => {
     const clientIp = client ? client.ip : null;
 
     console.log("[SIGNAL] disconnected:", connId, clientId ? `(${clientId})` : "");
-    debugLog(`DISCONNECT: connId=${connId} clientId=${clientId}`);
 
     // Decrement per-IP connection count
     if (clientIp) {
@@ -974,7 +917,6 @@ wss.on("connection", (ws, req) => {
           });
           routingTable.delete(sessionId);
           console.log("[ROUTING] Session cleaned up (disconnect):", sessionId);
-          debugLog(`DISCONNECT cleanup: session=${sessionId} peerId=${peerId} sent CALL_END`);
         }
       }
     }
