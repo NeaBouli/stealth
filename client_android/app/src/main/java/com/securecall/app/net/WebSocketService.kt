@@ -81,6 +81,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         try {
             com.securecall.app.IncomingCallActivity.stopActiveAudio()
         } catch (e: Exception) { Log.e("WS_SERVICE", "Error stopping IncomingCallActivity audio", e) }
+        // Stop CallActivity ringback tone if still playing
+        try {
+            com.securecall.app.CallActivity.stopActiveAudio()
+        } catch (e: Exception) { Log.e("WS_SERVICE", "Error stopping CallActivity audio", e) }
     }
 
     fun getLocalClientId(): String? {
@@ -175,8 +179,23 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     fun lookupPhone(phoneNumber: String, callback: (clientId: String?) -> Unit) {
         _phoneLookupCallback = callback
         val json = """{"type":"PHONE_LOOKUP","phoneNumber":"$phoneNumber"}"""
-        client?.send(json)
+        val sent = client?.send(json) ?: false
+        if (!sent) {
+            Log.w("WS_SERVICE", "PHONE_LOOKUP failed to send (WS not connected)")
+            _phoneLookupCallback = null
+            callback(null)
+            return
+        }
         Log.d("WS_SERVICE", "PHONE_LOOKUP sent: $phoneNumber")
+        // Timeout: if no response in 5 seconds, invoke callback with null
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            val pending = _phoneLookupCallback
+            if (pending === callback) {
+                Log.w("WS_SERVICE", "PHONE_LOOKUP timeout for $phoneNumber")
+                _phoneLookupCallback = null
+                callback(null)
+            }
+        }, 5000)
     }
 
     /** Batch-check which phone numbers are registered SecureCall users. */
@@ -187,7 +206,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             put("type", "BATCH_PHONE_LOOKUP")
             put("phoneNumbers", arr)
         }.toString()
-        client?.send(json)
+        val sent = client?.send(json) ?: false
+        if (!sent) {
+            Log.w("WS_SERVICE", "BATCH_PHONE_LOOKUP failed to send")
+            _batchPhoneLookupCallback = null
+            callback(emptySet())
+            return
+        }
         Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP sent: ${phoneNumbers.size} numbers")
     }
 

@@ -215,12 +215,13 @@ class ContactsFragment : Fragment() {
             Log.d(TAG, "Looking up phone for: ${contact.name}")
             val ws = com.securecall.app.net.WebSocketService.instance
             if (ws == null) {
-                showInviteDialog(contact)
+                android.widget.Toast.makeText(requireContext(), "Connecting to server, please try again", android.widget.Toast.LENGTH_SHORT).show()
                 return
             }
             val normalized = contact.phoneOrId.replace(Regex("[^0-9+]"), "")
             ws.lookupPhone(normalized) { clientId ->
                 activity?.runOnUiThread {
+                    if (!isAdded) return@runOnUiThread
                     if (clientId != null) {
                         Log.d(TAG, "Phone resolved: ${contact.phoneOrId} -> $clientId")
                         val intent = Intent(requireContext(), CallActivity::class.java).apply {
@@ -229,7 +230,14 @@ class ContactsFragment : Fragment() {
                         }
                         startActivity(intent)
                     } else {
-                        showInviteDialog(contact)
+                        // Check if we're actually connected to server
+                        val lastSeen = ws.lastSeen()
+                        val now = System.currentTimeMillis()
+                        if (now - lastSeen > 15000) {
+                            android.widget.Toast.makeText(requireContext(), "Server unavailable, please try again", android.widget.Toast.LENGTH_SHORT).show()
+                        } else {
+                            showInviteDialog(contact)
+                        }
                     }
                 }
             }

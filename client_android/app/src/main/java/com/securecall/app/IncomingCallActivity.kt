@@ -36,8 +36,9 @@ class IncomingCallActivity : AppCompatActivity() {
         /** Called by WebSocketService when CALL_END arrives during ringing. */
         fun dismissIfActive(sessionId: String) {
             val activity = activeInstance ?: return
-            if (activity.sessionId == sessionId) {
+            if (activity.sessionId == sessionId || sessionId.isEmpty()) {
                 Log.d(TAG, "Caller cancelled call — auto-dismissing")
+                activity.cancelRingTimeout()
                 activity.saveMissedCall()
                 activity.dismissIncomingCallNotification()
                 activity.runOnUiThread {
@@ -54,6 +55,8 @@ class IncomingCallActivity : AppCompatActivity() {
     private var accepted = false
     private var ringtonePlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
+    private var ringTimeoutHandler: android.os.Handler? = null
+    private var ringTimeoutRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,6 +108,14 @@ class IncomingCallActivity : AppCompatActivity() {
         startRingtone()
         startVibration()
 
+        // Ring timeout: auto-decline after 45 seconds to prevent infinite ringing
+        ringTimeoutHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        ringTimeoutRunnable = Runnable {
+            Log.d(TAG, "Ring timeout (45s) — auto-declining")
+            declineCall()
+        }
+        ringTimeoutHandler?.postDelayed(ringTimeoutRunnable!!, 45000)
+
         // Backup: also use callback for caller hangup during ringing
         ws?.setOnCallEnded { endedSessionId ->
             if (endedSessionId == sessionId) {
@@ -130,8 +141,15 @@ class IncomingCallActivity : AppCompatActivity() {
         nm.cancel(1002) // INCOMING_CALL_NOTIFICATION_ID
     }
 
+    private fun cancelRingTimeout() {
+        ringTimeoutRunnable?.let { ringTimeoutHandler?.removeCallbacks(it) }
+        ringTimeoutHandler = null
+        ringTimeoutRunnable = null
+    }
+
     private fun acceptCall() {
         accepted = true
+        cancelRingTimeout()
         stopRingtoneAndVibration()
         dismissIncomingCallNotification()
         Log.d(TAG, "Accepting call, session=$sessionId")
@@ -149,6 +167,7 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun declineCall() {
+        cancelRingTimeout()
         stopRingtoneAndVibration()
         dismissIncomingCallNotification()
         Log.d(TAG, "Declining call, session=$sessionId")
@@ -242,6 +261,7 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        cancelRingTimeout()
         stopRingtoneAndVibration()
         // Only clear activeInstance if WE are the current instance (avoids race with new instance)
         if (activeInstance === this) {

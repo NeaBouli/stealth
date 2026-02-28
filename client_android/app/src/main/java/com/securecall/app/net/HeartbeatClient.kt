@@ -47,8 +47,8 @@ class HeartbeatClient(
         ws = client.newWebSocket(req, this)
     }
 
-    fun send(text: String) {
-        ws?.send(text)
+    fun send(text: String): Boolean {
+        return ws?.send(text) ?: false
     }
 
     fun sendBinary(data: ByteArray): Boolean {

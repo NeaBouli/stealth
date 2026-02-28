@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final int REQUEST_RECORD_AUDIO = 1001;
     private static final int REQUEST_POST_NOTIFICATIONS = 1002;
+    private static final int REQUEST_PHONE_PERMISSION = 1003;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +70,9 @@ public class MainActivity extends AppCompatActivity {
         // Start WebSocket signaling service as foreground service (survives background)
         Intent wsIntent = new Intent(this, com.securecall.app.net.WebSocketService.class);
         androidx.core.content.ContextCompat.startForegroundService(this, wsIntent);
+
+        // Request phone number permission for server registration
+        requestPhoneNumberPermission();
 
         // Check if onboarding needed
         SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
@@ -179,7 +183,97 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, R.string.permission_mic_required, Toast.LENGTH_SHORT).show();
             }
+        } else if (requestCode == REQUEST_PHONE_PERMISSION) {
+            // Re-register with server (with or without phone number)
+            checkAndPromptPhoneNumber();
         }
+    }
+
+    private void requestPhoneNumberPermission() {
+        String permission;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            permission = Manifest.permission.READ_PHONE_NUMBERS;
+        } else {
+            permission = Manifest.permission.READ_PHONE_STATE;
+        }
+        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{permission}, REQUEST_PHONE_PERMISSION);
+        } else {
+            checkAndPromptPhoneNumber();
+        }
+    }
+
+    private void checkAndPromptPhoneNumber() {
+        // Wait briefly for WebSocket service to connect
+        new android.os.Handler(getMainLooper()).postDelayed(() -> {
+            com.securecall.app.net.WebSocketService ws =
+                    com.securecall.app.net.WebSocketService.Companion.getInstance();
+            if (ws != null) {
+                ws.reRegister();
+            }
+            // Check if a phone number is available (manual or carrier)
+            SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+            String manual = prefs.getString("manual_phone_number", null);
+            if (manual != null && !manual.trim().isEmpty()) return;
+            // Check carrier number
+            try {
+                if (hasPhonePermission()) {
+                    android.telephony.TelephonyManager tm =
+                            (android.telephony.TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+                    @android.annotation.SuppressLint("MissingPermission")
+                    String num = tm.getLine1Number();
+                    if (num != null && !num.trim().isEmpty()) return; // Carrier provides it
+                }
+            } catch (Exception e) { /* ignore */ }
+            // No phone number available — prompt user once per install
+            if (prefs.getBoolean("phone_number_prompted", false)) return;
+            promptForPhoneNumber(prefs);
+        }, 3000);
+    }
+
+    private boolean hasPhonePermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS)
+                    == PackageManager.PERMISSION_GRANTED;
+        } else {
+            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+                    == PackageManager.PERMISSION_GRANTED;
+        }
+    }
+
+    private void promptForPhoneNumber(SharedPreferences prefs) {
+        android.widget.EditText input = new android.widget.EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_PHONE);
+        input.setHint("+49...");
+
+        int padding = (int) (24 * getResources().getDisplayMetrics().density);
+        android.widget.FrameLayout container = new android.widget.FrameLayout(this);
+        container.setPadding(padding, padding / 2, padding, 0);
+        container.addView(input);
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Enter Your Phone Number")
+                .setMessage("Your carrier doesn't provide your phone number automatically. Enter it so others can call you by phone number.")
+                .setView(container)
+                .setPositiveButton("Save", (d, w) -> {
+                    String number = input.getText().toString().trim();
+                    if (!number.isEmpty()) {
+                        prefs.edit()
+                                .putString("manual_phone_number", number)
+                                .putBoolean("phone_number_prompted", true)
+                                .apply();
+                        Log.d(TAG, "Manual phone number saved: " + number);
+                        // Re-register with server
+                        com.securecall.app.net.WebSocketService ws2 =
+                                com.securecall.app.net.WebSocketService.Companion.getInstance();
+                        if (ws2 != null) ws2.reRegister();
+                    }
+                })
+                .setNegativeButton("Skip", (d, w) -> {
+                    prefs.edit().putBoolean("phone_number_prompted", true).apply();
+                })
+                .setCancelable(false)
+                .show();
     }
 
     private void runSecurityChecks() {

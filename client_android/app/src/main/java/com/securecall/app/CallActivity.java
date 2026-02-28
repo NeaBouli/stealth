@@ -40,6 +40,19 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
 
     private static final String TAG = "CallActivity";
     private static final int REQUEST_RECORD_AUDIO = 1001;
+
+    // Static reference for remote audio cleanup (from WebSocketService.killAllAudio)
+    private static volatile CallActivity activeInstance;
+
+    /** Stop ringback tone on the active CallActivity from any thread. */
+    public static void stopActiveAudio() {
+        CallActivity instance = activeInstance;
+        if (instance != null) {
+            instance.stopRingbackTone();
+            Log.d(TAG, "stopActiveAudio() — ringback stopped via static call");
+        }
+    }
+
     private AudioCapturePlaceholder audioCapture;
     // Saved refs for starting audio after permission grant
     private TextView pendingConnectionState;
@@ -71,6 +84,8 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        activeInstance = this;
 
         // Debug: log all intent extras
         Log.d(TAG, "onCreate — intent extras:");
@@ -547,10 +562,10 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
             audioCapture.stop();
             audioCapture = null;
         }
-        // Stop audio playback
+        // Stop all audio playback globally
         com.securecall.app.net.WebSocketService wsAudio =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
-        if (wsAudio != null) wsAudio.stopAudioPlayback();
+        if (wsAudio != null) wsAudio.killAllAudio();
 
         Chronometer callTimer = findViewById(R.id.callTimer);
         if (callTimer != null) {
@@ -565,10 +580,20 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onDestroy() {
+        // Clear static instance if WE are the current one
+        if (activeInstance == this) {
+            activeInstance = null;
+        }
         stopRingbackTone();
         if (audioCapture != null) {
             try { audioCapture.stop(); } catch (Exception e) { Log.e(TAG, "Error stopping audio capture", e); }
             audioCapture = null;
+        }
+        // Belt-and-suspenders: kill all audio globally
+        com.securecall.app.net.WebSocketService ws =
+                com.securecall.app.net.WebSocketService.Companion.getInstance();
+        if (ws != null) {
+            try { ws.killAllAudio(); } catch (Exception e) { Log.e(TAG, "Error in killAllAudio", e); }
         }
         if (secureCallMonitor != null) {
             secureCallMonitor.stopMonitoring(this);

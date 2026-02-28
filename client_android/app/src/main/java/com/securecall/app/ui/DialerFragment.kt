@@ -208,12 +208,20 @@ class DialerFragment : Fragment() {
     private fun resolveAndCall(displayName: String, phoneNumber: String) {
         val ws = com.securecall.app.net.WebSocketService.instance
         if (ws == null) {
-            showInviteDialog(phoneNumber)
+            // Service not running — try to start it and ask user to retry
+            try {
+                val intent = Intent(requireContext(), com.securecall.app.net.WebSocketService::class.java)
+                androidx.core.content.ContextCompat.startForegroundService(requireContext(), intent)
+            } catch (e: Exception) {
+                Log.e("DialerFragment", "Failed to start WebSocketService", e)
+            }
+            Toast.makeText(requireContext(), "Connecting to server, please try again", Toast.LENGTH_SHORT).show()
             return
         }
         val normalized = normalizePhone(phoneNumber)
         ws.lookupPhone(normalized) { clientId ->
             activity?.runOnUiThread {
+                if (!isAdded) return@runOnUiThread
                 if (clientId != null) {
                     Log.d("DialerFragment", "Phone resolved: $phoneNumber -> $clientId")
                     val intent = Intent(requireContext(), CallActivity::class.java).apply {
@@ -222,7 +230,15 @@ class DialerFragment : Fragment() {
                     }
                     startActivity(intent)
                 } else {
-                    showInviteDialog(phoneNumber)
+                    // Check if we're actually connected to server
+                    val lastSeen = ws.lastSeen()
+                    val now = System.currentTimeMillis()
+                    if (now - lastSeen > 15000) {
+                        // Server connection stale — not a real "not registered" answer
+                        Toast.makeText(requireContext(), "Server unavailable, please try again", Toast.LENGTH_SHORT).show()
+                    } else {
+                        showInviteDialog(phoneNumber)
+                    }
                 }
             }
         }
