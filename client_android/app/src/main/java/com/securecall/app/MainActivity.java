@@ -211,20 +211,34 @@ public class MainActivity extends AppCompatActivity {
             if (ws != null) {
                 ws.reRegister();
             }
-            // Check if a phone number is available (manual or carrier)
-            SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
-            String manual = prefs.getString("manual_phone_number", null);
-            if (manual != null && !manual.trim().isEmpty()) return;
-            // Check carrier number
-            try {
-                if (hasPhonePermission()) {
+            // Check if SIM provides a phone number (primary source)
+            if (hasPhonePermission()) {
+                try {
                     android.telephony.TelephonyManager tm =
                             (android.telephony.TelephonyManager) getSystemService(TELEPHONY_SERVICE);
                     @android.annotation.SuppressLint("MissingPermission")
                     String num = tm.getLine1Number();
-                    if (num != null && !num.trim().isEmpty()) return; // Carrier provides it
-                }
-            } catch (Exception e) { /* ignore */ }
+                    if (num != null && !num.trim().isEmpty()) return; // SIM provides it
+                } catch (Exception e) { /* ignore */ }
+                // Try SubscriptionManager as secondary source
+                try {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP_MR1) {
+                        @android.annotation.SuppressLint("MissingPermission")
+                        java.util.List<android.telephony.SubscriptionInfo> subs =
+                                android.telephony.SubscriptionManager.from(this).getActiveSubscriptionInfoList();
+                        if (subs != null) {
+                            for (android.telephony.SubscriptionInfo sub : subs) {
+                                String subNum = sub.getNumber();
+                                if (subNum != null && !subNum.trim().isEmpty()) return; // SubscriptionManager provides it
+                            }
+                        }
+                    }
+                } catch (Exception e) { /* ignore */ }
+            }
+            // SIM didn't provide a number — check if user already entered one manually
+            SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+            String manual = prefs.getString("manual_phone_number", null);
+            if (manual != null && !manual.trim().isEmpty()) return;
             // No phone number available — prompt user once per install
             if (prefs.getBoolean("phone_number_prompted", false)) return;
             promptForPhoneNumber(prefs);
