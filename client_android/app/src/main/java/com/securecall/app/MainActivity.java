@@ -206,59 +206,51 @@ public class MainActivity extends AppCompatActivity {
     private void checkAndPromptPhoneNumber() {
         // Wait briefly for WebSocket service to connect
         new android.os.Handler(getMainLooper()).postDelayed(() -> {
-            com.securecall.app.net.WebSocketService ws =
-                    com.securecall.app.net.WebSocketService.Companion.getInstance();
-            if (ws != null) {
-                ws.reRegister();
-            }
-            // Check if SIM provides a phone number (primary source)
-            if (hasPhonePermission()) {
-                try {
-                    android.telephony.TelephonyManager tm =
-                            (android.telephony.TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-                    @android.annotation.SuppressLint("MissingPermission")
-                    String num = tm.getLine1Number();
-                    if (num != null && !num.trim().isEmpty()) return; // SIM provides it
-                } catch (Exception e) { /* ignore */ }
-                // Try SubscriptionManager as secondary source
-                try {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP_MR1) {
-                        @android.annotation.SuppressLint("MissingPermission")
-                        java.util.List<android.telephony.SubscriptionInfo> subs =
-                                android.telephony.SubscriptionManager.from(this).getActiveSubscriptionInfoList();
-                        if (subs != null) {
-                            for (android.telephony.SubscriptionInfo sub : subs) {
-                                String subNum = sub.getNumber();
-                                if (subNum != null && !subNum.trim().isEmpty()) return; // SubscriptionManager provides it
-                            }
-                        }
-                    }
-                } catch (Exception e) { /* ignore */ }
-            }
-            // SIM didn't provide a number — check if user already entered one manually
             SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
-            String manual = prefs.getString("manual_phone_number", null);
-            if (manual != null && !manual.trim().isEmpty()) return;
-            // No phone number available — prompt user once per install
-            if (prefs.getBoolean("phone_number_prompted", false)) return;
-            promptForPhoneNumber(prefs);
+            // Already confirmed? Re-register and skip
+            String confirmed = prefs.getString("confirmed_phone_number", null);
+            if (confirmed != null && !confirmed.trim().isEmpty()) {
+                com.securecall.app.net.WebSocketService ws =
+                        com.securecall.app.net.WebSocketService.Companion.getInstance();
+                if (ws != null) ws.reRegister();
+                return;
+            }
+            // First launch — show confirm dialog with SIM suggestion
+            String simSuggestion = readSimNumber();
+            promptForPhoneNumber(prefs, simSuggestion);
         }, 3000);
     }
 
-    private boolean hasPhonePermission() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS)
-                    == PackageManager.PERMISSION_GRANTED;
-        } else {
-            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
-                    == PackageManager.PERMISSION_GRANTED;
-        }
+    /** Read phone number from SIM as a suggestion (may be wrong on some carriers). */
+    @android.annotation.SuppressLint("MissingPermission")
+    private String readSimNumber() {
+        try {
+            String permission;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                permission = Manifest.permission.READ_PHONE_NUMBERS;
+            } else {
+                permission = Manifest.permission.READ_PHONE_STATE;
+            }
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                return null;
+            }
+            android.telephony.TelephonyManager tm =
+                    (android.telephony.TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+            String num = tm.getLine1Number();
+            if (num != null && !num.trim().isEmpty()) return num.trim();
+        } catch (Exception e) { /* ignore */ }
+        return null;
     }
 
-    private void promptForPhoneNumber(SharedPreferences prefs) {
+    private void promptForPhoneNumber(SharedPreferences prefs, String simSuggestion) {
         android.widget.EditText input = new android.widget.EditText(this);
         input.setInputType(android.text.InputType.TYPE_CLASS_PHONE);
-        input.setHint("+49...");
+        if (simSuggestion != null) {
+            input.setText(simSuggestion);
+            input.setSelection(simSuggestion.length());
+        } else {
+            input.setHint("+49...");
+        }
 
         int padding = (int) (24 * getResources().getDisplayMetrics().density);
         android.widget.FrameLayout container = new android.widget.FrameLayout(this);
@@ -266,25 +258,26 @@ public class MainActivity extends AppCompatActivity {
         container.addView(input);
 
         new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Enter Your Phone Number")
-                .setMessage("Your carrier doesn't provide your phone number automatically. Enter it so others can call you by phone number.")
+                .setTitle("Confirm Your Phone Number")
+                .setMessage("Please verify your phone number. Others will use this number to call you on SecureCall.")
                 .setView(container)
-                .setPositiveButton("Save", (d, w) -> {
+                .setPositiveButton("Confirm", (d, w) -> {
                     String number = input.getText().toString().trim();
                     if (!number.isEmpty()) {
                         prefs.edit()
-                                .putString("manual_phone_number", number)
-                                .putBoolean("phone_number_prompted", true)
+                                .putString("confirmed_phone_number", number)
                                 .apply();
-                        Log.d(TAG, "Manual phone number saved: " + number);
-                        // Re-register with server
-                        com.securecall.app.net.WebSocketService ws2 =
+                        Log.d(TAG, "Phone number confirmed: " + number);
+                        com.securecall.app.net.WebSocketService ws =
                                 com.securecall.app.net.WebSocketService.Companion.getInstance();
-                        if (ws2 != null) ws2.reRegister();
+                        if (ws != null) ws.reRegister();
                     }
                 })
                 .setNegativeButton("Skip", (d, w) -> {
-                    prefs.edit().putBoolean("phone_number_prompted", true).apply();
+                    // No number confirmed — register without phone
+                    com.securecall.app.net.WebSocketService ws =
+                            com.securecall.app.net.WebSocketService.Companion.getInstance();
+                    if (ws != null) ws.reRegister();
                 })
                 .setCancelable(false)
                 .show();

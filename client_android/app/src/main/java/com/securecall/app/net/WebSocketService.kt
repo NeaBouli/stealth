@@ -318,52 +318,22 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     @android.annotation.SuppressLint("MissingPermission")
     private fun getDevicePhoneNumber(): String? {
         return try {
-            val hasPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                checkSelfPermission(android.Manifest.permission.READ_PHONE_NUMBERS) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            } else {
-                checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            }
-
-            // 1. Primary: TelephonyManager (reads SIM card)
-            if (hasPermission) {
-                val tm = getSystemService(android.content.Context.TELEPHONY_SERVICE) as? android.telephony.TelephonyManager
-                val number = tm?.line1Number
-                if (!number.isNullOrBlank()) {
-                    Log.d("WS_SERVICE", "Device phone number (SIM): $number")
-                    return number
-                }
-
-                // 2. Secondary: SubscriptionManager (may return number when TelephonyManager doesn't)
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP_MR1) {
-                    try {
-                        val sm = android.telephony.SubscriptionManager.from(this)
-                        val subList = sm.activeSubscriptionInfoList
-                        if (subList != null) {
-                            for (sub in subList) {
-                                val subNumber = sub.number
-                                if (!subNumber.isNullOrBlank()) {
-                                    Log.d("WS_SERVICE", "Device phone number (SubscriptionManager): $subNumber")
-                                    return subNumber
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.d("WS_SERVICE", "SubscriptionManager failed: ${e.message}")
-                    }
-                }
-            } else {
-                Log.d("WS_SERVICE", "No phone number permission")
-            }
-
-            // 3. Fallback: manual phone number (user entered once via prompt)
+            // 1. Primary: user-confirmed number (TelephonyManager is unreliable on many carriers)
             val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
+            val confirmedNumber = prefs.getString("confirmed_phone_number", null)
+            if (!confirmedNumber.isNullOrBlank()) {
+                Log.d("WS_SERVICE", "Device phone number (confirmed): $confirmedNumber")
+                return confirmedNumber
+            }
+
+            // 2. Legacy fallback: manual_phone_number from old prompt
             val manualNumber = prefs.getString("manual_phone_number", null)
             if (!manualNumber.isNullOrBlank()) {
                 Log.d("WS_SERVICE", "Device phone number (manual): $manualNumber")
                 return manualNumber
             }
 
-            Log.d("WS_SERVICE", "Device phone number unavailable (no SIM, no manual)")
+            Log.d("WS_SERVICE", "Device phone number not yet confirmed by user")
             null
         } catch (e: Exception) {
             Log.w("WS_SERVICE", "Failed to read phone number", e)
