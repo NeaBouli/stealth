@@ -367,9 +367,11 @@ wss.on("connection", (ws, req) => {
       // Falls vorher schon eine andere clientId registriert war, alte entfernen
       if (client.clientId) {
         clientIds.delete(client.clientId);
-        // Clean up old phone mapping for previous clientId
+        // Clean up old phone mapping for previous clientId — only if it still belongs to THIS client
         if (client.phoneNumber) {
-          phoneNumbers.delete(client.phoneNumber);
+          if (phoneNumbers.get(client.phoneNumber) === client.clientId || phoneNumbers.get(client.phoneNumber) === msg.clientId) {
+            phoneNumbers.delete(client.phoneNumber);
+          }
         }
       }
       client.clientId = msg.clientId;
@@ -378,7 +380,13 @@ wss.on("connection", (ws, req) => {
       // Store phone number if provided
       const phone = normalizePhone(msg.phoneNumber);
       if (phone.length >= 4) {
-        // Remove any existing mapping for this phone (e.g. stale from another client)
+        // Remove any OTHER phone that currently maps to this clientId (phone number changed)
+        for (const [existingPhone, existingClientId] of phoneNumbers) {
+          if (existingClientId === msg.clientId && existingPhone !== phone) {
+            phoneNumbers.delete(existingPhone);
+            break;
+          }
+        }
         phoneNumbers.set(phone, msg.clientId);
         client.phoneNumber = phone;
         console.log("[REGISTER] Phone:", phone, "->", msg.clientId);
@@ -893,9 +901,11 @@ wss.on("connection", (ws, req) => {
     // Clean up rate limit bucket
     rateLimit.clear(connId);
 
-    // Clean up phone number mapping
+    // Clean up phone number mapping — only if this phone still maps to THIS client
     if (client && client.phoneNumber) {
-      phoneNumbers.delete(client.phoneNumber);
+      if (phoneNumbers.get(client.phoneNumber) === clientId) {
+        phoneNumbers.delete(client.phoneNumber);
+      }
     }
 
     // clientId Mapping aufräumen
