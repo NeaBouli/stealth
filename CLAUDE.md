@@ -69,7 +69,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **No server changes:** Server already relays WEBRTC_OFFER (lines 553-597), WEBRTC_ANSWER (lines 602-646), and ICE_CANDIDATE (lines 651-694).
 - **Audio flow with P2P:** Mic → OpusEncoder → E2E encrypt → DataChannel P2P → peer decrypt → OpusDecode → JitterBuffer → GhostAudioPlayer (earpiece). Falls back to WebSocket relay transparently if DataChannel is not open.
 
-**Testing:** APK tested on 4 devices: S10 (`RF8N313QMFL`, `android-ded42f50`), S7 (`ce10160adc00152604`, `android-168bd2f9`), Tab S4 (`ce12182c68644439037e`, `android-5260e744`), and Pixel 5 emulator (`emulator-5554`, `android-33068922`). Full bidirectional call signaling, audio, E2E encryption, and auto-hangup verified across all device pairs:
+**Testing:** APK tested on 4 devices: S10 (`RF8N313QMFL`, `android-f90e7cf6`), S7 (`ce10160adc00152604`, `android-bc0f46cc`), Tab S4 (`ce12182c68644439037e`, `android-725b46bc`), and Pixel 5 emulator (`emulator-5554`, `android-33068922`). Full bidirectional call signaling, audio, E2E encryption, and auto-hangup verified across all device pairs:
 - **S10 → Emulator:** CALL_INVITE → IncomingCallActivity → Accept → CALL_ACCEPT → CallActivity with timer → End call from S10 → Emulator receives CALL_END and closes
 - **Emulator → S10:** CALL_INVITE → IncomingCallActivity on S10 → Accept → CALL_ACCEPT → CallActivity with timer → End call from emulator → S10 receives CALL_END and closes
 - **Bidirectional audio:** Both devices show `AUDIO_CAPTURE: Capture thread started` (mic recording) and `AUDIO_PLAYER: write(): wrote=960 samples` (receiving peer audio). Full pipeline: OpusEncoder init → capture thread → binary WebSocket send → remote decrypt → OpusDecode → JitterBuffer (60ms prefill) → playout thread (20ms) → AudioTrack (earpiece).
@@ -245,7 +245,7 @@ stealth/                              # Monorepo root
 11. **Activity lifecycle race condition.** `IncomingCallActivity.onDestroy()` runs after `CallActivity.onCreate()` when accepting a call. Any callbacks set in `onDestroy()` to `null` will overwrite what `CallActivity.onCreate()` just set. Fixed with `accepted` flag guard.
 12. ~~**IncomingCallActivity doesn't auto-dismiss on caller cancel.**~~ RESOLVED. Static `activeInstance` + `dismissIfActive()` + identity-checked `onDestroy()`. Commit `a568bf3`.
 13. **Background fullscreenIntent on Samsung.** On unlocked Samsung devices, `fullScreenIntent` notifications don't bring the activity to the foreground over the launcher — they show as a heads-up/status bar notification instead. The IncomingCallActivity IS launched and in the task stack, but the user must tap the notification to bring it forward. This is a known Android/Samsung restriction for background activity launches.
-14. **Phone number unavailable on some SIMs.** `TelephonyManager.getLine1Number()` returns null on SIMs that don't store the phone number (e.g., S10 test device). These devices register without a phone number and can only be called by clientId. READ_PHONE_STATE/READ_PHONE_NUMBERS permissions are currently granted via adb — no runtime permission request UI yet.
+14. **Phone number unavailable on some SIMs.** `TelephonyManager.getLine1Number()` returns null on SIMs that don't store the phone number. User-confirmed phone number (via dialog on first launch) is now the primary source, stored in `confirmed_phone_number` SharedPreference. All 3 physical devices now have confirmed numbers. READ_PHONE_STATE/READ_PHONE_NUMBERS permissions are currently granted via adb — no runtime permission request UI yet.
 15. **Dialer T9 suggestions shift button positions.** On S7 (Galaxy S7, Android 8), the contactSuggestions RecyclerView appearing/changing height as digits are typed shifts the dial pad button positions. Tapping buttons at static coordinates can hit the wrong button. Not a functional bug (users tap visually) but complicates automated UI testing via adb.
 
 ## Explicit Non-Goals
@@ -269,9 +269,9 @@ stealth/                              # Monorepo root
 - **Comments:** Older code has German comments (e.g., `// BACKEND-22: Heartbeat Ueberwachung`). New code uses English. Ticket references like `BACKEND-22`, `PATCH 201` appear throughout.
 - **Error handling:** Non-critical failures use `catch (_: Exception) {}`. Critical errors use `Log.e(TAG, message, throwable)`.
 - **adb on this machine:** Not in PATH. Full path required: `/Users/gio/Library/Android/sdk/platform-tools/adb`. Emulator: `~/Library/Android/sdk/emulator/emulator`. AVD name: `Pixel_5`.
-- **S10 serial:** `RF8N313QMFL`. ClientId: `android-e15eeebd`. No SIM-stored phone number.
-- **S7 serial:** `ce10160adc00152604`. ClientId: `android-0a5f81aa`. Phone: `+4915203487046`.
-- **Tab S4 serial:** `ce12182c68644439037e`. ClientId: `android-48712b87`. Phone: `+491752536807`. Landscape mode (2560x1492).
+- **S10 serial:** `RF8N313QMFL`. ClientId: `android-f90e7cf6`. Phone: `+4915231794100`.
+- **S7 serial:** `ce10160adc00152604`. ClientId: `android-bc0f46cc`. Phone: `+4915203487046`.
+- **Tab S4 serial:** `ce12182c68644439037e`. ClientId: `android-725b46bc`. Phone: `+491752536807`. Landscape mode (2560x1492).
 - **Emulator:** `emulator-5554`. ClientId: `android-33068922` (changes on wipe).
 - **Package name (free):** `com.securecall.app.free`. **Package name (premium):** `com.securecall.app.premium`.
 - **App launch command:** `adb -s <serial> shell am start -n com.securecall.app.{free|premium}/com.securecall.app.MainActivity`
