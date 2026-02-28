@@ -216,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             // First launch — show confirm dialog with SIM suggestion
+            if (isFinishing() || isDestroyed()) return;
             String simSuggestion = readSimNumber();
             promptForPhoneNumber(prefs, simSuggestion);
         }, 3000);
