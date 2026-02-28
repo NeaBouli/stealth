@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
 const { v4: uuidv4 } = require("uuid");
+const crypto = require("crypto");
 
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
@@ -78,10 +79,16 @@ const fcmTokens = new Map();
 // --- Phone Number Registry ---
 // normalized phone number -> clientId
 const phoneNumbers = new Map();
+// SHA-256(normalized phone) -> clientId (for privacy-preserving lookups)
+const phoneHashes = new Map();
 
 function normalizePhone(num) {
   if (typeof num !== "string") return "";
   return num.replace(/[^0-9+]/g, "");
+}
+
+function hashPhone(normalizedPhone) {
+  return crypto.createHash("sha256").update(normalizedPhone).digest("hex");
 }
 
 // --- Helper: send JSON to a clientId ---
@@ -371,6 +378,7 @@ wss.on("connection", (ws, req) => {
         if (client.phoneNumber) {
           if (phoneNumbers.get(client.phoneNumber) === client.clientId || phoneNumbers.get(client.phoneNumber) === msg.clientId) {
             phoneNumbers.delete(client.phoneNumber);
+            phoneHashes.delete(hashPhone(client.phoneNumber));
           }
         }
       }
@@ -384,10 +392,12 @@ wss.on("connection", (ws, req) => {
         for (const [existingPhone, existingClientId] of phoneNumbers) {
           if (existingClientId === msg.clientId && existingPhone !== phone) {
             phoneNumbers.delete(existingPhone);
+            phoneHashes.delete(hashPhone(existingPhone));
             break;
           }
         }
         phoneNumbers.set(phone, msg.clientId);
+        phoneHashes.set(hashPhone(phone), msg.clientId);
         client.phoneNumber = phone;
         console.log("[REGISTER] Phone:", phone, "->", msg.clientId);
       }
@@ -855,6 +865,20 @@ wss.on("connection", (ws, req) => {
     // BATCH_PHONE_LOOKUP — Resolve multiple phone numbers at once
     // ===========================
     if (msg.type === "BATCH_PHONE_LOOKUP") {
+      // Hashed mode: client sends SHA-256 hashes instead of raw phone numbers
+      if (Array.isArray(msg.hashes)) {
+        const results = msg.hashes.slice(0, 200).map(hash => {
+          const resolvedClientId = phoneHashes.get(hash) || null;
+          const online = resolvedClientId ? clientIds.has(resolvedClientId) : false;
+          return { hash, clientId: resolvedClientId, online };
+        });
+        return ws.send(JSON.stringify({
+          type: "BATCH_PHONE_LOOKUP_RESULT",
+          mode: "hashed",
+          results
+        }));
+      }
+      // Legacy mode: raw phone numbers
       const phoneList = Array.isArray(msg.phoneNumbers) ? msg.phoneNumbers : [];
       const results = phoneList.slice(0, 200).map(phone => {
         const normalized = normalizePhone(phone);
@@ -905,6 +929,7 @@ wss.on("connection", (ws, req) => {
     if (client && client.phoneNumber) {
       if (phoneNumbers.get(client.phoneNumber) === clientId) {
         phoneNumbers.delete(client.phoneNumber);
+        phoneHashes.delete(hashPhone(client.phoneNumber));
       }
     }
 

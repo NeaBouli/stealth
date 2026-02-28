@@ -128,12 +128,27 @@ class ContactsFragment : Fragment() {
             .filter { !it.phoneOrId.startsWith("android-") }
             .map { it.phoneOrId.replace("\\s".toRegex(), "") }
         if (phoneNumbers.isEmpty()) return
-        ws.batchPhoneLookup(phoneNumbers) { registered ->
-            registeredPhones = registered
+        // Hash phone numbers for privacy — server never sees raw numbers
+        val hashToPhone = mutableMapOf<String, String>()
+        val hashes = phoneNumbers.map { phone ->
+            val normalized = phone.replace(Regex("[^0-9+]"), "")
+            val hash = sha256(normalized)
+            hashToPhone[hash] = phone
+            hash
+        }
+        ws.batchPhoneLookup(hashes) { registeredHashes ->
+            // Map hashes back to phone numbers for the UI
+            registeredPhones = registeredHashes.mapNotNull { hashToPhone[it] }.toSet()
             activity?.runOnUiThread {
                 if (isAdded) updateList(allContacts)
             }
         }
+    }
+
+    private fun sha256(input: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        return digest.digest(input.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
     }
 
     private fun loadPhoneContacts(): List<Contact> {

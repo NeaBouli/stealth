@@ -198,13 +198,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         }, 5000)
     }
 
-    /** Batch-check which phone numbers are registered SecureCall users. */
-    fun batchPhoneLookup(phoneNumbers: List<String>, callback: (registered: Set<String>) -> Unit) {
+    /** Batch-check which phone hashes are registered SecureCall users. */
+    fun batchPhoneLookup(hashes: List<String>, callback: (registered: Set<String>) -> Unit) {
         _batchPhoneLookupCallback = callback
-        val arr = org.json.JSONArray(phoneNumbers)
+        val arr = org.json.JSONArray(hashes)
         val json = org.json.JSONObject().apply {
             put("type", "BATCH_PHONE_LOOKUP")
-            put("phoneNumbers", arr)
+            put("hashes", arr)
         }.toString()
         val sent = client?.send(json) ?: false
         if (!sent) {
@@ -213,7 +213,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             callback(emptySet())
             return
         }
-        Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP sent: ${phoneNumbers.size} numbers")
+        Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP sent: ${hashes.size} hashes")
     }
 
     // ===================== HeartbeatClient.Listener =====================
@@ -667,17 +667,20 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             }
             if (obj.optString("type") == "BATCH_PHONE_LOOKUP_RESULT") {
                 val results = obj.optJSONArray("results")
+                val mode = obj.optString("mode", "")
                 val registered = mutableSetOf<String>()
                 if (results != null) {
                     for (i in 0 until results.length()) {
                         val r = results.getJSONObject(i)
                         val cId = r.optString("clientId", "")
                         if (cId.isNotEmpty() && cId != "null") {
-                            registered.add(r.optString("phoneNumber", ""))
+                            // Hashed mode returns "hash", legacy returns "phoneNumber"
+                            val key = if (mode == "hashed") r.optString("hash", "") else r.optString("phoneNumber", "")
+                            if (key.isNotEmpty()) registered.add(key)
                         }
                     }
                 }
-                Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP_RESULT: ${registered.size} registered")
+                Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP_RESULT (mode=$mode): ${registered.size} registered")
                 _batchPhoneLookupCallback?.invoke(registered)
                 _batchPhoneLookupCallback = null
                 return
