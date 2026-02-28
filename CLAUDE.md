@@ -96,14 +96,16 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
   6. **Call history:** PASSED. Both devices: 10+ entries with correct OUTGOING/INCOMING/MISSED types, contact names, durations, and `encrypted=true`.
   7. **Unknown number invite dialog:** PASSED. Dialed random number on tablet, dialog appeared: "Invite 22378 to SecureCall" with options "Via Messenger", "Share Link", "Send SMS".
 - **IncomingCallActivity auto-dismiss (Commit `a568bf3`):** Caller cancels → callee's IncomingCallActivity auto-dismisses within 1s. Tested: Tab S4 → Emu cancel (PASSED, logs show "Caller cancelled call — auto-dismissing"), Emu → Tab S4 cancel (PASSED), back-to-back cancel (Call 1 dismissed, Call 2 dismissed, no lifecycle race).
-- **Phone number → clientId resolution (Commit `e0c0784`):** Bidirectional phone lookup tested on 3 physical devices:
-  - S7 registered `+4915203487046` → `android-0a5f81aa`. Tab S4 registered `+491752536807` → `android-48712b87`. S10 has no SIM-stored number (graceful fallback, registers without phone).
-  - **Tab S4 → S7 by phone number:** Dialed `+4915203487046` on Tab S4. PHONE_LOOKUP returned `clientId=android-0a5f81aa, online=true`. CallActivity launched, CALL_INVITE sent and ACK'd. S7 showed IncomingCallActivity. PASSED.
-  - **S7 → Tab S4 by phone number:** Dialed `+491752536807` on S7. PHONE_LOOKUP returned `clientId=android-48712b87, online=true`. CallActivity launched, CALL_INVITE sent and ACK'd. Tab S4 showed IncomingCallActivity. PASSED.
-  - **S10 → S7 by phone number:** Dialed `+4915203487046` on S10. PHONE_LOOKUP returned `clientId=android-0a5f81aa, online=true`. CallActivity launched, CALL_INVITE ACK'd. S7 showed IncomingCallActivity. PASSED.
-  - **S10 → Tab S4 by phone number:** Dialed `+491752536807` on S10. PHONE_LOOKUP returned `clientId=android-48712b87, online=true`. CallActivity launched, CALL_INVITE ACK'd. Tab S4 showed IncomingCallActivity. PASSED.
-  - Permissions granted via `adb shell pm grant` for testing. Runtime permission dialog not yet implemented in UI.
-- **IncomingCallActivity lock screen fix (Commit `1aed31d`):** Tab S4 screen locked with pattern lock. S10 called Tab S4's phone number. Before fix: IncomingCallActivity launched behind keyguard, `Surface is not valid`, invisible to user. After fix: IncomingCallActivity appeared over the lock screen with "Incoming Secure Call" from `android-e15eeebd`. PASSED. Device screen turned on and stayed on (`FLAG_KEEP_SCREEN_ON`).
+- **Phone number → clientId resolution (Commit `e0c0784`, server fix `036e838`):** Full 6/6 cross-device phone lookup matrix tested on 3 physical devices after server phone registry overwrite fix. All devices registered with user-confirmed phone numbers:
+  - S10 registered `+4915231794100` → `android-f90e7cf6`. S7 registered `+4915203487046` → `android-bc0f46cc`. Tab S4 registered `+491752536807` → `android-725b46bc`.
+  - **S10 → S7:** Dialed `+4915203487046` on S10. PHONE_LOOKUP returned `clientId=android-bc0f46cc, online=true`. S7 showed IncomingCallActivity. PASSED.
+  - **S10 → Tab S4:** Dialed `+491752536807` on S10. PHONE_LOOKUP returned `clientId=android-725b46bc, online=true`. Tab S4 showed IncomingCallActivity. PASSED.
+  - **S7 → Tab S4:** Dialed `+491752536807` on S7. PHONE_LOOKUP returned `clientId=android-725b46bc, online=true`. Tab S4 showed IncomingCallActivity. PASSED.
+  - **Tab S4 → S7:** Dialed `+4915203487046` on Tab S4. PHONE_LOOKUP returned `clientId=android-bc0f46cc, online=true`. S7 showed IncomingCallActivity. Contact resolved as "Partner Karte 100 Altes Samsung". PASSED.
+  - **Tab S4 → S10:** Dialed `+4915231794100` on Tab S4. PHONE_LOOKUP returned `clientId=android-f90e7cf6, online=true`. S10 showed IncomingCallActivity. Contact resolved as "GREGOR MARINOW". PASSED.
+  - **S7 → S10:** Dialed `+4915231794100` on S7. PHONE_LOOKUP returned `clientId=android-f90e7cf6, online=true`. S10 showed IncomingCallActivity. Contact resolved as "CHEF". PASSED.
+  - **6/6 directions verified.** Server phone registry overwrite bug fixed — multiple devices re-registering no longer corrupt each other's phone mappings. Permissions granted via `adb shell pm grant` for testing.
+- **IncomingCallActivity lock screen fix (Commit `1aed31d`):** Tab S4 screen locked with pattern lock. S10 called Tab S4's phone number. Before fix: IncomingCallActivity launched behind keyguard, `Surface is not valid`, invisible to user. After fix: IncomingCallActivity appeared over the lock screen with "Incoming Secure Call" from the caller. PASSED. Device screen turned on and stayed on (`FLAG_KEEP_SCREEN_ON`).
 
 ## Architecture Decisions
 
