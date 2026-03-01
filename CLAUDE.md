@@ -4,9 +4,9 @@
 
 SecureCall is an end-to-end encrypted voice calling app for Android. The monorepo contains the Android client, a Node.js signaling backend (deployed on Railway), a Rust crypto engine, and supporting infrastructure.
 
-**Sprint status:** All changes are **committed and pushed** to `origin/main`. Direct P2P audio transport is working via WebRTC DataChannel — Opus-encoded voice with E2E encryption, tested bidirectionally across all devices. Phone number → clientId resolution is live, tested across all 3 physical devices (S10, S7, Tab S4). Incoming calls now show over the lock screen and wake the device. Privacy-preserving contact verification is live — contacts with SecureCall show a green badge, using SHA-256 hashed phone lookups (server never sees raw numbers).
+**Sprint status:** All changes are **committed and pushed** to `origin/main`. Direct P2P audio transport is working via WebRTC DataChannel — Opus-encoded voice with E2E encryption, tested bidirectionally across all devices. Phone number → clientId resolution is live, tested across all 3 physical devices (S10, S7, Tab S4). Incoming calls now show over the lock screen and wake the device. Privacy-preserving contact verification is live — contacts with SecureCall show a green badge, using SHA-256 hashed phone lookups (server never sees raw numbers). Bug fix sprint complete: 7 UX/reliability bugs fixed (A2, D1, D2, A3, D3, C1, C2) — connection status indicator, pre-call health checks, missed call badges/notifications, save-contact-after-call dialog, and invite SMS with SecureCall ID.
 
-**The 32 completed changes (all committed):**
+**The 39 completed changes (all committed):**
 
 1. **Contact auto-call fix** -- Removed `itemView.setOnClickListener` from `ContactAdapter.kt`. Only the phone icon (`btnCallContact`) now triggers calls; tapping the contact row does nothing.
 2. **Messenger invite dialog** -- `DialerFragment.kt` now shows a 3-option dialog (Via Messenger, Share Link, Send SMS) when dialing an unknown number.
@@ -40,6 +40,13 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 30. **BATCH_PHONE_LOOKUP pagination** *(Commit `fd67ee1`)* -- `checkSecureCallMembers()` now chunks all contact hashes into sequential batches of 200 using `List.chunked(200)`. Batches are sent one at a time via recursive `sendBatch()` callback. Results accumulate across all batches; UI updates once after the last batch. Also fixed callback ordering bug in `WebSocketService.kt`: `_batchPhoneLookupCallback` was nullified after `invoke()`, killing the chain at batch 2. Fix: clear callback before invoking so the next batch's callback survives. S10 (1541 contacts): 8 batches in ~1.4s, now finds S7 + Tab S4. S7 (33 contacts): 1 batch, unchanged.
 31. **Proximity wake lock fix** *(Commit `a720fff`)* -- `CallActivity.java`: `PROXIMITY_SCREEN_OFF_WAKE_LOCK` is now acquired immediately in `initProximitySensor()` (called from `onCreate`). The system automatically turns the screen off when the phone is held to the ear and back on when moved away. Removed the manual `SensorEventListener` approach which was unreliable — the wake lock handles proximity monitoring internally. Released in `endCall()` and `onDestroy()`. Tested on S10: logcat confirms `Proximity wake lock acquired` on call start and `Proximity wake lock released` on call end.
 32. **Dialer cursor & delete fix** *(Commit `6ec004e`)* -- `DialerFragment.kt`: Backspace now deletes the character before the cursor position (`phoneDisplay.selectionStart`) instead of always deleting the last digit. Digit buttons insert at cursor position (`phoneNumber.insert(cursor, digit)`) instead of appending. `updateDisplay()` accepts a `cursorPos` parameter and calls `phoneDisplay.setSelection()` to restore cursor after `setText()`. Long-press backspace (clear all) unchanged. Tested on S10: typed `+1915231`, positioned cursor mid-number, backspace correctly deleted at cursor position.
+33. **Incoming call caller phone display** *(Commit `92665a1`)* -- `IncomingCallActivity.kt`: Caller display now resolves contact name by both clientId and phone number. If no contact matches the clientId, tries matching the `callerPhone` field (from CALL_INVITE) against contacts' `phoneOrId` with normalized comparison. Falls back to phone number if no contact found, then raw clientId as last resort. Incoming caller screen now shows the caller's phone number or contact name instead of just the raw clientId.
+34. **SecureCall ID copy fix** *(Commit `4f6efc8`)* -- `SettingsFragment.kt`: Fixed stale `clientId` closure in `onCreatePreferences`. The tap-to-copy handler now reads `client_id` fresh from SharedPreferences on each click instead of capturing it once at fragment creation time. Added `onResume()` to refresh the preference summary when returning to settings. Toast now shows the copied ID for verification.
+35. **Connection status indicator & pre-call health checks** *(Commit `14ac6c9`)* -- `WebSocketService.kt`: Added `@Volatile var isConnected: Boolean` flag, set `true` in `onConnected()`, `false` in `onDisconnected()`/`onError()`/`handleHeartbeatTimeout()`. Added `statusCallbackOnline`/`statusCallbackOffline` callbacks. `MainActivity.java`: Toolbar subtitle shows green "Connected" or gray "Connecting..." based on WebSocket state via `wireConnectionStatusCallbacks()`. `DialerFragment.kt` and `ContactsFragment.kt`: Added pre-call health checks in all call initiation paths — if `ws.isConnected` is false, triggers `forceReconnect()` and shows "Reconnecting to server" toast instead of silently failing.
+36. **Save contact dialog after phone-resolved call** *(Commit `a133856`)* -- `CallActivity.java`: After a call ends where the phone number was resolved to a clientId (via `originalPhone` intent extra), shows a "Save Contact" AlertDialog offering to save the contact with their SecureCall clientId. `shouldOfferContactSave()` checks: originalPhone is present, callContactId starts with `android-`, and contact not already saved. On save, creates a Contact with the clientId as `phoneOrId` so future calls connect directly without phone lookup. `DialerFragment.kt` and `ContactsFragment.kt` pass `originalPhone` extra through the intent chain.
+37. **Invite SMS includes SecureCall ID** *(Commit `2019e06`)* -- `strings.xml`: Updated `dialer_invite_sms` and `dialer_invite_share` with `%1$s` format placeholder for SecureCall ID. `DialerFragment.kt`: Added `getMyClientId()` helper, formatted invite messages in `sendViaMessenger()`, `sendSmsInvite()`, `shareInviteLink()` with the local clientId. `ContactsFragment.kt`: Same fix in `showInviteDialog()`. Invite messages now include the sender's SecureCall ID so recipients can call back.
+38. **Missed call notification with badge** *(Commit `ec9cceb`)* -- `IncomingCallActivity.kt`: Added `postMissedCallNotification()` called from `saveMissedCall()`. Creates `securecall_missed_calls` notification channel with `setShowBadge(true)`. Posts notification with caller name, missed call count via `setNumber()`, and tap-to-open PendingIntent. `CallHistoryRepository.kt`: Added `countMissed()` method. `strings.xml`: Added `missed_call_title` string. App launcher icon now shows badge count for missed calls (Samsung/Pixel launchers).
+39. **In-app missed call badge & snackbar** *(Commit `2d89569`)* -- `MainActivity.java`: Added `onResume()` with `checkMissedCallBadge()` — counts missed calls since `last_calls_viewed` timestamp (SharedPreferences). Shows badge number on bottom nav "Calls" tab via `getOrCreateBadge()`. Shows Snackbar with "X missed call(s)" and "View" action if user is not on the Calls tab. Badge clears when user navigates to Calls tab (updates `last_calls_viewed` timestamp). `CallHistoryRepository.kt`: Added `countMissedSince(context, sinceTimestamp)` method.
 
 **End-to-end call signaling details (change #8):**
 - `WebSocketService.kt`: Added call signaling callbacks (`_onCallAccepted`, `_onCallEnded`, `_onCallError`), session tracking, incoming call activity launch, message parsing for CALL_INVITE/CALL_INVITE_ACK/CALL_ACCEPT/CALL_END/ERROR. Uses private backing fields with explicit setter methods for Java interop.
@@ -168,9 +175,9 @@ stealth/                              # Monorepo root
 │   │       ├── AndroidManifest.xml   # MODIFIED: foreground service, IncomingCallActivity, phone permissions
 │   │       ├── cpp/CMakeLists.txt    # JNI bridge to Rust crypto
 │   │       ├── java/com/securecall/app/
-│   │       │   ├── MainActivity.kt
-│   │       │   ├── CallActivity.java          # MODIFIED: signaling, audio, runtime permission, endCall guard
-│   │       │   ├── IncomingCallActivity.kt    # NEW: incoming call ringing screen (accepted flag fix, contact name, lock screen flags)
+│   │       │   ├── MainActivity.java               # MODIFIED: connection status callbacks, missed call badge/snackbar, phone permission UI
+│   │       │   ├── CallActivity.java          # MODIFIED: signaling, audio, runtime permission, endCall guard, save-contact dialog
+│   │       │   ├── IncomingCallActivity.kt    # NEW: incoming call ringing screen (accepted flag fix, contact name, lock screen flags, missed call notification)
 │   │       │   ├── SecureCallApplication.kt
 │   │       │   ├── net/
 │   │       │   │   ├── HeartbeatClient.kt      # MODIFIED: reconnect fix, lastSeen on send, binary WS support
@@ -179,9 +186,9 @@ stealth/                              # Monorepo root
 │   │       │   │   └── signal/                 # Call & key exchange message builders
 │   │       │   ├── ui/
 │   │       │   │   ├── CallsFragment.kt
-│   │       │   │   ├── ContactsFragment.kt     # MODIFIED: async phone lookup, SHA-256 hashed batch contact verification
-│   │       │   │   ├── DialerFragment.kt       # MODIFIED: messenger invite, T9 search, invite dialog fix, phone lookup
-│   │       │   │   ├── SettingsFragment.kt     # MODIFIED: background service toggle, clientId display
+│   │       │   │   ├── ContactsFragment.kt     # MODIFIED: async phone lookup, SHA-256 hashed batch contact verification, pre-call health, invite with ID
+│   │       │   │   ├── DialerFragment.kt       # MODIFIED: messenger invite, T9 search, invite dialog fix, phone lookup, pre-call health, cursor fix, invite with ID
+│   │       │   │   ├── SettingsFragment.kt     # MODIFIED: background service toggle, clientId display, fresh-read copy fix
 │   │       │   │   └── adapter/
 │   │       │   │       └── ContactAdapter.kt   # MODIFIED: removed row click
 │   │       │   ├── config/                     # FeatureProvider, FeatureProviderRegistry
@@ -192,7 +199,7 @@ stealth/                              # Monorepo root
 │   │       │   ├── billing/                    # Subscription tiers, licensing
 │   │       │   ├── call/                       # CallController
 │   │       │   ├── crypto/                     # EphemeralKeyProvider
-│   │       │   ├── data/                       # ContactRepository, CallHistoryRepository
+│   │       │   ├── data/                       # ContactRepository, CallHistoryRepository (MODIFIED: countMissed, countMissedSince)
 │   │       │   ├── ghostnet/                   # Encrypted transport protocol
 │   │       │   ├── security/                   # Anti-recording, root detection
 │   │       │   ├── fcm/                        # FCM push handler
@@ -307,12 +314,13 @@ stealth/                              # Monorepo root
 
 ## Next Immediate Step
 
-All core features are complete, committed, and tested across 4 devices (S10, S7, Tab S4, Emulator). 32 changes shipped including full E2E encrypted P2P voice calls, phone number resolution, auto-dismiss, lock screen incoming calls, proximity wake lock, dialer cursor fix, privacy-preserving contact verification with paginated batch lookup, and comprehensive testing. Git history has been cleaned (test screenshots purged via `git filter-repo`). Next priorities:
+All core features are complete, committed, and tested across 4 devices (S10, S7, Tab S4, Emulator). 39 changes shipped including full E2E encrypted P2P voice calls, phone number resolution, auto-dismiss, lock screen incoming calls, proximity wake lock, dialer cursor fix, privacy-preserving contact verification with paginated batch lookup, and a 7-bug UX/reliability fix sprint (connection status, pre-call health checks, save-contact-after-call, invite SMS with ID, missed call notifications with badge, in-app missed call snackbar). Git history has been cleaned (test screenshots purged via `git filter-repo`). Next priorities:
 
 1. ~~**Runtime phone permission UI**~~ -- DONE. Already implemented in `MainActivity.java`: `requestPhoneNumberPermission()` + `promptForPhoneNumber()` dialog. Permissions were granted via adb during testing, bypassing the runtime dialog.
 2. ~~**Fix lock screen incoming calls**~~ -- DONE. IncomingCallActivity now shows over lock screen. Commit `1aed31d`.
 3. ~~**Privacy-preserving contact verification**~~ -- DONE. SHA-256 hashed BATCH_PHONE_LOOKUP with green badge. Commits `5ccba9f`, `e651a8d`.
 4. ~~**BATCH_PHONE_LOOKUP pagination**~~ -- DONE. Sequential batches of 200, all contacts checked. Commit `fd67ee1`.
-5. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
-6. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
-7. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
+5. ~~**Bug fix sprint (A2, D1, D2, A3, D3, C1, C2)**~~ -- DONE. 7 bugs fixed: incoming caller phone display, settings ID copy, connection status indicator, save-contact dialog, invite SMS with ID, missed call notification, in-app missed call badge. Commits `92665a1` through `2d89569`.
+6. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
+7. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
+8. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
