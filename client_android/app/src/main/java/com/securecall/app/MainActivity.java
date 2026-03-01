@@ -17,6 +17,7 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.snackbar.Snackbar;
 import android.view.View;
 
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
@@ -110,6 +111,10 @@ public class MainActivity extends AppCompatActivity {
             if (id == R.id.nav_calls) {
                 showFragment(new CallsFragment());
                 fab.setVisibility(View.VISIBLE);
+                // Mark calls as seen — clear badge
+                getSharedPreferences("securecall_prefs", MODE_PRIVATE).edit()
+                        .putLong("last_calls_viewed", System.currentTimeMillis()).apply();
+                bottomNav.removeBadge(R.id.nav_calls);
                 return true;
             } else if (id == R.id.nav_contacts) {
                 showFragment(new ContactsFragment());
@@ -286,6 +291,40 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .setCancelable(false)
                 .show();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        checkMissedCallBadge();
+    }
+
+    private void checkMissedCallBadge() {
+        SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+        long lastViewed = prefs.getLong("last_calls_viewed", 0);
+        int newMissed = com.securecall.app.data.CallHistoryRepository.INSTANCE
+                .countMissedSince(this, lastViewed);
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        if (bottomNav == null) return;
+        if (newMissed > 0) {
+            bottomNav.getOrCreateBadge(R.id.nav_calls).setNumber(newMissed);
+            // Show snackbar only if not already on the Calls tab
+            if (bottomNav.getSelectedItemId() != R.id.nav_calls) {
+                View root = findViewById(R.id.nav_host_fragment);
+                String msg = newMissed == 1
+                        ? "1 missed call"
+                        : newMissed + " missed calls";
+                Snackbar.make(root, msg, Snackbar.LENGTH_LONG)
+                        .setAction("View", v -> bottomNav.setSelectedItemId(R.id.nav_calls))
+                        .show();
+            } else {
+                // Already on Calls tab — mark as seen
+                prefs.edit().putLong("last_calls_viewed", System.currentTimeMillis()).apply();
+                bottomNav.removeBadge(R.id.nav_calls);
+            }
+        } else {
+            bottomNav.removeBadge(R.id.nav_calls);
+        }
     }
 
     private void wireConnectionStatusCallbacks() {

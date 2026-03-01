@@ -28,6 +28,10 @@ object CallHistoryRepository {
         return getAll(context).count { it.type == CallType.MISSED }
     }
 
+    fun countMissedSince(context: Context, sinceTimestamp: Long): Int {
+        return getAll(context).count { it.type == CallType.MISSED && it.timestamp > sinceTimestamp }
+    }
+
     fun delete(context: Context, recordId: String) {
         val all = getAll(context).filter { it.id != recordId }
         persist(context, all)
