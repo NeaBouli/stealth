@@ -31,6 +31,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     var statusCallbackOffline: (() -> Unit)? = null
     var errorCallback: ((Throwable) -> Unit)? = null
 
+    // Connection state (volatile for thread-safe reads from UI)
+    @Volatile var isConnected: Boolean = false
+        private set
+
     // Call signaling state and callbacks (private backing fields)
     private var _currentSessionId: String? = null
     private var _onIncomingCall: ((String, String, String) -> Unit)? = null
@@ -220,6 +224,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onConnected() {
         Log.d("WS_SERVICE", "WebSocket connected")
+        isConnected = true
         reconnectAttempts = 0
         startHeartbeatMonitor()
         registerClient()
@@ -350,6 +355,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onDisconnected() {
         Log.d("WS_SERVICE", "WebSocket disconnected")
+        isConnected = false
         stopHeartbeatMonitor()
         statusCallbackOffline?.invoke()
         scheduleReconnect()
@@ -364,6 +370,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onError(t: Throwable) {
         Log.e("WS_SERVICE", "WebSocket error", t)
+        isConnected = false
         errorCallback?.invoke(t)
         statusCallbackOffline?.invoke()
         // Reconnect is handled by HeartbeatClient — do NOT call scheduleReconnect() here
@@ -516,6 +523,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     private fun handleHeartbeatTimeout() {
+        isConnected = false
         statusCallbackOffline?.invoke()
         try {
             client?.close()

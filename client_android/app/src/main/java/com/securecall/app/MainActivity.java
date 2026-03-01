@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean inCall = false;
     private AudioCapturePlaceholder audioCapture;
+    private MaterialToolbar toolbar;
 
     private static final String TAG = "MainActivity";
     private static final int REQUEST_RECORD_AUDIO = 1001;
@@ -86,8 +87,11 @@ public class MainActivity extends AppCompatActivity {
 
         audioCapture = new AudioCapturePlaceholder();
 
-        // Setup toolbar
-        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
+        // Setup toolbar with connection status subtitle
+        toolbar = findViewById(R.id.topAppBar);
+        toolbar.setSubtitle("Connecting\u2026");
+        toolbar.setSubtitleTextColor(getResources().getColor(android.R.color.darker_gray, null));
+        wireConnectionStatusCallbacks();
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_settings) {
                 showFragment(new SettingsFragment());
@@ -282,6 +286,39 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .setCancelable(false)
                 .show();
+    }
+
+    private void wireConnectionStatusCallbacks() {
+        com.securecall.app.net.WebSocketService ws =
+                com.securecall.app.net.WebSocketService.Companion.getInstance();
+        if (ws != null) {
+            ws.setStatusCallbackOnline(() -> {
+                runOnUiThread(() -> {
+                    if (toolbar != null) {
+                        toolbar.setSubtitle("Connected");
+                        toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_active_green, null));
+                    }
+                });
+                return kotlin.Unit.INSTANCE;
+            });
+            ws.setStatusCallbackOffline(() -> {
+                runOnUiThread(() -> {
+                    if (toolbar != null) {
+                        toolbar.setSubtitle("Connecting\u2026");
+                        toolbar.setSubtitleTextColor(getResources().getColor(android.R.color.darker_gray, null));
+                    }
+                });
+                return kotlin.Unit.INSTANCE;
+            });
+            // Set initial state
+            if (ws.isConnected()) {
+                toolbar.setSubtitle("Connected");
+                toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_active_green, null));
+            }
+        } else {
+            // Service not started yet — retry after a short delay
+            new android.os.Handler(getMainLooper()).postDelayed(this::wireConnectionStatusCallbacks, 1000);
+        }
     }
 
     private void runSecurityChecks() {

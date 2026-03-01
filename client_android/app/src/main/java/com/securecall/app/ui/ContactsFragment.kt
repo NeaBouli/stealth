@@ -247,6 +247,13 @@ class ContactsFragment : Fragment() {
 
     private fun startCall(contact: Contact) {
         if (contact.phoneOrId.startsWith("android-")) {
+            // Pre-call health check for direct calls too
+            val ws = com.securecall.app.net.WebSocketService.instance
+            if (ws == null || !ws.isConnected) {
+                ws?.forceReconnect()
+                android.widget.Toast.makeText(requireContext(), "Reconnecting to server, please try again", android.widget.Toast.LENGTH_SHORT).show()
+                return
+            }
             // SecureCall ID — call directly
             Log.d(TAG, "Starting call to: ${contact.name}")
             val intent = Intent(requireContext(), CallActivity::class.java).apply {
@@ -260,6 +267,13 @@ class ContactsFragment : Fragment() {
             val ws = com.securecall.app.net.WebSocketService.instance
             if (ws == null) {
                 android.widget.Toast.makeText(requireContext(), "Connecting to server, please try again", android.widget.Toast.LENGTH_SHORT).show()
+                return
+            }
+            // Pre-call health check: if disconnected, trigger reconnect
+            if (!ws.isConnected) {
+                Log.w(TAG, "WS not connected — triggering reconnect")
+                ws.forceReconnect()
+                android.widget.Toast.makeText(requireContext(), "Reconnecting to server, please try again", android.widget.Toast.LENGTH_SHORT).show()
                 return
             }
             val normalized = contact.phoneOrId.replace(Regex("[^0-9+]"), "")

@@ -158,6 +158,13 @@ class DialerFragment : Fragment() {
         if (matches.isNotEmpty()) {
             contactSuggestions.adapter = ContactAdapter(matches) { contact ->
                 if (contact.phoneOrId.startsWith("android-")) {
+                    // Pre-call health check
+                    val ws = com.securecall.app.net.WebSocketService.instance
+                    if (ws == null || !ws.isConnected) {
+                        ws?.forceReconnect()
+                        Toast.makeText(requireContext(), "Reconnecting to server, please try again", Toast.LENGTH_SHORT).show()
+                        return@ContactAdapter
+                    }
                     val intent = Intent(requireContext(), CallActivity::class.java).apply {
                         putExtra("callerName", contact.name)
                         putExtra("phoneNumber", contact.phoneOrId)
@@ -200,6 +207,13 @@ class DialerFragment : Fragment() {
         val match = allContacts.find { normalizePhone(it.phoneOrId) == normalized }
 
         if (match != null && match.phoneOrId.startsWith("android-")) {
+            // Pre-call health check
+            val ws = com.securecall.app.net.WebSocketService.instance
+            if (ws == null || !ws.isConnected) {
+                ws?.forceReconnect()
+                Toast.makeText(requireContext(), "Reconnecting to server, please try again", Toast.LENGTH_SHORT).show()
+                return
+            }
             // Known SecureCall contact — start call directly
             val intent = Intent(requireContext(), CallActivity::class.java).apply {
                 putExtra("callerName", match.name)
@@ -225,6 +239,13 @@ class DialerFragment : Fragment() {
                 Log.e("DialerFragment", "Failed to start WebSocketService", e)
             }
             Toast.makeText(requireContext(), "Connecting to server, please try again", Toast.LENGTH_SHORT).show()
+            return
+        }
+        // Pre-call health check: if disconnected, trigger reconnect
+        if (!ws.isConnected) {
+            Log.w("DialerFragment", "WS not connected — triggering reconnect")
+            ws.forceReconnect()
+            Toast.makeText(requireContext(), "Reconnecting to server, please try again", Toast.LENGTH_SHORT).show()
             return
         }
         val normalized = normalizePhone(phoneNumber)
