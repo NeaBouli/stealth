@@ -681,8 +681,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     }
                 }
                 Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP_RESULT (mode=$mode): ${registered.size} registered")
-                _batchPhoneLookupCallback?.invoke(registered)
+                val cb = _batchPhoneLookupCallback
                 _batchPhoneLookupCallback = null
+                cb?.invoke(registered)
                 return
             }
         } catch (_: Throwable) {}

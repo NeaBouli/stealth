@@ -130,20 +130,47 @@ class ContactsFragment : Fragment() {
         if (phoneNumbers.isEmpty()) return
         // Hash phone numbers for privacy — server never sees raw numbers
         val hashToPhone = mutableMapOf<String, String>()
-        val hashes = phoneNumbers.map { phone ->
+        val allHashes = phoneNumbers.map { phone ->
             val normalized = phone.replace(Regex("[^0-9+]"), "")
             val hash = sha256(normalized)
             hashToPhone[hash] = phone
             hash
         }
-        // Limit to 200 per batch to stay under server maxPayload (64KB)
-        val batch = hashes.take(200)
-        ws.batchPhoneLookup(batch) { registeredHashes ->
-            // Map hashes back to phone numbers for the UI
-            registeredPhones = registeredHashes.mapNotNull { hashToPhone[it] }.toSet()
-            activity?.runOnUiThread {
-                if (isAdded) updateList(allContacts)
+        // Chunk into batches of 200 (server max per request) and send sequentially
+        val batches = allHashes.chunked(200)
+        if (batches.isEmpty()) return
+        val accumulatedRegistered = mutableSetOf<String>()
+
+        fun sendBatch(index: Int) {
+            if (!isAdded) return
+            val currentWs = com.securecall.app.net.WebSocketService.instance
+            if (currentWs == null) {
+                finalizeResults(accumulatedRegistered, hashToPhone)
+                return
             }
+            if (index >= batches.size) {
+                Log.d(TAG, "Batch phone lookup complete: ${accumulatedRegistered.size} registered across ${batches.size} batches")
+                finalizeResults(accumulatedRegistered, hashToPhone)
+                return
+            }
+            val batch = batches[index]
+            Log.d(TAG, "Sending batch ${index + 1}/${batches.size} (${batch.size} hashes)")
+            currentWs.batchPhoneLookup(batch) { registeredHashes ->
+                accumulatedRegistered.addAll(registeredHashes)
+                sendBatch(index + 1)
+            }
+        }
+
+        sendBatch(0)
+    }
+
+    private fun finalizeResults(
+        accumulatedRegistered: Set<String>,
+        hashToPhone: Map<String, String>
+    ) {
+        registeredPhones = accumulatedRegistered.mapNotNull { hashToPhone[it] }.toSet()
+        activity?.runOnUiThread {
+            if (isAdded) updateList(allContacts)
         }
     }
 
