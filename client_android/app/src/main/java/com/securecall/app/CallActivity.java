@@ -169,6 +169,13 @@ public class CallActivity extends AppCompatActivity {
             updateCallButton(true);
             startRingbackTone();
 
+            // Pre-call connection check: verify WebSocket is connected
+            if (ws != null && !ws.isConnected()) {
+                Log.w(TAG, "WebSocket not connected — triggering reconnect before call");
+                ws.ensureConnected();
+                connectionState.setText("Reconnecting\u2026");
+            }
+
             if (ws != null && targetId != null && !targetId.isEmpty()) {
                 ws.setOnCallAccepted(acceptedSessionId -> {
                     Log.d(TAG, "Remote accepted, session=" + acceptedSessionId);

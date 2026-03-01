@@ -334,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
             ws.setStatusCallbackOnline(() -> {
                 runOnUiThread(() -> {
                     if (toolbar != null) {
-                        toolbar.setSubtitle("Connected");
+                        toolbar.setSubtitle("\u25CF Connected");
                         toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_active_green, null));
                     }
                 });
@@ -343,16 +343,19 @@ public class MainActivity extends AppCompatActivity {
             ws.setStatusCallbackOffline(() -> {
                 runOnUiThread(() -> {
                     if (toolbar != null) {
-                        toolbar.setSubtitle("Connecting\u2026");
-                        toolbar.setSubtitleTextColor(getResources().getColor(android.R.color.darker_gray, null));
+                        toolbar.setSubtitle("\u25CF Disconnected");
+                        toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_end_red, null));
                     }
                 });
                 return kotlin.Unit.INSTANCE;
             });
             // Set initial state
             if (ws.isConnected()) {
-                toolbar.setSubtitle("Connected");
+                toolbar.setSubtitle("\u25CF Connected");
                 toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_active_green, null));
+            } else {
+                toolbar.setSubtitle("\u25CF Disconnected");
+                toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_end_red, null));
             }
         } else {
             // Service not started yet — retry after a short delay

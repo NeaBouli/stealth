@@ -101,9 +101,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private val heartbeatTimeoutMs = 30000L
     private var heartbeatTimer: java.util.Timer? = null
 
-    // BACKEND-26: Reconnect-Backoff
-    private var reconnectAttempts = 0
-    private val backoffSequenceMs = longArrayOf(1000L, 3000L, 5000L)
+    // Reconnect is owned by HeartbeatClient (exponential backoff 1s→30s max)
 
     inner class LocalBinder : Binder() {
         fun getService(): WebSocketService = this@WebSocketService
@@ -223,9 +221,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // ===================== HeartbeatClient.Listener =====================
 
     override fun onConnected() {
-        Log.d("WS_SERVICE", "WebSocket connected")
+        Log.d("WS_SERVICE", "WebSocket connected — registering client")
         isConnected = true
-        reconnectAttempts = 0
         startHeartbeatMonitor()
         registerClient()
         setupCallSignalingCallbacks()
@@ -351,7 +348,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         isConnected = false
         stopHeartbeatMonitor()
         statusCallbackOffline?.invoke()
-        scheduleReconnect()
+        // HeartbeatClient owns reconnect — do NOT schedule here
     }
 
     override fun onMessage(text: String) {
@@ -446,32 +443,15 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     // ===================== Reconnect =====================
-
-    private fun scheduleReconnect() {
-        val delay = backoffSequenceMs[
-            if (reconnectAttempts >= backoffSequenceMs.size) backoffSequenceMs.size - 1
-            else reconnectAttempts
-        ]
-        Log.w("WS_SERVICE", "Scheduling reconnect in ${delay}ms (attempt $reconnectAttempts)")
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            reconnectAttempts++
-            connectWebSocket()
-        }, delay)
-    }
-
-    private fun connectWebSocket() {
-        Log.d("WS_SERVICE", "connectWebSocket() invoked")
-        client?.connect()
-    }
+    // HeartbeatClient owns ALL reconnection logic.
+    // WebSocketService only delegates via forceReconnect() or handleHeartbeatTimeout().
 
     fun forceReconnect() {
-        Log.w("WS_SERVICE", "ForceReconnect() invoked — closing WS + scheduling reconnect")
-        try {
-            client?.close()
-        } catch (_: Exception) {}
+        Log.w("WS_SERVICE", "ForceReconnect() invoked — delegating to HeartbeatClient")
+        isConnected = false
         stopHeartbeatMonitor()
         statusCallbackOffline?.invoke()
-        scheduleReconnect()
+        client?.forceReconnect()
     }
 
     // BACKEND-56: Debug-Funktion zum künstlichen Trennen
@@ -486,10 +466,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         try {
             com.securecall.app.ghostnet.transport.GhostTransport.stop()
         } catch (_: Throwable) {}
-        try {
-            client?.close()
-        } catch (_: Throwable) {}
-        client?.connect()
+        forceReconnect()
         Log.d("WS_SERVICE", "reconnectFlow() completed")
     }
 
@@ -516,11 +493,22 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     private fun handleHeartbeatTimeout() {
+        Log.w("WS_SERVICE", "Heartbeat timeout — delegating to HeartbeatClient for reconnect")
         isConnected = false
+        stopHeartbeatMonitor()
         statusCallbackOffline?.invoke()
-        try {
-            client?.close()
-        } catch (_: Exception) {}
+        client?.forceReconnect()
+    }
+
+    /**
+     * Check if WebSocket is connected. If not, trigger reconnect.
+     * Returns true if currently connected, false if reconnecting.
+     */
+    fun ensureConnected(): Boolean {
+        if (isConnected) return true
+        Log.w("WS_SERVICE", "ensureConnected() — not connected, triggering reconnect")
+        client?.forceReconnect()
+        return false
     }
 
     // ===================== Call Signaling =====================
