@@ -125,10 +125,22 @@ public class CallActivity extends AppCompatActivity {
 
         // Track call metadata for history logging
         isIncomingCall = isIncoming || fromNotification;
-        callContactName = (callerName != null && !callerName.isEmpty()) ? callerName : "Unknown";
         callContactId = phoneNumber != null ? phoneNumber : "";
         String origPhone = getIntent().getStringExtra("originalPhone");
         originalPhone = origPhone != null ? origPhone : "";
+
+        // Re-resolve caller name from phone book if it looks like a raw ID or number
+        if (callerName == null || callerName.isEmpty() || callerName.startsWith("android-")
+                || callerName.matches("^[+\\d\\s\\-()]+$")) {
+            String phoneForLookup = !originalPhone.isEmpty() ? originalPhone : callerName;
+            String resolved = com.securecall.app.data.PhoneBookResolver.INSTANCE
+                    .resolveCallerName(this, callContactId, phoneForLookup != null ? phoneForLookup : "");
+            if (resolved != null && !resolved.isEmpty()) {
+                callerName = resolved;
+                callerNameView.setText(callerName);
+            }
+        }
+        callContactName = (callerName != null && !callerName.isEmpty()) ? callerName : "Unknown";
 
         // ─── Proximity Sensor (screen off at ear) ─────────────────
         initProximitySensor();

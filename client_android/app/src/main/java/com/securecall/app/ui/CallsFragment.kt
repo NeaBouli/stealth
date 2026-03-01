@@ -44,13 +44,24 @@ class CallsFragment : Fragment() {
 
     private fun loadHistory() {
         val records = CallHistoryRepository.getAll(requireContext())
-        if (records.isEmpty()) {
+        // Enrich contact names: re-resolve from phone book for records with raw IDs/numbers
+        val enriched = records.map { record ->
+            val name = record.contactName
+            if (name.startsWith("android-") || name.matches(Regex("^[+\\d\\s\\-()]+$"))) {
+                // Try phone book resolution
+                val phoneForLookup = if (!record.contactId.isNullOrBlank() && !record.contactId.startsWith("android-"))
+                    record.contactId else name
+                val resolved = com.securecall.app.data.PhoneBookResolver.resolvePhoneNumber(requireContext(), phoneForLookup)
+                if (resolved != null) record.copy(contactName = resolved) else record
+            } else record
+        }
+        if (enriched.isEmpty()) {
             recycler.visibility = View.GONE
             emptyState.visibility = View.VISIBLE
         } else {
             recycler.visibility = View.VISIBLE
             emptyState.visibility = View.GONE
-            recycler.adapter = CallHistoryAdapter(records) { record ->
+            recycler.adapter = CallHistoryAdapter(enriched) { record ->
                 callBack(record)
             }
         }

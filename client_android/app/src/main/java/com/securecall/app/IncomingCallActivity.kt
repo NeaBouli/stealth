@@ -95,16 +95,9 @@ class IncomingCallActivity : AppCompatActivity() {
             return
         }
 
-        // Resolve caller name: try clientId first, then phone number, then fall back
-        val contacts = com.securecall.app.data.ContactRepository.getAll(this)
-        val contactByClientId = contacts.find { it.phoneOrId == callerClientId }
-        val contactByPhone = if (contactByClientId == null && callerPhone.isNotEmpty()) {
-            val normalizedCaller = callerPhone.replace(Regex("[^0-9+]"), "")
-            contacts.find { it.phoneOrId.replace(Regex("[^0-9+]"), "") == normalizedCaller }
-        } else null
-        val resolvedContact = contactByClientId ?: contactByPhone
-        callerDisplayName = resolvedContact?.name ?: if (callerPhone.isNotEmpty()) callerPhone else callerClientId
-        Log.d(TAG, "Caller display name: $callerDisplayName (resolvedBy=${if (contactByClientId != null) "clientId" else if (contactByPhone != null) "phone" else "fallback"})")
+        // Resolve caller name: phone book first, then SecureCall contacts, then fallback
+        callerDisplayName = com.securecall.app.data.PhoneBookResolver.resolveCallerName(this, callerClientId, callerPhone)
+        Log.d(TAG, "Caller display name: $callerDisplayName")
 
         findViewById<TextView>(R.id.incomingCallerName).text = callerDisplayName
 
@@ -234,9 +227,8 @@ class IncomingCallActivity : AppCompatActivity() {
 
     /** Save missed call when dismissing due to race condition (before contact name resolved). */
     private fun saveMissedCallFromIntent() {
-        val name = com.securecall.app.data.ContactRepository.getAll(this)
-            .find { it.phoneOrId == callerClientId }?.name ?: callerClientId
-        callerDisplayName = name
+        val callerPhone = intent.getStringExtra("callerPhone") ?: ""
+        callerDisplayName = com.securecall.app.data.PhoneBookResolver.resolveCallerName(this, callerClientId, callerPhone)
         saveMissedCall()
     }
 

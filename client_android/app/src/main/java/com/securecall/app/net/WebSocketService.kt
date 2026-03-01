@@ -240,15 +240,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     private fun showIncomingCallNotification(sessionId: String, fromClientId: String, callerPhone: String = "") {
-        // Resolve caller name: try clientId first, then phone number
-        val contacts = com.securecall.app.data.ContactRepository.getAll(this)
-        val contactByClientId = contacts.find { it.phoneOrId == fromClientId }
-        val contactByPhone = if (contactByClientId == null && callerPhone.isNotEmpty()) {
-            val normalizedCaller = callerPhone.replace(Regex("[^0-9+]"), "")
-            contacts.find { it.phoneOrId.replace(Regex("[^0-9+]"), "") == normalizedCaller }
-        } else null
-        val resolvedContact = contactByClientId ?: contactByPhone
-        val callerName = resolvedContact?.name ?: if (callerPhone.isNotEmpty()) callerPhone else fromClientId
+        // Resolve caller name: phone book first, then SecureCall contacts, then fallback
+        val callerName = com.securecall.app.data.PhoneBookResolver.resolveCallerName(this, fromClientId, callerPhone)
 
         val intent = android.content.Intent(this, com.securecall.app.IncomingCallActivity::class.java).apply {
             putExtra("sessionId", sessionId)
