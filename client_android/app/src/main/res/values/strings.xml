@@ -103,6 +103,9 @@
     <string name="dialer_invite_share">Join me on SecureCall for encrypted voice calls! My SecureCall ID: %1$s — Download: https://neabouli.github.io/stealth/</string>
     <string name="dialer_invite_via">Invite via\u2026</string>
 
+    <!-- Missed Call -->
+    <string name="missed_call_title">Missed SecureCall</string>
+
     <!-- Background Service -->
     <string name="pref_background_service">Background Service</string>
     <string name="pref_background_service_summary">Keep connection active for incoming calls when app is minimized</string>

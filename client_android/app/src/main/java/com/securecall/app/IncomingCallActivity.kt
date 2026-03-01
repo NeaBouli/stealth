@@ -194,9 +194,42 @@ class IncomingCallActivity : AppCompatActivity() {
             )
             com.securecall.app.data.CallHistoryRepository.add(this, record)
             Log.d(TAG, "Missed call saved: $callerDisplayName")
+            postMissedCallNotification()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save missed call", e)
         }
+    }
+
+    private fun postMissedCallNotification() {
+        val channelId = "securecall_missed_calls"
+        val nm = getSystemService(NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                channelId, "Missed Calls",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Notifications for missed SecureCall calls"
+                setShowBadge(true)
+            }
+            nm.createNotificationChannel(channel)
+        }
+        val openIntent = android.content.Intent(this, MainActivity::class.java).apply {
+            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = android.app.PendingIntent.getActivity(
+            this, 0, openIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = androidx.core.app.NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.ic_call)
+            .setContentTitle(getString(R.string.missed_call_title))
+            .setContentText(callerDisplayName)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setNumber(com.securecall.app.data.CallHistoryRepository.countMissed(this))
+            .build()
+        nm.notify(1003, notification)
+        Log.d(TAG, "Missed call notification posted for $callerDisplayName")
     }
 
     /** Save missed call when dismissing due to race condition (before contact name resolved). */
