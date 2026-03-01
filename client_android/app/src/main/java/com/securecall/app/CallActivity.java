@@ -4,10 +4,6 @@ import android.Manifest;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Bundle;
@@ -36,7 +32,7 @@ import com.securecall.app.data.CallRecord;
 import com.securecall.app.data.CallType;
 import com.securecall.app.security.SecureCallMonitor;
 
-public class CallActivity extends AppCompatActivity implements SensorEventListener {
+public class CallActivity extends AppCompatActivity {
 
     private static final String TAG = "CallActivity";
     private static final int REQUEST_RECORD_AUDIO = 1001;
@@ -67,9 +63,7 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     private String callContactName = "";
     private String callContactId = "";
 
-    // Proximity sensor
-    private SensorManager sensorManager;
-    private Sensor proximitySensor;
+    // Proximity wake lock — acquired during call, system auto-manages screen on/off
     private PowerManager.WakeLock proximityWakeLock;
 
     // Ringback tone for caller while waiting
@@ -397,54 +391,25 @@ public class CallActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
-     * Initialize proximity sensor to turn screen off when phone is near ear.
+     * Acquire PROXIMITY_SCREEN_OFF_WAKE_LOCK — system automatically turns screen
+     * off when proximity sensor detects near, and back on when far.
      */
     private void initProximitySensor() {
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
-
-        if (proximitySensor != null) {
-            sensorManager.registerListener(this, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL);
-            Log.d(TAG, "Proximity sensor registered");
-        } else {
-            Log.w(TAG, "No proximity sensor available");
-        }
-
         PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         if (pm.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
             proximityWakeLock = pm.newWakeLock(
                     PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "securecall:proximity");
-            Log.d(TAG, "Proximity wake lock created");
-        }
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() != Sensor.TYPE_PROXIMITY) return;
-
-        float distance = event.values[0];
-        boolean isNear = distance < proximitySensor.getMaximumRange();
-
-        if (isNear && proximityWakeLock != null && !proximityWakeLock.isHeld()) {
             proximityWakeLock.acquire();
-            Log.d(TAG, "Proximity: near — screen off");
-        } else if (!isNear && proximityWakeLock != null && proximityWakeLock.isHeld()) {
-            proximityWakeLock.release(PowerManager.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY);
-            Log.d(TAG, "Proximity: far — screen on");
+            Log.d(TAG, "Proximity wake lock acquired — screen will turn off at ear");
+        } else {
+            Log.w(TAG, "PROXIMITY_SCREEN_OFF_WAKE_LOCK not supported");
         }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Not needed
     }
 
     private void releaseProximitySensor() {
-        if (sensorManager != null && proximitySensor != null) {
-            sensorManager.unregisterListener(this);
-        }
         if (proximityWakeLock != null && proximityWakeLock.isHeld()) {
             proximityWakeLock.release();
+            Log.d(TAG, "Proximity wake lock released");
         }
     }
 
