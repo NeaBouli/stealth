@@ -61,16 +61,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Upgrade button (only for FREE tier)
         findPreference<Preference>("pref_upgrade")?.isVisible = BuildConfig.BILLING_ENABLED
 
-        // SecureCall ID (tap to copy)
+        // SecureCall ID (tap to copy) — read fresh from SharedPreferences each time
         val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
-        val clientId = prefs.getString("client_id", "Not registered")
         findPreference<Preference>("pref_client_id")?.apply {
-            summary = clientId
+            summary = prefs.getString("client_id", "Not registered")
             setOnPreferenceClickListener {
+                val freshId = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+                    .getString("client_id", "Not registered") ?: "Not registered"
                 val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                         as android.content.ClipboardManager
-                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("SecureCall ID", clientId))
-                android.widget.Toast.makeText(requireContext(), "Copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("SecureCall ID", freshId))
+                android.widget.Toast.makeText(requireContext(), "ID copied: $freshId", android.widget.Toast.LENGTH_SHORT).show()
                 true
             }
         }
@@ -102,6 +103,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // Licenses placeholder
         findPreference<Preference>("pref_licenses")?.summary = "Apache 2.0, MIT, BSD"
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh SecureCall ID summary in case it changed
+        val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+        findPreference<Preference>("pref_client_id")?.summary = prefs.getString("client_id", "Not registered")
     }
 
     private fun setupAboutLinks() {
