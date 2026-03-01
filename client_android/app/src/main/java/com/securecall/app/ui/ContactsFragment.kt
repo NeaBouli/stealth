@@ -305,7 +305,8 @@ class ContactsFragment : Fragment() {
 
     private fun showInviteDialog(contact: Contact) {
         val ctx = requireContext()
-        val message = getString(R.string.dialer_invite_sms)
+        val myId = com.securecall.app.net.WebSocketService.instance?.getLocalClientId() ?: "unknown"
+        val message = getString(R.string.dialer_invite_sms, myId)
         val items = arrayOf(
             getString(R.string.dialer_share_link),
             getString(R.string.dialer_send_sms)

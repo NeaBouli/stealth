@@ -294,8 +294,12 @@ class DialerFragment : Fragment() {
             .show()
     }
 
+    private fun getMyClientId(): String {
+        return com.securecall.app.net.WebSocketService.instance?.getLocalClientId() ?: "unknown"
+    }
+
     private fun sendViaMessenger(number: String) {
-        val message = getString(R.string.dialer_invite_sms)
+        val message = getString(R.string.dialer_invite_sms, getMyClientId())
         // Try messengers in priority order: WhatsApp > Telegram > Signal
         val messengers = listOf(
             "com.whatsapp" to "com.whatsapp.ContactPicker",
@@ -324,7 +328,7 @@ class DialerFragment : Fragment() {
     }
 
     private fun sendSmsInvite(number: String) {
-        val message = getString(R.string.dialer_invite_sms)
+        val message = getString(R.string.dialer_invite_sms, getMyClientId())
         try {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse("smsto:$number")
@@ -337,7 +341,7 @@ class DialerFragment : Fragment() {
     }
 
     private fun shareInviteLink() {
-        val message = getString(R.string.dialer_invite_share)
+        val message = getString(R.string.dialer_invite_share, getMyClientId())
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, message)
