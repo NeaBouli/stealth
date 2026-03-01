@@ -62,6 +62,7 @@ public class CallActivity extends AppCompatActivity {
     private boolean isIncomingCall = false;
     private String callContactName = "";
     private String callContactId = "";
+    private String originalPhone = "";
 
     // Proximity wake lock — acquired during call, system auto-manages screen on/off
     private PowerManager.WakeLock proximityWakeLock;
@@ -126,6 +127,8 @@ public class CallActivity extends AppCompatActivity {
         isIncomingCall = isIncoming || fromNotification;
         callContactName = (callerName != null && !callerName.isEmpty()) ? callerName : "Unknown";
         callContactId = phoneNumber != null ? phoneNumber : "";
+        String origPhone = getIntent().getStringExtra("originalPhone");
+        originalPhone = origPhone != null ? origPhone : "";
 
         // ─── Proximity Sensor (screen off at ear) ─────────────────
         initProximitySensor();
@@ -540,7 +543,47 @@ public class CallActivity extends AppCompatActivity {
             secureCallMonitor.stopMonitoring(this);
         }
         releaseProximitySensor();
-        finish();
+
+        // Offer to save contact if this was a phone-resolved call to an unsaved clientId
+        if (shouldOfferContactSave()) {
+            showSaveContactDialog();
+        } else {
+            finish();
+        }
+    }
+
+    /** Check if we should offer to save this contact (phone→clientId resolved, not already saved). */
+    private boolean shouldOfferContactSave() {
+        if (originalPhone.isEmpty() || callContactId.isEmpty()) return false;
+        if (!callContactId.startsWith("android-")) return false;
+        // Check if already saved in contacts
+        java.util.List<com.securecall.app.data.Contact> contacts =
+                com.securecall.app.data.ContactRepository.INSTANCE.getAll(this);
+        for (com.securecall.app.data.Contact c : contacts) {
+            if (c.getPhoneOrId().equals(callContactId)) return false;
+        }
+        return true;
+    }
+
+    private void showSaveContactDialog() {
+        if (isFinishing() || isDestroyed()) { finish(); return; }
+        new AlertDialog.Builder(this)
+            .setTitle("Save Contact")
+            .setMessage("Save " + callContactName + " (" + originalPhone + ") as a SecureCall contact?\n\nFuture calls will connect directly without phone lookup.")
+            .setPositiveButton("Save", (d, w) -> {
+                com.securecall.app.data.Contact contact = new com.securecall.app.data.Contact(
+                    java.util.UUID.randomUUID().toString(),
+                    callContactName, callContactId,
+                    System.currentTimeMillis(), false
+                );
+                com.securecall.app.data.ContactRepository.INSTANCE.save(this, contact);
+                Toast.makeText(this, "Contact saved", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Saved contact: " + callContactName + " -> " + callContactId);
+                finish();
+            })
+            .setNegativeButton("Skip", (d, w) -> finish())
+            .setCancelable(false)
+            .show();
     }
 
     @Override

@@ -257,6 +257,7 @@ class DialerFragment : Fragment() {
                     val intent = Intent(requireContext(), CallActivity::class.java).apply {
                         putExtra("callerName", displayName)
                         putExtra("phoneNumber", clientId)
+                        putExtra("originalPhone", phoneNumber)
                     }
                     startActivity(intent)
                 } else {

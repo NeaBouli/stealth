@@ -285,6 +285,7 @@ class ContactsFragment : Fragment() {
                         val intent = Intent(requireContext(), CallActivity::class.java).apply {
                             putExtra("callerName", contact.name)
                             putExtra("phoneNumber", clientId)
+                            putExtra("originalPhone", contact.phoneOrId)
                         }
                         startActivity(intent)
                     } else {
