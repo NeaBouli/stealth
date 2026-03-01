@@ -136,7 +136,9 @@ class ContactsFragment : Fragment() {
             hashToPhone[hash] = phone
             hash
         }
-        ws.batchPhoneLookup(hashes) { registeredHashes ->
+        // Limit to 200 per batch to stay under server maxPayload (64KB)
+        val batch = hashes.take(200)
+        ws.batchPhoneLookup(batch) { registeredHashes ->
             // Map hashes back to phone numbers for the UI
             registeredPhones = registeredHashes.mapNotNull { hashToPhone[it] }.toSet()
             activity?.runOnUiThread {
