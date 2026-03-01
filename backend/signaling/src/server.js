@@ -469,7 +469,8 @@ wss.on("connection", (ws, req) => {
           sessionId,
           from: myClientId,
           to: targetClientId,
-          pubKey: msg.pubKey
+          pubKey: msg.pubKey,
+          callerPhone: msg.callerPhone || ""
         });
       } else {
         // Peer is offline — try FCM push

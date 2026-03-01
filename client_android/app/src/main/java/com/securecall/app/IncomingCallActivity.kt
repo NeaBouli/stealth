@@ -82,7 +82,8 @@ class IncomingCallActivity : AppCompatActivity() {
 
         sessionId = intent.getStringExtra("sessionId") ?: ""
         callerClientId = intent.getStringExtra("callerClientId") ?: ""
-        Log.d(TAG, "Incoming call: session=$sessionId, from=$callerClientId")
+        val callerPhone = intent.getStringExtra("callerPhone") ?: ""
+        Log.d(TAG, "Incoming call: session=$sessionId, from=$callerClientId, phone=$callerPhone")
 
         // Check if this call was already cancelled before we launched
         val ws = com.securecall.app.net.WebSocketService.instance
@@ -94,10 +95,16 @@ class IncomingCallActivity : AppCompatActivity() {
             return
         }
 
-        // Look up caller's clientId in contacts to show saved name
-        callerDisplayName = com.securecall.app.data.ContactRepository.getAll(this)
-            .find { it.phoneOrId == callerClientId }?.name ?: callerClientId
-        Log.d(TAG, "Caller display name: $callerDisplayName")
+        // Resolve caller name: try clientId first, then phone number, then fall back
+        val contacts = com.securecall.app.data.ContactRepository.getAll(this)
+        val contactByClientId = contacts.find { it.phoneOrId == callerClientId }
+        val contactByPhone = if (contactByClientId == null && callerPhone.isNotEmpty()) {
+            val normalizedCaller = callerPhone.replace(Regex("[^0-9+]"), "")
+            contacts.find { it.phoneOrId.replace(Regex("[^0-9+]"), "") == normalizedCaller }
+        } else null
+        val resolvedContact = contactByClientId ?: contactByPhone
+        callerDisplayName = resolvedContact?.name ?: if (callerPhone.isNotEmpty()) callerPhone else callerClientId
+        Log.d(TAG, "Caller display name: $callerDisplayName (resolvedBy=${if (contactByClientId != null) "clientId" else if (contactByPhone != null) "phone" else "fallback"})")
 
         findViewById<TextView>(R.id.incomingCallerName).text = callerDisplayName
 

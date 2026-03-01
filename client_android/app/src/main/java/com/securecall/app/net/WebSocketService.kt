@@ -33,7 +33,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     // Call signaling state and callbacks (private backing fields)
     private var _currentSessionId: String? = null
-    private var _onIncomingCall: ((String, String) -> Unit)? = null
+    private var _onIncomingCall: ((String, String, String) -> Unit)? = null
     private var _onCallAccepted: ((String) -> Unit)? = null
     private var _onCallEnded: ((String) -> Unit)? = null
     private var _onCallError: ((String, String) -> Unit)? = null
@@ -228,20 +228,27 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     private fun setupCallSignalingCallbacks() {
-        _onIncomingCall = { sessionId, fromClientId ->
-            Log.d("WS_SERVICE", "Incoming call: session=$sessionId, from=$fromClientId")
-            showIncomingCallNotification(sessionId, fromClientId)
+        _onIncomingCall = { sessionId, fromClientId, callerPhone ->
+            Log.d("WS_SERVICE", "Incoming call: session=$sessionId, from=$fromClientId, phone=$callerPhone")
+            showIncomingCallNotification(sessionId, fromClientId, callerPhone)
         }
     }
 
-    private fun showIncomingCallNotification(sessionId: String, fromClientId: String) {
-        // Resolve caller name from contacts
-        val callerName = com.securecall.app.data.ContactRepository.getAll(this)
-            .find { it.phoneOrId == fromClientId }?.name ?: fromClientId
+    private fun showIncomingCallNotification(sessionId: String, fromClientId: String, callerPhone: String = "") {
+        // Resolve caller name: try clientId first, then phone number
+        val contacts = com.securecall.app.data.ContactRepository.getAll(this)
+        val contactByClientId = contacts.find { it.phoneOrId == fromClientId }
+        val contactByPhone = if (contactByClientId == null && callerPhone.isNotEmpty()) {
+            val normalizedCaller = callerPhone.replace(Regex("[^0-9+]"), "")
+            contacts.find { it.phoneOrId.replace(Regex("[^0-9+]"), "") == normalizedCaller }
+        } else null
+        val resolvedContact = contactByClientId ?: contactByPhone
+        val callerName = resolvedContact?.name ?: if (callerPhone.isNotEmpty()) callerPhone else fromClientId
 
         val intent = android.content.Intent(this, com.securecall.app.IncomingCallActivity::class.java).apply {
             putExtra("sessionId", sessionId)
             putExtra("callerClientId", fromClientId)
+            putExtra("callerPhone", callerPhone)
             flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
 
@@ -527,9 +534,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         } else {
             Log.w("WS_SERVICE", "Native crypto unavailable — call will be unencrypted")
         }
-        val json = """{"type":"CALL_INVITE","to":"$targetId","pubKey":"$pubKeyB64"}"""
+        // Include caller's phone number so callee can resolve contact name
+        val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
+        val callerPhone = prefs.getString("confirmed_phone_number", "") ?: ""
+        val json = """{"type":"CALL_INVITE","to":"$targetId","pubKey":"$pubKeyB64","callerPhone":"$callerPhone"}"""
         client?.send(json)
-        Log.d("WS_SERVICE", "CALL_INVITE sent to $targetId")
+        Log.d("WS_SERVICE", "CALL_INVITE sent to $targetId (callerPhone=$callerPhone)")
     }
 
     fun sendCallAccept(sessionId: String) {
@@ -701,14 +711,15 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 "CALL_INVITE" -> {
                     val sessionId = obj.optString("sessionId", "")
                     val from = obj.optString("from", "")
+                    val callerPhone = obj.optString("callerPhone", "")
                     val pubKeyB64 = obj.optString("pubKey", "")
                     if (pubKeyB64.isNotEmpty()) {
                         remotePubKey = android.util.Base64.decode(pubKeyB64, android.util.Base64.NO_WRAP)
                         Log.d("WS_SERVICE", "Stored caller's X25519 public key")
                     }
-                    Log.d("WS_SERVICE", "Incoming CALL_INVITE, sessionId=$sessionId, from=$from")
+                    Log.d("WS_SERVICE", "Incoming CALL_INVITE, sessionId=$sessionId, from=$from, callerPhone=$callerPhone")
                     _currentSessionId = sessionId
-                    _onIncomingCall?.invoke(sessionId, from)
+                    _onIncomingCall?.invoke(sessionId, from, callerPhone)
                 }
                 "CALL_INVITE_ACK" -> {
                     val ok = obj.optBoolean("ok", false)
