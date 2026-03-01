@@ -86,23 +86,31 @@ class DialerFragment : Fragment() {
         for (id in dialButtons) {
             view.findViewById<Button>(id).setOnClickListener { btn ->
                 val digit = (btn as Button).tag.toString()
-                phoneNumber.append(digit)
-                updateDisplay()
+                val cursor = phoneDisplay.selectionStart.coerceIn(0, phoneNumber.length)
+                phoneNumber.insert(cursor, digit)
+                updateDisplay(cursor + digit.length)
             }
         }
 
         // Long-press 0 for +
         view.findViewById<Button>(R.id.btn0).setOnLongClickListener {
-            phoneNumber.append("+")
-            updateDisplay()
+            val cursor = phoneDisplay.selectionStart.coerceIn(0, phoneNumber.length)
+            phoneNumber.insert(cursor, "+")
+            updateDisplay(cursor + 1)
             true
         }
 
-        // Backspace
+        // Backspace — delete character before cursor position
         btnBackspace.setOnClickListener {
-            if (phoneNumber.isNotEmpty()) {
+            val cursor = phoneDisplay.selectionStart
+            if (cursor > 0 && phoneNumber.isNotEmpty()) {
+                val pos = cursor.coerceIn(1, phoneNumber.length)
+                phoneNumber.deleteCharAt(pos - 1)
+                updateDisplay(pos - 1)
+            } else if (cursor == 0 && phoneNumber.isNotEmpty()) {
+                // Cursor at start or unknown — fall back to deleting last char
                 phoneNumber.deleteCharAt(phoneNumber.length - 1)
-                updateDisplay()
+                updateDisplay(phoneNumber.length)
             }
         }
 
@@ -125,8 +133,9 @@ class DialerFragment : Fragment() {
         if (phoneNumber.isNotEmpty()) filterContacts()
     }
 
-    private fun updateDisplay() {
+    private fun updateDisplay(cursorPos: Int = phoneNumber.length) {
         phoneDisplay.setText(phoneNumber.toString())
+        phoneDisplay.setSelection(cursorPos.coerceIn(0, phoneNumber.length))
         btnBackspace.visibility = if (phoneNumber.isNotEmpty()) View.VISIBLE else View.GONE
         filterContacts()
     }
