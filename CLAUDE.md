@@ -4,9 +4,9 @@
 
 SecureCall is an end-to-end encrypted voice calling app for Android. The monorepo contains the Android client, a Node.js signaling backend (deployed on Railway), a Rust crypto engine, and supporting infrastructure.
 
-**Sprint status:** All changes are **committed and pushed** to `origin/main`. Direct P2P audio transport is working via WebRTC DataChannel — Opus-encoded voice with E2E encryption, tested bidirectionally across all devices. Phone number → clientId resolution is live, tested across all 3 physical devices (S10, S7, Tab S4). Incoming calls now show over the lock screen and wake the device.
+**Sprint status:** All changes are **committed and pushed** to `origin/main`. Direct P2P audio transport is working via WebRTC DataChannel — Opus-encoded voice with E2E encryption, tested bidirectionally across all devices. Phone number → clientId resolution is live, tested across all 3 physical devices (S10, S7, Tab S4). Incoming calls now show over the lock screen and wake the device. Privacy-preserving contact verification is live — contacts with SecureCall show a green badge, using SHA-256 hashed phone lookups (server never sees raw numbers).
 
-**The 28 completed changes (all committed):**
+**The 29 completed changes (all committed):**
 
 1. **Contact auto-call fix** -- Removed `itemView.setOnClickListener` from `ContactAdapter.kt`. Only the phone icon (`btnCallContact`) now triggers calls; tapping the contact row does nothing.
 2. **Messenger invite dialog** -- `DialerFragment.kt` now shows a 3-option dialog (Via Messenger, Share Link, Send SMS) when dialing an unknown number.
@@ -36,6 +36,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 26. **IncomingCallActivity auto-dismiss** *(Commit `a568bf3`)* -- When the caller cancels before the callee accepts, IncomingCallActivity now auto-dismisses. Three-layer approach: (1) static `activeInstance` reference so WebSocketService can call `dismissIfActive()` directly; (2) `onCallEnded` callback as backup; (3) identity-checked `onDestroy()` to only clear `activeInstance` if it's still this instance (prevents race condition with rapid back-to-back calls). Tested: Tab S4 → Emulator cancel, Emu → Tab S4 cancel, back-to-back cancels.
 27. **Phone number → clientId resolution** *(Commit `e0c0784`)* -- Server-side phone number registry: clients send their phone number during REGISTER, server stores normalized phone → clientId mapping. New `PHONE_LOOKUP` message type resolves phone numbers to clientIds. `CALL_INVITE` handler has phone fallback resolution. `DialerFragment` and `ContactsFragment` use async `lookupPhone()` before deciding call vs invite dialog. Client reads device phone number via `TelephonyManager.getLine1Number()` (requires READ_PHONE_STATE/READ_PHONE_NUMBERS permissions). Tested bidirectionally: S7 (+4915203487046) → Tab S4 (+491752536807) and Tab S4 → S7.
 28. **IncomingCallActivity lock screen fix** *(Commit `1aed31d`)* -- Added `setShowWhenLocked(true)`, `setTurnScreenOn(true)`, and `requestDismissKeyguard()` for Android 8.1+ (API 27+). Falls back to deprecated `FLAG_SHOW_WHEN_LOCKED`, `FLAG_DISMISS_KEYGUARD`, `FLAG_TURN_SCREEN_ON` for older versions. `FLAG_KEEP_SCREEN_ON` added unconditionally. Incoming calls now appear over the lock screen and wake the device. Tested: S10 → Tab S4 with Tab S4 screen locked — IncomingCallActivity appeared over lock screen.
+29. **SHA-256 privacy-preserving contact verification** *(Commits `5ccba9f`, `e651a8d`)* -- BATCH_PHONE_LOOKUP now uses SHA-256 hashed phone numbers so the server never sees raw contact numbers. Server stores `phoneHashes` Map alongside `phoneNumbers` during REGISTER. Client hashes phone numbers locally via `MessageDigest("SHA-256")`, sends up to 200 hashes per batch. Server matches hashes against `phoneHashes` Map and returns results with `mode: "hashed"`. Contacts that are registered SecureCall users show a green badge (`badgeSecureCall`) in the contacts list. See details below.
 
 **End-to-end call signaling details (change #8):**
 - `WebSocketService.kt`: Added call signaling callbacks (`_onCallAccepted`, `_onCallEnded`, `_onCallError`), session tracking, incoming call activity launch, message parsing for CALL_INVITE/CALL_INVITE_ACK/CALL_ACCEPT/CALL_END/ERROR. Uses private backing fields with explicit setter methods for Java interop.
@@ -68,6 +69,14 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - `WebSocketService.kt`: Added `webRtcManager` field. `sendBinary()` routes through DataChannel when `isDataChannelOpen`, falls back to WebSocket relay. Added `startWebRtc()` (called after CALL_ACCEPT), `sendWebRtcSdp()`, `sendIceCandidate()`. Handles incoming WEBRTC_OFFER/WEBRTC_ANSWER/ICE_CANDIDATE signaling messages. DataChannel received data feeds into existing `onBinaryMessage()` decrypt→decode pipeline. `clearSession()` tears down WebRTC.
 - **No server changes:** Server already relays WEBRTC_OFFER (lines 553-597), WEBRTC_ANSWER (lines 602-646), and ICE_CANDIDATE (lines 651-694).
 - **Audio flow with P2P:** Mic → OpusEncoder → E2E encrypt → DataChannel P2P → peer decrypt → OpusDecode → JitterBuffer → GhostAudioPlayer (earpiece). Falls back to WebSocket relay transparently if DataChannel is not open.
+
+**SHA-256 privacy-preserving contact verification details (change #29):**
+- `server.js`: Added `crypto` require, `phoneHashes` Map (SHA256(normalized_phone) → clientId), and `hashPhone()` helper. REGISTER handler stores hash alongside raw phone in all paths (registration, re-registration cleanup, phone change). BATCH_PHONE_LOOKUP handler: if `msg.hashes` array exists, looks up against `phoneHashes` Map and returns `{ hash, clientId, online }` with `mode: "hashed"`. Legacy `msg.phoneNumbers` path preserved as fallback. Disconnect cleanup also removes from `phoneHashes`.
+- `ContactsFragment.kt`: Added `sha256()` helper (Java `MessageDigest`). `checkSecureCallMembers()` hashes each phone number with `sha256(normalized)`, builds `hashToPhone` reverse lookup map, sends up to 200 hashes via `ws.batchPhoneLookup(batch)`. On response, maps registered hashes back to phone numbers for `registeredPhones` Set. Limited to 200 per batch to stay under server's 64KB `maxPayload`.
+- `WebSocketService.kt`: `batchPhoneLookup()` sends `"hashes"` field instead of `"phoneNumbers"`. BATCH_PHONE_LOOKUP_RESULT handler checks `mode == "hashed"` and returns `hash` field; legacy mode still returns `phoneNumber`.
+- `ContactAdapter.kt`: Already shows green `badgeSecureCall` ImageView for contacts whose phone numbers are in the `registeredPhones` Set. No changes needed.
+- **Privacy guarantee:** Server never receives raw phone numbers during contact discovery. Only SHA-256 hashes are transmitted. Server stores hashes at REGISTER time and matches incoming hashes against stored hashes.
+- **Batch size limit:** Client sends max 200 hashes per request. Server also slices to 200. On large contact lists (1500+), only the first 200 contacts are checked. This prevents WebSocket disconnects from payloads exceeding 64KB maxPayload.
 
 **Testing:** APK tested on 4 devices: S10 (`RF8N313QMFL`, `android-f90e7cf6`), S7 (`ce10160adc00152604`, `android-bc0f46cc`), Tab S4 (`ce12182c68644439037e`, `android-725b46bc`), and Pixel 5 emulator (`emulator-5554`, `android-33068922`). Full bidirectional call signaling, audio, E2E encryption, and auto-hangup verified across all device pairs:
 - **S10 → Emulator:** CALL_INVITE → IncomingCallActivity → Accept → CALL_ACCEPT → CallActivity with timer → End call from S10 → Emulator receives CALL_END and closes
@@ -106,6 +115,11 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
   - **S7 → S10:** Dialed `+4915231794100` on S7. PHONE_LOOKUP returned `clientId=android-f90e7cf6, online=true`. S10 showed IncomingCallActivity. Contact resolved as "CHEF". PASSED.
   - **6/6 directions verified.** Server phone registry overwrite bug fixed — multiple devices re-registering no longer corrupt each other's phone mappings. Permissions granted via `adb shell pm grant` for testing.
 - **IncomingCallActivity lock screen fix (Commit `1aed31d`):** Tab S4 screen locked with pattern lock. S10 called Tab S4's phone number. Before fix: IncomingCallActivity launched behind keyguard, `Surface is not valid`, invisible to user. After fix: IncomingCallActivity appeared over the lock screen with "Incoming Secure Call" from the caller. PASSED. Device screen turned on and stayed on (`FLAG_KEEP_SCREEN_ON`).
+- **SHA-256 privacy-preserving contact verification (Commits `5ccba9f`, `e651a8d`):** Tested on all 3 physical devices (S10 Premium, S7 Free, Tab S4 Pro). All devices send SHA-256 hashes (not raw phone numbers) via BATCH_PHONE_LOOKUP. Server responds with `mode: "hashed"` results.
+  - **S7 (33 contacts):** Sent 33 hashes → server returned 1 registered match: hash `914437a2...` resolved to `clientId=android-f90e7cf6` (S10), `online=true`. Green badge (`badgeSecureCall`) visible next to "CHEF" contact (+49 1523 1794100). PASSED.
+  - **S10 (1500+ contacts):** Sent 200 hashes (batch limit) → `mode=hashed`, 0 registered. S7/Tab S4 phone numbers fall outside the first 200 alphabetically-sorted contacts. Hashed mode working correctly, batch limit preventing payload overflow. PASSED.
+  - **Tab S4 (1500+ contacts):** Sent 200 hashes → `mode=hashed`, 0 registered. Same alphabetical ordering limitation as S10. PASSED.
+  - **Audio leak test (S10→S7):** S10 called S7 (+4915203487046), S7 rang without answering, S10 hung up. Clean teardown on both sides: S10 `killAllAudio()` x3, S7 `dismissIfActive()` + `Vibration cancelled`. No lingering audio resources. PASSED.
 
 ## Architecture Decisions
 
@@ -123,6 +137,7 @@ SecureCall is an end-to-end encrypted voice calling app for Android. The monorep
 - **endCall() idempotency:** `endCall()` uses an `isEnding` boolean guard to ensure it runs at most once per call session. The `onCallError` callback is cleared after first invocation (`ws.setOnCallError(null)`) to prevent server error floods (e.g., `rate_limited`) from scheduling multiple delayed `endCall()` calls. The proximity sensor does NOT call `endCall()` — it only manages `PROXIMITY_SCREEN_OFF_WAKE_LOCK`.
 - **Kotlin/Java interop:** CallActivity is Java, WebSocketService is Kotlin. Kotlin `var` properties auto-generate getters/setters that clash with explicit methods of the same name. Solution: private backing fields (`_fieldName`) with explicit public setter methods. Java lambdas for Kotlin `(String) -> Unit` must return `kotlin.Unit.INSTANCE`.
 - **Phone number → clientId resolution:** Server maintains an in-memory `phoneNumbers` Map (normalized phone → clientId). Clients send their phone number (via `TelephonyManager.getLine1Number()`) in the REGISTER message. `PHONE_LOOKUP { phoneNumber }` → `PHONE_LOOKUP_RESULT { phoneNumber, clientId, online }` resolves phone numbers. `CALL_INVITE` handler has a fallback: if `msg.to` isn't a known clientId, it tries `phoneNumbers.get(normalizePhone(msg.to))`. Phone entries are cleaned up on disconnect. `normalizePhone()` strips non-digit characters except leading `+`.
+- **Privacy-preserving contact verification (BATCH_PHONE_LOOKUP):** Server maintains a parallel `phoneHashes` Map (SHA256(normalized_phone) → clientId) alongside `phoneNumbers`. During REGISTER, the server stores `hashPhone(phone)` → clientId. Client hashes each contact's phone number locally using Java `MessageDigest("SHA-256")` and sends up to 200 hashes per batch. Server matches against `phoneHashes` and returns `mode: "hashed"` results with hash, clientId, and online status. The `registeredPhones` Set in `ContactsFragment` drives the green `badgeSecureCall` badge in `ContactAdapter`. Server never sees raw phone numbers during contact discovery — only during REGISTER (which is the client's own number, already known to the server).
 - **Feature flags via BuildConfig:** Tier-specific behavior is controlled by `BuildConfig` fields set in `build.gradle` per flavor, accessed at runtime through `FeatureProvider` interface and `FeatureProviderRegistry` singleton.
 - **Firebase disabled:** Firebase initialization is disabled via manifest (`FirebaseInitProvider` set to `enabled="false"`). Crashlytics and Analytics collection are both disabled. FCM push notifications won't work until Firebase is properly configured with real credentials.
 
@@ -151,12 +166,12 @@ stealth/                              # Monorepo root
 │   │       │   ├── SecureCallApplication.kt
 │   │       │   ├── net/
 │   │       │   │   ├── HeartbeatClient.kt      # MODIFIED: reconnect fix, lastSeen on send, binary WS support
-│   │       │   │   ├── WebSocketService.kt     # MODIFIED: foreground, call signaling, audio, E2E encryption, WebRTC, phone registry
+│   │       │   │   ├── WebSocketService.kt     # MODIFIED: foreground, call signaling, audio, E2E encryption, WebRTC, phone registry, hashed batch lookup
 │   │       │   │   ├── WebRtcManager.kt        # NEW: WebRTC PeerConnection + DataChannel for P2P audio
 │   │       │   │   └── signal/                 # Call & key exchange message builders
 │   │       │   ├── ui/
 │   │       │   │   ├── CallsFragment.kt
-│   │       │   │   ├── ContactsFragment.kt     # MODIFIED: async phone lookup before call/invite
+│   │       │   │   ├── ContactsFragment.kt     # MODIFIED: async phone lookup, SHA-256 hashed batch contact verification
 │   │       │   │   ├── DialerFragment.kt       # MODIFIED: messenger invite, T9 search, invite dialog fix, phone lookup
 │   │       │   │   ├── SettingsFragment.kt     # MODIFIED: background service toggle, clientId display
 │   │       │   │   └── adapter/
@@ -183,7 +198,7 @@ stealth/                              # Monorepo root
 │
 ├── backend/                          # Node.js signaling server (Railway)
 │   └── signaling/src/
-│       ├── server.js                 # MODIFIED: HEARTBEAT_ACK, pubKey forwarding, binary before rate limit, phone registry + PHONE_LOOKUP
+│       ├── server.js                 # MODIFIED: HEARTBEAT_ACK, pubKey forwarding, binary before rate limit, phone registry + PHONE_LOOKUP, phoneHashes + hashed BATCH_PHONE_LOOKUP
 │       ├── rate_limit.js             # MODIFIED: separate binary rate limit (1000/10s)
 │       └── heartbeat.js              # MODIFIED: session timeout 30s→60s
 ├── core_crypto/                      # Rust crypto library (XChaCha20, X25519, HKDF)
@@ -230,6 +245,8 @@ stealth/                              # Monorepo root
 21. ~~**IncomingCallActivity over lock screen.**~~ DONE. Added show-when-locked, turn-screen-on, dismiss-keyguard, keep-screen-on flags. Commit `1aed31d`. Tested: S10 → locked Tab S4, IncomingCallActivity appeared over lock screen.
 22. **Runtime phone number permission UI.** READ_PHONE_STATE/READ_PHONE_NUMBERS are granted via adb for testing. Need to add a runtime permission request dialog in the app (e.g., during onboarding or first REGISTER).
 23. **Automated tests.** Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
+24. ~~**Privacy-preserving contact verification.**~~ DONE. SHA-256 hashed BATCH_PHONE_LOOKUP. Server stores phoneHashes alongside phoneNumbers. Client hashes locally, sends up to 200 per batch. Green badge for registered contacts. Commits `5ccba9f`, `e651a8d`. Tested on S7 (1 match found — S10), S10, Tab S4.
+25. **BATCH_PHONE_LOOKUP pagination.** Currently limited to first 200 contacts. Large contact lists (1500+) may miss registered users beyond the 200th alphabetical entry. Could add multiple batches or prioritize contacts with recent interaction.
 
 ## Known Issues
 
@@ -252,7 +269,7 @@ stealth/                              # Monorepo root
 
 ## Explicit Non-Goals
 
-- Backend changes are minimal: `HEARTBEAT_ACK` response, `pubKey` forwarding, binary-before-rate-limit reorder, phone number registry + `PHONE_LOOKUP` handler in `server.js`; separate binary rate limit in `rate_limit.js`; session timeout increase in `heartbeat.js`. No structural or architectural backend changes.
+- Backend changes are minimal: `HEARTBEAT_ACK` response, `pubKey` forwarding, binary-before-rate-limit reorder, phone number registry + `PHONE_LOOKUP` handler, `phoneHashes` Map + hashed `BATCH_PHONE_LOOKUP` mode in `server.js`; separate binary rate limit in `rate_limit.js`; session timeout increase in `heartbeat.js`. No structural or architectural backend changes.
 - No Rust crypto changes. `core_crypto/` is stable and untouched.
 - Both `free` and `premium` debug variants are built and tested. Premium is used for 3-device physical testing (S10, S7, Tab S4).
 - No CI/CD pipeline changes. GitHub Actions workflows exist but are not being modified.
@@ -281,10 +298,12 @@ stealth/                              # Monorepo root
 
 ## Next Immediate Step
 
-All core features are complete, committed, and tested across 4 devices (S10, S7, Tab S4, Emulator). 28 changes shipped including full E2E encrypted P2P voice calls, phone number resolution, auto-dismiss, lock screen incoming calls, and comprehensive testing. Git history has been cleaned (test screenshots purged via `git filter-repo`). Next priorities:
+All core features are complete, committed, and tested across 4 devices (S10, S7, Tab S4, Emulator). 29 changes shipped including full E2E encrypted P2P voice calls, phone number resolution, auto-dismiss, lock screen incoming calls, privacy-preserving contact verification, and comprehensive testing. Git history has been cleaned (test screenshots purged via `git filter-repo`). Next priorities:
 
 1. **Runtime phone permission UI** -- Add a permission request dialog for READ_PHONE_STATE/READ_PHONE_NUMBERS (currently granted via adb). Could be added to onboarding flow or triggered on first REGISTER.
 2. ~~**Fix lock screen incoming calls**~~ -- DONE. IncomingCallActivity now shows over lock screen. Commit `1aed31d`.
-3. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
-4. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
-5. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
+3. ~~**Privacy-preserving contact verification**~~ -- DONE. SHA-256 hashed BATCH_PHONE_LOOKUP with green badge. Commits `5ccba9f`, `e651a8d`.
+4. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
+5. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
+6. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
+7. **BATCH_PHONE_LOOKUP pagination** -- Currently limited to 200 contacts per batch. Large contact lists may miss registered users beyond the 200th entry.
