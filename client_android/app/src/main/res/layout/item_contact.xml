@@ -9,16 +9,28 @@
     android:minHeight="@dimen/touch_target_min"
     android:background="?attr/selectableItemBackground">
 
-    <!-- Avatar circle with initial -->
-    <TextView
-        android:id="@+id/txtAvatar"
+    <!-- Avatar circle with initial + status dot -->
+    <FrameLayout
         android:layout_width="@dimen/avatar_size_small"
-        android:layout_height="@dimen/avatar_size_small"
-        android:gravity="center"
-        android:textColor="?attr/colorOnPrimary"
-        android:textSize="@dimen/text_body_large"
-        android:textStyle="bold"
-        android:background="@drawable/ic_contacts" />
+        android:layout_height="@dimen/avatar_size_small">
+
+        <TextView
+            android:id="@+id/txtAvatar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textColor="?attr/colorOnPrimary"
+            android:textSize="@dimen/text_body_large"
+            android:textStyle="bold"
+            android:background="@drawable/ic_contacts" />
+
+        <View
+            android:id="@+id/statusDot"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_gravity="bottom|end"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="0dp"

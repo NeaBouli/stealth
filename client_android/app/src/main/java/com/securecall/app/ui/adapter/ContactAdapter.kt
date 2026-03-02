@@ -13,6 +13,7 @@ import com.securecall.app.data.Contact
 class ContactAdapter(
     private val contacts: List<Contact>,
     private val registeredPhones: Set<String> = emptySet(),
+    private val onlinePhones: Set<String> = emptySet(),
     private val onCallClick: ((Contact) -> Unit)? = null
 ) : RecyclerView.Adapter<ContactAdapter.ViewHolder>() {
 
@@ -22,6 +23,7 @@ class ContactAdapter(
         val txtPhoneOrId: TextView = view.findViewById(R.id.txtPhoneOrId)
         val btnCall: ImageView = view.findViewById(R.id.btnCallContact)
         val badgeSecureCall: ImageView = view.findViewById(R.id.badgeSecureCall)
+        val statusDot: View = view.findViewById(R.id.statusDot)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -37,9 +39,12 @@ class ContactAdapter(
 
         holder.itemView.contentDescription = contact.name
 
-        // Show green badge for SecureCall members
+        val normalizedPhone = contact.phoneOrId.replace("\\s".toRegex(), "")
         val isSecureCallMember = contact.phoneOrId.startsWith("android-") ||
-            registeredPhones.contains(contact.phoneOrId.replace("\\s".toRegex(), ""))
+            registeredPhones.contains(normalizedPhone)
+        val isOnline = onlinePhones.contains(normalizedPhone)
+
+        // Show green badge for SecureCall members
         if (isSecureCallMember) {
             holder.badgeSecureCall.visibility = View.VISIBLE
             holder.badgeSecureCall.setColorFilter(
@@ -47,6 +52,20 @@ class ContactAdapter(
             )
         } else {
             holder.badgeSecureCall.visibility = View.GONE
+        }
+
+        // Status dot: green=online, red=offline but registered, gray=not SecureCall
+        holder.statusDot.visibility = View.VISIBLE
+        when {
+            isSecureCallMember && isOnline -> {
+                holder.statusDot.setBackgroundResource(R.drawable.status_dot_green)
+            }
+            isSecureCallMember -> {
+                holder.statusDot.setBackgroundResource(R.drawable.status_dot_red)
+            }
+            else -> {
+                holder.statusDot.setBackgroundResource(R.drawable.status_dot_gray)
+            }
         }
 
         holder.btnCall.setOnClickListener {

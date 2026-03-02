@@ -34,6 +34,8 @@ class ContactsFragment : Fragment() {
     private lateinit var searchInput: EditText
     private var allContacts: List<Contact> = emptyList()
     private var registeredPhones: Set<String> = emptySet()
+    private var onlinePhones: Set<String> = emptySet()
+    private var statusRefreshHandler: android.os.Handler? = null
 
     companion object {
         private const val TAG = "ContactsFragment"
@@ -41,8 +43,10 @@ class ContactsFragment : Fragment() {
         // Cache: shared across fragment instances within the same app session
         @Volatile private var cachedContacts: List<Contact>? = null
         @Volatile private var cachedRegisteredPhones: Set<String> = emptySet()
+        @Volatile private var cachedOnlinePhones: Set<String> = emptySet()
         @Volatile private var lastLookupTimestamp: Long = 0L
         private const val LOOKUP_CACHE_TTL = 60_000L // 60 seconds
+        private const val STATUS_REFRESH_INTERVAL = 30_000L // 30 seconds
 
         /** Clear cache (e.g., when a new contact is added). */
         fun invalidateCache() {
@@ -110,6 +114,7 @@ class ContactsFragment : Fragment() {
         if (cached != null) {
             allContacts = cached
             registeredPhones = cachedRegisteredPhones
+            onlinePhones = cachedOnlinePhones
             updateList(allContacts)
         }
 
@@ -129,10 +134,37 @@ class ContactsFragment : Fragment() {
         if (cached != null) {
             allContacts = cached
             registeredPhones = cachedRegisteredPhones
+            onlinePhones = cachedOnlinePhones
             updateList(allContacts)
         }
         // Refresh app contacts (cheap — SharedPreferences read) in case a contact was saved
         refreshAppContacts()
+        // Start periodic status refresh (every 30s)
+        startStatusRefresh()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopStatusRefresh()
+    }
+
+    private fun startStatusRefresh() {
+        stopStatusRefresh()
+        statusRefreshHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        val runnable = object : Runnable {
+            override fun run() {
+                if (!isAdded) return
+                Log.d(TAG, "Periodic status refresh")
+                checkSecureCallMembers()
+                statusRefreshHandler?.postDelayed(this, STATUS_REFRESH_INTERVAL)
+            }
+        }
+        statusRefreshHandler?.postDelayed(runnable, STATUS_REFRESH_INTERVAL)
+    }
+
+    private fun stopStatusRefresh() {
+        statusRefreshHandler?.removeCallbacksAndMessages(null)
+        statusRefreshHandler = null
     }
 
     /** Lightweight refresh: re-read app contacts and merge with cached phone contacts. */
@@ -167,6 +199,7 @@ class ContactsFragment : Fragment() {
                     if (!isAdded) return@runOnUiThread
                     allContacts = merged
                     registeredPhones = cachedRegisteredPhones
+                    onlinePhones = cachedOnlinePhones
                     updateList(allContacts)
                 }
                 // Only do BATCH_PHONE_LOOKUP if cache is stale or forced
@@ -199,7 +232,7 @@ class ContactsFragment : Fragment() {
         // Chunk into batches of 200 (server max per request) and send sequentially
         val batches = allHashes.chunked(200)
         if (batches.isEmpty()) return
-        val accumulatedRegistered = mutableSetOf<String>()
+        val accumulatedRegistered = mutableMapOf<String, Boolean>() // hash → online
 
         fun sendBatch(index: Int) {
             if (!isAdded) return
@@ -215,8 +248,8 @@ class ContactsFragment : Fragment() {
             }
             val batch = batches[index]
             Log.d(TAG, "Sending batch ${index + 1}/${batches.size} (${batch.size} hashes)")
-            currentWs.batchPhoneLookup(batch) { registeredHashes ->
-                accumulatedRegistered.addAll(registeredHashes)
+            currentWs.batchPhoneLookup(batch) { registeredMap ->
+                accumulatedRegistered.putAll(registeredMap)
                 sendBatch(index + 1)
             }
         }
@@ -225,12 +258,20 @@ class ContactsFragment : Fragment() {
     }
 
     private fun finalizeResults(
-        accumulatedRegistered: Set<String>,
+        accumulatedRegistered: Map<String, Boolean>,
         hashToPhone: Map<String, String>
     ) {
-        val phones = accumulatedRegistered.mapNotNull { hashToPhone[it] }.toSet()
-        registeredPhones = phones
-        cachedRegisteredPhones = phones
+        val regPhones = mutableSetOf<String>()
+        val onPhones = mutableSetOf<String>()
+        for ((hash, online) in accumulatedRegistered) {
+            val phone = hashToPhone[hash] ?: continue
+            regPhones.add(phone)
+            if (online) onPhones.add(phone)
+        }
+        registeredPhones = regPhones
+        onlinePhones = onPhones
+        cachedRegisteredPhones = regPhones
+        cachedOnlinePhones = onPhones
         lastLookupTimestamp = System.currentTimeMillis()
         activity?.runOnUiThread {
             if (isAdded) updateList(allContacts)
@@ -303,7 +344,7 @@ class ContactsFragment : Fragment() {
         } else {
             recycler.visibility = View.VISIBLE
             emptyState.visibility = View.GONE
-            recycler.adapter = ContactAdapter(contacts, registeredPhones) { contact ->
+            recycler.adapter = ContactAdapter(contacts, registeredPhones, onlinePhones) { contact ->
                 startCall(contact)
             }
         }
