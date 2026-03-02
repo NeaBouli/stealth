@@ -109,6 +109,13 @@ class IncomingCallActivity : AppCompatActivity() {
             phoneSubtitle.visibility = android.view.View.VISIBLE
         }
 
+        // Show SecureCall ID if it's a registered user
+        val secureIdLabel = findViewById<TextView>(R.id.incomingCallerSecureId)
+        if (callerClientId.startsWith("android-")) {
+            secureIdLabel.text = "Secure ID: $callerClientId"
+            secureIdLabel.visibility = android.view.View.VISIBLE
+        }
+
         findViewById<FloatingActionButton>(R.id.fabAcceptCall).setOnClickListener { acceptCall() }
         findViewById<FloatingActionButton>(R.id.fabDeclineCall).setOnClickListener { declineCall() }
 
