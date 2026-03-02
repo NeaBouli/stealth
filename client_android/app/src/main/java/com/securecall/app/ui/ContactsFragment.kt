@@ -37,16 +37,27 @@ class ContactsFragment : Fragment() {
 
     companion object {
         private const val TAG = "ContactsFragment"
+
+        // Cache: shared across fragment instances within the same app session
+        @Volatile private var cachedContacts: List<Contact>? = null
+        @Volatile private var cachedRegisteredPhones: Set<String> = emptySet()
+        @Volatile private var lastLookupTimestamp: Long = 0L
+        private const val LOOKUP_CACHE_TTL = 60_000L // 60 seconds
+
+        /** Clear cache (e.g., when a new contact is added). */
+        fun invalidateCache() {
+            cachedContacts = null
+        }
     }
 
     private val requestContactsPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
                 Log.d(TAG, "READ_CONTACTS permission granted")
-                loadContacts()
+                loadContactsAsync(forceRefresh = true)
             } else {
                 Log.w(TAG, "READ_CONTACTS permission denied")
-                loadContacts() // Still load app contacts
+                loadContactsAsync(forceRefresh = true) // Still load app contacts
             }
         }
 
@@ -94,32 +105,81 @@ class ContactsFragment : Fragment() {
             }
         }
 
+        // Show cached contacts immediately (instant tab switch)
+        val cached = cachedContacts
+        if (cached != null) {
+            allContacts = cached
+            registeredPhones = cachedRegisteredPhones
+            updateList(allContacts)
+        }
+
         // Request contacts permission if not granted
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_CONTACTS)
             != PackageManager.PERMISSION_GRANTED) {
             requestContactsPermission.launch(Manifest.permission.READ_CONTACTS)
         } else {
-            loadContacts()
+            loadContactsAsync(forceRefresh = cached == null)
         }
     }
 
     override fun onResume() {
         super.onResume()
-        loadContacts()
+        // Only reload from cache on resume — don't re-query phone book or server
+        val cached = cachedContacts
+        if (cached != null) {
+            allContacts = cached
+            registeredPhones = cachedRegisteredPhones
+            updateList(allContacts)
+        }
+        // Refresh app contacts (cheap — SharedPreferences read) in case a contact was saved
+        refreshAppContacts()
     }
 
-    private fun loadContacts() {
-        val appContacts = ContactRepository.getAll(requireContext())
-        val phoneContacts = loadPhoneContacts()
-        // Merge: app contacts first, then phone contacts not already in app contacts
+    /** Lightweight refresh: re-read app contacts and merge with cached phone contacts. */
+    private fun refreshAppContacts() {
+        val ctx = context ?: return
+        val appContacts = ContactRepository.getAll(ctx)
+        val cached = cachedContacts ?: return
+        val phoneContacts = cached.filter { it.isPhoneContact }
         val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
         val uniquePhoneContacts = phoneContacts.filter { pc ->
             pc.phoneOrId.replace("\\s".toRegex(), "") !in appPhoneNumbers
         }
         allContacts = appContacts + uniquePhoneContacts
+        cachedContacts = allContacts
         updateList(allContacts)
-        // Check which contacts are registered SecureCall users
-        checkSecureCallMembers()
+    }
+
+    /** Load contacts on a background thread. Shows cached data immediately, refreshes async. */
+    private fun loadContactsAsync(forceRefresh: Boolean) {
+        val ctx = context ?: return
+        Thread({
+            try {
+                val appContacts = ContactRepository.getAll(ctx)
+                val phoneContacts = loadPhoneContacts()
+                val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
+                val uniquePhoneContacts = phoneContacts.filter { pc ->
+                    pc.phoneOrId.replace("\\s".toRegex(), "") !in appPhoneNumbers
+                }
+                val merged = appContacts + uniquePhoneContacts
+                cachedContacts = merged
+                activity?.runOnUiThread {
+                    if (!isAdded) return@runOnUiThread
+                    allContacts = merged
+                    registeredPhones = cachedRegisteredPhones
+                    updateList(allContacts)
+                }
+                // Only do BATCH_PHONE_LOOKUP if cache is stale or forced
+                val now = System.currentTimeMillis()
+                if (forceRefresh || now - lastLookupTimestamp > LOOKUP_CACHE_TTL) {
+                    checkSecureCallMembers()
+                } else {
+                    Log.d(TAG, "BATCH_PHONE_LOOKUP cache still valid (${(now - lastLookupTimestamp) / 1000}s old)")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load contacts async", e)
+            }
+        }, "ContactsLoader").start()
     }
 
     private fun checkSecureCallMembers() {
@@ -168,7 +228,10 @@ class ContactsFragment : Fragment() {
         accumulatedRegistered: Set<String>,
         hashToPhone: Map<String, String>
     ) {
-        registeredPhones = accumulatedRegistered.mapNotNull { hashToPhone[it] }.toSet()
+        val phones = accumulatedRegistered.mapNotNull { hashToPhone[it] }.toSet()
+        registeredPhones = phones
+        cachedRegisteredPhones = phones
+        lastLookupTimestamp = System.currentTimeMillis()
         activity?.runOnUiThread {
             if (isAdded) updateList(allContacts)
         }
@@ -181,7 +244,8 @@ class ContactsFragment : Fragment() {
     }
 
     private fun loadPhoneContacts(): List<Contact> {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_CONTACTS)
+        val ctx = context ?: return emptyList()
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.READ_CONTACTS)
             != PackageManager.PERMISSION_GRANTED) {
             return emptyList()
         }
@@ -190,7 +254,7 @@ class ContactsFragment : Fragment() {
         val seen = mutableSetOf<String>()
 
         try {
-            val cursor = requireContext().contentResolver.query(
+            val cursor = ctx.contentResolver.query(
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                 arrayOf(
                     ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
@@ -364,7 +428,8 @@ class ContactsFragment : Fragment() {
                 val phoneOrId = idInput.text.toString().trim()
                 if (name.isNotEmpty() && phoneOrId.isNotEmpty()) {
                     ContactRepository.save(ctx, Contact(name = name, phoneOrId = phoneOrId))
-                    loadContacts()
+                    invalidateCache()
+                    loadContactsAsync(forceRefresh = true)
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
