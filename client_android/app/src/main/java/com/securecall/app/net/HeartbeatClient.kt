@@ -11,11 +11,16 @@ import java.util.concurrent.TimeUnit
  * Reconnect ownership: HeartbeatClient owns ALL reconnection logic.
  * WebSocketService MUST NOT schedule reconnects — it only reacts to callbacks.
  *
+ * State machine: DISCONNECTED → CONNECTING → CONNECTED → (DISCONNECTED on error/close)
+ *
  * Dead connection detection:
- * 1. OkHttp pingInterval (5s) detects TCP-level dead connections
- * 2. App-level HEARTBEAT every 15s expects HEARTBEAT_ACK — if no server message
- *    for 20s, connection is considered dead and force-reconnected
+ * 1. OkHttp pingInterval (5s) detects TCP-level dead connections via ping/pong
+ * 2. App-level HEARTBEAT every 15s — staleness check every 15s. If no server message
+ *    for 45s, connection is considered dead and force-reconnected
  * 3. If send() fails, connection is considered dead
+ *
+ * Anti-flap: minimum 3s between reconnect attempts. If 3+ reconnects happen in 30s,
+ * forces a hard reset (new OkHttpClient).
  */
 class HeartbeatClient(
     private val url: String,
@@ -32,35 +37,75 @@ class HeartbeatClient(
         fun onPong()
     }
 
+    enum class State { DISCONNECTED, CONNECTING, CONNECTED }
+
     private var ws: WebSocket? = null
     @Volatile private var _lastSeen: Long = System.currentTimeMillis()
+    @Volatile private var state: State = State.DISCONNECTED
 
-    // Reconnect backoff: 1s, 2s, 4s, 8s, 16s, 30s max
-    private var reconnectDelay = 1000L
+    // Reconnect backoff: 2s, 4s, 8s, 16s, 30s max (starts at 2s minimum)
+    private var reconnectDelay = 2000L
     private val maxReconnectDelay = 30000L
-    private var heartbeatTimer: java.util.Timer? = null
-    @Volatile private var isConnecting = false
-    @Volatile private var isClosed = false // true after intentional close()
+    private val minReconnectInterval = 3000L // Minimum 3s between connect attempts
 
-    private val client = OkHttpClient.Builder()
-        .readTimeout(0, TimeUnit.MILLISECONDS)
-        .pingInterval(5, TimeUnit.SECONDS)
-        .build()
+    private var heartbeatTimer: java.util.Timer? = null
+    @Volatile private var isClosed = false // true after intentional close()
+    @Volatile private var lastConnectAttempt = 0L
+    private var reconnectPending = false // Whether a reconnect is already scheduled
+
+    // Flap detection: track recent reconnect timestamps
+    private val reconnectTimestamps = mutableListOf<Long>()
+    private val flapThreshold = 3 // 3 reconnects in flapWindow = flapping
+    private val flapWindow = 30_000L // 30 seconds
+
+    private var okClient = buildClient()
+
+    private fun buildClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .readTimeout(0, TimeUnit.MILLISECONDS)
+            .pingInterval(5, TimeUnit.SECONDS)
+            .build()
+    }
 
     fun connect() {
-        if (isConnecting) {
+        val now = System.currentTimeMillis()
+
+        // Enforce minimum interval between connect attempts
+        val elapsed = now - lastConnectAttempt
+        if (elapsed < minReconnectInterval && state == State.CONNECTING) {
+            Log.d("HB", "Connect throttled — only ${elapsed}ms since last attempt")
+            return
+        }
+
+        if (state == State.CONNECTING) {
             Log.d("HB", "Already connecting, skipping duplicate connect()")
             return
         }
+
         isClosed = false
-        isConnecting = true
+        state = State.CONNECTING
+        lastConnectAttempt = now
+        reconnectPending = false
+
         // Cancel old socket to prevent zombie connections
         val oldWs = ws
         ws = null
         try { oldWs?.cancel() } catch (_: Exception) {}
+
+        // Flap detection: if too many reconnects recently, hard reset
+        reconnectTimestamps.add(now)
+        reconnectTimestamps.removeAll { it < now - flapWindow }
+        if (reconnectTimestamps.size >= flapThreshold) {
+            Log.w("HB", "Flap detected (${reconnectTimestamps.size} reconnects in ${flapWindow/1000}s) — hard reset")
+            reconnectTimestamps.clear()
+            try { okClient.dispatcher.cancelAll() } catch (_: Exception) {}
+            okClient = buildClient()
+            reconnectDelay = maxReconnectDelay // Slow down after flapping
+        }
+
         val req = Request.Builder().url(url).build()
-        ws = client.newWebSocket(req, this)
-        Log.d("HB", "New WebSocket connection initiated")
+        ws = okClient.newWebSocket(req, this)
+        Log.d("HB", "[$state] New WebSocket connection initiated to $url")
     }
 
     fun send(text: String): Boolean {
@@ -74,28 +119,41 @@ class HeartbeatClient(
     }
 
     fun close() {
+        Log.d("HB", "close() — intentional shutdown")
         isClosed = true
+        state = State.DISCONNECTED
+        reconnectPending = false
         stopHeartbeat()
-        try { ws?.close(1000, "client_close") } catch (_: Exception) {}
+        val oldWs = ws
+        ws = null
+        try { oldWs?.close(1000, "client_close") } catch (_: Exception) {}
     }
 
     /** Force-cancel the socket (immediate, no close frame) and schedule reconnect. */
     fun forceReconnect() {
-        Log.w("HB", "forceReconnect() — cancelling socket and scheduling reconnect")
+        Log.w("HB", "forceReconnect() — cancelling socket")
         stopHeartbeat()
+        state = State.DISCONNECTED
         val oldWs = ws
         ws = null
-        isConnecting = false
+        // cancel() fires onFailure() which would also call scheduleReconnect(),
+        // so set a flag to prevent double-scheduling
         try { oldWs?.cancel() } catch (_: Exception) {}
-        // onFailure will fire from cancel(), but schedule reconnect defensively
-        scheduleReconnect()
+        // Schedule reconnect only if onFailure hasn't already done it
+        if (!reconnectPending) {
+            scheduleReconnect()
+        }
     }
 
     fun getLastSeen(): Long = _lastSeen
 
+    fun getState(): State = state
+
     override fun onOpen(webSocket: WebSocket, response: Response) {
-        Log.d("HB", "WebSocket connected to $url")
-        isConnecting = false
+        Log.d("HB", "[CONNECTED] WebSocket connected to $url")
+        state = State.CONNECTED
+        reconnectPending = false
+        _lastSeen = System.currentTimeMillis()
         resetBackoff()
         startHeartbeat()
         listener.onConnected()
@@ -112,21 +170,29 @@ class HeartbeatClient(
     }
 
     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-        Log.d("HB", "Server closing connection: code=$code, reason=$reason")
-        isConnecting = false
+        Log.d("HB", "[CLOSING] Server closing: code=$code, reason=$reason")
+        val wasConnected = state == State.CONNECTED
+        state = State.DISCONNECTED
         stopHeartbeat()
-        listener.onDisconnected()
         webSocket.close(1000, null)
-        // Server initiated close — reconnect unless we intentionally closed
-        if (!isClosed) {
+        if (wasConnected) {
+            listener.onDisconnected()
+        }
+        // Server-initiated close — reconnect unless we intentionally closed
+        // Do NOT reconnect on clean close from onClosing — only from onFailure
+        if (!isClosed && code != 1000) {
             scheduleReconnect()
         }
     }
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-        Log.w("HB", "WebSocket failure: ${t.message}")
-        isConnecting = false
+        Log.w("HB", "[FAILURE] WebSocket failure: ${t.message}")
+        val wasConnected = state == State.CONNECTED
+        state = State.DISCONNECTED
         stopHeartbeat()
+        if (wasConnected) {
+            listener.onDisconnected()
+        }
         listener.onError(t)
         // Always reconnect on failure unless intentionally closed
         if (!isClosed) {
@@ -136,42 +202,54 @@ class HeartbeatClient(
 
     private fun scheduleReconnect() {
         if (isClosed) return
-        Log.d("HB", "Reconnect scheduled in ${reconnectDelay}ms")
+        if (reconnectPending) {
+            Log.d("HB", "Reconnect already pending, skipping duplicate schedule")
+            return
+        }
+        reconnectPending = true
+        Log.d("HB", "[RECONNECT] Scheduled in ${reconnectDelay}ms")
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
             if (!isClosed) {
+                val delay = reconnectDelay
                 reconnectDelay = kotlin.math.min(reconnectDelay * 2, maxReconnectDelay)
+                Log.d("HB", "[RECONNECT] Executing (delay was ${delay}ms, next will be ${reconnectDelay}ms)")
                 connect()
+            } else {
+                reconnectPending = false
             }
         }, reconnectDelay)
     }
 
     private fun resetBackoff() {
-        reconnectDelay = 1000L
+        reconnectDelay = 2000L
     }
 
     /**
      * Heartbeat: send HEARTBEAT every 15s. Check lastSeen every 15s.
-     * If no server message received for 20s, force-reconnect.
-     * The HEARTBEAT_ACK from server updates lastSeen, proving the connection is alive.
+     * If no server message received for 45s (well under server's 60s timeout),
+     * connection is considered dead and force-reconnected.
      */
     private fun startHeartbeat() {
         stopHeartbeat()
+        _lastSeen = System.currentTimeMillis()
         heartbeatTimer = java.util.Timer("hb-timer", true)
         heartbeatTimer?.scheduleAtFixedRate(object : java.util.TimerTask() {
             override fun run() {
-                // Check for stale connection
+                // Check for stale connection (45s threshold)
                 val elapsed = System.currentTimeMillis() - _lastSeen
-                if (elapsed > 20_000) {
-                    Log.w("HB", "No server message for ${elapsed}ms — connection dead, force-reconnecting")
+                if (elapsed > 45_000) {
+                    Log.w("HB", "No server message for ${elapsed}ms — connection dead")
                     stopHeartbeat()
                     // Cancel socket and reconnect on main thread
                     android.os.Handler(android.os.Looper.getMainLooper()).post {
-                        val oldWs = ws
-                        ws = null
-                        isConnecting = false
-                        try { oldWs?.cancel() } catch (_: Exception) {}
-                        listener.onDisconnected()
-                        scheduleReconnect()
+                        if (state != State.DISCONNECTED || ws != null) {
+                            state = State.DISCONNECTED
+                            val oldWs = ws
+                            ws = null
+                            try { oldWs?.cancel() } catch (_: Exception) {}
+                            listener.onDisconnected()
+                            // onFailure from cancel() will schedule reconnect
+                        }
                     }
                     return
                 }
@@ -180,7 +258,6 @@ class HeartbeatClient(
                     val sent = ws?.send("{\"type\":\"HEARTBEAT\"}") ?: false
                     if (!sent) {
                         Log.w("HB", "HEARTBEAT send failed — socket dead")
-                        // Don't reconnect here; the staleness check above will handle it
                     }
                 } catch (_: Exception) {}
             }

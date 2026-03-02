@@ -96,12 +96,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         return prefs.getString("client_id", null)
     }
 
-    // BACKEND-25: Heartbeat Überwachung
-    private val heartbeatIntervalMs = 5000L
-    private val heartbeatTimeoutMs = 30000L
-    private var heartbeatTimer: java.util.Timer? = null
-
-    // Reconnect is owned by HeartbeatClient (exponential backoff 1s→30s max)
+    // HeartbeatClient owns ALL heartbeat + reconnect logic.
+    // WebSocketService does NOT run its own heartbeat monitor.
 
     inner class LocalBinder : Binder() {
         fun getService(): WebSocketService = this@WebSocketService
@@ -144,7 +140,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onDestroy() {
         Log.d("WS_SERVICE", "onDestroy")
         instance = null
-        stopHeartbeatMonitor()
         stopAudioPlayback()
         client?.close()
         super.onDestroy()
@@ -223,7 +218,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onConnected() {
         Log.d("WS_SERVICE", "WebSocket connected — registering client")
         isConnected = true
-        startHeartbeatMonitor()
         registerClient()
         setupCallSignalingCallbacks()
         statusCallbackOnline?.invoke()
@@ -346,7 +340,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onDisconnected() {
         Log.d("WS_SERVICE", "WebSocket disconnected")
         isConnected = false
-        stopHeartbeatMonitor()
         statusCallbackOffline?.invoke()
         // HeartbeatClient owns reconnect — do NOT schedule here
     }
@@ -449,7 +442,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     fun forceReconnect() {
         Log.w("WS_SERVICE", "ForceReconnect() invoked — delegating to HeartbeatClient")
         isConnected = false
-        stopHeartbeatMonitor()
         statusCallbackOffline?.invoke()
         client?.forceReconnect()
     }
@@ -470,35 +462,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.d("WS_SERVICE", "reconnectFlow() completed")
     }
 
-    // ===================== Heartbeat Monitor =====================
-
-    private fun startHeartbeatMonitor() {
-        heartbeatTimer?.cancel()
-        heartbeatTimer = java.util.Timer()
-        heartbeatTimer?.schedule(object : java.util.TimerTask() {
-            override fun run() {
-                val last = client?.getLastSeen() ?: 0
-                val now = System.currentTimeMillis()
-                if (now - last > heartbeatTimeoutMs) {
-                    Log.w("WS_SERVICE", "Heartbeat timeout → treating as disconnect")
-                    handleHeartbeatTimeout()
-                }
-            }
-        }, heartbeatIntervalMs, heartbeatIntervalMs)
-    }
-
-    private fun stopHeartbeatMonitor() {
-        heartbeatTimer?.cancel()
-        heartbeatTimer = null
-    }
-
-    private fun handleHeartbeatTimeout() {
-        Log.w("WS_SERVICE", "Heartbeat timeout — delegating to HeartbeatClient for reconnect")
-        isConnected = false
-        stopHeartbeatMonitor()
-        statusCallbackOffline?.invoke()
-        client?.forceReconnect()
-    }
+    // HeartbeatClient handles all heartbeat monitoring and timeout detection.
+    // No duplicate heartbeat monitor in WebSocketService.
 
     /**
      * Check if WebSocket is connected. If not, trigger reconnect.
@@ -509,6 +474,22 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.w("WS_SERVICE", "ensureConnected() — not connected, triggering reconnect")
         client?.forceReconnect()
         return false
+    }
+
+    /**
+     * Post-call recovery: force a clean reconnect after any call ends.
+     * This ensures the WebSocket is in a clean state for the next call.
+     */
+    fun postCallRecovery() {
+        Log.d("WS_SERVICE", "Post-call recovery — scheduling clean reconnect")
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            if (!isConnected) {
+                Log.w("WS_SERVICE", "Post-call: still disconnected — forcing reconnect")
+                client?.forceReconnect()
+            } else {
+                Log.d("WS_SERVICE", "Post-call: connection is healthy, no recovery needed")
+            }
+        }, 2000)
     }
 
     // ===================== Call Signaling =====================

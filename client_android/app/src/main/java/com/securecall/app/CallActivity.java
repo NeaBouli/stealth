@@ -67,6 +67,15 @@ public class CallActivity extends AppCompatActivity {
     // Proximity wake lock — acquired during call, system auto-manages screen on/off
     private PowerManager.WakeLock proximityWakeLock;
 
+    // Audio focus — prevent other apps from stealing audio
+    private AudioManager audioManager;
+    private android.media.AudioFocusRequest audioFocusRequest;
+
+    // Phone state monitoring — detect incoming cell calls
+    private android.telephony.TelephonyManager telephonyManager;
+    private android.telephony.PhoneStateListener phoneStateListener;
+    private boolean isPausedForCellCall = false;
+
     // Ringback tone for caller while waiting
     private ToneGenerator ringbackTone;
 
@@ -448,6 +457,12 @@ public class CallActivity extends AppCompatActivity {
             callTimer.start();
             updateCallButton(true);
 
+            // Acquire audio focus to prevent other apps from interrupting
+            requestAudioFocus();
+
+            // Monitor for incoming cell phone calls
+            startPhoneStateMonitor(connectionState);
+
             // Start audio capture (requires RECORD_AUDIO permission)
             startAudioCaptureWithPermission(connectionState, callTimer);
         }, 2000);
@@ -504,6 +519,109 @@ public class CallActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    private void requestAudioFocus() {
+        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (audioManager == null) return;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            audioFocusRequest = new android.media.AudioFocusRequest.Builder(
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                    .setAudioAttributes(new android.media.AudioAttributes.Builder()
+                            .setUsage(android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build())
+                    .setOnAudioFocusChangeListener(focusChange -> {
+                        Log.d(TAG, "Audio focus changed: " + focusChange);
+                        if (focusChange == AudioManager.AUDIOFOCUS_LOSS ||
+                                focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                            Log.w(TAG, "Audio focus lost — pausing SecureCall audio");
+                            if (audioCapture != null && !isMuted) {
+                                audioCapture.stop();
+                                isPausedForCellCall = true;
+                            }
+                        } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+                            Log.d(TAG, "Audio focus regained — resuming SecureCall audio");
+                            if (isPausedForCellCall && audioCapture != null && !isMuted) {
+                                audioCapture.start();
+                                isPausedForCellCall = false;
+                            }
+                        }
+                    })
+                    .build();
+            int result = audioManager.requestAudioFocus(audioFocusRequest);
+            Log.d(TAG, "Audio focus requested: " + (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED ? "GRANTED" : "DENIED"));
+        } else {
+            audioManager.requestAudioFocus(
+                    focusChange -> Log.d(TAG, "Audio focus changed: " + focusChange),
+                    AudioManager.STREAM_VOICE_CALL,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
+        }
+    }
+
+    private void abandonAudioFocus() {
+        if (audioManager == null) return;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O && audioFocusRequest != null) {
+            audioManager.abandonAudioFocusRequest(audioFocusRequest);
+        }
+        audioFocusRequest = null;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void startPhoneStateMonitor(TextView connectionState) {
+        telephonyManager = (android.telephony.TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+        if (telephonyManager == null) return;
+
+        phoneStateListener = new android.telephony.PhoneStateListener() {
+            @Override
+            public void onCallStateChanged(int state, String phoneNumber) {
+                switch (state) {
+                    case android.telephony.TelephonyManager.CALL_STATE_RINGING:
+                        Log.w(TAG, "Incoming cell call detected — pausing SecureCall audio");
+                        runOnUiThread(() -> {
+                            if (connectionState != null && isCallActive) {
+                                connectionState.setText("Paused — incoming phone call");
+                                connectionState.setTextColor(getResources().getColor(R.color.stealthx_red, getTheme()));
+                            }
+                        });
+                        if (audioCapture != null && !isMuted) {
+                            audioCapture.stop();
+                            isPausedForCellCall = true;
+                        }
+                        break;
+                    case android.telephony.TelephonyManager.CALL_STATE_OFFHOOK:
+                        Log.w(TAG, "Cell call answered — SecureCall audio paused");
+                        break;
+                    case android.telephony.TelephonyManager.CALL_STATE_IDLE:
+                        if (isPausedForCellCall) {
+                            Log.d(TAG, "Cell call ended — resuming SecureCall audio");
+                            runOnUiThread(() -> {
+                                if (connectionState != null && isCallActive) {
+                                    connectionState.setText(R.string.call_active);
+                                    connectionState.setTextColor(getResources().getColor(R.color.call_active_green, getTheme()));
+                                }
+                            });
+                            if (audioCapture != null && !isMuted) {
+                                audioCapture.start();
+                            }
+                            isPausedForCellCall = false;
+                        }
+                        break;
+                }
+            }
+        };
+        telephonyManager.listen(phoneStateListener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
+        Log.d(TAG, "Phone state monitor started");
+    }
+
+    private void stopPhoneStateMonitor() {
+        if (telephonyManager != null && phoneStateListener != null) {
+            telephonyManager.listen(phoneStateListener, android.telephony.PhoneStateListener.LISTEN_NONE);
+            phoneStateListener = null;
+            Log.d(TAG, "Phone state monitor stopped");
+        }
+    }
+
     private void endCall() {
         if (isEnding) return;
         isEnding = true;
@@ -544,6 +662,10 @@ public class CallActivity extends AppCompatActivity {
 
         isCallActive = false;
 
+        // Stop phone state monitoring and release audio focus
+        stopPhoneStateMonitor();
+        abandonAudioFocus();
+
         // Stop audio capture
         if (audioCapture != null) {
             audioCapture.stop();
@@ -552,7 +674,11 @@ public class CallActivity extends AppCompatActivity {
         // Stop all audio playback globally
         com.securecall.app.net.WebSocketService wsAudio =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
-        if (wsAudio != null) wsAudio.killAllAudio();
+        if (wsAudio != null) {
+            wsAudio.killAllAudio();
+            // Post-call recovery: ensure WebSocket reconnects cleanly
+            wsAudio.postCallRecovery();
+        }
 
         Chronometer callTimer = findViewById(R.id.callTimer);
         if (callTimer != null) {
@@ -612,6 +738,8 @@ public class CallActivity extends AppCompatActivity {
             activeInstance = null;
         }
         stopRingbackTone();
+        stopPhoneStateMonitor();
+        abandonAudioFocus();
         if (audioCapture != null) {
             try { audioCapture.stop(); } catch (Exception e) { Log.e(TAG, "Error stopping audio capture", e); }
             audioCapture = null;
