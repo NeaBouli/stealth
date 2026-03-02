@@ -298,6 +298,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         checkMissedCallBadge();
+        // Always clear launcher badge (notification-based) when user opens the app
+        clearMissedCallNotifications();
     }
 
     private void checkMissedCallBadge() {
