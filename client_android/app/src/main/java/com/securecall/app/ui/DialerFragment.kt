@@ -295,11 +295,27 @@ class DialerFragment : Fragment() {
     }
 
     private fun getMyClientId(): String {
-        return com.securecall.app.net.WebSocketService.instance?.getLocalClientId() ?: "unknown"
+        // Read directly from SharedPreferences — works even if WebSocketService isn't running
+        val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+        return prefs.getString("client_id", null)
+            ?: com.securecall.app.net.WebSocketService.instance?.getLocalClientId()
+            ?: "unknown"
+    }
+
+    private fun getMyPhone(): String {
+        val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+        return prefs.getString("confirmed_phone_number", null) ?: ""
+    }
+
+    private fun buildInviteMessage(): String {
+        val myId = getMyClientId()
+        val myPhone = getMyPhone()
+        val base = getString(R.string.dialer_invite_sms, myId)
+        return if (myPhone.isNotEmpty()) "$base\nMy phone: $myPhone" else base
     }
 
     private fun sendViaMessenger(number: String) {
-        val message = getString(R.string.dialer_invite_sms, getMyClientId())
+        val message = buildInviteMessage()
         // Try messengers in priority order: WhatsApp > Telegram > Signal
         val messengers = listOf(
             "com.whatsapp" to "com.whatsapp.ContactPicker",
@@ -328,7 +344,7 @@ class DialerFragment : Fragment() {
     }
 
     private fun sendSmsInvite(number: String) {
-        val message = getString(R.string.dialer_invite_sms, getMyClientId())
+        val message = buildInviteMessage()
         try {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse("smsto:$number")
@@ -341,7 +357,7 @@ class DialerFragment : Fragment() {
     }
 
     private fun shareInviteLink() {
-        val message = getString(R.string.dialer_invite_share, getMyClientId())
+        val message = buildInviteMessage()
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, message)
