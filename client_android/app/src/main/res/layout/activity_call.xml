@@ -120,6 +120,21 @@
             android:layout_marginStart="4dp" />
     </LinearLayout>
 
+    <!-- Security warning banner (non-blocking, dismissible) -->
+    <TextView
+        android:id="@+id/securityWarningBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/stealthx_yellow"
+        android:textColor="@color/stealthx_black"
+        android:textSize="12sp"
+        android:padding="8dp"
+        android:gravity="center"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/securityStatusBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- Bottom action buttons -->
     <LinearLayout
         android:id="@+id/callActions"

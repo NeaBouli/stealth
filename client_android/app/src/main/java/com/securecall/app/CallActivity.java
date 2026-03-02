@@ -82,8 +82,10 @@ public class CallActivity extends AppCompatActivity {
     // Security status UI
     private ImageView securityStatusIcon;
     private TextView securityStatusText;
+    private TextView securityWarningBanner;
     private FloatingActionButton fabEndCall;
     private SecureCallMonitor.SecurityStatus lastSecurityStatus;
+    private final java.util.Set<SecureCallMonitor.ThreatType> shownThreatTypes = new java.util.HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,7 +119,11 @@ public class CallActivity extends AppCompatActivity {
         // Security status views
         securityStatusIcon = findViewById(R.id.securityStatusIcon);
         securityStatusText = findViewById(R.id.securityStatusText);
+        securityWarningBanner = findViewById(R.id.securityWarningBanner);
         findViewById(R.id.securityStatusBar).setOnClickListener(v -> showSecurityDetailsDialog());
+        if (securityWarningBanner != null) {
+            securityWarningBanner.setOnClickListener(v -> v.setVisibility(View.GONE));
+        }
 
         // Handle caller info
         String callerName = getIntent().getStringExtra("callerName");
@@ -389,6 +395,22 @@ public class CallActivity extends AppCompatActivity {
      * Handle critical security threats based on tier.
      */
     private void handleCriticalThreat(SecureCallMonitor.Threat threat) {
+        // Only show each threat type once per call session
+        if (shownThreatTypes.contains(threat.getType())) {
+            return;
+        }
+        shownThreatTypes.add(threat.getType());
+
+        // Audio focus lost — retry before warning
+        if (threat.getType() == SecureCallMonitor.ThreatType.AUDIO_FOCUS_LOST) {
+            requestAudioFocus();
+            // Re-check after retry
+            if (secureCallMonitor != null && secureCallMonitor.getAudioFocusManager().hasFocus()) {
+                shownThreatTypes.remove(threat.getType()); // Allow re-check if lost again
+                return;
+            }
+        }
+
         String tier;
         try {
             tier = FeatureProviderRegistry.INSTANCE.get().getTier();
@@ -397,28 +419,28 @@ public class CallActivity extends AppCompatActivity {
         }
 
         switch (tier) {
-            case "FREE":
-                Toast.makeText(this,
-                        getString(R.string.security_warning_recording, threat.getDescription()),
-                        Toast.LENGTH_LONG).show();
-                break;
-
-            case "PRO":
-                new AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
-                        .setTitle(R.string.security_threat_title)
-                        .setMessage(getString(R.string.security_threat_message, threat.getDescription()))
-                        .setIcon(R.drawable.ic_shield)
-                        .setPositiveButton(R.string.security_end_call, (d, w) -> endCall())
-                        .setNegativeButton(R.string.security_continue_call, null)
-                        .setCancelable(false)
-                        .show();
-                break;
-
             case "PREMIUM":
                 Log.e(TAG, "PREMIUM: Critical threat — terminating call");
                 endCall();
                 break;
+
+            default:
+                // Show as non-blocking banner instead of dialog/toast
+                showWarningBanner(threat.getDescription());
+                break;
         }
+    }
+
+    private void showWarningBanner(String message) {
+        if (securityWarningBanner == null) return;
+        securityWarningBanner.setText("\u26a0 " + message);
+        securityWarningBanner.setVisibility(View.VISIBLE);
+        // Auto-hide after 8 seconds
+        securityWarningBanner.postDelayed(() -> {
+            if (securityWarningBanner != null) {
+                securityWarningBanner.setVisibility(View.GONE);
+            }
+        }, 8000);
     }
 
     /**

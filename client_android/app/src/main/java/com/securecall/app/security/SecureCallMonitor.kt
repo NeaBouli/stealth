@@ -156,13 +156,16 @@ class SecureCallMonitor(private val context: Context) {
             ))
         }
 
-        // 6. Audio Focus
+        // 6. Audio Focus — retry before warning
         if (!audioFocusManager.hasFocus()) {
-            threats.add(Threat(
-                type = ThreatType.AUDIO_FOCUS_LOST,
-                severity = Severity.WARNING,
-                description = "Exclusive audio focus not held"
-            ))
+            audioFocusManager.requestExclusiveFocus()
+            if (!audioFocusManager.hasFocus()) {
+                threats.add(Threat(
+                    type = ThreatType.AUDIO_FOCUS_LOST,
+                    severity = Severity.WARNING,
+                    description = "Exclusive audio focus not held"
+                ))
+            }
         }
 
         // Determine overall security level
