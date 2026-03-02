@@ -111,10 +111,11 @@ public class MainActivity extends AppCompatActivity {
             if (id == R.id.nav_calls) {
                 showFragment(new CallsFragment());
                 fab.setVisibility(View.VISIBLE);
-                // Mark calls as seen — clear badge
+                // Mark calls as seen — clear badge and dismiss notifications
                 getSharedPreferences("securecall_prefs", MODE_PRIVATE).edit()
                         .putLong("last_calls_viewed", System.currentTimeMillis()).apply();
                 bottomNav.removeBadge(R.id.nav_calls);
+                clearMissedCallNotifications();
                 return true;
             } else if (id == R.id.nav_contacts) {
                 showFragment(new ContactsFragment());
@@ -321,10 +322,26 @@ public class MainActivity extends AppCompatActivity {
                 // Already on Calls tab — mark as seen
                 prefs.edit().putLong("last_calls_viewed", System.currentTimeMillis()).apply();
                 bottomNav.removeBadge(R.id.nav_calls);
+                clearMissedCallNotifications();
             }
         } else {
             bottomNav.removeBadge(R.id.nav_calls);
         }
+    }
+
+    private void clearMissedCallNotifications() {
+        android.app.NotificationManager nm = getSystemService(android.app.NotificationManager.class);
+        SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+        String activeIds = prefs.getString("missed_notif_ids", "");
+        if (activeIds != null && !activeIds.isEmpty()) {
+            for (String idStr : activeIds.split(",")) {
+                try {
+                    nm.cancel(Integer.parseInt(idStr.trim()));
+                } catch (NumberFormatException ignored) {}
+            }
+            prefs.edit().putString("missed_notif_ids", "").apply();
+        }
+        nm.cancel(1003); // Group summary
     }
 
     private void wireConnectionStatusCallbacks() {

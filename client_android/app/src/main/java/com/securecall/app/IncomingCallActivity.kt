@@ -204,6 +204,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
     private fun postMissedCallNotification() {
         val channelId = "securecall_missed_calls"
+        val groupKey = "securecall_missed_calls_group"
         val nm = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = android.app.NotificationChannel(
@@ -222,16 +223,40 @@ class IncomingCallActivity : AppCompatActivity() {
             this, 0, openIntent,
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
+        // Unique notification ID per missed call so launcher badge count reflects actual count
+        val prefs = getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+        val nextId = prefs.getInt("missed_notif_next_id", 2000)
+        prefs.edit().putInt("missed_notif_next_id", nextId + 1).apply()
+        // Track active notification IDs for bulk cancel when user views Calls tab
+        val activeIds = prefs.getString("missed_notif_ids", "") ?: ""
+        val updatedIds = if (activeIds.isEmpty()) "$nextId" else "$activeIds,$nextId"
+        prefs.edit().putString("missed_notif_ids", updatedIds).apply()
+
+        val missedCount = com.securecall.app.data.CallHistoryRepository.countMissed(this)
+        // Individual notification for this missed call
         val notification = androidx.core.app.NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_call)
             .setContentTitle(getString(R.string.missed_call_title))
             .setContentText(callerDisplayName)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setNumber(com.securecall.app.data.CallHistoryRepository.countMissed(this))
+            .setGroup(groupKey)
+            .setNumber(missedCount)
             .build()
-        nm.notify(1003, notification)
-        Log.d(TAG, "Missed call notification posted for $callerDisplayName")
+        nm.notify(nextId, notification)
+        // Group summary notification (required for grouped notifications on Android 7+)
+        val summary = androidx.core.app.NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.ic_call)
+            .setContentTitle(getString(R.string.missed_call_title))
+            .setContentText("$missedCount missed calls")
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setGroup(groupKey)
+            .setGroupSummary(true)
+            .setNumber(missedCount)
+            .build()
+        nm.notify(1003, summary)
+        Log.d(TAG, "Missed call notification posted for $callerDisplayName (id=$nextId, total=$missedCount)")
     }
 
     /** Save missed call when dismissing due to race condition (before contact name resolved). */
