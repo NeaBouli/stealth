@@ -100,6 +100,78 @@ public class AudioCapturePlaceholder {
         Log.d(TAG, "Audio capture STARTED (Opus encoding enabled)");
     }
 
+    /**
+     * Lightweight pause — stops recording and capture thread but keeps AudioRecord
+     * and OpusEncoder alive for fast resume. Used during cell call interruptions.
+     */
+    public void pause() {
+        if (!running) return;
+        running = false;
+
+        try {
+            if (audioRecord != null) {
+                audioRecord.stop();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "pause(): AudioRecord.stop() failed", e);
+        }
+
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
+        }
+
+        Log.d(TAG, "Audio capture PAUSED (AudioRecord + OpusEncoder kept alive)");
+    }
+
+    /**
+     * Resume from pause — restarts recording on the existing AudioRecord.
+     * If AudioRecord was released (full stop), falls back to full start().
+     */
+    public void resume() {
+        if (running) return;
+        if (audioRecord == null || audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+            Log.w(TAG, "resume(): AudioRecord not available — falling back to full start()");
+            start();
+            return;
+        }
+
+        running = true;
+        audioRecord.startRecording();
+
+        thread = new Thread(() -> {
+            Log.d(TAG, "Capture thread RESUMED (sr=" + SAMPLE_RATE + ", frame=" + FRAME_SAMPLES + " samples)");
+            short[] buffer = new short[FRAME_SAMPLES];
+
+            while (running) {
+                int read = audioRecord.read(buffer, 0, FRAME_SAMPLES);
+                if (read == FRAME_SAMPLES) {
+                    byte[] encoded = OpusEncoder.INSTANCE.encode(buffer);
+                    if (encoded.length > 0) {
+                        WebSocketService ws = WebSocketService.Companion.getInstance();
+                        if (ws != null) ws.sendBinary(encoded);
+                    }
+                } else if (read > 0) {
+                    short[] padded = new short[FRAME_SAMPLES];
+                    System.arraycopy(buffer, 0, padded, 0, read);
+                    byte[] encoded = OpusEncoder.INSTANCE.encode(padded);
+                    if (encoded.length > 0) {
+                        WebSocketService ws = WebSocketService.Companion.getInstance();
+                        if (ws != null) ws.sendBinary(encoded);
+                    }
+                } else if (read < 0) {
+                    Log.e(TAG, "AudioRecord.read() returned " + read);
+                    break;
+                }
+            }
+
+            Log.d(TAG, "Capture thread stopped");
+        }, "AudioCaptureThread");
+        thread.start();
+
+        Log.d(TAG, "Audio capture RESUMED");
+    }
+
     public void stop() {
         if (!running) return;
         running = false;

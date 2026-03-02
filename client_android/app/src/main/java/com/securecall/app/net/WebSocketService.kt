@@ -47,6 +47,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private var opusDecoderInitialized = false
     private var jitterPlaybackThread: Thread? = null
     @Volatile private var jitterPlaybackRunning = false
+    @Volatile private var audioPlaybackPaused = false
 
     // E2E encryption state (X25519 + XChaCha20-Poly1305)
     private var localPrivKey: ByteArray? = null
@@ -408,11 +409,17 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             }
             Log.d("WS_SERVICE", "Jitter prefill reached, starting playout")
             while (jitterPlaybackRunning) {
-                val frame = com.securecall.app.audio.jitter.JitterBuffer.pop()
-                if (frame != null) {
-                    player.write(frame)
-                } else {
+                if (audioPlaybackPaused) {
+                    // During cell call: drain buffer but don't play, write silence
+                    com.securecall.app.audio.jitter.JitterBuffer.pop() // discard
                     player.write(silence)
+                } else {
+                    val frame = com.securecall.app.audio.jitter.JitterBuffer.pop()
+                    if (frame != null) {
+                        player.write(frame)
+                    } else {
+                        player.write(silence)
+                    }
                 }
                 try { Thread.sleep(20) } catch (_: InterruptedException) { return@Thread }
             }
@@ -421,7 +428,26 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         jitterPlaybackThread?.start()
     }
 
+    /** Pause audio playback (e.g. during cell call). Playout thread writes silence. */
+    fun pauseAudioPlayback() {
+        audioPlaybackPaused = true
+        Log.d("WS_SERVICE", "Audio playback PAUSED (cell call interruption)")
+    }
+
+    /** Resume audio playback after cell call ends. */
+    fun resumeAudioPlayback() {
+        audioPlaybackPaused = false
+        Log.d("WS_SERVICE", "Audio playback RESUMED")
+    }
+
+    /** Mark call as active — extends HeartbeatClient staleness threshold. */
+    fun setCallActive(active: Boolean) {
+        client?.setCallActive(active)
+        Log.d("WS_SERVICE", "Call active flag set to $active")
+    }
+
     fun stopAudioPlayback() {
+        audioPlaybackPaused = false
         jitterPlaybackRunning = false
         jitterPlaybackThread?.interrupt()
         jitterPlaybackThread = null

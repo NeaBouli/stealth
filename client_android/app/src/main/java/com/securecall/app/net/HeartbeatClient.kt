@@ -52,6 +52,7 @@ class HeartbeatClient(
     @Volatile private var isClosed = false // true after intentional close()
     @Volatile private var lastConnectAttempt = 0L
     private var reconnectPending = false // Whether a reconnect is already scheduled
+    @Volatile private var callActive = false // Extends staleness threshold during active calls
 
     // Flap detection: track recent reconnect timestamps
     private val reconnectTimestamps = mutableListOf<Long>()
@@ -149,6 +150,12 @@ class HeartbeatClient(
 
     fun getState(): State = state
 
+    /** Set call active flag — extends heartbeat staleness threshold to 120s during calls. */
+    fun setCallActive(active: Boolean) {
+        callActive = active
+        if (active) _lastSeen = System.currentTimeMillis() // Reset staleness on call start
+    }
+
     override fun onOpen(webSocket: WebSocket, response: Response) {
         Log.d("HB", "[CONNECTED] WebSocket connected to $url")
         state = State.CONNECTED
@@ -235,9 +242,10 @@ class HeartbeatClient(
         heartbeatTimer = java.util.Timer("hb-timer", true)
         heartbeatTimer?.scheduleAtFixedRate(object : java.util.TimerTask() {
             override fun run() {
-                // Check for stale connection (45s threshold)
+                // Check for stale connection (45s normally, 120s during active call)
+                val stalenessThreshold = if (callActive) 120_000L else 45_000L
                 val elapsed = System.currentTimeMillis() - _lastSeen
-                if (elapsed > 45_000) {
+                if (elapsed > stalenessThreshold) {
                     Log.w("HB", "No server message for ${elapsed}ms — connection dead")
                     stopHeartbeat()
                     // Cancel socket and reconnect on main thread

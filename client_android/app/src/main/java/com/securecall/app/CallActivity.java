@@ -457,6 +457,11 @@ public class CallActivity extends AppCompatActivity {
             callTimer.start();
             updateCallButton(true);
 
+            // Mark call as active — extends WebSocket staleness threshold
+            com.securecall.app.net.WebSocketService wsActive =
+                    com.securecall.app.net.WebSocketService.Companion.getInstance();
+            if (wsActive != null) wsActive.setCallActive(true);
+
             // Acquire audio focus to prevent other apps from interrupting
             requestAudioFocus();
 
@@ -533,17 +538,23 @@ public class CallActivity extends AppCompatActivity {
                             .build())
                     .setOnAudioFocusChangeListener(focusChange -> {
                         Log.d(TAG, "Audio focus changed: " + focusChange);
+                        com.securecall.app.net.WebSocketService wsFocus =
+                                com.securecall.app.net.WebSocketService.Companion.getInstance();
                         if (focusChange == AudioManager.AUDIOFOCUS_LOSS ||
                                 focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
                             Log.w(TAG, "Audio focus lost — pausing SecureCall audio");
                             if (audioCapture != null && !isMuted) {
-                                audioCapture.stop();
-                                isPausedForCellCall = true;
+                                audioCapture.pause();
                             }
+                            if (wsFocus != null) wsFocus.pauseAudioPlayback();
+                            isPausedForCellCall = true;
                         } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
                             Log.d(TAG, "Audio focus regained — resuming SecureCall audio");
-                            if (isPausedForCellCall && audioCapture != null && !isMuted) {
-                                audioCapture.start();
+                            if (isPausedForCellCall) {
+                                if (audioCapture != null && !isMuted) {
+                                    audioCapture.resume();
+                                }
+                                if (wsFocus != null) wsFocus.resumeAudioPlayback();
                                 isPausedForCellCall = false;
                             }
                         }
@@ -575,6 +586,8 @@ public class CallActivity extends AppCompatActivity {
         phoneStateListener = new android.telephony.PhoneStateListener() {
             @Override
             public void onCallStateChanged(int state, String phoneNumber) {
+                com.securecall.app.net.WebSocketService wsInner =
+                        com.securecall.app.net.WebSocketService.Companion.getInstance();
                 switch (state) {
                     case android.telephony.TelephonyManager.CALL_STATE_RINGING:
                         Log.w(TAG, "Incoming cell call detected — pausing SecureCall audio");
@@ -584,13 +597,16 @@ public class CallActivity extends AppCompatActivity {
                                 connectionState.setTextColor(getResources().getColor(R.color.stealthx_red, getTheme()));
                             }
                         });
+                        // Pause capture (lightweight — keeps AudioRecord alive)
                         if (audioCapture != null && !isMuted) {
-                            audioCapture.stop();
-                            isPausedForCellCall = true;
+                            audioCapture.pause();
                         }
+                        // Pause playback (playout thread writes silence)
+                        if (wsInner != null) wsInner.pauseAudioPlayback();
+                        isPausedForCellCall = true;
                         break;
                     case android.telephony.TelephonyManager.CALL_STATE_OFFHOOK:
-                        Log.w(TAG, "Cell call answered — SecureCall audio paused");
+                        Log.w(TAG, "Cell call answered — SecureCall audio remains paused");
                         break;
                     case android.telephony.TelephonyManager.CALL_STATE_IDLE:
                         if (isPausedForCellCall) {
@@ -601,9 +617,12 @@ public class CallActivity extends AppCompatActivity {
                                     connectionState.setTextColor(getResources().getColor(R.color.call_active_green, getTheme()));
                                 }
                             });
+                            // Resume capture (lightweight — restarts recording)
                             if (audioCapture != null && !isMuted) {
-                                audioCapture.start();
+                                audioCapture.resume();
                             }
+                            // Resume playback
+                            if (wsInner != null) wsInner.resumeAudioPlayback();
                             isPausedForCellCall = false;
                         }
                         break;
@@ -661,6 +680,11 @@ public class CallActivity extends AppCompatActivity {
         }
 
         isCallActive = false;
+
+        // Clear call active flag on WebSocket — restores normal staleness threshold
+        com.securecall.app.net.WebSocketService wsFlag =
+                com.securecall.app.net.WebSocketService.Companion.getInstance();
+        if (wsFlag != null) wsFlag.setCallActive(false);
 
         // Stop phone state monitoring and release audio focus
         stopPhoneStateMonitor();
