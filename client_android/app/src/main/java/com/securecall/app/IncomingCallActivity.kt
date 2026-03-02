@@ -51,6 +51,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
     private var sessionId: String = ""
     private var callerClientId: String = ""
+    private var callerPhone: String = ""
     private var callerDisplayName: String = ""
     private var accepted = false
     private var ringtonePlayer: MediaPlayer? = null
@@ -82,7 +83,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
         sessionId = intent.getStringExtra("sessionId") ?: ""
         callerClientId = intent.getStringExtra("callerClientId") ?: ""
-        val callerPhone = intent.getStringExtra("callerPhone") ?: ""
+        callerPhone = intent.getStringExtra("callerPhone") ?: ""
         Log.d(TAG, "Incoming call: session=$sessionId, from=$callerClientId, phone=$callerPhone")
 
         // Check if this call was already cancelled before we launched
@@ -100,6 +101,13 @@ class IncomingCallActivity : AppCompatActivity() {
         Log.d(TAG, "Caller display name: $callerDisplayName")
 
         findViewById<TextView>(R.id.incomingCallerName).text = callerDisplayName
+
+        // Show phone number subtitle if resolved name differs from phone number
+        val phoneSubtitle = findViewById<TextView>(R.id.incomingCallerPhone)
+        if (callerPhone.isNotEmpty() && callerDisplayName != callerPhone) {
+            phoneSubtitle.text = callerPhone
+            phoneSubtitle.visibility = android.view.View.VISIBLE
+        }
 
         findViewById<FloatingActionButton>(R.id.fabAcceptCall).setOnClickListener { acceptCall() }
         findViewById<FloatingActionButton>(R.id.fabDeclineCall).setOnClickListener { declineCall() }
@@ -160,6 +168,7 @@ class IncomingCallActivity : AppCompatActivity() {
             putExtra("sessionId", sessionId)
             putExtra("callerName", callerDisplayName)
             putExtra("phoneNumber", callerClientId)
+            putExtra("originalPhone", callerPhone)
             putExtra("isIncoming", true)
         }
         startActivity(intent)
