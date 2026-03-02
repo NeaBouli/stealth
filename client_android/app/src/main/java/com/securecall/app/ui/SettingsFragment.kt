@@ -66,12 +66,23 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("pref_client_id")?.apply {
             summary = prefs.getString("client_id", "Not registered")
             setOnPreferenceClickListener {
-                val freshId = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
-                    .getString("client_id", "Not registered") ?: "Not registered"
-                val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE)
-                        as android.content.ClipboardManager
-                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("SecureCall ID", freshId))
-                android.widget.Toast.makeText(requireContext(), "ID copied: $freshId", android.widget.Toast.LENGTH_SHORT).show()
+                val ctx = requireContext()
+                val freshId = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+                    .getString("client_id", null)
+                    ?: com.securecall.app.net.WebSocketService.instance?.getLocalClientId()
+                    ?: "Not registered"
+                // Show dialog with full ID so user can verify before copy
+                android.app.AlertDialog.Builder(ctx)
+                    .setTitle(getString(R.string.settings_client_id))
+                    .setMessage(freshId)
+                    .setPositiveButton("Copy") { _, _ ->
+                        val clipboard = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                                as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("SecureCall ID", freshId))
+                        android.widget.Toast.makeText(ctx, "Copied: $freshId", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
                 true
             }
         }
