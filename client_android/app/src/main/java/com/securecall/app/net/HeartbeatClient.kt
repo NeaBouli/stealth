@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit
  *    for 45s, connection is considered dead and force-reconnected
  * 3. If send() fails, connection is considered dead
  *
- * Anti-flap: minimum 3s between reconnect attempts. If 3+ reconnects happen in 30s,
- * forces a hard reset (new OkHttpClient).
+ * Anti-flap recovery: if 3+ reconnects happen in 10s, enters recovery mode:
+ * destroy OkHttpClient, wait 3s, create fresh client + connection, re-register.
  */
 class HeartbeatClient(
     private val url: String,
@@ -57,7 +57,8 @@ class HeartbeatClient(
     // Flap detection: track recent reconnect timestamps
     private val reconnectTimestamps = mutableListOf<Long>()
     private val flapThreshold = 3 // 3 reconnects in flapWindow = flapping
-    private val flapWindow = 30_000L // 30 seconds
+    private val flapWindow = 10_000L // 10 seconds
+    @Volatile private var inRecoveryMode = false
 
     private var okClient = buildClient()
 
@@ -93,15 +94,27 @@ class HeartbeatClient(
         ws = null
         try { oldWs?.cancel() } catch (_: Exception) {}
 
-        // Flap detection: if too many reconnects recently, hard reset
+        // Flap detection: if 3+ reconnects in 10s, enter recovery mode
         reconnectTimestamps.add(now)
         reconnectTimestamps.removeAll { it < now - flapWindow }
-        if (reconnectTimestamps.size >= flapThreshold) {
-            Log.w("HB", "Flap detected (${reconnectTimestamps.size} reconnects in ${flapWindow/1000}s) — hard reset")
+        if (reconnectTimestamps.size >= flapThreshold && !inRecoveryMode) {
+            Log.w("HB", "FLAP RECOVERY: ${reconnectTimestamps.size} reconnects in ${flapWindow/1000}s — full clean restart")
+            inRecoveryMode = true
             reconnectTimestamps.clear()
+            state = State.DISCONNECTED
+            reconnectPending = false
+            // 1. Destroy old OkHttp client completely
             try { okClient.dispatcher.cancelAll() } catch (_: Exception) {}
-            okClient = buildClient()
-            reconnectDelay = maxReconnectDelay // Slow down after flapping
+            try { okClient.connectionPool.evictAll() } catch (_: Exception) {}
+            // 2. Wait 3 seconds, then create fresh client and connect
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                Log.d("HB", "FLAP RECOVERY: creating fresh OkHttpClient and connecting")
+                okClient = buildClient()
+                reconnectDelay = 2000L // Reset backoff after recovery
+                inRecoveryMode = false
+                if (!isClosed) connect()
+            }, 3000)
+            return
         }
 
         val req = Request.Builder().url(url).build()
@@ -209,6 +222,10 @@ class HeartbeatClient(
 
     private fun scheduleReconnect() {
         if (isClosed) return
+        if (inRecoveryMode) {
+            Log.d("HB", "In recovery mode — skipping normal reconnect")
+            return
+        }
         if (reconnectPending) {
             Log.d("HB", "Reconnect already pending, skipping duplicate schedule")
             return
