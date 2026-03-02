@@ -40,7 +40,7 @@ class ContactAdapter(
 
         holder.itemView.contentDescription = contact.name
 
-        val normalizedPhone = contact.phoneOrId.replace("\\s".toRegex(), "")
+        val normalizedPhone = contact.phoneOrId.replace(Regex("[^0-9+]"), "")
         val isSecureCallMember = contact.phoneOrId.startsWith("android-") ||
             registeredPhones.contains(normalizedPhone)
         val isOnline = onlinePhones.contains(normalizedPhone) ||

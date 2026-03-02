@@ -180,15 +180,23 @@ class ContactsFragment : Fragment() {
         val appSecureIds = appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
         val phonesCoveredBySecureId = cachedClientIdToPhone
             .filter { it.key in appSecureIds }
-            .values.map { it.replace("\\s".toRegex(), "") }.toSet()
+            .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
 
-        val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
+        // Dedup app contacts: remove phone-number entries covered by SecureCall ID entries
+        val dedupedAppContacts = appContacts.filter { ac ->
+            ac.phoneOrId.startsWith("android-") ||
+                ac.phoneOrId.replace(Regex("[^0-9+]"), "") !in phonesCoveredBySecureId
+        }
+
+        val appPhoneNumbers = dedupedAppContacts
+            .filter { !it.phoneOrId.startsWith("android-") }
+            .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }.toSet()
         val excludePhones = appPhoneNumbers + phonesCoveredBySecureId
 
         val uniquePhoneContacts = phoneContacts.filter { pc ->
-            pc.phoneOrId.replace("\\s".toRegex(), "") !in excludePhones
+            pc.phoneOrId.replace(Regex("[^0-9+]"), "") !in excludePhones
         }
-        allContacts = appContacts + uniquePhoneContacts
+        allContacts = dedupedAppContacts + uniquePhoneContacts
         cachedContacts = allContacts
         updateList(allContacts)
     }
@@ -205,15 +213,23 @@ class ContactsFragment : Fragment() {
                 val appSecureIds = appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
                 val phonesCoveredBySecureId = cachedClientIdToPhone
                     .filter { it.key in appSecureIds }
-                    .values.map { it.replace("\\s".toRegex(), "") }.toSet()
+                    .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
 
-                val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
+                // Dedup app contacts: remove phone-number entries covered by SecureCall ID entries
+                val dedupedAppContacts = appContacts.filter { ac ->
+                    ac.phoneOrId.startsWith("android-") ||
+                        ac.phoneOrId.replace(Regex("[^0-9+]"), "") !in phonesCoveredBySecureId
+                }
+
+                val appPhoneNumbers = dedupedAppContacts
+                    .filter { !it.phoneOrId.startsWith("android-") }
+                    .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }.toSet()
                 val excludePhones = appPhoneNumbers + phonesCoveredBySecureId
 
                 val uniquePhoneContacts = phoneContacts.filter { pc ->
-                    pc.phoneOrId.replace("\\s".toRegex(), "") !in excludePhones
+                    pc.phoneOrId.replace(Regex("[^0-9+]"), "") !in excludePhones
                 }
-                val merged = appContacts + uniquePhoneContacts
+                val merged = dedupedAppContacts + uniquePhoneContacts
                 cachedContacts = merged
                 activity?.runOnUiThread {
                     if (!isAdded) return@runOnUiThread
@@ -237,9 +253,13 @@ class ContactsFragment : Fragment() {
 
     private fun checkSecureCallMembers() {
         val ws = com.securecall.app.net.WebSocketService.instance ?: return
-        val phoneNumbers = allContacts
+        // Use cachedContacts (set on background thread) instead of allContacts (set on UI thread)
+        // to avoid race condition where allContacts is still empty when this runs
+        val contactsSnapshot = cachedContacts ?: allContacts
+        val phoneNumbers = contactsSnapshot
             .filter { !it.phoneOrId.startsWith("android-") }
-            .map { it.phoneOrId.replace("\\s".toRegex(), "") }
+            .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }
+        Log.d(TAG, "checkSecureCallMembers: ${contactsSnapshot.size} contacts, ${phoneNumbers.size} phone numbers to check")
         if (phoneNumbers.isEmpty()) return
         // Hash phone numbers for privacy — server never sees raw numbers
         val hashToPhone = mutableMapOf<String, String>()
@@ -318,15 +338,32 @@ class ContactsFragment : Fragment() {
         val appSecureIds = appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
         val phonesCoveredBySecureId = cachedClientIdToPhone
             .filter { it.key in appSecureIds }
-            .values.map { it.replace("\\s".toRegex(), "") }.toSet()
+            .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
 
-        val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
+        // Dedup app contacts: remove phone-number app contacts covered by a SecureCall ID app contact
+        val dedupedAppContacts = appContacts.filter { ac ->
+            if (ac.phoneOrId.startsWith("android-")) {
+                true // Keep SecureCall ID contacts
+            } else {
+                val norm = ac.phoneOrId.replace(Regex("[^0-9+]"), "")
+                val covered = norm in phonesCoveredBySecureId
+                if (covered) Log.d(TAG, "Dedup: '${ac.name}' phone covered by SecureCall ID")
+                !covered
+            }
+        }
+
+        val appPhoneNumbers = dedupedAppContacts
+            .filter { !it.phoneOrId.startsWith("android-") }
+            .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }.toSet()
         val excludePhones = appPhoneNumbers + phonesCoveredBySecureId
 
         val uniquePhoneContacts = phoneContacts.filter { pc ->
-            pc.phoneOrId.replace("\\s".toRegex(), "") !in excludePhones
+            pc.phoneOrId.replace(Regex("[^0-9+]"), "") !in excludePhones
         }
-        allContacts = appContacts + uniquePhoneContacts
+        if (appContacts.size != dedupedAppContacts.size || phoneContacts.size != uniquePhoneContacts.size) {
+            Log.d(TAG, "dedupAndRefresh: ${appContacts.size} app -> ${dedupedAppContacts.size}, ${phoneContacts.size} phone -> ${uniquePhoneContacts.size}")
+        }
+        allContacts = dedupedAppContacts + uniquePhoneContacts
         cachedContacts = allContacts
         activity?.runOnUiThread {
             if (isAdded) updateList(allContacts)
@@ -366,7 +403,7 @@ class ContactsFragment : Fragment() {
                 while (it.moveToNext()) {
                     val name = it.getString(nameIdx) ?: continue
                     val number = it.getString(numberIdx) ?: continue
-                    val normalized = number.replace("\\s".toRegex(), "")
+                    val normalized = number.replace(Regex("[^0-9+]"), "")
                     if (normalized !in seen) {
                         seen.add(normalized)
                         contacts.add(Contact(name = name, phoneOrId = number, isPhoneContact = true))

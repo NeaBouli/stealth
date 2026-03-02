@@ -129,7 +129,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // START_STICKY: system restarts service if killed
+        // Ensure foreground notification is up — Android 8 ANR if not called within 5s of startForegroundService()
+        startForegroundWithNotification()
         return START_STICKY
     }
 
