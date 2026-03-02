@@ -44,6 +44,8 @@ class ContactsFragment : Fragment() {
         @Volatile private var cachedContacts: List<Contact>? = null
         @Volatile private var cachedRegisteredPhones: Set<String> = emptySet()
         @Volatile private var cachedOnlinePhones: Set<String> = emptySet()
+        @Volatile private var cachedOnlineClientIds: Set<String> = emptySet()
+        @Volatile private var cachedClientIdToPhone: Map<String, String> = emptyMap()
         @Volatile private var lastLookupTimestamp: Long = 0L
         private const val LOOKUP_CACHE_TTL = 60_000L // 60 seconds
         private const val STATUS_REFRESH_INTERVAL = 30_000L // 30 seconds
@@ -173,9 +175,18 @@ class ContactsFragment : Fragment() {
         val appContacts = ContactRepository.getAll(ctx)
         val cached = cachedContacts ?: return
         val phoneContacts = cached.filter { it.isPhoneContact }
+
+        // Build set of phone numbers covered by app contacts' SecureCall IDs
+        val appSecureIds = appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
+        val phonesCoveredBySecureId = cachedClientIdToPhone
+            .filter { it.key in appSecureIds }
+            .values.map { it.replace("\\s".toRegex(), "") }.toSet()
+
         val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
+        val excludePhones = appPhoneNumbers + phonesCoveredBySecureId
+
         val uniquePhoneContacts = phoneContacts.filter { pc ->
-            pc.phoneOrId.replace("\\s".toRegex(), "") !in appPhoneNumbers
+            pc.phoneOrId.replace("\\s".toRegex(), "") !in excludePhones
         }
         allContacts = appContacts + uniquePhoneContacts
         cachedContacts = allContacts
@@ -189,9 +200,18 @@ class ContactsFragment : Fragment() {
             try {
                 val appContacts = ContactRepository.getAll(ctx)
                 val phoneContacts = loadPhoneContacts()
+
+                // Build set of phone numbers covered by app contacts' SecureCall IDs
+                val appSecureIds = appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
+                val phonesCoveredBySecureId = cachedClientIdToPhone
+                    .filter { it.key in appSecureIds }
+                    .values.map { it.replace("\\s".toRegex(), "") }.toSet()
+
                 val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
+                val excludePhones = appPhoneNumbers + phonesCoveredBySecureId
+
                 val uniquePhoneContacts = phoneContacts.filter { pc ->
-                    pc.phoneOrId.replace("\\s".toRegex(), "") !in appPhoneNumbers
+                    pc.phoneOrId.replace("\\s".toRegex(), "") !in excludePhones
                 }
                 val merged = appContacts + uniquePhoneContacts
                 cachedContacts = merged
@@ -232,7 +252,7 @@ class ContactsFragment : Fragment() {
         // Chunk into batches of 200 (server max per request) and send sequentially
         val batches = allHashes.chunked(200)
         if (batches.isEmpty()) return
-        val accumulatedRegistered = mutableMapOf<String, Boolean>() // hash → online
+        val accumulatedRegistered = mutableMapOf<String, Pair<Boolean, String>>() // hash → (online, clientId)
 
         fun sendBatch(index: Int) {
             if (!isAdded) return
@@ -258,21 +278,56 @@ class ContactsFragment : Fragment() {
     }
 
     private fun finalizeResults(
-        accumulatedRegistered: Map<String, Boolean>,
+        accumulatedRegistered: Map<String, Pair<Boolean, String>>,
         hashToPhone: Map<String, String>
     ) {
         val regPhones = mutableSetOf<String>()
         val onPhones = mutableSetOf<String>()
-        for ((hash, online) in accumulatedRegistered) {
+        val onClientIds = mutableSetOf<String>()
+        val cidToPhone = mutableMapOf<String, String>()
+        for ((hash, info) in accumulatedRegistered) {
+            val (online, clientId) = info
             val phone = hashToPhone[hash] ?: continue
             regPhones.add(phone)
             if (online) onPhones.add(phone)
+            if (clientId.isNotEmpty()) {
+                cidToPhone[clientId] = phone
+                if (online) onClientIds.add(clientId)
+            }
         }
         registeredPhones = regPhones
         onlinePhones = onPhones
         cachedRegisteredPhones = regPhones
         cachedOnlinePhones = onPhones
+        cachedOnlineClientIds = onClientIds
+        cachedClientIdToPhone = cidToPhone
         lastLookupTimestamp = System.currentTimeMillis()
+        Log.d(TAG, "Finalized: ${regPhones.size} registered, ${onPhones.size} online phones, ${onClientIds.size} online clientIds, ${cidToPhone.size} clientId→phone mappings")
+        // Re-run dedup merge with updated mappings
+        dedupAndRefresh()
+    }
+
+    /** Re-merge contacts removing phone duplicates that have a matching app contact (by SecureCall ID). */
+    private fun dedupAndRefresh() {
+        val ctx = context ?: return
+        val appContacts = ContactRepository.getAll(ctx)
+        val cached = cachedContacts ?: return
+        val phoneContacts = cached.filter { it.isPhoneContact }
+
+        // Build set of phone numbers covered by app contacts' SecureCall IDs
+        val appSecureIds = appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
+        val phonesCoveredBySecureId = cachedClientIdToPhone
+            .filter { it.key in appSecureIds }
+            .values.map { it.replace("\\s".toRegex(), "") }.toSet()
+
+        val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
+        val excludePhones = appPhoneNumbers + phonesCoveredBySecureId
+
+        val uniquePhoneContacts = phoneContacts.filter { pc ->
+            pc.phoneOrId.replace("\\s".toRegex(), "") !in excludePhones
+        }
+        allContacts = appContacts + uniquePhoneContacts
+        cachedContacts = allContacts
         activity?.runOnUiThread {
             if (isAdded) updateList(allContacts)
         }
@@ -344,7 +399,7 @@ class ContactsFragment : Fragment() {
         } else {
             recycler.visibility = View.VISIBLE
             emptyState.visibility = View.GONE
-            recycler.adapter = ContactAdapter(contacts, registeredPhones, onlinePhones) { contact ->
+            recycler.adapter = ContactAdapter(contacts, registeredPhones, onlinePhones, cachedOnlineClientIds) { contact ->
                 startCall(contact)
             }
         }

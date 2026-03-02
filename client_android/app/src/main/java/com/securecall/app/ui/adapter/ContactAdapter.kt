@@ -14,6 +14,7 @@ class ContactAdapter(
     private val contacts: List<Contact>,
     private val registeredPhones: Set<String> = emptySet(),
     private val onlinePhones: Set<String> = emptySet(),
+    private val onlineClientIds: Set<String> = emptySet(),
     private val onCallClick: ((Contact) -> Unit)? = null
 ) : RecyclerView.Adapter<ContactAdapter.ViewHolder>() {
 
@@ -42,7 +43,8 @@ class ContactAdapter(
         val normalizedPhone = contact.phoneOrId.replace("\\s".toRegex(), "")
         val isSecureCallMember = contact.phoneOrId.startsWith("android-") ||
             registeredPhones.contains(normalizedPhone)
-        val isOnline = onlinePhones.contains(normalizedPhone)
+        val isOnline = onlinePhones.contains(normalizedPhone) ||
+            (contact.phoneOrId.startsWith("android-") && onlineClientIds.contains(contact.phoneOrId))
 
         // Show green badge for SecureCall members
         if (isSecureCallMember) {

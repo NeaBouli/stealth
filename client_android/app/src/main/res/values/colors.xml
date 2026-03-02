@@ -67,6 +67,9 @@
     <color name="call_end_red">#F44336</color>
     <color name="encryption_verified">#00E676</color>
     <color name="stealthx_yellow">#FFC107</color>
+    <color name="caller_known_green">#00E676</color>
+    <color name="caller_unknown_red">#FF5252</color>
+    <color name="caller_secure_id_cyan">#80DEEA</color>
     <color name="tier_free">#90CAF9</color>
     <color name="tier_pro">#FFD700</color>
     <color name="tier_premium">#FF4444</color>

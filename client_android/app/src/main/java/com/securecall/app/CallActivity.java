@@ -425,22 +425,49 @@ public class CallActivity extends AppCompatActivity {
                 break;
 
             default:
-                // Show as non-blocking banner instead of dialog/toast
-                showWarningBanner(threat.getDescription());
+                // Show as non-blocking banner with actionable explanation
+                showWarningBanner(threat);
                 break;
         }
     }
 
-    private void showWarningBanner(String message) {
+    private void showWarningBanner(SecureCallMonitor.Threat threat) {
         if (securityWarningBanner == null) return;
-        securityWarningBanner.setText("\u26a0 " + message);
+        String message = getActionableMessage(threat);
+        securityWarningBanner.setText(message);
         securityWarningBanner.setVisibility(View.VISIBLE);
-        // Auto-hide after 8 seconds
+        // Tap to dismiss
+        securityWarningBanner.setOnClickListener(v -> securityWarningBanner.setVisibility(View.GONE));
+        // Auto-hide after 10 seconds
+        securityWarningBanner.removeCallbacks(null);
         securityWarningBanner.postDelayed(() -> {
             if (securityWarningBanner != null) {
                 securityWarningBanner.setVisibility(View.GONE);
             }
-        }, 8000);
+        }, 10000);
+    }
+
+    private String getActionableMessage(SecureCallMonitor.Threat threat) {
+        switch (threat.getType()) {
+            case SCREEN_RECORDING:
+                return "\u26a0 Screen recording detected. Turn off screen recording to protect your call.";
+            case DISPLAY_CAPTURE:
+                return "\u26a0 Display capture active. Close screen mirroring or casting apps.";
+            case MICROPHONE_HIJACK:
+                return "\u26a0 Another app is using the microphone. Close other voice/recording apps.";
+            case SPY_APP_ACCESSIBILITY:
+                String apps = threat.getDetails().isEmpty() ? "" : " (" + String.join(", ", threat.getDetails()) + ")";
+                return "\u26a0 Suspicious accessibility service" + apps + ". Check Settings > Accessibility and disable unknown services.";
+            case SUSPICIOUS_NOTIFICATION_LISTENER:
+                return "\u26a0 Suspicious app has notification access. Check Settings > Apps > Special access > Notification access.";
+            case CALL_RECORDING_APP:
+                String recApps = threat.getDetails().isEmpty() ? "" : ": " + String.join(", ", threat.getDetails());
+                return "\u26a0 Call recording app installed" + recApps + ". Uninstall or disable it for secure calls.";
+            case AUDIO_FOCUS_LOST:
+                return "\u26a0 Another app took audio focus. Close music/video apps for best call quality.";
+            default:
+                return "\u26a0 " + threat.getDescription();
+        }
     }
 
     /**

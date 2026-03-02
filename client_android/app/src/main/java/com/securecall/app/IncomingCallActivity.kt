@@ -100,7 +100,16 @@ class IncomingCallActivity : AppCompatActivity() {
         callerDisplayName = com.securecall.app.data.PhoneBookResolver.resolveCallerName(this, callerClientId, callerPhone)
         Log.d(TAG, "Caller display name: $callerDisplayName")
 
-        findViewById<TextView>(R.id.incomingCallerName).text = callerDisplayName
+        val nameLabel = findViewById<TextView>(R.id.incomingCallerName)
+        nameLabel.text = callerDisplayName
+
+        // Color the name: green if known contact, red if first-time/unknown
+        val isKnownContact = callerDisplayName != callerClientId && callerDisplayName != callerPhone
+        if (isKnownContact) {
+            nameLabel.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.caller_known_green))
+        } else {
+            nameLabel.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.caller_unknown_red))
+        }
 
         // Show phone number subtitle if resolved name differs from phone number
         val phoneSubtitle = findViewById<TextView>(R.id.incomingCallerPhone)

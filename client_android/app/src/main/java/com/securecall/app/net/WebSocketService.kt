@@ -60,7 +60,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // Phone lookup callback
     private var _phoneLookupCallback: ((String?) -> Unit)? = null
     // Batch phone lookup callback: returns map of hash/phone → online status (true=online, false=offline but registered)
-    private var _batchPhoneLookupCallback: ((Map<String, Boolean>) -> Unit)? = null
+    private var _batchPhoneLookupCallback: ((Map<String, Pair<Boolean, String>>) -> Unit)? = null
 
     fun getCurrentSessionId(): String? = _currentSessionId
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
@@ -196,8 +196,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         }, 5000)
     }
 
-    /** Batch-check which phone hashes are registered SecureCall users. Returns hash → online status. */
-    fun batchPhoneLookup(hashes: List<String>, callback: (registered: Map<String, Boolean>) -> Unit) {
+    /** Batch-check which phone hashes are registered SecureCall users. Returns hash → (online, clientId). */
+    fun batchPhoneLookup(hashes: List<String>, callback: (registered: Map<String, Pair<Boolean, String>>) -> Unit) {
         _batchPhoneLookupCallback = callback
         val arr = org.json.JSONArray(hashes)
         val json = org.json.JSONObject().apply {
@@ -674,7 +674,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             if (obj.optString("type") == "BATCH_PHONE_LOOKUP_RESULT") {
                 val results = obj.optJSONArray("results")
                 val mode = obj.optString("mode", "")
-                val registered = mutableMapOf<String, Boolean>()
+                val registered = mutableMapOf<String, Pair<Boolean, String>>()
                 if (results != null) {
                     for (i in 0 until results.length()) {
                         val r = results.getJSONObject(i)
@@ -683,11 +683,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                             // Hashed mode returns "hash", legacy returns "phoneNumber"
                             val key = if (mode == "hashed") r.optString("hash", "") else r.optString("phoneNumber", "")
                             val online = r.optBoolean("online", false)
-                            if (key.isNotEmpty()) registered[key] = online
+                            if (key.isNotEmpty()) registered[key] = Pair(online, cId)
                         }
                     }
                 }
-                Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP_RESULT (mode=$mode): ${registered.size} registered, ${registered.count { it.value }} online")
+                Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP_RESULT (mode=$mode): ${registered.size} registered, ${registered.count { it.value.first }} online")
                 val cb = _batchPhoneLookupCallback
                 _batchPhoneLookupCallback = null
                 cb?.invoke(registered)
