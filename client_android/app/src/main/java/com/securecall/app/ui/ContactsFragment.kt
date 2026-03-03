@@ -170,16 +170,17 @@ class ContactsFragment : Fragment() {
         statusRefreshHandler = null
     }
 
-    /** Lightweight online status check — sends plain phone numbers, server returns online/offline. */
+    /** Lightweight online status check — only checks phones already known to be registered SecureCall users. */
     private fun refreshOnlineStatus() {
         val ws = com.securecall.app.net.WebSocketService.instance ?: return
-        val contactsSnapshot = cachedContacts ?: allContacts
-        val phones = contactsSnapshot
-            .filter { !it.phoneOrId.startsWith("android-") }
-            .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }
-            .distinct()
-        if (phones.isEmpty()) return
-        Log.d(TAG, "refreshOnlineStatus: ${phones.size} phones")
+        // Only check phones we already know are registered (from BATCH_PHONE_LOOKUP).
+        // This is typically 1-5 phones, not 1535. Avoids the 500-phone server cap.
+        val phones = cachedRegisteredPhones.toList()
+        if (phones.isEmpty()) {
+            Log.d(TAG, "refreshOnlineStatus: no registered phones cached, skipping")
+            return
+        }
+        Log.d(TAG, "refreshOnlineStatus: ${phones.size} registered phones")
         ws.requestOnlineStatus(phones) { statuses ->
             if (!isAdded) return@requestOnlineStatus
             val onPhones = mutableSetOf<String>()
