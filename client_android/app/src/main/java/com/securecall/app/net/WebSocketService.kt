@@ -765,6 +765,14 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     val error = obj.optString("error", "")
                     val message = obj.optString("message", error)
                     Log.e("WS_SERVICE", "Server error: $error — $message")
+                    // Ignore session_not_found from stale WebRTC signaling after call teardown.
+                    // These arrive when ICE candidates from a previous call hit the server
+                    // after the session was already deleted. Don't trigger _onCallError
+                    // because it would crash the next call.
+                    if (error == "session_not_found" && _currentSessionId == null) {
+                        Log.d("WS_SERVICE", "Ignoring stale session_not_found (no active session)")
+                        return
+                    }
                     _onCallError?.invoke(error, message)
                 }
             }

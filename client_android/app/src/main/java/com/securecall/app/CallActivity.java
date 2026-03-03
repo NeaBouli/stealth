@@ -697,6 +697,8 @@ public class CallActivity extends AppCompatActivity {
         Log.d(TAG, "endCall() — stopping call");
 
         // Send CALL_END signaling and clear callbacks
+        // CRITICAL: Clear callbacks BEFORE clearSession() to prevent WebRTC close()
+        // from triggering onPeerDisconnect → _onCallEnded while callbacks are still set
         com.securecall.app.net.WebSocketService ws =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
         if (ws != null) {
@@ -704,10 +706,10 @@ public class CallActivity extends AppCompatActivity {
             if (sid != null && !sid.isEmpty()) {
                 ws.sendCallEnd(sid);
             }
-            ws.clearSession();
             ws.setOnCallAccepted(null);
             ws.setOnCallEnded(null);
             ws.setOnCallError(null);
+            ws.clearSession();
         }
 
         // Save call to history

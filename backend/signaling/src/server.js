@@ -355,17 +355,17 @@ wss.on("connection", (ws, req) => {
       // TODO: Implement challenge-response auth using PKD public keys
       // For now, accept registration if clientId is valid and not taken
 
-      // Prüfen ob clientId bereits vergeben
+      // Prüfen ob clientId bereits vergeben — allow reconnection by superseding old connection
       if (clientIds.has(msg.clientId)) {
         const existingConnId = clientIds.get(msg.clientId);
-        if (existingConnId !== connId && clients.has(existingConnId)) {
-          return ws.send(JSON.stringify({
-            type: "ERROR",
-            error: "client_id_taken",
-            message: `clientId '${sanitize(msg.clientId)}' is already registered`
-          }));
+        if (existingConnId !== connId) {
+          // Supersede old connection — allow re-registration on reconnect
+          const oldClient = clients.get(existingConnId);
+          if (oldClient) {
+            console.log("[REGISTER] Superseding old connection for", msg.clientId, "(old connId:", existingConnId, ")");
+            try { oldClient.ws.close(1000, "Superseded"); } catch(e) {}
+          }
         }
-        // Alte Zuordnung aufräumen falls connId nicht mehr existiert
         clientIds.delete(msg.clientId);
       }
 
@@ -926,16 +926,15 @@ wss.on("connection", (ws, req) => {
     // Clean up rate limit bucket
     rateLimit.clear(connId);
 
-    // Clean up phone number mapping — only if this phone still maps to THIS client
-    if (client && client.phoneNumber) {
-      if (phoneNumbers.get(client.phoneNumber) === clientId) {
-        phoneNumbers.delete(client.phoneNumber);
-        phoneHashes.delete(hashPhone(client.phoneNumber));
-      }
-    }
+    // Do NOT delete phoneNumbers/phoneHashes on disconnect.
+    // Keep them so the user still appears as "registered but offline" (red dot)
+    // in other users' contacts. The entries are re-added on reconnect via REGISTER.
+    // Only removed when: (a) user registers a different phone number, or (b) server restarts.
 
-    // clientId Mapping aufräumen
-    if (clientId) {
+    // clientId Mapping aufräumen — only if WE are still the active connection for this clientId.
+    // When a connection is superseded (new connection registered same clientId),
+    // the old close handler must NOT delete the new connection's clientId mapping.
+    if (clientId && clientIds.get(clientId) === connId) {
       clientIds.delete(clientId);
     }
     clients.delete(connId);

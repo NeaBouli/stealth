@@ -31,6 +31,9 @@ class WebRtcManager(
     var isDataChannelOpen = false
         private set
 
+    @Volatile
+    private var isClosed = false
+
     // Pending queues for messages that arrive before init() completes
     private var pendingOffer: String? = null
     private var pendingAnswer: String? = null
@@ -144,6 +147,7 @@ class WebRtcManager(
     /** Tear down everything */
     fun close() {
         Log.d(TAG, "Closing WebRTC")
+        isClosed = true  // Prevent callbacks from firing after close
         isDataChannelOpen = false
         try { dataChannel?.close() } catch (_: Exception) {}
         try { peerConnection?.close() } catch (_: Exception) {}
@@ -157,6 +161,7 @@ class WebRtcManager(
 
     private val pcObserver = object : PeerConnection.Observer {
         override fun onIceCandidate(candidate: IceCandidate) {
+            if (isClosed) return
             Log.d(TAG, "Local ICE candidate: ${candidate.sdp.take(60)}...")
             val json = JSONObject().apply {
                 put("candidate", candidate.sdp)
@@ -167,6 +172,7 @@ class WebRtcManager(
         }
 
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState) {
+            if (isClosed) return
             Log.d(TAG, "ICE connection state: $state")
             if (state == PeerConnection.IceConnectionState.FAILED ||
                 state == PeerConnection.IceConnectionState.DISCONNECTED) {
@@ -176,6 +182,7 @@ class WebRtcManager(
         }
 
         override fun onDataChannel(dc: DataChannel) {
+            if (isClosed) return
             // Callee receives the DataChannel here
             Log.d(TAG, "DataChannel received (callee): ${dc.label()}")
             dataChannel = dc
@@ -201,6 +208,7 @@ class WebRtcManager(
         override fun onBufferedAmountChange(previousAmount: Long) {}
 
         override fun onStateChange() {
+            if (isClosed) return
             val state = dataChannel?.state()
             Log.d(TAG, "DataChannel state: $state")
             isDataChannelOpen = (state == DataChannel.State.OPEN)
