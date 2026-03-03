@@ -69,9 +69,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Start WebSocket signaling service as foreground service (survives background)
-        Intent wsIntent = new Intent(this, com.securecall.app.net.WebSocketService.class);
-        androidx.core.content.ContextCompat.startForegroundService(this, wsIntent);
+        // WebSocket service is started in SecureCallApplication.onCreate() (before any Activity).
+        // On Android 8 (Galaxy S7), starting from Activity is too late — the 5-second
+        // startForeground() window expires before the service's onCreate() runs.
+        // This is now just a safety net in case the Application path didn't fire.
+        if (com.securecall.app.net.WebSocketService.Companion.getInstance() == null) {
+            Intent wsIntent = new Intent(this, com.securecall.app.net.WebSocketService.class);
+            androidx.core.content.ContextCompat.startForegroundService(this, wsIntent);
+        }
 
         // Request phone number permission for server registration
         requestPhoneNumberPermission();
