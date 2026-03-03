@@ -47,7 +47,7 @@ class ContactsFragment : Fragment() {
         @Volatile private var cachedOnlineClientIds: Set<String> = emptySet()
         @Volatile private var cachedClientIdToPhone: Map<String, String> = emptyMap()
         @Volatile private var lastLookupTimestamp: Long = 0L
-        private const val LOOKUP_CACHE_TTL = 60_000L // 60 seconds
+        private const val LOOKUP_CACHE_TTL = 300_000L // 5 minutes — registration check is expensive (8 batches)
         private const val STATUS_REFRESH_INTERVAL = 30_000L // 30 seconds
 
         /** Clear cache (e.g., when a new contact is added). */
@@ -141,7 +141,8 @@ class ContactsFragment : Fragment() {
         }
         // Refresh app contacts (cheap — SharedPreferences read) in case a contact was saved
         refreshAppContacts()
-        // Start periodic status refresh (every 30s)
+        // Fire immediate online status check, then start periodic refresh (every 30s)
+        refreshOnlineStatus()
         startStatusRefresh()
     }
 
@@ -156,8 +157,8 @@ class ContactsFragment : Fragment() {
         val runnable = object : Runnable {
             override fun run() {
                 if (!isAdded) return
-                Log.d(TAG, "Periodic status refresh")
-                checkSecureCallMembers()
+                Log.d(TAG, "Periodic online status refresh")
+                refreshOnlineStatus()
                 statusRefreshHandler?.postDelayed(this, STATUS_REFRESH_INTERVAL)
             }
         }
@@ -167,6 +168,38 @@ class ContactsFragment : Fragment() {
     private fun stopStatusRefresh() {
         statusRefreshHandler?.removeCallbacksAndMessages(null)
         statusRefreshHandler = null
+    }
+
+    /** Lightweight online status check — sends plain phone numbers, server returns online/offline. */
+    private fun refreshOnlineStatus() {
+        val ws = com.securecall.app.net.WebSocketService.instance ?: return
+        val contactsSnapshot = cachedContacts ?: allContacts
+        val phones = contactsSnapshot
+            .filter { !it.phoneOrId.startsWith("android-") }
+            .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }
+            .distinct()
+        if (phones.isEmpty()) return
+        Log.d(TAG, "refreshOnlineStatus: ${phones.size} phones")
+        ws.requestOnlineStatus(phones) { statuses ->
+            if (!isAdded) return@requestOnlineStatus
+            val onPhones = mutableSetOf<String>()
+            for ((phone, online) in statuses) {
+                if (online) onPhones.add(phone)
+            }
+            onlinePhones = onPhones
+            cachedOnlinePhones = onPhones
+            // Update onlineClientIds from cachedClientIdToPhone mapping
+            val onCids = mutableSetOf<String>()
+            for ((cid, phone) in cachedClientIdToPhone) {
+                val norm = phone.replace(Regex("[^0-9+]"), "")
+                if (norm in onPhones) onCids.add(cid)
+            }
+            cachedOnlineClientIds = onCids
+            Log.d(TAG, "Online status updated: ${onPhones.size} online phones, ${onCids.size} online clientIds")
+            activity?.runOnUiThread {
+                if (isAdded) updateList(allContacts)
+            }
+        }
     }
 
     /** Lightweight refresh: re-read app contacts and merge with cached phone contacts. */
@@ -244,6 +277,8 @@ class ContactsFragment : Fragment() {
                     checkSecureCallMembers()
                 } else {
                     Log.d(TAG, "BATCH_PHONE_LOOKUP cache still valid (${(now - lastLookupTimestamp) / 1000}s old)")
+                    // Still refresh online dots even if registration cache is valid
+                    activity?.runOnUiThread { if (isAdded) refreshOnlineStatus() }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load contacts async", e)

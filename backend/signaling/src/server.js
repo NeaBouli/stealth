@@ -893,6 +893,20 @@ wss.on("connection", (ws, req) => {
       }));
     }
 
+    // ===========================
+    // ONLINE_STATUS_REQUEST — Simple online/offline check for phone numbers
+    // ===========================
+    if (msg.type === "ONLINE_STATUS_REQUEST") {
+      const phones = Array.isArray(msg.phoneNumbers) ? msg.phoneNumbers.slice(0, 500) : [];
+      const statuses = {};
+      for (const phone of phones) {
+        const normalized = normalizePhone(phone);
+        const resolvedClientId = phoneNumbers.get(normalized);
+        statuses[phone] = !!(resolvedClientId && clientIds.has(resolvedClientId));
+      }
+      return ws.send(JSON.stringify({ type: "ONLINE_STATUS_RESPONSE", statuses }));
+    }
+
     // HEARTBEAT — client keepalive, reply so client's onMessage updates lastSeen
     if (msg.type === "HEARTBEAT") {
       return ws.send(JSON.stringify({ type: "HEARTBEAT_ACK" }));
