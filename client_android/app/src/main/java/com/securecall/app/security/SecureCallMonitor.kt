@@ -156,17 +156,9 @@ class SecureCallMonitor(private val context: Context) {
             ))
         }
 
-        // 6. Audio Focus — retry before warning
-        if (!audioFocusManager.hasFocus()) {
-            audioFocusManager.requestExclusiveFocus()
-            if (!audioFocusManager.hasFocus()) {
-                threats.add(Threat(
-                    type = ThreatType.AUDIO_FOCUS_LOST,
-                    severity = Severity.WARNING,
-                    description = "Exclusive audio focus not held"
-                ))
-            }
-        }
+        // 6. Audio Focus — CallActivity owns the exclusive focus request.
+        // We only observe focus state here; we do NOT request focus ourselves
+        // to avoid competing with CallActivity and pausing audio capture.
 
         // Determine overall security level
         val level = when {
@@ -179,7 +171,7 @@ class SecureCallMonitor(private val context: Context) {
             level = level,
             threats = threats,
             flagSecureActive = true, // Set by CallActivity
-            exclusiveAudioFocus = audioFocusManager.hasFocus()
+            exclusiveAudioFocus = true // CallActivity manages audio focus
         )
 
         Log.d(TAG, "Security scan complete: level=$level, threats=${threats.size}")
@@ -194,16 +186,15 @@ class SecureCallMonitor(private val context: Context) {
         isMonitoring = true
 
         // Start sub-monitors
-        audioFocusManager.requestExclusiveFocus()
+        // NOTE: Do NOT request audio focus here — CallActivity owns the single
+        // AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE request. A competing request from
+        // AudioFocusManager would steal focus from CallActivity and pause audio capture.
         screenRecordingDetector.startMonitoring(activity)
         microphoneMonitor.startMonitoring()
 
         // Set up real-time callbacks
-        audioFocusManager.onFocusLost = {
-            Log.w(TAG, "Audio focus lost during call!")
-            val status = performFullScan()
-            onSecurityStatusChanged?.invoke(status)
-        }
+        // NOTE: Audio focus is managed by CallActivity, not by us.
+        // We just log the event for diagnostics — no re-request or scan trigger.
 
         screenRecordingDetector.onRecordingStateChanged = { isRecording ->
             if (isRecording) {

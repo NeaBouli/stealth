@@ -121,8 +121,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         super.onCreate()
         Log.d("WS_SERVICE", "onCreate")
         instance = this
-        // Always start as foreground to survive background/kill
-        startForegroundWithNotification()
+        // CRITICAL: Call startForeground() as early as possible.
+        // Android 8 (API 26) has a strict 5-second timeout from startForegroundService() to startForeground().
+        // On slow devices (e.g. Galaxy S7), any delay here causes an ANR.
+        ensureForegroundImmediate()
         createIncomingCallChannel()
         client = HeartbeatClient(wsUrl, this)
         client?.connect()
@@ -855,35 +857,60 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         }
     }
 
-    private fun startForegroundWithNotification() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                getString(R.string.notif_channel_background),
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = getString(R.string.notif_channel_background_desc)
-                setShowBadge(false)
+    private var foregroundStarted = false
+
+    /**
+     * Minimal startForeground() — called immediately in onCreate() to beat Android 8's 5s timeout.
+     * Creates channel + notification inline with no unnecessary work.
+     */
+    private fun ensureForegroundImmediate() {
+        if (foregroundStarted) return
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val nm = getSystemService(NotificationManager::class.java)
+                if (nm.getNotificationChannel(CHANNEL_ID) == null) {
+                    nm.createNotificationChannel(
+                        NotificationChannel(CHANNEL_ID, "Background Service", NotificationManager.IMPORTANCE_LOW).apply {
+                            setShowBadge(false)
+                        }
+                    )
+                }
             }
-            val nm = getSystemService(NotificationManager::class.java)
-            nm.createNotificationChannel(channel)
+            val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("SecureCall")
+                .setContentText("Running in background")
+                .setSmallIcon(R.drawable.ic_lock)
+                .setOngoing(true)
+                .setSilent(true)
+                .build()
+            startForeground(NOTIFICATION_ID, notification)
+            foregroundStarted = true
+        } catch (e: Exception) {
+            Log.e("WS_SERVICE", "ensureForegroundImmediate failed", e)
         }
+    }
 
-        val openIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.notif_background_title))
-            .setContentText(getString(R.string.notif_background_text))
-            .setSmallIcon(R.drawable.ic_lock)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .setSilent(true)
-            .build()
-
-        startForeground(NOTIFICATION_ID, notification)
+    private fun startForegroundWithNotification() {
+        ensureForegroundImmediate()
+        // Update notification with proper strings (non-critical, can be deferred)
+        try {
+            val openIntent = Intent(this, MainActivity::class.java)
+            val pendingIntent = PendingIntent.getActivity(
+                this, 0, openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(getString(R.string.notif_background_title))
+                .setContentText(getString(R.string.notif_background_text))
+                .setSmallIcon(R.drawable.ic_lock)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .setSilent(true)
+                .build()
+            val nm = getSystemService(NotificationManager::class.java)
+            nm.notify(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            Log.e("WS_SERVICE", "Notification update failed", e)
+        }
     }
 }
