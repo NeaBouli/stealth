@@ -203,6 +203,12 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun saveMissedCall() {
+        val saveHistory = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+            .getBoolean("pref_call_history", true)
+        if (!saveHistory) {
+            Log.d(TAG, "Call history saving disabled by user preference")
+            return
+        }
         try {
             val record = com.securecall.app.data.CallRecord(
                 contactName = callerDisplayName,

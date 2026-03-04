@@ -20,26 +20,26 @@
     <color name="metallic_light">#B0B0C0</color>
     <color name="honeycomb_stroke">#1A1A2E</color>
 
-    <!-- MD3 Light scheme (forced to military dark palette — both modes identical) -->
-    <color name="md_theme_light_primary">#D32F2F</color>
+    <!-- MD3 Light scheme (actual light colors for day mode) -->
+    <color name="md_theme_light_primary">#C62828</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>
-    <color name="md_theme_light_primaryContainer">#4A0000</color>
-    <color name="md_theme_light_onPrimaryContainer">#FFDAD5</color>
-    <color name="md_theme_light_secondary">#8A8A9A</color>
+    <color name="md_theme_light_primaryContainer">#FFDAD5</color>
+    <color name="md_theme_light_onPrimaryContainer">#410002</color>
+    <color name="md_theme_light_secondary">#5F5D62</color>
     <color name="md_theme_light_onSecondary">#FFFFFF</color>
-    <color name="md_theme_light_secondaryContainer">#16213E</color>
-    <color name="md_theme_light_onSecondaryContainer">#C8D8F0</color>
-    <color name="md_theme_light_tertiary">#00E676</color>
-    <color name="md_theme_light_onTertiary">#003300</color>
-    <color name="md_theme_light_background">#0D0D18</color>
-    <color name="md_theme_light_onBackground">#E0E0E8</color>
-    <color name="md_theme_light_surface">#1A1A2E</color>
-    <color name="md_theme_light_onSurface">#E0E0E8</color>
-    <color name="md_theme_light_error">#EF5350</color>
-    <color name="md_theme_light_onError">#4A0000</color>
-    <color name="md_theme_light_surfaceVariant">#16213E</color>
-    <color name="md_theme_light_onSurfaceVariant">#B0B0C0</color>
-    <color name="md_theme_light_outline">#3A3A4E</color>
+    <color name="md_theme_light_secondaryContainer">#E4E1E6</color>
+    <color name="md_theme_light_onSecondaryContainer">#1C1B1E</color>
+    <color name="md_theme_light_tertiary">#2E7D32</color>
+    <color name="md_theme_light_onTertiary">#FFFFFF</color>
+    <color name="md_theme_light_background">#FFFBFE</color>
+    <color name="md_theme_light_onBackground">#1C1B1F</color>
+    <color name="md_theme_light_surface">#FFFBFE</color>
+    <color name="md_theme_light_onSurface">#1C1B1F</color>
+    <color name="md_theme_light_error">#BA1A1A</color>
+    <color name="md_theme_light_onError">#FFFFFF</color>
+    <color name="md_theme_light_surfaceVariant">#E7E0EC</color>
+    <color name="md_theme_light_onSurfaceVariant">#49454F</color>
+    <color name="md_theme_light_outline">#79747E</color>
 
     <!-- MD3 Dark scheme (same military palette) -->
     <color name="md_theme_dark_primary">#EF5350</color>

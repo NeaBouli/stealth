@@ -364,6 +364,8 @@ class ContactsFragment : Fragment() {
         Log.d(TAG, "Finalized: ${regPhones.size} registered, ${onPhones.size} online phones, ${onClientIds.size} online clientIds, ${cidToPhone.size} clientId→phone mappings")
         // Re-run dedup merge with updated mappings
         dedupAndRefresh()
+        // Immediately refresh online status with dedicated endpoint for freshest data
+        activity?.runOnUiThread { if (isAdded) refreshOnlineStatus() }
     }
 
     /** Re-merge contacts removing phone duplicates that have a matching app contact (by SecureCall ID). */

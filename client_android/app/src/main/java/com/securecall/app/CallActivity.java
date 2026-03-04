@@ -712,22 +712,28 @@ public class CallActivity extends AppCompatActivity {
             ws.clearSession();
         }
 
-        // Save call to history
-        try {
-            int durationSecs = 0;
-            if (callStartTimeMs > 0) {
-                durationSecs = (int) ((System.currentTimeMillis() - callStartTimeMs) / 1000);
+        // Save call to history (only if user hasn't disabled it)
+        boolean saveHistory = PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean("pref_call_history", true);
+        if (saveHistory) {
+            try {
+                int durationSecs = 0;
+                if (callStartTimeMs > 0) {
+                    durationSecs = (int) ((System.currentTimeMillis() - callStartTimeMs) / 1000);
+                }
+                CallType callType = isIncomingCall ? CallType.INCOMING : CallType.OUTGOING;
+                CallRecord record = new CallRecord(
+                    java.util.UUID.randomUUID().toString(),
+                    callContactName, callContactId, callType,
+                    System.currentTimeMillis(), durationSecs, true
+                );
+                CallHistoryRepository.INSTANCE.add(this, record);
+                Log.d(TAG, "Call history saved: " + callType + " " + callContactName + " " + durationSecs + "s");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to save call history", e);
             }
-            CallType callType = isIncomingCall ? CallType.INCOMING : CallType.OUTGOING;
-            CallRecord record = new CallRecord(
-                java.util.UUID.randomUUID().toString(),
-                callContactName, callContactId, callType,
-                System.currentTimeMillis(), durationSecs, true
-            );
-            CallHistoryRepository.INSTANCE.add(this, record);
-            Log.d(TAG, "Call history saved: " + callType + " " + callContactName + " " + durationSecs + "s");
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to save call history", e);
+        } else {
+            Log.d(TAG, "Call history saving disabled by user preference");
         }
 
         isCallActive = false;
@@ -774,14 +780,26 @@ public class CallActivity extends AppCompatActivity {
 
     /** Check if we should offer to save this contact (phone→clientId resolved, not already saved). */
     private boolean shouldOfferContactSave() {
+        Log.d(TAG, "shouldOfferContactSave: originalPhone='" + originalPhone
+                + "', callContactId='" + callContactId + "'");
         if (originalPhone.isEmpty() || callContactId.isEmpty()) return false;
         if (!callContactId.startsWith("android-")) return false;
-        // Check if already saved in contacts
+        // Check if already saved in contacts (by clientId or phone number)
+        String normalizedPhone = originalPhone.replaceAll("[^0-9+]", "");
         java.util.List<com.securecall.app.data.Contact> contacts =
                 com.securecall.app.data.ContactRepository.INSTANCE.getAll(this);
         for (com.securecall.app.data.Contact c : contacts) {
-            if (c.getPhoneOrId().equals(callContactId)) return false;
+            if (c.getPhoneOrId().equals(callContactId)) {
+                Log.d(TAG, "shouldOfferContactSave: already saved by clientId");
+                return false;
+            }
+            String cNorm = c.getPhoneOrId().replaceAll("[^0-9+]", "");
+            if (!cNorm.isEmpty() && cNorm.equals(normalizedPhone)) {
+                Log.d(TAG, "shouldOfferContactSave: already saved by phone number");
+                return false;
+            }
         }
+        Log.d(TAG, "shouldOfferContactSave: YES — showing dialog");
         return true;
     }
 
