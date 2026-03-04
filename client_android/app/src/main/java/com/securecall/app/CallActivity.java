@@ -797,6 +797,7 @@ public class CallActivity extends AppCompatActivity {
                     System.currentTimeMillis(), false
                 );
                 com.securecall.app.data.ContactRepository.INSTANCE.save(this, contact);
+                com.securecall.app.ui.ContactsFragment.Companion.invalidateCache();
                 Toast.makeText(this, "Contact saved", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "Saved contact: " + callContactName + " -> " + callContactId);
                 finish();

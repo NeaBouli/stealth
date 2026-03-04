@@ -15,6 +15,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -53,6 +54,7 @@ class ContactsFragment : Fragment() {
         /** Clear cache (e.g., when a new contact is added). */
         fun invalidateCache() {
             cachedContacts = null
+            lastLookupTimestamp = 0L // Force BATCH_PHONE_LOOKUP on next visit
         }
     }
 
@@ -97,18 +99,19 @@ class ContactsFragment : Fragment() {
             }
         })
 
-        // Hide bottom nav and main FAB when search is focused so contacts stay visible above keyboard
-        searchInput.setOnFocusChangeListener { _, hasFocus ->
-            val activity = activity ?: return@setOnFocusChangeListener
-            val bottomNav = activity.findViewById<View>(R.id.bottomNav)
-            val fab = activity.findViewById<View>(R.id.fabNewCall)
-            if (hasFocus) {
-                bottomNav?.visibility = View.GONE
-                fab?.visibility = View.GONE
-            } else {
-                bottomNav?.visibility = View.VISIBLE
-                fab?.visibility = View.VISIBLE
+        // Back press clears search instead of exiting the app
+        val backCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                searchInput.setText("")
+                searchInput.clearFocus()
+                val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.hideSoftInputFromWindow(searchInput.windowToken, 0)
+                isEnabled = false
             }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
+        searchInput.setOnFocusChangeListener { _, hasFocus ->
+            backCallback.isEnabled = hasFocus
         }
 
         // Show cached contacts immediately (instant tab switch)
