@@ -15,6 +15,7 @@ class ContactAdapter(
     private val registeredPhones: Set<String> = emptySet(),
     private val onlinePhones: Set<String> = emptySet(),
     private val onlineClientIds: Set<String> = emptySet(),
+    private val hideOnlineStatus: Boolean = false,
     private val onCallClick: ((Contact) -> Unit)? = null
 ) : RecyclerView.Adapter<ContactAdapter.ViewHolder>() {
 
@@ -65,16 +66,21 @@ class ContactAdapter(
         }
 
         // Status dot: green=online, red=offline but registered, gray=not SecureCall
-        holder.statusDot.visibility = View.VISIBLE
-        when {
-            isSecureCallMember && isOnline -> {
-                holder.statusDot.setBackgroundResource(R.drawable.status_dot_green)
-            }
-            isSecureCallMember -> {
-                holder.statusDot.setBackgroundResource(R.drawable.status_dot_red)
-            }
-            else -> {
-                holder.statusDot.setBackgroundResource(R.drawable.status_dot_gray)
+        // Free tier: hide online status dots entirely (Pro/Premium feature)
+        if (hideOnlineStatus) {
+            holder.statusDot.visibility = View.GONE
+        } else {
+            holder.statusDot.visibility = View.VISIBLE
+            when {
+                isSecureCallMember && isOnline -> {
+                    holder.statusDot.setBackgroundResource(R.drawable.status_dot_green)
+                }
+                isSecureCallMember -> {
+                    holder.statusDot.setBackgroundResource(R.drawable.status_dot_red)
+                }
+                else -> {
+                    holder.statusDot.setBackgroundResource(R.drawable.status_dot_gray)
+                }
             }
         }
 

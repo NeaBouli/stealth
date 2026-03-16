@@ -22,6 +22,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.securecall.app.BuildConfig
 import com.securecall.app.CallActivity
 import com.securecall.app.R
 import com.securecall.app.data.Contact
@@ -80,6 +81,19 @@ class ContactsFragment : Fragment() {
         searchInput = view.findViewById(R.id.searchInput)
 
         recycler.layoutManager = LinearLayoutManager(requireContext())
+
+        // Show "Online status: PRO feature" banner for Free tier
+        if (isFreeTier()) {
+            val banner = android.widget.TextView(requireContext()).apply {
+                text = "\uD83D\uDD12 Online status is a PRO feature"
+                setTextColor(android.graphics.Color.parseColor("#888888"))
+                textSize = 12f
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, 16, 0, 8)
+            }
+            val parent = recycler.parent as? android.widget.LinearLayout
+            parent?.addView(banner, 1) // After search bar, before recycler
+        }
 
         view.findViewById<FloatingActionButton>(R.id.fabAddContact).setOnClickListener {
             showAddContactDialog()
@@ -144,9 +158,11 @@ class ContactsFragment : Fragment() {
         }
         // Refresh app contacts (cheap — SharedPreferences read) in case a contact was saved
         refreshAppContacts()
-        // Fire immediate online status check, then start periodic refresh (every 30s)
-        refreshOnlineStatus()
-        startStatusRefresh()
+        // Online status is a Pro/Premium feature — skip for Free tier
+        if (!isFreeTier()) {
+            refreshOnlineStatus()
+            startStatusRefresh()
+        }
     }
 
     override fun onPause() {
@@ -269,8 +285,10 @@ class ContactsFragment : Fragment() {
                     checkSecureCallMembers()
                 } else {
                     Log.d(TAG, "BATCH_PHONE_LOOKUP cache still valid (${(now - lastLookupTimestamp) / 1000}s old)")
-                    // Still refresh online dots even if registration cache is valid
-                    activity?.runOnUiThread { if (isAdded) refreshOnlineStatus() }
+                    // Still refresh online dots even if registration cache is valid (Pro/Premium only)
+                    if (!isFreeTier()) {
+                        activity?.runOnUiThread { if (isAdded) refreshOnlineStatus() }
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load contacts async", e)
@@ -356,8 +374,10 @@ class ContactsFragment : Fragment() {
 
         // Re-run dedup merge with updated mappings
         dedupAndRefresh()
-        // Immediately refresh online status with dedicated endpoint for freshest data
-        activity?.runOnUiThread { if (isAdded) refreshOnlineStatus() }
+        // Immediately refresh online status with dedicated endpoint for freshest data (Pro/Premium only)
+        if (!isFreeTier()) {
+            activity?.runOnUiThread { if (isAdded) refreshOnlineStatus() }
+        }
     }
 
     /**
@@ -511,6 +531,8 @@ class ContactsFragment : Fragment() {
         }
     }
 
+    private fun isFreeTier(): Boolean = BuildConfig.FLAVOR == "free"
+
     private fun sha256(input: String): String {
         val digest = java.security.MessageDigest.getInstance("SHA-256")
         return digest.digest(input.toByteArray(Charsets.UTF_8))
@@ -577,7 +599,7 @@ class ContactsFragment : Fragment() {
         } else {
             recycler.visibility = View.VISIBLE
             emptyState.visibility = View.GONE
-            recycler.adapter = ContactAdapter(contacts, registeredPhones, onlinePhones, cachedOnlineClientIds) { contact ->
+            recycler.adapter = ContactAdapter(contacts, registeredPhones, onlinePhones, cachedOnlineClientIds, isFreeTier()) { contact ->
                 startCall(contact)
             }
         }
