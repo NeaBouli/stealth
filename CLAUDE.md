@@ -325,6 +325,7 @@ All core features are complete, committed, and tested across 4 devices (S10, S7,
 4. ~~**BATCH_PHONE_LOOKUP pagination**~~ -- DONE. Sequential batches of 200, all contacts checked. Commit `fd67ee1`.
 5. ~~**Bug fix sprint (A2, D1, D2, A3, D3, C1, C2)**~~ -- DONE. 7 bugs fixed: incoming caller phone display, settings ID copy, connection status indicator, save-contact dialog, invite SMS with ID, missed call notification, in-app missed call badge. Commits `92665a1` through `2d89569`.
 6. ~~**Contact deduplication + stale SecureID cleanup**~~ -- DONE. Commit `2fa64d2`. After BATCH_PHONE_LOOKUP, merges duplicate contacts (phone + SecureID → single entry with secureId metadata). Stale SecureIDs (from reinstalls) auto-deleted. Server broadcasts SECUREID_CHANGED when phone re-registers with new clientId. S10 deduped from 5 contacts to 2 clean entries.
-7. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
-8. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
-9. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
+7. ~~**Online status as Pro/Premium feature + landing page update**~~ -- DONE. Commit `f635400`. Online status dots hidden in Free tier (shows "PRO feature" banner), visible in Pro/Premium. Landing page (index.html), FAQ tier table, and getting-started wiki updated with accurate feature tiers including online status, anti-recording, enhanced monitoring, advanced threat detection.
+8. **Firebase setup** -- Configure real Firebase credentials to enable FCM push for incoming calls when app is not running.
+9. **TURN credential rotation** -- Move hardcoded Metered.ca TURN credentials out of `build.gradle` and fetch from server at runtime.
+10. **Automated tests** -- Add unit/integration tests for the new features (crypto, jitter buffer, WebRTC signaling, phone lookup).
