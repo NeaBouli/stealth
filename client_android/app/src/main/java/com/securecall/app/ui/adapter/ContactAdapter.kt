@@ -35,16 +35,24 @@ class ContactAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contact = contacts[position]
         holder.txtName.text = contact.name
-        holder.txtPhoneOrId.text = contact.phoneOrId
+        // Show phone + SecureID if both are available
+        val subtitle = if (contact.secureId != null && !contact.phoneOrId.startsWith("android-")) {
+            "${contact.phoneOrId} | ${contact.secureId}"
+        } else {
+            contact.phoneOrId
+        }
+        holder.txtPhoneOrId.text = subtitle
         holder.txtAvatar.text = contact.name.firstOrNull()?.uppercase() ?: "?"
 
         holder.itemView.contentDescription = contact.name
 
         val normalizedPhone = contact.phoneOrId.replace(Regex("[^0-9+]"), "")
+        val effectiveClientId = contact.secureId ?: if (contact.phoneOrId.startsWith("android-")) contact.phoneOrId else null
         val isSecureCallMember = contact.phoneOrId.startsWith("android-") ||
+            contact.secureId != null ||
             registeredPhones.contains(normalizedPhone)
         val isOnline = onlinePhones.contains(normalizedPhone) ||
-            (contact.phoneOrId.startsWith("android-") && onlineClientIds.contains(contact.phoneOrId))
+            (effectiveClientId != null && onlineClientIds.contains(effectiveClientId))
 
         // Show green badge for SecureCall members
         if (isSecureCallMember) {

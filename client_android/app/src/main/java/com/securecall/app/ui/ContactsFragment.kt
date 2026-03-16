@@ -213,27 +213,21 @@ class ContactsFragment : Fragment() {
         val cached = cachedContacts ?: return
         val phoneContacts = cached.filter { it.isPhoneContact }
 
-        // Build set of phone numbers covered by app contacts' SecureCall IDs
-        val appSecureIds = appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
-        val phonesCoveredBySecureId = cachedClientIdToPhone
-            .filter { it.key in appSecureIds }
-            .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
-
-        // Dedup app contacts: remove phone-number entries covered by SecureCall ID entries
-        val dedupedAppContacts = appContacts.filter { ac ->
-            ac.phoneOrId.startsWith("android-") ||
-                ac.phoneOrId.replace(Regex("[^0-9+]"), "") !in phonesCoveredBySecureId
-        }
-
-        val appPhoneNumbers = dedupedAppContacts
+        // Exclude phone book contacts that are already covered by app contacts (by phone or secureId)
+        val appPhoneNumbers = appContacts
             .filter { !it.phoneOrId.startsWith("android-") }
             .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }.toSet()
-        val excludePhones = appPhoneNumbers + phonesCoveredBySecureId
+        val appSecureIds = appContacts.mapNotNull { it.secureId }.toSet() +
+            appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
+        val secureIdPhones = cachedClientIdToPhone
+            .filter { it.key in appSecureIds }
+            .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
+        val excludePhones = appPhoneNumbers + secureIdPhones
 
         val uniquePhoneContacts = phoneContacts.filter { pc ->
             pc.phoneOrId.replace(Regex("[^0-9+]"), "") !in excludePhones
         }
-        allContacts = dedupedAppContacts + uniquePhoneContacts
+        allContacts = appContacts + uniquePhoneContacts
         cachedContacts = allContacts
         updateList(allContacts)
     }
@@ -246,27 +240,21 @@ class ContactsFragment : Fragment() {
                 val appContacts = ContactRepository.getAll(ctx)
                 val phoneContacts = loadPhoneContacts()
 
-                // Build set of phone numbers covered by app contacts' SecureCall IDs
-                val appSecureIds = appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
-                val phonesCoveredBySecureId = cachedClientIdToPhone
-                    .filter { it.key in appSecureIds }
-                    .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
-
-                // Dedup app contacts: remove phone-number entries covered by SecureCall ID entries
-                val dedupedAppContacts = appContacts.filter { ac ->
-                    ac.phoneOrId.startsWith("android-") ||
-                        ac.phoneOrId.replace(Regex("[^0-9+]"), "") !in phonesCoveredBySecureId
-                }
-
-                val appPhoneNumbers = dedupedAppContacts
+                // Exclude phone book contacts already covered by app contacts
+                val appPhoneNumbers = appContacts
                     .filter { !it.phoneOrId.startsWith("android-") }
                     .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }.toSet()
-                val excludePhones = appPhoneNumbers + phonesCoveredBySecureId
+                val appSecureIds = appContacts.mapNotNull { it.secureId }.toSet() +
+                    appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
+                val secureIdPhones = cachedClientIdToPhone
+                    .filter { it.key in appSecureIds }
+                    .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
+                val excludePhones = appPhoneNumbers + secureIdPhones
 
                 val uniquePhoneContacts = phoneContacts.filter { pc ->
                     pc.phoneOrId.replace(Regex("[^0-9+]"), "") !in excludePhones
                 }
-                val merged = dedupedAppContacts + uniquePhoneContacts
+                val merged = appContacts + uniquePhoneContacts
                 cachedContacts = merged
                 activity?.runOnUiThread {
                     if (!isAdded) return@runOnUiThread
@@ -362,52 +350,164 @@ class ContactsFragment : Fragment() {
         cachedClientIdToPhone = cidToPhone
         lastLookupTimestamp = System.currentTimeMillis()
         Log.d(TAG, "Finalized: ${regPhones.size} registered, ${onPhones.size} online phones, ${onClientIds.size} online clientIds, ${cidToPhone.size} clientId→phone mappings")
+
+        // Clean up stale SecureIDs: app contacts with SecureIDs not found in server response
+        cleanupStaleSecureIds(cidToPhone.keys)
+
         // Re-run dedup merge with updated mappings
         dedupAndRefresh()
         // Immediately refresh online status with dedicated endpoint for freshest data
         activity?.runOnUiThread { if (isAdded) refreshOnlineStatus() }
     }
 
-    /** Re-merge contacts removing phone duplicates that have a matching app contact (by SecureCall ID). */
+    /**
+     * Deduplicate contacts: merge SecureID-only entries into phone-number entries.
+     * After BATCH_PHONE_LOOKUP we know clientId → phone mappings.
+     * If the same person appears twice (once by phone, once by SecureID), keep the phone entry
+     * with the SecureID attached, and delete the SecureID-only entry from storage.
+     */
     private fun dedupAndRefresh() {
         val ctx = context ?: return
         val appContacts = ContactRepository.getAll(ctx)
         val cached = cachedContacts ?: return
         val phoneContacts = cached.filter { it.isPhoneContact }
 
-        // Build set of phone numbers covered by app contacts' SecureCall IDs
-        val appSecureIds = appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
-        val phonesCoveredBySecureId = cachedClientIdToPhone
-            .filter { it.key in appSecureIds }
-            .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
+        // Reverse map: phone → clientId
+        val phoneToCid = mutableMapOf<String, String>()
+        for ((cid, phone) in cachedClientIdToPhone) {
+            phoneToCid[phone.replace(Regex("[^0-9+]"), "")] = cid
+        }
 
-        // Dedup app contacts: remove phone-number app contacts covered by a SecureCall ID app contact
-        val dedupedAppContacts = appContacts.filter { ac ->
-            if (ac.phoneOrId.startsWith("android-")) {
-                true // Keep SecureCall ID contacts
+        // Separate app contacts into SecureID-based and phone-based
+        val secureIdContacts = appContacts.filter { it.phoneOrId.startsWith("android-") }
+        val phoneAppContacts = appContacts.filter { !it.phoneOrId.startsWith("android-") }
+
+        // Build lookup: normalized phone → phone app contact
+        val phoneAppMap = mutableMapOf<String, Contact>()
+        for (c in phoneAppContacts) {
+            phoneAppMap[c.phoneOrId.replace(Regex("[^0-9+]"), "")] = c
+        }
+
+        val secureIdsToDelete = mutableListOf<String>() // contact IDs to delete from storage
+        val phoneContactsToUpdate = mutableListOf<Contact>() // phone contacts that get a secureId attached
+
+        for (secContact in secureIdContacts) {
+            val clientId = secContact.phoneOrId
+            val phone = cachedClientIdToPhone[clientId]?.replace(Regex("[^0-9+]"), "") ?: continue
+            val phoneContact = phoneAppMap[phone]
+            if (phoneContact != null) {
+                // Duplicate found: same person saved by phone AND by SecureID
+                // Keep the phone entry, attach the secureId, delete the SecureID entry
+                if (phoneContact.secureId != clientId) {
+                    val merged = phoneContact.copy(secureId = clientId)
+                    phoneContactsToUpdate.add(merged)
+                    phoneAppMap[phone] = merged // update local map too
+                }
+                secureIdsToDelete.add(secContact.id)
+                Log.d(TAG, "Dedup merge: '${secContact.name}' SecureID=$clientId → phone entry '${phoneContact.name}' (${phoneContact.phoneOrId})")
             } else {
-                val norm = ac.phoneOrId.replace(Regex("[^0-9+]"), "")
-                val covered = norm in phonesCoveredBySecureId
-                if (covered) Log.d(TAG, "Dedup: '${ac.name}' phone covered by SecureCall ID")
-                !covered
+                // No phone contact for this SecureID — check if we can create one from phone book contacts
+                val phoneBookContact = phoneContacts.find {
+                    it.phoneOrId.replace(Regex("[^0-9+]"), "") == phone
+                }
+                if (phoneBookContact != null) {
+                    // Replace SecureID entry with phone entry + secureId
+                    val merged = secContact.copy(
+                        phoneOrId = phoneBookContact.phoneOrId,
+                        name = phoneBookContact.name,
+                        secureId = clientId
+                    )
+                    phoneContactsToUpdate.add(merged)
+                    phoneAppMap[phone] = merged
+                    Log.d(TAG, "Dedup convert: SecureID=$clientId → phone=${phoneBookContact.phoneOrId} (name=${phoneBookContact.name})")
+                }
+                // If no phone book match either, keep the SecureID entry as-is
             }
         }
 
-        val appPhoneNumbers = dedupedAppContacts
+        // Persist changes: delete SecureID duplicates and update phone entries with secureId
+        if (secureIdsToDelete.isNotEmpty() || phoneContactsToUpdate.isNotEmpty()) {
+            var all = ContactRepository.getAll(ctx).toMutableList()
+            // Remove duplicates
+            all = all.filter { it.id !in secureIdsToDelete }.toMutableList()
+            // Update phone contacts with secureId
+            for (updated in phoneContactsToUpdate) {
+                val idx = all.indexOfFirst { it.id == updated.id }
+                if (idx >= 0) all[idx] = updated
+            }
+            ContactRepository.replaceAll(ctx, all)
+            Log.d(TAG, "dedupAndRefresh: deleted ${secureIdsToDelete.size} SecureID dupes, updated ${phoneContactsToUpdate.size} phone entries")
+        }
+
+        // Also attach secureIds to phone app contacts that weren't dupes but have a known mapping
+        val finalAppContacts = ContactRepository.getAll(ctx).toMutableList()
+        var metadataUpdated = false
+        for (i in finalAppContacts.indices) {
+            val c = finalAppContacts[i]
+            if (!c.phoneOrId.startsWith("android-") && c.secureId == null) {
+                val norm = c.phoneOrId.replace(Regex("[^0-9+]"), "")
+                val cid = phoneToCid[norm]
+                if (cid != null) {
+                    finalAppContacts[i] = c.copy(secureId = cid)
+                    metadataUpdated = true
+                }
+            }
+        }
+        if (metadataUpdated) ContactRepository.replaceAll(ctx, finalAppContacts)
+
+        // Rebuild display list
+        val freshAppContacts = ContactRepository.getAll(ctx)
+        val appPhoneNumbers = freshAppContacts
             .filter { !it.phoneOrId.startsWith("android-") }
             .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }.toSet()
-        val excludePhones = appPhoneNumbers + phonesCoveredBySecureId
+        val appSecureIds = freshAppContacts.mapNotNull { it.secureId }.toSet() +
+            freshAppContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
+        val secureIdPhones = cachedClientIdToPhone
+            .filter { it.key in appSecureIds }
+            .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
+        val excludePhones = appPhoneNumbers + secureIdPhones
 
         val uniquePhoneContacts = phoneContacts.filter { pc ->
             pc.phoneOrId.replace(Regex("[^0-9+]"), "") !in excludePhones
         }
-        if (appContacts.size != dedupedAppContacts.size || phoneContacts.size != uniquePhoneContacts.size) {
-            Log.d(TAG, "dedupAndRefresh: ${appContacts.size} app -> ${dedupedAppContacts.size}, ${phoneContacts.size} phone -> ${uniquePhoneContacts.size}")
-        }
-        allContacts = dedupedAppContacts + uniquePhoneContacts
+
+        allContacts = freshAppContacts + uniquePhoneContacts
         cachedContacts = allContacts
         activity?.runOnUiThread {
             if (isAdded) updateList(allContacts)
+        }
+    }
+
+    /**
+     * Remove stale SecureIDs from contacts.
+     * If an app contact is saved only by SecureID (android-*) and that ID is no longer
+     * registered on the server, delete it — the device probably reinstalled and has a new ID.
+     */
+    private fun cleanupStaleSecureIds(activeClientIds: Set<String>) {
+        val ctx = context ?: return
+        if (activeClientIds.isEmpty()) return // No server data yet, don't delete anything
+        val appContacts = ContactRepository.getAll(ctx)
+        val staleContacts = appContacts.filter { c ->
+            c.phoneOrId.startsWith("android-") && c.phoneOrId !in activeClientIds
+        }
+        if (staleContacts.isNotEmpty()) {
+            Log.d(TAG, "Cleaning up ${staleContacts.size} stale SecureID contacts: ${staleContacts.map { it.phoneOrId }}")
+            val remaining = appContacts.filter { it.id !in staleContacts.map { s -> s.id }.toSet() }
+            ContactRepository.replaceAll(ctx, remaining)
+        }
+        // Also clear stale secureId metadata from phone contacts
+        val contactsWithStaleSecureId = appContacts.filter { c ->
+            c.secureId != null && c.secureId !in activeClientIds
+        }
+        if (contactsWithStaleSecureId.isNotEmpty()) {
+            val current = ContactRepository.getAll(ctx).toMutableList()
+            for (i in current.indices) {
+                if (current[i].secureId != null && current[i].secureId !in activeClientIds) {
+                    current[i] = current[i].copy(secureId = null)
+                }
+            }
+            ContactRepository.replaceAll(ctx, current)
+            Log.d(TAG, "Cleared ${contactsWithStaleSecureId.size} stale secureId metadata entries")
         }
     }
 
@@ -484,7 +584,7 @@ class ContactsFragment : Fragment() {
     }
 
     private fun startCall(contact: Contact) {
-        if (contact.phoneOrId.startsWith("android-")) {
+        if (contact.phoneOrId.startsWith("android-") || contact.secureId != null) {
             // Pre-call health check for direct calls too
             val ws = com.securecall.app.net.WebSocketService.instance
             if (ws == null || !ws.isConnected) {
@@ -492,11 +592,15 @@ class ContactsFragment : Fragment() {
                 android.widget.Toast.makeText(requireContext(), "Reconnecting to server, please try again", android.widget.Toast.LENGTH_SHORT).show()
                 return
             }
-            // SecureCall ID — call directly
-            Log.d(TAG, "Starting call to: ${contact.name}")
+            // SecureCall ID — call directly (use secureId if contact has phone + secureId)
+            val callTarget = contact.secureId ?: contact.phoneOrId
+            Log.d(TAG, "Starting call to: ${contact.name} via SecureID=$callTarget")
             val intent = Intent(requireContext(), CallActivity::class.java).apply {
                 putExtra("callerName", contact.name)
-                putExtra("phoneNumber", contact.phoneOrId)
+                putExtra("phoneNumber", callTarget)
+                if (!contact.phoneOrId.startsWith("android-")) {
+                    putExtra("originalPhone", contact.phoneOrId)
+                }
             }
             startActivity(intent)
         } else {

@@ -29,6 +29,43 @@ object ContactRepository {
         persist(context, all)
     }
 
+    fun update(context: Context, contact: Contact) {
+        val all = getAll(context).map { if (it.id == contact.id) contact else it }
+        persist(context, all)
+    }
+
+    fun replaceAll(context: Context, contacts: List<Contact>) {
+        persist(context, contacts)
+    }
+
+    fun deleteByPhoneOrId(context: Context, phoneOrId: String) {
+        val all = getAll(context).filter { it.phoneOrId != phoneOrId }
+        persist(context, all)
+    }
+
+    /** Replace oldClientId with newClientId in all contacts. Returns number of contacts updated. */
+    fun replaceSecureId(context: Context, oldClientId: String, newClientId: String): Int {
+        val all = getAll(context)
+        var count = 0
+        val updated = all.mapNotNull { contact ->
+            when {
+                // Contact saved by old SecureID directly
+                contact.phoneOrId == oldClientId -> {
+                    count++
+                    contact.copy(phoneOrId = newClientId)
+                }
+                // Contact has old secureId as metadata
+                contact.secureId == oldClientId -> {
+                    count++
+                    contact.copy(secureId = newClientId)
+                }
+                else -> contact
+            }
+        }
+        if (count > 0) persist(context, updated)
+        return count
+    }
+
     private fun persist(context: Context, contacts: List<Contact>) {
         val arr = JSONArray()
         contacts.forEach { arr.put(it.toJson()) }

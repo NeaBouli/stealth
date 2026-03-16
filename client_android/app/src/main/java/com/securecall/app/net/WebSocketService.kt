@@ -725,6 +725,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 cb?.invoke(registered)
                 return
             }
+            if (obj.optString("type") == "SECUREID_CHANGED") {
+                handleSecureIdChanged(obj)
+                return
+            }
             if (obj.optString("type") == "ONLINE_STATUS_RESPONSE") {
                 val statusesObj = obj.optJSONObject("statuses")
                 val statuses = mutableMapOf<String, Boolean>()
@@ -841,6 +845,23 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 _onCallEnded?.invoke(sessionId)
             }
         } catch (_: Exception) {}
+    }
+
+    /** Handle SECUREID_CHANGED: a device reinstalled and got a new SecureID for the same phone number. */
+    private fun handleSecureIdChanged(obj: org.json.JSONObject) {
+        val phoneNumber = obj.optString("phoneNumber", "")
+        val oldClientId = obj.optString("oldClientId", "")
+        val newClientId = obj.optString("newClientId", "")
+        Log.d("WS_SERVICE", "SECUREID_CHANGED: phone=$phoneNumber, old=$oldClientId, new=$newClientId")
+        if (oldClientId.isEmpty() || newClientId.isEmpty()) return
+
+        val ctx = applicationContext
+        // Replace oldClientId with newClientId in local contacts
+        val updated = com.securecall.app.data.ContactRepository.replaceSecureId(ctx, oldClientId, newClientId)
+        Log.d("WS_SERVICE", "SECUREID_CHANGED: updated $updated contacts (old=$oldClientId -> new=$newClientId)")
+
+        // Invalidate contacts cache so UI refreshes
+        com.securecall.app.ui.ContactsFragment.invalidateCache()
     }
 
     // BACKEND-24: GHOST_ACK handling

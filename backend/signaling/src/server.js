@@ -396,6 +396,34 @@ wss.on("connection", (ws, req) => {
             break;
           }
         }
+
+        // Check if this phone was previously registered with a DIFFERENT clientId
+        // (e.g., app reinstall, data clear → new clientId for same phone)
+        const oldClientId = phoneNumbers.get(phone);
+        if (oldClientId && oldClientId !== msg.clientId) {
+          console.log("[REGISTER] SecureID changed for phone", phone, ":", oldClientId, "->", msg.clientId);
+          // Broadcast SECUREID_CHANGED to all connected clients
+          const notification = JSON.stringify({
+            type: "SECUREID_CHANGED",
+            phoneNumber: phone,
+            oldClientId: oldClientId,
+            newClientId: msg.clientId
+          });
+          for (const [, c] of clients) {
+            if (c.ws.readyState === WebSocket.OPEN && c.clientId && c.clientId !== msg.clientId) {
+              try { c.ws.send(notification); } catch (e) {}
+            }
+          }
+          // Clean up old clientId's connection mapping if still active
+          if (clientIds.has(oldClientId) && clientIds.get(oldClientId) !== connId) {
+            const oldConnId = clientIds.get(oldClientId);
+            const oldConn = clients.get(oldConnId);
+            if (oldConn) {
+              try { oldConn.ws.close(1000, "SecureID replaced"); } catch (e) {}
+            }
+          }
+        }
+
         phoneNumbers.set(phone, msg.clientId);
         phoneHashes.set(hashPhone(phone), msg.clientId);
         client.phoneNumber = phone;
