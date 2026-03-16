@@ -63,6 +63,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private var _batchPhoneLookupCallback: ((Map<String, Pair<Boolean, String>>) -> Unit)? = null
     // Online status callback: returns map of phone → online (true/false)
     private var _onlineStatusCallback: ((Map<String, Boolean>) -> Unit)? = null
+    // Activation code callback: returns (success, tier, error)
+    private var _activateCodeCallback: ((Boolean, String, String) -> Unit)? = null
 
     fun getCurrentSessionId(): String? = _currentSessionId
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
@@ -244,6 +246,32 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 callback(emptyMap())
             }
         }, 5000)
+    }
+
+    /** Send activation code to server for validation. Returns (success, tier, error). */
+    fun activateCode(code: String, callback: (success: Boolean, tier: String, error: String) -> Unit) {
+        _activateCodeCallback = callback
+        val json = org.json.JSONObject().apply {
+            put("type", "ACTIVATE_CODE")
+            put("code", code.trim().uppercase())
+        }.toString()
+        val sent = client?.send(json) ?: false
+        if (!sent) {
+            Log.w("WS_SERVICE", "ACTIVATE_CODE failed to send")
+            _activateCodeCallback = null
+            callback(false, "", "not_connected")
+            return
+        }
+        Log.d("WS_SERVICE", "ACTIVATE_CODE sent: ${code.trim().uppercase()}")
+        // Timeout: 10 seconds
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            val pending = _activateCodeCallback
+            if (pending === callback) {
+                Log.w("WS_SERVICE", "ACTIVATE_CODE timeout")
+                _activateCodeCallback = null
+                callback(false, "", "timeout")
+            }
+        }, 10000)
     }
 
     // ===================== HeartbeatClient.Listener =====================
@@ -723,6 +751,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 val cb = _batchPhoneLookupCallback
                 _batchPhoneLookupCallback = null
                 cb?.invoke(registered)
+                return
+            }
+            if (obj.optString("type") == "ACTIVATE_CODE_RESULT") {
+                val success = obj.optBoolean("success", false)
+                val tier = obj.optString("tier", "")
+                val error = obj.optString("error", "")
+                Log.d("WS_SERVICE", "ACTIVATE_CODE_RESULT: success=$success, tier=$tier, error=$error")
+                val cb = _activateCodeCallback
+                _activateCodeCallback = null
+                cb?.invoke(success, tier, error)
                 return
             }
             if (obj.optString("type") == "SECUREID_CHANGED") {

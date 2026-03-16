@@ -531,7 +531,10 @@ class ContactsFragment : Fragment() {
         }
     }
 
-    private fun isFreeTier(): Boolean = BuildConfig.FLAVOR == "free"
+    private fun isFreeTier(): Boolean {
+        val ctx = context ?: return BuildConfig.FLAVOR == "free"
+        return com.securecall.app.config.TierManager.isFreeTier(ctx)
+    }
 
     private fun sha256(input: String): String {
         val digest = java.security.MessageDigest.getInstance("SHA-256")

@@ -53,6 +53,9 @@ public class MainActivity extends AppCompatActivity {
         // Initialize flavor-specific FeatureProvider
         AppInit.INSTANCE.init(this);
 
+        // Apply activated tier override (activation code unlock)
+        com.securecall.app.config.TierManager.INSTANCE.applyTier(this);
+
         // Security checks at startup
         runSecurityChecks();
 

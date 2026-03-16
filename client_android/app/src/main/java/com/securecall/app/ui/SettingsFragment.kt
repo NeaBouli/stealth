@@ -12,14 +12,16 @@ import androidx.preference.SwitchPreferenceCompat
 import com.securecall.app.BuildConfig
 import com.securecall.app.R
 import com.securecall.app.config.FeatureProviderRegistry
+import com.securecall.app.config.TierManager
 
 class SettingsFragment : PreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.preferences, rootKey)
 
-        // Tier display
-        findPreference<Preference>("pref_tier")?.summary = BuildConfig.TIER
+        // Tier display — use TierManager for effective tier
+        val effectiveTier = TierManager.getCurrentTier(requireContext())
+        findPreference<Preference>("pref_tier")?.summary = effectiveTier
 
         // Version
         findPreference<Preference>("pref_version")?.summary = BuildConfig.VERSION_NAME
@@ -37,7 +39,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-        // Security features (read-only display based on tier)
+        // Security features (read-only display based on effective tier)
         val fp = try { FeatureProviderRegistry.get() } catch (_: Exception) { null }
         if (fp != null) {
             findPreference<Preference>("pref_cert_pinning")?.summary =
@@ -60,6 +62,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // Upgrade button (only for FREE tier)
         findPreference<Preference>("pref_upgrade")?.isVisible = BuildConfig.BILLING_ENABLED
+
+        // Activation code section
+        configureActivationCode(effectiveTier)
 
         // SecureCall ID (tap to copy) — read fresh from SharedPreferences each time
         val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
@@ -144,6 +149,87 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun openUrl(url: String) {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+
+    private fun configureActivationCode(effectiveTier: String) {
+        val isUpgraded = effectiveTier != "FREE"
+        val codePref = findPreference<EditTextPreference>("pref_activation_code")
+        val activateButton = findPreference<Preference>("pref_activate_button")
+
+        if (isUpgraded) {
+            // Already Pro/Premium — hide input, show status
+            codePref?.isVisible = false
+            activateButton?.apply {
+                title = getString(R.string.pref_plan_active, effectiveTier)
+                isEnabled = false
+                summary = null
+            }
+        } else {
+            // Free tier — show activation code input
+            codePref?.isVisible = true
+            codePref?.setOnPreferenceChangeListener { _, _ -> true }
+
+            activateButton?.apply {
+                title = getString(R.string.pref_activate)
+                isEnabled = true
+                summary = getString(R.string.pref_activation_code_summary)
+                setOnPreferenceClickListener {
+                    val code = codePref?.text?.trim() ?: ""
+                    if (code.isEmpty()) {
+                        android.widget.Toast.makeText(requireContext(), "Enter an activation code first", android.widget.Toast.LENGTH_SHORT).show()
+                        return@setOnPreferenceClickListener true
+                    }
+                    submitActivationCode(code)
+                    true
+                }
+            }
+        }
+    }
+
+    private fun submitActivationCode(code: String) {
+        val ctx = requireContext()
+        val ws = com.securecall.app.net.WebSocketService.instance
+        if (ws == null || !ws.isConnected) {
+            android.widget.Toast.makeText(ctx, getString(R.string.activation_error_connection), android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Disable button during request
+        findPreference<Preference>("pref_activate_button")?.apply {
+            isEnabled = false
+            summary = "Validating\u2026"
+        }
+
+        ws.activateCode(code) { success, tier, error ->
+            activity?.runOnUiThread {
+                if (!isAdded) return@runOnUiThread
+                if (success && tier.isNotEmpty()) {
+                    // Store activated tier
+                    TierManager.setActivatedTier(ctx, tier)
+                    android.widget.Toast.makeText(ctx, getString(R.string.activation_success, tier.uppercase()), android.widget.Toast.LENGTH_LONG).show()
+                    // Restart app to apply new tier
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        val intent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
+                        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        ctx.startActivity(intent)
+                        Runtime.getRuntime().exit(0)
+                    }, 1500)
+                } else {
+                    // Failed
+                    val msg = when (error) {
+                        "invalid" -> getString(R.string.activation_error_invalid)
+                        "exhausted" -> getString(R.string.activation_error_exhausted)
+                        "timeout", "not_connected" -> getString(R.string.activation_error_connection)
+                        else -> "Activation failed: $error"
+                    }
+                    android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
+                    findPreference<Preference>("pref_activate_button")?.apply {
+                        isEnabled = true
+                        summary = getString(R.string.pref_activation_code_summary)
+                    }
+                }
+            }
+        }
     }
 
     /**

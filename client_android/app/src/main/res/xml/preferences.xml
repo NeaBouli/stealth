@@ -14,6 +14,19 @@
             android:title="@string/upgrade_to_pro"
             android:icon="@drawable/ic_add" />
 
+        <EditTextPreference
+            android:key="pref_activation_code"
+            android:title="@string/pref_activation_code"
+            android:summary="@string/pref_activation_code_summary"
+            android:dialogTitle="@string/pref_activation_code_dialog"
+            android:inputType="textCapCharacters"
+            android:icon="@drawable/ic_lock" />
+
+        <Preference
+            android:key="pref_activate_button"
+            android:title="@string/pref_activate"
+            android:icon="@drawable/ic_shield" />
+
         <Preference
             android:key="pref_client_id"
             android:title="@string/settings_client_id"

@@ -3,6 +3,8 @@ const http = require("http");
 const WebSocket = require("ws");
 const { v4: uuidv4 } = require("uuid");
 const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
@@ -81,6 +83,32 @@ const fcmTokens = new Map();
 const phoneNumbers = new Map();
 // SHA-256(normalized phone) -> clientId (for privacy-preserving lookups)
 const phoneHashes = new Map();
+
+// --- Activation Codes ---
+const CODES_FILE = path.join(__dirname, "..", "data", "activation_codes.json");
+let activationCodes = [];
+
+function loadActivationCodes() {
+  try {
+    const raw = fs.readFileSync(CODES_FILE, "utf8");
+    const data = JSON.parse(raw);
+    activationCodes = data.codes || [];
+    console.log(`[ACTIVATION] Loaded ${activationCodes.length} activation codes`);
+  } catch (e) {
+    console.warn("[ACTIVATION] Could not load activation_codes.json:", e.message);
+    activationCodes = [];
+  }
+}
+
+function saveActivationCodes() {
+  try {
+    fs.writeFileSync(CODES_FILE, JSON.stringify({ codes: activationCodes }, null, 2), "utf8");
+  } catch (e) {
+    console.error("[ACTIVATION] Failed to save activation_codes.json:", e.message);
+  }
+}
+
+loadActivationCodes();
 
 function normalizePhone(num) {
   if (typeof num !== "string") return "";
@@ -933,6 +961,52 @@ wss.on("connection", (ws, req) => {
         statuses[phone] = !!(resolvedClientId && clientIds.has(resolvedClientId));
       }
       return ws.send(JSON.stringify({ type: "ONLINE_STATUS_RESPONSE", statuses }));
+    }
+
+    // ===========================
+    // ACTIVATE_CODE — Validate activation code and return tier
+    // ===========================
+    if (msg.type === "ACTIVATE_CODE") {
+      const code = (msg.code || "").trim().toUpperCase();
+      if (!code) {
+        return ws.send(JSON.stringify({
+          type: "ACTIVATE_CODE_RESULT",
+          success: false,
+          error: "missing_code"
+        }));
+      }
+
+      const entry = activationCodes.find(c => c.code === code);
+      if (!entry) {
+        console.log("[ACTIVATION] Invalid code attempted:", code);
+        return ws.send(JSON.stringify({
+          type: "ACTIVATE_CODE_RESULT",
+          success: false,
+          error: "invalid"
+        }));
+      }
+
+      if (entry.currentUses >= entry.maxUses) {
+        console.log("[ACTIVATION] Code exhausted:", code);
+        return ws.send(JSON.stringify({
+          type: "ACTIVATE_CODE_RESULT",
+          success: false,
+          error: "exhausted"
+        }));
+      }
+
+      // Success — increment usage and save
+      entry.currentUses++;
+      saveActivationCodes();
+      const myClientId = getClientId(connId);
+      console.log("[ACTIVATION] Code redeemed:", code, "-> tier:", entry.tier, "by:", myClientId, "(uses:", entry.currentUses + "/" + entry.maxUses + ")");
+
+      return ws.send(JSON.stringify({
+        type: "ACTIVATE_CODE_RESULT",
+        success: true,
+        tier: entry.tier,
+        code: code
+      }));
     }
 
     // HEARTBEAT — client keepalive, reply so client's onMessage updates lastSeen
