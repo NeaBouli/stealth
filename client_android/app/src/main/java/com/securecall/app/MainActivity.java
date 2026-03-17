@@ -55,6 +55,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Apply activated tier override (activation code / IFR lock unlock)
         com.securecall.app.config.TierManager.INSTANCE.applyTier(this);
+
+        // FLAG_SECURE: prevent screenshots based on tier/preference
+        applyFlagSecure();
         // Re-verify IFR lock if due (every 24h)
         com.securecall.app.config.IfrLockManager.INSTANCE.reverifyIfNeeded(this);
 
@@ -209,6 +212,27 @@ public class MainActivity extends AppCompatActivity {
         } else if (requestCode == REQUEST_PHONE_PERMISSION) {
             // Re-register with server (with or without phone number)
             checkAndPromptPhoneNumber();
+        }
+    }
+
+    /** Apply FLAG_SECURE to prevent screenshots based on tier and settings. */
+    private void applyFlagSecure() {
+        try {
+            String tier = com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this);
+            boolean isPremium = "PREMIUM".equals(tier);
+            boolean isPro = "PRO".equals(tier);
+            SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+            boolean blockScreenshots = prefs.getBoolean("pref_block_screenshots", isPremium || isPro);
+
+            if (isPremium || blockScreenshots) {
+                getWindow().setFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                    android.view.WindowManager.LayoutParams.FLAG_SECURE);
+            } else {
+                getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+            }
+        } catch (Exception e) {
+            android.util.Log.w("MainActivity", "Failed to apply FLAG_SECURE", e);
         }
     }
 

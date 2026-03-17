@@ -141,7 +141,8 @@ let ifrTokenContracts = [];
 
 for (const url of ETH_RPC_URLS) {
   try {
-    const provider = new ethers.JsonRpcProvider(url, undefined, { staticNetwork: true });
+    // Don't use staticNetwork on cloud platforms — DNS resolution may differ
+    const provider = new ethers.JsonRpcProvider(url);
     const tokenContract = new ethers.Contract(IFR_TOKEN_ADDRESS, IFR_TOKEN_ABI, provider);
     ifrTokenContracts.push({ contract: tokenContract, url });
   } catch (e) {
@@ -177,7 +178,7 @@ async function verifyIfrLock(walletAddress) {
 
   for (const { contract, url } of ifrTokenContracts) {
     try {
-      const timeoutMs = 5000;
+      const timeoutMs = 10000;
       const withTimeout = (p) => Promise.race([p, new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs))]);
 
       const balance = await withTimeout(contract.balanceOf(walletAddress));

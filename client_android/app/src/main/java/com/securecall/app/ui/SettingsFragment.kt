@@ -372,21 +372,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         if (hasPermission) {
                             com.securecall.app.vpn.VpnController.start(ctx)
                         }
-                        // If not, VPN starts after permission is granted in onActivityResult
                     } else {
                         com.securecall.app.vpn.VpnController.stop(ctx)
                     }
+                    // Update status text immediately
+                    updateVpnStatus(ctx, true)
                     true
                 }
             }
         }
 
-        findPreference<Preference>("pref_vpn_status")?.summary = when {
-            !isPremium -> getString(R.string.pref_premium_feature)
-            com.securecall.app.vpn.GhostVpnService.isActive -> "Connected: ${com.securecall.app.vpn.GhostVpnService.connectedServer ?: "Unknown"}"
-            com.securecall.app.vpn.VpnController.isEnabled(ctx) -> "Enabled but not connected"
-            else -> "Disconnected"
-        }
+        updateVpnStatus(ctx, isPremium)
 
         findPreference<Preference>("pref_vpn_config")?.apply {
             if (!isPremium) {
@@ -420,6 +416,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     true
                 }
             }
+        }
+    }
+
+    private fun updateVpnStatus(ctx: android.content.Context, isPremium: Boolean) {
+        findPreference<Preference>("pref_vpn_status")?.summary = when {
+            !isPremium -> getString(R.string.pref_premium_feature)
+            com.securecall.app.vpn.GhostVpnService.isActive ->
+                "Connected: ${com.securecall.app.vpn.GhostVpnService.connectedServer ?: "Unknown"}"
+            com.securecall.app.vpn.VpnController.isEnabled(ctx) && com.securecall.app.vpn.VpnController.hasConfig(ctx) ->
+                "Enabled — waiting for connection"
+            com.securecall.app.vpn.VpnController.isEnabled(ctx) ->
+                "Enabled — no configuration"
+            else -> "VPN disabled"
         }
     }
 
