@@ -16,6 +16,12 @@ import com.securecall.app.config.TierManager
 
 class SettingsFragment : PreferenceFragmentCompat() {
 
+    // Stealth-delete: 5-tap rapid trigger
+    private var resetTapCount = 0
+    private var resetFirstTapTime = 0L
+    private val RESET_TAP_WINDOW = 5000L // 5 seconds
+    private val RESET_TAP_TARGET = 5
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.preferences, rootKey)
 
@@ -131,6 +137,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // Licenses placeholder
         findPreference<Preference>("pref_licenses")?.summary = "Apache 2.0, MIT, BSD"
+
+        // Stealth-delete: 5-tap rapid trigger on "Reset App"
+        findPreference<Preference>("pref_reset_app")?.setOnPreferenceClickListener {
+            handleResetTap()
+            true
+        }
+    }
+
+    override fun onViewCreated(view: android.view.View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // Add bottom padding so last preference item scrolls above bottom nav bar
+        listView.clipToPadding = false
+        listView.setPadding(listView.paddingLeft, listView.paddingTop, listView.paddingRight, 300)
     }
 
     override fun onResume() {
@@ -243,6 +262,47 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
             }
         }
+    }
+
+    @android.annotation.SuppressLint("MissingPermission")
+    private fun handleResetTap() {
+        val now = System.currentTimeMillis()
+        if (now - resetFirstTapTime > RESET_TAP_WINDOW) {
+            resetTapCount = 0
+            resetFirstTapTime = now
+        }
+        resetTapCount++
+        android.util.Log.d("STEALTH_DELETE", "Reset tap #$resetTapCount (window=${now - resetFirstTapTime}ms)")
+
+        val ctx = context ?: return
+        try {
+            val vibrator = ctx.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? android.os.Vibrator
+            when (resetTapCount) {
+                3 -> vibrator?.vibrate(50)
+                4 -> vibrator?.vibrate(longArrayOf(0, 40, 60, 40), -1)
+                RESET_TAP_TARGET -> {
+                    vibrator?.vibrate(150)
+                    showStealthDeleteConfirmation()
+                    resetTapCount = 0
+                    return
+                }
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun showStealthDeleteConfirmation() {
+        val ctx = context ?: return
+        android.app.AlertDialog.Builder(ctx)
+            .setTitle(getString(R.string.stealth_delete_title))
+            .setMessage(getString(R.string.stealth_delete_message))
+            .setPositiveButton(getString(R.string.stealth_delete_confirm)) { _, _ ->
+                com.securecall.app.security.StealthDeleteManager.execute(ctx)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+            // Make the delete button red
+            .getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+            ?.setTextColor(android.graphics.Color.RED)
     }
 
     /**

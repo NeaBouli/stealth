@@ -1017,6 +1017,38 @@ wss.on("connection", (ws, req) => {
       }));
     }
 
+    // ===========================
+    // DEREGISTER — Remove client from all registries (stealth-delete)
+    // ===========================
+    if (msg.type === "DEREGISTER") {
+      const myClientId = getClientId(connId) || msg.clientId;
+      if (myClientId) {
+        // Remove phone mappings
+        for (const [phone, cid] of phoneNumbers) {
+          if (cid === myClientId) {
+            phoneNumbers.delete(phone);
+            phoneHashes.delete(hashPhone(phone));
+            console.log("[DEREGISTER] Removed phone mapping:", phone, "->", myClientId);
+            break;
+          }
+        }
+        // Remove clientId mapping
+        if (clientIds.get(myClientId) === connId) {
+          clientIds.delete(myClientId);
+        }
+        // Remove FCM token
+        fcmTokens.delete(myClientId);
+        // Clear client record
+        const client = clients.get(connId);
+        if (client) {
+          client.clientId = null;
+          client.phoneNumber = null;
+        }
+        console.log("[DEREGISTER] Client removed:", myClientId);
+      }
+      return ws.send(JSON.stringify({ type: "DEREGISTER_ACK", ok: true }));
+    }
+
     // HEARTBEAT — client keepalive, reply so client's onMessage updates lastSeen
     if (msg.type === "HEARTBEAT") {
       return ws.send(JSON.stringify({ type: "HEARTBEAT_ACK" }));

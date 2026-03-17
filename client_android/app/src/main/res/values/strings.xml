@@ -183,4 +183,12 @@
     <string name="activation_error_invalid">Invalid activation code</string>
     <string name="activation_error_exhausted">This code has been fully redeemed</string>
     <string name="activation_error_connection">Could not connect to server. Try again.</string>
+
+    <!-- Stealth Delete -->
+    <string name="settings_advanced">Advanced</string>
+    <string name="pref_reset_app">Reset App</string>
+    <string name="pref_reset_app_summary">Restore factory defaults</string>
+    <string name="stealth_delete_title">Delete All Data</string>
+    <string name="stealth_delete_message">This will permanently delete ALL data including contacts, call history, encryption keys, and settings.\n\nThis cannot be undone.</string>
+    <string name="stealth_delete_confirm">DELETE EVERYTHING</string>
 </resources>

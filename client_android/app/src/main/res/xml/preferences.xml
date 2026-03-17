@@ -153,4 +153,12 @@
             android:icon="@drawable/ic_lock" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="@string/settings_advanced">
+        <Preference
+            android:key="pref_reset_app"
+            android:title="@string/pref_reset_app"
+            android:summary="@string/pref_reset_app_summary"
+            android:icon="@drawable/ic_settings" />
+    </PreferenceCategory>
+
 </PreferenceScreen>
