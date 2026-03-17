@@ -504,10 +504,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val wallet = com.securecall.app.config.IfrLockManager.getWalletAddress(ctx)
         val ifrTier = com.securecall.app.config.IfrLockManager.getIfrTier(ctx)
         val amount = com.securecall.app.config.IfrLockManager.getLockedAmount(ctx)
+        val method = com.securecall.app.config.IfrLockManager.getVerificationMethod(ctx)
+        val daysRemaining = com.securecall.app.config.IfrLockManager.getDaysRemaining(ctx)
 
-        // Status display
+        // Status display with expiration info
         findPreference<Preference>("pref_ifr_status")?.summary = when {
-            ifrTier != null -> getString(R.string.ifr_status_active, amount, ifrTier.uppercase())
+            ifrTier != null && method == com.securecall.app.config.IfrLockManager.METHOD_WALLETCONNECT ->
+                getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (lifetime)"
+            ifrTier != null && daysRemaining > 0 ->
+                getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (expires in $daysRemaining days)"
+            ifrTier != null && daysRemaining == 0 ->
+                getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (expiring today!)"
             wallet != null -> "Wallet: ${wallet.take(6)}...${wallet.takeLast(4)}"
             else -> getString(R.string.ifr_status_none) + "\n" + getString(R.string.ifr_threshold_info)
         }
@@ -543,9 +550,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        // WalletConnect placeholder
+        // WalletConnect placeholder — show "Confirm for lifetime" if manual wallet active
         findPreference<Preference>("pref_ifr_walletconnect")?.apply {
             isEnabled = false
+            summary = if (ifrTier != null && method == com.securecall.app.config.IfrLockManager.METHOD_MANUAL) {
+                "Confirm with WalletConnect for lifetime access (coming soon)"
+            } else {
+                getString(R.string.pref_ifr_walletconnect_summary)
+            }
         }
     }
 
