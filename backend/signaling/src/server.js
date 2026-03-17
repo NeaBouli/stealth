@@ -88,15 +88,23 @@ const phoneHashes = new Map();
 const CODES_FILE = path.join(__dirname, "..", "data", "activation_codes.json");
 let activationCodes = [];
 
+// Hardcoded fallback codes (used if file is missing on deployment platform)
+const FALLBACK_CODES = [
+  {code: "TEST-PRO1-CODE", tier: "pro", maxUses: 10, currentUses: 0},
+  {code: "TEST-PREM-CODE", tier: "premium", maxUses: 10, currentUses: 0},
+  {code: "BETA-PRO0-2026", tier: "pro", maxUses: 50, currentUses: 0},
+  {code: "BETA-PREM-2026", tier: "premium", maxUses: 25, currentUses: 0}
+];
+
 function loadActivationCodes() {
   try {
     const raw = fs.readFileSync(CODES_FILE, "utf8");
     const data = JSON.parse(raw);
     activationCodes = data.codes || [];
-    console.log(`[ACTIVATION] Loaded ${activationCodes.length} activation codes`);
+    console.log(`[ACTIVATION] Loaded ${activationCodes.length} activation codes from file`);
   } catch (e) {
-    console.warn("[ACTIVATION] Could not load activation_codes.json:", e.message);
-    activationCodes = [];
+    console.warn("[ACTIVATION] Could not load activation_codes.json:", e.message, "— using fallback codes");
+    activationCodes = FALLBACK_CODES.map(c => ({...c}));
   }
 }
 

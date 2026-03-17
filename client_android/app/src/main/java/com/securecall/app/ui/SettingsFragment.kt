@@ -60,8 +60,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-        // Upgrade button (only for FREE tier)
-        findPreference<Preference>("pref_upgrade")?.isVisible = BuildConfig.BILLING_ENABLED
+        // Upgrade button (only for FREE effective tier)
+        findPreference<Preference>("pref_upgrade")?.apply {
+            isVisible = TierManager.isFreeTier(requireContext())
+            setOnPreferenceClickListener {
+                try {
+                    val intent = Intent()
+                    intent.setClassName(requireContext().packageName, "com.securecall.app.billing.UpgradeActivity")
+                    startActivity(intent)
+                } catch (_: Exception) {
+                    android.widget.Toast.makeText(requireContext(), "Use an activation code below to upgrade", android.widget.Toast.LENGTH_SHORT).show()
+                }
+                true
+            }
+        }
 
         // Activation code section
         configureActivationCode(effectiveTier)
@@ -157,8 +169,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val activateButton = findPreference<Preference>("pref_activate_button")
 
         if (isUpgraded) {
-            // Already Pro/Premium — hide input, show status
+            // Already Pro/Premium — hide input, show status, hide upgrade button
             codePref?.isVisible = false
+            findPreference<Preference>("pref_upgrade")?.isVisible = false
             activateButton?.apply {
                 title = getString(R.string.pref_plan_active, effectiveTier)
                 isEnabled = false
