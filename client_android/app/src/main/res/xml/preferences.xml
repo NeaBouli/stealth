@@ -42,6 +42,33 @@
             android:icon="@drawable/ic_call" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="@string/settings_ifr_unlock">
+        <Preference
+            android:key="pref_ifr_status"
+            android:title="@string/pref_ifr_status"
+            android:selectable="false"
+            android:icon="@drawable/ic_shield" />
+
+        <EditTextPreference
+            android:key="pref_ifr_wallet"
+            android:title="@string/pref_ifr_wallet"
+            android:summary="@string/pref_ifr_wallet_summary"
+            android:dialogTitle="@string/pref_ifr_wallet_dialog"
+            android:inputType="text"
+            android:icon="@drawable/ic_lock" />
+
+        <Preference
+            android:key="pref_ifr_verify"
+            android:title="@string/pref_ifr_verify"
+            android:icon="@drawable/ic_shield" />
+
+        <Preference
+            android:key="pref_ifr_walletconnect"
+            android:title="@string/pref_ifr_walletconnect"
+            android:summary="@string/pref_ifr_walletconnect_summary"
+            android:icon="@drawable/ic_lock" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/settings_security">
         <Preference
             android:key="pref_cert_pinning"

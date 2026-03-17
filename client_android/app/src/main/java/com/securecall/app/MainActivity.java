@@ -53,8 +53,10 @@ public class MainActivity extends AppCompatActivity {
         // Initialize flavor-specific FeatureProvider
         AppInit.INSTANCE.init(this);
 
-        // Apply activated tier override (activation code unlock)
+        // Apply activated tier override (activation code / IFR lock unlock)
         com.securecall.app.config.TierManager.INSTANCE.applyTier(this);
+        // Re-verify IFR lock if due (every 24h)
+        com.securecall.app.config.IfrLockManager.INSTANCE.reverifyIfNeeded(this);
 
         // Security checks at startup
         runSecurityChecks();

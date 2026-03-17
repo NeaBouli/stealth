@@ -6,6 +6,8 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
+const { ethers } = require("ethers");
+
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
 const rateLimit = require("./rate_limit");
@@ -117,6 +119,80 @@ function saveActivationCodes() {
 }
 
 loadActivationCodes();
+
+// --- IFR Token Lock Verification ---
+const IFR_LOCK_ADDRESS = "0x769928aBDfc949D0718d8766a1C2d7dBb63954Eb";
+const IFR_DECIMALS = 9;
+const IFR_PRO_THRESHOLD = BigInt(1000) * BigInt(10 ** IFR_DECIMALS);
+const IFR_PREMIUM_THRESHOLD = BigInt(5000) * BigInt(10 ** IFR_DECIMALS);
+const ETH_RPC_URL = process.env.ETH_RPC_URL || "https://eth.llamarpc.com";
+
+const IFR_LOCK_ABI = [
+  "function isLocked(address user, uint256 minAmount) view returns (bool)",
+  "function lockedBalance(address user) view returns (uint256)"
+];
+
+let ethProvider = null;
+let ifrLockContract = null;
+
+try {
+  ethProvider = new ethers.JsonRpcProvider(ETH_RPC_URL);
+  ifrLockContract = new ethers.Contract(IFR_LOCK_ADDRESS, IFR_LOCK_ABI, ethProvider);
+  console.log("[IFR] Ethereum provider initialized:", ETH_RPC_URL);
+} catch (e) {
+  console.warn("[IFR] Failed to initialize Ethereum provider:", e.message);
+}
+
+// Wallet → clientId mappings (prevent multi-device abuse for manual entry)
+const WALLETS_FILE = path.join(__dirname, "..", "data", "wallets.json");
+let walletMappings = [];
+
+function loadWalletMappings() {
+  try {
+    const raw = fs.readFileSync(WALLETS_FILE, "utf8");
+    walletMappings = JSON.parse(raw).wallets || [];
+    console.log(`[IFR] Loaded ${walletMappings.length} wallet mappings`);
+  } catch (e) {
+    walletMappings = [];
+  }
+}
+
+function saveWalletMappings() {
+  try {
+    fs.writeFileSync(WALLETS_FILE, JSON.stringify({ wallets: walletMappings }, null, 2), "utf8");
+  } catch (_) {}
+}
+
+loadWalletMappings();
+
+async function verifyIfrLock(walletAddress) {
+  if (!ifrLockContract) return { success: false, error: "eth_unavailable" };
+  try {
+    // Check Premium threshold first (5000 IFR)
+    const isPremium = await ifrLockContract.isLocked(walletAddress, IFR_PREMIUM_THRESHOLD);
+    if (isPremium) {
+      const balance = await ifrLockContract.lockedBalance(walletAddress);
+      return { success: true, tier: "premium", lockedAmount: (balance / BigInt(10 ** IFR_DECIMALS)).toString() };
+    }
+    // Check Pro threshold (1000 IFR)
+    const isPro = await ifrLockContract.isLocked(walletAddress, IFR_PRO_THRESHOLD);
+    if (isPro) {
+      const balance = await ifrLockContract.lockedBalance(walletAddress);
+      return { success: true, tier: "pro", lockedAmount: (balance / BigInt(10 ** IFR_DECIMALS)).toString() };
+    }
+    // Check if any amount locked (for informative response)
+    try {
+      const balance = await ifrLockContract.lockedBalance(walletAddress);
+      const amount = (balance / BigInt(10 ** IFR_DECIMALS)).toString();
+      return { success: false, error: "insufficient", lockedAmount: amount };
+    } catch (_) {
+      return { success: false, error: "insufficient", lockedAmount: "0" };
+    }
+  } catch (e) {
+    console.error("[IFR] Verification failed:", e.message);
+    return { success: false, error: "contract_error" };
+  }
+}
 
 function normalizePhone(num) {
   if (typeof num !== "string") return "";
@@ -1015,6 +1091,69 @@ wss.on("connection", (ws, req) => {
         tier: entry.tier,
         code: code
       }));
+    }
+
+    // ===========================
+    // VERIFY_IFR_LOCK — Check IFR token lock status on Ethereum
+    // ===========================
+    if (msg.type === "VERIFY_IFR_LOCK") {
+      const wallet = (msg.walletAddress || "").trim();
+      if (!wallet || !wallet.match(/^0x[0-9a-fA-F]{40}$/)) {
+        return ws.send(JSON.stringify({
+          type: "IFR_LOCK_RESULT",
+          success: false,
+          error: "invalid_address"
+        }));
+      }
+
+      const myClientId = getClientId(connId);
+
+      // Check wallet→device mapping (manual entry: one wallet per device)
+      const existing = walletMappings.find(w => w.wallet.toLowerCase() === wallet.toLowerCase());
+      if (existing && existing.clientId !== myClientId) {
+        return ws.send(JSON.stringify({
+          type: "IFR_LOCK_RESULT",
+          success: false,
+          error: "wallet_bound",
+          boundTo: existing.clientId.substring(0, 8) + "..."
+        }));
+      }
+
+      console.log("[IFR] Verifying lock for wallet:", wallet, "client:", myClientId);
+
+      verifyIfrLock(wallet).then(result => {
+        if (result.success) {
+          // Store/update wallet mapping
+          const idx = walletMappings.findIndex(w => w.wallet.toLowerCase() === wallet.toLowerCase());
+          if (idx >= 0) {
+            walletMappings[idx].clientId = myClientId;
+            walletMappings[idx].tier = result.tier;
+            walletMappings[idx].lastVerified = Date.now();
+          } else {
+            walletMappings.push({ wallet: wallet.toLowerCase(), clientId: myClientId, tier: result.tier, lastVerified: Date.now() });
+          }
+          saveWalletMappings();
+          console.log("[IFR] Lock verified:", wallet, "->", result.tier, "(", result.lockedAmount, "IFR)");
+        }
+
+        ws.send(JSON.stringify({
+          type: "IFR_LOCK_RESULT",
+          success: result.success,
+          tier: result.tier || "",
+          lockedAmount: result.lockedAmount || "0",
+          walletAddress: wallet,
+          error: result.error || ""
+        }));
+      }).catch(e => {
+        console.error("[IFR] Verification error:", e.message);
+        ws.send(JSON.stringify({
+          type: "IFR_LOCK_RESULT",
+          success: false,
+          error: "server_error"
+        }));
+      });
+
+      return;
     }
 
     // ===========================
