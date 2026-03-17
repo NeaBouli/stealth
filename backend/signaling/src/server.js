@@ -123,35 +123,32 @@ loadActivationCodes();
 // FIX 3: Track code usage in-memory (survives within a deploy, resets on restart — acceptable for beta)
 const codeUsageCount = new Map(); // code -> usage count this session
 
-// --- IFR Token Lock Verification ---
-const IFR_LOCK_ADDRESS = "0x769928aBDfc949D0718d8766a1C2d7dBb63954Eb";
+// --- IFR Token Verification ---
+// Primary: check IFR ERC-20 token balance (balanceOf)
+// Optional: check IFRLock contract (isLocked) if deployed
+const IFR_TOKEN_ADDRESS = "0x77e99917Eca8539c62F509ED1193ac36580A6e7B";
+const IFR_LOCK_ADDRESS = process.env.IFR_LOCK_ADDRESS || "";
 const IFR_DECIMALS = 9;
 const IFR_PRO_THRESHOLD = BigInt(1000) * BigInt(10 ** IFR_DECIMALS);
 const IFR_PREMIUM_THRESHOLD = BigInt(5000) * BigInt(10 ** IFR_DECIMALS);
-// FIX 4: Multiple fallback RPC endpoints with 5-second timeout
 const ETH_RPC_URLS = (process.env.ETH_RPC_URL || "https://eth.llamarpc.com")
   .split(",")
   .concat(["https://rpc.ankr.com/eth", "https://cloudflare-eth.com"]);
 
-const IFR_LOCK_ABI = [
-  "function isLocked(address user, uint256 minAmount) view returns (bool)",
-  "function lockedBalance(address user) view returns (uint256)"
-];
+const IFR_TOKEN_ABI = ["function balanceOf(address) view returns (uint256)"];
 
-let ethProviders = [];
-let ifrLockContracts = [];
+let ifrTokenContracts = [];
 
 for (const url of ETH_RPC_URLS) {
   try {
     const provider = new ethers.JsonRpcProvider(url, undefined, { staticNetwork: true });
-    const contract = new ethers.Contract(IFR_LOCK_ADDRESS, IFR_LOCK_ABI, provider);
-    ethProviders.push(provider);
-    ifrLockContracts.push({ contract, url });
+    const tokenContract = new ethers.Contract(IFR_TOKEN_ADDRESS, IFR_TOKEN_ABI, provider);
+    ifrTokenContracts.push({ contract: tokenContract, url });
   } catch (e) {
     console.warn("[IFR] Failed to init provider:", url, e.message);
   }
 }
-console.log(`[IFR] Initialized ${ifrLockContracts.length} Ethereum RPC endpoints`);
+console.log(`[IFR] Initialized ${ifrTokenContracts.length} Ethereum RPC endpoints for IFR token ${IFR_TOKEN_ADDRESS}`);
 
 // Wallet → clientId mappings (prevent multi-device abuse for manual entry)
 const WALLETS_FILE = path.join(__dirname, "..", "data", "wallets.json");
@@ -176,30 +173,24 @@ function saveWalletMappings() {
 loadWalletMappings();
 
 async function verifyIfrLock(walletAddress) {
-  if (ifrLockContracts.length === 0) return { success: false, error: "eth_unavailable" };
+  if (ifrTokenContracts.length === 0) return { success: false, error: "eth_unavailable" };
 
-  // FIX 4: Try each RPC endpoint with 5-second timeout
-  for (const { contract, url } of ifrLockContracts) {
+  for (const { contract, url } of ifrTokenContracts) {
     try {
       const timeoutMs = 5000;
       const withTimeout = (p) => Promise.race([p, new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs))]);
 
-      const isPremium = await withTimeout(contract.isLocked(walletAddress, IFR_PREMIUM_THRESHOLD));
-      if (isPremium) {
-        const balance = await withTimeout(contract.lockedBalance(walletAddress));
-        return { success: true, tier: "premium", lockedAmount: (balance / BigInt(10 ** IFR_DECIMALS)).toString() };
+      const balance = await withTimeout(contract.balanceOf(walletAddress));
+      const humanAmount = (balance / BigInt(10 ** IFR_DECIMALS)).toString();
+      console.log("[IFR] balanceOf(" + walletAddress + ") = " + humanAmount + " IFR (via " + url + ")");
+
+      if (balance >= IFR_PREMIUM_THRESHOLD) {
+        return { success: true, tier: "premium", lockedAmount: humanAmount };
       }
-      const isPro = await withTimeout(contract.isLocked(walletAddress, IFR_PRO_THRESHOLD));
-      if (isPro) {
-        const balance = await withTimeout(contract.lockedBalance(walletAddress));
-        return { success: true, tier: "pro", lockedAmount: (balance / BigInt(10 ** IFR_DECIMALS)).toString() };
+      if (balance >= IFR_PRO_THRESHOLD) {
+        return { success: true, tier: "pro", lockedAmount: humanAmount };
       }
-      try {
-        const balance = await withTimeout(contract.lockedBalance(walletAddress));
-        return { success: false, error: "insufficient", lockedAmount: (balance / BigInt(10 ** IFR_DECIMALS)).toString() };
-      } catch (_) {
-        return { success: false, error: "insufficient", lockedAmount: "0" };
-      }
+      return { success: false, error: "insufficient", lockedAmount: humanAmount };
     } catch (e) {
       console.warn("[IFR] RPC failed (" + url + "):", e.message, "— trying next");
       continue;

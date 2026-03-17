@@ -194,13 +194,13 @@
     <string name="pref_ifr_walletconnect">Connect Wallet</string>
     <string name="pref_ifr_walletconnect_summary">WalletConnect (coming soon)</string>
     <string name="ifr_status_none">No wallet connected</string>
-    <string name="ifr_status_active">%1$s IFR locked \u2192 %2$s active</string>
-    <string name="ifr_status_insufficient">%1$s IFR locked (need 1,000 for Pro)</string>
-    <string name="ifr_verify_success">Verified! %1$s IFR locked \u2192 %2$s unlocked</string>
-    <string name="ifr_verify_insufficient">Insufficient IFR locked. Need 1,000 for Pro or 5,000 for Premium.</string>
+    <string name="ifr_status_active">%1$s IFR held \u2192 %2$s active</string>
+    <string name="ifr_status_insufficient">%1$s IFR held (need 1,000 for Pro)</string>
+    <string name="ifr_verify_success">Verified! %1$s IFR \u2192 %2$s unlocked</string>
+    <string name="ifr_verify_insufficient">Insufficient IFR balance. Need 1,000 for Pro or 5,000 for Premium.</string>
     <string name="ifr_verify_error">Verification failed: %1$s</string>
     <string name="ifr_wallet_bound">This wallet is already linked to another device</string>
-    <string name="ifr_threshold_info">1,000 IFR = Pro | 5,000 IFR = Premium</string>
+    <string name="ifr_threshold_info">Hold 1,000 IFR = Pro | 5,000 IFR = Premium</string>
 
     <!-- Anonymous Network (eSIM) -->
     <string name="settings_anon_network">Anonymous Network</string>
