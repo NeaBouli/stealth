@@ -135,6 +135,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
+        // eSIM + VPN (Premium only)
+        configureAnonymousNetwork(effectiveTier)
+        configureVpn(effectiveTier)
+
         // About section links
         setupAboutLinks()
 
@@ -265,6 +269,215 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
             }
         }
+    }
+
+    private fun configureAnonymousNetwork(effectiveTier: String) {
+        val isPremium = TierManager.isPremium(requireContext())
+        val ctx = requireContext()
+
+        findPreference<Preference>("pref_esim_setup")?.apply {
+            if (!isPremium) {
+                isEnabled = false
+                summary = getString(R.string.pref_premium_feature)
+            } else {
+                isEnabled = true
+                setOnPreferenceClickListener {
+                    try {
+                        val intent = android.content.Intent(android.provider.Settings.ACTION_NETWORK_OPERATOR_SETTINGS)
+                        startActivity(intent)
+                    } catch (_: Exception) {
+                        try {
+                            val intent = android.content.Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS)
+                            startActivity(intent)
+                        } catch (_: Exception) {
+                            android.widget.Toast.makeText(ctx, "eSIM settings not available on this device", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    true
+                }
+            }
+        }
+
+        findPreference<SwitchPreferenceCompat>("pref_esim_routing")?.apply {
+            if (!isPremium) {
+                isChecked = false
+                isEnabled = false
+                summary = getString(R.string.pref_premium_feature)
+            } else {
+                isChecked = com.securecall.app.net.NetworkManager.isEsimRoutingEnabled(ctx)
+                isEnabled = true
+                setOnPreferenceChangeListener { _, newValue ->
+                    com.securecall.app.net.NetworkManager.setEsimRouting(ctx, newValue as Boolean)
+                    true
+                }
+            }
+        }
+
+        findPreference<Preference>("pref_network_info")?.apply {
+            summary = com.securecall.app.net.NetworkManager.getActiveNetworkInfo(ctx)
+            if (com.securecall.app.net.NetworkManager.isBound()) {
+                summary = summary.toString() + " (bound)"
+            }
+        }
+
+        findPreference<ListPreference>("pref_network_transport")?.apply {
+            if (!isPremium) {
+                isEnabled = false
+                summary = getString(R.string.pref_premium_feature)
+            } else {
+                isEnabled = true
+                value = com.securecall.app.net.NetworkManager.getPreferredTransport(ctx)
+                setOnPreferenceChangeListener { _, newValue ->
+                    com.securecall.app.net.NetworkManager.setPreferredTransport(ctx, newValue as String)
+                    if (com.securecall.app.net.NetworkManager.isEsimRoutingEnabled(ctx)) {
+                        com.securecall.app.net.NetworkManager.bindToPreferredNetwork(ctx)
+                    }
+                    true
+                }
+            }
+        }
+    }
+
+    private fun configureVpn(effectiveTier: String) {
+        val isPremium = TierManager.isPremium(requireContext())
+        val ctx = requireContext()
+
+        findPreference<SwitchPreferenceCompat>("pref_vpn_enabled")?.apply {
+            if (!isPremium) {
+                isChecked = false
+                isEnabled = false
+                summary = getString(R.string.pref_premium_feature)
+            } else {
+                isChecked = com.securecall.app.vpn.VpnController.isEnabled(ctx)
+                isEnabled = true
+                setOnPreferenceChangeListener { _, newValue ->
+                    val enabled = newValue as Boolean
+                    com.securecall.app.vpn.VpnController.setEnabled(ctx, enabled)
+                    if (enabled) {
+                        if (!com.securecall.app.vpn.VpnController.hasConfig(ctx)) {
+                            android.widget.Toast.makeText(ctx, "Configure WireGuard first", android.widget.Toast.LENGTH_SHORT).show()
+                            return@setOnPreferenceChangeListener false
+                        }
+                        val hasPermission = com.securecall.app.vpn.VpnController.requestPermission(requireActivity())
+                        if (hasPermission) {
+                            com.securecall.app.vpn.VpnController.start(ctx)
+                        }
+                        // If not, VPN starts after permission is granted in onActivityResult
+                    } else {
+                        com.securecall.app.vpn.VpnController.stop(ctx)
+                    }
+                    true
+                }
+            }
+        }
+
+        findPreference<Preference>("pref_vpn_status")?.summary = when {
+            !isPremium -> getString(R.string.pref_premium_feature)
+            com.securecall.app.vpn.GhostVpnService.isActive -> "Connected: ${com.securecall.app.vpn.GhostVpnService.connectedServer ?: "Unknown"}"
+            com.securecall.app.vpn.VpnController.isEnabled(ctx) -> "Enabled but not connected"
+            else -> "Disconnected"
+        }
+
+        findPreference<Preference>("pref_vpn_config")?.apply {
+            if (!isPremium) {
+                isEnabled = false
+                summary = getString(R.string.pref_premium_feature)
+            } else {
+                isEnabled = true
+                if (com.securecall.app.vpn.VpnController.hasConfig(ctx)) {
+                    val prefs = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+                    summary = prefs.getString("vpn_server_endpoint", "") + ":" + prefs.getInt("vpn_server_port", 51820)
+                }
+                setOnPreferenceClickListener {
+                    showVpnConfigDialog()
+                    true
+                }
+            }
+        }
+
+        findPreference<SwitchPreferenceCompat>("pref_vpn_kill_switch")?.apply {
+            if (!isPremium) {
+                isChecked = false
+                isEnabled = false
+                summary = getString(R.string.pref_premium_feature)
+            } else {
+                isEnabled = true
+                isChecked = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+                    .getBoolean("vpn_kill_switch", false)
+                setOnPreferenceChangeListener { _, newValue ->
+                    ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+                        .edit().putBoolean("vpn_kill_switch", newValue as Boolean).apply()
+                    true
+                }
+            }
+        }
+    }
+
+    private fun showVpnConfigDialog() {
+        val ctx = requireContext()
+        val prefs = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+
+        val layout = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            val pad = resources.getDimensionPixelSize(R.dimen.spacing_lg)
+            setPadding(pad, pad, pad, 0)
+        }
+
+        val endpointInput = android.widget.EditText(ctx).apply {
+            hint = "Server endpoint (IP or hostname)"
+            setText(prefs.getString("vpn_server_endpoint", ""))
+        }
+        val portInput = android.widget.EditText(ctx).apply {
+            hint = "Port (default: 51820)"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(prefs.getInt("vpn_server_port", 51820).toString())
+        }
+        val pubKeyInput = android.widget.EditText(ctx).apply {
+            hint = "Server public key"
+            setText(prefs.getString("vpn_server_public_key", ""))
+        }
+        val privKeyInput = android.widget.EditText(ctx).apply {
+            hint = "Client private key"
+            setText(prefs.getString("vpn_client_private_key", ""))
+        }
+        val dnsInput = android.widget.EditText(ctx).apply {
+            hint = "DNS (default: 1.1.1.1)"
+            setText(prefs.getString("vpn_dns", "1.1.1.1"))
+        }
+
+        layout.addView(endpointInput)
+        layout.addView(portInput)
+        layout.addView(pubKeyInput)
+        layout.addView(privKeyInput)
+        layout.addView(dnsInput)
+
+        android.app.AlertDialog.Builder(ctx)
+            .setTitle("WireGuard Configuration")
+            .setView(layout)
+            .setPositiveButton("Save") { _, _ ->
+                val endpoint = endpointInput.text.toString().trim()
+                val port = portInput.text.toString().toIntOrNull() ?: 51820
+                val pubKey = pubKeyInput.text.toString().trim()
+                val privKey = privKeyInput.text.toString().trim()
+                val dns = dnsInput.text.toString().trim().ifEmpty { "1.1.1.1" }
+
+                if (endpoint.isEmpty()) {
+                    android.widget.Toast.makeText(ctx, "Server endpoint required", android.widget.Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                com.securecall.app.vpn.VpnController.saveConfig(ctx, endpoint, port, pubKey, privKey, dns, "0.0.0.0/0",
+                    prefs.getBoolean("vpn_kill_switch", false))
+                findPreference<Preference>("pref_vpn_config")?.summary = "$endpoint:$port"
+                android.widget.Toast.makeText(ctx, "VPN config saved", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setNeutralButton("Clear") { _, _ ->
+                com.securecall.app.vpn.VpnController.clearConfig(ctx)
+                findPreference<Preference>("pref_vpn_config")?.summary = getString(R.string.pref_vpn_config_summary)
+                android.widget.Toast.makeText(ctx, "VPN config cleared", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            .show()
     }
 
     private fun configureIfrUnlock(effectiveTier: String) {
