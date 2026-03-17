@@ -294,6 +294,103 @@
                 <strong>Note:</strong> Medium findings include items such as certificate pinning enforcement, additional input sanitization, logging hygiene improvements, and enhanced error message redaction. None represent active exploitability in the current deployment.
             </div>
 
+            <!-- DEVICE EMULATION TEST -->
+            <div class="section-break">Device Emulation Test &mdash; March 2026</div>
+
+            <h2>Full Cross-Device Emulation Test Results</h2>
+            <p>Comprehensive field test conducted on 3 physical Samsung devices across all 3 subscription tiers. Every feature tested systematically with pass/fail logging.</p>
+
+            <h3>Test Environment</h3>
+            <table>
+                <thead>
+                    <tr><th>Device</th><th>Model</th><th>Tier</th><th>Phone Number</th><th>Android</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>S10</td><td>Galaxy S10 (RF8N313QMFL)</td><td><strong>Premium</strong></td><td>+4915231794100</td><td>Android 12</td></tr>
+                    <tr><td>S7</td><td>Galaxy S7 (ce10160adc00152604)</td><td><strong>Free</strong></td><td>+4915203487046</td><td>Android 8</td></tr>
+                    <tr><td>Tab S4</td><td>Galaxy Tab S4 (ce12182c68644439037e)</td><td><strong>Pro</strong></td><td>+491752536807</td><td>Android 10</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Phase 1 &mdash; Connection Stability</h3>
+            <table>
+                <thead>
+                    <tr><th>Test</th><th>Description</th><th>Result</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1.1</td><td>All 3 devices connected with green "Connected" indicator</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>1.2</td><td>60-second monitoring &mdash; zero WebSocket disconnects on all devices</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>1.3</td><td>All devices registered with correct phone numbers on server</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                </tbody>
+            </table>
+
+            <h3>Phase 2 &mdash; Call Signaling</h3>
+            <table>
+                <thead>
+                    <tr><th>Test</th><th>Direction</th><th>Result</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>2.1</td><td>S10 &rarr; S7: Phone lookup, CALL_INVITE, ring, accept, audio, end</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>2.2</td><td>S7 &rarr; S10: Reverse direction</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>2.3</td><td>S10 &rarr; S4: Cross-tier (Premium &rarr; Pro)</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>2.4</td><td>S4 &rarr; S10: Reverse direction</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>2.5</td><td>S7 &rarr; S4: Cross-tier (Free &rarr; Pro), full signaling verified</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>2.6</td><td>S4 &rarr; S7: Reverse direction</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                </tbody>
+            </table>
+
+            <h3>Phase 3 &mdash; Call Edge Cases</h3>
+            <table>
+                <thead>
+                    <tr><th>Test</th><th>Scenario</th><th>Result</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>3.1</td><td>Caller hangup before answer: CALL_END forwarded, ringing stopped, clean teardown</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>3.2</td><td>Busy signal: CALL_BUSY sent when session already active, caller receives error</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>3.3</td><td>Rapid redial after hangup: New session created successfully</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                </tbody>
+            </table>
+
+            <h3>Phase 4 &mdash; Contacts &amp; Status</h3>
+            <table>
+                <thead>
+                    <tr><th>Test</th><th>Feature</th><th>Result</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>4.1</td><td>Contacts tab loads within 3 seconds</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>4.2</td><td>Zero duplicate contacts after deduplication</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>4.3</td><td>Online status dots visible (Pro/Premium), hidden (Free)</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                </tbody>
+            </table>
+
+            <h3>Phase 5 &mdash; Feature Gating</h3>
+            <table>
+                <thead>
+                    <tr><th>Test</th><th>Device &amp; Tier</th><th>Result</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>5.1</td><td>S10 (Premium): shows "PREMIUM", eSIM/VPN enabled, all security ON</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>5.2</td><td>S7 (Free): shows "FREE", eSIM/VPN locked with "PREMIUM feature"</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>5.3</td><td>S4 (Pro): shows "PRO", eSIM/VPN locked, anti-recording toggleable</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                </tbody>
+            </table>
+
+            <h3>Phase 6 &mdash; Special Features</h3>
+            <table>
+                <thead>
+                    <tr><th>Test</th><th>Feature</th><th>Result</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>6.1</td><td>Doze mode battery optimization dialog shown on first launch</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>6.2</td><td>Phone number normalization (international format)</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>6.3</td><td>PHONE_LOOKUP rate limiting (10/min anti-enumeration)</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                </tbody>
+            </table>
+
+            <div class="info-box info">
+                <strong>Test Date:</strong> March 17, 2026 &mdash; All tests conducted on physical devices over WiFi and mobile data connections. Server: Railway (wss://protective-healing-production.up.railway.app). Build: v0.2-beta. Commit: <code>543d77f</code>.
+            </div>
+
             <!-- FULL REPORT -->
             <div class="section-break">Full Report</div>
 
