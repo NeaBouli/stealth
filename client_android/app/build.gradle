@@ -128,6 +128,12 @@ android {
                 mappingFileUploadEnabled true
             }
             // Production server URLs (Railway + Metered.ca)
+            // FIX 10 — TODO: TURN credentials are hardcoded. Security risk: credentials in source code.
+            // Planned fix: fetch TURN credentials at runtime from the signaling server via
+            // a new GET /ice-servers endpoint (already exists, admin-only). Client should call
+            // this endpoint on each call initiation and use the returned credentials.
+            // This also enables credential rotation without app updates.
+            // Do NOT change the working TURN setup until runtime fetch is implemented.
             buildConfigField "String", "SIGNAL_WS_URL", "\"wss://protective-healing-production.up.railway.app/signal\""
             buildConfigField "String", "STUN_URL", "\"stun:stun.l.google.com:19302\""
             buildConfigField "String", "TURN_URL", "\"turn:a.relay.metered.ca:443?transport=tcp\""

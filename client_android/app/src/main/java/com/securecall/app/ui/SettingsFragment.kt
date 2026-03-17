@@ -275,8 +275,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val isPremium = TierManager.isPremium(requireContext())
         val ctx = requireContext()
 
+        // FIX 2: Hide eSIM options if device doesn't support eSIM
+        val hasEsim = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            val euicc = ctx.getSystemService(android.telephony.euicc.EuiccManager::class.java)
+            euicc?.isEnabled == true
+        } else false
+
         findPreference<Preference>("pref_esim_setup")?.apply {
-            if (!isPremium) {
+            if (!hasEsim) {
+                isVisible = false
+            } else if (!isPremium) {
                 isEnabled = false
                 summary = getString(R.string.pref_premium_feature)
             } else {
@@ -299,7 +307,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<SwitchPreferenceCompat>("pref_esim_routing")?.apply {
-            if (!isPremium) {
+            if (!hasEsim) {
+                isVisible = false
+            } else if (!isPremium) {
                 isChecked = false
                 isEnabled = false
                 summary = getString(R.string.pref_premium_feature)

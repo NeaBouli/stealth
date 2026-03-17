@@ -83,6 +83,9 @@ public class MainActivity extends AppCompatActivity {
             androidx.core.content.ContextCompat.startForegroundService(this, wsIntent);
         }
 
+        // FIX 7: Request battery optimization exemption for reliable call reception
+        requestBatteryOptimizationExemption();
+
         // Request phone number permission for server registration
         requestPhoneNumberPermission();
 
@@ -206,6 +209,28 @@ public class MainActivity extends AppCompatActivity {
         } else if (requestCode == REQUEST_PHONE_PERMISSION) {
             // Re-register with server (with or without phone number)
             checkAndPromptPhoneNumber();
+        }
+    }
+
+    /** FIX 7: Request battery optimization exemption so calls work with screen off. */
+    @android.annotation.SuppressLint("BatteryLife")
+    private void requestBatteryOptimizationExemption() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                // Only ask once — check if we already asked
+                SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+                if (!prefs.getBoolean("battery_opt_asked", false)) {
+                    prefs.edit().putBoolean("battery_opt_asked", true).apply();
+                    try {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                        intent.setData(android.net.Uri.parse("package:" + getPackageName()));
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        android.util.Log.w("MainActivity", "Battery optimization request failed", e);
+                    }
+                }
+            }
         }
     }
 

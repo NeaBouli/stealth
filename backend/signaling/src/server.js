@@ -120,28 +120,38 @@ function saveActivationCodes() {
 
 loadActivationCodes();
 
+// FIX 3: Track code usage in-memory (survives within a deploy, resets on restart — acceptable for beta)
+const codeUsageCount = new Map(); // code -> usage count this session
+
 // --- IFR Token Lock Verification ---
 const IFR_LOCK_ADDRESS = "0x769928aBDfc949D0718d8766a1C2d7dBb63954Eb";
 const IFR_DECIMALS = 9;
 const IFR_PRO_THRESHOLD = BigInt(1000) * BigInt(10 ** IFR_DECIMALS);
 const IFR_PREMIUM_THRESHOLD = BigInt(5000) * BigInt(10 ** IFR_DECIMALS);
-const ETH_RPC_URL = process.env.ETH_RPC_URL || "https://eth.llamarpc.com";
+// FIX 4: Multiple fallback RPC endpoints with 5-second timeout
+const ETH_RPC_URLS = (process.env.ETH_RPC_URL || "https://eth.llamarpc.com")
+  .split(",")
+  .concat(["https://rpc.ankr.com/eth", "https://cloudflare-eth.com"]);
 
 const IFR_LOCK_ABI = [
   "function isLocked(address user, uint256 minAmount) view returns (bool)",
   "function lockedBalance(address user) view returns (uint256)"
 ];
 
-let ethProvider = null;
-let ifrLockContract = null;
+let ethProviders = [];
+let ifrLockContracts = [];
 
-try {
-  ethProvider = new ethers.JsonRpcProvider(ETH_RPC_URL);
-  ifrLockContract = new ethers.Contract(IFR_LOCK_ADDRESS, IFR_LOCK_ABI, ethProvider);
-  console.log("[IFR] Ethereum provider initialized:", ETH_RPC_URL);
-} catch (e) {
-  console.warn("[IFR] Failed to initialize Ethereum provider:", e.message);
+for (const url of ETH_RPC_URLS) {
+  try {
+    const provider = new ethers.JsonRpcProvider(url, undefined, { staticNetwork: true });
+    const contract = new ethers.Contract(IFR_LOCK_ADDRESS, IFR_LOCK_ABI, provider);
+    ethProviders.push(provider);
+    ifrLockContracts.push({ contract, url });
+  } catch (e) {
+    console.warn("[IFR] Failed to init provider:", url, e.message);
+  }
 }
+console.log(`[IFR] Initialized ${ifrLockContracts.length} Ethereum RPC endpoints`);
 
 // Wallet → clientId mappings (prevent multi-device abuse for manual entry)
 const WALLETS_FILE = path.join(__dirname, "..", "data", "wallets.json");
@@ -166,32 +176,36 @@ function saveWalletMappings() {
 loadWalletMappings();
 
 async function verifyIfrLock(walletAddress) {
-  if (!ifrLockContract) return { success: false, error: "eth_unavailable" };
-  try {
-    // Check Premium threshold first (5000 IFR)
-    const isPremium = await ifrLockContract.isLocked(walletAddress, IFR_PREMIUM_THRESHOLD);
-    if (isPremium) {
-      const balance = await ifrLockContract.lockedBalance(walletAddress);
-      return { success: true, tier: "premium", lockedAmount: (balance / BigInt(10 ** IFR_DECIMALS)).toString() };
-    }
-    // Check Pro threshold (1000 IFR)
-    const isPro = await ifrLockContract.isLocked(walletAddress, IFR_PRO_THRESHOLD);
-    if (isPro) {
-      const balance = await ifrLockContract.lockedBalance(walletAddress);
-      return { success: true, tier: "pro", lockedAmount: (balance / BigInt(10 ** IFR_DECIMALS)).toString() };
-    }
-    // Check if any amount locked (for informative response)
+  if (ifrLockContracts.length === 0) return { success: false, error: "eth_unavailable" };
+
+  // FIX 4: Try each RPC endpoint with 5-second timeout
+  for (const { contract, url } of ifrLockContracts) {
     try {
-      const balance = await ifrLockContract.lockedBalance(walletAddress);
-      const amount = (balance / BigInt(10 ** IFR_DECIMALS)).toString();
-      return { success: false, error: "insufficient", lockedAmount: amount };
-    } catch (_) {
-      return { success: false, error: "insufficient", lockedAmount: "0" };
+      const timeoutMs = 5000;
+      const withTimeout = (p) => Promise.race([p, new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs))]);
+
+      const isPremium = await withTimeout(contract.isLocked(walletAddress, IFR_PREMIUM_THRESHOLD));
+      if (isPremium) {
+        const balance = await withTimeout(contract.lockedBalance(walletAddress));
+        return { success: true, tier: "premium", lockedAmount: (balance / BigInt(10 ** IFR_DECIMALS)).toString() };
+      }
+      const isPro = await withTimeout(contract.isLocked(walletAddress, IFR_PRO_THRESHOLD));
+      if (isPro) {
+        const balance = await withTimeout(contract.lockedBalance(walletAddress));
+        return { success: true, tier: "pro", lockedAmount: (balance / BigInt(10 ** IFR_DECIMALS)).toString() };
+      }
+      try {
+        const balance = await withTimeout(contract.lockedBalance(walletAddress));
+        return { success: false, error: "insufficient", lockedAmount: (balance / BigInt(10 ** IFR_DECIMALS)).toString() };
+      } catch (_) {
+        return { success: false, error: "insufficient", lockedAmount: "0" };
+      }
+    } catch (e) {
+      console.warn("[IFR] RPC failed (" + url + "):", e.message, "— trying next");
+      continue;
     }
-  } catch (e) {
-    console.error("[IFR] Verification failed:", e.message);
-    return { success: false, error: "contract_error" };
   }
+  return { success: false, error: "all_rpc_failed" };
 }
 
 function normalizePhone(num) {
@@ -706,6 +720,25 @@ wss.on("connection", (ws, req) => {
     }
 
     // ===========================
+    // CALL_BUSY — Callee is already in a call, forward to caller
+    // ===========================
+    if (msg.type === "CALL_BUSY") {
+      const myClientId = getClientId(connId);
+      const session = routingTable.get(msg.sessionId);
+      if (session) {
+        const callerClientId = session.from;
+        sendToClient(callerClientId, {
+          type: "CALL_BUSY",
+          sessionId: msg.sessionId,
+          from: myClientId
+        });
+        routingTable.delete(msg.sessionId);
+        console.log("[ROUTING] BUSY:", myClientId, "-> caller:", callerClientId, "session:", msg.sessionId);
+      }
+      return;
+    }
+
+    // ===========================
     // CALL_END — Anruf beenden + an Peer weiterleiten
     // ===========================
     if (msg.type === "CALL_END") {
@@ -979,8 +1012,26 @@ wss.on("connection", (ws, req) => {
 
     // ===========================
     // PHONE_LOOKUP — Resolve phone number to clientId
+    // FIX 8: Rate limited to 10 lookups/minute per client
     // ===========================
     if (msg.type === "PHONE_LOOKUP") {
+      // Rate limit: 10 per 60 seconds per connection
+      if (!clients.get(connId)._phoneLookups) clients.get(connId)._phoneLookups = [];
+      const lookups = clients.get(connId)._phoneLookups;
+      const now = Date.now();
+      // Prune old entries
+      while (lookups.length > 0 && now - lookups[0] > 60000) lookups.shift();
+      if (lookups.length >= 10) {
+        return ws.send(JSON.stringify({
+          type: "PHONE_LOOKUP_RESULT",
+          phoneNumber: msg.phoneNumber || "",
+          clientId: null,
+          online: false,
+          error: "rate_limited"
+        }));
+      }
+      lookups.push(now);
+
       if (!msg.phoneNumber || typeof msg.phoneNumber !== "string") {
         return ws.send(JSON.stringify({
           type: "PHONE_LOOKUP_RESULT",
@@ -1070,8 +1121,11 @@ wss.on("connection", (ws, req) => {
         }));
       }
 
-      if (entry.currentUses >= entry.maxUses) {
-        console.log("[ACTIVATION] Code exhausted:", code);
+      // FIX 3: Use in-memory usage tracking (file currentUses + session count)
+      const sessionUses = codeUsageCount.get(code) || 0;
+      const totalUses = entry.currentUses + sessionUses;
+      if (totalUses >= entry.maxUses) {
+        console.log("[ACTIVATION] Code exhausted:", code, "(total:", totalUses, "/", entry.maxUses, ")");
         return ws.send(JSON.stringify({
           type: "ACTIVATE_CODE_RESULT",
           success: false,
@@ -1079,9 +1133,8 @@ wss.on("connection", (ws, req) => {
         }));
       }
 
-      // Success — increment usage and save
-      entry.currentUses++;
-      saveActivationCodes();
+      // Success — increment in-memory usage (don't write to file — Railway filesystem is ephemeral)
+      codeUsageCount.set(code, sessionUses + 1);
       const myClientId = getClientId(connId);
       console.log("[ACTIVATION] Code redeemed:", code, "-> tier:", entry.tier, "by:", myClientId, "(uses:", entry.currentUses + "/" + entry.maxUses + ")");
 

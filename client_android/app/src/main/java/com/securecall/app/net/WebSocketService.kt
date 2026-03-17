@@ -835,6 +835,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     val sessionId = obj.optString("sessionId", "")
                     val from = obj.optString("from", "")
                     val callerPhone = obj.optString("callerPhone", "")
+                    // FIX 1: Busy signal — reject if already in active call
+                    if (_currentSessionId != null) {
+                        Log.d("WS_SERVICE", "BUSY: rejecting CALL_INVITE from $from (already in session $_currentSessionId)")
+                        val busyJson = """{"type":"CALL_BUSY","sessionId":"$sessionId","from":"${getLocalClientId() ?: ""}"}"""
+                        client?.send(busyJson)
+                        return
+                    }
                     val pubKeyB64 = obj.optString("pubKey", "")
                     if (pubKeyB64.isNotEmpty()) {
                         remotePubKey = android.util.Base64.decode(pubKeyB64, android.util.Base64.NO_WRAP)
@@ -843,6 +850,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     Log.d("WS_SERVICE", "Incoming CALL_INVITE, sessionId=$sessionId, from=$from, callerPhone=$callerPhone")
                     _currentSessionId = sessionId
                     _onIncomingCall?.invoke(sessionId, from, callerPhone)
+                }
+                "CALL_BUSY" -> {
+                    val sessionId = obj.optString("sessionId", "")
+                    Log.d("WS_SERVICE", "CALL_BUSY received for session $sessionId")
+                    _onCallError?.invoke("busy", "User is busy on another call")
                 }
                 "CALL_INVITE_ACK" -> {
                     val ok = obj.optBoolean("ok", false)
