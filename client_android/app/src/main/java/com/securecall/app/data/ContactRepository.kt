@@ -20,7 +20,31 @@ object ContactRepository {
 
     fun save(context: Context, contact: Contact) {
         val all = getAll(context).toMutableList()
-        all.add(contact)
+        val normalizedPhone = contact.phoneOrId.replace(Regex("[^0-9+]"), "")
+
+        // Dedup: check if contact already exists by phoneOrId, secureId, or normalized phone
+        val existingIdx = all.indexOfFirst { existing ->
+            existing.phoneOrId == contact.phoneOrId ||
+            (contact.secureId != null && existing.secureId == contact.secureId) ||
+            (existing.secureId != null && existing.secureId == contact.phoneOrId) ||
+            (contact.phoneOrId.startsWith("android-") && existing.secureId == contact.phoneOrId) ||
+            (!contact.phoneOrId.startsWith("android-") && !existing.phoneOrId.startsWith("android-") &&
+                normalizedPhone.isNotEmpty() &&
+                existing.phoneOrId.replace(Regex("[^0-9+]"), "") == normalizedPhone)
+        }
+
+        if (existingIdx >= 0) {
+            // Update existing: merge secureId if the new contact provides one
+            val existing = all[existingIdx]
+            val mergedSecureId = contact.secureId ?: existing.secureId
+            val mergedName = if (contact.name.isNotBlank() && contact.name != "Unknown") contact.name else existing.name
+            all[existingIdx] = existing.copy(
+                name = mergedName,
+                secureId = mergedSecureId
+            )
+        } else {
+            all.add(contact)
+        }
         persist(context, all)
     }
 

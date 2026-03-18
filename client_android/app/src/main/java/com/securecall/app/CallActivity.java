@@ -820,10 +820,15 @@ public class CallActivity extends AppCompatActivity {
             .setMessage("Save " + callContactName + " (" + originalPhone + ") as a SecureCall contact?\n\nFuture calls will connect directly without phone lookup.")
             .setPositiveButton("Save", (d, w) -> {
                 showingSaveDialog = false;
+                // Save with phone as primary key and SecureID as metadata —
+                // this deduplicates correctly with phone book contacts
+                String savePhoneOrId = (originalPhone != null && !originalPhone.isEmpty())
+                    ? originalPhone : callContactId;
+                String saveSecureId = callContactId.startsWith("android-") ? callContactId : null;
                 com.securecall.app.data.Contact contact = new com.securecall.app.data.Contact(
                     java.util.UUID.randomUUID().toString(),
-                    callContactName, callContactId,
-                    System.currentTimeMillis(), false, null
+                    callContactName, savePhoneOrId,
+                    System.currentTimeMillis(), false, saveSecureId
                 );
                 com.securecall.app.data.ContactRepository.INSTANCE.save(this, contact);
                 com.securecall.app.ui.ContactsFragment.Companion.invalidateCache();
