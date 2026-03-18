@@ -57,7 +57,8 @@ public class CallActivity extends AppCompatActivity {
     private boolean isMuted = false;
     private boolean isSpeaker = false;
     private boolean isCallActive = false;
-    private boolean isEnding = false;
+    private volatile boolean isEnding = false;
+    private volatile boolean showingSaveDialog = false;
     private long callStartTimeMs = 0;
     private boolean isIncomingCall = false;
     private String callContactName = "";
@@ -768,12 +769,16 @@ public class CallActivity extends AppCompatActivity {
         if (secureCallMonitor != null) {
             secureCallMonitor.stopMonitoring(this);
         }
-        releaseProximitySensor();
 
         // Offer to save contact if this was a phone-resolved call to an unsaved clientId
+        // IMPORTANT: Do NOT release proximity sensor before showing dialog — on Samsung devices,
+        // releasing the wake lock triggers a screen state transition that can destroy the Activity.
         if (shouldOfferContactSave()) {
+            // Keep screen on while dialog is visible
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             showSaveContactDialog();
         } else {
+            releaseProximitySensor();
             finish();
         }
     }
@@ -804,11 +809,17 @@ public class CallActivity extends AppCompatActivity {
     }
 
     private void showSaveContactDialog() {
-        if (isFinishing() || isDestroyed()) { finish(); return; }
+        if (isFinishing() || isDestroyed()) {
+            releaseProximitySensor();
+            finish();
+            return;
+        }
+        showingSaveDialog = true;
         new AlertDialog.Builder(this)
             .setTitle("Save Contact")
             .setMessage("Save " + callContactName + " (" + originalPhone + ") as a SecureCall contact?\n\nFuture calls will connect directly without phone lookup.")
             .setPositiveButton("Save", (d, w) -> {
+                showingSaveDialog = false;
                 com.securecall.app.data.Contact contact = new com.securecall.app.data.Contact(
                     java.util.UUID.randomUUID().toString(),
                     callContactName, callContactId,
@@ -818,9 +829,14 @@ public class CallActivity extends AppCompatActivity {
                 com.securecall.app.ui.ContactsFragment.Companion.invalidateCache();
                 Toast.makeText(this, "Contact saved", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "Saved contact: " + callContactName + " -> " + callContactId);
+                releaseProximitySensor();
                 finish();
             })
-            .setNegativeButton("Skip", (d, w) -> finish())
+            .setNegativeButton("Skip", (d, w) -> {
+                showingSaveDialog = false;
+                releaseProximitySensor();
+                finish();
+            })
             .setCancelable(false)
             .show();
     }
@@ -831,6 +847,7 @@ public class CallActivity extends AppCompatActivity {
         if (activeInstance == this) {
             activeInstance = null;
         }
+        showingSaveDialog = false;
         stopRingbackTone();
         stopPhoneStateMonitor();
         abandonAudioFocus();

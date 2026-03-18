@@ -36,11 +36,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         private set
 
     // Call signaling state and callbacks (private backing fields)
-    private var _currentSessionId: String? = null
+    // Volatile: callbacks are set on UI thread but read on WebRTC/WS threads
+    @Volatile private var _currentSessionId: String? = null
     private var _onIncomingCall: ((String, String, String) -> Unit)? = null
-    private var _onCallAccepted: ((String) -> Unit)? = null
-    private var _onCallEnded: ((String) -> Unit)? = null
-    private var _onCallError: ((String, String) -> Unit)? = null
+    @Volatile private var _onCallAccepted: ((String) -> Unit)? = null
+    @Volatile private var _onCallEnded: ((String) -> Unit)? = null
+    @Volatile private var _onCallError: ((String, String) -> Unit)? = null
 
     // Audio playback pipeline
     private var audioPlayer: com.securecall.app.ghostnet.media.playback.GhostAudioPlayer? = null
