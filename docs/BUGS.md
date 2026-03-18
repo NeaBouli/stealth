@@ -2,7 +2,7 @@
 
 | ID | Description | Status | Severity | Fixed In |
 |----|-------------|--------|----------|----------|
-| BUG-001 | Online status dots inconsistent | REVERTED | Medium | 2c3c697 → reverted 623f433 |
+| BUG-001 | Online status dots inconsistent | FIXED | Medium | 9ef003c |
 | BUG-002 | Save Contact disappears in <1s | FIXED | High | 5c4f9cd |
 | BUG-003 | Contact deduplication broken | FIXED | High | c9c2bbd |
 | BUG-004 | IFR wallet verify shows no token count | FIXED | High | c615a5b |
@@ -11,13 +11,12 @@
 
 ## Fix Details
 
-### BUG-001: Online status dots inconsistent (REVERTED — regression)
-- Fix in 2c3c697 caused dots to always show RED even when device is connected
-- Reverted in 623f433 — original code restored, dots work correctly again
-- Root cause of regression: clearing onlinePhones to emptySet() on resume
-  combined with WS disconnect check caused dots to never recover to green
-- Original code at: ContactsFragment.kt lines 149-223
-- Needs new fix approach that does NOT clear online state on resume
+### BUG-001: Online status dots inconsistent (FIXED)
+- Reduced STATUS_REFRESH_INTERVAL from 30s to 15s for faster dot transitions
+- Previous fix (2c3c697) was reverted due to regression — it cleared cache on
+  resume and WS disconnect, preventing dots from ever showing green
+- New fix (9ef003c): single-line change, no cache clearing, no WS state clearing
+- Verified: green→red within 15s on disconnect, red→green within 15s on reconnect
 
 ### BUG-002: Save Contact dialog disappears in <1s (FIXED)
 - Proximity wake lock released BEFORE dialog caused Samsung screen state transitions
