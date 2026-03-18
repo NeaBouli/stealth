@@ -507,7 +507,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val method = com.securecall.app.config.IfrLockManager.getVerificationMethod(ctx)
         val daysRemaining = com.securecall.app.config.IfrLockManager.getDaysRemaining(ctx)
 
-        // Status display with expiration info
+        // Status display with expiration info and token count
         findPreference<Preference>("pref_ifr_status")?.summary = when {
             ifrTier != null && method == com.securecall.app.config.IfrLockManager.METHOD_WALLETCONNECT ->
                 getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (lifetime)"
@@ -515,7 +515,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (expires in $daysRemaining days)"
             ifrTier != null && daysRemaining == 0 ->
                 getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (expiring today!)"
-            wallet != null -> "Wallet: ${wallet.take(6)}...${wallet.takeLast(4)}"
+            wallet != null && amount != "0" ->
+                "Wallet: ${wallet.take(6)}...${wallet.takeLast(4)} — $amount IFR held"
+            wallet != null ->
+                "Wallet: ${wallet.take(6)}...${wallet.takeLast(4)}"
             else -> getString(R.string.ifr_status_none) + "\n" + getString(R.string.ifr_threshold_info)
         }
 
@@ -588,14 +591,24 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         Runtime.getRuntime().exit(0)
                     }, 2000)
                 } else {
+                    val amountInfo = if (amount != "0" && amount.isNotEmpty()) " ($amount IFR held)" else ""
                     val msg = when (error) {
-                        "insufficient" -> getString(R.string.ifr_verify_insufficient) + " (${amount} IFR locked)"
+                        "insufficient" -> getString(R.string.ifr_verify_insufficient) + amountInfo
                         "wallet_bound" -> getString(R.string.ifr_wallet_bound)
                         "invalid_address" -> "Invalid wallet address format"
                         "not_connected", "timeout" -> getString(R.string.activation_error_connection)
-                        else -> getString(R.string.ifr_verify_error, error)
+                        "all_rpc_failed" -> "Ethereum RPC unavailable — try again later"
+                        else -> getString(R.string.ifr_verify_error, error) + amountInfo
                     }
                     findPreference<Preference>("pref_ifr_verify")?.summary = msg
+                    // Update status to show the balance even on failure
+                    if (amount != "0" && amount.isNotEmpty()) {
+                        val addr = findPreference<androidx.preference.EditTextPreference>("pref_ifr_wallet")?.text?.trim() ?: ""
+                        if (addr.isNotEmpty()) {
+                            findPreference<Preference>("pref_ifr_status")?.summary =
+                                "Wallet: ${addr.take(6)}...${addr.takeLast(4)} — $amount IFR held"
+                        }
+                    }
                     android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
                 }
             }

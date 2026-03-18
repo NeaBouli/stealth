@@ -117,6 +117,16 @@ object IfrLockManager {
         ws.verifyIfrLock(walletAddress) { success, tier, amount, error ->
             if (success && tier.isNotEmpty()) {
                 storeVerificationResult(context, walletAddress, tier, amount, METHOD_MANUAL)
+            } else if (amount != "0" && amount.isNotEmpty()) {
+                // Store the amount even on insufficient balance so the UI can show it.
+                // Don't store the tier — user doesn't get an upgrade.
+                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                    .putString(KEY_WALLET, walletAddress.lowercase())
+                    .putString(KEY_IFR_AMOUNT, amount)
+                    .putLong(KEY_LAST_VERIFIED, System.currentTimeMillis())
+                    .putString(KEY_VERIFICATION_METHOD, METHOD_MANUAL)
+                    .apply()
+                Log.d(TAG, "Stored IFR balance (insufficient for tier): wallet=$walletAddress, amount=$amount IFR")
             }
             callback(success, tier, amount, error)
         }
