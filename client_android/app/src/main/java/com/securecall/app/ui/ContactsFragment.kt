@@ -50,7 +50,7 @@ class ContactsFragment : Fragment() {
         @Volatile private var cachedClientIdToPhone: Map<String, String> = emptyMap()
         @Volatile private var lastLookupTimestamp: Long = 0L
         private const val LOOKUP_CACHE_TTL = 300_000L // 5 minutes — registration check is expensive (8 batches)
-        private const val STATUS_REFRESH_INTERVAL = 15_000L // 15 seconds — faster updates for responsive dots
+        private const val STATUS_REFRESH_INTERVAL = 30_000L // 30 seconds
 
         /** Clear cache (e.g., when a new contact is added). */
         fun invalidateCache() {
@@ -153,10 +153,7 @@ class ContactsFragment : Fragment() {
         if (cached != null) {
             allContacts = cached
             registeredPhones = cachedRegisteredPhones
-            // Clear stale online status on resume — prevents showing green dots
-            // for devices that disconnected since last visit. Fresh data will arrive
-            // from refreshOnlineStatus() within ~1s.
-            onlinePhones = emptySet()
+            onlinePhones = cachedOnlinePhones
             updateList(allContacts)
         }
         // Refresh app contacts (cheap — SharedPreferences read) in case a contact was saved
@@ -195,14 +192,6 @@ class ContactsFragment : Fragment() {
     /** Lightweight online status check — only checks phones already known to be registered SecureCall users. */
     private fun refreshOnlineStatus() {
         val ws = com.securecall.app.net.WebSocketService.instance ?: return
-        if (!ws.isConnected) {
-            Log.d(TAG, "refreshOnlineStatus: WS not connected, clearing online state")
-            onlinePhones = emptySet()
-            cachedOnlinePhones = emptySet()
-            cachedOnlineClientIds = emptySet()
-            activity?.runOnUiThread { if (isAdded) updateList(allContacts) }
-            return
-        }
         // Only check phones we already know are registered (from BATCH_PHONE_LOOKUP).
         // This is typically 1-5 phones, not 1535. Avoids the 500-phone server cap.
         val phones = cachedRegisteredPhones.toList()
@@ -217,14 +206,14 @@ class ContactsFragment : Fragment() {
             for ((phone, online) in statuses) {
                 if (online) onPhones.add(phone)
             }
-            // Update all online state atomically to prevent adapter inconsistency
+            onlinePhones = onPhones
+            cachedOnlinePhones = onPhones
+            // Update onlineClientIds from cachedClientIdToPhone mapping
             val onCids = mutableSetOf<String>()
             for ((cid, phone) in cachedClientIdToPhone) {
                 val norm = phone.replace(Regex("[^0-9+]"), "")
                 if (norm in onPhones) onCids.add(cid)
             }
-            onlinePhones = onPhones
-            cachedOnlinePhones = onPhones
             cachedOnlineClientIds = onCids
             Log.d(TAG, "Online status updated: ${onPhones.size} online phones, ${onCids.size} online clientIds")
             activity?.runOnUiThread {
