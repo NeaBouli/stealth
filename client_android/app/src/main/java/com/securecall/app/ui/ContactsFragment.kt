@@ -50,7 +50,7 @@ class ContactsFragment : Fragment() {
         @Volatile private var cachedClientIdToPhone: Map<String, String> = emptyMap()
         @Volatile private var lastLookupTimestamp: Long = 0L
         private const val LOOKUP_CACHE_TTL = 300_000L // 5 minutes — registration check is expensive (8 batches)
-        private const val STATUS_REFRESH_INTERVAL = 30_000L // 30 seconds
+        private const val STATUS_REFRESH_INTERVAL = 15_000L // 15 seconds
 
         /** Clear cache (e.g., when a new contact is added). */
         fun invalidateCache() {
