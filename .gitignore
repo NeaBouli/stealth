@@ -27,6 +27,11 @@ deployment/.env
 # Performance test results
 tools/perf_results/
 
+# IDE / tooling
+.claude/
+.idea/
+*.iml
+
 # Node.js
 node_modules/
 npm-debug.log*
