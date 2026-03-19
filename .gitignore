@@ -35,3 +35,4 @@ tools/perf_results/
 # Node.js
 node_modules/
 npm-debug.log*
+docs/logs/*.log

@@ -443,6 +443,11 @@ Sessions auto-clean after 60 seconds of inactivity.
 - Call screen UI: timer, encryption badge, mute/end/speaker buttons
 - Bottom navigation across all 4 tabs
 - Backend WebSocket connectivity from multiple devices
+- Online status dots: verified green→red→green cycle within 15s (BUG-001 fixed, BUG-007 fixed)
+- Presence works immediately after app restart (persisted in SharedPreferences)
+- Incoming call: IncomingCallActivity launches without crash (verified 2026-03-19)
+- Network audit: all traffic over TLS, TURN over TCP:443, VPN-compatible (see docs/AUDIT_NETWORK.md)
+- Screenshot blocking: FLAG_SECURE enforced on Premium, opt-in on Pro/Free
 
 ---
 
