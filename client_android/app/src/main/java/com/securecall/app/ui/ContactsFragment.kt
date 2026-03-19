@@ -57,6 +57,23 @@ class ContactsFragment : Fragment() {
             cachedContacts = null
             lastLookupTimestamp = 0L // Force BATCH_PHONE_LOOKUP on next visit
         }
+
+        /** BUG-007 fix: Persist registered phones so presence works immediately after app restart. */
+        private fun persistRegisteredPhones(context: android.content.Context, phones: Set<String>) {
+            val prefs = context.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putStringSet("cached_registered_phones", phones).apply()
+        }
+
+        /** BUG-007 fix: Load persisted registered phones on cold start. */
+        private fun loadPersistedRegisteredPhones(context: android.content.Context) {
+            if (cachedRegisteredPhones.isNotEmpty()) return // Already populated in-memory
+            val prefs = context.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+            val saved = prefs.getStringSet("cached_registered_phones", null)
+            if (saved != null && saved.isNotEmpty()) {
+                cachedRegisteredPhones = saved
+                Log.d(TAG, "Loaded ${saved.size} persisted registered phones for immediate presence")
+            }
+        }
     }
 
     private val requestContactsPermission =
@@ -127,6 +144,9 @@ class ContactsFragment : Fragment() {
         searchInput.setOnFocusChangeListener { _, hasFocus ->
             backCallback.isEnabled = hasFocus
         }
+
+        // BUG-007 fix: restore registered phones from SharedPreferences on cold start
+        loadPersistedRegisteredPhones(requireContext())
 
         // Show cached contacts immediately (instant tab switch)
         val cached = cachedContacts
@@ -367,6 +387,9 @@ class ContactsFragment : Fragment() {
         cachedOnlineClientIds = onClientIds
         cachedClientIdToPhone = cidToPhone
         lastLookupTimestamp = System.currentTimeMillis()
+        // BUG-007 fix: persist registered phones for immediate presence after app restart
+        val ctx = context
+        if (ctx != null) persistRegisteredPhones(ctx, regPhones)
         Log.d(TAG, "Finalized: ${regPhones.size} registered, ${onPhones.size} online phones, ${onClientIds.size} online clientIds, ${cidToPhone.size} clientId→phone mappings")
 
         // Clean up stale SecureIDs: app contacts with SecureIDs not found in server response
