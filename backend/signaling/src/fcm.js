@@ -10,15 +10,29 @@ let admin = null;
 let initialized = false;
 
 function initFcm() {
+  // Support two modes: Base64-encoded JSON (Railway) or file path (local dev)
+  const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
   const keyPath = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (!keyPath) {
-    console.warn("[FCM] FIREBASE_SERVICE_ACCOUNT_KEY not set — FCM disabled");
+
+  if (!base64Key && !keyPath) {
+    console.warn("[FCM] No Firebase credentials set — FCM disabled");
+    console.warn("[FCM] Set FIREBASE_SERVICE_ACCOUNT_BASE64 (Railway) or FIREBASE_SERVICE_ACCOUNT_KEY (file path)");
     return;
   }
 
   try {
     const firebaseAdmin = require("firebase-admin");
-    const serviceAccount = require(keyPath);
+    let serviceAccount;
+
+    if (base64Key) {
+      serviceAccount = JSON.parse(
+        Buffer.from(base64Key, "base64").toString("utf8")
+      );
+      console.log("[FCM] Using Base64-encoded service account");
+    } else {
+      serviceAccount = require(keyPath);
+      console.log("[FCM] Using file-based service account:", keyPath);
+    }
 
     firebaseAdmin.initializeApp({
       credential: firebaseAdmin.credential.cert(serviceAccount),
@@ -26,7 +40,7 @@ function initFcm() {
 
     admin = firebaseAdmin;
     initialized = true;
-    console.log("[FCM] Firebase Admin SDK initialized");
+    console.log("[FCM] Firebase Admin SDK initialized successfully");
   } catch (err) {
     console.error("[FCM] Failed to initialize:", err.message);
   }
