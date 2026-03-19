@@ -2,7 +2,7 @@
 
 | ID | Task | Status | Priority | Notes |
 |----|------|--------|----------|-------|
-| TODO-001 | FCM push notifications | IN PROGRESS | High | Client ✅ (token obtained + sent). Server ❌ (FIREBASE_SERVICE_ACCOUNT_KEY not set on Railway) |
+| TODO-001 | FCM push notifications | DONE | High | Client ✅ Server ✅ Verified: force-stopped S10 woken by FCM, IncomingCallActivity launched |
 | TODO-002 | WalletConnect v2 integration | OPEN | High | UI ready, SDK not integrated |
 | TODO-003 | TURN credential rotation | OPEN | Medium | Metered.ca API, /ice-servers endpoint exists |
 | TODO-004 | Release APKs all 3 flavors | OPEN | High | Keystore exists, CI/CD needed |
