@@ -308,6 +308,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         registerClient()
         setupCallSignalingCallbacks()
         statusCallbackOnline?.invoke()
+        // Send FCM token to backend after WS connect so push works when app is killed
+        com.securecall.app.fcm.FcmTokenManager.ensureTokenRegistered(this)
     }
 
     private fun setupCallSignalingCallbacks() {

@@ -2,7 +2,7 @@
 
 | ID | Task | Status | Priority | Notes |
 |----|------|--------|----------|-------|
-| TODO-001 | FCM push notifications | OPEN | High | Needs real Firebase project + google-services.json |
+| TODO-001 | FCM push notifications | IN PROGRESS | High | Firebase enabled, FCM token sent on WS connect. Needs: Railway env var + device test |
 | TODO-002 | WalletConnect v2 integration | OPEN | High | UI ready, SDK not integrated |
 | TODO-003 | TURN credential rotation | OPEN | Medium | Metered.ca API, /ice-servers endpoint exists |
 | TODO-004 | Release APKs all 3 flavors | OPEN | High | Keystore exists, CI/CD needed |
