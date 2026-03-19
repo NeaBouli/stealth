@@ -1329,7 +1329,9 @@ app.get("/metrics", (req, res) => {
     uptime: Math.round(process.uptime()) + " seconds",
     activeConnections: wss.clients.size,
     registeredClients: clientIds.size,
-    activeSessions: routingTable.size
+    activeSessions: routingTable.size,
+    fcmEnabled: fcm.isInitialized(),
+    fcmTokensStored: fcmTokens.size
   });
 });
 
