@@ -36,3 +36,4 @@ tools/perf_results/
 node_modules/
 npm-debug.log*
 docs/logs/*.log
+*/google-services.json
