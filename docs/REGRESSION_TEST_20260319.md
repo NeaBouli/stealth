@@ -19,7 +19,7 @@
 | TEST-05 | Online dots green/red within 15s | ✅ PASS | Stop S7: 3→2 online. Restart: 2→3 online |
 | TEST-06 | Settings persist after restart | ✅ PASS | PREMIUM tier, SecureCall ID persist |
 | TEST-07 | STEALTH-DELETE | ⏭️ SKIP | Previously verified manually |
-| TEST-08 | Activation code | ⏭️ SKIP | Already PREMIUM, previously verified |
+| TEST-08 | Activation code TEST-PRO1-CODE on Tab S4 Free | ✅ PASS | TierManager: PRO (build=free, activated=pro) |
 | TEST-09 | Screenshot in debug build | ✅ PASS | S7 screencap: 112,200 bytes (non-zero) |
 | TEST-10 | Tab S4 Free PRO feature lock | ✅ PASS | "🔒 Online status is a PRO feature" visible |
 

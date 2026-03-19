@@ -15,4 +15,4 @@
 
 ## Completed
 
-- TODO-006: Activation code feature verified working. UI in SettingsFragment, backend validates codes, tier persisted and applied on restart.
+- TODO-006: Activation code feature verified working. UI in SettingsFragment, backend validates codes, tier persisted and applied on restart. Re-verified 2026-03-19: TEST-PRO1-CODE on Tab S4 Free → PRO upgrade confirmed via TierManager log.
