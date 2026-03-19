@@ -9,6 +9,7 @@
 | BUG-005 | Block screenshots not working on all Activities/tiers | FIXED | Medium | 3597cc9 |
 | BUG-006 | WireGuard VPN non-functional (no test config) | KNOWN STUB | Low | - |
 | BUG-007 | Contacts cache empty after app restart — presence skipped | FIXED | Medium | 0681cc7 |
+| BUG-008 | CallActivity crash: SecurityException on PhoneStateListener | FIXED | Critical | see below |
 
 ## Fix Details
 
@@ -47,3 +48,18 @@
 - **Root Cause:** `cachedRegisteredPhones` is a `companion object` volatile Set in `ContactsFragment.kt:47`. It is populated only by `finalizeResults()` after `BATCH_PHONE_LOOKUP`. On app restart, the companion object is re-initialized to `emptySet()`. Since `refreshOnlineStatus()` checks `cachedRegisteredPhones` and skips if empty, presence never works until the next batch lookup.
 - **Evidence:** S7 Pro logcat 2026-03-19 11:22–11:23 — repeated "no registered phones cached, skipping" after app restart.
 - **Fix (0681cc7):** Persisted `cachedRegisteredPhones` in SharedPreferences (`securecall_prefs`, key `cached_registered_phones`). On fragment creation (`onViewCreated`), loads from SharedPreferences via `loadPersistedRegisteredPhones()`. On `finalizeResults()`, saves to SharedPreferences via `persistRegisteredPhones()`. Presence now works immediately after app restart without waiting for batch lookup.
+
+### BUG-008: CallActivity crash — SecurityException on PhoneStateListener (FIXED)
+- **Symptom:** App crashes with FATAL `java.lang.SecurityException: listen` when accepting or making a call. CallActivity force-finishes immediately.
+- **Stack Trace:**
+  ```
+  FATAL EXCEPTION: main
+  java.lang.SecurityException: listen
+    at CallActivity.startPhoneStateMonitor(CallActivity.java:682)
+    at CallActivity.lambda$startTransportAndTimer$16(CallActivity.java:519)
+  Caused by: android.os.RemoteException
+    at TelephonyPermissions.checkReadPhoneState
+  ```
+- **Root Cause:** `CallActivity.java:682` — `telephonyManager.listen(phoneStateListener, LISTEN_CALL_STATE)` requires `READ_PHONE_STATE` permission on Android 12+. The app doesn't request this permission at runtime. The phone state monitor is a non-critical feature (pauses SecureCall audio during incoming cell calls).
+- **Evidence:** S10 Premium (Android 12, SM-G973F) crash at 2026-03-19 21:10:21, PID 27780.
+- **Fix:** Wrapped `telephonyManager.listen()` in try-catch for `SecurityException`. If permission is missing, phone state monitoring is gracefully skipped — calls work normally without it.

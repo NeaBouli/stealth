@@ -679,8 +679,15 @@ public class CallActivity extends AppCompatActivity {
                 }
             }
         };
-        telephonyManager.listen(phoneStateListener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
-        Log.d(TAG, "Phone state monitor started");
+        try {
+            telephonyManager.listen(phoneStateListener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
+            Log.d(TAG, "Phone state monitor started");
+        } catch (SecurityException e) {
+            // READ_PHONE_STATE not granted — non-critical, call still works without cell-call detection
+            Log.w(TAG, "Phone state monitor skipped — READ_PHONE_STATE not granted", e);
+            telephonyManager = null;
+            phoneStateListener = null;
+        }
     }
 
     private void stopPhoneStateMonitor() {
