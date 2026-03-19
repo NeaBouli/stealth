@@ -215,11 +215,11 @@ ADB=/Users/gio/Library/Android/sdk/platform-tools/adb
 # Galaxy S10 — Premium
 $ADB -s RF8N313QMFL install -r app/build/outputs/apk/premium/debug/app-premium-debug.apk
 
-# Galaxy S7 — Free
-$ADB -s ce10160adc00152604 install -r app/build/outputs/apk/free/debug/app-free-debug.apk
+# Galaxy S7 — Pro
+$ADB -s ce10160adc00152604 install -r app/build/outputs/apk/pro/debug/app-pro-debug.apk
 
-# Galaxy Tab S4 — Pro
-$ADB -s ce12182c68644439037e install -r app/build/outputs/apk/pro/debug/app-pro-debug.apk
+# Galaxy Tab S4 — Free
+$ADB -s ce12182c68644439037e install -r app/build/outputs/apk/free/debug/app-free-debug.apk
 ```
 
 ### Backend — Local Development
@@ -269,9 +269,9 @@ See `deploy/.env.example` for the full list. Critical ones:
 
 | Device | Serial Number | Installed Flavor | Phone Number | SecureCall ID |
 |--------|--------------|-----------------|--------------|---------------|
-| Samsung Galaxy S10 | `RF8N313QMFL` | Premium (debug) | +4915231794100 | android-8c766ae8 |
-| Samsung Galaxy S7 | `ce10160adc00152604` | Free (debug) | +4915203487046 | android-117f1741 |
-| Samsung Galaxy Tab S4 | `ce12182c68644439037e` | Pro (debug) | +491752536807 | android-50965c37 |
+| Samsung Galaxy S10 | `RF8N313QMFL` | Premium (debug) | +4915231794100 | (new after reinstall) |
+| Samsung Galaxy S7 | `ce10160adc00152604` | Pro (debug) | +4915203487046 | (new after reinstall) |
+| Samsung Galaxy Tab S4 | `ce12182c68644439037e` | Free (debug) | +491752536807 | (new after reinstall) |
 
 **Notes:**
 - SecureCall IDs are generated at first install and persist in SharedPreferences. They change on app reinstall/data clear.
@@ -749,15 +749,15 @@ Run this after every significant change:
 
 | Test | Device A | Device B | Expected |
 |------|----------|----------|----------|
-| Call (both online) | S10 (Premium) | S7 (Free) | Ring → Accept → Audio → End |
+| Call (both online) | S10 (Premium) | S7 (Pro) | Ring → Accept → Audio → End |
 | Call (busy) | S10 | S7 (already in call) | Caller gets CALL_BUSY |
 | Call (unknown number) | S10 | — | Invite dialog (SMS/Share) |
 | Contact search | S10 | — | Keyboard shows, contacts filter, bottom nav hides |
 | T9 dialer | S10 | — | Type digits → contact suggestions appear |
-| Activation code | S7 | — | Enter TEST-PRO1-CODE → app restarts → Pro features |
+| Activation code | Tab S4 | — | Enter TEST-PRO1-CODE → app restarts → Pro features |
 | IFR wallet verify | S7 | — | Enter wallet → server checks → tier updates |
 | STEALTH-DELETE | Tab S4 | — | 5 taps on version → confirmation → data wiped |
-| Online status | S10 (Premium) | S7 | Green/red dots update when S7 connects/disconnects |
+| Online status | S10 (Premium) | S7 (Pro) | Green/red dots update when S7 connects/disconnects |
 | Dark/light mode | Any | — | Toggle in Settings → theme switches |
 
 ### Checking Logs
