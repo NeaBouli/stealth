@@ -8,7 +8,7 @@
 | BUG-004 | IFR wallet verify shows no token count | FIXED | High | c615a5b |
 | BUG-005 | Block screenshots not working on all Activities/tiers | FIXED | Medium | 3597cc9 |
 | BUG-006 | WireGuard VPN non-functional (no test config) | KNOWN STUB | Low | - |
-| BUG-007 | Contacts cache empty after app restart — presence skipped | OPEN | Medium | - |
+| BUG-007 | Contacts cache empty after app restart — presence skipped | FIXED | Medium | 0681cc7 |
 
 ## Fix Details
 
@@ -46,4 +46,4 @@
 - **Symptom:** After app force-stop or restart, `refreshOnlineStatus()` logs "no registered phones cached, skipping" repeatedly. Online dots never appear until a full BATCH_PHONE_LOOKUP completes (up to 5 minutes).
 - **Root Cause:** `cachedRegisteredPhones` is a `companion object` volatile Set in `ContactsFragment.kt:47`. It is populated only by `finalizeResults()` after `BATCH_PHONE_LOOKUP`. On app restart, the companion object is re-initialized to `emptySet()`. Since `refreshOnlineStatus()` checks `cachedRegisteredPhones` and skips if empty, presence never works until the next batch lookup.
 - **Evidence:** S7 Pro logcat 2026-03-19 11:22–11:23 — repeated "no registered phones cached, skipping" after app restart.
-- **Fix Direction:** Persist `cachedRegisteredPhones` in SharedPreferences (`securecall_prefs`, key `cached_registered_phones`). On fragment creation, load from SharedPreferences. On `finalizeResults()`, save to SharedPreferences. This ensures presence works immediately after app restart without waiting for batch lookup.
+- **Fix (0681cc7):** Persisted `cachedRegisteredPhones` in SharedPreferences (`securecall_prefs`, key `cached_registered_phones`). On fragment creation (`onViewCreated`), loads from SharedPreferences via `loadPersistedRegisteredPhones()`. On `finalizeResults()`, saves to SharedPreferences via `persistRegisteredPhones()`. Presence now works immediately after app restart without waiting for batch lookup.
