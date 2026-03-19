@@ -63,3 +63,4 @@
 - **Root Cause:** `CallActivity.java:682` — `telephonyManager.listen(phoneStateListener, LISTEN_CALL_STATE)` requires `READ_PHONE_STATE` permission on Android 12+. The app doesn't request this permission at runtime. The phone state monitor is a non-critical feature (pauses SecureCall audio during incoming cell calls).
 - **Evidence:** S10 Premium (Android 12, SM-G973F) crash at 2026-03-19 21:10:21, PID 27780.
 - **Fix:** Wrapped `telephonyManager.listen()` in try-catch for `SecurityException`. If permission is missing, phone state monitoring is gracefully skipped — calls work normally without it.
+- **Verified:** Fully automated call test 2026-03-19 21:49–21:50. S7→S10 call initiated via ADB tap, accepted via uiautomator-detected Accept button (742,1807), 8s active call, ended via EndCall button (539,1807). Complete CALL_INVITE→ACCEPT→END cycle with no crash. SecurityException caught gracefully ("Phone state monitor skipped").

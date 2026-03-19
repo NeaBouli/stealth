@@ -26,6 +26,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void applyFlagSecure() {
+        if (com.securecall.app.BuildConfig.DEBUG) return; // Allow screencap + uiautomator in debug builds
         try {
             String tier = com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this);
             boolean isPremium = "PREMIUM".equals(tier);
