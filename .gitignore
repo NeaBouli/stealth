@@ -38,3 +38,5 @@ npm-debug.log*
 docs/logs/*.log
 */google-services.json
 client_android/gradle.properties
+securecall-release-key.jks.bak
+*.bak
