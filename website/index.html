@@ -286,10 +286,14 @@
             </div>
 
             <!-- Audit banners -->
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:48px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:48px">
                 <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:20px;text-align:center">
-                    <div style="font-size:2rem;font-weight:800;color:#4ade80">ALL PASS</div>
-                    <div style="font-size:13px;color:#aaa;margin-top:4px">Full Device Emulation Test</div>
+                    <div style="font-size:2rem;font-weight:800;color:#4ade80">33/33</div>
+                    <div style="font-size:13px;color:#aaa;margin-top:4px">Settings Tests Passed</div>
+                </div>
+                <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:20px;text-align:center">
+                    <div style="font-size:2rem;font-weight:800;color:#4ade80">8/8</div>
+                    <div style="font-size:13px;color:#aaa;margin-top:4px">Bugs Found &amp; Fixed</div>
                 </div>
                 <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:20px;text-align:center">
                     <div style="font-size:2rem;font-weight:800;color:#4ade80">E2E</div>
@@ -297,11 +301,11 @@
                 </div>
                 <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:20px;text-align:center">
                     <div style="font-size:2rem;font-weight:800;color:#4ade80">P2P</div>
-                    <div style="font-size:13px;color:#aaa;margin-top:4px">WebRTC &mdash; Zero Server Access</div>
+                    <div style="font-size:13px;color:#aaa;margin-top:4px">WebRTC DataChannel Audio</div>
                 </div>
                 <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:20px;text-align:center">
-                    <div style="font-size:2rem;font-weight:800;color:#4ade80">3 TIERS</div>
-                    <div style="font-size:13px;color:#aaa;margin-top:4px">Cross-Device Testing Verified</div>
+                    <div style="font-size:2rem;font-weight:800;color:#4ade80">FCM</div>
+                    <div style="font-size:13px;color:#aaa;margin-top:4px">Push Notifications Verified</div>
                 </div>
             </div>
 
@@ -309,16 +313,19 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
                 <!-- Test Matrix -->
                 <div>
-                    <h3 style="margin-bottom:16px;font-size:1.1rem;color:#fff">Test Matrix</h3>
+                    <h3 style="margin-bottom:16px;font-size:1.1rem;color:#fff">Quality Audit &mdash; v1.6</h3>
                     <table style="width:100%;font-size:13px">
                         <tbody>
-                            <tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Connection Stability (60s zero disconnects)</td><td style="color:#4ade80;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Call Signaling (all 6 directions)</td><td style="color:#4ade80;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Busy Signal (second call rejected)</td><td style="color:#4ade80;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Feature Gating (tier-locked features)</td><td style="color:#4ade80;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Doze Mode Whitelisting</td><td style="color:#4ade80;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Phone Number Normalization</td><td style="color:#4ade80;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:8px 0">Rate Limiting (anti-enumeration)</td><td style="color:#4ade80;text-align:right;padding:8px 0">&#10003; PASS</td></tr>
+                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Incoming Call (accept, hold, end)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
+                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Outgoing Call via Dialer</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
+                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">FCM Push (wakes killed app)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
+                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Online Status Dots (&lt;15s refresh)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
+                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Dynamic TURN Credentials (no hardcoded secrets)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
+                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">IFR Wallet Verification (on-chain)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
+                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Tier Gating (33 settings across 3 tiers)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
+                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Contact Deduplication</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
+                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Screenshot Blocking (FLAG_SECURE)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
+                            <tr><td style="padding:6px 0">Network Audit (TLS, VPN compat, no cleartext)</td><td style="color:#4ade80;text-align:right;padding:6px 0">&#10003; PASS</td></tr>
                         </tbody>
                     </table>
                 </div>
