@@ -39,22 +39,16 @@ class WebRtcManager(
     private var pendingAnswer: String? = null
     private val pendingIceCandidates = mutableListOf<JSONObject>()
 
-    fun init() {
+    fun init(dynamicIceServers: List<PeerConnection.IceServer>? = null) {
         factory = PeerConnectionFactory.builder()
             .setOptions(PeerConnectionFactory.Options())
             .createPeerConnectionFactory()
 
-        val iceServers = listOf(
-            PeerConnection.IceServer.builder(BuildConfig.STUN_URL).createIceServer(),
-            PeerConnection.IceServer.builder(BuildConfig.TURN_URL)
-                .setUsername(BuildConfig.TURN_USERNAME)
-                .setPassword(BuildConfig.TURN_PASSWORD)
-                .createIceServer(),
-            PeerConnection.IceServer.builder(BuildConfig.TURNS_URL)
-                .setUsername(BuildConfig.TURN_USERNAME)
-                .setPassword(BuildConfig.TURN_PASSWORD)
-                .createIceServer()
+        val iceServers = dynamicIceServers ?: listOf(
+            // Fallback: STUN only (no TURN relay) if dynamic fetch failed
+            PeerConnection.IceServer.builder(BuildConfig.STUN_URL).createIceServer()
         )
+        Log.d(TAG, "Using ${iceServers.size} ICE servers (dynamic=${dynamicIceServers != null})")
 
         val rtcConfig = PeerConnection.RTCConfiguration(iceServers).apply {
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN

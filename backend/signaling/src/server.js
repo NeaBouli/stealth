@@ -295,7 +295,9 @@ app.get("/routing/list", requireAdmin, (req, res) => {
 });
 
 // --- ICE Servers API (BACKEND-02) ---
-app.get("/ice-servers", requireAdmin, (req, res) => {
+// Public endpoint — app clients fetch TURN credentials at call start.
+// Credentials come from server env vars (rotatable without APK rebuild).
+app.get("/ice-servers", (req, res) => {
   res.json({ iceServers: ICE_SERVERS });
 });
 

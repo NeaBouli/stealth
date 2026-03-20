@@ -683,7 +683,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             }
         )
         webRtcManager = mgr
-        mgr.init()
+        // Fetch TURN credentials from backend (removes hardcoded secrets from APK)
+        val dynamicIce = IceServerFetcher.fetch()
+        mgr.init(dynamicIce)
         if (isOfferer) mgr.createOffer()
     }
 
