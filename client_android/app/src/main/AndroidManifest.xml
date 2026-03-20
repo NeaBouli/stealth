@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.securecall.app">
 
     <!-- Basis-Rechte; später bei Bedarf erweitern -->
@@ -59,6 +60,7 @@
             android:name=".vpn.GhostVpnService"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false" />
+
 
         <!-- BACKEND-22: WebSocket Hintergrund-Service -->
         <service

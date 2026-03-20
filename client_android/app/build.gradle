@@ -185,6 +185,11 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.fragment:fragment-ktx:1.6.1'
 
+    // WireGuard VPN: requires AGP 8+ (com.wireguard.android:tunnel uses Java Records)
+    // Blocked by current AGP 7.4.2 — upgrade AGP first, then add:
+    // implementation 'com.wireguard.android:tunnel:1.0.20260102'
+    // See docs/TODO.md TODO-006 for migration plan
+
     // Google Play Billing (FREE flavor only)
     freeImplementation 'com.android.billingclient:billing-ktx:6.1.0'
 
