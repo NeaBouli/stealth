@@ -5,7 +5,7 @@
 | TODO-001 | FCM push notifications | DONE | High | Client ✅ Server ✅ Verified: force-stopped S10 woken by FCM, IncomingCallActivity launched |
 | TODO-002 | WalletConnect v2 integration | OPEN | High | UI ready, SDK not integrated |
 | TODO-003 | TURN credential rotation | DONE | Medium | Dynamic fetch from /ice-servers, no hardcoded credentials in APK |
-| TODO-004 | Release APKs all 3 flavors | OPEN | High | Keystore exists, CI/CD needed |
+| TODO-004 | Release APKs all 3 flavors | DONE | High | Signed with securecall-release-key.jks, smoke tested on all devices |
 | TODO-005 | Play Store listing | OPEN | High | Checklist at docs/PLAY_STORE_CHECKLIST.md |
 | TODO-006 | Activation code premium unlock | VERIFIED | High | Fully implemented and working |
 | TODO-007 | Wire real encryption (replace mock handshake) | OPEN | Critical | GhostNet uses placeholder crypto in debug |
