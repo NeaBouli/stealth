@@ -37,3 +37,4 @@ node_modules/
 npm-debug.log*
 docs/logs/*.log
 */google-services.json
+client_android/gradle.properties
