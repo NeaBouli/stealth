@@ -1,5 +1,6 @@
 package com.securecall.app.ui
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -164,6 +165,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Refresh SecureCall ID summary in case it changed
         val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
         findPreference<Preference>("pref_client_id")?.summary = prefs.getString("client_id", "Not registered")
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == com.securecall.app.vpn.VpnController.VPN_PERMISSION_REQUEST) {
+            if (resultCode == Activity.RESULT_OK) {
+                com.securecall.app.vpn.VpnController.start(requireContext())
+            } else {
+                // Permission denied — revert toggle
+                com.securecall.app.vpn.VpnController.setEnabled(requireContext(), false)
+                findPreference<SwitchPreferenceCompat>("pref_vpn_enabled")?.isChecked = false
+                updateVpnStatus(requireContext(), true)
+            }
+        }
     }
 
     private fun setupAboutLinks() {
@@ -368,8 +384,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
                             android.widget.Toast.makeText(ctx, "Configure WireGuard first", android.widget.Toast.LENGTH_SHORT).show()
                             return@setOnPreferenceChangeListener false
                         }
-                        val hasPermission = com.securecall.app.vpn.VpnController.requestPermission(requireActivity())
-                        if (hasPermission) {
+                        val vpnIntent = android.net.VpnService.prepare(ctx)
+                        if (vpnIntent != null) {
+                            @Suppress("DEPRECATION")
+                            startActivityForResult(vpnIntent, com.securecall.app.vpn.VpnController.VPN_PERMISSION_REQUEST)
+                        } else {
                             com.securecall.app.vpn.VpnController.start(ctx)
                         }
                     } else {

@@ -1,4 +1,4 @@
-# Session Context — 2026-03-21
+# Session Context — 2026-03-22
 
 ## Letzter Stand
 - TURN Credentials rotiert ✅ (neue Credentials auf Railway aktiv)
@@ -6,13 +6,15 @@
 - AGP 7.4.2 → 8.7.3 Upgrade ✅ (Gradle 8.14, Kotlin 1.9.22, Java 17)
 - WireGuard VPN implementiert ✅ (GoBackend mit Noise_IKpsk2)
 - minSdk 23 → 24 ✅
+- TURN Call-Test ✅ (S7→S10, 26s E2E-encrypted call, ICE host+srflx)
+- WireGuard VPN BUG-006 fixed ✅ (onActivityResult handler added)
+- WireGuard Tunnel UP verified ✅ (GoBackend, Noise handshake init sent)
+- WireGuard Handshake PARTIAL — Tunnel UP but Mac server not responding to handshake (needs firewall/config check)
 - Rollback: v1.9-turn-rotated
 
-## Offen — heute Abend fortsetzen
-1. **S10 anschließen** — war bei letzter Session nicht verbunden
-2. **Call-Test mit neuen TURN Credentials** — S7→S10, prüfe ICE_FETCH mit neuen Credentials
-3. **WireGuard End-to-End Test** — lokale Test-Config generiert, siehe `docs/WIREGUARD_TEST_SETUP.md`
-4. **Play Store Vorbereitung starten** — Screenshots, Beschreibung, Datenschutzerklärung
+## Offen
+1. **WireGuard Handshake** — Mac-seitig: Firewall-Port 51821/UDP öffnen, `sudo wg show` prüfen
+2. **Play Store Vorbereitung starten** — Screenshots, Beschreibung, Datenschutzerklärung
 
 ## WireGuard Test-Plan (2026-03-21)
 Test-Optionen in Prioritätsreihenfolge:

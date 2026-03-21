@@ -7,7 +7,7 @@
 | BUG-003 | Contact deduplication broken | FIXED | High | c9c2bbd |
 | BUG-004 | IFR wallet verify shows no token count | FIXED | High | c615a5b |
 | BUG-005 | Block screenshots not working on all Activities/tiers | FIXED | Medium | 3597cc9 |
-| BUG-006 | WireGuard VPN non-functional (no test config) | FIXED | Low | AGP 8.7.3 + GoBackend |
+| BUG-006 | WireGuard VPN service never started after permission grant | FIXED | High | onActivityResult handler |
 | BUG-007 | Contacts cache empty after app restart — presence skipped | FIXED | Medium | 0681cc7 |
 | BUG-008 | CallActivity crash: SecurityException on PhoneStateListener | FIXED | Critical | a90c7fc |
 
@@ -64,3 +64,9 @@
 - **Evidence:** S10 Premium (Android 12, SM-G973F) crash at 2026-03-19 21:10:21, PID 27780.
 - **Fix:** Wrapped `telephonyManager.listen()` in try-catch for `SecurityException`. If permission is missing, phone state monitoring is gracefully skipped — calls work normally without it.
 - **Verified:** Fully automated call test 2026-03-19 21:49–21:50. S7→S10 call initiated via ADB tap, accepted via uiautomator-detected Accept button (742,1807), 8s active call, ended via EndCall button (539,1807). Complete CALL_INVITE→ACCEPT→END cycle with no crash. SecurityException caught gracefully ("Phone state monitor skipped").
+
+### BUG-006: WireGuard VPN service never started after permission grant (FIXED)
+- **Symptom:** VPN toggle could be enabled, Android VPN permission dialog appeared and was accepted, but GhostVpnService never started. VPN status remained "Enabled — waiting for connection" forever.
+- **Root Cause:** `SettingsFragment.configureVpn()` called `VpnController.requestPermission(requireActivity())` which uses `activity.startActivityForResult()`. When the permission dialog was dismissed, there was no `onActivityResult` handler — neither in the Fragment nor in the Activity. So `VpnController.start()` was never called after permission grant.
+- **Fix:** (1) Changed permission request to use `fragment.startActivityForResult()` instead of `activity.startActivityForResult()` so the result routes to the fragment. (2) Added `onActivityResult()` override in `SettingsFragment` that calls `VpnController.start()` on `RESULT_OK` or reverts the toggle on denial.
+- **Verified:** 2026-03-22 S10 Premium. After fix: VPN toggle → Android permission dialog → OK → GhostVpnService started → WireGuard GoBackend tunnel UP → Noise handshake initiation sent. Tunnel state transitions: DOWN→UP→DOWN all logged correctly. Config correctly loaded from SharedPreferences (endpoint, port, keys, DNS).
