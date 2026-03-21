@@ -40,3 +40,7 @@ docs/logs/*.log
 client_android/gradle.properties
 securecall-release-key.jks.bak
 *.bak
+
+# WireGuard private keys
+*.key
+docs/wireguard/*_private*
