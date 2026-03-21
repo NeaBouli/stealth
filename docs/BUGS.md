@@ -69,4 +69,10 @@
 - **Symptom:** VPN toggle could be enabled, Android VPN permission dialog appeared and was accepted, but GhostVpnService never started. VPN status remained "Enabled — waiting for connection" forever.
 - **Root Cause:** `SettingsFragment.configureVpn()` called `VpnController.requestPermission(requireActivity())` which uses `activity.startActivityForResult()`. When the permission dialog was dismissed, there was no `onActivityResult` handler — neither in the Fragment nor in the Activity. So `VpnController.start()` was never called after permission grant.
 - **Fix:** (1) Changed permission request to use `fragment.startActivityForResult()` instead of `activity.startActivityForResult()` so the result routes to the fragment. (2) Added `onActivityResult()` override in `SettingsFragment` that calls `VpnController.start()` on `RESULT_OK` or reverts the toggle on denial.
-- **Verified:** 2026-03-22 S10 Premium. After fix: VPN toggle → Android permission dialog → OK → GhostVpnService started → WireGuard GoBackend tunnel UP → Noise handshake initiation sent. Tunnel state transitions: DOWN→UP→DOWN all logged correctly. Config correctly loaded from SharedPreferences (endpoint, port, keys, DNS).
+- **Additional fix:** Config dialog was missing client address field, and `vpn_client_address` was not saved by `VpnController.saveConfig()`. Without correct client address (e.g. `10.99.0.2/31`), the tunnel used default `10.66.66.2/32` which didn't match server's AllowedIPs, preventing handshake completion.
+- **Verified:** 2026-03-22 S10 Premium. Full WireGuard E2E test:
+  - VPN toggle → permission grant → GhostVpnService started ✅
+  - WireGuard GoBackend tunnel UP, Noise_IKpsk2 handshake complete ✅
+  - Keepalive packets flowing bidirectionally ✅
+  - S7→S10 call during active VPN: 21s E2E-encrypted call ✅
+  - VPN stop: clean tunnel DOWN ✅

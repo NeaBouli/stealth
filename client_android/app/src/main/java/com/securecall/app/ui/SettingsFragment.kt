@@ -482,12 +482,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
             hint = "DNS (default: 1.1.1.1)"
             setText(prefs.getString("vpn_dns", "1.1.1.1"))
         }
+        val clientAddrInput = android.widget.EditText(ctx).apply {
+            hint = "Client address (e.g. 10.99.0.2/31)"
+            setText(prefs.getString("vpn_client_address", ""))
+        }
 
         layout.addView(endpointInput)
         layout.addView(portInput)
         layout.addView(pubKeyInput)
         layout.addView(privKeyInput)
         layout.addView(dnsInput)
+        layout.addView(clientAddrInput)
 
         android.app.AlertDialog.Builder(ctx)
             .setTitle("WireGuard Configuration")
@@ -504,8 +509,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     return@setPositiveButton
                 }
 
+                val clientAddr = clientAddrInput.text.toString().trim().ifEmpty { "10.66.66.2/32" }
                 com.securecall.app.vpn.VpnController.saveConfig(ctx, endpoint, port, pubKey, privKey, dns, "0.0.0.0/0",
-                    prefs.getBoolean("vpn_kill_switch", false))
+                    clientAddr, prefs.getBoolean("vpn_kill_switch", false))
                 findPreference<Preference>("pref_vpn_config")?.summary = "$endpoint:$port"
                 android.widget.Toast.makeText(ctx, "VPN config saved", android.widget.Toast.LENGTH_SHORT).show()
             }

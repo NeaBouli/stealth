@@ -66,7 +66,8 @@ public class VpnController {
     /** Save WireGuard configuration. */
     public static void saveConfig(Context ctx, String endpoint, int port,
                                    String serverPubKey, String clientPrivKey,
-                                   String dns, String allowedIps, boolean killSwitch) {
+                                   String dns, String allowedIps, String clientAddress,
+                                   boolean killSwitch) {
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString("vpn_server_endpoint", endpoint)
             .putInt("vpn_server_port", port)
@@ -74,6 +75,7 @@ public class VpnController {
             .putString("vpn_client_private_key", clientPrivKey)
             .putString("vpn_dns", dns)
             .putString("vpn_allowed_ips", allowedIps)
+            .putString("vpn_client_address", clientAddress)
             .putBoolean("vpn_kill_switch", killSwitch)
             .apply();
         Log.d(TAG, "VPN config saved: " + endpoint + ":" + port);
@@ -88,6 +90,7 @@ public class VpnController {
             .remove("vpn_client_private_key")
             .remove("vpn_dns")
             .remove("vpn_allowed_ips")
+            .remove("vpn_client_address")
             .remove("vpn_kill_switch")
             .remove("vpn_enabled")
             .apply();
