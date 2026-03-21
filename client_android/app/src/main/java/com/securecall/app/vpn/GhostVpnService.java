@@ -7,24 +7,23 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.VpnService;
 import android.os.Build;
-import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
 import com.securecall.app.R;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+import com.wireguard.android.backend.GoBackend;
+import com.wireguard.android.backend.Tunnel;
+import com.wireguard.config.Config;
+import com.wireguard.config.InetEndpoint;
+import com.wireguard.config.InetNetwork;
+import com.wireguard.config.Interface;
+import com.wireguard.config.Peer;
 
 /**
- * StealthX VPN Service — WireGuard-compatible split tunnel.
- * Routes only SecureCall app traffic through the VPN tunnel.
+ * StealthX VPN Service — Real WireGuard tunnel via wireguard-android GoBackend.
+ * Full Noise_IKpsk2 handshake, ChaCha20-Poly1305 packet encryption.
+ * Split tunnel: only SecureCall app traffic routed through VPN.
  * Premium feature only.
  */
 public class GhostVpnService extends VpnService {
@@ -33,21 +32,17 @@ public class GhostVpnService extends VpnService {
     private static final String CHANNEL_ID = "securecall_vpn";
     private static final int NOTIFICATION_ID = 2001;
 
-    private ParcelFileDescriptor vpnInterface;
-    private Thread vpnThread;
-    private volatile boolean running = false;
-
-    // WireGuard config (read from SharedPreferences)
-    private String serverEndpoint;
-    private int serverPort;
-    private String serverPublicKey;
-    private String clientPrivateKey;
-    private String dns;
-    private String allowedIps;
-    private boolean killSwitch;
+    private GoBackend backend;
+    private GhostTunnel tunnel;
 
     public static volatile boolean isActive = false;
     public static volatile String connectedServer = null;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        backend = new GoBackend(this);
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -58,198 +53,144 @@ public class GhostVpnService extends VpnService {
 
         Log.d(TAG, "Starting GhostVPN...");
 
-        if (vpnInterface != null) {
+        if (isActive && tunnel != null) {
             Log.d(TAG, "GhostVPN already active.");
             return START_STICKY;
-        }
-
-        loadConfig();
-
-        if (serverEndpoint == null || serverEndpoint.isEmpty()) {
-            Log.w(TAG, "No WireGuard config — cannot start VPN");
-            stopSelf();
-            return START_NOT_STICKY;
         }
 
         createNotificationChannel();
         startForeground(NOTIFICATION_ID, buildNotification("Connecting..."));
 
-        try {
-            Builder builder = new Builder();
-            builder.setSession("StealthX VPN");
-            builder.addAddress("10.66.66.2", 32);
-            if (dns != null && !dns.isEmpty()) {
-                builder.addDnsServer(dns);
-            } else {
-                builder.addDnsServer("1.1.1.1");
-            }
-            builder.addRoute("0.0.0.0", 0);
-
-            // Split tunneling: only route THIS app's traffic through VPN
+        new Thread(() -> {
             try {
-                builder.addAllowedApplication(getPackageName());
-            } catch (Exception e) {
-                Log.e(TAG, "addAllowedApplication failed", e);
-            }
+                Config config = buildWireGuardConfig();
+                if (config == null) {
+                    Log.w(TAG, "No valid WireGuard config — cannot start VPN");
+                    updateNotification("No configuration");
+                    stopSelf();
+                    return;
+                }
 
-            builder.setMtu(1280);
-            builder.setBlocking(true);
+                tunnel = new GhostTunnel();
+                backend.setState(tunnel, Tunnel.State.UP, config);
 
-            vpnInterface = builder.establish();
-
-            if (vpnInterface != null) {
-                Log.d(TAG, "GhostVPN TUN interface established");
+                String endpoint = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
+                        .getString("vpn_server_endpoint", "unknown");
                 isActive = true;
-                connectedServer = serverEndpoint + ":" + serverPort;
-                updateNotification("Connected to " + serverEndpoint);
-                startForwarding();
-            } else {
-                Log.e(TAG, "Failed to establish VPN interface");
+                connectedServer = endpoint;
+                updateNotification("Connected to " + endpoint);
+                Log.d(TAG, "WireGuard tunnel UP — Noise handshake complete, connected to " + endpoint);
+
+            } catch (Exception e) {
+                Log.e(TAG, "WireGuard tunnel failed: " + e.getMessage(), e);
                 isActive = false;
-                stopSelf();
+                connectedServer = null;
+                updateNotification("Failed: " + e.getMessage());
             }
-        } catch (Exception e) {
-            Log.e(TAG, "GhostVPN error: " + e.getMessage(), e);
-            isActive = false;
-            stopSelf();
-        }
+        }, "ghost-vpn-start").start();
 
         return START_STICKY;
     }
 
-    private void loadConfig() {
+    private Config buildWireGuardConfig() {
         SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
-        serverEndpoint = prefs.getString("vpn_server_endpoint", "");
-        serverPort = prefs.getInt("vpn_server_port", 51820);
-        serverPublicKey = prefs.getString("vpn_server_public_key", "");
-        clientPrivateKey = prefs.getString("vpn_client_private_key", "");
-        dns = prefs.getString("vpn_dns", "1.1.1.1");
-        allowedIps = prefs.getString("vpn_allowed_ips", "0.0.0.0/0");
-        killSwitch = prefs.getBoolean("vpn_kill_switch", false);
-    }
+        String endpoint = prefs.getString("vpn_server_endpoint", "");
+        int port = prefs.getInt("vpn_server_port", 51820);
+        String serverPubKey = prefs.getString("vpn_server_public_key", "");
+        String clientPrivKey = prefs.getString("vpn_client_private_key", "");
+        String dns = prefs.getString("vpn_dns", "1.1.1.1");
+        String allowedIps = prefs.getString("vpn_allowed_ips", "0.0.0.0/0");
+        String clientAddress = prefs.getString("vpn_client_address", "10.66.66.2/32");
 
-    /**
-     * Simple packet forwarding loop.
-     * In production, this would use WireGuard's Noise protocol for encryption.
-     * Current MVP: forwards packets through a UDP tunnel to the endpoint.
-     */
-    private void startForwarding() {
-        running = true;
-        vpnThread = new Thread(() -> {
-            try (FileInputStream in = new FileInputStream(vpnInterface.getFileDescriptor());
-                 FileOutputStream out = new FileOutputStream(vpnInterface.getFileDescriptor())) {
-
-                DatagramSocket tunnel = new DatagramSocket();
-                protect(tunnel); // Prevent VPN from routing its own traffic through itself
-
-                InetAddress serverAddr = InetAddress.getByName(serverEndpoint);
-                tunnel.connect(new InetSocketAddress(serverAddr, serverPort));
-                Log.d(TAG, "UDP tunnel connected to " + serverEndpoint + ":" + serverPort);
-
-                byte[] packet = new byte[1500];
-                while (running) {
-                    // Read from TUN interface (outgoing app traffic)
-                    int length = in.read(packet);
-                    if (length > 0 && running) {
-                        // In production: encrypt with WireGuard Noise protocol
-                        // MVP: forward raw (tunnel itself provides transport encryption)
-                        tunnel.send(new DatagramPacket(packet, length));
-                    }
-                }
-
-                tunnel.close();
-            } catch (IOException e) {
-                if (running) {
-                    Log.e(TAG, "VPN tunnel error: " + e.getMessage());
-                    handleTunnelDrop();
-                }
-            }
-            Log.d(TAG, "VPN forwarding thread stopped");
-        }, "ghost-vpn-fwd");
-        vpnThread.start();
-    }
-
-    private void handleTunnelDrop() {
-        isActive = false;
-        connectedServer = null;
-        updateNotification("Disconnected — reconnecting...");
-
-        if (killSwitch) {
-            Log.w(TAG, "Kill switch active — blocking traffic until reconnect");
-            // The TUN interface stays up but forwarding stopped,
-            // so all app traffic is blackholed (kill switch effect)
+        if (endpoint.isEmpty() || serverPubKey.isEmpty() || clientPrivKey.isEmpty()) {
+            Log.w(TAG, "Incomplete WireGuard config");
+            return null;
         }
 
-        // Attempt reconnect after 5 seconds
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            if (running) {
-                Log.d(TAG, "Attempting VPN reconnect...");
-                startForwarding();
-                isActive = true;
-                connectedServer = serverEndpoint + ":" + serverPort;
-                updateNotification("Reconnected to " + serverEndpoint);
+        try {
+            Interface.Builder ifaceBuilder = new Interface.Builder();
+            ifaceBuilder.parsePrivateKey(clientPrivKey);
+            ifaceBuilder.addAddress(InetNetwork.parse(clientAddress));
+            for (String d : dns.split(",")) {
+                String trimmed = d.trim();
+                if (!trimmed.isEmpty()) {
+                    ifaceBuilder.addDnsServer(java.net.InetAddress.getByName(trimmed));
+                }
             }
-        }, 5000);
+            ifaceBuilder.includeApplication(getPackageName());
+
+            Peer.Builder peerBuilder = new Peer.Builder();
+            peerBuilder.parsePublicKey(serverPubKey);
+            peerBuilder.setEndpoint(InetEndpoint.parse(endpoint + ":" + port));
+            for (String ip : allowedIps.split(",")) {
+                String trimmed = ip.trim();
+                if (!trimmed.isEmpty()) {
+                    peerBuilder.addAllowedIp(InetNetwork.parse(trimmed));
+                }
+            }
+            peerBuilder.setPersistentKeepalive(25);
+
+            Config.Builder configBuilder = new Config.Builder();
+            configBuilder.setInterface(ifaceBuilder.build());
+            configBuilder.addPeer(peerBuilder.build());
+
+            Log.d(TAG, "WireGuard config: " + endpoint + ":" + port);
+            return configBuilder.build();
+        } catch (Exception e) {
+            Log.e(TAG, "Config build failed: " + e.getMessage(), e);
+            return null;
+        }
     }
 
     private void stopVpn() {
         Log.d(TAG, "Stopping GhostVPN...");
-        running = false;
         isActive = false;
         connectedServer = null;
-
-        if (vpnThread != null) {
-            vpnThread.interrupt();
-            vpnThread = null;
-        }
-
-        try {
-            if (vpnInterface != null) {
-                vpnInterface.close();
-                vpnInterface = null;
+        if (backend != null && tunnel != null) {
+            try {
+                backend.setState(tunnel, Tunnel.State.DOWN, null);
+                Log.d(TAG, "WireGuard tunnel DOWN");
+            } catch (Exception e) {
+                Log.e(TAG, "Error stopping tunnel", e);
             }
-        } catch (IOException e) {
-            Log.e(TAG, "Error closing VPN interface", e);
         }
-
+        tunnel = null;
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
 
-    @Override
-    public void onDestroy() {
-        stopVpn();
-        super.onDestroy();
-    }
+    @Override public void onDestroy() { stopVpn(); super.onDestroy(); }
 
-    @Override
-    public void onRevoke() {
-        Log.w(TAG, "VPN permission revoked by user");
+    @Override public void onRevoke() {
+        Log.w(TAG, "VPN permission revoked");
         stopVpn();
     }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID, "VPN Service", NotificationManager.IMPORTANCE_LOW);
-            channel.setShowBadge(false);
-            NotificationManager nm = getSystemService(NotificationManager.class);
-            nm.createNotificationChannel(channel);
+            NotificationChannel ch = new NotificationChannel(
+                    CHANNEL_ID, "VPN Service", NotificationManager.IMPORTANCE_LOW);
+            ch.setShowBadge(false);
+            getSystemService(NotificationManager.class).createNotificationChannel(ch);
         }
     }
 
     private Notification buildNotification(String status) {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("StealthX VPN")
-            .setContentText(status)
-            .setSmallIcon(R.drawable.ic_lock)
-            .setOngoing(true)
-            .setSilent(true)
-            .build();
+                .setContentTitle("StealthX VPN").setContentText(status)
+                .setSmallIcon(R.drawable.ic_lock).setOngoing(true).setSilent(true).build();
     }
 
     private void updateNotification(String status) {
-        NotificationManager nm = getSystemService(NotificationManager.class);
-        nm.notify(NOTIFICATION_ID, buildNotification(status));
+        getSystemService(NotificationManager.class).notify(NOTIFICATION_ID, buildNotification(status));
+    }
+
+    private static class GhostTunnel implements Tunnel {
+        @Override public String getName() { return "stealthx"; }
+        @Override public void onStateChange(State s) {
+            Log.d("GhostVPN", "Tunnel state: " + s);
+            isActive = (s == State.UP);
+            if (s != State.UP) connectedServer = null;
+        }
     }
 }

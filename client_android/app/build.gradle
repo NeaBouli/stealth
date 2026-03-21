@@ -4,11 +4,12 @@ apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 
 android {
-    compileSdkVersion 33
+    namespace "com.securecall.app"
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.securecall.app"
-        minSdkVersion 23
+        minSdkVersion 24
         targetSdkVersion 33
         versionCode 2
         versionName "0.2-beta"
@@ -148,16 +149,17 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
 
     testOptions {
@@ -185,10 +187,8 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.fragment:fragment-ktx:1.6.1'
 
-    // WireGuard VPN: requires AGP 8+ (com.wireguard.android:tunnel uses Java Records)
-    // Blocked by current AGP 7.4.2 — upgrade AGP first, then add:
-    // implementation 'com.wireguard.android:tunnel:1.0.20260102'
-    // See docs/TODO.md TODO-006 for migration plan
+    // WireGuard VPN tunnel (Premium only, uses GoBackend with Noise_IKpsk2)
+    implementation 'com.wireguard.android:tunnel:1.0.20260102'
 
     // Google Play Billing (FREE flavor only)
     freeImplementation 'com.android.billingclient:billing-ktx:6.1.0'

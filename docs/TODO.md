@@ -12,7 +12,7 @@
 | TODO-008 | HKDF key derivation (CRYPTO-03) | OPEN | High | Uses random bytes instead of HKDF-SHA256 |
 | TODO-009 | Samsung background Activity launch | OPEN | Medium | fullScreenIntent unreliable on Samsung locked screen |
 | TODO-010 | Self-hosted TURN (coturn) | OPEN | Medium | Config exists in deployment/coturn_config/ |
-| TODO-011 | WireGuard VPN: upgrade AGP 7.4→8.x | OPEN | High | `com.wireguard.android:tunnel` requires AGP 8+ (Java Records). UI + VpnService scaffold ready. Blocked by AGP version |
+| TODO-011 | WireGuard VPN: upgrade AGP 7.4→8.x | DONE | High | AGP 8.7.3 + Gradle 8.14 + WireGuard tunnel 1.0.20260102 + GoBackend |
 
 ## Completed
 

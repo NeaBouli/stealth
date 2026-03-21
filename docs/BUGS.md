@@ -7,7 +7,7 @@
 | BUG-003 | Contact deduplication broken | FIXED | High | c9c2bbd |
 | BUG-004 | IFR wallet verify shows no token count | FIXED | High | c615a5b |
 | BUG-005 | Block screenshots not working on all Activities/tiers | FIXED | Medium | 3597cc9 |
-| BUG-006 | WireGuard VPN non-functional (no test config) | KNOWN STUB | Low | - |
+| BUG-006 | WireGuard VPN non-functional (no test config) | FIXED | Low | AGP 8.7.3 + GoBackend |
 | BUG-007 | Contacts cache empty after app restart — presence skipped | FIXED | Medium | 0681cc7 |
 | BUG-008 | CallActivity crash: SecurityException on PhoneStateListener | FIXED | Critical | a90c7fc |
 
