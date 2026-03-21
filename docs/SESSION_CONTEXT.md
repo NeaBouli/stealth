@@ -11,8 +11,18 @@
 ## Offen — heute Abend fortsetzen
 1. **S10 anschließen** — war bei letzter Session nicht verbunden
 2. **Call-Test mit neuen TURN Credentials** — S7→S10, prüfe ICE_FETCH mit neuen Credentials
-3. **WireGuard End-to-End Test** — echte Mullvad Config auf S10 eingeben, VPN-Tunnel prüfen
+3. **WireGuard End-to-End Test** — lokale Test-Config generiert, siehe `docs/WIREGUARD_TEST_SETUP.md`
 4. **Play Store Vorbereitung starten** — Screenshots, Beschreibung, Datenschutzerklärung
+
+## WireGuard Test-Plan (2026-03-21)
+Test-Optionen in Prioritätsreihenfolge:
+1. **BESTE OPTION: Lokale Test-Config** (kein VPN-Anbieter nötig)
+   - `wg genkey` auf Mac → Server + Client Keypairs generiert ✅
+   - Mini-Server Config auf Mac (`wg-quick up wg-test`) → bereit in `/tmp/wg-test-server.conf`
+   - Client Config für S10 → bereit in `/tmp/securecall-test.conf`
+   - In SecureCall Premium Settings importieren
+2. **MULLVAD:** Giorgio hat Mullvad bereits — mullvad.net/account → WireGuard Config generieren
+3. **PROTON VPN:** Free Plan verfügbar als Fallback
 
 ## Device Serials
 - S10 Premium: `RF8N313QMFL`
