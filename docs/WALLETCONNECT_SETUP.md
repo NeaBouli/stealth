@@ -9,7 +9,7 @@ The Project ID must be created at [cloud.reown.com](https://cloud.reown.com):
 3. Copy the Project ID (hex string, e.g. `a1b2c3d4e5f6...`)
 4. Replace `PROJECT_ID` in `WalletConnectManager.kt` line 27
 
-**Current placeholder:** `83571cb4-8aa5-4b4b-bc0e-b9b098785fc7` (not yet registered — will return 403)
+**Current placeholder:** `32f56abaa4b1d7f59fb1571c0c0a551f` (not yet registered — will return 403)
 
 ## App IDs to register in Reown dashboard
 All three flavors:
