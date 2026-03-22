@@ -1,5 +1,8 @@
 # Emergency Broadcast System — Admin Guide
 
+> **SECURITY:** `ADMIN_API_KEY` is stored ONLY in Railway environment variables.
+> Never commit the actual key. Find it: Railway Dashboard → Variables → `ADMIN_API_KEY`
+
 ## How It Works
 The server sends ONLY a numeric `template_id` to all connected clients.
 No message text is transmitted — all alert content is pre-installed on each device.

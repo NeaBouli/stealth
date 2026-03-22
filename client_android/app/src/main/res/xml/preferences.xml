@@ -237,6 +237,29 @@
             android:icon="@drawable/ic_shield" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="Support Development">
+        <Preference
+            android:key="pref_donate_eth"
+            android:title="ETH"
+            android:summary="0xA0860f...2b275"
+            android:icon="@drawable/ic_lock" />
+        <Preference
+            android:key="pref_donate_btc"
+            android:title="BTC"
+            android:summary="bc1qu0z...9sse"
+            android:icon="@drawable/ic_lock" />
+        <Preference
+            android:key="pref_donate_sol"
+            android:title="SOL"
+            android:summary="7tXfgs...HXDv"
+            android:icon="@drawable/ic_lock" />
+        <Preference
+            android:key="pref_donate_ifr"
+            android:title="IFR Token"
+            android:summary="Lock tokens at ifrunit.tech for Premium access"
+            android:icon="@drawable/ic_shield" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/settings_advanced">
         <Preference
             android:key="pref_reset_app"

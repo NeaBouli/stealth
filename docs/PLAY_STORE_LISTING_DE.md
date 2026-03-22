@@ -42,6 +42,9 @@ Empfangen Sie kritische Sicherheitswarnungen vom Entwicklerteam. Vorinstallierte
   IFR ist der native Token des Inferno Protocol (ifrunit.tech)
   Bootstrap-Phase endet 5. Juni 2026 — Handel erwartet ab August 2026
 
+🎁 PREMIUM VERSCHENKEN
+Erstelle einen einmaligen Geschenkcode für einen Freund. Eingabe in Einstellungen — sofort Premium. Kein Account nötig. Läuft nach 30 Tagen ab.
+
 🌍 DATENSCHUTZ DURCH DESIGN
 • Keine Kontoregistrierung
 • Keine persönlichen Daten auf unseren Servern

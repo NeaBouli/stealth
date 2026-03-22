@@ -1106,6 +1106,23 @@ wss.on("connection", (ws, req) => {
       }
 
       const entry = activationCodes.find(c => c.code === code);
+
+      // Check gift codes if not found in activation codes
+      if (!entry && giftCodes.has(code)) {
+        const gift = giftCodes.get(code);
+        if (gift.used) {
+          return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "already_used" }));
+        }
+        if (new Date(gift.expires) < new Date()) {
+          return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "expired" }));
+        }
+        gift.used = true;
+        gift.usedBy = getClientId(connId);
+        const myClientId = getClientId(connId);
+        console.log("[GIFT] Code redeemed:", code, "-> tier:", gift.tier, "by:", myClientId);
+        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: true, tier: gift.tier }));
+      }
+
       if (!entry) {
         console.log("[ACTIVATION] Invalid code attempted:", code);
         return ws.send(JSON.stringify({
@@ -1308,6 +1325,84 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (error) => {
   console.error('[ERROR] Uncaught Exception:', error);
   process.exit(1);
+});
+
+// --- Emergency Broadcast Endpoint (admin-only) ---
+app.post("/admin/broadcast", requireAdmin, (req, res) => {
+  const { template_id } = req.body;
+  if (!template_id || template_id < 1 || template_id > 8) {
+    return res.status(400).json({ error: "invalid template_id (1-8)" });
+  }
+
+  // Broadcast to all connected WebSocket clients
+  const msg = JSON.stringify({ type: "EMERGENCY_BROADCAST", template_id });
+  let wsSent = 0;
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(msg);
+      wsSent++;
+    }
+  });
+
+  // Also send via FCM to all registered tokens
+  let fcmSent = 0;
+  if (fcm.isInitialized()) {
+    for (const [clientId, token] of fcmTokens.entries()) {
+      try {
+        const admin = require("firebase-admin");
+        admin.messaging().send({
+          token,
+          data: { type: "EMERGENCY_BROADCAST", template_id: String(template_id) },
+          android: { priority: "high" }
+        }).then(() => { fcmSent++; }).catch(() => {});
+      } catch (_) {}
+    }
+  }
+
+  console.log(`[BROADCAST] Emergency template=${template_id} sent to ${wsSent} WS clients, ${fcmTokens.size} FCM targets`);
+  res.json({ ok: true, ws_sent: wsSent, fcm_targets: fcmTokens.size });
+});
+
+// --- Gift Link System (admin-only) ---
+const giftCodes = new Map();
+
+app.post("/admin/gift", requireAdmin, (req, res) => {
+  const { tier, note } = req.body;
+  if (!tier || !["pro", "premium"].includes(tier.toLowerCase())) {
+    return res.status(400).json({ error: "tier must be 'pro' or 'premium'" });
+  }
+
+  const code = "GIFT-" + crypto.randomBytes(4).toString("hex").toUpperCase();
+  const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+  giftCodes.set(code, {
+    tier: tier.toUpperCase(),
+    note: note || "",
+    created: new Date().toISOString(),
+    expires,
+    used: false,
+    usedBy: null
+  });
+
+  console.log(`[GIFT] Created ${code} → ${tier.toUpperCase()} (note: ${note || "none"})`);
+  res.json({ code, tier: tier.toUpperCase(), expires, note: note || "" });
+});
+
+app.get("/admin/gifts", requireAdmin, (req, res) => {
+  const gifts = [];
+  for (const [code, data] of giftCodes.entries()) {
+    gifts.push({ code, ...data });
+  }
+  res.json({ gifts });
+});
+
+app.delete("/admin/gift/:code", requireAdmin, (req, res) => {
+  const code = req.params.code;
+  if (!giftCodes.has(code)) {
+    return res.status(404).json({ error: "gift code not found" });
+  }
+  giftCodes.delete(code);
+  res.json({ ok: true, deleted: code });
 });
 
 // --- Health Check Endpoint ---

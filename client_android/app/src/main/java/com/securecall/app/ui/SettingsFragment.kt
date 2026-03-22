@@ -146,6 +146,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Licenses placeholder
         findPreference<Preference>("pref_licenses")?.summary = "Apache 2.0, MIT, BSD"
 
+        // Donation addresses — copy to clipboard on tap
+        setupDonationPrefs()
+
         // Stealth-delete: 5-tap rapid trigger on "Reset App"
         findPreference<Preference>("pref_reset_app")?.setOnPreferenceClickListener {
             handleResetTap()
@@ -203,6 +206,31 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun openUrl(url: String) {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+
+    private fun setupDonationPrefs() {
+        val addresses = mapOf(
+            "pref_donate_eth" to "0xA0860f872a9cAB34817D9a764e71ab43B942b275",
+            "pref_donate_btc" to "bc1qu0z0yur24cck25wc6rmack9tvczvx6g50y9sse",
+            "pref_donate_sol" to "7tXfgsfw5SPsXMFQD1XYMSMYko77anuxNyRfY6YaHXDV"
+        )
+        val ctx = requireContext()
+        for ((key, addr) in addresses) {
+            findPreference<Preference>(key)?.apply {
+                summary = addr
+                setOnPreferenceClickListener {
+                    val clip = android.content.ClipData.newPlainText("address", addr)
+                    (ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+                        .setPrimaryClip(clip)
+                    android.widget.Toast.makeText(ctx, "Address copied", android.widget.Toast.LENGTH_SHORT).show()
+                    true
+                }
+            }
+        }
+        findPreference<Preference>("pref_donate_ifr")?.setOnPreferenceClickListener {
+            openUrl("https://ifrunit.tech")
+            true
+        }
     }
 
     private fun configureActivationCode(effectiveTier: String) {

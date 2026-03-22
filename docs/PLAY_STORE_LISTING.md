@@ -42,6 +42,9 @@ Receive critical security alerts from the development team. Pre-installed templa
   IFR is the native token of Inferno Protocol (ifrunit.tech)
   Bootstrap phase ends June 5, 2026 — trading expected August 2026
 
+🎁 GIFT PREMIUM ACCESS
+Generate a one-time gift code for a friend. They enter it in Settings → instant Premium. No account needed. Expires in 30 days.
+
 🌍 PRIVACY BY DESIGN
 • No account registration
 • No personal data on our servers
