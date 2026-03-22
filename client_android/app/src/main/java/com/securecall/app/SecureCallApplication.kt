@@ -39,5 +39,12 @@ class SecureCallApplication : Application() {
             )
             android.util.Log.d("SecureCallApp", "WebRTC PeerConnectionFactory initialized")
         }, "webrtc-init").start()
+
+        // Initialize WalletConnect / Reown AppKit (non-blocking)
+        try {
+            com.securecall.app.wallet.WalletConnectManager.init(this)
+        } catch (e: Exception) {
+            android.util.Log.e("SecureCallApp", "WalletConnect init failed (non-fatal)", e)
+        }
     }
 }

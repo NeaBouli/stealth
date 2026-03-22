@@ -192,7 +192,7 @@
     <string name="pref_ifr_wallet_dialog">Enter your wallet address (0x\u2026)</string>
     <string name="pref_ifr_verify">Verify Lock</string>
     <string name="pref_ifr_walletconnect">Connect Wallet</string>
-    <string name="pref_ifr_walletconnect_summary">WalletConnect (coming soon)</string>
+    <string name="pref_ifr_walletconnect_summary">Connect via WalletConnect for permanent unlock</string>
     <string name="ifr_status_none">No wallet connected</string>
     <string name="ifr_status_active">%1$s IFR held \u2192 %2$s active</string>
     <string name="ifr_status_insufficient">%1$s IFR held (need 1,000 for Pro)</string>

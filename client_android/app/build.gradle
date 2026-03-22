@@ -5,7 +5,7 @@ apply plugin: 'com.google.firebase.crashlytics'
 
 android {
     namespace "com.securecall.app"
-    compileSdk 33
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.securecall.app"
@@ -189,6 +189,14 @@ dependencies {
 
     // WireGuard VPN tunnel (Premium only, uses GoBackend with Noise_IKpsk2)
     implementation 'com.wireguard.android:tunnel:1.0.20260102'
+
+    // WalletConnect v2 — Sign client for IFR token wallet verification
+    implementation("com.walletconnect:android-core:1.26.0") {
+        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
+    }
+    implementation("com.walletconnect:sign:2.26.0") {
+        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
+    }
 
     // Google Play Billing (FREE flavor only)
     freeImplementation 'com.android.billingclient:billing-ktx:6.1.0'

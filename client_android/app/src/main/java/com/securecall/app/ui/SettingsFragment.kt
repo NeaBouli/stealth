@@ -578,13 +578,63 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        // WalletConnect placeholder — show "Confirm for lifetime" if manual wallet active
+        // WalletConnect — connect wallet for permanent tier unlock
         findPreference<Preference>("pref_ifr_walletconnect")?.apply {
-            isEnabled = false
-            summary = if (ifrTier != null && method == com.securecall.app.config.IfrLockManager.METHOD_MANUAL) {
-                "Confirm with WalletConnect for lifetime access (coming soon)"
+            val wcWallet = com.securecall.app.wallet.WalletConnectManager.getConnectedWallet()
+            isEnabled = true
+            summary = when {
+                method == com.securecall.app.config.IfrLockManager.METHOD_WALLETCONNECT && ifrTier != null ->
+                    "Connected: ${wallet?.take(6)}...${wallet?.takeLast(4)} — Permanent unlock active"
+                wcWallet != null ->
+                    "Connected: ${wcWallet.take(6)}...${wcWallet.takeLast(4)} — Tap to verify IFR"
+                else ->
+                    getString(R.string.pref_ifr_walletconnect_summary)
+            }
+            title = if (method == com.securecall.app.config.IfrLockManager.METHOD_WALLETCONNECT) {
+                "Disconnect WalletConnect"
             } else {
-                getString(R.string.pref_ifr_walletconnect_summary)
+                getString(R.string.pref_ifr_walletconnect)
+            }
+            setOnPreferenceClickListener {
+                if (method == com.securecall.app.config.IfrLockManager.METHOD_WALLETCONNECT) {
+                    // Disconnect
+                    com.securecall.app.wallet.WalletConnectManager.disconnect(ctx)
+                    com.securecall.app.config.IfrLockManager.clearIfrUnlock(ctx)
+                    android.widget.Toast.makeText(ctx, "Wallet disconnected", android.widget.Toast.LENGTH_SHORT).show()
+                    configureIfrUnlock(effectiveTier)
+                } else if (!com.securecall.app.wallet.WalletConnectManager.isInitialized) {
+                    android.widget.Toast.makeText(ctx, "WalletConnect initializing...", android.widget.Toast.LENGTH_SHORT).show()
+                } else {
+                    // Start WalletConnect pairing
+                    summary = "Connecting..."
+                    isEnabled = false
+                    com.securecall.app.wallet.WalletConnectManager.connect(ctx) { success, result ->
+                        activity?.runOnUiThread {
+                            if (!isAdded) return@runOnUiThread
+                            isEnabled = true
+                            if (success) {
+                                // Wallet connected — now verify IFR balance
+                                summary = "Connected: ${result.take(6)}...${result.takeLast(4)} — Verifying..."
+                                com.securecall.app.wallet.WalletConnectManager.verifyAndUnlock(ctx, result) { verified, msg ->
+                                    activity?.runOnUiThread {
+                                        if (!isAdded) return@runOnUiThread
+                                        android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
+                                        if (verified) {
+                                            configureIfrUnlock(effectiveTier)
+                                        } else {
+                                            summary = msg
+                                        }
+                                    }
+                                }
+                            } else if (result == "no_wallet_app") {
+                                summary = "No wallet app found — install MetaMask or Trust Wallet"
+                            } else {
+                                summary = result
+                            }
+                        }
+                    }
+                }
+                true
             }
         }
     }
