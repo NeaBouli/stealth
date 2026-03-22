@@ -54,7 +54,11 @@ object WalletConnectManager {
                 application = application,
                 metaData = metadata
             ) { error ->
-                Log.e(TAG, "CoreClient init error: ${error.throwable.message}")
+                val msg = error.throwable.message ?: "unknown"
+                Log.e(TAG, "CoreClient init error: $msg")
+                if (msg.contains("403")) {
+                    Log.e(TAG, "Project ID rejected — register at cloud.reown.com")
+                }
             }
 
             val signParams = Sign.Params.Init(core = CoreClient)
@@ -147,8 +151,13 @@ object WalletConnectManager {
         )
 
         val pairing = CoreClient.Pairing.create { error ->
-            Log.e(TAG, "Pairing create error: ${error.throwable.message}")
-            callback(false, "Pairing failed: ${error.throwable.message}")
+            val msg = error.throwable.message ?: "unknown"
+            Log.e(TAG, "Pairing create error: $msg")
+            if (msg.contains("403") || msg.contains("Forbidden")) {
+                callback(false, "Invalid WalletConnect Project ID — register at cloud.reown.com")
+            } else {
+                callback(false, "Pairing failed: $msg")
+            }
         } ?: run {
             callback(false, "Failed to create pairing")
             return
@@ -180,8 +189,13 @@ object WalletConnectManager {
                 }
             },
             onError = { error: Sign.Model.Error ->
-                Log.e(TAG, "Connect error: ${error.throwable.message}")
-                callback(false, "Connection failed: ${error.throwable.message}")
+                val msg = error.throwable.message ?: "unknown"
+                Log.e(TAG, "Connect error: $msg")
+                if (msg.contains("403") || msg.contains("Forbidden") || msg.contains("Connection error")) {
+                    callback(false, "WalletConnect Project ID not registered — contact developer")
+                } else {
+                    callback(false, "Connection failed: $msg")
+                }
             }
         )
     }
