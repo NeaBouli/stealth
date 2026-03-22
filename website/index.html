@@ -29,6 +29,12 @@
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <style>
+        .lang-switcher-nav{display:inline-flex;gap:4px;margin-right:12px;vertical-align:middle}
+        .lang-btn{background:transparent;border:1px solid rgba(255,255,255,0.12);color:#888;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-family:inherit;line-height:1.4}
+        .lang-btn.active{border-color:#FF4444;color:#fff;background:rgba(255,68,68,0.15)}
+        .lang-btn:hover{border-color:#666}
+    </style>
 </head>
 <body>
     <!-- ─── Navigation ──────────────────────────────────────── -->
@@ -39,15 +45,15 @@
                 SecureCall
             </a>
             <div class="nav-links" id="navLinks">
-                <a href="./#features">Features</a>
-                <a href="./#security">Security</a>
-                <a href="./#audit">Audit</a>
-                <a href="./#pricing">Pricing</a>
-                <a href="./#lifetime" style="color:#FFD700">Lifetime</a>
-                <a href="wiki/" style="color:var(--accent-light)">Wiki</a>
-                <a href="faq.html">FAQ</a>
-                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
-                <a href="./#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+                <a href="./#features" data-i18n="nav_features">Features</a>
+                <a href="./#security" data-i18n="nav_security">Security</a>
+                <a href="./#audit" data-i18n="nav_audit">Audit</a>
+                <a href="./#pricing" data-i18n="nav_pricing">Pricing</a>
+                <a href="./#lifetime" style="color:#FFD700" data-i18n="nav_lifetime">Lifetime</a>
+                <a href="wiki/" style="color:var(--accent-light)" data-i18n="nav_wiki">Wiki</a>
+                <a href="faq.html" data-i18n="nav_faq">FAQ</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener" data-i18n="nav_github">GitHub</a>
+                <a href="./#download" class="btn btn-primary btn-sm nav-cta" data-i18n="nav_download">Download</a>
             </div>
             <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
                 <span></span>
@@ -66,8 +72,8 @@
                         <span class="dot" style="background:#D32F2F;box-shadow:0 0 6px #D32F2F"></span>
                         COMMS SECURE &middot; FIELD READY
                     </div>
-                    <h1>Classified<br>Voice <span class="text-gradient">Communications</span>.</h1>
-                    <p class="hero-subtitle">
+                    <h1 data-i18n="hero_title">Classified<br>Voice <span class="text-gradient">Communications</span>.</h1>
+                    <p class="hero-subtitle" data-i18n="hero_subtitle">
                         Field-grade end-to-end encrypted voice calls. Zero metadata. Zero trust required.
                         Built with Rust cryptography for operators who demand absolute privacy.
                     </p>
@@ -658,8 +664,8 @@
     <!-- ─── CTA / Download ──────────────────────────────────── -->
     <section class="cta" id="download">
         <div class="container">
-            <h2>Ready to secure<br>your <span class="text-gradient">comms</span>?</h2>
-            <p>Deploy SecureCall and establish your first encrypted channel in under 60 seconds.</p>
+            <h2 data-i18n="cta_title">Ready to secure<br>your <span class="text-gradient">comms</span>?</h2>
+            <p data-i18n="cta_subtitle">Deploy SecureCall and establish your first encrypted channel in under 60 seconds.</p>
             <div class="cta-buttons">
                 <a href="#" class="store-badge" aria-label="Get it on Google Play">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.61 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/></svg>
@@ -760,5 +766,6 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script src="js/i18n.js"></script>
 </body>
 </html>
