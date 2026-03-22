@@ -4,6 +4,11 @@
     <uses-permission android:name="com.android.vending.BILLING" />
 
     <application>
+        <!-- AdMob App ID (test ID for debug — replace with real ID for production) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+
         <activity
             android:name="com.securecall.app.billing.UpgradeActivity"
             android:exported="false"

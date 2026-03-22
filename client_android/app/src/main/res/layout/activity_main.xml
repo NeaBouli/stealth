@@ -41,6 +41,15 @@
         app:iconTint="@android:color/white"
         android:contentDescription="@string/new_call" />
 
+    <!-- Ad banner container (used by FREE flavor only, empty in Pro/Premium) -->
+    <FrameLayout
+        android:id="@+id/adBannerContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="56dp"
+        android:visibility="gone" />
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"

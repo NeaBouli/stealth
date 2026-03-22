@@ -160,6 +160,12 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             bottomNav.setSelectedItemId(R.id.nav_calls);
         }
+
+        // AdMob — FREE flavor only (Pro/Premium stubs are no-ops)
+        com.securecall.app.ads.AdMobManager.INSTANCE.init(this);
+        android.widget.FrameLayout adContainer = findViewById(R.id.adBannerContainer);
+        com.securecall.app.ads.AdMobManager.INSTANCE.loadBanner(this, adContainer);
+        com.securecall.app.ads.AdMobManager.INSTANCE.preloadInterstitial(this);
     }
 
     private void showFragment(Fragment fragment) {

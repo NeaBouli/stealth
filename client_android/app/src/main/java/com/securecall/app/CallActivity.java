@@ -778,6 +778,9 @@ public class CallActivity extends AppCompatActivity {
             secureCallMonitor.stopMonitoring(this);
         }
 
+        // Show interstitial ad after call (FREE flavor only, Pro/Premium no-op)
+        com.securecall.app.ads.AdMobManager.INSTANCE.onCallCompleted(this);
+
         // Offer to save contact if this was a phone-resolved call to an unsaved clientId
         // IMPORTANT: Do NOT release proximity sensor before showing dialog — on Samsung devices,
         // releasing the wake lock triggers a screen state transition that can destroy the Activity.
