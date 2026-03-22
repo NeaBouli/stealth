@@ -96,6 +96,10 @@
             android:showOnLockScreen="true"
             android:turnScreenOn="true" />
         <activity android:name=".ui.onboarding.OnboardingActivity" />
+        <activity
+            android:name=".emergency.EmergencyBroadcastActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:exported="false" />
 
         <!-- FCM Messaging Service -->
         <service

@@ -1,0 +1,44 @@
+Categories:
+  - Phone & SMS
+  - Security
+License: Apache-2.0
+AuthorName: StealthX
+AuthorEmail: ''
+AuthorWebSite: https://neabouli.github.io/stealth/
+WebSite: https://neabouli.github.io/stealth/
+SourceCode: https://github.com/NeaBouli/stealth
+IssueTracker: https://github.com/NeaBouli/stealth/issues
+
+AutoName: SecureCall
+
+Summary: Encrypted P2P calls with no phone number required
+
+Description: |
+  SecureCall is a privacy-first encrypted calling app.
+
+  Features:
+  * End-to-end encrypted calls (X25519 + DTLS-SRTP)
+  * No phone number required — identified by SecureID
+  * Built-in WireGuard VPN (Premium)
+  * STEALTH-DELETE emergency data wipe
+  * Emergency Broadcast System
+  * No ads, no tracking, no telemetry
+
+  This F-Droid build contains no proprietary libraries:
+  no Google Play Services, no Firebase, no AdMob.
+
+RepoType: git
+Repo: https://github.com/NeaBouli/stealth.git
+
+Builds:
+  - versionName: 0.2-beta-fdroid
+    versionCode: 2
+    commit: v2.4-broadcast
+    subdir: client_android/app
+    gradle:
+      - fdroid
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: Tags
+CurrentVersion: 0.2-beta-fdroid
+CurrentVersionCode: 2

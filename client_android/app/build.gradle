@@ -108,6 +108,32 @@ android {
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "true"
             buildConfigField "boolean", "BILLING_ENABLED", "false"
         }
+
+        fdroid {
+            dimension "tier"
+            applicationIdSuffix ".fdroid"
+            versionNameSuffix "-fdroid"
+
+            buildConfigField "String", "TIER", "\"FREE\""
+            buildConfigField "int", "MAX_CALL_DURATION_MINUTES", "15"
+            buildConfigField "int", "MAX_CONTACTS", "10"
+            buildConfigField "boolean", "DEVICE_ATTESTATION_REQUIRED", "false"
+            buildConfigField "boolean", "ROOT_DETECTION_BLOCKS", "false"
+            buildConfigField "boolean", "CERTIFICATE_PINNING", "false"
+            buildConfigField "boolean", "CALL_RECORDING_ALLOWED", "true"
+            buildConfigField "boolean", "TELEMETRY_ENABLED", "false"
+            buildConfigField "boolean", "THIRD_PARTY_ANALYTICS", "false"
+            buildConfigField "String", "RECONNECT_STRATEGY", "\"basic\""
+            buildConfigField "boolean", "MULTI_DEVICE_SUPPORT", "false"
+            buildConfigField "boolean", "SCREEN_CAPTURE_DETECTION", "false"
+            buildConfigField "boolean", "DEBUGGER_DETECTION", "false"
+            buildConfigField "boolean", "EMULATOR_DETECTION", "false"
+            buildConfigField "boolean", "HARDWARE_KEYSTORE_REQUIRED", "false"
+            buildConfigField "String", "LOGGING_LEVEL", "\"DEBUG\""
+            buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
+            buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
+            buildConfigField "boolean", "BILLING_ENABLED", "false"
+        }
     }
 
     signingConfigs {
@@ -221,6 +247,13 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.5.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+// Disable google-services and crashlytics plugin for fdroid flavor
+afterEvaluate {
+    tasks.matching { it.name.contains("Fdroid") && (it.name.contains("GoogleServices") || it.name.contains("Crashlytics")) }.configureEach {
+        enabled = false
+    }
 }
 
 // PATCH 215 — native build integration skeleton

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- F-Droid: no billing, no AdMob, no Firebase -->
+    <!-- Remove FCM service since Firebase is not available -->
+    <application>
+        <service
+            android:name="com.securecall.app.fcm.SecureCallMessagingService"
+            tools:node="remove" />
+    </application>
+</manifest>

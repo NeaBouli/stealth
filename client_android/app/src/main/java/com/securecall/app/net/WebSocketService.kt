@@ -741,6 +741,21 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             }
         } catch (_: Throwable) {}
 
+        // Emergency Broadcast — only a template_id, no message content
+        try {
+            val obj = org.json.JSONObject(json)
+            if (obj.optString("type") == "EMERGENCY_BROADCAST") {
+                val templateId = obj.optInt("template_id", -1)
+                Log.d("WS_SERVICE", "EMERGENCY_BROADCAST received: template_id=$templateId")
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    com.securecall.app.emergency.EmergencyBroadcastManager.handleBroadcast(
+                        applicationContext, templateId
+                    )
+                }
+                return
+            }
+        } catch (_: Throwable) {}
+
         // Subscription verification
         try {
             val obj = org.json.JSONObject(json)

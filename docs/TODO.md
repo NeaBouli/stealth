@@ -15,9 +15,10 @@
 | TODO-011 | WireGuard VPN: upgrade AGP 7.4→8.x | DONE | High | AGP 8.7.3 + Gradle 8.14 + WireGuard tunnel 1.0.20260102 + GoBackend |
 | TODO-012 | WalletConnect v2 Integration | DONE | High | Merged with TODO-002 |
 | TODO-013 | AdMob Werbung Free Flavor | DONE | High | Test IDs active, banner + interstitial, Pro/Premium no-op stubs |
-| TODO-014 | F-Droid Version vorbereiten | OPEN | Medium | Separate Build ohne proprietäre Libs |
-| TODO-015 | Play Store Listing | OPEN | High | Screenshots morgen, Beschreibung + Datenschutz heute |
-| TODO-016 | Datenschutzerklärung | OPEN | High | Hosted auf GitHub Pages (keine eigene Domain nötig) |
+| TODO-014 | F-Droid Version vorbereiten | DONE | Medium | fdroid flavor, no Google services, metadata YAML |
+| TODO-015 | Play Store Listing | DONE | High | EN + DE texts in docs/, screenshots pending |
+| TODO-016 | Datenschutzerklärung | DONE | High | neabouli.github.io/stealth/privacy.html (EN + DE, AdMob disclosure) |
+| TODO-017 | Emergency Broadcast System | DONE | High | 8 templates, WS + FCM delivery, EmergencyBroadcastActivity |
 
 ## Completed
 

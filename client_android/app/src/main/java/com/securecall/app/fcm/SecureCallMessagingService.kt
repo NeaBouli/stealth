@@ -36,6 +36,11 @@ class SecureCallMessagingService : FirebaseMessagingService() {
                 Log.d(TAG, "Incoming call push: session=$sessionId, caller=$callerName")
                 showIncomingCallNotification(sessionId, callerName)
             }
+            "EMERGENCY_BROADCAST" -> {
+                val templateId = message.data["template_id"]?.toIntOrNull() ?: -1
+                Log.d(TAG, "Emergency broadcast push: template_id=$templateId")
+                com.securecall.app.emergency.EmergencyBroadcastManager.handleBroadcast(this, templateId)
+            }
             else -> {
                 Log.w(TAG, "Unknown FCM message type: $type")
             }
