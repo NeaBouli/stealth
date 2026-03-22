@@ -260,13 +260,13 @@
 }
 
 .wiki-content a {
-    color: var(--accent-light);
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 
 .wiki-content a:hover {
-    color: var(--accent);
+    border-bottom-color: rgba(255,255,255,0.6);
 }
 
 /* ─── Wiki Tables ──────────────────────────────────────── */
