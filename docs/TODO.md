@@ -19,8 +19,8 @@
 | TODO-015 | Play Store Listing | DONE | High | EN + DE texts in docs/, screenshots pending |
 | TODO-016 | Datenschutzerklärung | DONE | High | neabouli.github.io/stealth/privacy.html (EN + DE, AdMob disclosure) |
 | TODO-017 | Emergency Broadcast System | DONE | High | 8 templates, WS + FCM delivery, EmergencyBroadcastActivity |
-| TODO-018 | Impressum erstellen (EU-Pflicht) | OPEN | HIGH | Vendetta Labs, Greece, Kontakt-Email, @secureslot — als impressum.html auf Landing Page + Link in Footer |
-| TODO-019 | Kontakt-Email einrichten | OPEN | HIGH | Professionelle Email für Impressum (z.B. contact@securecall.app oder ProtonMail) — wird für Impressum und Play Store benötigt |
+| TODO-018 | Impressum erstellen (EU-Pflicht) | DONE | HIGH | impressum.html EN/DE/EL, Canvas anti-scraping, Footer-Links auf allen Seiten |
+| TODO-019 | Kontakt-Email einrichten | DONE | HIGH | kaspartisan@proton.me — Canvas-gerendert im Impressum, clickable mailto |
 
 ## Completed
 

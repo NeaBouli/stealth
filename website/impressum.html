@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impressum / Legal Notice — SecureCall</title>
+    <meta name="description" content="Legal notice (Impressum) for SecureCall by Vendetta Labs, Greece. EU-compliant service provider information.">
+    <meta name="theme-color" content="#0B0B0F">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://stealthx.tech/impressum.html">
+
+    <meta property="og:title" content="Impressum — SecureCall">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://stealthx.tech/impressum.html">
+    <meta property="og:site_name" content="SecureCall">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <style>
+        .impressum-container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 120px 24px 60px;
+        }
+        .impressum-container h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        .impressum-container h2 {
+            font-size: 1.2rem;
+            color: #FF4444;
+            margin-top: 32px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255,68,68,0.2);
+            padding-bottom: 6px;
+        }
+        .impressum-container p, .impressum-container a {
+            color: #ccc;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+        .impressum-container a {
+            color: #FF9800;
+            text-decoration: none;
+        }
+        .impressum-container a:hover {
+            text-decoration: underline;
+        }
+        .lang-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+        .lang-tab {
+            padding: 8px 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .lang-tab.active {
+            background: #FF4444;
+            color: #fff;
+            border-color: #FF4444;
+        }
+        .lang-tab:hover:not(.active) {
+            border-color: #666;
+            color: #ccc;
+        }
+        .lang-content { display: none; }
+        .lang-content.active { display: block; }
+        .canvas-field {
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .canvas-field canvas {
+            display: block;
+        }
+        .email-canvas {
+            cursor: pointer;
+        }
+        .protected-section {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        .disclaimer {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            border: 1px solid #222;
+        }
+        .disclaimer p {
+            color: #888;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="./" class="nav-logo">
+                <img src="logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="./#features">Features</a>
+                <a href="./#security">Security</a>
+                <a href="./#pricing">Pricing</a>
+                <a href="./#lifetime" style="color:#FFD700">Lifetime</a>
+                <a href="wiki/" style="color:var(--accent-light)">Wiki</a>
+                <a href="faq.html">FAQ</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="./#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="hamburger" id="hamburger" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="impressum-container">
+
+        <!-- Language Tabs -->
+        <div class="lang-tabs">
+            <button class="lang-tab active" onclick="switchLang('en')">EN</button>
+            <button class="lang-tab" onclick="switchLang('de')">DE</button>
+            <button class="lang-tab" onclick="switchLang('el')">EL</button>
+        </div>
+
+        <!-- ═══ ENGLISH ═══ -->
+        <div id="lang-en" class="lang-content active">
+            <h1>Legal Notice</h1>
+            <p style="color:#666;margin-bottom:24px">Information in accordance with EU E-Commerce Directive (2000/31/EC)</p>
+
+            <h2>Service Provider</h2>
+            <p>Vendetta Labs</p>
+            <div class="protected-section">
+                <div class="canvas-field"><canvas id="ownerEN" height="28"></canvas></div>
+            </div>
+            <p>Greece / European Union</p>
+
+            <h2>Contact</h2>
+            <p>Email:</p>
+            <div class="protected-section">
+                <div class="canvas-field"><canvas id="emailEN" height="26" class="email-canvas"></canvas></div>
+            </div>
+            <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
+
+            <h2>Responsible for Content</h2>
+            <div class="protected-section">
+                <div class="canvas-field"><canvas id="respEN" height="28"></canvas></div>
+            </div>
+
+            <h2>EU Dispute Resolution</h2>
+            <p>Platform of the EU Commission for online dispute resolution:<br>
+            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener">https://ec.europa.eu/consumers/odr</a></p>
+            <p>We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board.</p>
+
+            <div class="disclaimer">
+                <h2 style="margin-top:0">Disclaimer</h2>
+                <p>The contents of this website have been created with the utmost care. However, we cannot guarantee the accuracy, completeness or topicality of the content. As a service provider, we are responsible for our own content on these pages in accordance with general laws. However, we are not obligated to monitor transmitted or stored third-party information.</p>
+            </div>
+        </div>
+
+        <!-- ═══ DEUTSCH ═══ -->
+        <div id="lang-de" class="lang-content">
+            <h1>Impressum</h1>
+            <p style="color:#666;margin-bottom:24px">Angaben gem. &sect; 5 TMG / EU E-Commerce-Richtlinie (2000/31/EG)</p>
+
+            <h2>Dienstanbieter</h2>
+            <p>Vendetta Labs</p>
+            <div class="protected-section">
+                <div class="canvas-field"><canvas id="ownerDE" height="28"></canvas></div>
+            </div>
+            <p>Griechenland / Europ&auml;ische Union</p>
+
+            <h2>Kontakt</h2>
+            <p>E-Mail:</p>
+            <div class="protected-section">
+                <div class="canvas-field"><canvas id="emailDE" height="26" class="email-canvas"></canvas></div>
+            </div>
+            <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
+
+            <h2>Verantwortlich f&uuml;r den Inhalt</h2>
+            <div class="protected-section">
+                <div class="canvas-field"><canvas id="respDE" height="28"></canvas></div>
+            </div>
+
+            <h2>EU-Streitbeilegung</h2>
+            <p>Plattform der EU-Kommission zur Online-Streitbeilegung:<br>
+            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener">https://ec.europa.eu/consumers/odr</a></p>
+            <p>Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+
+            <div class="disclaimer">
+                <h2 style="margin-top:0">Haftungsausschluss</h2>
+                <p>Die Inhalte dieser Website wurden mit gr&ouml;&szlig;ter Sorgfalt erstellt. F&uuml;r die Richtigkeit, Vollst&auml;ndigkeit und Aktualit&auml;t der Inhalte k&ouml;nnen wir jedoch keine Gew&auml;hr &uuml;bernehmen. Als Dienstanbieter sind wir gem&auml;&szlig; den allgemeinen Gesetzen f&uuml;r eigene Inhalte auf diesen Seiten verantwortlich. Wir sind jedoch nicht verpflichtet, &uuml;bermittelte oder gespeicherte Informationen Dritter zu &uuml;berwachen.</p>
+            </div>
+        </div>
+
+        <!-- ═══ ΕΛΛΗΝΙΚΑ ═══ -->
+        <div id="lang-el" class="lang-content">
+            <h1>&#925;&#959;&#956;&#953;&#954;&#942; &#931;&#951;&#956;&#949;&#943;&#969;&#963;&#951;</h1>
+            <p style="color:#666;margin-bottom:24px">&#928;&#955;&#951;&#961;&#959;&#966;&#959;&#961;&#943;&#949;&#962; &#963;&#973;&#956;&#966;&#969;&#957;&#945; &#956;&#949; &#964;&#951;&#957; &#927;&#948;&#951;&#947;&#943;&#945; &#917;&#917; 2000/31/&#917;&#922;</p>
+
+            <h2>&#928;&#940;&#961;&#959;&#967;&#959;&#962; &#933;&#960;&#951;&#961;&#949;&#963;&#953;&#974;&#957;</h2>
+            <p>Vendetta Labs</p>
+            <div class="protected-section">
+                <div class="canvas-field"><canvas id="ownerEL" height="28"></canvas></div>
+            </div>
+            <p>&#917;&#955;&#955;&#940;&#948;&#945; / &#917;&#965;&#961;&#969;&#960;&#945;&#970;&#954;&#942; &#904;&#957;&#969;&#963;&#951;</p>
+
+            <h2>&#917;&#960;&#953;&#954;&#959;&#953;&#957;&#969;&#957;&#943;&#945;</h2>
+            <p>Email:</p>
+            <div class="protected-section">
+                <div class="canvas-field"><canvas id="emailEL" height="26" class="email-canvas"></canvas></div>
+            </div>
+            <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
+
+            <h2>&#933;&#960;&#949;&#973;&#952;&#965;&#957;&#959;&#962; &#947;&#953;&#945; &#964;&#959; &#960;&#949;&#961;&#953;&#949;&#967;&#972;&#956;&#949;&#957;&#959;</h2>
+            <div class="protected-section">
+                <div class="canvas-field"><canvas id="respEL" height="28"></canvas></div>
+            </div>
+
+            <h2>&#917;&#960;&#943;&#955;&#965;&#963;&#951; &#948;&#953;&#945;&#966;&#959;&#961;&#974;&#957; &#917;&#917;</h2>
+            <p>&#928;&#955;&#945;&#964;&#966;&#972;&#961;&#956;&#945; &#964;&#951;&#962; &#917;&#965;&#961;&#969;&#960;&#945;&#970;&#954;&#942;&#962; &#917;&#960;&#953;&#964;&#961;&#959;&#960;&#942;&#962;:<br>
+            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener">https://ec.europa.eu/consumers/odr</a></p>
+            <p>&#916;&#949;&#957; &#949;&#943;&#956;&#945;&#963;&#964;&#949; &#960;&#961;&#972;&#952;&#965;&#956;&#959;&#953; &#942; &#965;&#960;&#959;&#967;&#961;&#949;&#969;&#956;&#941;&#957;&#959;&#953; &#957;&#945; &#963;&#965;&#956;&#956;&#949;&#964;&#940;&#963;&#967;&#959;&#965;&#956;&#949; &#963;&#949; &#948;&#953;&#945;&#948;&#953;&#954;&#945;&#963;&#943;&#949;&#962; &#949;&#960;&#943;&#955;&#965;&#963;&#951;&#962; &#948;&#953;&#945;&#966;&#959;&#961;&#974;&#957;.</p>
+
+            <div class="disclaimer">
+                <h2 style="margin-top:0">&#913;&#960;&#959;&#960;&#959;&#943;&#951;&#963;&#951; &#949;&#965;&#952;&#965;&#957;&#974;&#957;</h2>
+                <p>&#932;&#959; &#960;&#949;&#961;&#953;&#949;&#967;&#972;&#956;&#949;&#957;&#959; &#945;&#965;&#964;&#942;&#962; &#964;&#951;&#962; &#953;&#963;&#964;&#959;&#963;&#949;&#955;&#943;&#948;&#945;&#962; &#948;&#951;&#956;&#953;&#959;&#965;&#961;&#947;&#942;&#952;&#951;&#954;&#949; &#956;&#949; &#964;&#951; &#956;&#941;&#947;&#953;&#963;&#964;&#951; &#949;&#960;&#953;&#956;&#941;&#955;&#949;&#953;&#945;. &#937;&#963;&#964;&#972;&#963;&#959;, &#948;&#949;&#957; &#956;&#960;&#959;&#961;&#959;&#973;&#956;&#949; &#957;&#945; &#949;&#947;&#947;&#965;&#951;&#952;&#959;&#973;&#956;&#949; &#964;&#951;&#957; &#945;&#954;&#961;&#943;&#946;&#949;&#953;&#945;, &#960;&#955;&#951;&#961;&#972;&#964;&#951;&#964;&#945; &#942; &#949;&#960;&#953;&#954;&#945;&#953;&#961;&#972;&#964;&#951;&#964;&#945; &#964;&#959;&#965; &#960;&#949;&#961;&#953;&#949;&#967;&#959;&#956;&#941;&#957;&#959;&#965;.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Vendetta Labs &mdash; Greece</p>
+                <p><a href="./">Home</a> | <a href="privacy.html">Privacy Policy</a> | <a href="impressum.html">Impressum</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+    // ── Language Switcher ──
+    function switchLang(lang) {
+        document.querySelectorAll('.lang-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.lang-tab').forEach(el => el.classList.remove('active'));
+        document.getElementById('lang-' + lang).classList.add('active');
+        event.target.classList.add('active');
+        renderCanvases();
+    }
+
+    // ── Canvas Rendering (Anti-Scraping) ──
+    function renderCanvases() {
+        const dpr = window.devicePixelRatio || 1;
+        const ownerText = '\u0393\u03B9\u03CE\u03C1\u03B3\u03BF\u03C2 \u039C\u03B1\u03C1\u03B9\u03CC\u03C4\u03C4\u03B9';
+        const emailText = 'kaspartisan' + '@' + 'proton.me';
+
+        function drawText(canvasId, text, fontSize, color, width) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas || !canvas.getContext) return;
+            canvas.width = width * dpr;
+            canvas.height = (fontSize + 12) * dpr;
+            canvas.style.width = width + 'px';
+            canvas.style.height = (fontSize + 12) + 'px';
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, width, fontSize + 12);
+            ctx.fillStyle = color;
+            ctx.font = fontSize + 'px Inter, Arial, sans-serif';
+            ctx.fillText(text, 0, fontSize);
+        }
+
+        // Owner name canvases
+        ['ownerEN', 'ownerDE', 'ownerEL', 'respEN', 'respDE', 'respEL'].forEach(function(id) {
+            drawText(id, ownerText, 16, '#e2e8f0', 260);
+        });
+
+        // Email canvases
+        ['emailEN', 'emailDE', 'emailEL'].forEach(function(id) {
+            drawText(id, emailText, 14, '#FF9800', 220);
+        });
+    }
+
+    // ── Email Click Handler ──
+    document.querySelectorAll('.email-canvas').forEach(function(canvas) {
+        canvas.addEventListener('click', function() {
+            window.location = 'mai' + 'lto:' + 'kaspartisan' + '@' + 'proton.me';
+        });
+    });
+
+    // ── Copy/Context Protection for Protected Sections ──
+    document.querySelectorAll('.protected-section').forEach(function(el) {
+        el.addEventListener('copy', function(e) { e.preventDefault(); });
+        el.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+    });
+
+    // Initial render
+    renderCanvases();
+    window.addEventListener('resize', renderCanvases);
+    </script>
+</body>
+</html>

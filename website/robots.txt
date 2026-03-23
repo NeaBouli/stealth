@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /
-Sitemap: https://neabouli.github.io/stealth/sitemap.xml
+Sitemap: https://stealthx.tech/sitemap.xml
 
 # AI Crawlers — allowed for AI search indexing
 User-agent: GPTBot

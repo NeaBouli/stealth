@@ -1,105 +1,111 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://neabouli.github.io/stealth/</loc>
+        <loc>https://stealthx.tech/</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/faq.html</loc>
+        <loc>https://stealthx.tech/faq.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/privacy.html</loc>
+        <loc>https://stealthx.tech/privacy.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/security.html</loc>
+        <loc>https://stealthx.tech/security.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/</loc>
+        <loc>https://stealthx.tech/wiki/</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/faq.html</loc>
+        <loc>https://stealthx.tech/wiki/faq.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/installation-guide.html</loc>
+        <loc>https://stealthx.tech/wiki/installation-guide.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/getting-started.html</loc>
+        <loc>https://stealthx.tech/wiki/getting-started.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/security-design.html</loc>
+        <loc>https://stealthx.tech/wiki/security-design.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/security-audit.html</loc>
+        <loc>https://stealthx.tech/wiki/security-audit.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/architecture.html</loc>
+        <loc>https://stealthx.tech/wiki/architecture.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/ifr-unlock.html</loc>
+        <loc>https://stealthx.tech/wiki/ifr-unlock.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/api-reference.html</loc>
+        <loc>https://stealthx.tech/wiki/api-reference.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/privacy-policy.html</loc>
+        <loc>https://stealthx.tech/wiki/privacy-policy.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/changelog.html</loc>
+        <loc>https://stealthx.tech/wiki/changelog.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.6</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/roadmap.html</loc>
+        <loc>https://stealthx.tech/wiki/roadmap.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
     </url>
     <url>
-        <loc>https://neabouli.github.io/stealth/wiki/troubleshooting.html</loc>
+        <loc>https://stealthx.tech/wiki/troubleshooting.html</loc>
         <lastmod>2026-03-23</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
+    </url>
+    <url>
+        <loc>https://stealthx.tech/impressum.html</loc>
+        <lastmod>2026-03-23</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.4</priority>
     </url>
 </urlset>

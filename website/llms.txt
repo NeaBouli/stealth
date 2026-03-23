@@ -44,7 +44,7 @@ Built by Vendetta Labs, Greece. Open source: github.com/NeaBouli/stealth
 ## Contact
 - X/Twitter: @secureslot
 - GitHub: github.com/NeaBouli
-- Website: neabouli.github.io/stealth
+- Website: stealthx.tech
 
 ## Privacy
 - No personal data collected
