@@ -10,7 +10,7 @@ android {
     defaultConfig {
         applicationId "com.securecall.app"
         minSdkVersion 24
-        targetSdkVersion 33
+        targetSdkVersion 35
         versionCode 2
         versionName "0.2-beta"
 
