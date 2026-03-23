@@ -69,7 +69,7 @@ Yes. An internal security audit was conducted in February 2026. All 7 Critical a
 #### ████ TIER COMPARISON ████
 ---
 
-| Feature | Free | Pro ($4.99/mo or $15 Lifetime) | Premium ($9.99/mo or $25 Lifetime) |
+| Feature | Free | Pro (€3.49/mo or $15 Lifetime) | Premium (€4.99/mo or $25 Lifetime) |
 |---------|------|-------------------------------|-----------------------------------|
 | E2E Encrypted Calls | Yes | Yes | Yes |
 | Audio Quality | Standard | HD (48kHz Opus) | HD (48kHz Opus) |

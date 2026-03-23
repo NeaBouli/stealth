@@ -98,12 +98,12 @@ During a call, the security status bar shows:
 #### ████ UPGRADING ████
 ---
 
-### Free → Pro ($4.99/month)
+### Free → Pro (€3.49/month)
 1. Open Settings → Subscription
 2. Tap "Upgrade to Pro"
 3. Complete purchase via Google Play
 
-### Pro → Premium ($9.99/month)
+### Pro → Premium (€4.99/month)
 1. Open Settings → Subscription
 2. Tap "Upgrade to Premium"
 3. Complete purchase via Google Play
