@@ -21,6 +21,10 @@
 | TODO-017 | Emergency Broadcast System | DONE | High | 8 templates, WS + FCM delivery, EmergencyBroadcastActivity |
 | TODO-018 | Impressum erstellen (EU-Pflicht) | DONE | HIGH | impressum.html EN/DE/EL, Canvas anti-scraping, Footer-Links auf allen Seiten |
 | TODO-019 | Kontakt-Email einrichten | DONE | HIGH | kaspartisan@proton.me — Canvas-gerendert im Impressum, clickable mailto |
+| TODO-020 | Google Search Console verifizieren | OPEN | HIGH | stealthx.tech in GSC eintragen, sitemap einreichen |
+| TODO-021 | SEO Keywords erweitern + Content optimieren | OPEN | HIGH | Long-tail Keywords, FAQ Schema, Feature Schema |
+| TODO-022 | Google Analytics einrichten | OPEN | MEDIUM | GA4 auf stealthx.tech |
+| TODO-023 | Bing Webmaster Tools | OPEN | LOW | Parallel zu Google indexieren |
 
 ## Completed
 

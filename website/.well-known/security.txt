@@ -1,0 +1,5 @@
+Contact: mailto:kaspartisan@proton.me
+Contact: https://github.com/NeaBouli/stealth/issues
+Preferred-Languages: en, de, el
+Canonical: https://stealthx.tech/.well-known/security.txt
+Expires: 2027-03-23T00:00:00.000Z
