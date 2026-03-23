@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disclaimer — SecureCall</title>
+    <meta name="description" content="SecureCall disclaimer and limitation of liability. Service provided as-is by Vendetta Labs, Greece.">
+    <meta name="theme-color" content="#0B0B0F">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://stealthx.tech/disclaimer.html">
+    <meta property="og:title" content="Disclaimer — SecureCall">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://stealthx.tech/disclaimer.html">
+    <meta property="og:site_name" content="SecureCall">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <style>
+        .disclaimer-container {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 120px 24px 60px;
+        }
+        .disclaimer-container h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        .disclaimer-container h2 {
+            font-size: 1.1rem;
+            color: #FF4444;
+            margin-top: 28px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,68,68,0.15);
+            padding-bottom: 6px;
+        }
+        .disclaimer-container p, .disclaimer-container li {
+            color: #bbb;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+        .disclaimer-container ul {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+        .disclaimer-container a {
+            color: #FF9800;
+            text-decoration: none;
+        }
+        .disclaimer-container a:hover { text-decoration: underline; }
+        .lang-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+        .lang-tab {
+            padding: 8px 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .lang-tab.active {
+            background: #FF4444;
+            color: #fff;
+            border-color: #FF4444;
+        }
+        .lang-tab:hover:not(.active) {
+            border-color: #666;
+            color: #ccc;
+        }
+        .lang-content { display: none; }
+        .lang-content.active { display: block; }
+        .last-updated {
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid #222;
+            color: #555;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="./" class="nav-logo">
+                <img src="logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="./#features">Features</a>
+                <a href="./#security">Security</a>
+                <a href="./#audit">Audit</a>
+                <a href="./#compare">Compare</a>
+                <a href="./#pricing">Pricing</a>
+                <a href="./#lifetime" style="color:#FFD700">Lifetime</a>
+                <a href="wiki/" style="color:var(--accent-light)">Wiki</a>
+                <a href="faq.html">FAQ</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="./#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="hamburger" id="hamburger" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="disclaimer-container">
+
+        <div class="lang-tabs">
+            <button class="lang-tab active" onclick="switchLang('en')">EN</button>
+            <button class="lang-tab" onclick="switchLang('de')">DE</button>
+            <button class="lang-tab" onclick="switchLang('el')">EL</button>
+        </div>
+
+        <!-- ═══ ENGLISH ═══ -->
+        <div id="lang-en" class="lang-content active">
+            <h1>Disclaimer &amp; Limitation of Liability</h1>
+
+            <h2>General Disclaimer</h2>
+            <p>SecureCall is provided "as is" and "as available" without warranties of any kind, either express or implied. Vendetta Labs makes no warranties regarding reliability, availability, accuracy, or fitness for a particular purpose.</p>
+
+            <h2>No Guarantee of Uninterrupted Service</h2>
+            <p>SecureCall depends on third-party infrastructure including but not limited to:</p>
+            <ul>
+                <li>Railway.app signaling servers</li>
+                <li>Metered.ca TURN relay servers</li>
+                <li>Google Firebase (FCM push notifications)</li>
+                <li>Ethereum network (IFR Token verification)</li>
+                <li>WalletConnect relay servers</li>
+            </ul>
+            <p>Service interruptions, maintenance, or third-party outages may affect app functionality. Vendetta Labs is not liable for any interruption of service.</p>
+
+            <h2>Device Compatibility</h2>
+            <p>SecureCall is designed for Android devices running Android 7.0 (API 24) or higher. Functionality may vary depending on:</p>
+            <ul>
+                <li>Device manufacturer customizations (Samsung Knox, MIUI, etc.)</li>
+                <li>Android version and security patch level</li>
+                <li>Device-specific battery optimization settings</li>
+                <li>User-configured permissions (microphone, notifications, etc.)</li>
+                <li>Network configuration and firewall settings</li>
+                <li>VPN or proxy settings on the device or network</li>
+            </ul>
+            <p>Vendetta Labs does not guarantee identical functionality across all Android devices and configurations.</p>
+
+            <h2>User Responsibility</h2>
+            <p>Users are solely responsible for:</p>
+            <ul>
+                <li>Granting required permissions (microphone, notifications)</li>
+                <li>Maintaining adequate network connectivity</li>
+                <li>Keeping the app updated to the latest version</li>
+                <li>Ensuring device compatibility before purchase</li>
+                <li>Compliance with local laws regarding encrypted communications</li>
+            </ul>
+
+            <h2>Encryption &amp; Security</h2>
+            <p>While SecureCall implements industry-standard encryption (X25519, DTLS-SRTP, ChaCha20-Poly1305), no encryption system is 100% guaranteed to be unbreakable. Vendetta Labs:</p>
+            <ul>
+                <li>Does not guarantee absolute security against all attack vectors</li>
+                <li>Is not liable for security breaches caused by compromised devices</li>
+                <li>Is not liable for user error or misconfiguration</li>
+                <li>Cannot guarantee security if the device OS is compromised</li>
+            </ul>
+
+            <h2>WireGuard VPN</h2>
+            <p>The built-in WireGuard VPN feature requires user configuration. Vendetta Labs does not provide VPN server infrastructure. Users must configure their own WireGuard endpoints. Functionality depends on user-provided server configuration.</p>
+
+            <h2>IFR Token &amp; Blockchain</h2>
+            <p>IFR token integration depends on Ethereum network availability, smart contract functionality, and user's wallet configuration. Token values and availability are subject to market conditions outside Vendetta Labs' control. Vendetta Labs is not liable for any financial loss related to IFR token transactions.</p>
+
+            <h2>Emergency Broadcast System</h2>
+            <p>The Emergency Broadcast System is a best-effort service. Delivery depends on active internet connection, FCM push notification availability, and device notification settings. Vendetta Labs does not guarantee delivery of emergency broadcasts and is not liable for failure to receive alerts.</p>
+
+            <h2>Limitation of Liability</h2>
+            <p>To the maximum extent permitted by applicable law, Vendetta Labs shall not be liable for:</p>
+            <ul>
+                <li>Direct, indirect, incidental, or consequential damages</li>
+                <li>Loss of data, profits, or business opportunities</li>
+                <li>Damages resulting from device malfunction or misconfiguration</li>
+                <li>Damages resulting from third-party service outages</li>
+                <li>Any claims arising from use or inability to use the app</li>
+            </ul>
+
+            <h2>Refund Policy</h2>
+            <p>In-app purchases are subject to Google Play's refund policy. Activation codes are non-refundable once delivered. IFR token locks are subject to the Inferno Protocol smart contract terms.</p>
+
+            <h2>Governing Law</h2>
+            <p>This disclaimer is governed by the laws of Greece and the European Union. Any disputes shall be subject to the jurisdiction of Greek courts.</p>
+
+            <h2>Changes</h2>
+            <p>Vendetta Labs reserves the right to modify this disclaimer at any time. Continued use of SecureCall constitutes acceptance of the current disclaimer.</p>
+
+            <p class="last-updated">Last updated: March 2026</p>
+        </div>
+
+        <!-- ═══ DEUTSCH ═══ -->
+        <div id="lang-de" class="lang-content">
+            <h1>Haftungsausschluss</h1>
+
+            <h2>Allgemeiner Haftungsausschluss</h2>
+            <p>SecureCall wird &bdquo;wie besehen&ldquo; und &bdquo;wie verf&uuml;gbar&ldquo; ohne jegliche ausdr&uuml;ckliche oder stillschweigende Garantien bereitgestellt. Vendetta Labs gibt keine Garantien hinsichtlich Zuverl&auml;ssigkeit, Verf&uuml;gbarkeit, Genauigkeit oder Eignung f&uuml;r einen bestimmten Zweck.</p>
+
+            <h2>Keine Garantie f&uuml;r ununterbrochenen Betrieb</h2>
+            <p>SecureCall ist von Drittanbieter-Infrastruktur abh&auml;ngig:</p>
+            <ul>
+                <li>Railway.app Signalisierungsserver</li>
+                <li>Metered.ca TURN-Relay-Server</li>
+                <li>Google Firebase (FCM Push-Benachrichtigungen)</li>
+                <li>Ethereum-Netzwerk (IFR Token-Verifizierung)</li>
+                <li>WalletConnect Relay-Server</li>
+            </ul>
+            <p>Dienstunterbrechungen, Wartungsarbeiten oder Ausf&auml;lle Dritter k&ouml;nnen die App-Funktionalit&auml;t beeintr&auml;chtigen.</p>
+
+            <h2>Ger&auml;tekompatibilit&auml;t</h2>
+            <p>SecureCall ist f&uuml;r Android-Ger&auml;te ab Android 7.0 (API 24) konzipiert. Die Funktionalit&auml;t kann variieren je nach Gerätehersteller-Anpassungen, Android-Version, Akku-Optimierungseinstellungen, Berechtigungen und Netzwerkkonfiguration.</p>
+
+            <h2>Nutzerverantwortung</h2>
+            <p>Nutzer sind allein verantwortlich f&uuml;r:</p>
+            <ul>
+                <li>Erteilung erforderlicher Berechtigungen (Mikrofon, Benachrichtigungen)</li>
+                <li>Ausreichende Netzwerkkonnektivit&auml;t</li>
+                <li>Aktualit&auml;t der App</li>
+                <li>Ger&auml;tekompatibilit&auml;t vor dem Kauf</li>
+                <li>Einhaltung lokaler Gesetze zu verschl&uuml;sselter Kommunikation</li>
+            </ul>
+
+            <h2>Verschl&uuml;sselung &amp; Sicherheit</h2>
+            <p>Keine Verschl&uuml;sselung ist zu 100% unknackbar. Vendetta Labs haftet nicht f&uuml;r Sicherheitsverletzungen durch kompromittierte Ger&auml;te, Nutzerfehler oder Fehlkonfigurationen.</p>
+
+            <h2>Haftungsbeschr&auml;nkung</h2>
+            <p>Im gesetzlich zul&auml;ssigen Rahmen haftet Vendetta Labs nicht f&uuml;r:</p>
+            <ul>
+                <li>Direkte, indirekte oder Folgesch&auml;den</li>
+                <li>Datenverlust oder entgangene Gewinne</li>
+                <li>Sch&auml;den durch Ger&auml;tefehlfunktionen oder Drittanbieter-Ausf&auml;lle</li>
+                <li>Anspr&uuml;che aus der Nutzung oder Nichtnutzbarkeit der App</li>
+            </ul>
+
+            <h2>R&uuml;ckerstattung</h2>
+            <p>In-App-K&auml;ufe unterliegen der Google Play R&uuml;ckerstattungsrichtlinie. Aktivierungscodes sind nach Lieferung nicht erstattungsf&auml;hig.</p>
+
+            <h2>Anwendbares Recht</h2>
+            <p>Dieser Haftungsausschluss unterliegt dem Recht Griechenlands und der Europ&auml;ischen Union. Streitigkeiten unterliegen der Zust&auml;ndigkeit griechischer Gerichte.</p>
+
+            <p class="last-updated">Zuletzt aktualisiert: M&auml;rz 2026</p>
+        </div>
+
+        <!-- ═══ ΕΛΛΗΝΙΚΑ ═══ -->
+        <div id="lang-el" class="lang-content">
+            <h1>&#913;&#960;&#959;&#960;&#959;&#943;&#951;&#963;&#951; &#917;&#965;&#952;&#965;&#957;&#974;&#957;</h1>
+
+            <h2>&#915;&#949;&#957;&#953;&#954;&#942; &#913;&#960;&#959;&#960;&#959;&#943;&#951;&#963;&#951;</h2>
+            <p>&#932;&#959; SecureCall &#960;&#945;&#961;&#941;&#967;&#949;&#964;&#945;&#953; &laquo;&#969;&#962; &#941;&#967;&#949;&#953;&raquo; &#967;&#969;&#961;&#943;&#962; &#949;&#947;&#947;&#965;&#942;&#963;&#949;&#953;&#962; &#959;&#960;&#959;&#953;&#959;&#965;&#948;&#942;&#960;&#959;&#964;&#949; &#949;&#943;&#948;&#959;&#965;&#962;. &#919; &#955;&#949;&#953;&#964;&#959;&#965;&#961;&#947;&#953;&#954;&#972;&#964;&#951;&#964;&#945; &#949;&#958;&#945;&#961;&#964;&#940;&#964;&#945;&#953; &#945;&#960;&#972; &#964;&#953;&#962; &#961;&#965;&#952;&#956;&#943;&#963;&#949;&#953;&#962; &#964;&#951;&#962; &#963;&#965;&#963;&#954;&#949;&#965;&#942;&#962; &#954;&#945;&#953; &#964;&#961;&#943;&#964;&#959;&#965;&#962; &#960;&#945;&#961;&#972;&#967;&#959;&#965;&#962; &#965;&#960;&#951;&#961;&#949;&#963;&#953;&#974;&#957;.</p>
+
+            <h2>&#928;&#949;&#961;&#953;&#959;&#961;&#953;&#963;&#956;&#972;&#962; &#917;&#965;&#952;&#973;&#957;&#951;&#962;</h2>
+            <p>&#919; Vendetta Labs &#948;&#949;&#957; &#949;&#965;&#952;&#973;&#957;&#949;&#964;&#945;&#953; &#947;&#953;&#945;:</p>
+            <ul>
+                <li>&#916;&#953;&#945;&#954;&#959;&#960;&#941;&#962; &#965;&#960;&#951;&#961;&#949;&#963;&#953;&#974;&#957; &#964;&#961;&#943;&#964;&#969;&#957;</li>
+                <li>&#914;&#955;&#940;&#946;&#949;&#962; &#963;&#965;&#963;&#954;&#949;&#965;&#974;&#957; &#942; &#949;&#963;&#966;&#945;&#955;&#956;&#941;&#957;&#949;&#962; &#961;&#965;&#952;&#956;&#943;&#963;&#949;&#953;&#962;</li>
+                <li>&#913;&#960;&#974;&#955;&#949;&#953;&#945; &#948;&#949;&#948;&#959;&#956;&#941;&#957;&#969;&#957; &#942; &#954;&#949;&#961;&#948;&#974;&#957;</li>
+                <li>&#927;&#953;&#954;&#959;&#957;&#959;&#956;&#953;&#954;&#941;&#962; &#945;&#960;&#974;&#955;&#949;&#953;&#949;&#962; &#963;&#967;&#949;&#964;&#953;&#954;&#941;&#962; &#956;&#949; IFR tokens</li>
+            </ul>
+
+            <h2>&#917;&#965;&#952;&#973;&#957;&#951; &#935;&#961;&#942;&#963;&#964;&#951;</h2>
+            <p>&#927;&#953; &#967;&#961;&#942;&#963;&#964;&#949;&#962; &#949;&#943;&#957;&#945;&#953; &#945;&#960;&#959;&#954;&#955;&#949;&#953;&#963;&#964;&#953;&#954;&#940; &#965;&#960;&#949;&#973;&#952;&#965;&#957;&#959;&#953; &#947;&#953;&#945; &#964;&#951; &#963;&#965;&#956;&#956;&#972;&#961;&#966;&#969;&#963;&#951; &#956;&#949; &#964;&#959;&#965;&#962; &#964;&#959;&#960;&#953;&#954;&#959;&#973;&#962; &#957;&#972;&#956;&#959;&#965;&#962; &#954;&#945;&#953; &#964;&#953;&#962; &#940;&#948;&#949;&#953;&#949;&#962; &#964;&#951;&#962; &#963;&#965;&#963;&#954;&#949;&#965;&#942;&#962;.</p>
+
+            <h2>&#917;&#966;&#945;&#961;&#956;&#959;&#963;&#964;&#941;&#959; &#916;&#943;&#954;&#945;&#953;&#959;</h2>
+            <p>&#917;&#955;&#955;&#951;&#957;&#953;&#954;&#942; &#957;&#959;&#956;&#959;&#952;&#949;&#963;&#943;&#945; &#954;&#945;&#953; &#948;&#943;&#954;&#945;&#953;&#959; &#964;&#951;&#962; &#917;&#965;&#961;&#969;&#960;&#945;&#970;&#954;&#942;&#962; &#904;&#957;&#969;&#963;&#951;&#962;.</p>
+
+            <p class="last-updated">&#932;&#949;&#955;&#949;&#965;&#964;&#945;&#943;&#945; &#949;&#957;&#951;&#956;&#941;&#961;&#969;&#963;&#951;: &#924;&#940;&#961;&#964;&#953;&#959;&#962; 2026</p>
+        </div>
+
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Vendetta Labs &mdash; Greece</p>
+                <p><a href="./">Home</a> | <a href="privacy.html">Privacy Policy</a> | <a href="impressum.html">Impressum</a> | <a href="disclaimer.html">Disclaimer</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+    function switchLang(lang) {
+        document.querySelectorAll('.lang-content').forEach(function(el) { el.classList.remove('active'); });
+        document.querySelectorAll('.lang-tab').forEach(function(el) { el.classList.remove('active'); });
+        document.getElementById('lang-' + lang).classList.add('active');
+        event.target.classList.add('active');
+    }
+    </script>
+</body>
+</html>

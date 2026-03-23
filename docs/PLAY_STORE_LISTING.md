@@ -104,10 +104,15 @@ X (Twitter): @secureslot
 
 ## Privacy Policy URL
 ```
-https://neabouli.github.io/stealth/privacy.html
+https://stealthx.tech/privacy.html
+```
+
+## Disclaimer URL
+```
+https://stealthx.tech/disclaimer.html
 ```
 
 ## Website URL
 ```
-https://neabouli.github.io/stealth/
+https://stealthx.tech
 ```

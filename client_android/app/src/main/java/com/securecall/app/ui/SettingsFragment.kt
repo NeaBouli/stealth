@@ -143,8 +143,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // About section links
         setupAboutLinks()
 
-        // Licenses placeholder
-        findPreference<Preference>("pref_licenses")?.summary = "Apache 2.0, MIT, BSD"
+        // Licenses & Disclaimer
+        findPreference<Preference>("pref_licenses")?.apply {
+            summary = "Disclaimer, Licenses & Legal — tap to view"
+            isSelectable = true
+        }
 
         // Donation addresses — copy to clipboard on tap
         setupDonationPrefs()
@@ -199,7 +202,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
         findPreference<Preference>("pref_privacy")?.setOnPreferenceClickListener {
-            openUrl("https://neabouli.github.io/stealth/privacy.html")
+            openUrl("https://stealthx.tech/privacy.html")
+            true
+        }
+        findPreference<Preference>("pref_licenses")?.setOnPreferenceClickListener {
+            openUrl("https://stealthx.tech/disclaimer.html")
             true
         }
     }
