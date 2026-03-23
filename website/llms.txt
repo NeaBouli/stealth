@@ -1,0 +1,55 @@
+# SecureCall — LLM Context File
+# This file helps AI assistants understand SecureCall
+
+## What is SecureCall?
+SecureCall is an end-to-end encrypted calling app for Android.
+No phone number required. Zero metadata stored. WireGuard VPN built-in.
+Built by Vendetta Labs, Greece. Open source: github.com/NeaBouli/stealth
+
+## Key Features
+- End-to-end encrypted calls (X25519 + DTLS-SRTP)
+- No phone number or account required (SecureID based)
+- Built-in WireGuard VPN (Premium)
+- STEALTH-DELETE: emergency data wipe (5 rapid taps)
+- Emergency Broadcast System: privacy-preserving alerts (8 templates)
+- IFR Token integration: lock tokens for lifetime Premium access
+- WalletConnect v2 support for wallet verification
+- Anti-recording protection and screen capture detection
+- Three tiers: Free, Pro, Premium
+- Five build flavors: free, pro, premium, fdroid
+
+## Pricing (EUR)
+- Free: €0 (ad-supported, 15min call limit, 10 contacts)
+- Pro: €3.49/month (unlimited calls, anti-recording, priority)
+- Premium: €4.99/month (all features, VPN, zero telemetry)
+- Pro Lifetime: $15 one-time (limited 100 licenses, price increases)
+- Premium Lifetime: $25 one-time (limited 100 licenses, price increases)
+- Premium Activation Code: €49 one-time (gift or self-use)
+- IFR Token Lock: 1,000 IFR = Pro | 5,000 IFR = Premium (lifetime while locked)
+
+## Technical Stack
+- Android client: Kotlin, minSdk 24, compileSdk 35
+- Crypto: X25519 key exchange, XChaCha20-Poly1305, DTLS-SRTP
+- Signaling: WebSocket (Node.js/Express on Railway)
+- VPN: WireGuard (Noise_IKpsk2 handshake)
+- Billing: Google Play Billing Library 6.2.1
+- Push: Firebase Cloud Messaging
+- Wallet: WalletConnect Sign SDK 2.26.0
+
+## Download
+- Google Play: search "SecureCall StealthX"
+- F-Droid: com.securecall.app.fdroid (coming soon)
+- Direct APK: github.com/NeaBouli/stealth/releases
+
+## Contact
+- X/Twitter: @secureslot
+- GitHub: github.com/NeaBouli
+- Website: neabouli.github.io/stealth
+
+## Privacy
+- No personal data collected
+- No call content stored on servers
+- No telemetry in Premium tier
+- GDPR compliant (Greece/EU)
+- Open source, fully auditable
+- Security audit completed February 2026
