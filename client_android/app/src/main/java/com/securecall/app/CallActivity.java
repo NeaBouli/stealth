@@ -778,8 +778,10 @@ public class CallActivity extends AppCompatActivity {
             secureCallMonitor.stopMonitoring(this);
         }
 
-        // Show interstitial ad after call (FREE flavor only, Pro/Premium no-op)
-        com.securecall.app.ads.AdMobManager.INSTANCE.onCallCompleted(this);
+        // Show interstitial ad after call — only if effective tier is FREE
+        if (com.securecall.app.config.TierManager.INSTANCE.isFreeTier(this)) {
+            com.securecall.app.ads.AdMobManager.INSTANCE.onCallCompleted(this);
+        }
 
         // Offer to save contact if this was a phone-resolved call to an unsaved clientId
         // IMPORTANT: Do NOT release proximity sensor before showing dialog — on Samsung devices,

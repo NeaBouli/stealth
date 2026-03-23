@@ -161,11 +161,20 @@ public class MainActivity extends AppCompatActivity {
             bottomNav.setSelectedItemId(R.id.nav_calls);
         }
 
-        // AdMob — FREE flavor only (Pro/Premium stubs are no-ops)
-        com.securecall.app.ads.AdMobManager.INSTANCE.init(this);
+        // AdMob — only show ads if effective tier is FREE
         android.widget.FrameLayout adContainer = findViewById(R.id.adBannerContainer);
-        com.securecall.app.ads.AdMobManager.INSTANCE.loadBanner(this, adContainer);
-        com.securecall.app.ads.AdMobManager.INSTANCE.preloadInterstitial(this);
+        if (com.securecall.app.config.TierManager.INSTANCE.isFreeTier(this)) {
+            com.securecall.app.ads.AdMobManager.INSTANCE.init(this);
+            com.securecall.app.ads.AdMobManager.INSTANCE.loadBanner(this, adContainer);
+            com.securecall.app.ads.AdMobManager.INSTANCE.preloadInterstitial(this);
+        } else {
+            // Upgraded user — hide ad container completely
+            if (adContainer != null) {
+                com.securecall.app.ads.AdMobManager.INSTANCE.destroyBanner(adContainer);
+                adContainer.setVisibility(android.view.View.GONE);
+            }
+            android.util.Log.d("AdMob", "Ads disabled — tier: " + com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this));
+        }
     }
 
     private void showFragment(Fragment fragment) {
