@@ -28,6 +28,7 @@ class BillingManager(
 
     private var billingClient: BillingClient? = null
     private var productDetailsList: List<ProductDetails> = emptyList()
+    private var lastPurchasedProductId: String? = null
 
     private val subscriptionSkus = listOf(
         BuildConfig.SKU_PRO_MONTHLY,
@@ -38,7 +39,8 @@ class BillingManager(
 
     private val lifetimeSkus = listOf(
         BuildConfig.SKU_PRO_LIFETIME,
-        BuildConfig.SKU_PREMIUM_LIFETIME
+        BuildConfig.SKU_PREMIUM_LIFETIME,
+        BuildConfig.SKU_PREMIUM_ACTIVATION_CODE
     )
 
     fun init() {
@@ -198,8 +200,11 @@ class BillingManager(
         }
     }
 
+    fun getLastPurchasedProductId(): String? = lastPurchasedProductId
+
     private fun handlePurchase(purchase: Purchase) {
         val productId = purchase.products.firstOrNull() ?: return
+        lastPurchasedProductId = productId
         val tier = SubscriptionTier.fromProductId(productId)
         val token = purchase.purchaseToken
 

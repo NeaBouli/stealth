@@ -13,5 +13,10 @@
             android:name="com.securecall.app.billing.UpgradeActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
+
+        <activity
+            android:name="com.securecall.app.billing.PurchaseResultActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
     </application>
 </manifest>

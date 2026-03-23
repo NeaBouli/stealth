@@ -1,5 +1,6 @@
 package com.securecall.app.billing
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -71,6 +72,11 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         }
         btnPremiumLifetime.setOnClickListener {
             launchPurchase(BuildConfig.SKU_PREMIUM_LIFETIME)
+        }
+
+        // Activation Code purchase button
+        findViewById<Button>(R.id.btnActivationCode).setOnClickListener {
+            launchPurchase(BuildConfig.SKU_PREMIUM_ACTIVATION_CODE)
         }
 
         // Subscription buttons
@@ -160,11 +166,26 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
 
     override fun onPurchaseCompleted(tier: SubscriptionTier, token: String) {
         runOnUiThread {
+            // Check if this is an activation code purchase
+            val lastProduct = billingManager.getLastPurchasedProductId()
+            if (lastProduct == BuildConfig.SKU_PREMIUM_ACTIVATION_CODE) {
+                // Launch PurchaseResultActivity to show generated code
+                val intent = Intent(this, PurchaseResultActivity::class.java).apply {
+                    putExtra(PurchaseResultActivity.EXTRA_PURCHASE_TOKEN, token)
+                    putExtra(PurchaseResultActivity.EXTRA_PRODUCT_ID, lastProduct)
+                    putExtra(PurchaseResultActivity.EXTRA_PACKAGE_NAME, packageName)
+                }
+                startActivity(intent)
+                tvStatus.text = "Activation code purchased!"
+                return@runOnUiThread
+            }
+
+            // Normal upgrade flow
             subscriptionManager.updateSubscription(
                 tier = tier,
                 purchaseToken = token,
                 expiresAt = 0L,
-                productId = ""
+                productId = lastProduct ?: ""
             )
 
             FeatureProviderRegistry.set(RuntimeFeatureProvider(this))

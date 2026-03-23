@@ -55,6 +55,7 @@ android {
             buildConfigField "String", "SKU_PREMIUM_YEARLY", "\"securecall_premium_yearly\""
             buildConfigField "String", "SKU_PRO_LIFETIME", "\"securecall_pro_lifetime\""
             buildConfigField "String", "SKU_PREMIUM_LIFETIME", "\"securecall_premium_lifetime\""
+            buildConfigField "String", "SKU_PREMIUM_ACTIVATION_CODE", "\"securecall_premium_activation_code\""
         }
 
         pro {
@@ -225,7 +226,7 @@ dependencies {
     }
 
     // Google Play Billing (FREE flavor only)
-    freeImplementation 'com.android.billingclient:billing-ktx:6.1.0'
+    freeImplementation 'com.android.billingclient:billing-ktx:6.2.1'
 
     // AdMob ads (FREE flavor only)
     freeImplementation 'com.google.android.gms:play-services-ads:23.0.0'

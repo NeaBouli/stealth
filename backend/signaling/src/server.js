@@ -1405,6 +1405,78 @@ app.delete("/admin/gift/:code", requireAdmin, (req, res) => {
   res.json({ ok: true, deleted: code });
 });
 
+// --- Google Play Billing: Purchase Verification + Code Generation ---
+app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
+  const { purchase_token, product_id, package_name } = req.body;
+
+  if (!purchase_token || !product_id || !package_name) {
+    return res.status(400).json({ error: "missing fields: purchase_token, product_id, package_name" });
+  }
+
+  // Determine tier from product_id
+  let tier = "premium";
+  if (product_id.includes("pro") && !product_id.includes("premium")) {
+    tier = "pro";
+  }
+
+  // Google Play Developer API verification
+  // Requires GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 env var (base64-encoded JSON key)
+  const serviceAccountB64 = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64;
+  if (serviceAccountB64) {
+    try {
+      const { google } = require("googleapis");
+      const keyJson = JSON.parse(Buffer.from(serviceAccountB64, "base64").toString("utf8"));
+      const auth = new google.auth.GoogleAuth({
+        credentials: keyJson,
+        scopes: ["https://www.googleapis.com/auth/androidpublisher"]
+      });
+      const androidpublisher = google.androidpublisher({ version: "v3", auth });
+
+      // For one-time products (activation codes + lifetime), use products.get
+      const result = await androidpublisher.purchases.products.get({
+        packageName: package_name,
+        productId: product_id,
+        token: purchase_token
+      });
+
+      if (result.data.purchaseState !== 0) {
+        return res.status(403).json({ error: "purchase_not_completed", state: result.data.purchaseState });
+      }
+
+      console.log("[BILLING] Purchase verified via Google API:", product_id, "state:", result.data.purchaseState);
+    } catch (e) {
+      console.error("[BILLING] Google API verification failed:", e.message);
+      return res.status(500).json({ error: "verification_failed", detail: e.message });
+    }
+  } else {
+    // No service account configured — accept in development, log warning
+    console.warn("[BILLING] No GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 set — skipping verification (dev mode)");
+  }
+
+  // Generate activation code
+  const code = "PREM-" + crypto.randomBytes(4).toString("hex").toUpperCase();
+  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year to redeem
+
+  giftCodes.set(code, {
+    tier,
+    note: `Purchased via Google Play (${product_id})`,
+    created: new Date().toISOString(),
+    expires: expires.toISOString(),
+    used: false,
+    usedBy: null,
+    purchaseToken: purchase_token
+  });
+
+  console.log("[BILLING] Activation code generated:", code, "tier:", tier, "product:", product_id);
+
+  res.json({
+    code,
+    tier,
+    expires: expires.toISOString(),
+    product_id
+  });
+});
+
 // --- Health Check Endpoint ---
 app.get("/health", (req, res) => {
   res.json({
