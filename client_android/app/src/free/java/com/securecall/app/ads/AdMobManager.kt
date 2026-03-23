@@ -26,9 +26,10 @@ object AdMobManager {
 
     private const val TAG = "AdMob"
 
+    // TODO: Replace with real AdMob IDs from admob.google.com before production release
     // Test Ad Unit IDs (Google-provided, safe for debug)
-    private const val BANNER_ID = "ca-app-pub-3940256099942544/6300978111"
-    private const val INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
+    private const val BANNER_ID = "ca-app-pub-3940256099942544/6300978111"         // TODO: real Banner ID
+    private const val INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"   // TODO: real Interstitial ID
 
     private var interstitialAd: InterstitialAd? = null
     private var callCount = 0
