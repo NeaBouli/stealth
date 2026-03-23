@@ -87,7 +87,7 @@
         .email-canvas {
             cursor: pointer;
         }
-        .protected-section {
+        .personal-data {
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -146,20 +146,20 @@
 
             <h2>Service Provider</h2>
             <p>Vendetta Labs</p>
-            <div class="protected-section">
+            <div class="personal-data">
                 <div class="canvas-field"><canvas id="ownerEN" height="28"></canvas></div>
             </div>
             <p>Greece / European Union</p>
 
             <h2>Contact</h2>
             <p>Email:</p>
-            <div class="protected-section">
+            <div class="personal-data">
                 <div class="canvas-field"><canvas id="emailEN" height="26" class="email-canvas"></canvas></div>
             </div>
             <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
 
             <h2>Responsible for Content</h2>
-            <div class="protected-section">
+            <div class="personal-data">
                 <div class="canvas-field"><canvas id="respEN" height="28"></canvas></div>
             </div>
 
@@ -181,20 +181,20 @@
 
             <h2>Dienstanbieter</h2>
             <p>Vendetta Labs</p>
-            <div class="protected-section">
+            <div class="personal-data">
                 <div class="canvas-field"><canvas id="ownerDE" height="28"></canvas></div>
             </div>
             <p>Griechenland / Europ&auml;ische Union</p>
 
             <h2>Kontakt</h2>
             <p>E-Mail:</p>
-            <div class="protected-section">
+            <div class="personal-data">
                 <div class="canvas-field"><canvas id="emailDE" height="26" class="email-canvas"></canvas></div>
             </div>
             <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
 
             <h2>Verantwortlich f&uuml;r den Inhalt</h2>
-            <div class="protected-section">
+            <div class="personal-data">
                 <div class="canvas-field"><canvas id="respDE" height="28"></canvas></div>
             </div>
 
@@ -216,20 +216,20 @@
 
             <h2>&#928;&#940;&#961;&#959;&#967;&#959;&#962; &#933;&#960;&#951;&#961;&#949;&#963;&#953;&#974;&#957;</h2>
             <p>Vendetta Labs</p>
-            <div class="protected-section">
+            <div class="personal-data">
                 <div class="canvas-field"><canvas id="ownerEL" height="28"></canvas></div>
             </div>
             <p>&#917;&#955;&#955;&#940;&#948;&#945; / &#917;&#965;&#961;&#969;&#960;&#945;&#970;&#954;&#942; &#904;&#957;&#969;&#963;&#951;</p>
 
             <h2>&#917;&#960;&#953;&#954;&#959;&#953;&#957;&#969;&#957;&#943;&#945;</h2>
             <p>Email:</p>
-            <div class="protected-section">
+            <div class="personal-data">
                 <div class="canvas-field"><canvas id="emailEL" height="26" class="email-canvas"></canvas></div>
             </div>
             <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
 
             <h2>&#933;&#960;&#949;&#973;&#952;&#965;&#957;&#959;&#962; &#947;&#953;&#945; &#964;&#959; &#960;&#949;&#961;&#953;&#949;&#967;&#972;&#956;&#949;&#957;&#959;</h2>
-            <div class="protected-section">
+            <div class="personal-data">
                 <div class="canvas-field"><canvas id="respEL" height="28"></canvas></div>
             </div>
 
@@ -307,14 +307,42 @@
     });
 
     // ── Copy/Context Protection for Protected Sections ──
-    document.querySelectorAll('.protected-section').forEach(function(el) {
+    document.querySelectorAll('.personal-data').forEach(function(el) {
         el.addEventListener('copy', function(e) { e.preventDefault(); });
         el.addEventListener('contextmenu', function(e) { e.preventDefault(); });
     });
 
-    // Initial render
-    renderCanvases();
-    window.addEventListener('resize', renderCanvases);
+    // ── Domain Guard: hide personal data on non-stealthx.tech domains ──
+    (function() {
+        var allowed = 'stealthx.tech';
+        var h = window.location.hostname;
+        if (h !== allowed && h !== 'www.' + allowed && h !== 'localhost' && h !== '127.0.0.1') {
+            // Hide all personal data elements
+            document.querySelectorAll('.personal-data').forEach(function(el) {
+                el.style.display = 'none';
+            });
+            // Replace impressum content with redirect notice
+            var container = document.querySelector('.impressum-container');
+            if (container) {
+                container.innerHTML =
+                    '<div style="text-align:center;padding:80px 20px;">' +
+                    '<h1 style="color:#fff;font-size:2rem;margin-bottom:16px;">Legal Notice</h1>' +
+                    '<p style="color:#888;font-size:16px;line-height:1.8;">' +
+                    'The full legal notice (Impressum) is available at<br>' +
+                    '<a href="https://stealthx.tech/impressum.html" style="color:#FF4444;font-size:18px;font-weight:600;">stealthx.tech/impressum.html</a>' +
+                    '</p>' +
+                    '<p style="color:#555;margin-top:24px;font-size:13px;">' +
+                    'For general inquiries: <a href="https://github.com/NeaBouli/stealth/issues" style="color:#FF9800;">GitHub Issues</a>' +
+                    '</p>' +
+                    '</div>';
+            }
+            return; // Skip canvas rendering
+        }
+
+        // Initial render (only on allowed domain)
+        renderCanvases();
+        window.addEventListener('resize', renderCanvases);
+    })();
     </script>
 </body>
 </html>
