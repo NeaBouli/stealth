@@ -159,7 +159,7 @@
                         <td>Health check &mdash; returns <code>{"status":"ok"}</code></td>
                     </tr>
                 </tbody>
-            </table></div>
+            </table>
 
             <h3>Example Request</h3>
 <pre><code>GET /health HTTP/1.1
@@ -260,7 +260,7 @@ Content-Type: application/json
                         <td><code>{ "clientId": "..." }</code></td>
                     </tr>
                 </tbody>
-            </table></div>
+            </table>
 
             <h2>Server &rarr; Client Messages</h2>
             <p>These message types are sent from the signaling server to client applications, either as responses to client requests or as notifications of events initiated by other clients.</p>
@@ -315,7 +315,7 @@ Content-Type: application/json
                         <td><code>{ "code": "...", "message": "..." }</code></td>
                     </tr>
                 </tbody>
-            </table></div>
+            </table>
 
             <h3>Error Codes</h3>
             <p>The <code>ERROR</code> message type includes a <code>code</code> field that indicates the specific error condition:</p>
@@ -362,7 +362,7 @@ Content-Type: application/json
                         <td><code>^[a-zA-Z0-9_-]{1,64}$</code></td>
                     </tr>
                 </tbody>
-            </table></div>
+            </table>
 
             <div class="info-box warning">
                 <strong>Heartbeat requirement:</strong> The Android client sends keepalive pings every 8 seconds (via <code>HeartbeatClient</code>) to maintain the connection. If the server does not receive any message for 60 seconds, it will close the WebSocket connection. The client implements exponential backoff reconnection (1s to 30s max) to handle disconnections gracefully.
@@ -407,7 +407,7 @@ Content-Type: application/json
                         <td>Time-limited (HMAC-based)</td>
                     </tr>
                 </tbody>
-            </table></div>
+            </table>
 
             <div class="wiki-doc-footer">
                 <span class="end-mark">Document End // Classification: Restricted</span>
