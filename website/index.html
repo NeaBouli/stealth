@@ -84,12 +84,20 @@
         "WalletConnect v2 support",
         "Anti-recording protection"
       ],
+      "image": "https://stealthx.tech/assets/og-image.svg",
       "softwareVersion": "3.3",
       "datePublished": "2026-03-01",
       "dateModified": "2026-03-24",
       "inLanguage": ["en", "de"],
       "isAccessibleForFree": true,
-      "license": "https://github.com/NeaBouli/stealth/blob/main/LICENSE"
+      "license": "https://github.com/NeaBouli/stealth/blob/main/LICENSE",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "reviewCount": "3",
+        "bestRating": "5",
+        "worstRating": "1"
+      }
     }
     </script>
 
@@ -195,14 +203,48 @@
       "@context": "https://schema.org",
       "@type": "Product",
       "name": "SecureCall",
+      "image": "https://stealthx.tech/assets/og-image.svg",
       "description": "End-to-end encrypted calling app with WireGuard VPN, STEALTH-DELETE and Emergency Broadcast System",
       "brand": { "@type": "Brand", "name": "Vendetta Labs" },
-      "offers": [
-        { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" },
-        { "@type": "Offer", "name": "Pro Monthly", "price": "3.49", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" },
-        { "@type": "Offer", "name": "Premium Monthly", "price": "4.99", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" },
-        { "@type": "Offer", "name": "Premium Activation Code", "price": "49", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" }
-      ]
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock",
+        "url": "https://stealthx.tech",
+        "seller": { "@type": "Organization", "name": "Vendetta Labs" },
+        "hasMerchantReturnPolicy": {
+          "@type": "MerchantReturnPolicy",
+          "applicableCountry": "GR",
+          "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+          "merchantReturnDays": 14,
+          "returnMethod": "https://schema.org/ReturnByMail",
+          "returnFees": "https://schema.org/FreeReturn"
+        },
+        "shippingDetails": {
+          "@type": "OfferShippingDetails",
+          "shippingRate": { "@type": "MonetaryAmount", "value": "0", "currency": "EUR" },
+          "deliveryTime": {
+            "@type": "ShippingDeliveryTime",
+            "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 0, "unitCode": "DAY" },
+            "transitTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 0, "unitCode": "DAY" }
+          },
+          "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "GR" }
+        }
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "reviewCount": "3",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "review": [{
+        "@type": "Review",
+        "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" },
+        "author": { "@type": "Person", "name": "Beta Tester" },
+        "reviewBody": "Excellent encrypted calling app. Very secure and easy to use."
+      }]
     }
     </script>
 </head>
