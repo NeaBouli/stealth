@@ -15,6 +15,7 @@
 | TB-007 | SMS Einladungslink zeigt auf falschen Store | MEDIUM | Tester | Alle | FIXED — stealthx.tech |
 | TB-008 | Support Development Section nicht einklappbar | LOW | Tester | Alle | FIXED — initialExpandedChildrenCount=0 |
 | TB-009 | Werbebanner nicht einklappbar | LOW | Tester | Free | WONTFIX — AdMob standard behavior |
+| TB-010 | Kein Invite System — Tester koennen sich nicht gegenseitig als Kontakt hinzufuegen | HIGH | Tester | Alle | FIXED — Deep Link Invite v3.5 |
 
 ## Beta Tester (anonymisiert)
 

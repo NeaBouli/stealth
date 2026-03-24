@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureCall Invitation</title>
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Inter, -apple-system, sans-serif; background: #0a0a12; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        .card { max-width: 420px; width: 100%; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 16px; padding: 40px 32px; text-align: center; }
+        .icon { font-size: 48px; margin-bottom: 16px; }
+        h1 { font-size: 22px; margin-bottom: 8px; }
+        .subtitle { color: #aaa; font-size: 14px; margin-bottom: 32px; line-height: 1.5; }
+        .id-box { background: #222244; border-radius: 8px; padding: 14px; margin-bottom: 16px; font-family: monospace; font-size: 15px; color: #00E676; word-break: break-all; cursor: pointer; position: relative; }
+        .id-box:hover { background: #2a2a5a; }
+        .id-label { font-size: 11px; color: #888; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+        .copied { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #00E676; opacity: 0; transition: opacity 0.3s; }
+        .copied.show { opacity: 1; }
+        .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; margin-bottom: 12px; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: #FF4444; color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid #444; color: #ccc; }
+        .note { color: #666; font-size: 12px; margin-top: 20px; line-height: 1.6; }
+        .note a { color: #FF9800; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">&#128272;</div>
+        <h1 id="title">SecureCall Invitation</h1>
+        <p class="subtitle" id="subtitle">You've been invited to make encrypted calls. No phone number needed.</p>
+
+        <div class="id-label">Inviter's SecureCall ID</div>
+        <div class="id-box" id="idBox" onclick="copyId()">
+            <span id="secureId">loading...</span>
+            <span class="copied" id="copiedLabel">Copied!</span>
+        </div>
+
+        <a id="playLink" href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn btn-primary">
+            Install SecureCall
+        </a>
+        <a href="https://stealthx.tech" class="btn btn-outline">
+            Learn more
+        </a>
+
+        <p class="note">
+            After installing, go to Contacts and add the ID above.<br>
+            Or share your own ID with the inviter to connect.<br><br>
+            <a href="https://stealthx.tech/privacy.html">Privacy Policy</a> &middot;
+            <a href="https://stealthx.tech">stealthx.tech</a>
+        </p>
+    </div>
+
+    <script>
+    (function() {
+        var path = window.location.pathname;
+        var parts = path.split('/').filter(Boolean);
+        var secureId = parts.length >= 2 && parts[0] === 'invite' ? parts[1] : null;
+
+        if (secureId) {
+            document.getElementById('secureId').textContent = secureId;
+            document.title = 'SecureCall Invitation from ' + secureId;
+            // Store for deferred deep link
+            try { localStorage.setItem('pendingInviteSecureId', secureId); } catch(e) {}
+            // Add referrer param to Play Store link
+            var playLink = document.getElementById('playLink');
+            playLink.href += '&referrer=' + encodeURIComponent('invite_' + secureId);
+        } else {
+            document.getElementById('secureId').textContent = 'No ID in URL';
+            document.getElementById('title').textContent = 'SecureCall';
+            document.getElementById('subtitle').textContent = 'End-to-end encrypted calls. No phone number needed.';
+        }
+    })();
+
+    function copyId() {
+        var id = document.getElementById('secureId').textContent;
+        if (id && id !== 'loading...' && id !== 'No ID in URL') {
+            navigator.clipboard.writeText(id).then(function() {
+                var label = document.getElementById('copiedLabel');
+                label.classList.add('show');
+                setTimeout(function() { label.classList.remove('show'); }, 2000);
+            });
+        }
+    }
+    </script>
+</body>
+</html>

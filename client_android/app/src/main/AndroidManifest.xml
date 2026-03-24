@@ -86,6 +86,15 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="securecall" android:host="wc" />
             </intent-filter>
+            <!-- Invite deep link: stealthx.tech/invite/{secureId} -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https"
+                      android:host="stealthx.tech"
+                      android:pathPrefix="/invite/" />
+            </intent-filter>
         </activity>
 
         <activity android:name=".SettingsActivity" />

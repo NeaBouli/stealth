@@ -1405,6 +1405,37 @@ app.delete("/admin/gift/:code", requireAdmin, (req, res) => {
   res.json({ ok: true, deleted: code });
 });
 
+// --- Invite System ---
+app.get("/invite/:secureId", (req, res) => {
+  const secureId = req.params.secureId;
+  const exists = clientIds.has(secureId);
+  res.json({ secureId, exists, online: exists });
+});
+
+app.post("/invite/accepted", (req, res) => {
+  const { inviterSecureId, newUserSecureId } = req.body;
+  if (!inviterSecureId || !newUserSecureId) {
+    return res.status(400).json({ error: "missing inviterSecureId or newUserSecureId" });
+  }
+  // Send FCM push to inviter if they have a token
+  const fcmToken = fcmTokens.get(inviterSecureId);
+  if (fcmToken && fcm.isInitialized()) {
+    fcm.sendDataMessage(fcmToken, {
+      type: "INVITE_ACCEPTED",
+      newUserSecureId,
+      message: newUserSecureId + " joined SecureCall and added you as a contact!"
+    });
+    console.log("[INVITE] Accepted notification sent to", inviterSecureId, "from", newUserSecureId);
+  }
+  // Also send via WebSocket if online
+  sendToClient(inviterSecureId, {
+    type: "INVITE_ACCEPTED",
+    newUserSecureId,
+    message: newUserSecureId + " joined SecureCall!"
+  });
+  res.json({ ok: true });
+});
+
 // --- Google Play Billing: Purchase Verification + Code Generation ---
 app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
   const { purchase_token, product_id, package_name } = req.body;

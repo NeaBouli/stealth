@@ -180,6 +180,72 @@ public class MainActivity extends AppCompatActivity {
             }
             android.util.Log.d("AdMob", "Ads disabled — tier: " + com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this));
         }
+
+        // Handle invite deep link: stealthx.tech/invite/{secureId}
+        handleInviteDeepLink(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleInviteDeepLink(intent);
+    }
+
+    private void handleInviteDeepLink(Intent intent) {
+        if (intent == null || intent.getData() == null) return;
+        android.net.Uri data = intent.getData();
+        java.util.List<String> segments = data.getPathSegments();
+        if (segments.size() >= 2 && "invite".equals(segments.get(0))) {
+            String inviterSecureId = segments.get(1);
+            Log.d(TAG, "Invite deep link received: " + inviterSecureId);
+
+            // Save inviter as a contact
+            SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+            java.util.Set<String> contacts = new java.util.HashSet<>(
+                    prefs.getStringSet("saved_contacts", new java.util.HashSet<>()));
+            if (!contacts.contains(inviterSecureId)) {
+                contacts.add(inviterSecureId);
+                prefs.edit().putStringSet("saved_contacts", contacts).apply();
+                Log.d(TAG, "Inviter saved as contact: " + inviterSecureId);
+            }
+
+            // Show confirmation
+            com.google.android.material.snackbar.Snackbar.make(
+                    findViewById(android.R.id.content),
+                    inviterSecureId + " added as contact!",
+                    com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+            ).setAction("Call", v -> {
+                Intent callIntent = new Intent(this, CallActivity.class);
+                callIntent.putExtra("phoneNumber", inviterSecureId);
+                callIntent.putExtra("callerName", inviterSecureId);
+                startActivity(callIntent);
+            }).show();
+
+            // Notify backend
+            notifyInviteAccepted(inviterSecureId, prefs.getString("client_id", ""));
+
+            // Clear the intent data so it doesn't re-trigger
+            intent.setData(null);
+        }
+    }
+
+    private void notifyInviteAccepted(String inviterSecureId, String mySecureId) {
+        if (inviterSecureId.isEmpty() || mySecureId.isEmpty()) return;
+        new Thread(() -> {
+            try {
+                String serverUrl = com.securecall.app.BuildConfig.SIGNAL_WS_URL
+                        .replace("wss://", "https://").replace("ws://", "http://").replace("/signal", "");
+                String json = "{\"inviterSecureId\":\"" + inviterSecureId + "\",\"newUserSecureId\":\"" + mySecureId + "\"}";
+                okhttp3.RequestBody body = okhttp3.RequestBody.create(json, okhttp3.MediaType.parse("application/json"));
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(serverUrl + "/invite/accepted")
+                        .post(body).build();
+                new okhttp3.OkHttpClient().newCall(request).execute();
+                Log.d(TAG, "Invite accepted notification sent");
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to notify invite accepted: " + e.getMessage());
+            }
+        }).start();
     }
 
     private void showFragment(Fragment fragment) {
