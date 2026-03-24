@@ -6,7 +6,8 @@
 
 | # | Bug | Severity | Tester | Geraet | Status |
 |---|-----|----------|--------|--------|--------|
-| T-001 | — | — | — | — | — |
+| TB-001 | — | — | — | — | — |
+| TB-002 | Upgrade Screen: schlechte Formatierung + falsche Preise | HIGH | Alle Tester | S10/S7/Tab | FIXED |
 
 ## Beta Tester (anonymisiert)
 

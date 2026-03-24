@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#1A1A2E"
-    android:padding="24dp">
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,19 +15,12 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Upgrade SecureCall"
-            android:textSize="24sp"
+            android:text="Choose Your Plan"
+            android:textSize="22sp"
             android:textColor="#FFFFFF"
             android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Unlock advanced security and unlimited calls"
-            android:textSize="14sp"
-            android:textColor="#AAAAAA"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp" />
 
         <!-- Current Tier -->
         <TextView
@@ -35,200 +28,159 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Current Plan: Free"
-            android:textSize="16sp"
+            android:textSize="14sp"
             android:textColor="#00FFAA"
             android:gravity="center"
-            android:padding="12dp"
+            android:padding="10dp"
             android:background="#222244"
-            android:layout_marginBottom="24dp" />
-
-        <!-- LIMITED TIME OFFER Banner -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="LIMITED TIME: Forever Licenses"
-            android:textSize="18sp"
-            android:textColor="#FF4444"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:padding="12dp"
-            android:background="#2A1010"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="One-time purchase. No subscription. Price increases with each sale!"
-            android:textSize="12sp"
-            android:textColor="#FFAAAA"
-            android:gravity="center"
             android:layout_marginBottom="16dp" />
 
-        <!-- PRO LIFETIME Section -->
-        <TextView
+        <!-- ═══ 3 PLAN CARDS ═══ -->
+
+        <!-- FREE Card -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="PRO LIFETIME"
-            android:textSize="20sp"
-            android:textColor="#FFD700"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
+            android:orientation="vertical"
+            android:background="#222244"
+            android:padding="16dp"
+            android:layout_marginBottom="8dp">
 
-        <TextView
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="FREE"
+                android:textSize="16sp"
+                android:textColor="#AAAAAA"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="€0"
+                android:textSize="28sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="&#8226; Encrypted calls\n&#8226; 15 min call limit\n&#8226; 10 contacts\n&#8226; With ads"
+                android:textSize="13sp"
+                android:textColor="#999999"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <!-- PRO Card -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Unlimited calls &amp; contacts\nCertificate pinning\nDevice attestation\nMulti-device support\nNo telemetry"
-            android:textSize="13sp"
-            android:textColor="#CCCCCC"
-            android:lineSpacingMultiplier="1.3"
-            android:layout_marginBottom="8dp" />
+            android:orientation="vertical"
+            android:background="#1A2A4A"
+            android:padding="16dp"
+            android:layout_marginBottom="8dp">
 
-        <!-- PRO Lifetime Price Info -->
-        <TextView
-            android:id="@+id/tvProLicensesLeft"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PRO"
+                android:textSize="16sp"
+                android:textColor="#FFD700"
+                android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="€3.49"
+                    android:textSize="28sp"
+                    android:textColor="#FFD700"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" /month"
+                    android:textSize="14sp"
+                    android:textColor="#888888" />
+            </LinearLayout>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="&#8226; No ads\n&#8226; Unlimited calls &amp; contacts\n&#8226; Online status\n&#8226; Call history\n&#8226; Anti-recording detection"
+                android:textSize="13sp"
+                android:textColor="#CCCCCC"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/btnProMonthly"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:text="Upgrade to Pro — €3.49/mo"
+                android:textSize="14sp"
+                android:backgroundTint="#FFD700"
+                android:textColor="#000000"
+                android:layout_marginTop="12dp" />
+        </LinearLayout>
+
+        <!-- PREMIUM Card -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Only 100 licenses left!"
-            android:textSize="14sp"
-            android:textColor="#FFC107"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
+            android:orientation="vertical"
+            android:background="#2A1A1A"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
 
-        <ProgressBar
-            android:id="@+id/progressProSold"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:max="100"
-            android:progress="0"
-            android:progressTint="#FFD700"
-            android:layout_marginBottom="8dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PREMIUM"
+                android:textSize="16sp"
+                android:textColor="#FF4444"
+                android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="€4.99"
+                    android:textSize="28sp"
+                    android:textColor="#FF4444"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" /month"
+                    android:textSize="14sp"
+                    android:textColor="#888888" />
+            </LinearLayout>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="&#8226; Everything in Pro\n&#8226; WireGuard VPN\n&#8226; Zero telemetry\n&#8226; Screenshot protection\n&#8226; Hardware keystore"
+                android:textSize="13sp"
+                android:textColor="#CCCCCC"
+                android:lineSpacingMultiplier="1.4"
+                android:layout_marginTop="8dp" />
 
-        <Button
-            android:id="@+id/btnProLifetime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Buy PRO Lifetime — $15.00"
-            android:layout_marginBottom="4dp" />
+            <Button
+                android:id="@+id/btnPremiumMonthly"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:text="Upgrade to Premium — €4.99/mo"
+                android:textSize="14sp"
+                android:backgroundTint="#FF4444"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="12dp" />
+        </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvProNextPrice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Next buyer pays: $15.35"
-            android:textSize="11sp"
-            android:textColor="#999999"
-            android:gravity="center"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Subscription Alternative -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Or subscribe:"
-            android:textSize="12sp"
-            android:textColor="#888888"
-            android:layout_marginBottom="4dp" />
-
-        <Button
-            android:id="@+id/btnProMonthly"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Pro Monthly — $9.99/mo"
-            android:backgroundTint="#333355"
-            android:layout_marginBottom="4dp" />
-
-        <Button
-            android:id="@+id/btnProYearly"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Pro Yearly — $99.99/yr (save 17%)"
-            android:backgroundTint="#333355"
-            android:layout_marginBottom="24dp" />
-
-        <!-- PREMIUM LIFETIME Section -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="PREMIUM LIFETIME"
-            android:textSize="20sp"
-            android:textColor="#FF4444"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="All PRO features plus:\nHardware keystore required\nScreen capture detection\nDebugger detection\nEmulator blocking\nAggressive key rotation\nZero-fallback mode"
-            android:textSize="13sp"
-            android:textColor="#CCCCCC"
-            android:lineSpacingMultiplier="1.3"
-            android:layout_marginBottom="8dp" />
-
-        <!-- PREMIUM Lifetime Price Info -->
-        <TextView
-            android:id="@+id/tvPremiumLicensesLeft"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Only 100 licenses left!"
-            android:textSize="14sp"
-            android:textColor="#FF6666"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
-
-        <ProgressBar
-            android:id="@+id/progressPremiumSold"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:max="100"
-            android:progress="0"
-            android:progressTint="#FF4444"
-            android:layout_marginBottom="8dp" />
-
-        <Button
-            android:id="@+id/btnPremiumLifetime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Buy PREMIUM Lifetime — $25.00"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:id="@+id/tvPremiumNextPrice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Next buyer pays: $25.75"
-            android:textSize="11sp"
-            android:textColor="#999999"
-            android:gravity="center"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Subscription Alternative -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Or subscribe:"
-            android:textSize="12sp"
-            android:textColor="#888888"
-            android:layout_marginBottom="4dp" />
-
-        <Button
-            android:id="@+id/btnPremiumMonthly"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Premium Monthly — $29.99/mo"
-            android:backgroundTint="#333355"
-            android:layout_marginBottom="4dp" />
-
-        <Button
-            android:id="@+id/btnPremiumYearly"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Premium Yearly — $299.99/yr (save 17%)"
-            android:backgroundTint="#333355"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Activation Code Purchase -->
+        <!-- ═══ LIFETIME ACCESS ═══ -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -238,49 +190,103 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🎁 GIFT OPTION"
+            android:text="&#128273; Lifetime Access"
             android:textSize="18sp"
-            android:textColor="#00E676"
+            android:textColor="#FFFFFF"
             android:textStyle="bold"
             android:gravity="center"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Buy a Premium activation code.\nUse it yourself or gift it to anyone!"
-            android:textSize="13sp"
-            android:textColor="#CCCCCC"
-            android:gravity="center"
-            android:lineSpacingMultiplier="1.3"
             android:layout_marginBottom="12dp" />
 
-        <Button
-            android:id="@+id/btnActivationCode"
+        <!-- IFR Token Lock -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🛒 Buy Activation Code — €49"
-            android:textSize="16sp"
-            android:backgroundTint="#00E676"
-            android:textColor="#000000"
-            android:layout_marginBottom="24dp" />
+            android:orientation="vertical"
+            android:background="#1A2A2A"
+            android:padding="16dp"
+            android:layout_marginBottom="8dp">
 
-        <!-- Restore -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="IFR Token Lock — No subscription needed"
+                android:textSize="14sp"
+                android:textColor="#FF9800"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="&#8226; Lock ≥ 1,000 IFR → Pro forever\n&#8226; Lock ≥ 5,000 IFR → Premium forever\n&#8226; Your tokens stay yours — unlock anytime"
+                android:textSize="13sp"
+                android:textColor="#CCCCCC"
+                android:lineSpacingMultiplier="1.4" />
+
+            <!-- Hidden lifecycle views for UpgradeActivity compatibility -->
+            <TextView android:id="@+id/tvProLicensesLeft" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+            <TextView android:id="@+id/tvPremiumLicensesLeft" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+            <TextView android:id="@+id/tvProNextPrice" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+            <TextView android:id="@+id/tvPremiumNextPrice" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+            <ProgressBar android:id="@+id/progressProSold" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:max="100" />
+            <ProgressBar android:id="@+id/progressPremiumSold" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" android:max="100" />
+            <Button android:id="@+id/btnProLifetime" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+            <Button android:id="@+id/btnPremiumLifetime" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+            <Button android:id="@+id/btnProYearly" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+            <Button android:id="@+id/btnPremiumYearly" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Activation Code -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#1A2A1A"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="&#127873; Activation Code — €49"
+                android:textSize="14sp"
+                android:textColor="#00E676"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Buy a Premium activation code. Use it yourself or gift it to anyone. Enter in Settings → instant Premium."
+                android:textSize="13sp"
+                android:textColor="#CCCCCC"
+                android:lineSpacingMultiplier="1.4" />
+
+            <Button
+                android:id="@+id/btnActivationCode"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:text="Buy Activation Code — €49"
+                android:textSize="14sp"
+                android:backgroundTint="#00E676"
+                android:textColor="#000000"
+                android:layout_marginTop="12dp" />
+        </LinearLayout>
+
+        <!-- Restore + Status -->
         <Button
             android:id="@+id/btnRestore"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:text="Restore Purchase"
-            android:backgroundTint="#444466"
-            android:layout_marginBottom="16dp" />
+            android:textSize="12sp"
+            android:backgroundTint="#333355"
+            android:layout_marginBottom="8dp" />
 
-        <!-- Status -->
         <TextView
             android:id="@+id/tvStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text=""
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textColor="#AAAAAA"
             android:gravity="center"
             android:layout_marginBottom="16dp" />
