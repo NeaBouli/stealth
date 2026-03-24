@@ -46,10 +46,17 @@ Built by Vendetta Labs, Greece. Open source: github.com/NeaBouli/stealth
 - GitHub: github.com/NeaBouli
 - Website: stealthx.tech
 
+## Test Results (March 24, 2026)
+- 44/44 regression tests passing
+- 0 crashes, 0 ANRs
+- Tested on 3 physical Samsung devices (S10, S7, Tab S4)
+- App start time: 841ms average
+- Memory: 75-158 MB across tiers
+
 ## Privacy
 - No personal data collected
 - No call content stored on servers
 - No telemetry in Premium tier
 - GDPR compliant (Greece/EU)
-- Open source, fully auditable
+- Source available, fully auditable
 - Security audit completed February 2026
