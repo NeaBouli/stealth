@@ -1351,6 +1351,17 @@ app.get("/status/last-broadcast", (req, res) => {
   res.json(lastBroadcast);
 });
 
+app.get("/status/live", (req, res) => {
+  res.json({
+    server: "online",
+    uptime: Math.floor(process.uptime()),
+    connectedClients: clients ? clients.size : 0,
+    registeredIds: clientIds ? clientIds.size : 0,
+    fcmTokens: fcmTokens ? fcmTokens.size : 0,
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.post("/admin/broadcast", requireAdmin, (req, res) => {
   const { template_id } = req.body;
   if (!template_id || template_id < 1 || template_id > 10) {
