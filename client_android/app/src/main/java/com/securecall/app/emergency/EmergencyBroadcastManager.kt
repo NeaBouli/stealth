@@ -107,6 +107,26 @@ object EmergencyBroadcastManager {
             bodyDe = "Die vorherige Sicherheitswarnung wurde behoben. Der Dienst ist vollständig wiederhergestellt.",
             severity = Severity.INFO,
             dismissable = true
+        ),
+        9 to EmergencyTemplate(
+            icon = "\uD83D\uDD04", // arrows counterclockwise
+            titleEn = "Update Available",
+            titleDe = "Update verf\u00FCgbar",
+            bodyEn = "A new version of SecureCall is available on Google Play. Update now for the latest features and improvements.",
+            bodyDe = "Eine neue Version von SecureCall ist im Google Play Store verf\u00FCgbar. Jetzt aktualisieren.",
+            severity = Severity.INFO,
+            dismissable = true,
+            showUpdateButton = true
+        ),
+        10 to EmergencyTemplate(
+            icon = "\uD83E\uDDEA", // test tube
+            titleEn = "Beta Update Available",
+            titleDe = "Beta-Update verf\u00FCgbar",
+            bodyEn = "A new beta version is available. Open Google Play \u2192 My Apps \u2192 Update SecureCall. Check the changelog for what\u2019s new.",
+            bodyDe = "Eine neue Beta-Version ist verf\u00FCgbar. Google Play \u2192 Meine Apps \u2192 SecureCall aktualisieren.",
+            severity = Severity.INFO,
+            dismissable = true,
+            showUpdateButton = true
         )
     )
 

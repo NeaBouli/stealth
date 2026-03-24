@@ -991,8 +991,8 @@
                         <li class="included">No subscription &mdash; permanent Premium</li>
                         <li class="included">Lifetime updates included</li>
                     </ul>
-                    <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn btn-primary btn-block" style="background:#00E676;color:#000;border-color:#00E676">🛒 Buy on Google Play &mdash; &euro;49</a>
-                    <p style="font-size:11px;color:#888;margin-top:8px;text-align:center">Secure payment via Google Play. Code delivered instantly in-app.</p>
+                    <p style="font-size:11px;color:#888;margin-bottom:8px;text-align:center">Secure payment via Google Play. Code delivered instantly in-app.</p>
+                    <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn btn-primary btn-block" style="background:#00E676;color:#000;border-color:#00E676">Buy on Google Play &mdash; &euro;49</a>
                 </div>
             </div>
             <p style="text-align:center;color:#888;font-size:13px;margin-top:24px">
@@ -1088,42 +1088,43 @@
     </section>
 
     <!-- ─── Emergency Broadcast ─────────────────────────────── -->
-    <section class="section" id="broadcast" style="border-top:2px solid #FF4444;background:linear-gradient(180deg,rgba(255,68,68,0.04),transparent)">
+    <section id="broadcast" style="background:linear-gradient(135deg,#0d0d1a 0%,#1a0a0a 100%);border-top:1px solid rgba(220,38,38,0.3);border-bottom:1px solid rgba(220,38,38,0.3);padding:80px 0">
         <div class="container">
-            <div class="section-label" style="color:#FF4444">EMERGENCY SYSTEM</div>
-            <h2 class="section-title">Emergency Broadcast System</h2>
-            <p class="section-desc">Reach every user instantly &mdash; without knowing who they are.</p>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;max-width:900px;margin:32px auto 0;text-align:left">
-                <div style="color:#ccc;line-height:1.8">
-                    <h3 style="color:#fff;margin-bottom:12px">How it works</h3>
-                    <ul style="list-style:none;padding:0">
-                        <li style="margin-bottom:8px">&#128225; Only a single numeric ID is sent &mdash; nothing else</li>
-                        <li style="margin-bottom:8px">&#128274; No message text, no user data, no location transmitted</li>
-                        <li style="margin-bottom:8px">&#128241; Alert templates are pre-installed on your device</li>
-                        <li style="margin-bottom:8px">&#9889; A 1-byte ping reaches all users simultaneously</li>
-                        <li>&#128276; Works even when the app is closed</li>
+            <div style="text-align:center;margin-bottom:48px">
+                <span style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#ef4444;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Privacy-Preserving Alerts</span>
+                <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;margin:16px 0 12px;color:#fff">&#128680; Emergency Broadcast System</h2>
+                <p style="color:rgba(255,255,255,0.6);font-size:18px;max-width:600px;margin:0 auto">Reach every user instantly &mdash; without knowing who they are.</p>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:32px;max-width:900px;margin:0 auto 48px">
+                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px">
+                    <h3 style="color:#ef4444;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:0 0 20px">How It Works</h3>
+                    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px">
+                        <li style="display:flex;gap:12px;align-items:flex-start"><span style="color:#ef4444;font-size:18px;flex-shrink:0">&#128225;</span><span style="color:rgba(255,255,255,0.7);font-size:14px">Dev team sends only a single numeric ID &mdash; nothing else</span></li>
+                        <li style="display:flex;gap:12px;align-items:flex-start"><span style="color:#ef4444;font-size:18px;flex-shrink:0">&#128274;</span><span style="color:rgba(255,255,255,0.7);font-size:14px">No message text, no user data, no location ever transmitted</span></li>
+                        <li style="display:flex;gap:12px;align-items:flex-start"><span style="color:#ef4444;font-size:18px;flex-shrink:0">&#128241;</span><span style="color:rgba(255,255,255,0.7);font-size:14px">Pre-installed templates stored locally on your device</span></li>
+                        <li style="display:flex;gap:12px;align-items:flex-start"><span style="color:#ef4444;font-size:18px;flex-shrink:0">&#9889;</span><span style="color:rgba(255,255,255,0.7);font-size:14px">1-byte ping reaches all users simultaneously</span></li>
+                        <li style="display:flex;gap:12px;align-items:flex-start"><span style="color:#ef4444;font-size:18px;flex-shrink:0">&#128276;</span><span style="color:rgba(255,255,255,0.7);font-size:14px">Works even when the app is closed via push notification</span></li>
                     </ul>
                 </div>
-                <div style="color:#ccc;line-height:1.8">
-                    <h3 style="color:#fff;margin-bottom:12px">Alert Templates</h3>
-                    <div style="font-size:14px;line-height:2">
-                        <span style="color:#FF4444">&#128308; CRITICAL</span> &mdash; Stop using SecureCall<br>
-                        <span style="color:#FF8800">&#128992; Security Alert</span> &mdash; Switch to backup comms<br>
-                        <span style="color:#FFCC00">&#128993; Update Required</span> &mdash; Critical update available<br>
-                        &#128251; Emergency &mdash; Turn on radio/TV<br>
-                        &#9899; Stealth Protocol &mdash; Activate stealth mode<br>
-                        &#9888;&#65039; Network Warning &mdash; Network may be monitored<br>
-                        <span style="color:#4488FF">&#128309; Maintenance</span> &mdash; Temporary interruption<br>
-                        <span style="color:#44FF44">&#128994; All Clear</span> &mdash; Previous alert resolved
+                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px">
+                    <h3 style="color:#ef4444;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:0 0 20px">10 Alert Templates</h3>
+                    <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(220,38,38,0.05)"><span>&#128308;</span><span style="color:rgba(255,255,255,0.8)">CRITICAL &mdash; Stop using app</span></div>
+                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px"><span>&#128992;</span><span style="color:rgba(255,255,255,0.8)">Security Alert &mdash; Switch comms</span></div>
+                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(220,38,38,0.05)"><span>&#128993;</span><span style="color:rgba(255,255,255,0.8)">Update Required &mdash; Critical update</span></div>
+                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px"><span>&#128309;</span><span style="color:rgba(255,255,255,0.8)">Maintenance &mdash; Temporary pause</span></div>
+                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(220,38,38,0.05)"><span>&#9899;</span><span style="color:rgba(255,255,255,0.8)">Stealth Protocol &mdash; Go dark</span></div>
+                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px"><span>&#128251;</span><span style="color:rgba(255,255,255,0.8)">Emergency &mdash; Turn on radio/TV</span></div>
+                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(220,38,38,0.05)"><span>&#9888;&#65039;</span><span style="color:rgba(255,255,255,0.8)">Network Warning &mdash; Switch network</span></div>
+                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px"><span>&#128994;</span><span style="color:rgba(255,255,255,0.8)">All Clear &mdash; Alert resolved</span></div>
+                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(220,38,38,0.05)"><span>&#128260;</span><span style="color:rgba(255,255,255,0.8)">Update Available &mdash; New version</span></div>
+                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px"><span>&#129514;</span><span style="color:rgba(255,255,255,0.8)">Beta Update &mdash; New beta ready</span></div>
                     </div>
                 </div>
             </div>
-
-            <p style="text-align:center;margin-top:32px;color:#888;font-style:italic;max-width:600px;margin-left:auto;margin-right:auto">
-                <strong style="color:#ccc">Your privacy is preserved at every step.</strong><br>
-                We send a number. Your phone does the rest.
-            </p>
+            <div style="text-align:center;max-width:600px;margin:0 auto;padding:24px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px">
+                <p style="color:rgba(255,255,255,0.5);font-size:14px;margin:0;line-height:1.6"><strong style="color:rgba(255,255,255,0.8)">Your privacy is preserved at every step.</strong><br>We don&rsquo;t know who you are or where you are &mdash; and we never will.<br>We send a number. Your phone does the rest.</p>
+            </div>
         </div>
     </section>
 

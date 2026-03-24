@@ -1327,11 +1327,34 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-// --- Emergency Broadcast Endpoint (admin-only) ---
+// --- Emergency Broadcast System ---
+const TEMPLATE_META = {
+  1: { icon: "🔴", title: "CRITICAL: Do Not Use SecureCall" },
+  2: { icon: "🟠", title: "Security Alert" },
+  3: { icon: "🟡", title: "Critical Update Required" },
+  4: { icon: "🔵", title: "Service Maintenance" },
+  5: { icon: "⚫", title: "Stealth Protocol Activated" },
+  6: { icon: "📻", title: "Emergency Broadcast" },
+  7: { icon: "⚠️", title: "Network Compromise Warning" },
+  8: { icon: "🟢", title: "All Clear" },
+  9: { icon: "🔄", title: "Update Available" },
+  10: { icon: "🧪", title: "Beta Update Available" }
+};
+
+let lastBroadcast = {
+  template_id: 8, icon: "🟢", title: "All Clear",
+  body: "All systems operational. No active alerts.",
+  timestamp: new Date().toISOString(), active: false
+};
+
+app.get("/status/last-broadcast", (req, res) => {
+  res.json(lastBroadcast);
+});
+
 app.post("/admin/broadcast", requireAdmin, (req, res) => {
   const { template_id } = req.body;
-  if (!template_id || template_id < 1 || template_id > 8) {
-    return res.status(400).json({ error: "invalid template_id (1-8)" });
+  if (!template_id || template_id < 1 || template_id > 10) {
+    return res.status(400).json({ error: "invalid template_id (1-10)" });
   }
 
   // Broadcast to all connected WebSocket clients
@@ -1358,6 +1381,13 @@ app.post("/admin/broadcast", requireAdmin, (req, res) => {
       } catch (_) {}
     }
   }
+
+  const meta = TEMPLATE_META[template_id] || { icon: "📡", title: "Broadcast" };
+  lastBroadcast = {
+    template_id, icon: meta.icon, title: meta.title,
+    body: "", timestamp: new Date().toISOString(),
+    active: template_id !== 8
+  };
 
   console.log(`[BROADCAST] Emergency template=${template_id} sent to ${wsSent} WS clients, ${fcmTokens.size} FCM targets`);
   res.json({ ok: true, ws_sent: wsSent, fcm_targets: fcmTokens.size });
