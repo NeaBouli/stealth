@@ -99,8 +99,8 @@
     <string name="dialer_share_link">Share Link</string>
     <string name="dialer_no_sms_app">No SMS app found</string>
     <string name="dialer_no_messenger">No messenger app found, opening share sheet\u2026</string>
-    <string name="dialer_invite_sms">Join me on SecureCall for encrypted voice calls! My SecureCall ID: %1$s — Download: https://neabouli.github.io/stealth/</string>
-    <string name="dialer_invite_share">Join me on SecureCall for encrypted voice calls! My SecureCall ID: %1$s — Download: https://neabouli.github.io/stealth/</string>
+    <string name="dialer_invite_sms">Join me on SecureCall for encrypted voice calls! My SecureCall ID: %1$s — Download: https://stealthx.tech</string>
+    <string name="dialer_invite_share">Join me on SecureCall for encrypted voice calls! My SecureCall ID: %1$s — Download: https://stealthx.tech</string>
     <string name="dialer_invite_via">Invite via\u2026</string>
 
     <!-- Missed Call -->

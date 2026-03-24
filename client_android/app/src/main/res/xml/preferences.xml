@@ -237,7 +237,8 @@
             android:icon="@drawable/ic_shield" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Support Development">
+    <PreferenceCategory android:title="Support Development"
+        app:initialExpandedChildrenCount="0">
         <Preference
             android:key="pref_donate_eth"
             android:title="ETH"

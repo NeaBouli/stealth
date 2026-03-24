@@ -119,8 +119,13 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
 
-        // Setup bottom navigation
+        // Setup bottom navigation with system bar insets (TB-005: Samsung navbar overlap fix)
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
+            int navBarHeight = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars()).bottom;
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), navBarHeight);
+            return insets;
+        });
         ExtendedFloatingActionButton fab = findViewById(R.id.fabNewCall);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();

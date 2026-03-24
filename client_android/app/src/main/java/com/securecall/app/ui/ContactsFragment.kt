@@ -703,21 +703,32 @@ class ContactsFragment : Fragment() {
         val base = getString(R.string.dialer_invite_sms, myId)
         val message = if (myPhone.isNotEmpty()) "$base\nMy phone: $myPhone" else base
         val items = arrayOf(
+            "Try calling anyway",
             getString(R.string.dialer_share_link),
             getString(R.string.dialer_send_sms)
         )
         android.app.AlertDialog.Builder(ctx)
-            .setTitle(getString(R.string.dialer_invite_message, contact.name))
+            .setTitle("${contact.name} not found on SecureCall")
+            .setMessage("This contact may not have SecureCall installed, or their phone number may be registered differently.")
             .setItems(items) { _, which ->
                 when (which) {
                     0 -> {
+                        // Try calling with the phone number directly
+                        val intent = Intent(requireContext(), CallActivity::class.java).apply {
+                            putExtra("callerName", contact.name)
+                            putExtra("phoneNumber", contact.phoneOrId)
+                            putExtra("originalPhone", contact.phoneOrId)
+                        }
+                        startActivity(intent)
+                    }
+                    1 -> {
                         val intent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_TEXT, message)
                         }
                         startActivity(Intent.createChooser(intent, getString(R.string.dialer_invite_via)))
                     }
-                    1 -> {
+                    2 -> {
                         try {
                             val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
                                 data = android.net.Uri.parse("smsto:${contact.phoneOrId}")

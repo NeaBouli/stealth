@@ -205,9 +205,17 @@ public class CallActivity extends AppCompatActivity {
                     // Clear callback to prevent repeated error handling
                     ws.setOnCallError(null);
                     runOnUiThread(() -> {
-                        connectionState.setText("Call failed: " + error);
+                        String userMessage;
+                        if ("peer_not_found".equals(error)) {
+                            userMessage = "Contact is offline or not registered.\nMake sure they have SecureCall installed.";
+                        } else if ("busy".equals(error)) {
+                            userMessage = "Contact is busy on another call.";
+                        } else {
+                            userMessage = "Call failed: " + message;
+                        }
+                        connectionState.setText(userMessage);
                         connectionState.setTextColor(getResources().getColor(R.color.stealthx_red, getTheme()));
-                        connectionState.postDelayed(this::endCall, 3000);
+                        connectionState.postDelayed(this::endCall, 4000);
                     });
                     return kotlin.Unit.INSTANCE;
                 });

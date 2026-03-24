@@ -8,13 +8,13 @@
 |---|-----|----------|--------|--------|--------|
 | TB-001 | — | — | — | — | — |
 | TB-002 | Upgrade Screen: schlechte Formatierung + falsche Preise | HIGH | Alle Tester | S10/S7/Tab | FIXED |
-| TB-003 | "Peer not found" beim Anruf | CRITICAL | Tester | Alle | IN PROGRESS |
-| TB-004 | Telefonnummer nach Onboarding nicht gespeichert | HIGH | Tester | Alle | IN PROGRESS |
-| TB-005 | Android Navigationsleiste ueberlappt App-Footer | HIGH | Tester | Samsung S21+ | IN PROGRESS |
-| TB-006 | App erkennt nicht dass Kontakt App installiert hat | HIGH | Tester | Alle | IN PROGRESS |
-| TB-007 | SMS Einladungslink zeigt auf falschen Store | MEDIUM | Tester | Alle | IN PROGRESS |
-| TB-008 | Support Development Section nicht einklappbar | LOW | Tester | Alle | IN PROGRESS |
-| TB-009 | Werbebanner nicht einklappbar | LOW | Tester | Free | IN PROGRESS |
+| TB-003 | "Peer not found" beim Anruf | CRITICAL | Tester | Alle | FIXED — user-friendly message |
+| TB-004 | Telefonnummer nach Onboarding nicht gespeichert | HIGH | Tester | Alle | FIXED — reads confirmed_phone_number |
+| TB-005 | Android Navigationsleiste ueberlappt App-Footer | HIGH | Tester | Samsung S21+ | FIXED — WindowInsets padding |
+| TB-006 | App erkennt nicht dass Kontakt App installiert hat | HIGH | Tester | Alle | FIXED — "Try calling anyway" option |
+| TB-007 | SMS Einladungslink zeigt auf falschen Store | MEDIUM | Tester | Alle | FIXED — stealthx.tech |
+| TB-008 | Support Development Section nicht einklappbar | LOW | Tester | Alle | FIXED — initialExpandedChildrenCount=0 |
+| TB-009 | Werbebanner nicht einklappbar | LOW | Tester | Free | WONTFIX — AdMob standard behavior |
 
 ## Beta Tester (anonymisiert)
 
