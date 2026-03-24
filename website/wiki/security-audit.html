@@ -114,7 +114,11 @@
                 <span class="division">StealthX // SecureCall</span>
             </div>
 
-            <h1 class="wiki-title">Security Audit Report</h1>
+            <div class="wiki-page-header">
+                <div class="wiki-classification">Classification: Restricted &middot; SC-AUDIT</div>
+                <h1 class="wiki-page-title">Security Audit Report</h1>
+                <p class="wiki-page-subtitle">Security audit findings, remediations, and regression test results.</p>
+            </div>
             <p class="wiki-meta">Internal security audit findings and remediations for SecureCall &middot; Last updated February 2026</p>
 
             <!-- SUMMARY -->
@@ -164,7 +168,7 @@
                         <td><strong>48</strong></td>
                     </tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <h3>Remediation Status</h3>
             <div class="info-box info">
@@ -232,7 +236,7 @@
                         <td>Debug endpoints removed entirely from production builds</td>
                     </tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <!-- KEY REMEDIATIONS -->
             <div class="section-break">Key Remediations</div>
@@ -303,7 +307,7 @@
                         <td><a href="https://github.com/NeaBouli/stealth/issues/301" target="_blank" rel="noopener">#301</a> &mdash; <a href="https://github.com/NeaBouli/stealth/issues/310" target="_blank" rel="noopener">#310</a></td>
                     </tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <div class="info-box warning">
                 <strong>Note:</strong> Medium findings include items such as certificate pinning enforcement, additional input sanitization, logging hygiene improvements, and enhanced error message redaction. None represent active exploitability in the current deployment.
@@ -325,7 +329,7 @@
                     <tr><td>S7</td><td>Galaxy S7 (ce10160adc00152604)</td><td><strong>Free</strong></td><td>+4915203487046</td><td>Android 8</td></tr>
                     <tr><td>Tab S4</td><td>Galaxy Tab S4 (ce12182c68644439037e)</td><td><strong>Pro</strong></td><td>+491752536807</td><td>Android 10</td></tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <h3>Phase 1 &mdash; Connection Stability</h3>
             <table>
@@ -337,7 +341,7 @@
                     <tr><td>1.2</td><td>60-second monitoring &mdash; zero WebSocket disconnects on all devices</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                     <tr><td>1.3</td><td>All devices registered with correct phone numbers on server</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <h3>Phase 2 &mdash; Call Signaling</h3>
             <table>
@@ -352,7 +356,7 @@
                     <tr><td>2.5</td><td>S7 &rarr; S4: Cross-tier (Free &rarr; Pro), full signaling verified</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                     <tr><td>2.6</td><td>S4 &rarr; S7: Reverse direction</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <h3>Phase 3 &mdash; Call Edge Cases</h3>
             <table>
@@ -364,7 +368,7 @@
                     <tr><td>3.2</td><td>Busy signal: CALL_BUSY sent when session already active, caller receives error</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                     <tr><td>3.3</td><td>Rapid redial after hangup: New session created successfully</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <h3>Phase 4 &mdash; Contacts &amp; Status</h3>
             <table>
@@ -376,7 +380,7 @@
                     <tr><td>4.2</td><td>Zero duplicate contacts after deduplication</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                     <tr><td>4.3</td><td>Online status dots visible (Pro/Premium), hidden (Free)</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <h3>Phase 5 &mdash; Feature Gating</h3>
             <table>
@@ -388,7 +392,7 @@
                     <tr><td>5.2</td><td>S7 (Free): shows "FREE", eSIM/VPN locked with "PREMIUM feature"</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                     <tr><td>5.3</td><td>S4 (Pro): shows "PRO", eSIM/VPN locked, anti-recording toggleable</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <h3>Phase 6 &mdash; Special Features</h3>
             <table>
@@ -400,7 +404,7 @@
                     <tr><td>6.2</td><td>Phone number normalization (international format)</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                     <tr><td>6.3</td><td>PHONE_LOOKUP rate limiting (10/min anti-enumeration)</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                 </tbody>
-            </table>
+            </table></div>
 
             <div class="info-box info">
                 <strong>Test Date:</strong> March 17, 2026 &mdash; All tests conducted on physical devices over WiFi and mobile data connections. Server: Railway (wss://protective-healing-production.up.railway.app). Build: v0.2-beta. Commit: <code>543d77f</code>.
@@ -436,7 +440,7 @@
                     <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Website (23 pages)</td><td style="text-align:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">23/23</td><td style="text-align:center;color:#4ade80;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">PASS</td></tr>
                     <tr style="font-weight:700"><td style="padding:8px 0">TOTAL</td><td style="text-align:center;padding:8px 0">44/44</td><td style="text-align:center;color:#4ade80;padding:8px 0">100% PASS</td></tr>
                 </tbody>
-            </table>
+            </table></div>
             <p style="color:#888;font-size:12px"><strong>Crashes:</strong> 0 &nbsp;|&nbsp; <strong>ANRs:</strong> 0 &nbsp;|&nbsp; <strong>App Start:</strong> 841ms avg &nbsp;|&nbsp; <strong>Memory:</strong> 75&ndash;158 MB</p>
 
             <div class="wiki-doc-footer">
