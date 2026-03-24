@@ -8,6 +8,13 @@
 |---|-----|----------|--------|--------|--------|
 | TB-001 | — | — | — | — | — |
 | TB-002 | Upgrade Screen: schlechte Formatierung + falsche Preise | HIGH | Alle Tester | S10/S7/Tab | FIXED |
+| TB-003 | "Peer not found" beim Anruf | CRITICAL | Tester | Alle | IN PROGRESS |
+| TB-004 | Telefonnummer nach Onboarding nicht gespeichert | HIGH | Tester | Alle | IN PROGRESS |
+| TB-005 | Android Navigationsleiste ueberlappt App-Footer | HIGH | Tester | Samsung S21+ | IN PROGRESS |
+| TB-006 | App erkennt nicht dass Kontakt App installiert hat | HIGH | Tester | Alle | IN PROGRESS |
+| TB-007 | SMS Einladungslink zeigt auf falschen Store | MEDIUM | Tester | Alle | IN PROGRESS |
+| TB-008 | Support Development Section nicht einklappbar | LOW | Tester | Alle | IN PROGRESS |
+| TB-009 | Werbebanner nicht einklappbar | LOW | Tester | Free | IN PROGRESS |
 
 ## Beta Tester (anonymisiert)
 
