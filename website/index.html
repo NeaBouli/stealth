@@ -365,6 +365,14 @@
                     <span style="font-size:20px">&#128230;</span>
                     <span style="color:#ccc;font-size:13px;font-weight:500">Source Available &mdash; auditable</span>
                 </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);border-radius:10px">
+                    <span style="font-size:20px"><span id="hero-dot-server" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;vertical-align:middle;margin-right:4px"></span>&#9889;</span>
+                    <span style="color:#ccc;font-size:13px;font-weight:500"><span id="hero-server-status">Server Online</span><span id="hero-clients" style="color:rgba(255,255,255,0.4);font-size:11px;display:block;margin-top:1px">&mdash;</span></span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:10px">
+                    <span style="font-size:20px">&#128147;</span>
+                    <span style="color:#ccc;font-size:13px;font-weight:500">Live Heartbeat<span id="hero-heartbeat" style="color:rgba(255,255,255,0.4);font-size:11px;display:block;margin-top:1px">&mdash;</span></span>
+                </div>
             </div>
         </div>
     </section>
@@ -1123,7 +1131,7 @@
                 </div>
             </div>
             <div style="text-align:center;max-width:600px;margin:0 auto;padding:24px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px">
-                <p style="color:rgba(255,255,255,0.5);font-size:14px;margin:0;line-height:1.6"><strong style="color:rgba(255,255,255,0.8)">Your privacy is preserved at every step.</strong><br>We don&rsquo;t know who you are or where you are &mdash; and we never will.<br>We send a number. Your phone does the rest.</p>
+                <p style="color:rgba(255,255,255,0.5);font-size:14px;margin:0;line-height:1.6"><strong style="color:rgba(255,255,255,0.8)">Your privacy is preserved at every step.</strong><br>We don&rsquo;t know who you are or where you are &mdash; and we never will.<br>We send a ping. Your phone does the rest.</p>
             </div>
         </div>
     </section>
@@ -1168,5 +1176,33 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <style>
+    @keyframes pulse-green{0%,100%{opacity:1;box-shadow:0 0 6px #22c55e}50%{opacity:.4;box-shadow:0 0 12px #22c55e}}
+    @keyframes pulse-red{0%,100%{opacity:1;box-shadow:0 0 6px #ef4444}50%{opacity:.4;box-shadow:0 0 18px #ef4444}}
+    #hero-dot-server{animation:pulse-green 2s infinite}
+    </style>
+    <script>
+    (function(){
+      var S='https://protective-healing-production.up.railway.app';
+      function u(){
+        fetch(S+'/health',{signal:AbortSignal.timeout(5000)}).then(function(r){return r.json()}).then(function(d){
+          var dot=document.getElementById('hero-dot-server');
+          if(dot){dot.style.background='#22c55e';dot.style.boxShadow='0 0 6px #22c55e';dot.style.animation='pulse-green 2s infinite'}
+          var st=document.getElementById('hero-server-status');
+          if(st)st.textContent='Server Online';
+          var cl=document.getElementById('hero-clients');
+          if(cl)cl.textContent='uptime '+d.uptime+'s';
+          var hb=document.getElementById('hero-heartbeat');
+          if(hb)hb.textContent=d.uptime?Math.round(60000/15000)+' bpm':'—';
+        }).catch(function(){
+          var dot=document.getElementById('hero-dot-server');
+          if(dot){dot.style.background='#ef4444';dot.style.boxShadow='0 0 6px #ef4444';dot.style.animation='pulse-red 1s infinite'}
+          var st=document.getElementById('hero-server-status');
+          if(st)st.textContent='Checking...';
+        });
+      }
+      u();setInterval(u,15000);
+    })();
+    </script>
 </body>
 </html>
