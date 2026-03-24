@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beta Testing Guide — SecureCall Wiki</title>
+    <meta name="description" content="How to install, test, and report bugs during the SecureCall beta testing phase on Google Play.">
+    <meta name="theme-color" content="#0a0a12">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://stealthx.tech/wiki/beta-testing.html">
+    <meta property="og:title" content="Beta Testing Guide — SecureCall Wiki">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://stealthx.tech/wiki/beta-testing.html">
+    <meta property="og:site_name" content="SecureCall">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#compare">Compare</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="../#audit">Audit</a>
+                <a href="../#lifetime" style="color:#FFD700">Lifetime</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="../faq.html">FAQ</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="beta-testing.html" class="active">Beta Testing</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span>Beta Testing</span>
+            </div>
+
+            <h1>Beta Testing Guide</h1>
+
+            <h2>1. App installieren</h2>
+            <ul>
+                <li>Email-Einladung von Google Play erhalten</li>
+                <li>Link in der Email &ouml;ffnen</li>
+                <li>&ldquo;Am Test teilnehmen&rdquo; klicken</li>
+                <li>App im Play Store installieren</li>
+            </ul>
+
+            <h2>2. App einrichten</h2>
+            <ul>
+                <li>App &ouml;ffnen &rarr; Onboarding (4 Screens) durchlaufen</li>
+                <li>Telefonnummer eingeben und speichern</li>
+                <li>Berechtigungen erlauben (Mikrofon, Benachrichtigungen)</li>
+                <li>Fertig &mdash; App ist einsatzbereit</li>
+            </ul>
+
+            <h2>3. App upgraden (f&uuml;r erweiterte Tests)</h2>
+            <p>Settings &rarr; Activation Code eingeben:</p>
+            <table style="width:100%;max-width:400px;font-size:14px">
+                <tr><td style="padding:6px 12px;color:#FFD700;font-weight:600">Pro Version</td><td style="padding:6px 12px;font-family:monospace;color:#ccc">TEST-PRO1-CODE</td></tr>
+                <tr><td style="padding:6px 12px;color:#FF4444;font-weight:600">Premium Version</td><td style="padding:6px 12px;font-family:monospace;color:#ccc">TEST-PREM-CODE</td></tr>
+            </table>
+
+            <h2>4. Updates installieren</h2>
+            <ol>
+                <li>Play Store &ouml;ffnen</li>
+                <li>Profilbild oben rechts tippen</li>
+                <li>&ldquo;Apps &amp; Ger&auml;t verwalten&rdquo; &ouml;ffnen</li>
+                <li>SecureCall &rarr; &ldquo;Aktualisieren&rdquo; tippen</li>
+            </ol>
+
+            <h2>5. Kontakt zu anderen Testern herstellen</h2>
+            <h3>Methode A &mdash; Invite Link</h3>
+            <ol>
+                <li>Settings &rarr; &ldquo;Your SecureCall ID&rdquo; kopieren</li>
+                <li>Link per SMS/WhatsApp senden: <code>stealthx.tech/invite/DEINE-ID</code></li>
+                <li>Empf&auml;nger &ouml;ffnet Link &rarr; App erkennt Kontakt automatisch</li>
+            </ol>
+            <h3>Methode B &mdash; Manuell</h3>
+            <ol>
+                <li>Settings &rarr; &ldquo;Your SecureCall ID&rdquo; kopieren</li>
+                <li>ID per SMS senden</li>
+                <li>Empf&auml;nger: Kontakte &rarr; Suche &rarr; SecureID eingeben</li>
+            </ol>
+
+            <h2>6. Bugs melden</h2>
+            <p>Gefundene Bugs bitte melden via:</p>
+            <ul>
+                <li><a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">GitHub Issues</a></li>
+                <li>Email an den Entwickler</li>
+            </ul>
+            <p>Bug-Bericht sollte enthalten:</p>
+            <ul>
+                <li>Ger&auml;t + Android Version</li>
+                <li>App Version (Settings &rarr; About)</li>
+                <li>Schritte zum Reproduzieren</li>
+                <li>Screenshot falls m&ouml;glich</li>
+            </ul>
+
+            <h2>Bekannte Einschr&auml;nkungen (Beta)</h2>
+            <ul>
+                <li>App zeigt &ldquo;com.securecall.app.free&rdquo; als Paketnamen</li>
+                <li>WireGuard VPN braucht eigene Server-Konfiguration</li>
+                <li>App noch nicht im &ouml;ffentlichen Play Store</li>
+            </ul>
+
+            <h2>Was getestet werden soll</h2>
+            <ul>
+                <li>Verschl&uuml;sselte Anrufe zwischen verschiedenen Ger&auml;ten</li>
+                <li>Kontakte hinzuf&uuml;gen (manuell + Invite Link)</li>
+                <li>Einstellungen speichern (nach App-Neustart noch vorhanden?)</li>
+                <li>Upgrade auf Pro/Premium via Aktivierungscode</li>
+                <li>Dark/Light Mode wechseln</li>
+                <li>Navigationsleiste &uuml;berlappt App? (Samsung S21+)</li>
+            </ul>
+
+            <h2>Changelog</h2>
+            <table style="width:100%;font-size:13px">
+                <thead>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
+                        <th style="text-align:left;padding:8px 0;color:#888">Version</th>
+                        <th style="text-align:left;padding:8px 0;color:#888">Datum</th>
+                        <th style="text-align:left;padding:8px 0;color:#888">&Auml;nderungen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.2</td><td style="padding:6px 0">24.03.2026</td><td style="padding:6px 0;color:#ccc">Peer-not-found Fix, Telefonnummer-Speicherung, Navbar Overlap, Invite System, Upgrade Screen Redesign</td></tr>
+                    <tr><td style="padding:6px 0;color:#4ade80">1.0.0</td><td style="padding:6px 0">24.03.2026</td><td style="padding:6px 0;color:#ccc">Erster interner Test-Release</td></tr>
+                </tbody>
+            </table>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Vendetta Labs &mdash; Greece</p>
+                <p><a href="../">Home</a> | <a href="../privacy.html">Privacy Policy</a> | <a href="../impressum.html">Impressum</a> | <a href="../disclaimer.html">Disclaimer</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

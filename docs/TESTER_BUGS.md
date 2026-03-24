@@ -19,17 +19,21 @@
 
 ## Beta Tester (anonymisiert)
 
-| # | Tester | Geraet | Status |
-|---|--------|--------|--------|
-| 1 | g..............i@gmail.com | - | Eingeladen |
-| 2 | n......n@gmail.com | - | Eingeladen |
-| 3 | p............a@gmail.com | - | Eingeladen |
-| 4 | l............a@gmail.com | - | Eingeladen |
-| 5 | e................2@gmail.com | - | Eingeladen |
-| 6 | a..............s@gmail.com | - | Eingeladen |
-| 7 | k...........4@gmail.com | - | Eingeladen |
+| # | Tester | Status |
+|---|--------|--------|
+| 1 | B................1@gmail.com | Eingeladen |
+| 2 | H................1@gmail.com | Eingeladen |
+| 3 | a..............s@gmail.com | Eingeladen |
+| 4 | d................3@gmail.com | Eingeladen |
+| 5 | e................2@gmail.com | Eingeladen |
+| 6 | g..............i@gmail.com | Eingeladen |
+| 7 | l............a@gmail.com | Eingeladen |
+| 8 | n......n@gmail.com | Eingeladen |
+| 9 | p............a@gmail.com | Eingeladen |
+| 10 | r......s@gmail.com | Eingeladen |
+| 11 | z......r@gmail.com | Eingeladen |
 
-**Tester gesamt: 7/12**
+**Tester gesamt: 11/12 — noch 1 fehlt fuer geschlossenen Test**
 
 ## How to report
 Tester melden Bugs per Email an kaspartisan@proton.me oder via GitHub Issues.
