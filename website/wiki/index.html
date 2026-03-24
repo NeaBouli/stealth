@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="stylesheet" href="../css/wiki-v2.css">
     <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
 </head>
 <body>
@@ -98,153 +99,86 @@
                 Navigation
             </button>
 
-            <div class="breadcrumbs">
-                <a href="../">Home</a>
-                <span class="sep">&#9656;</span>
-                <span class="current">Wiki</span>
+            <div class="wiki-page-header">
+                <div class="wiki-classification">Classification: Restricted &middot; SC-HOME</div>
+                <h1 class="wiki-page-title">SecureCall Intel Database</h1>
+                <p class="wiki-page-subtitle">Operations center for all SecureCall documentation &middot; Last updated March 2026</p>
             </div>
 
-            <div class="classified-banner">
-                <span>Classification: Restricted</span>
-                <span class="doc-id">SC-HOME</span>
-                <span class="division">StealthX // SecureCall</span>
+            <div class="wiki-stats">
+                <div class="wiki-stat"><div class="wiki-stat-value">v1.0.3</div><div class="wiki-stat-label">Current Version</div></div>
+                <div class="wiki-stat"><div class="wiki-stat-value">44/44</div><div class="wiki-stat-label">Tests Passing</div></div>
+                <div class="wiki-stat"><div class="wiki-stat-value">11/12</div><div class="wiki-stat-label">Beta Testers</div></div>
+                <div class="wiki-stat"><div class="wiki-stat-value">0</div><div class="wiki-stat-label">Critical Bugs</div></div>
             </div>
 
-            <h1 class="wiki-title">SecureCall Intel Database</h1>
-            <p class="wiki-meta">Operations center for all SecureCall documentation &middot; Last updated February 2026</p>
-
-            <!-- GETTING STARTED -->
-            <div class="section-break">Getting Started</div>
-
-            <div class="wiki-index-grid">
-                <a href="installation-guide.html" class="wiki-index-card">
-                    <span class="card-label">Getting Started</span>
-                    <h3>Installation Guide</h3>
-                    <p>Field deployment instructions for Google Play, GitHub Releases, and APK sideloading. Includes minimum device specifications.</p>
-                </a>
-                <a href="getting-started.html" class="wiki-index-card">
-                    <span class="card-label">Getting Started</span>
-                    <h3>Quick Start</h3>
-                    <p>Get up and running in under five minutes. Grant permissions, generate keys, add contacts, and make your first encrypted call.</p>
-                </a>
-                <a href="ifr-unlock.html" class="wiki-index-card">
-                    <span class="card-label">Getting Started</span>
-                    <h3>IFR Token Unlock</h3>
-                    <p>Lock $IFR tokens on Ethereum for lifetime Pro or Premium access. Your tokens stay yours &mdash; unlock anytime.</p>
-                </a>
+            <div class="wiki-section">
+                <div class="wiki-section-label">Getting Started</div>
+                <div class="wiki-cards">
+                    <a href="installation-guide.html" class="wiki-card"><div class="wiki-card-tag">Guide</div><div class="wiki-card-title">Installation Guide</div><div class="wiki-card-desc">Google Play, APK sideload, F-Droid. Minimum device specs and first-launch setup.</div></a>
+                    <a href="getting-started.html" class="wiki-card"><div class="wiki-card-tag">Guide</div><div class="wiki-card-title">Quick Start</div><div class="wiki-card-desc">Up and running in five minutes. Permissions, key generation, first encrypted call.</div></a>
+                    <a href="ifr-unlock.html" class="wiki-card featured"><div class="wiki-card-tag" style="color:#ef4444">Integration</div><div class="wiki-card-title">IFR Token Unlock</div><div class="wiki-card-desc">Lock $IFR on Ethereum for lifetime Pro or Premium. Bootstrap ends June 5, 2026.</div></a>
+                    <a href="beta-testing.html" class="wiki-card beta"><div class="wiki-card-tag" style="color:#f59e0b">Beta</div><div class="wiki-card-title">Beta Testing Guide</div><div class="wiki-card-desc">Install test build, upgrade tiers, report bugs, connect with other testers.</div></a>
+                </div>
             </div>
 
-            <!-- USER GUIDE -->
-            <div class="section-break">User Guide</div>
-
-            <div class="wiki-index-grid">
-                <a href="faq.html" class="wiki-index-card">
-                    <span class="card-label">User Guide</span>
-                    <h3>FAQ</h3>
-                    <p>Frequently asked questions about SecureCall, encryption, subscriptions, compatibility, and privacy.</p>
-                </a>
-                <a href="troubleshooting.html" class="wiki-index-card">
-                    <span class="card-label">User Guide</span>
-                    <h3>Troubleshooting</h3>
-                    <p>Fault diagnosis procedures for connection failures, audio issues, permission errors, and server timeouts.</p>
-                </a>
-                <a href="privacy-policy.html" class="wiki-index-card">
-                    <span class="card-label">User Guide</span>
-                    <h3>Privacy Policy</h3>
-                    <p>Our privacy commitments, data collection practices, third-party service disclosures, and your rights.</p>
-                </a>
+            <div class="wiki-section">
+                <div class="wiki-section-label">Security Intelligence</div>
+                <div class="wiki-cards">
+                    <a href="security-design.html" class="wiki-card"><div class="wiki-card-tag">Architecture</div><div class="wiki-card-title">Security Design</div><div class="wiki-card-desc">E2E encryption, threat model, anti-recording layers, key zeroization.</div></a>
+                    <a href="security-audit.html" class="wiki-card"><div class="wiki-card-tag">Audit</div><div class="wiki-card-title">Security Audit Report</div><div class="wiki-card-desc">48 findings. All 7 critical and 18 high severity issues resolved and verified.</div></a>
+                </div>
             </div>
 
-            <!-- SECURITY INTELLIGENCE -->
-            <div class="section-break">Security Intelligence</div>
-
-            <div class="wiki-index-grid">
-                <a href="security-design.html" class="wiki-index-card">
-                    <span class="card-label">Security Intelligence</span>
-                    <h3>Security Design</h3>
-                    <p>Comms security briefing covering E2E encryption, threat assessment, system architecture, anti-recording layers, and key zeroization.</p>
-                </a>
-                <a href="security-audit.html" class="wiki-index-card">
-                    <span class="card-label">Security Intelligence</span>
-                    <h3>Security Audit</h3>
-                    <p>Independent audit findings, vulnerability classifications, remediation status, and cryptographic implementation review.</p>
-                </a>
+            <div class="wiki-section">
+                <div class="wiki-section-label">Technical</div>
+                <div class="wiki-cards">
+                    <a href="architecture.html" class="wiki-card"><div class="wiki-card-tag">Reference</div><div class="wiki-card-title">Architecture</div><div class="wiki-card-desc">Rust crypto engine, GhostNet transport, WebSocket signaling, JNI bridge.</div></a>
+                    <a href="api-reference.html" class="wiki-card"><div class="wiki-card-tag">Reference</div><div class="wiki-card-title">API Reference</div><div class="wiki-card-desc">WebSocket protocol, message types, key exchange flow, GHOST spec.</div></a>
+                </div>
             </div>
 
-            <!-- TECHNICAL -->
-            <div class="section-break">Technical</div>
-
-            <div class="wiki-index-grid">
-                <a href="architecture.html" class="wiki-index-card">
-                    <span class="card-label">Technical</span>
-                    <h3>Architecture</h3>
-                    <p>System architecture overview including the Rust crypto engine, GhostNet transport protocol, WebSocket signaling, and JNI bridge.</p>
-                </a>
-                <a href="api-reference.html" class="wiki-index-card">
-                    <span class="card-label">Technical</span>
-                    <h3>API Reference</h3>
-                    <p>WebSocket signaling protocol, message types, key exchange flow, call signaling endpoints, and GHOST protocol specification.</p>
-                </a>
+            <div class="wiki-section">
+                <div class="wiki-section-label">User Guide</div>
+                <div class="wiki-cards">
+                    <a href="faq.html" class="wiki-card"><div class="wiki-card-tag">Support</div><div class="wiki-card-title">FAQ</div><div class="wiki-card-desc">Frequently asked questions about encryption, subscriptions, compatibility.</div></a>
+                    <a href="troubleshooting.html" class="wiki-card"><div class="wiki-card-tag">Support</div><div class="wiki-card-title">Troubleshooting</div><div class="wiki-card-desc">Connection failures, audio issues, permission errors, server timeouts.</div></a>
+                    <a href="privacy-policy.html" class="wiki-card"><div class="wiki-card-tag">Legal</div><div class="wiki-card-title">Privacy Policy</div><div class="wiki-card-desc">Data collection, third-party disclosures, GDPR rights.</div></a>
+                </div>
             </div>
 
-            <!-- PROJECT STATUS -->
-            <div class="section-break">Project Status</div>
-
-            <div class="wiki-index-grid">
-                <a href="roadmap.html" class="wiki-index-card">
-                    <span class="card-label">Project Status</span>
-                    <h3>Roadmap</h3>
-                    <p>Planned features, milestone targets, and development priorities for upcoming SecureCall releases.</p>
-                </a>
-                <a href="changelog.html" class="wiki-index-card">
-                    <span class="card-label">Project Status</span>
-                    <h3>Changelog</h3>
-                    <p>Version history, release notes, bug fixes, and feature additions across all SecureCall releases.</p>
-                </a>
+            <div class="wiki-section">
+                <div class="wiki-section-label">Project Status</div>
+                <div class="wiki-cards">
+                    <a href="roadmap.html" class="wiki-card"><div class="wiki-card-tag">Planning</div><div class="wiki-card-title">Roadmap</div><div class="wiki-card-desc">Planned features, milestone targets, development priorities.</div></a>
+                    <a href="changelog.html" class="wiki-card"><div class="wiki-card-tag">History</div><div class="wiki-card-title">Changelog</div><div class="wiki-card-desc">Version history, release notes, bug fixes and feature additions.</div></a>
+                </div>
             </div>
 
-            <!-- QUICK ACCESS TABLE -->
-            <div class="section-break">Quick Access</div>
+            <div class="wiki-section">
+                <div class="wiki-section-label">Recent Bug Reports</div>
+                <div class="wiki-table-wrap">
+                    <table class="wiki-table">
+                        <thead><tr><th>ID</th><th>Description</th><th>Device</th><th>Status</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>TB-003</code></td><td>Peer not found error message</td><td>All</td><td><span class="wiki-badge wiki-badge-green">Fixed</span></td></tr>
+                            <tr><td><code>TB-004</code></td><td>Phone number not saved after onboarding</td><td>All</td><td><span class="wiki-badge wiki-badge-green">Fixed</span></td></tr>
+                            <tr><td><code>TB-005</code></td><td>Navigation bar overlaps app footer</td><td>S21+</td><td><span class="wiki-badge wiki-badge-green">Fixed</span></td></tr>
+                            <tr><td><code>TB-010</code></td><td>No invite system for contacts</td><td>All</td><td><span class="wiki-badge wiki-badge-green">Fixed</span></td></tr>
+                            <tr><td><code>TB-009</code></td><td>Ad banner not collapsible</td><td>Free</td><td><span class="wiki-badge wiki-badge-gray">Wontfix</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-            <h2>External Resources</h2>
-            <p>Direct links to SecureCall platforms and official channels.</p>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Resource</th>
-                        <th>Description</th>
-                        <th>Link</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Google Play</strong></td>
-                        <td>Official app listing on the Google Play Store</td>
-                        <td><a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener">Play Store</a></td>
-                    </tr>
-                    <tr>
-                        <td><strong>GitHub Repository</strong></td>
-                        <td>Source code, issues, and releases</td>
-                        <td><a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">github.com/NeaBouli/stealth</a></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Issue Tracker</strong></td>
-                        <td>Report bugs and request features</td>
-                        <td><a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">GitHub Issues</a></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Website</strong></td>
-                        <td>Official SecureCall landing page</td>
-                        <td><a href="https://stealthx.tech/" target="_blank" rel="noopener">stealthx.tech</a></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Security Policy</strong></td>
-                        <td>Responsible disclosure and security contacts</td>
-                        <td><a href="https://github.com/NeaBouli/stealth/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY.md</a></td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="wiki-section">
+                <div class="wiki-section-label">External Resources</div>
+                <div class="wiki-cards">
+                    <a href="https://github.com/NeaBouli/stealth" class="wiki-card" target="_blank" rel="noopener"><div class="wiki-card-tag">Source</div><div class="wiki-card-title">GitHub Repository &#8599;</div><div class="wiki-card-desc">Source code, issues, and releases</div></a>
+                    <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" class="wiki-card" target="_blank" rel="noopener"><div class="wiki-card-tag">Download</div><div class="wiki-card-title">Google Play &#8599;</div><div class="wiki-card-desc">Official app listing</div></a>
+                    <a href="https://stealthx.tech" class="wiki-card" target="_blank" rel="noopener"><div class="wiki-card-tag">Website</div><div class="wiki-card-title">stealthx.tech &#8599;</div><div class="wiki-card-desc">Official landing page</div></a>
+                </div>
+            </div>
 
             <div class="wiki-doc-footer">
                 <span class="end-mark">Document End // Classification: Restricted</span>
