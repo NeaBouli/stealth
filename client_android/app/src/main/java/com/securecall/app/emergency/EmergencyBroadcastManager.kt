@@ -132,6 +132,8 @@ object EmergencyBroadcastManager {
 
     /**
      * Handle an incoming emergency broadcast. Only a template_id is received.
+     * If app is in foreground → launch Activity directly.
+     * If app is in background → show system notification (Samsung blocks bg activity starts).
      */
     fun handleBroadcast(context: Context, templateId: Int) {
         val template = TEMPLATES[templateId]
@@ -146,6 +148,57 @@ object EmergencyBroadcastManager {
             putExtra("template_id", templateId)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
-        context.startActivity(intent)
+
+        // Try to start Activity — if it fails (background restriction), show notification
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.w(TAG, "Cannot start Activity from background — showing notification instead")
+            showBroadcastNotification(context, template, templateId)
+        }
+
+        // Always show notification as backup (visible on lock screen)
+        showBroadcastNotification(context, template, templateId)
+    }
+
+    private fun showBroadcastNotification(context: Context, template: EmergencyTemplate, templateId: Int) {
+        val channelId = "emergency_broadcast"
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                channelId, "Emergency Broadcasts",
+                android.app.NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Critical security and update alerts"
+                setBypassDnd(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            }
+            manager.createNotificationChannel(channel)
+        }
+
+        val intent = Intent(context, EmergencyBroadcastActivity::class.java).apply {
+            putExtra("template_id", templateId)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        val pending = android.app.PendingIntent.getActivity(
+            context, templateId, intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = androidx.core.app.NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(com.securecall.app.R.mipmap.ic_launcher)
+            .setContentTitle("${template.icon} ${template.title()}")
+            .setContentText(template.body())
+            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(template.body()))
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+            .setCategory(androidx.core.app.NotificationCompat.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .setContentIntent(pending)
+            .setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+
+        manager.notify(8000 + templateId, notification)
+        Log.d(TAG, "Emergency notification shown for template=$templateId")
     }
 }
