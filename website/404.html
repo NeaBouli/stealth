@@ -1,7 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
+    <script>
+    // Domain guard
+    if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}
+    // SPA Router: redirect /invite/{id} to invite.html
+    (function(){
+        var path = window.location.pathname;
+        if (path.match(/^\/invite\/[a-zA-Z0-9_-]+$/)) {
+            // Redirect to invite.html with the ID preserved in the path
+            // invite.html reads the ID from window.location.pathname
+            window.location.replace('/invite.html' + window.location.search + '#' + path.split('/').pop());
+        }
+    })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 — SecureCall</title>
@@ -9,13 +21,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" href="/img/favicon.ico" type="image/x-icon">
 </head>
 <body>
     <nav class="navbar scrolled">
         <div class="container nav-inner">
-            <a href="./" class="nav-logo">
+            <a href="/" class="nav-logo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 SecureCall
             </a>
@@ -27,7 +39,7 @@
             <h1>404</h1>
             <h2 style="margin-top:0;color:#fff">ACCESS DENIED</h2>
             <p>This sector does not exist. Clearance level insufficient.</p>
-            <a href="./" class="btn btn-primary">Return to Base</a>
+            <a href="/" class="btn btn-primary">Return to Base</a>
         </div>
     </div>
 </body>
