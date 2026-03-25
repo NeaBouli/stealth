@@ -154,6 +154,11 @@
             android:selectable="false"
             android:icon="@drawable/ic_settings" />
         <Preference
+            android:key="pref_check_update"
+            android:title="Check for Updates"
+            android:summary="Open update channel"
+            android:icon="@drawable/ic_shield" />
+        <Preference
             android:key="pref_github"
             android:title="@string/settings_github"
             android:summary="@string/settings_github_summary"

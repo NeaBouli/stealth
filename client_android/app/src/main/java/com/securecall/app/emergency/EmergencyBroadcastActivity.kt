@@ -77,19 +77,13 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
             setPadding(0, 0, 0, pad * 2)
         })
 
-        // Update button
+        // Update button — auto-detects Play Store vs sideload
         if (t.showUpdateButton) {
             layout.addView(Button(this).apply {
                 text = "Update Now"
                 textSize = 16f
                 setOnClickListener {
-                    try {
-                        startActivity(Intent(Intent.ACTION_VIEW,
-                            Uri.parse("market://details?id=$packageName")))
-                    } catch (e: Exception) {
-                        startActivity(Intent(Intent.ACTION_VIEW,
-                            Uri.parse("https://play.google.com/store/apps/details?id=$packageName")))
-                    }
+                    com.securecall.app.update.UpdateManager.openUpdate(this@EmergencyBroadcastActivity)
                 }
                 setPadding(0, 0, 0, pad)
             })

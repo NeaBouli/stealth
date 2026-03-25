@@ -196,6 +196,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun setupAboutLinks() {
+        findPreference<Preference>("pref_check_update")?.apply {
+            val source = com.securecall.app.update.UpdateManager.getInstallSource(requireContext())
+            summary = if (source == com.securecall.app.update.UpdateManager.InstallSource.PLAY_STORE)
+                "Open Google Play" else "Open stealthx.tech"
+            setOnPreferenceClickListener {
+                com.securecall.app.update.UpdateManager.openUpdate(requireContext())
+                true
+            }
+        }
         findPreference<Preference>("pref_github")?.setOnPreferenceClickListener {
             openUrl("https://github.com/NeaBouli/stealth")
             true
