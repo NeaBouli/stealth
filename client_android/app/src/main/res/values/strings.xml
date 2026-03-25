@@ -171,7 +171,7 @@
     <string name="pref_detect_recording_summary">Monitor for screen recording during calls</string>
     <string name="pref_security_level">Security Level</string>
     <string name="always_on">Always On</string>
-    <string name="pref_pro_feature">PRO feature — upgrade to enable</string>
+    <string name="pref_pro_feature">⭐ PRO feature — upgrade to unlock</string>
 
     <!-- Activation Code -->
     <string name="pref_activation_code">Activation Code</string>
@@ -210,7 +210,7 @@
     <string name="pref_esim_routing_summary">Bind StealthX traffic to eSIM network</string>
     <string name="pref_network_info">Active Network</string>
     <string name="pref_network_transport">Preferred Network</string>
-    <string name="pref_premium_feature">PREMIUM feature — upgrade to enable</string>
+    <string name="pref_premium_feature">💎 PREMIUM feature — upgrade to unlock</string>
 
     <!-- VPN -->
     <string name="settings_vpn">VPN Configuration</string>
@@ -238,8 +238,8 @@
 
     <!-- Stealth Delete -->
     <string name="settings_advanced">Advanced</string>
-    <string name="pref_reset_app">Reset App</string>
-    <string name="pref_reset_app_summary">Restore factory defaults</string>
+    <string name="pref_reset_app">🚨 Emergency Delete</string>
+    <string name="pref_reset_app_summary">Tap 5 times rapidly to wipe all data instantly</string>
     <string name="stealth_delete_title">Delete All Data</string>
     <string name="stealth_delete_message">This will permanently delete ALL data including contacts, call history, encryption keys, and settings.\n\nThis cannot be undone.</string>
     <string name="stealth_delete_confirm">DELETE EVERYTHING</string>

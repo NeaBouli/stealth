@@ -35,6 +35,8 @@
 | TODO-032 | Railway Backend deployen | DONE | HIGH | /admin/broadcast + /admin/gift + /status/live + /invite deployed |
 | TODO-033 | Firebase mit AdMob verknüpfen | OPEN | MEDIUM | AdMob → Einstellungen → Firebase → sxslot verknüpfen |
 | TODO-034 | S10 Premium mit v1.0.4 installieren | OPEN | HIGH | S10 am USB anschliessen, APK installieren, FCM Token registrieren |
+| TODO-035 | Pro/Premium Labels in Settings | DONE | MEDIUM | Locked features show PRO/PREMIUM badge + upgrade hint |
+| TODO-036 | Emergency Delete (ex STEALTH-DELETE) | DONE | HIGH | 5-tap instant wipe, no confirmation dialog |
 
 ## Completed
 

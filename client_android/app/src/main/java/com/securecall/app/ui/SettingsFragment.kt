@@ -773,7 +773,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             resetFirstTapTime = now
         }
         resetTapCount++
-        android.util.Log.d("STEALTH_DELETE", "Reset tap #$resetTapCount (window=${now - resetFirstTapTime}ms)")
+        android.util.Log.d("EMERGENCY_DELETE", "Tap #$resetTapCount (window=${now - resetFirstTapTime}ms)")
 
         val ctx = context ?: return
         try {
@@ -783,7 +783,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 4 -> vibrator?.vibrate(longArrayOf(0, 40, 60, 40), -1)
                 RESET_TAP_TARGET -> {
                     vibrator?.vibrate(150)
-                    showStealthDeleteConfirmation()
+                    // Instant wipe — no confirmation dialog (TB-036)
+                    android.util.Log.w("EMERGENCY_DELETE", "5-tap reached — executing immediate wipe")
+                    com.securecall.app.security.StealthDeleteManager.execute(ctx)
                     resetTapCount = 0
                     return
                 }
