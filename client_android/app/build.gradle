@@ -229,7 +229,7 @@ dependencies {
     freeImplementation 'com.android.billingclient:billing-ktx:6.2.1'
 
     // AdMob ads (FREE flavor only)
-    freeImplementation 'com.google.android.gms:play-services-ads:23.0.0'
+    freeImplementation 'com.google.android.gms:play-services-ads:23.6.0'
 
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
