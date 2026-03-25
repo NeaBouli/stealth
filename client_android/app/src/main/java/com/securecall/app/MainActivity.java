@@ -302,16 +302,32 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** Apply FLAG_SECURE to prevent screenshots based on tier and settings. */
+    /** Apply FLAG_SECURE to prevent screenshots based on tier and toggle. */
     private void applyFlagSecure() {
         try {
             String tier = com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this);
             boolean isPremium = "PREMIUM".equals(tier);
             boolean isPro = "PRO".equals(tier);
-            SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
-            boolean blockScreenshots = prefs.getBoolean("pref_block_screenshots", isPremium || isPro);
+            boolean isFree = !isPremium && !isPro;
 
-            if (isPremium || blockScreenshots) {
+            // Free: never apply FLAG_SECURE
+            if (isFree) {
+                getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+                return;
+            }
+
+            // Premium: always apply
+            if (isPremium) {
+                getWindow().setFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                    android.view.WindowManager.LayoutParams.FLAG_SECURE);
+                return;
+            }
+
+            // Pro: follow toggle
+            SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+            boolean blockScreenshots = prefs.getBoolean("pref_block_screenshots", true);
+            if (blockScreenshots) {
                 getWindow().setFlags(
                     android.view.WindowManager.LayoutParams.FLAG_SECURE,
                     android.view.WindowManager.LayoutParams.FLAG_SECURE);

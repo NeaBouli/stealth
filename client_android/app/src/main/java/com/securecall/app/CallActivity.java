@@ -296,26 +296,31 @@ public class CallActivity extends AppCompatActivity {
      * Apply FLAG_SECURE based on tier and user preferences.
      */
     private void applyFlagSecure() {
-        boolean shouldApply;
         try {
             String tier = FeatureProviderRegistry.INSTANCE.get().getTier();
-            if ("PREMIUM".equals(tier)) {
-                shouldApply = true;
+            boolean isFree = "FREE".equals(tier);
+            boolean isPremium = "PREMIUM".equals(tier);
+
+            if (isFree) {
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                return;
+            }
+            if (isPremium) {
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
+                Log.d(TAG, "FLAG_SECURE applied (Premium)");
+                return;
+            }
+            // Pro: follow toggle
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            if (prefs.getBoolean("pref_block_screenshots", true)) {
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
+                Log.d(TAG, "FLAG_SECURE applied (Pro toggle ON)");
             } else {
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                boolean defaultValue = "PRO".equals(tier);
-                shouldApply = prefs.getBoolean("pref_block_screenshots", defaultValue);
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
             }
         } catch (Exception e) {
-            shouldApply = true;
-        }
-
-        if (shouldApply) {
-            getWindow().setFlags(
-                    WindowManager.LayoutParams.FLAG_SECURE,
-                    WindowManager.LayoutParams.FLAG_SECURE
-            );
-            Log.d(TAG, "FLAG_SECURE applied — screenshots and screen recording blocked");
+            // Fail safe: apply
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
         }
     }
 

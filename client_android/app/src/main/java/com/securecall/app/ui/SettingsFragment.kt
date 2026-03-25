@@ -818,17 +818,34 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val isPro = fp.tier == "PRO"
         val isFree = fp.tier == "FREE"
 
-        // Block Screenshots toggle — available on all tiers
+        // Block Screenshots toggle
         findPreference<SwitchPreferenceCompat>("pref_block_screenshots")?.apply {
             if (isPremium) {
                 isChecked = true
                 isEnabled = false
                 summary = getString(R.string.pref_block_screenshots_premium)
+            } else if (isFree) {
+                isChecked = false
+                isEnabled = false
+                summary = getString(R.string.pref_pro_feature)
             } else {
+                // Pro: toggle available, default ON
                 isEnabled = true
                 if (!preferenceManager.sharedPreferences!!.contains("pref_block_screenshots")) {
-                    // Default: ON for Pro, OFF for Free
-                    isChecked = isPro
+                    isChecked = true
+                }
+                setOnPreferenceChangeListener { _, newValue ->
+                    // Immediately apply FLAG_SECURE change
+                    val enabled = newValue as Boolean
+                    val window = activity?.window
+                    if (enabled) {
+                        window?.setFlags(
+                            android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                            android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                    } else {
+                        window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                    }
+                    true
                 }
             }
         }

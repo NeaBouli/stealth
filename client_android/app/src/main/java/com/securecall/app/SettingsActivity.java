@@ -28,22 +28,16 @@ public class SettingsActivity extends AppCompatActivity {
     private void applyFlagSecure() {
         try {
             String tier = com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this);
-            boolean isPremium = "PREMIUM".equals(tier);
+            if ("FREE".equals(tier)) { getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE); return; }
+            if ("PREMIUM".equals(tier)) { getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE); return; }
             SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
-            boolean blockScreenshots = prefs.getBoolean("pref_block_screenshots", isPremium || "PRO".equals(tier));
-
-            if (isPremium || blockScreenshots) {
-                getWindow().setFlags(
-                    WindowManager.LayoutParams.FLAG_SECURE,
-                    WindowManager.LayoutParams.FLAG_SECURE);
+            if (prefs.getBoolean("pref_block_screenshots", true)) {
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
             } else {
                 getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
             }
         } catch (Exception e) {
-            // Fail safe: apply FLAG_SECURE
-            getWindow().setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE);
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
         }
     }
 }
