@@ -34,6 +34,7 @@
 | TODO-031 | GitHub Release erstellen | OPEN | MEDIUM | Free APK + F-Droid APK hochladen |
 | TODO-032 | Railway Backend deployen | DONE | HIGH | /admin/broadcast + /admin/gift + /status/live + /invite deployed |
 | TODO-033 | Firebase mit AdMob verknüpfen | OPEN | MEDIUM | AdMob → Einstellungen → Firebase → sxslot verknüpfen |
+| TODO-034 | S10 Premium mit v1.0.4 installieren | OPEN | HIGH | S10 am USB anschliessen, APK installieren, FCM Token registrieren |
 
 ## Completed
 
