@@ -241,12 +241,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val ctx = requireContext()
 
         // Toggle button (TB-012)
-        findPreference<Preference>("pref_donate_toggle")?.setOnPreferenceClickListener {
+        val togglePref = findPreference<Preference>("pref_donate_toggle")
+        togglePref?.setOnPreferenceClickListener { pref ->
             donationExpanded = !donationExpanded
+            android.util.Log.d("Settings", "Donation toggle: expanded=$donationExpanded")
             for (key in donationKeys) {
-                findPreference<Preference>(key)?.isVisible = donationExpanded
+                val p = findPreference<Preference>(key)
+                if (p != null) {
+                    p.isVisible = donationExpanded
+                } else {
+                    android.util.Log.w("Settings", "Donation pref not found: $key")
+                }
             }
-            it.title = if (donationExpanded) "Hide donation addresses" else "Show donation addresses"
+            pref.title = if (donationExpanded) "Hide donation addresses \u25B2" else "Show donation addresses \u25BC"
+            pref.summary = if (donationExpanded) "Tap to collapse" else "ETH, BTC, SOL, IFR Token"
             true
         }
 

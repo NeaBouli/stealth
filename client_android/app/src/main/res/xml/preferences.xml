@@ -245,7 +245,7 @@
     <PreferenceCategory android:title="Support Development">
         <Preference
             android:key="pref_donate_toggle"
-            android:title="Show donation addresses"
+            android:title="Show donation addresses &#x25BC;"
             android:summary="ETH, BTC, SOL, IFR Token"
             android:icon="@drawable/ic_lock" />
         <Preference
