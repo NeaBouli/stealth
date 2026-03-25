@@ -111,13 +111,14 @@ Send: curl -X POST .../admin/broadcast -H "X-Admin-Key: KEY" -d '{"template_id":
 ## Open TODOs (Priority)
 | ID | Task | Priority |
 |---|---|---|
-| FCM | FCM Push Notifications | DONE |
-| TODO-028 | Play Store closed test — need 12th tester | HIGH |
+| TODO-007 | Real encryption (replace placeholder crypto) | CRITICAL |
+| TODO-008 | HKDF key derivation | HIGH |
+| TODO-028 | Play Store 14-day closed test (12/12 testers ready) | HIGH |
 | TODO-029 | Google Play Service Account for Billing | HIGH |
 | TODO-030 | Store Listing DE translation | MEDIUM |
 | TODO-031 | GitHub Release APKs (Free + F-Droid) | MEDIUM |
 | TODO-033 | Firebase + AdMob link | MEDIUM |
-| WIKI | Wiki redesign not fully visible yet (GitHub Pages delay) | MEDIUM |
+| TODO-034 | S10 needs v1.0.4 install for FCM | MEDIUM |
 
 ## FCM Status (CRITICAL — in progress)
 - FIS_AUTH_ERROR was caused by API key restrictions blocking app packages

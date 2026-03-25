@@ -1,43 +1,51 @@
 # SecureCall TODO Tracker
+**Last updated:** 2026-03-25 | **Version:** v1.0.4 (code 14)
 
-| ID | Task | Status | Priority | Notes |
-|----|------|--------|----------|-------|
-| TODO-001 | FCM push notifications | DONE | High | Client ✅ Server ✅ Verified: force-stopped S10 woken by FCM, IncomingCallActivity launched |
-| TODO-002 | WalletConnect v2 integration | DONE | High | Sign SDK 2.26.0, Project ID registered, deep link securecall://wc |
-| TODO-003 | TURN credential rotation | DONE | Medium | Dynamic fetch from /ice-servers, no hardcoded credentials in APK |
-| TODO-004 | Release APKs all 3 flavors | DONE | High | Signed with securecall-release-key.jks, smoke tested on all devices |
-| TODO-005 | Play Store listing | OPEN | High | Checklist at docs/PLAY_STORE_CHECKLIST.md |
-| TODO-006 | Activation code premium unlock | VERIFIED | High | Fully implemented and working |
-| TODO-007 | Wire real encryption (replace mock handshake) | OPEN | Critical | GhostNet uses placeholder crypto in debug |
-| TODO-008 | HKDF key derivation (CRYPTO-03) | OPEN | High | Uses random bytes instead of HKDF-SHA256 |
-| TODO-009 | Samsung background Activity launch | OPEN | Medium | fullScreenIntent unreliable on Samsung locked screen |
-| TODO-010 | Self-hosted TURN (coturn) | OPEN | Medium | Config exists in deployment/coturn_config/ |
-| TODO-011 | WireGuard VPN: upgrade AGP 7.4→8.x | DONE | High | AGP 8.7.3 + Gradle 8.14 + WireGuard tunnel 1.0.20260102 + GoBackend |
-| TODO-012 | WalletConnect v2 Integration | DONE | High | Merged with TODO-002 |
-| TODO-013 | AdMob Werbung Free Flavor | DONE | High | Test IDs active, banner + interstitial, Pro/Premium no-op stubs |
-| TODO-014 | F-Droid Version vorbereiten | DONE | Medium | fdroid flavor, no Google services, metadata YAML |
-| TODO-015 | Play Store Listing | DONE | High | EN + DE texts in docs/, screenshots pending |
-| TODO-016 | Datenschutzerklärung | DONE | High | neabouli.github.io/stealth/privacy.html (EN + DE, AdMob disclosure) |
-| TODO-017 | Emergency Broadcast System | DONE | High | 8 templates, WS + FCM delivery, EmergencyBroadcastActivity |
-| TODO-018 | Impressum erstellen (EU-Pflicht) | DONE | HIGH | impressum.html EN/DE/EL, Canvas anti-scraping, Footer-Links auf allen Seiten |
-| TODO-019 | Kontakt-Email einrichten | DONE | HIGH | kaspartisan@proton.me — Canvas-gerendert im Impressum, clickable mailto |
-| TODO-020 | Google Search Console verifizieren | OPEN | HIGH | stealthx.tech in GSC eintragen, sitemap einreichen |
-| TODO-021 | SEO Keywords erweitern + Content optimieren | OPEN | HIGH | Long-tail Keywords, FAQ Schema, Feature Schema |
-| TODO-022 | Google Analytics einrichten | OPEN | MEDIUM | GA4 auf stealthx.tech |
-| TODO-023 | Bing Webmaster Tools | OPEN | LOW | Parallel zu Google indexieren |
-| TODO-024 | FCM Push Notifications | DONE | HIGH | v4.0-fcm-fixed — SHA-1 + API key restrictions corrected |
-| TODO-025 | One-Click Update System | DONE | HIGH | UpdateManager auto-detect Play Store vs sideload |
-| TODO-026 | Play Store v1.0.4 | DONE | HIGH | Internal Testing Release 14 live |
-| TODO-028 | Google Play geschlossener Test | IN PROGRESS | HIGH | 12/12 Tester gesammelt, 14-Tage Phase starten |
-| TODO-029 | Google Play Service Account | OPEN | HIGH | Cloud Console → Service Account → Android Publisher API → JSON Key → Railway ENV |
-| TODO-030 | Store Listing DE Übersetzung | OPEN | MEDIUM | Deutsche Version in Play Console hinzufügen |
-| TODO-031 | GitHub Release erstellen | OPEN | MEDIUM | Free APK + F-Droid APK hochladen |
-| TODO-032 | Railway Backend deployen | DONE | HIGH | /admin/broadcast + /admin/gift + /status/live + /invite deployed |
-| TODO-033 | Firebase mit AdMob verknüpfen | OPEN | MEDIUM | AdMob → Einstellungen → Firebase → sxslot verknüpfen |
-| TODO-034 | S10 Premium mit v1.0.4 installieren | OPEN | HIGH | S10 am USB anschliessen, APK installieren, FCM Token registrieren |
-| TODO-035 | Pro/Premium Labels in Settings | DONE | MEDIUM | Locked features show PRO/PREMIUM badge + upgrade hint |
-| TODO-036 | Emergency Delete (ex STEALTH-DELETE) | DONE | HIGH | 5-tap instant wipe, no confirmation dialog |
+## DONE
 
-## Completed
+| ID | Task | Notes |
+|----|------|-------|
+| TODO-001 | FCM push notifications | Client + Server verified, tokens registered |
+| TODO-002 | WalletConnect v2 integration | Sign SDK 2.26.0, relay connected |
+| TODO-003 | TURN credential rotation | Dynamic fetch from /ice-servers |
+| TODO-004 | Release APKs all 3 flavors | Signed, smoke tested |
+| TODO-005 | Play Store listing | EN + DE texts, screenshots, v1.0.4 uploaded |
+| TODO-006 | Activation code premium unlock | Verified working |
+| TODO-009 | Samsung background Activity launch | fullScreenIntent + FLAG_KEEP_SCREEN_ON implemented |
+| TODO-011 | WireGuard VPN: AGP 8.x | AGP 8.7.3 + Gradle 8.14 |
+| TODO-013 | AdMob Free Flavor | Real IDs: ca-app-pub-4336336811005394 |
+| TODO-014 | F-Droid flavor | No Google services, builds successfully |
+| TODO-015 | Play Store Listing texts | EN + DE in docs/ |
+| TODO-016 | Privacy Policy | stealthx.tech/privacy.html (EN + DE + account deletion) |
+| TODO-017 | Emergency Broadcast System | 10 templates, WS + FCM delivery |
+| TODO-018 | Impressum (EU) | EN/DE/EL, Canvas anti-scraping |
+| TODO-019 | Contact Email | kaspartisan@proton.me |
+| TODO-020 | Google Search Console | Verification tag inserted, sitemap submitted |
+| TODO-021 | SEO optimization | FAQ Schema (7 questions), Product Schema, 31 keywords, hreflang |
+| TODO-024 | FCM Push fix | v4.0-fcm-fixed — API key restrictions corrected |
+| TODO-025 | One-Click Update | UpdateManager auto-detect Play Store vs sideload |
+| TODO-026 | Play Store v1.0.4 | Internal Testing Release 14 live |
+| TODO-032 | Railway Backend deploy | /admin/broadcast, /gift, /status/live, /invite all live |
+| TODO-035 | Pro/Premium Labels | Locked features show badge + upgrade hint |
+| TODO-036 | Emergency Delete | 5-tap instant wipe, no dialog |
 
-- TODO-006: Activation code feature verified working. UI in SettingsFragment, backend validates codes, tier persisted and applied on restart. Re-verified 2026-03-19: TEST-PRO1-CODE on Tab S4 Free → PRO upgrade confirmed via TierManager log.
+## IN PROGRESS
+
+| ID | Task | Priority | Notes |
+|----|------|----------|-------|
+| TODO-028 | Google Play closed test | HIGH | 12/12 testers collected, start 14-day phase |
+
+## OPEN
+
+| ID | Task | Priority | Notes |
+|----|------|----------|-------|
+| TODO-007 | Real encryption (replace placeholder crypto) | CRITICAL | GhostNet audio uses placeholder in debug builds |
+| TODO-008 | HKDF key derivation (CRYPTO-03) | HIGH | Uses random bytes instead of HKDF-SHA256 |
+| TODO-010 | Self-hosted TURN (coturn) | LOW | Config in deployment/coturn_config/, using Metered.ca for now |
+| TODO-022 | Google Analytics (GA4) | LOW | Not yet added to stealthx.tech |
+| TODO-023 | Bing Webmaster Tools | LOW | Not yet registered |
+| TODO-029 | Google Play Service Account | HIGH | For billing purchase verification on Railway |
+| TODO-030 | Store Listing DE translation | MEDIUM | German listing in Play Console |
+| TODO-031 | GitHub Release APKs | MEDIUM | Free + F-Droid APK public release |
+| TODO-033 | Firebase + AdMob linking | MEDIUM | AdMob → Firebase → sxslot |
+| TODO-034 | S10 Premium FCM install | MEDIUM | S10 needs v1.0.4 for FCM token |
