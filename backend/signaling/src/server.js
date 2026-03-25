@@ -76,9 +76,37 @@ const clientIds = new Map();
 const routingTable = new Map();
 // sessionId -> { sessionId, from, to, state, created, updated }
 
-// --- FCM Token Storage ---
-// clientId -> fcmToken
+// --- FCM Token Storage (persistent) ---
+const FCM_TOKENS_FILE = path.join(__dirname, "..", "data", "fcm_tokens.json");
 const fcmTokens = new Map();
+
+function loadFcmTokens() {
+  try {
+    if (fs.existsSync(FCM_TOKENS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(FCM_TOKENS_FILE, "utf8"));
+      for (const [k, v] of Object.entries(data)) {
+        fcmTokens.set(k, v);
+      }
+      console.log(`[FCM] Loaded ${fcmTokens.size} persisted tokens`);
+    }
+  } catch (e) {
+    console.warn("[FCM] Could not load persisted tokens:", e.message);
+  }
+}
+
+function saveFcmTokens() {
+  try {
+    const dir = path.dirname(FCM_TOKENS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const obj = {};
+    for (const [k, v] of fcmTokens) obj[k] = v;
+    fs.writeFileSync(FCM_TOKENS_FILE, JSON.stringify(obj, null, 2), "utf8");
+  } catch (e) {
+    console.error("[FCM] Failed to persist tokens:", e.message);
+  }
+}
+
+loadFcmTokens();
 
 // --- Phone Number Registry ---
 // normalized phone number -> clientId
@@ -977,7 +1005,8 @@ wss.on("connection", (ws, req) => {
       }
 
       fcmTokens.set(myClientId, msg.fcmToken);
-      console.log("[FCM] Token registered for:", myClientId);
+      saveFcmTokens();
+      console.log("[FCM] Token registered + persisted for:", myClientId);
 
       return ws.send(JSON.stringify({
         type: "REGISTER_FCM_TOKEN_ACK",

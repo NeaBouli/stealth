@@ -302,9 +302,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** Apply FLAG_SECURE to prevent screenshots based on tier and settings. Disabled in debug builds for UI testing. */
+    /** Apply FLAG_SECURE to prevent screenshots based on tier and settings. */
     private void applyFlagSecure() {
-        if (BuildConfig.DEBUG) return; // Allow screencap + uiautomator in debug builds
         try {
             String tier = com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this);
             boolean isPremium = "PREMIUM".equals(tier);

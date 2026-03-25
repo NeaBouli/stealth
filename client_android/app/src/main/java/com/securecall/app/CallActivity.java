@@ -296,7 +296,6 @@ public class CallActivity extends AppCompatActivity {
      * Apply FLAG_SECURE based on tier and user preferences.
      */
     private void applyFlagSecure() {
-        if (BuildConfig.DEBUG) return; // Allow screencap + uiautomator in debug builds
         boolean shouldApply;
         try {
             String tier = FeatureProviderRegistry.INSTANCE.get().getTier();
