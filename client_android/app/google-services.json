@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "816326597317",
+    "project_id": "sxslot",
+    "storage_bucket": "sxslot.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:816326597317:android:d4b50840ed19e6ea486eac",
+        "android_client_info": {
+          "package_name": "com.securecall.app.free"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByk8haDZkuS-wJqliELdHwr07WP8Bgexw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:816326597317:android:af4239ab4b135cd5486eac",
+        "android_client_info": {
+          "package_name": "com.securecall.app.premium"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByk8haDZkuS-wJqliELdHwr07WP8Bgexw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:816326597317:android:d48fbd7bd28bcee2486eac",
+        "android_client_info": {
+          "package_name": "com.securecall.app.pro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByk8haDZkuS-wJqliELdHwr07WP8Bgexw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

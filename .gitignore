@@ -44,3 +44,4 @@ securecall-release-key.jks.bak
 # WireGuard private keys
 *.key
 docs/wireguard/*_private*
+.env.local
