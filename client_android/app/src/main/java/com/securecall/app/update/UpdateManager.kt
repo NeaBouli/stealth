@@ -3,61 +3,49 @@ package com.securecall.app.update
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.util.Log
+import com.securecall.app.BuildConfig
 
 /**
- * Detects install source and opens the correct update channel.
- * - Google Play installs → opens Play Store
- * - Sideload/F-Droid → opens stealthx.tech/download
+ * Opens the correct update channel.
+ * - Free/Pro/Premium flavors → always Google Play (com.securecall.app.free listing)
+ * - F-Droid flavor → stealthx.tech
  */
 object UpdateManager {
 
     private const val TAG = "UpdateManager"
     private const val PLAY_PACKAGE = "com.android.vending"
-    private const val PLAY_URL = "https://play.google.com/store/apps/details?id="
+    private const val PLAY_ID = "com.securecall.app.free"
+    private const val PLAY_URL = "https://play.google.com/store/apps/details?id=$PLAY_ID"
     private const val SIDELOAD_URL = "https://stealthx.tech"
 
-    enum class InstallSource { PLAY_STORE, SIDELOAD }
+    fun openUpdate(context: Context) {
+        val isFdroid = BuildConfig.APPLICATION_ID.endsWith(".fdroid")
+        if (isFdroid) {
+            Log.d(TAG, "F-Droid flavor → opening stealthx.tech")
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SIDELOAD_URL)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+            return
+        }
 
-    fun getInstallSource(context: Context): InstallSource {
-        return try {
-            val installer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName
-            } else {
-                @Suppress("DEPRECATION")
-                context.packageManager.getInstallerPackageName(context.packageName)
+        // All other flavors → Google Play Store
+        Log.d(TAG, "Opening Play Store for $PLAY_ID")
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$PLAY_ID")).apply {
+                setPackage(PLAY_PACKAGE)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            Log.d(TAG, "Install source: $installer")
-            if (installer == PLAY_PACKAGE) InstallSource.PLAY_STORE else InstallSource.SIDELOAD
+            context.startActivity(intent)
         } catch (e: Exception) {
-            Log.w(TAG, "Could not detect install source: ${e.message}")
-            InstallSource.SIDELOAD
+            Log.w(TAG, "Play Store app not available, opening browser: ${e.message}")
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PLAY_URL)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
         }
     }
 
-    fun openUpdate(context: Context) {
-        val source = getInstallSource(context)
-        val intent = when (source) {
-            InstallSource.PLAY_STORE -> {
-                try {
-                    Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${context.packageName}")).apply {
-                        setPackage(PLAY_PACKAGE)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                } catch (e: Exception) {
-                    Intent(Intent.ACTION_VIEW, Uri.parse(PLAY_URL + context.packageName)).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                }
-            }
-            InstallSource.SIDELOAD -> {
-                Intent(Intent.ACTION_VIEW, Uri.parse(SIDELOAD_URL)).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-            }
-        }
-        Log.d(TAG, "Opening update: source=$source, intent=$intent")
-        context.startActivity(intent)
+    fun getUpdateLabel(): String {
+        return if (BuildConfig.APPLICATION_ID.endsWith(".fdroid")) "Open stealthx.tech" else "Open Google Play"
     }
 }

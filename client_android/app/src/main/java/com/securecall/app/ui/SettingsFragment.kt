@@ -197,9 +197,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun setupAboutLinks() {
         findPreference<Preference>("pref_check_update")?.apply {
-            val source = com.securecall.app.update.UpdateManager.getInstallSource(requireContext())
-            summary = if (source == com.securecall.app.update.UpdateManager.InstallSource.PLAY_STORE)
-                "Open Google Play" else "Open stealthx.tech"
+            summary = com.securecall.app.update.UpdateManager.getUpdateLabel()
             setOnPreferenceClickListener {
                 com.securecall.app.update.UpdateManager.openUpdate(requireContext())
                 true
