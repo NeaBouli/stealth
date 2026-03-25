@@ -19,6 +19,10 @@
 | TB-011 | WalletConnect haengt bei Connecting wenn User abbricht | HIGH | Tester | S10/Alle | FIXED — 30s timeout |
 | TB-012 | Support Development Accordion oeffnet sich aber schliesst nicht | MEDIUM | Tester | Alle | FIXED — toggle button |
 | TB-013 | Werbebanner komplett unsichtbar — AdMob laedt nicht | HIGH | Tester | Free | FIXED — container VISIBLE |
+| TB-014 | FCM Tokens gehen bei Server-Redeploy verloren | CRITICAL | Dev | Backend | FIXED — persistent file storage |
+| TB-015 | FLAG_SECURE Toggle Free Tier nicht gesperrt | HIGH | Tester | Free | FIXED — disabled + PRO label |
+| TB-016 | FLAG_SECURE ignoriert Toggle-Zustand auf Pro | HIGH | Tester | Pro | FIXED — tier-based logic |
+| TB-017 | Update Button oeffnet stealthx.tech statt Play Store | MEDIUM | Tester | Alle | FIXED — always Play Store |
 
 ## Beta Tester (anonymisiert)
 

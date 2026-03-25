@@ -48,4 +48,8 @@
 | TODO-030 | Store Listing DE translation | MEDIUM | German listing in Play Console |
 | TODO-031 | GitHub Release APKs | MEDIUM | Free + F-Droid APK public release |
 | TODO-033 | Firebase + AdMob linking | MEDIUM | AdMob → Firebase → sxslot |
-| TODO-034 | S10 Premium FCM install | MEDIUM | S10 needs v1.0.4 for FCM token |
+| TODO-034 | S10 FCM install | DONE | S10 Free installed, FCM token registered |
+| TODO-037 | FCM Token Persistence | DONE | Tokens saved to data/fcm_tokens.json, survives redeploy |
+| TODO-038 | FLAG_SECURE tier-based logic | DONE | Free=off, Pro=toggle, Premium=always on |
+| TODO-039 | EBS Notification from background | DONE | System notification + Activity launch |
+| TODO-040 | EBS multilingual (beyond EN/DE) | LOW | Currently EN+DE, add ru/es/zh/hi/el later |

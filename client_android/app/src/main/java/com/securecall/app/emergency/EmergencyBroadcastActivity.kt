@@ -82,6 +82,8 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
             layout.addView(Button(this).apply {
                 text = "Update Now"
                 textSize = 16f
+                gravity = android.view.Gravity.CENTER
+                minimumHeight = (48 * resources.displayMetrics.density).toInt()
                 setOnClickListener {
                     com.securecall.app.update.UpdateManager.openUpdate(this@EmergencyBroadcastActivity)
                 }

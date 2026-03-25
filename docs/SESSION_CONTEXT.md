@@ -118,7 +118,7 @@ Send: curl -X POST .../admin/broadcast -H "X-Admin-Key: KEY" -d '{"template_id":
 | TODO-030 | Store Listing DE translation | MEDIUM |
 | TODO-031 | GitHub Release APKs (Free + F-Droid) | MEDIUM |
 | TODO-033 | Firebase + AdMob link | MEDIUM |
-| TODO-034 | S10 needs v1.0.4 install for FCM | MEDIUM |
+| TODO-034 | S10 FCM install | DONE |
 
 ## FCM Status (CRITICAL — in progress)
 - FIS_AUTH_ERROR was caused by API key restrictions blocking app packages
