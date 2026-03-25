@@ -1,5 +1,5 @@
 # SecureCall TODO Tracker
-**Last updated:** 2026-03-26 | **Version:** v1.0.5 (code 15)
+**Last updated:** 2026-03-26 | **Version:** v1.0.6 (code 16)
 
 ## DONE (28)
 
@@ -40,7 +40,7 @@
 |----|------|----------|-------|
 | TODO-028 | Google Play closed test | HIGH | 12/12 testers, start 14-day phase |
 
-## OPEN (7)
+## OPEN (6)
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
@@ -49,5 +49,5 @@
 | TODO-023 | Bing Webmaster Tools | LOW | Register at bing.com/webmasters |
 | TODO-029 | Google Play Service Account | HIGH | For billing purchase verification |
 | TODO-030 | Store Listing DE in Play Console | MEDIUM | docs/PLAY_STORE_LISTING_DE.md exists |
-| TODO-031 | GitHub Release APKs | MEDIUM | APKs ready, need gh release create |
+| TODO-031 | GitHub Release APKs | DONE | v1.0.6 release published |
 | TODO-033 | Firebase + AdMob linking | MEDIUM | AdMob Console → Firebase |
