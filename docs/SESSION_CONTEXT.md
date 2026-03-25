@@ -1,5 +1,5 @@
 # StealthX / SecureCall — Handover Document
-**Date:** 25.03.2026
+**Date:** 25.03.2026 (updated)
 **Predecessor session:** Available for questions in same chat
 
 ---
@@ -25,14 +25,14 @@
 | Tab S4 | ce12182c68644439037e | Free | +491752536807 |
 
 ## Current Version
-- versionCode: 13 / versionName: 1.0.3
-- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v13.aab
-- Play Store: Internal Testing Track, Release 13 live
+- versionCode: 14 / versionName: 1.0.4
+- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v14.aab
+- Play Store: Internal Testing Track, Release 14 live
 
 ## Git Tags
 | Tag | Description |
 |---|---|
-| v3.9-wiki-complete | Latest stable — wiki redesigned, favicon, all fixes |
+| v1.0.4 | Latest release — FCM + update system — wiki redesigned, favicon, all fixes |
 | v3.8-wiki-redesign | Wiki card grid, stats, badges |
 | v3.7-language-fix | Wiki EN, /status/live endpoint |
 | v3.6-polish | EBS templates 9+10, EBS redesign, gift fix |
@@ -75,7 +75,7 @@ Send: curl -X POST .../admin/broadcast -H "X-Admin-Key: KEY" -d '{"template_id":
 - IFR Lock Contract: 0x769928aBDfc949D0718d8766a1C2d7dBb63954Eb
 - Pro: >=1000 IFR, Premium: >=5000 IFR
 
-## Beta Testers (11/12)
+## Beta Testers (12/12)
 | # | Tester | Status |
 |---|---|---|
 | 1 | B................1@gmail.com | Active |
@@ -89,7 +89,7 @@ Send: curl -X POST .../admin/broadcast -H "X-Admin-Key: KEY" -d '{"template_id":
 | 9 | p............a@gmail.com | Active |
 | 10 | r......s@gmail.com | Active |
 | 11 | z......r@gmail.com | Active |
-| 12 | — | Pending |
+| 12 | 12th tester | Active |
 
 ## Bug Tracker
 | ID | Description | Status |
@@ -111,7 +111,7 @@ Send: curl -X POST .../admin/broadcast -H "X-Admin-Key: KEY" -d '{"template_id":
 ## Open TODOs (Priority)
 | ID | Task | Priority |
 |---|---|---|
-| FCM | FCM Push — SHA-1 added to Firebase, rebuild pending | HIGH |
+| FCM | FCM Push Notifications | DONE |
 | TODO-028 | Play Store closed test — need 12th tester | HIGH |
 | TODO-029 | Google Play Service Account for Billing | HIGH |
 | TODO-030 | Store Listing DE translation | MEDIUM |
@@ -120,9 +120,9 @@ Send: curl -X POST .../admin/broadcast -H "X-Admin-Key: KEY" -d '{"template_id":
 | WIKI | Wiki redesign not fully visible yet (GitHub Pages delay) | MEDIUM |
 
 ## FCM Status (CRITICAL — in progress)
-- FIS_AUTH_ERROR was caused by missing Debug SHA-1 in Firebase
+- FIS_AUTH_ERROR was caused by API key restrictions blocking app packages
 - SHA-1 added to all 3 apps in Firebase Console: 35:82:FA:AF:F6:A9:BB:8B:01:9A:0F:1F:B3:6D:18:E0:8D:E3:1F:6E
-- NEXT STEP: Download NEW google-services.json from Firebase Console (after SHA-1 addition), rebuild and test
+- RESOLVED: API key restrictions removed in Google Cloud Console from Firebase Console (after SHA-1 addition), rebuild and test
 - google-services.json at: client_android/app/google-services.json (not versioned)
 
 ## Next Session — First Steps

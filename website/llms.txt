@@ -49,7 +49,7 @@ Built by Vendetta Labs, Greece. Open source: github.com/NeaBouli/stealth
 ## Test Results (March 24, 2026)
 - 44/44 regression tests passing
 - 0 crashes, 0 ANRs
-- Tested on 3 physical Samsung devices (S10, S7, Tab S4)
+- Tested on 3 physical Samsung devices (v1.0.4) (S10, S7, Tab S4)
 - App start time: 841ms average
 - Memory: 75-158 MB across tiers
 

@@ -25,11 +25,14 @@
 | TODO-021 | SEO Keywords erweitern + Content optimieren | OPEN | HIGH | Long-tail Keywords, FAQ Schema, Feature Schema |
 | TODO-022 | Google Analytics einrichten | OPEN | MEDIUM | GA4 auf stealthx.tech |
 | TODO-023 | Bing Webmaster Tools | OPEN | LOW | Parallel zu Google indexieren |
-| TODO-028 | Google Play geschlossener Test | OPEN | HIGH | 12 Tester sammeln (Gmail), in Play Console eintragen, 14 Tage laufen lassen |
+| TODO-024 | FCM Push Notifications | DONE | HIGH | v4.0-fcm-fixed — SHA-1 + API key restrictions corrected |
+| TODO-025 | One-Click Update System | DONE | HIGH | UpdateManager auto-detect Play Store vs sideload |
+| TODO-026 | Play Store v1.0.4 | DONE | HIGH | Internal Testing Release 14 live |
+| TODO-028 | Google Play geschlossener Test | IN PROGRESS | HIGH | 12/12 Tester gesammelt, 14-Tage Phase starten |
 | TODO-029 | Google Play Service Account | OPEN | HIGH | Cloud Console → Service Account → Android Publisher API → JSON Key → Railway ENV |
 | TODO-030 | Store Listing DE Übersetzung | OPEN | MEDIUM | Deutsche Version in Play Console hinzufügen |
 | TODO-031 | GitHub Release erstellen | OPEN | MEDIUM | Free APK + F-Droid APK hochladen |
-| TODO-032 | Railway Backend deployen | OPEN | HIGH | /admin/broadcast + /admin/gift Endpoints live schalten |
+| TODO-032 | Railway Backend deployen | DONE | HIGH | /admin/broadcast + /admin/gift + /status/live + /invite deployed |
 | TODO-033 | Firebase mit AdMob verknüpfen | OPEN | MEDIUM | AdMob → Einstellungen → Firebase → sxslot verknüpfen |
 
 ## Completed

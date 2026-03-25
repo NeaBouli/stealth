@@ -36,7 +36,7 @@
 | 10 | r......s@gmail.com | Eingeladen |
 | 11 | z......r@gmail.com | Eingeladen |
 
-**Tester gesamt: 11/12 — noch 1 fehlt fuer geschlossenen Test**
+**Tester gesamt: 12/12 — geschlossener Test bereit**
 
 ## How to report
 Tester melden Bugs per Email an kaspartisan@proton.me oder via GitHub Issues.
