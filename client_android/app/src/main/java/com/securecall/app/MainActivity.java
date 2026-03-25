@@ -166,9 +166,10 @@ public class MainActivity extends AppCompatActivity {
             bottomNav.setSelectedItemId(R.id.nav_calls);
         }
 
-        // AdMob — only show ads if effective tier is FREE
+        // AdMob — only show ads if effective tier is FREE (TB-013: ensure container visible)
         android.widget.FrameLayout adContainer = findViewById(R.id.adBannerContainer);
         if (com.securecall.app.config.TierManager.INSTANCE.isFreeTier(this)) {
+            if (adContainer != null) adContainer.setVisibility(android.view.View.VISIBLE);
             com.securecall.app.ads.AdMobManager.INSTANCE.init(this);
             com.securecall.app.ads.AdMobManager.INSTANCE.loadBanner(this, adContainer);
             com.securecall.app.ads.AdMobManager.INSTANCE.preloadInterstitial(this);

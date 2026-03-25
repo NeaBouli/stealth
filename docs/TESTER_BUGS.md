@@ -16,9 +16,9 @@
 | TB-008 | Support Development Section nicht einklappbar | LOW | Tester | Alle | FIXED — initialExpandedChildrenCount=0 |
 | TB-009 | Werbebanner nicht einklappbar | LOW | Tester | Free | WONTFIX — AdMob standard behavior |
 | TB-010 | Kein Invite System — Tester koennen sich nicht gegenseitig als Kontakt hinzufuegen | HIGH | Tester | Alle | FIXED — Deep Link Invite v3.5 |
-| TB-011 | WalletConnect haengt bei Connecting wenn User abbricht | HIGH | Tester | S10/Alle | IN PROGRESS |
-| TB-012 | Support Development Accordion oeffnet sich aber schliesst nicht | MEDIUM | Tester | Alle | IN PROGRESS |
-| TB-013 | Werbebanner komplett unsichtbar — AdMob laedt nicht | HIGH | Tester | Free | IN PROGRESS |
+| TB-011 | WalletConnect haengt bei Connecting wenn User abbricht | HIGH | Tester | S10/Alle | FIXED — 30s timeout |
+| TB-012 | Support Development Accordion oeffnet sich aber schliesst nicht | MEDIUM | Tester | Alle | FIXED — toggle button |
+| TB-013 | Werbebanner komplett unsichtbar — AdMob laedt nicht | HIGH | Tester | Free | FIXED — container VISIBLE |
 
 ## Beta Tester (anonymisiert)
 

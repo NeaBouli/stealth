@@ -222,13 +222,27 @@ class SettingsFragment : PreferenceFragmentCompat() {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
+    private var donationExpanded = false
+
     private fun setupDonationPrefs() {
+        val donationKeys = listOf("pref_donate_eth", "pref_donate_btc", "pref_donate_sol", "pref_donate_ifr")
         val addresses = mapOf(
             "pref_donate_eth" to "0xA0860f872a9cAB34817D9a764e71ab43B942b275",
             "pref_donate_btc" to "bc1qu0z0yur24cck25wc6rmack9tvczvx6g50y9sse",
             "pref_donate_sol" to "7tXfgsfw5SPsXMFQD1XYMSMYko77anuxNyRfY6YaHXDV"
         )
         val ctx = requireContext()
+
+        // Toggle button (TB-012)
+        findPreference<Preference>("pref_donate_toggle")?.setOnPreferenceClickListener {
+            donationExpanded = !donationExpanded
+            for (key in donationKeys) {
+                findPreference<Preference>(key)?.isVisible = donationExpanded
+            }
+            it.title = if (donationExpanded) "Hide donation addresses" else "Show donation addresses"
+            true
+        }
+
         for ((key, addr) in addresses) {
             findPreference<Preference>(key)?.apply {
                 summary = addr
@@ -647,10 +661,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 } else if (!com.securecall.app.wallet.WalletConnectManager.isInitialized) {
                     android.widget.Toast.makeText(ctx, "WalletConnect initializing...", android.widget.Toast.LENGTH_SHORT).show()
                 } else {
-                    // Start WalletConnect pairing
+                    // Start WalletConnect pairing with 30s timeout (TB-011)
                     summary = "Connecting..."
                     isEnabled = false
+                    val timeoutHandler = android.os.Handler(android.os.Looper.getMainLooper())
+                    val timeoutRunnable = Runnable {
+                        if (isAdded) {
+                            isEnabled = true
+                            summary = getString(R.string.pref_ifr_walletconnect_summary)
+                            android.widget.Toast.makeText(ctx, "Connection timed out — try again", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    timeoutHandler.postDelayed(timeoutRunnable, 30000)
                     com.securecall.app.wallet.WalletConnectManager.connect(ctx) { success, result ->
+                        timeoutHandler.removeCallbacks(timeoutRunnable)
                         activity?.runOnUiThread {
                             if (!isAdded) return@runOnUiThread
                             isEnabled = true
