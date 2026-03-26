@@ -122,13 +122,13 @@
                 <h1 class="wiki-page-title">Strategic Development Roadmap</h1>
                 <p class="wiki-page-subtitle">Development roadmap and upcoming features.</p>
             </div>
-            <p class="wiki-meta">SecureCall development roadmap &mdash; completed, active, and planned features &middot; Last updated February 2026</p>
+            <p class="wiki-meta">SecureCall development roadmap &mdash; completed, active, and planned features &middot; Last updated March 2026</p>
 
             <!-- OBJECTIVES ACHIEVED -->
-            <div class="section-break">Objectives Achieved (v0.2-beta)</div>
+            <div class="section-break">Objectives Achieved (v1.0.6)</div>
 
             <h2>Completed Milestones</h2>
-            <p>The following objectives have been fully implemented, tested, and verified in the current <strong>v0.2-beta</strong> release. These form the foundation of the SecureCall platform.</p>
+            <p>The following objectives have been fully implemented, tested, and verified in the current <strong>v1.0.6</strong> release. These form the foundation of the SecureCall platform.</p>
 
             <ul class="checklist">
                 <li class="done">End-to-End Encryption (XChaCha20-Poly1305 + X25519 key exchange)</li>
@@ -141,12 +141,18 @@
                 <li class="done">Material Design 3 UI with dynamic theming</li>
                 <li class="done">3 Product Tiers (Free / Pro / Premium) with feature gating</li>
                 <li class="done">In-App Purchases &amp; Subscription management</li>
-                <li class="done">Firebase Cloud Messaging for push notifications</li>
+                <li class="done">Firebase Cloud Messaging (FCM) for push notifications</li>
                 <li class="done">Security Audit (48 findings &mdash; all Critical and High fixed)</li>
                 <li class="done">R8/ProGuard optimization and code shrinking</li>
                 <li class="done">Crashlytics integration (Free tier, opt-out available)</li>
                 <li class="done">Landing page website (<a href="https://stealthx.tech" target="_blank" rel="noopener">stealthx.tech</a>)</li>
                 <li class="done">Complete documentation &amp; Wiki</li>
+                <li class="done">Google Analytics 4 (GA4) &mdash; deployed across all 23 HTML pages</li>
+                <li class="done">Bing Webmaster verification &mdash; meta tag + BingSiteAuth.xml</li>
+                <li class="done">Invite System with Deep Link &amp; SPA router</li>
+                <li class="done">Emergency Delete (STEALTH-DELETE) &mdash; 5-tap instant wipe</li>
+                <li class="done">One-Click Update System &mdash; UpdateManager auto-detect</li>
+                <li class="done">F-Droid variant &mdash; in preparation (coming soon)</li>
             </ul>
 
             <!-- ACTIVE OPERATIONS -->
@@ -156,20 +162,18 @@
             <p>These objectives are actively being worked on and represent the immediate priorities before the first public release.</p>
 
             <ul class="checklist">
-                <li class="pending">Beta Testing &mdash; recruiting 10&ndash;20 testers for real-world validation on diverse devices and network conditions</li>
-                <li class="pending">Google Play Store Launch &mdash; store listing, screenshots, privacy declarations, and review submission</li>
-                <li class="pending">Production Server Deployment &mdash; scaling Railway infrastructure, monitoring, and uptime guarantees</li>
+                <li class="pending">Beta Testing &mdash; 12 of 15 target testers enrolled, 14-day validation period in progress</li>
+                <li class="pending">Google Play Store Launch &mdash; pending successful 14-day beta + Audit Report submission</li>
+                <li class="pending">Audit Report &mdash; preparation and submission to Google Play</li>
+                <li class="pending">F-Droid Release &mdash; build and publish Google-free APK variant</li>
+                <li class="pending">Production Server &mdash; scaling Railway infrastructure and monitoring</li>
             </ul>
-
-            <div class="info-box info">
-                <strong>Current blocker:</strong> The Railway signaling server requires a redeploy to clear a rate-limit condition caused by a now-fixed WebSocket reconnect loop. Client-side fix is in place and verified.
-            </div>
 
             <!-- PLANNED OPERATIONS -->
             <div class="section-break">Planned Operations (v0.3)</div>
 
             <h2>Next Release Features</h2>
-            <p>The following features are planned for the <strong>v0.3</strong> release cycle. These extend SecureCall's capabilities while maintaining the security-first design philosophy.</p>
+            <p>The following features are planned for the <strong>v0.3</strong> release cycle. These extend SecureCall&rsquo;s capabilities while maintaining the security-first design philosophy.</p>
 
             <ul class="checklist">
                 <li class="pending">WebRTC upgrade &mdash; migration to the latest WebRTC specification for improved compatibility and performance</li>
@@ -205,7 +209,7 @@
             <ul>
                 <li><strong>Cloud backup of call history</strong> &mdash; storing call metadata on remote servers creates an unacceptable attack surface</li>
                 <li><strong>Social media integration</strong> &mdash; connecting to social platforms leaks identity information and expands the trust boundary</li>
-                <li><strong>Read receipts or "last seen" status</strong> &mdash; presence information enables surveillance and behavioral analysis</li>
+                <li><strong>Read receipts or &ldquo;last seen&rdquo; status</strong> &mdash; presence information enables surveillance and behavioral analysis</li>
                 <li><strong>Contact sync with phone contacts</strong> &mdash; uploading contact lists to servers is a privacy violation regardless of encryption</li>
                 <li><strong>Any form of analytics or tracking</strong> &mdash; we do not collect, transmit, or store any usage telemetry beyond opt-in Crashlytics on the Free tier</li>
             </ul>
