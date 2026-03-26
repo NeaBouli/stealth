@@ -1,34 +1,7 @@
 // reportRoute.js — Bug Report API Endpoint
 // Add to your existing Railway backend: require('./reportRoute')(app);
 
-// Use native https module instead of node-fetch (no extra dependency needed)
-const https = require('https');
-
-function fetch(url, options = {}) {
-    return new Promise((resolve, reject) => {
-        const parsedUrl = new URL(url);
-        const req = https.request({
-            hostname: parsedUrl.hostname,
-            path: parsedUrl.pathname + parsedUrl.search,
-            method: options.method || 'GET',
-            headers: options.headers || {}
-        }, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                resolve({
-                    ok: res.statusCode >= 200 && res.statusCode < 300,
-                    status: res.statusCode,
-                    text: () => Promise.resolve(data),
-                    json: () => Promise.resolve(JSON.parse(data))
-                });
-            });
-        });
-        req.on('error', reject);
-        if (options.body) req.write(options.body);
-        req.end();
-    });
-}
+const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
 // In-memory rate limit store (resets on server restart — fine for abuse prevention)
 const rateLimitStore = new Map();
@@ -138,12 +111,10 @@ ${screenshotLine}
 }
 
 module.exports = function registerReportRoute(app) {
-    // Note: express.json() is already registered in server.js
-    // Just increase the limit for this specific route
-    const express = require('express');
-    const jsonParser = express.json({ limit: '5mb' });
+    // Middleware: parse JSON body (add if not already in your app)
+    app.use(require('express').json({ limit: '5mb' })); // 5mb for screenshots
 
-    app.post('/api/report', jsonParser, async (req, res) => {
+    app.post('/api/report', async (req, res) => {
         // --- Config from environment ---
         const GITHUB_TOKEN   = process.env.GITHUB_TOKEN;
         const REPO_OWNER     = process.env.GITHUB_REPO_OWNER || 'NeaBouli';
