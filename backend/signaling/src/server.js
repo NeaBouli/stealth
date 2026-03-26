@@ -17,6 +17,9 @@ const fcm = require("./fcm");
 // Initialize Firebase Cloud Messaging
 fcm.initFcm();
 
+// Bug Report API (GitHub Issues integration)
+require("./reportRoute")(app);
+
 // --- STUN/TURN Configuration (BACKEND-02) ---
 // SECURITY: TURN credentials should be set via environment variables
 if (process.env.NODE_ENV === "production" && (!process.env.TURN_USER || !process.env.TURN_PASS)) {

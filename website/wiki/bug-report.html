@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug Report — SecureCall Wiki</title>
+    <meta name="description" content="Submit a bug report for SecureCall. Reports go directly into the GitHub issue tracker.">
+    <meta name="theme-color" content="#0a0a12">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://stealthx.tech/wiki/bug-report.html">
+    <meta property="og:title" content="Bug Report — SecureCall Wiki">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://stealthx.tech/wiki/bug-report.html">
+    <meta property="og:site_name" content="SecureCall">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="stylesheet" href="../css/wiki-v2.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="../logo.png">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2L60E8E7R"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-V2L60E8E7R");</script>
+    <style>
+        .report-form {
+            max-width: 680px;
+        }
+        .form-group {
+            margin-bottom: 24px;
+        }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .form-label .required {
+            color: #ff4444;
+            margin-left: 4px;
+        }
+        .form-label .optional {
+            color: #555;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+            font-size: 12px;
+            margin-left: 6px;
+        }
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            padding: 12px 16px;
+            box-sizing: border-box;
+            transition: border-color 0.2s, background 0.2s;
+            outline: none;
+        }
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: rgba(255, 77, 77, 0.5);
+            background: rgba(255,255,255,0.06);
+        }
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: #444;
+        }
+        .form-select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
+        .form-select option {
+            background: #0a0a12;
+            color: #e0e0e0;
+        }
+        .form-textarea {
+            resize: vertical;
+            min-height: 140px;
+            line-height: 1.6;
+        }
+        .char-count {
+            text-align: right;
+            font-size: 11px;
+            color: #444;
+            margin-top: 4px;
+        }
+        .char-count.warn { color: #FFD700; }
+        .char-count.over { color: #ff4444; }
+        .screenshot-area {
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+        }
+        .screenshot-area:hover {
+            border-color: rgba(255, 77, 77, 0.4);
+            background: rgba(255,255,255,0.02);
+        }
+        .screenshot-area.has-file {
+            border-color: rgba(74, 222, 128, 0.4);
+            background: rgba(74, 222, 128, 0.04);
+        }
+        .screenshot-area input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        .screenshot-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .screenshot-label {
+            font-size: 13px;
+            color: #666;
+        }
+        .screenshot-filename {
+            font-size: 12px;
+            color: #4ade80;
+            margin-top: 6px;
+            font-family: monospace;
+        }
+        .screenshot-preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 6px;
+            margin-top: 12px;
+            display: none;
+        }
+        /* Honeypot — hidden from real users */
+        .hp-field {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            opacity: 0;
+            pointer-events: none;
+            tab-index: -1;
+        }
+        .submit-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #cc2200, #ff4444);
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:active { transform: scale(0.98); }
+        .submit-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .submit-btn .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        .submit-btn.loading .spinner { display: block; }
+        .submit-btn.loading .btn-text { opacity: 0.7; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .form-feedback {
+            display: none;
+            padding: 16px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+        .form-feedback.success {
+            display: block;
+            background: rgba(74, 222, 128, 0.08);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            color: #4ade80;
+        }
+        .form-feedback.error {
+            display: block;
+            background: rgba(255, 68, 68, 0.08);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            color: #ff6666;
+        }
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 600px) {
+            .field-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#audit">Audit</a>
+                <a href="../#compare">Compare</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="../#lifetime" style="color:#FFD700">Lifetime</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="../faq.html">FAQ</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="beta-testing.html">Beta Testing</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                    <a href="bug-report.html" class="active">Bug Report</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span>Bug Report</span>
+            </div>
+
+            <div class="wiki-page-header">
+                <div class="wiki-classification">Classification: Restricted &middot; SC-REPORT</div>
+                <h1 class="wiki-page-title">Bug Report</h1>
+                <p class="wiki-page-subtitle">Submit a bug directly into the SecureCall issue tracker. Reports go straight to GitHub.</p>
+            </div>
+            <p class="wiki-meta">All reports are reviewed by the developer &middot; Last updated March 2026</p>
+
+            <div class="info-box info" style="margin-bottom:32px">
+                <strong>Beta Testers:</strong> Use this form to report bugs during the closed testing phase. Your report lands directly in the <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">GitHub issue tracker</a> with the label <code>user-report</code>.
+            </div>
+
+            <div class="report-form">
+                <div class="field-row">
+                    <div class="form-group">
+                        <label class="form-label" for="appVersion">App Version <span class="required">*</span></label>
+                        <select class="form-select" id="appVersion" required>
+                            <option value="" disabled selected>Select version…</option>
+                            <option value="1.0.6 (Build 16)">1.0.6 (Build 16) — latest</option>
+                            <option value="1.0.4 (Build 14)">1.0.4 (Build 14)</option>
+                            <option value="1.0.3 (Build 13)">1.0.3 (Build 13)</option>
+                            <option value="1.0.2 (Build 12)">1.0.2 (Build 12)</option>
+                            <option value="1.0.0 (Build 10)">1.0.0 (Build 10)</option>
+                            <option value="other">Other…</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="androidVersion">Android Version <span class="required">*</span></label>
+                        <select class="form-select" id="androidVersion" required>
+                            <option value="" disabled selected>Select version…</option>
+                            <option value="Android 15 (API 35)">Android 15 (API 35)</option>
+                            <option value="Android 14 (API 34)">Android 14 (API 34)</option>
+                            <option value="Android 13 (API 33)">Android 13 (API 33)</option>
+                            <option value="Android 12 (API 32)">Android 12 (API 32)</option>
+                            <option value="Android 11 (API 30)">Android 11 (API 30)</option>
+                            <option value="Android 10 (API 29)">Android 10 (API 29)</option>
+                            <option value="Android 9 or older">Android 9 or older</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="device">Device Model <span class="required">*</span></label>
+                    <input class="form-input" type="text" id="device" placeholder="e.g. Samsung Galaxy S10, Pixel 7, Xiaomi 13…" maxlength="100" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="description">
+                        Bug Description <span class="required">*</span>
+                        <span class="optional">(min. 30 characters)</span>
+                    </label>
+                    <textarea class="form-textarea" id="description" placeholder="Describe what happened, what you expected, and the steps to reproduce the issue…" maxlength="5000" required></textarea>
+                    <div class="char-count" id="charCount">0 / 5000</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Screenshot <span class="optional">(optional, max 3 MB)</span></label>
+                    <div class="screenshot-area" id="screenshotArea">
+                        <input type="file" id="screenshotInput" accept="image/png,image/jpeg,image/webp,image/gif">
+                        <div class="screenshot-icon">📎</div>
+                        <div class="screenshot-label">Click to attach a screenshot</div>
+                        <div class="screenshot-filename" id="screenshotFilename"></div>
+                        <img class="screenshot-preview" id="screenshotPreview" alt="Screenshot preview">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="email">
+                        Your Email <span class="optional">(optional — only if you want a follow-up)</span>
+                    </label>
+                    <input class="form-input" type="email" id="email" placeholder="your@email.com" maxlength="254">
+                </div>
+
+                <!-- Honeypot — hidden from real users, visible to bots -->
+                <div class="hp-field" aria-hidden="true">
+                    <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+                    <input type="text" name="_trap" id="_trap" tabindex="-1" autocomplete="off">
+                </div>
+
+                <button class="submit-btn" id="submitBtn" type="button" onclick="submitReport()">
+                    <div class="spinner"></div>
+                    <span class="btn-text">⚡ Submit Report</span>
+                </button>
+
+                <div class="form-feedback" id="formFeedback"></div>
+            </div>
+
+            <div class="wiki-doc-footer" style="margin-top:48px">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Vendetta Labs &mdash; Greece</p>
+                <p><a href="../">Home</a> | <a href="../privacy.html">Privacy Policy</a> | <a href="../impressum.html">Impressum</a> | <a href="../disclaimer.html">Disclaimer</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        // --- Config ---
+        const API_URL = 'https://protective-healing-production.up.railway.app/api/report';
+        // ↑ Replace with your actual Railway backend URL
+
+        // --- Character counter ---
+        const descEl = document.getElementById('description');
+        const charCount = document.getElementById('charCount');
+        descEl.addEventListener('input', () => {
+            const len = descEl.value.length;
+            charCount.textContent = `${len} / 5000`;
+            charCount.className = 'char-count' + (len > 4500 ? ' over' : len > 4000 ? ' warn' : '');
+        });
+
+        // --- Screenshot handling ---
+        let screenshotData = null;
+        let screenshotName = null;
+
+        const screenshotInput = document.getElementById('screenshotInput');
+        const screenshotArea  = document.getElementById('screenshotArea');
+        const screenshotFilename = document.getElementById('screenshotFilename');
+        const screenshotPreview  = document.getElementById('screenshotPreview');
+
+        screenshotInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 3 * 1024 * 1024) {
+                showFeedback('error', 'Screenshot is too large. Max 3 MB.');
+                screenshotInput.value = '';
+                return;
+            }
+
+            screenshotName = file.name;
+            screenshotArea.classList.add('has-file');
+            screenshotFilename.textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                screenshotData = ev.target.result; // base64 data URL
+                screenshotPreview.src = screenshotData;
+                screenshotPreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // --- Form submission ---
+        async function submitReport() {
+            const appVersion    = document.getElementById('appVersion').value;
+            const androidVersion = document.getElementById('androidVersion').value;
+            const device        = document.getElementById('device').value.trim();
+            const description   = document.getElementById('description').value.trim();
+            const email         = document.getElementById('email').value.trim();
+            // Honeypot values
+            const hpWebsite = document.getElementById('website').value;
+            const hpTrap    = document.getElementById('_trap').value;
+
+            // Client-side validation
+            if (!appVersion)      return showFeedback('error', 'Please select an app version.');
+            if (!androidVersion)  return showFeedback('error', 'Please select an Android version.');
+            if (!device)          return showFeedback('error', 'Please enter your device model.');
+            if (!description)     return showFeedback('error', 'Please describe the bug.');
+            if (description.length < 30) return showFeedback('error', 'Description too short. Please provide at least 30 characters.');
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.classList.add('loading');
+            hideFeedback();
+
+            try {
+                const payload = {
+                    appVersion,
+                    androidVersion,
+                    device,
+                    description,
+                    email:          email || null,
+                    screenshot:     screenshotData || null,
+                    screenshotName: screenshotName || null,
+                    // Honeypot fields — sent to server for validation
+                    website: hpWebsite,
+                    _trap:   hpTrap
+                };
+
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    showFeedback('error', data.error || 'Something went wrong. Please try again.');
+                } else {
+                    const issueNum = data.issue_number;
+                    showFeedback('success',
+                        issueNum
+                            ? `✅ Report submitted — <a href="https://github.com/NeaBouli/stealth/issues/${issueNum}" target="_blank" rel="noopener">Issue #${issueNum}</a> created. Thank you!`
+                            : '✅ Report received. Thank you!'
+                    );
+                    // Reset form on success
+                    document.getElementById('appVersion').value = '';
+                    document.getElementById('androidVersion').value = '';
+                    document.getElementById('device').value = '';
+                    document.getElementById('description').value = '';
+                    document.getElementById('email').value = '';
+                    charCount.textContent = '0 / 5000';
+                    charCount.className = 'char-count';
+                    screenshotData = null;
+                    screenshotName = null;
+                    screenshotArea.classList.remove('has-file');
+                    screenshotFilename.textContent = '';
+                    screenshotPreview.style.display = 'none';
+                    screenshotInput.value = '';
+                }
+            } catch (err) {
+                showFeedback('error', 'Network error. Please check your connection and try again, or use <a href="https://github.com/NeaBouli/stealth/issues/new" target="_blank" rel="noopener">GitHub Issues</a> directly.');
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+            }
+        }
+
+        function showFeedback(type, message) {
+            const el = document.getElementById('formFeedback');
+            el.className = `form-feedback ${type}`;
+            el.innerHTML = message;
+        }
+
+        function hideFeedback() {
+            const el = document.getElementById('formFeedback');
+            el.className = 'form-feedback';
+            el.textContent = '';
+        }
+    </script>
+</body>
+</html>
