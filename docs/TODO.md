@@ -40,13 +40,13 @@
 |----|------|----------|-------|
 | TODO-028 | Google Play closed test | HIGH | 12/12 testers, start 14-day phase |
 
-## OPEN (6)
+## OPEN (4)
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
 | TODO-010 | Self-hosted TURN (coturn) | LOW | Using Metered.ca for now |
-| TODO-022 | Google Analytics (GA4) | LOW | Needs GA4 Measurement ID from analytics.google.com |
-| TODO-023 | Bing Webmaster Tools | LOW | Register at bing.com/webmasters |
+| TODO-022 | Google Analytics (GA4) | DONE | G-V2L60E8E7R on all 23 pages |
+| TODO-023 | Bing Webmaster Tools | DONE | D9B5AE056084F8FDB71EC30134F3B009 + BingSiteAuth.xml |
 | TODO-029 | Google Play Service Account | HIGH | For billing purchase verification |
 | TODO-030 | Store Listing DE in Play Console | MEDIUM | docs/PLAY_STORE_LISTING_DE.md exists |
 | TODO-031 | GitHub Release APKs | DONE | v1.0.6 release published |
