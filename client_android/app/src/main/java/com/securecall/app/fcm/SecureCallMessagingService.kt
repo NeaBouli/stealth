@@ -63,10 +63,11 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             manager.createNotificationChannel(channel)
         }
 
-        val intent = Intent(this, CallActivity::class.java).apply {
+        val intent = Intent(this, com.securecall.app.IncomingCallActivity::class.java).apply {
             putExtra("fromNotification", true)
             putExtra("sessionId", sessionId)
             putExtra("callerName", callerName)
+            putExtra("isIncoming", true)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 

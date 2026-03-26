@@ -62,8 +62,9 @@ class IncomingCallActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // FLAG_SECURE: prevent screenshots of incoming call screen (release only)
-        if (!com.securecall.app.BuildConfig.DEBUG) {
+        // FLAG_SECURE: prevent screenshots of incoming call screen
+        val tier = com.securecall.app.config.TierManager.getCurrentTier(this)
+        if (tier != "FREE") {
             window.setFlags(
                 android.view.WindowManager.LayoutParams.FLAG_SECURE,
                 android.view.WindowManager.LayoutParams.FLAG_SECURE)
