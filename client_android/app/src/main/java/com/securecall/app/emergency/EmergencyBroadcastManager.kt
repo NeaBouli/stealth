@@ -122,8 +122,8 @@ object EmergencyBroadcastManager {
             icon = "\uD83E\uDDEA", // test tube
             titleEn = "Beta Update Available",
             titleDe = "Beta-Update verf\u00FCgbar",
-            bodyEn = "A new beta version is available. Open Google Play \u2192 My Apps \u2192 Update SecureCall. Check the changelog for what\u2019s new.",
-            bodyDe = "Eine neue Beta-Version ist verf\u00FCgbar. Google Play \u2192 Meine Apps \u2192 SecureCall aktualisieren.",
+            bodyEn = "A new version of SecureCall is available.\n\nTo update:\n1. Open Google Play Store\n2. Tap your profile \u2192 Manage apps\n3. Find SecureCall \u2192 Update\n\nOr use your beta tester link from the invitation email.",
+            bodyDe = "Eine neue Version von SecureCall ist verf\u00FCgbar.\n\nSo aktualisieren:\n1. Google Play Store \u00F6ffnen\n2. Profilbild \u2192 Apps verwalten\n3. SecureCall suchen \u2192 Aktualisieren\n\nOder den Beta-Tester-Link aus der Einladungs-Email nutzen.",
             severity = Severity.INFO,
             dismissable = true,
             showUpdateButton = true
