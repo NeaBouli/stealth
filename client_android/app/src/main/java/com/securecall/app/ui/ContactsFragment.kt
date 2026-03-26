@@ -699,20 +699,34 @@ class ContactsFragment : Fragment() {
         val myId = prefs.getString("client_id", null)
             ?: com.securecall.app.net.WebSocketService.instance?.getLocalClientId()
             ?: "unknown"
-        val myPhone = prefs.getString("confirmed_phone_number", null) ?: ""
-        val base = getString(R.string.dialer_invite_sms, myId)
-        val message = if (myPhone.isNotEmpty()) "$base\nMy phone: $myPhone" else base
+        val inviteLink = "https://stealthx.tech/invite/$myId"
+        val inviteText = "Join me on SecureCall for encrypted calls!\n\n$inviteLink\n\nMy ID: $myId"
+
         val items = arrayOf(
-            "Try calling anyway",
-            getString(R.string.dialer_share_link),
-            getString(R.string.dialer_send_sms)
+            "\uD83D\uDCE9 Send Invite Link",
+            "\uD83D\uDCCB Copy Invite Link",
+            "\uD83D\uDCF1 Try calling anyway"
         )
         android.app.AlertDialog.Builder(ctx)
-            .setTitle("${contact.name} not found on SecureCall")
-            .setMessage("This contact may not have SecureCall installed, or their phone number may be registered differently.")
+            .setTitle("${contact.name} hasn\u2019t joined SecureCall yet")
+            .setMessage("Send them an invite link so they can install SecureCall and add you as a contact.")
             .setItems(items) { _, which ->
                 when (which) {
                     0 -> {
+                        // Share invite link via system share sheet
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, inviteText)
+                        }
+                        startActivity(Intent.createChooser(intent, "Send Invite"))
+                    }
+                    1 -> {
+                        // Copy invite link to clipboard
+                        val clipboard = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Invite Link", inviteLink))
+                        android.widget.Toast.makeText(ctx, "Invite link copied!", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    2 -> {
                         // Try calling with the phone number directly
                         val intent = Intent(requireContext(), CallActivity::class.java).apply {
                             putExtra("callerName", contact.name)
@@ -720,24 +734,6 @@ class ContactsFragment : Fragment() {
                             putExtra("originalPhone", contact.phoneOrId)
                         }
                         startActivity(intent)
-                    }
-                    1 -> {
-                        val intent = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, message)
-                        }
-                        startActivity(Intent.createChooser(intent, getString(R.string.dialer_invite_via)))
-                    }
-                    2 -> {
-                        try {
-                            val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
-                                data = android.net.Uri.parse("smsto:${contact.phoneOrId}")
-                                putExtra("sms_body", message)
-                            }
-                            startActivity(smsIntent)
-                        } catch (_: Exception) {
-                            android.widget.Toast.makeText(ctx, getString(R.string.dialer_no_sms_app), android.widget.Toast.LENGTH_SHORT).show()
-                        }
                     }
                 }
             }
