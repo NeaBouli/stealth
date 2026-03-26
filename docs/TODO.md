@@ -1,5 +1,5 @@
 # SecureCall TODO Tracker
-**Last updated:** 2026-03-26 | **Version:** v1.0.6 (code 16)
+**Last updated:** 2026-03-26 | **Version:** v1.0.8 (code 18)
 
 ## DONE (28)
 
