@@ -75,7 +75,7 @@ Send: curl -X POST .../admin/broadcast -H "X-Admin-Key: KEY" -d '{"template_id":
 - IFR Lock Contract: 0x769928aBDfc949D0718d8766a1C2d7dBb63954Eb
 - Pro: >=1000 IFR, Premium: >=5000 IFR
 
-## Beta Testers (12/12)
+## Beta Testers (14/14)
 | # | Tester | Status |
 |---|---|---|
 | 1 | B................1@gmail.com | Active |
@@ -89,7 +89,9 @@ Send: curl -X POST .../admin/broadcast -H "X-Admin-Key: KEY" -d '{"template_id":
 | 9 | p............a@gmail.com | Active |
 | 10 | r......s@gmail.com | Active |
 | 11 | z......r@gmail.com | Active |
-| 12 | 12th tester | Active |
+| 12 | u..........m@gmail.com | Active |
+| 13 | r..........1@gmail.com | Active |
+| 14 | b..........r@googlemail.com | Active |
 
 ## Bug Tracker
 | ID | Description | Status |

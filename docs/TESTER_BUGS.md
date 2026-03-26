@@ -40,8 +40,10 @@
 | 10 | r......s@gmail.com | Eingeladen |
 | 11 | z......r@gmail.com | Eingeladen |
 | 12 | u..........m@gmail.com | Eingeladen |
+| 13 | r..........1@gmail.com | Eingeladen |
+| 14 | b..........r@googlemail.com | Eingeladen |
 
-**Tester gesamt: 12/12 — geschlossener Test bereit**
+**Tester gesamt: 14/14**
 
 ## How to report
 Tester melden Bugs per Email an kaspartisan@proton.me oder via GitHub Issues.
