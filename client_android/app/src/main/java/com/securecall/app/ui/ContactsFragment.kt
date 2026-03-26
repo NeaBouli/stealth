@@ -702,42 +702,29 @@ class ContactsFragment : Fragment() {
         val inviteLink = "https://stealthx.tech/invite/$myId"
         val inviteText = "Join me on SecureCall for encrypted calls!\n\n$inviteLink\n\nMy ID: $myId"
 
-        val items = arrayOf(
-            "\uD83D\uDCE9 Send Invite Link",
-            "\uD83D\uDCCB Copy Invite Link",
-            "\uD83D\uDCF1 Try calling anyway"
-        )
         android.app.AlertDialog.Builder(ctx)
             .setTitle("${contact.name} hasn\u2019t joined SecureCall yet")
             .setMessage("Send them an invite link so they can install SecureCall and add you as a contact.")
-            .setItems(items) { _, which ->
-                when (which) {
-                    0 -> {
-                        // Share invite link via system share sheet
-                        val intent = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, inviteText)
-                        }
-                        startActivity(Intent.createChooser(intent, "Send Invite"))
-                    }
-                    1 -> {
-                        // Copy invite link to clipboard
-                        val clipboard = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Invite Link", inviteLink))
-                        android.widget.Toast.makeText(ctx, "Invite link copied!", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                    2 -> {
-                        // Try calling with the phone number directly
-                        val intent = Intent(requireContext(), CallActivity::class.java).apply {
-                            putExtra("callerName", contact.name)
-                            putExtra("phoneNumber", contact.phoneOrId)
-                            putExtra("originalPhone", contact.phoneOrId)
-                        }
-                        startActivity(intent)
-                    }
+            .setPositiveButton("Send Invite") { _, _ ->
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, inviteText)
                 }
+                startActivity(Intent.createChooser(intent, "Send Invite"))
             }
-            .setNegativeButton(android.R.string.cancel, null)
+            .setNeutralButton("Copy Link") { _, _ ->
+                val clipboard = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Invite Link", inviteLink))
+                android.widget.Toast.makeText(ctx, "Invite link copied!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Call anyway") { _, _ ->
+                val intent = Intent(requireContext(), CallActivity::class.java).apply {
+                    putExtra("callerName", contact.name)
+                    putExtra("phoneNumber", contact.phoneOrId)
+                    putExtra("originalPhone", contact.phoneOrId)
+                }
+                startActivity(intent)
+            }
             .show()
     }
 
