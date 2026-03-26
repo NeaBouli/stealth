@@ -45,7 +45,7 @@
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
 | TODO-010 | Self-hosted TURN (coturn) | LOW | Using Metered.ca for now |
-| TODO-022 | Google Analytics (GA4) | LOW | Manually add in Firebase Console |
+| TODO-022 | Google Analytics (GA4) | LOW | Needs GA4 Measurement ID from analytics.google.com |
 | TODO-023 | Bing Webmaster Tools | LOW | Register at bing.com/webmasters |
 | TODO-029 | Google Play Service Account | HIGH | For billing purchase verification |
 | TODO-030 | Store Listing DE in Play Console | MEDIUM | docs/PLAY_STORE_LISTING_DE.md exists |
