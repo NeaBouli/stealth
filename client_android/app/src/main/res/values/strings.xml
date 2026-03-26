@@ -24,7 +24,7 @@
     <!-- Contacts -->
     <string name="contacts_empty">No contacts yet</string>
     <string name="contacts_add">Add Contact</string>
-    <string name="contacts_search">Search contacts</string>
+    <string name="contacts_search">Search all contacts</string>
     <string name="contact_name_hint">Name</string>
     <string name="contact_id_hint">Phone or SecureCall ID</string>
 

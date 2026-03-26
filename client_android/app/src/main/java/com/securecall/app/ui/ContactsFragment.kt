@@ -297,7 +297,7 @@ class ContactsFragment : Fragment() {
                     allContacts = merged
                     registeredPhones = cachedRegisteredPhones
                     onlinePhones = cachedOnlinePhones
-                    updateList(allContacts)
+                    filterContacts(searchInput.text?.toString() ?: "")
                 }
                 // Only do BATCH_PHONE_LOOKUP if cache is stale or forced
                 val now = System.currentTimeMillis()
@@ -608,17 +608,24 @@ class ContactsFragment : Fragment() {
 
     private fun filterContacts(query: String) {
         if (query.isEmpty()) {
-            updateList(allContacts)
+            // Default: show only SecureCall-registered contacts + app contacts
+            val secureCallOnly = allContacts.filter { contact ->
+                contact.phoneOrId.startsWith("android-") ||
+                contact.secureId != null ||
+                registeredPhones.contains(contact.phoneOrId.replace(Regex("[^0-9+]"), ""))
+            }
+            updateList(secureCallOnly, showRegistrationBadge = false)
         } else {
+            // Search: show ALL contacts, with registration status
             val filtered = allContacts.filter {
                 it.name.contains(query, ignoreCase = true) ||
                 it.phoneOrId.contains(query, ignoreCase = true)
             }
-            updateList(filtered)
+            updateList(filtered, showRegistrationBadge = true)
         }
     }
 
-    private fun updateList(contacts: List<Contact>) {
+    private fun updateList(contacts: List<Contact>, showRegistrationBadge: Boolean = false) {
         if (contacts.isEmpty()) {
             recycler.visibility = View.GONE
             emptyState.visibility = View.VISIBLE

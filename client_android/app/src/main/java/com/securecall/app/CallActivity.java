@@ -158,6 +158,13 @@ public class CallActivity extends AppCompatActivity {
         }
         callContactName = (callerName != null && !callerName.isEmpty()) ? callerName : "Unknown";
 
+        // Verified Contact badge — show if caller name was resolved from phone book
+        if (callerName != null && !callerName.isEmpty() && !callerName.startsWith("android-")
+                && !callerName.matches("^[+\\d\\s\\-()]+$")) {
+            connectionState.setText("\u2713 Verified Contact");
+            connectionState.setTextColor(getResources().getColor(android.R.color.holo_green_light, getTheme()));
+        }
+
         // ─── Proximity Sensor (screen off at ear) ─────────────────
         initProximitySensor();
 
