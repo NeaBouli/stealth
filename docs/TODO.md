@@ -48,6 +48,6 @@
 | TODO-022 | Google Analytics (GA4) | DONE | G-V2L60E8E7R on all 23 pages |
 | TODO-023 | Bing Webmaster Tools | DONE | D9B5AE056084F8FDB71EC30134F3B009 + BingSiteAuth.xml |
 | TODO-029 | Google Play Service Account | HIGH | For billing purchase verification |
-| TODO-030 | Store Listing DE in Play Console | MEDIUM | docs/PLAY_STORE_LISTING_DE.md exists |
+| TODO-030 | Store Listing DE | DONE | marketing/play_store/de/store_listing.md |
 | TODO-031 | GitHub Release APKs | DONE | v1.0.6 release published |
 | TODO-033 | Firebase + AdMob linking | MEDIUM | AdMob Console → Firebase |
