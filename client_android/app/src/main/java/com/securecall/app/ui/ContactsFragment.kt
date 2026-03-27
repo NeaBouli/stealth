@@ -606,21 +606,33 @@ class ContactsFragment : Fragment() {
         return contacts
     }
 
+    private fun isContactOnline(contact: Contact): Boolean {
+        val normalized = contact.phoneOrId.replace(Regex("[^0-9+]"), "")
+        val clientId = contact.secureId ?: if (contact.phoneOrId.startsWith("android-")) contact.phoneOrId else null
+        return onlinePhones.contains(normalized) ||
+            (clientId != null && cachedOnlineClientIds.contains(clientId))
+    }
+
+    private fun isContactRegistered(contact: Contact): Boolean {
+        return contact.phoneOrId.startsWith("android-") ||
+            contact.secureId != null ||
+            registeredPhones.contains(contact.phoneOrId.replace(Regex("[^0-9+]"), ""))
+    }
+
     private fun filterContacts(query: String) {
         if (query.isEmpty()) {
-            // Default: show only SecureCall-registered contacts + app contacts
-            val secureCallOnly = allContacts.filter { contact ->
-                contact.phoneOrId.startsWith("android-") ||
-                contact.secureId != null ||
-                registeredPhones.contains(contact.phoneOrId.replace(Regex("[^0-9+]"), ""))
-            }
-            updateList(secureCallOnly, showRegistrationBadge = false)
+            // Default: only registered contacts, sorted online first
+            val registered = allContacts.filter { isContactRegistered(it) }
+            val online = registered.filter { isContactOnline(it) }.sortedBy { it.name }
+            val offline = registered.filter { !isContactOnline(it) }.sortedBy { it.name }
+            val sorted = online + offline
+            updateList(sorted, showRegistrationBadge = false)
         } else {
             // Search: show ALL contacts, with registration status
             val filtered = allContacts.filter {
                 it.name.contains(query, ignoreCase = true) ||
                 it.phoneOrId.contains(query, ignoreCase = true)
-            }
+            }.sortedWith(compareByDescending<Contact> { isContactRegistered(it) }.thenBy { it.name })
             updateList(filtered, showRegistrationBadge = true)
         }
     }
