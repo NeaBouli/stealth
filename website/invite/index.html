@@ -45,16 +45,19 @@
             <span class="copied" id="copiedLabel">Copied!</span>
         </div>
 
-        <a id="playLink" href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn btn-primary">
-            Install SecureCall
+        <a id="openAppLink" href="#" class="btn btn-primary" style="background:#00E676;border-color:#00E676;color:#000">
+            Open in SecureCall
         </a>
-        <a href="https://stealthx.tech" class="btn btn-outline">
-            Learn more
+        <a id="downloadLink" href="https://github.com/NeaBouli/stealth/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+            Download SecureCall APK
+        </a>
+        <a id="playLink" href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn btn-outline">
+            Google Play (Beta)
         </a>
 
         <p class="note">
-            After installing, go to Contacts and add the ID above.<br>
-            Or share your own ID with the inviter to connect.<br><br>
+            <strong>Already have SecureCall?</strong> Tap "Open in SecureCall" above.<br>
+            <strong>New user?</strong> Download the app, then go to Contacts &rarr; Add Contact &rarr; paste the ID above.<br><br>
             <a href="https://stealthx.tech/privacy.html">Privacy Policy</a> &middot;
             <a href="https://stealthx.tech">stealthx.tech</a>
         </p>
@@ -84,6 +87,9 @@
             }
             // Store for deferred deep link
             try { localStorage.setItem('pendingInviteSecureId', secureId); } catch(e) {}
+            // Set deep link for "Open in SecureCall" button
+            var nameParam = senderName ? '&name=' + encodeURIComponent(senderName) : '';
+            document.getElementById('openAppLink').href = 'https://stealthx.tech/invite/' + secureId + (senderName ? '?name=' + encodeURIComponent(senderName) : '');
             // Add referrer param to Play Store link
             var playLink = document.getElementById('playLink');
             playLink.href += '&referrer=' + encodeURIComponent('invite_' + secureId);
