@@ -240,8 +240,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
         )
         val ctx = requireContext()
 
+        // Force collapsed on every start (reset state)
+        donationExpanded = false
+        for (key in donationKeys) {
+            findPreference<Preference>(key)?.isVisible = false
+        }
+
         // Toggle button (TB-012)
         val togglePref = findPreference<Preference>("pref_donate_toggle")
+        togglePref?.title = "Show donation addresses \u25BC"
+        togglePref?.summary = "ETH, BTC, SOL, IFR Token"
         togglePref?.setOnPreferenceClickListener { pref ->
             donationExpanded = !donationExpanded
             android.util.Log.d("Settings", "Donation toggle: expanded=$donationExpanded")
