@@ -743,6 +743,20 @@ class ContactsFragment : Fragment() {
         }
         layout.addView(includeNameCheck)
 
+        // QR Code button inside layout
+        val qrBtn = android.widget.Button(ctx).apply {
+            text = "\uD83D\uDD32 Show QR Code"
+            textSize = 14f
+            setOnClickListener {
+                val intent = Intent(ctx, QrCodeActivity::class.java).apply {
+                    putExtra("invite_link", inviteLink)
+                    putExtra("contact_name", contact.name)
+                }
+                startActivity(intent)
+            }
+        }
+        layout.addView(qrBtn)
+
         android.app.AlertDialog.Builder(ctx)
             .setTitle("\uD83D\uDCE9 Invite ${contact.name}")
             .setView(layout)

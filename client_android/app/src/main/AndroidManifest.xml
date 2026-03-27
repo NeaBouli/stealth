@@ -98,6 +98,8 @@
         </activity>
 
         <activity android:name=".SettingsActivity" />
+        <activity android:name=".ui.QrCodeActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity
             android:name=".CallActivity"
             android:theme="@style/Theme.SecureCall.Call" />
