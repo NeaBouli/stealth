@@ -95,6 +95,13 @@
                       android:host="stealthx.tech"
                       android:pathPrefix="/invite/" />
             </intent-filter>
+            <!-- Custom scheme: securecall://add-contact?id=xxx&name=xxx -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="securecall" android:host="add-contact" />
+            </intent-filter>
         </activity>
 
         <activity android:name=".SettingsActivity" />

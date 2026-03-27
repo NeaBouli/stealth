@@ -87,9 +87,17 @@
             }
             // Store for deferred deep link
             try { localStorage.setItem('pendingInviteSecureId', secureId); } catch(e) {}
-            // Set deep link for "Open in SecureCall" button
+            // Set deep link for "Open in SecureCall" button (custom scheme + fallback)
             var nameParam = senderName ? '&name=' + encodeURIComponent(senderName) : '';
-            document.getElementById('openAppLink').href = 'https://stealthx.tech/invite/' + secureId + (senderName ? '?name=' + encodeURIComponent(senderName) : '');
+            var customSchemeLink = 'securecall://add-contact?id=' + secureId + nameParam;
+            var httpsLink = 'https://stealthx.tech/invite/' + secureId + (senderName ? '?name=' + encodeURIComponent(senderName) : '');
+            document.getElementById('openAppLink').href = customSchemeLink;
+            document.getElementById('openAppLink').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location = customSchemeLink;
+                // Fallback: if app not installed, redirect to download after 2s
+                setTimeout(function() { window.location = httpsLink; }, 2000);
+            });
             // Add referrer param to Play Store link
             var playLink = document.getElementById('playLink');
             playLink.href += '&referrer=' + encodeURIComponent('invite_' + secureId);

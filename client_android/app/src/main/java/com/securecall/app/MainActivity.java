@@ -195,9 +195,19 @@ public class MainActivity extends AppCompatActivity {
     private void handleInviteDeepLink(Intent intent) {
         if (intent == null || intent.getData() == null) return;
         android.net.Uri data = intent.getData();
+
+        // Handle securecall://add-contact?id=xxx&name=xxx OR https://stealthx.tech/invite/{id}
+        String id = null;
+        if ("securecall".equals(data.getScheme()) && "add-contact".equals(data.getHost())) {
+            id = data.getQueryParameter("id");
+        }
         java.util.List<String> segments = data.getPathSegments();
-        if (segments.size() >= 2 && "invite".equals(segments.get(0))) {
-            String inviterSecureId = segments.get(1);
+        if (id == null && segments != null && segments.size() >= 2 && "invite".equals(segments.get(0))) {
+            id = segments.get(1);
+        }
+        if (id == null || id.isEmpty()) return;
+        final String inviterSecureId = id;
+        {
             Log.d(TAG, "Invite deep link received: " + inviterSecureId);
 
             // Save inviter as a contact
