@@ -207,37 +207,51 @@ public class MainActivity extends AppCompatActivity {
         }
         if (id == null || id.isEmpty()) return;
         final String inviterSecureId = id;
-        {
-            Log.d(TAG, "Invite deep link received: " + inviterSecureId);
 
-            // Save inviter as a contact
-            SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
-            java.util.Set<String> contacts = new java.util.HashSet<>(
-                    prefs.getStringSet("saved_contacts", new java.util.HashSet<>()));
-            if (!contacts.contains(inviterSecureId)) {
+        // Read optional name parameter
+        String nameParam = data.getQueryParameter("name");
+        final String displayName = (nameParam != null && !nameParam.isEmpty()) ? nameParam : inviterSecureId;
+
+        Log.d(TAG, "Invite deep link received: " + inviterSecureId + " name=" + displayName);
+
+        // Show confirmation dialog before saving
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("\uD83D\uDD12 Add Contact")
+            .setMessage("Add " + displayName + " as a SecureCall contact?\n\nID: " + inviterSecureId)
+            .setPositiveButton("Add Contact", (d, w) -> {
+                // Save inviter as a contact
+                SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+                java.util.Set<String> contacts = new java.util.HashSet<>(
+                        prefs.getStringSet("saved_contacts", new java.util.HashSet<>()));
+                if (!contacts.contains(inviterSecureId)) {
+                    contacts.add(inviterSecureId);
+                    prefs.edit().putStringSet("saved_contacts", contacts).apply();
+                    Log.d(TAG, "Inviter saved as contact: " + inviterSecureId);
+                }
+                android.widget.Toast.makeText(this, displayName + " added!", android.widget.Toast.LENGTH_SHORT).show();
+
+                // Notify backend
+                notifyInviteAccepted(inviterSecureId, prefs.getString("client_id", ""));
+            })
+            .setNeutralButton("Call Now", (d, w) -> {
+                // Save + call immediately
+                SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+                java.util.Set<String> contacts = new java.util.HashSet<>(
+                        prefs.getStringSet("saved_contacts", new java.util.HashSet<>()));
                 contacts.add(inviterSecureId);
                 prefs.edit().putStringSet("saved_contacts", contacts).apply();
-                Log.d(TAG, "Inviter saved as contact: " + inviterSecureId);
-            }
+                notifyInviteAccepted(inviterSecureId, prefs.getString("client_id", ""));
 
-            // Show confirmation
-            com.google.android.material.snackbar.Snackbar.make(
-                    findViewById(android.R.id.content),
-                    inviterSecureId + " added as contact!",
-                    com.google.android.material.snackbar.Snackbar.LENGTH_LONG
-            ).setAction("Call", v -> {
                 Intent callIntent = new Intent(this, CallActivity.class);
                 callIntent.putExtra("phoneNumber", inviterSecureId);
-                callIntent.putExtra("callerName", inviterSecureId);
+                callIntent.putExtra("callerName", displayName);
                 startActivity(callIntent);
-            }).show();
+            })
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
 
-            // Notify backend
-            notifyInviteAccepted(inviterSecureId, prefs.getString("client_id", ""));
-
-            // Clear the intent data so it doesn't re-trigger
-            intent.setData(null);
-        }
+        // Clear the intent data so it doesn't re-trigger
+        intent.setData(null);
     }
 
     private void notifyInviteAccepted(String inviterSecureId, String mySecureId) {
