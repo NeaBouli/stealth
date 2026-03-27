@@ -706,32 +706,65 @@ class ContactsFragment : Fragment() {
         val myId = prefs.getString("client_id", null)
             ?: com.securecall.app.net.WebSocketService.instance?.getLocalClientId()
             ?: "unknown"
-        val inviteLink = "https://stealthx.tech/invite/$myId"
-        val inviteText = "Join me on SecureCall for encrypted calls!\n\n$inviteLink\n\nMy ID: $myId"
+        val myPhone = prefs.getString("confirmed_phone_number", null)
+            ?: prefs.getString("manual_phone_number", null) ?: ""
+
+        // Build invite link with optional name param
+        val nameParam = java.net.URLEncoder.encode(myId.take(16), "UTF-8")
+        val inviteLink = "https://stealthx.tech/invite/$myId?name=$nameParam"
+
+        // Build share text
+        val shareText = buildString {
+            append("I invited you to SecureCall!\n")
+            append("\uD83D\uDD12 Tap here to connect:\n")
+            append(inviteLink)
+            append("\n\nDon\u2019t have SecureCall yet?\n")
+            append("https://play.google.com/apps/testing/com.securecall.app.free")
+        }
+
+        // Dialog with options
+        val layout = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            val pad = (16 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, 0)
+        }
+
+        val msgView = android.widget.TextView(ctx).apply {
+            text = "Send an invite to ${contact.name} so they can install SecureCall and add you as a contact."
+            setTextColor(0xFFCCCCCC.toInt())
+            textSize = 14f
+        }
+        layout.addView(msgView)
+
+        val includeNameCheck = android.widget.CheckBox(ctx).apply {
+            text = "Include my SecureID in link"
+            isChecked = true
+            setTextColor(0xFFDDDDDD.toInt())
+        }
+        layout.addView(includeNameCheck)
 
         android.app.AlertDialog.Builder(ctx)
-            .setTitle("${contact.name} hasn\u2019t joined SecureCall yet")
-            .setMessage("Send them an invite link so they can install SecureCall and add you as a contact.")
+            .setTitle("\uD83D\uDCE9 Invite ${contact.name}")
+            .setView(layout)
             .setPositiveButton("Send Invite") { _, _ ->
+                val link = if (includeNameCheck.isChecked) inviteLink
+                    else "https://stealthx.tech/invite/$myId"
+                val text = if (includeNameCheck.isChecked) shareText
+                    else "I invited you to SecureCall!\n\uD83D\uDD12 $link"
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, inviteText)
+                    putExtra(Intent.EXTRA_TEXT, text)
                 }
                 startActivity(Intent.createChooser(intent, "Send Invite"))
             }
             .setNeutralButton("Copy Link") { _, _ ->
+                val link = if (includeNameCheck.isChecked) inviteLink
+                    else "https://stealthx.tech/invite/$myId"
                 val clipboard = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Invite Link", inviteLink))
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Invite Link", link))
                 android.widget.Toast.makeText(ctx, "Invite link copied!", android.widget.Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("Call anyway") { _, _ ->
-                val intent = Intent(requireContext(), CallActivity::class.java).apply {
-                    putExtra("callerName", contact.name)
-                    putExtra("phoneNumber", contact.phoneOrId)
-                    putExtra("originalPhone", contact.phoneOrId)
-                }
-                startActivity(intent)
-            }
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 

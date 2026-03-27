@@ -72,7 +72,16 @@
 
         if (secureId) {
             document.getElementById('secureId').textContent = secureId;
-            document.title = 'SecureCall Invitation from ' + secureId;
+            // Read optional name from URL params
+            var params = new URLSearchParams(window.location.search);
+            var senderName = params.get('name');
+            if (senderName) {
+                document.getElementById('title').textContent = senderName + ' invited you!';
+                document.getElementById('subtitle').textContent = 'Join ' + senderName + ' on SecureCall for encrypted calls. No phone number needed.';
+                document.title = 'SecureCall Invitation from ' + senderName;
+            } else {
+                document.title = 'SecureCall Invitation from ' + secureId;
+            }
             // Store for deferred deep link
             try { localStorage.setItem('pendingInviteSecureId', secureId); } catch(e) {}
             // Add referrer param to Play Store link
