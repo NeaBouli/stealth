@@ -25,9 +25,9 @@
 | Tab S4 | ce12182c68644439037e | Free | +491752536807 |
 
 ## Current Version
-- versionCode: 18 / versionName: 1.0.8
-- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v18.aab
-- Play Store: Internal Testing Track, Release 18 live
+- versionCode: 21 / versionName: 1.0.10
+- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v21.aab
+- Play Store: Internal Testing Track, Release 21 live
 
 ## Git Tags
 | Tag | Description |
