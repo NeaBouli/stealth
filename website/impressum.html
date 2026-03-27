@@ -155,13 +155,10 @@
             <div class="personal-data">
                 <div class="canvas-field"><canvas id="ownerEN" height="28"></canvas></div>
             </div>
-            <p>Greece / European Union</p>
+            <p>24100 Kalamata, Greece / European Union</p>
 
             <h2>Contact</h2>
-            <p>Email:</p>
-            <div class="personal-data">
-                <div class="canvas-field"><canvas id="emailEN" height="26" class="email-canvas"></canvas></div>
-            </div>
+            <p><a href="#contact-form" style="color:#FF9800;text-decoration:underline">Send us a message</a> (contact form below)</p>
             <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
 
             <h2>Responsible for Content</h2>
@@ -190,13 +187,10 @@
             <div class="personal-data">
                 <div class="canvas-field"><canvas id="ownerDE" height="28"></canvas></div>
             </div>
-            <p>Griechenland / Europ&auml;ische Union</p>
+            <p>24100 Kalamata, Griechenland / Europ&auml;ische Union</p>
 
             <h2>Kontakt</h2>
-            <p>E-Mail:</p>
-            <div class="personal-data">
-                <div class="canvas-field"><canvas id="emailDE" height="26" class="email-canvas"></canvas></div>
-            </div>
+            <p><a href="#contact-form" style="color:#FF9800;text-decoration:underline">Nachricht senden</a> (Kontaktformular unten)</p>
             <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
 
             <h2>Verantwortlich f&uuml;r den Inhalt</h2>
@@ -225,13 +219,10 @@
             <div class="personal-data">
                 <div class="canvas-field"><canvas id="ownerEL" height="28"></canvas></div>
             </div>
-            <p>&#917;&#955;&#955;&#940;&#948;&#945; / &#917;&#965;&#961;&#969;&#960;&#945;&#970;&#954;&#942; &#904;&#957;&#969;&#963;&#951;</p>
+            <p>24100 &#922;&#945;&#955;&#945;&#956;&#940;&#964;&#945;, &#917;&#955;&#955;&#940;&#948;&#945; / &#917;&#965;&#961;&#969;&#960;&#945;&#970;&#954;&#942; &#904;&#957;&#969;&#963;&#951;</p>
 
             <h2>&#917;&#960;&#953;&#954;&#959;&#953;&#957;&#969;&#957;&#943;&#945;</h2>
-            <p>Email:</p>
-            <div class="personal-data">
-                <div class="canvas-field"><canvas id="emailEL" height="26" class="email-canvas"></canvas></div>
-            </div>
+            <p><a href="#contact-form" style="color:#FF9800;text-decoration:underline">&#931;&#964;&#949;&#943;&#955;&#964;&#949; &#956;&#942;&#957;&#965;&#956;&#945;</a> (&#966;&#972;&#961;&#956;&#945; &#949;&#960;&#953;&#954;&#959;&#953;&#957;&#969;&#957;&#943;&#945;&#962;)</p>
             <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
 
             <h2>&#933;&#960;&#949;&#973;&#952;&#965;&#957;&#959;&#962; &#947;&#953;&#945; &#964;&#959; &#960;&#949;&#961;&#953;&#949;&#967;&#972;&#956;&#949;&#957;&#959;</h2>
@@ -250,6 +241,19 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Contact Form -->
+    <div id="contact-form" style="max-width:720px;margin:0 auto;padding:40px 24px 20px">
+        <h2 style="color:#fff;font-size:1.2rem;margin-bottom:16px;border-bottom:1px solid rgba(255,68,68,0.2);padding-bottom:8px;color:#FF4444">Contact / Kontakt</h2>
+        <form id="contactForm" style="display:flex;flex-direction:column;gap:12px">
+            <input type="text" id="cfName" placeholder="Your name / Ihr Name" required style="padding:10px 14px;border-radius:8px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:14px">
+            <input type="email" id="cfEmail" placeholder="Your email / Ihre Email" required style="padding:10px 14px;border-radius:8px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:14px">
+            <textarea id="cfMessage" placeholder="Message / Nachricht" required rows="5" style="padding:10px 14px;border-radius:8px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:14px;resize:vertical"></textarea>
+            <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off">
+            <button type="submit" style="padding:12px;border-radius:8px;border:none;background:#FF4444;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Send Message / Nachricht senden</button>
+            <p id="cfStatus" style="color:#888;font-size:13px;text-align:center;display:none"></p>
+        </form>
     </div>
 
     <!-- Footer -->
@@ -349,6 +353,24 @@
         renderCanvases();
         window.addEventListener('resize', renderCanvases);
     })();
+
+    // Contact form — sends via mailto (no server needed, email stays hidden)
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var name = document.getElementById('cfName').value.trim();
+        var email = document.getElementById('cfEmail').value.trim();
+        var msg = document.getElementById('cfMessage').value.trim();
+        var honeypot = this.querySelector('[name="website"]').value;
+        if (honeypot) return; // bot
+        if (!name || !email || !msg) return;
+        var subject = encodeURIComponent('Contact from ' + name + ' via Impressum');
+        var body = encodeURIComponent('From: ' + name + ' (' + email + ')\n\n' + msg);
+        window.location.href = 'mai' + 'lto:' + 'kaspar' + 'tisan' + '@' + 'proton' + '.me' + '?subject=' + subject + '&body=' + body;
+        var st = document.getElementById('cfStatus');
+        st.textContent = 'Opening your email app...';
+        st.style.display = 'block';
+        st.style.color = '#4ade80';
+    });
     </script>
 </body>
 </html>
