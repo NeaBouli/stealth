@@ -154,7 +154,7 @@ class ContactsFragment : Fragment() {
             allContacts = cached
             registeredPhones = cachedRegisteredPhones
             onlinePhones = cachedOnlinePhones
-            updateList(allContacts)
+            filterContacts(searchInput.text?.toString() ?: "")
         }
 
         // Request contacts permission if not granted
@@ -174,7 +174,7 @@ class ContactsFragment : Fragment() {
             allContacts = cached
             registeredPhones = cachedRegisteredPhones
             onlinePhones = cachedOnlinePhones
-            updateList(allContacts)
+            filterContacts(searchInput.text?.toString() ?: "")
         }
         // Refresh app contacts (cheap — SharedPreferences read) in case a contact was saved
         refreshAppContacts()
@@ -237,7 +237,7 @@ class ContactsFragment : Fragment() {
             cachedOnlineClientIds = onCids
             Log.d(TAG, "Online status updated: ${onPhones.size} online phones, ${onCids.size} online clientIds")
             activity?.runOnUiThread {
-                if (isAdded) updateList(allContacts)
+                if (isAdded) filterContacts(searchInput.text?.toString() ?: "")
             }
         }
     }
@@ -265,7 +265,7 @@ class ContactsFragment : Fragment() {
         }
         allContacts = appContacts + uniquePhoneContacts
         cachedContacts = allContacts
-        updateList(allContacts)
+        filterContacts(searchInput.text?.toString() ?: "")
     }
 
     /** Load contacts on a background thread. Shows cached data immediately, refreshes async. */
@@ -517,7 +517,7 @@ class ContactsFragment : Fragment() {
         allContacts = freshAppContacts + uniquePhoneContacts
         cachedContacts = allContacts
         activity?.runOnUiThread {
-            if (isAdded) updateList(allContacts)
+            if (isAdded) filterContacts(searchInput.text?.toString() ?: "")
         }
     }
 
