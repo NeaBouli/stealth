@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.nav_calls) {
                 showFragment(new CallsFragment());
-                fab.setVisibility(View.VISIBLE);
+                fab.setVisibility(View.GONE); // BUG-017: FAB only in Dialer tab
                 // Mark calls as seen — clear badge and dismiss notifications
                 getSharedPreferences("securecall_prefs", MODE_PRIVATE).edit()
                         .putLong("last_calls_viewed", System.currentTimeMillis()).apply();
@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             } else if (id == R.id.nav_contacts) {
                 showFragment(new ContactsFragment());
-                fab.setVisibility(View.VISIBLE);
+                fab.setVisibility(View.GONE); // BUG-017: FAB only in Dialer tab
                 return true;
             } else if (id == R.id.nav_dialer) {
                 showFragment(new DialerFragment());
@@ -461,10 +461,12 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("Confirm", (d, w) -> {
                     String number = input.getText().toString().trim();
                     if (!number.isEmpty()) {
+                        // Normalize phone number before saving (BUG-025)
+                        String normalized = com.securecall.app.data.PhoneUtils.INSTANCE.normalize(number, MainActivity.this);
                         prefs.edit()
-                                .putString("confirmed_phone_number", number)
+                                .putString("confirmed_phone_number", normalized)
                                 .apply();
-                        Log.d(TAG, "Phone number confirmed: " + number);
+                        Log.d(TAG, "Phone number confirmed: " + number + " -> normalized: " + normalized);
                         com.securecall.app.net.WebSocketService ws =
                                 com.securecall.app.net.WebSocketService.Companion.getInstance();
                         if (ws != null) ws.reRegister();

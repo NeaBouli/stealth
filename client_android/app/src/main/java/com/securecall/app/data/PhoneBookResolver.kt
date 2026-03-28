@@ -79,9 +79,9 @@ object PhoneBookResolver {
         if (contactByClientId != null) return contactByClientId.name
 
         if (phoneNumber.isNotEmpty()) {
-            val normalizedCaller = phoneNumber.replace(Regex("[^0-9+]"), "")
+            val normalizedCaller = PhoneUtils.normalize(phoneNumber, context)
             val contactByPhone = contacts.find {
-                it.phoneOrId.replace(Regex("[^0-9+]"), "") == normalizedCaller
+                PhoneUtils.normalize(it.phoneOrId, context) == normalizedCaller
             }
             if (contactByPhone != null) return contactByPhone.name
         }

@@ -202,9 +202,9 @@
     <string name="ifr_wallet_bound">This wallet is already linked to another device</string>
     <string name="ifr_threshold_info">Hold 1,000 IFR = Pro | 5,000 IFR = Premium</string>
 
-    <!-- Anonymous Network (eSIM) -->
-    <string name="settings_anon_network">Anonymous Network</string>
-    <string name="pref_esim_setup">Setup Anonymous eSIM</string>
+    <!-- Network (eSIM) -->
+    <string name="settings_anon_network">Network</string>
+    <string name="pref_esim_setup">Setup eSIM</string>
     <string name="pref_esim_setup_summary">Open Android eSIM settings</string>
     <string name="pref_esim_routing">Route through eSIM</string>
     <string name="pref_esim_routing_summary">Bind StealthX traffic to eSIM network</string>

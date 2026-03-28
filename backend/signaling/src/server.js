@@ -233,7 +233,15 @@ async function verifyIfrLock(walletAddress) {
 
 function normalizePhone(num) {
   if (typeof num !== "string") return "";
-  return num.replace(/[^0-9+]/g, "");
+  // Strip ALL formatting: spaces, dashes, parens, dots, brackets, slashes
+  let normalized = num.replace(/[\s\-().\[\]/]/g, "");
+  // Convert 00-prefix to + (international dialing)
+  if (normalized.startsWith("00")) {
+    normalized = "+" + normalized.substring(2);
+  }
+  // Strip remaining non-digit/non-plus chars
+  normalized = normalized.replace(/[^0-9+]/g, "");
+  return normalized;
 }
 
 function hashPhone(normalizedPhone) {

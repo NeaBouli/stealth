@@ -2,31 +2,39 @@ package com.securecall.app.data
 
 import android.content.Context
 import android.telephony.TelephonyManager
+import android.util.Log
 
 /**
- * FIX 5: Phone number normalization utility.
+ * Phone number normalization utility.
  * Normalizes various phone number formats to E.164-like international format.
- * +491752536807, 01752536807, 491752536807 all become +491752536807.
+ * +491752536807, 00491752536807, +49 175 253 6807 all become +491752536807.
  */
 object PhoneUtils {
 
+    private const val TAG = "PhoneUtils"
+
     /**
-     * Normalize a phone number for comparison.
-     * Strips formatting, converts local to international using device country code.
+     * Normalize a phone number for comparison and storage.
+     * Strips ALL formatting (spaces, dashes, parens, dots, brackets, slashes),
+     * converts 00-prefix to +, and optionally resolves local numbers using device country.
      */
     fun normalize(phone: String, context: Context? = null): String {
+        if (phone.isBlank()) return phone
+
         var num = phone.trim()
-            .replace(Regex("[\\s\\-().]+"), "") // strip spaces, dashes, parens, dots
+
+        // Strip ALL formatting characters: spaces, dashes, parens, dots, brackets, slashes
+        num = num.replace(Regex("[\\s\\-().\\[\\]/]"), "")
 
         if (num.isEmpty()) return num
 
-        // Convert 00 prefix to +
+        // Convert 00 prefix to + (international dialing)
         if (num.startsWith("00")) {
             num = "+" + num.substring(2)
         }
 
         // Convert local format (0xxx) to international using device country code
-        if (num.startsWith("0") && !num.startsWith("00") && !num.startsWith("+")) {
+        if (num.startsWith("0") && !num.startsWith("+")) {
             val countryCode = getCountryDialCode(context)
             if (countryCode.isNotEmpty()) {
                 num = "+$countryCode${num.substring(1)}"
@@ -38,6 +46,7 @@ object PhoneUtils {
             num = "+$num"
         }
 
+        Log.d(TAG, "normalize: '$phone' -> '$num'")
         return num
     }
 

@@ -20,7 +20,7 @@ object ContactRepository {
 
     fun save(context: Context, contact: Contact) {
         val all = getAll(context).toMutableList()
-        val normalizedPhone = contact.phoneOrId.replace(Regex("[^0-9+]"), "")
+        val normalizedPhone = PhoneUtils.normalize(contact.phoneOrId, context)
 
         // Dedup: check if contact already exists by phoneOrId, secureId, or normalized phone
         val existingIdx = all.indexOfFirst { existing ->
@@ -30,7 +30,7 @@ object ContactRepository {
             (contact.phoneOrId.startsWith("android-") && existing.secureId == contact.phoneOrId) ||
             (!contact.phoneOrId.startsWith("android-") && !existing.phoneOrId.startsWith("android-") &&
                 normalizedPhone.isNotEmpty() &&
-                existing.phoneOrId.replace(Regex("[^0-9+]"), "") == normalizedPhone)
+                PhoneUtils.normalize(existing.phoneOrId, context) == normalizedPhone)
         }
 
         if (existingIdx >= 0) {

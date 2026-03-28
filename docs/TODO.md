@@ -41,11 +41,16 @@
 | TODO-040 | Deep Link Invite | securecall://add-contact + QR code |
 | TODO-041 | Bug Report Form | wiki/bug-report.html → GitHub Issues |
 
-## OPEN (4)
+## OPEN (9)
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
 | TODO-029 | Google Play Service Account | HIGH | For billing purchase verification (manual) |
+| TODO-042 | Auto-Reconnect bei Netzwerkwechsel | HIGH | ConnectivityManager NetworkCallback — BUG-009/024 |
+| TODO-043 | Ads waehrend aktiver Anrufe unterdruecken | HIGH | AdMob pause in CallActivity — BUG-012 |
 | TODO-030 | Store Listing DE in Play Console | MEDIUM | marketing/play_store/de/store_listing.md ready |
 | TODO-033 | Firebase + AdMob linking | MEDIUM | AdMob Console → Firebase (manual) |
+| TODO-044 | Kontakt-Sync mit Telefonbuch | MEDIUM | Namen nach Anruf aus Phonebook uebernehmen — BUG-013 |
+| TODO-041a | P2P Kontaktaustausch Visitenkarte | MEDIUM | QR Code + NFC + Bluetooth Proximity |
 | TODO-010 | Self-hosted TURN (coturn) | LOW | Using Metered.ca, optional |
+| TODO-045 | SecLog Diagnose-Export CSV (Pro/Premium) | LOW | BUG-023 |

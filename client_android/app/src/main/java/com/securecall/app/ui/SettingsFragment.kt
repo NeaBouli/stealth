@@ -125,11 +125,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
             setOnPreferenceChangeListener { _, newValue ->
                 val number = (newValue as? String)?.trim()
                 if (!number.isNullOrBlank()) {
+                    // Normalize phone number before saving (BUG-025)
+                    val normalized = com.securecall.app.data.PhoneUtils.normalize(number, requireContext())
                     prefs.edit()
-                        .putString("manual_phone_number", number)
-                        .putString("confirmed_phone_number", number)
+                        .putString("manual_phone_number", normalized)
+                        .putString("confirmed_phone_number", normalized)
                         .apply()
-                    summary = number
+                    summary = normalized
                 } else {
                     prefs.edit()
                         .remove("manual_phone_number")
@@ -212,7 +214,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
         findPreference<Preference>("pref_report_bug")?.setOnPreferenceClickListener {
-            openUrl("https://github.com/NeaBouli/stealth/issues")
+            openUrl("https://stealthx.tech/wiki/bug-report.html")
             true
         }
         findPreference<Preference>("pref_privacy")?.setOnPreferenceClickListener {

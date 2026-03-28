@@ -108,6 +108,7 @@ object AdMobManager {
      * Returns true if an ad was shown.
      */
     fun onCallCompleted(activity: Activity): Boolean {
+        resumeAfterCall() // Ensure ads are unpaused
         callCount++
         if (callCount % INTERSTITIAL_INTERVAL != 0) return false
 
@@ -127,6 +128,28 @@ object AdMobManager {
         ad.show(activity)
         Log.d(TAG, "Interstitial shown after call #$callCount")
         return true
+    }
+
+    /**
+     * Pause banner ads during an active call (BUG-012).
+     * Called from CallActivity.onCreate().
+     */
+    @Volatile
+    var isCallActive = false
+        private set
+
+    fun pauseForCall() {
+        isCallActive = true
+        Log.d(TAG, "Ads paused for active call")
+    }
+
+    /**
+     * Resume banner ads after call ends (BUG-012).
+     * Called from CallActivity.onDestroy().
+     */
+    fun resumeAfterCall() {
+        isCallActive = false
+        Log.d(TAG, "Ads resumed after call")
     }
 
     /**

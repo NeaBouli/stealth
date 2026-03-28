@@ -23,6 +23,23 @@
 | TB-015 | FLAG_SECURE Toggle Free Tier nicht gesperrt | HIGH | Tester | Free | FIXED — disabled + PRO label |
 | TB-016 | FLAG_SECURE ignoriert Toggle-Zustand auf Pro | HIGH | Tester | Pro | FIXED — tier-based logic |
 | TB-017 | Update Button oeffnet stealthx.tech statt Play Store | MEDIUM | Tester | Alle | FIXED — always Play Store |
+| TB-018 | App trennt bei Netzwerkwechsel (WiFi→Mobile→eSIM) | HIGH | G........e | X Cover 7, A16 | OPEN |
+| TB-019 | Eingehende Anrufe bei geschlossener App nicht empfangen | CRITICAL | G........e | A17, Xiaomi Redmi 15C | OPEN |
+| TB-020 | Anruf bricht sofort nach Verbindung ab | CRITICAL | G........e | Huawei P30, Motorola Edge 60 | OPEN |
+| TB-021 | Werbebanner waehrend aktivem Anruf sichtbar | HIGH | G........e | X Cover 7 | OPEN |
+| TB-022 | Kontakt zeigt Telefonnummer statt Telefonbuch-Name | MEDIUM | G........e | A16, A17 | OPEN |
+| TB-023 | Alle Settings-Sektionen aufgeklappt | LOW | G........e | Alle | OPEN |
+| TB-024 | Kein Disconnect-Button neben Verbindungsstatus | MEDIUM | G........e | Alle | OPEN |
+| TB-025 | Label "Anonymous Network" statt "Network" | LOW | G........e | Alle | OPEN |
+| TB-026 | "New Call" Button in allen Tabs sichtbar | MEDIUM | G........e | Alle | OPEN |
+| TB-027 | "Report a Bug" macht nichts / oeffnet falsche Seite | MEDIUM | G........e | Alle | OPEN |
+| TB-028 | "Check for Updates" oeffnet Play Store bei APK-Install | MEDIUM | G........e | Xiaomi Redmi 15C | OPEN |
+| TB-029 | IFR Token Sektion nicht ganz unten | LOW | G........e | Alle | OPEN |
+| TB-030 | Emergency Delete nicht ganz oben | LOW | G........e | Alle | OPEN |
+| TB-031 | eSIM Status bleibt "connected" nach Netzwerkwechsel | MEDIUM | G........e | Samsung A16 | OPEN |
+| TB-032 | Kein Diagnose-Export (SecLog CSV) | LOW | G........e | Alle | OPEN |
+| TB-033 | Zufaellige Disconnects bei Netzwerkwechsel | HIGH | G........e | Huawei P30, Motorola Edge 60 | OPEN |
+| TB-034 | Telefonnummern-Normalisierung fehlerhaft (+49/0049) | HIGH | G........e | Alle | OPEN |
 
 ## Beta Tester (anonymisiert)
 

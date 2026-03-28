@@ -10,6 +10,23 @@
 | BUG-006 | WireGuard VPN service never started after permission grant | FIXED | High | dedb2ab + 6990c78 |
 | BUG-007 | Contacts cache empty after app restart — presence skipped | FIXED | Medium | 0681cc7 |
 | BUG-008 | CallActivity crash: SecurityException on PhoneStateListener | FIXED | Critical | a90c7fc |
+| BUG-009 | App disconnects on network switch (WiFi→Mobile→eSIM) — no auto-reconnect | OPEN | High | — |
+| BUG-010 | Incoming calls fail when app closed/background — FCM not waking app reliably | OPEN | Critical | — |
+| BUG-011 | Call drops immediately after connecting — WebRTC P2P unstable | OPEN | Critical | — |
+| BUG-012 | AdMob banner appears during active call | OPEN | High | — |
+| BUG-013 | Saved contact after call shows phone number not phonebook name | OPEN | Medium | — |
+| BUG-014 | All Settings sections expanded by default — should all be collapsed | OPEN | Low | — |
+| BUG-015 | No disconnect button next to connection status | OPEN | Medium | — |
+| BUG-016 | Label "Anonymous Network" should be "Network" | OPEN | Low | — |
+| BUG-017 | "New Call" FAB appears in all tabs — should only show in Dialer tab | OPEN | Medium | — |
+| BUG-018 | "Report a Bug" opens GitHub Issues — should open bug-report.html | OPEN | Medium | — |
+| BUG-019 | "Check for Updates" opens Play Store for F-Droid/APK installs | OPEN | Medium | — |
+| BUG-020 | IFR Token section should be last in Settings | OPEN | Low | — |
+| BUG-021 | Emergency Delete should be first in Settings | OPEN | Low | — |
+| BUG-022 | eSIM status stays "connected" after switching to default network | OPEN | Medium | — |
+| BUG-023 | No diagnostic log export — SecLog CSV export (Pro/Premium) | OPEN | Low | — |
+| BUG-024 | Random disconnects on network change — reconnects only after app restart | OPEN | High | — |
+| BUG-025 | Phone normalization — +49/0049/+49 151 treated as different numbers | OPEN | High | — |
 
 ## Fix Details
 
@@ -64,6 +81,75 @@
 - **Evidence:** S10 Premium (Android 12, SM-G973F) crash at 2026-03-19 21:10:21, PID 27780.
 - **Fix:** Wrapped `telephonyManager.listen()` in try-catch for `SecurityException`. If permission is missing, phone state monitoring is gracefully skipped — calls work normally without it.
 - **Verified:** Fully automated call test 2026-03-19 21:49–21:50. S7→S10 call initiated via ADB tap, accepted via uiautomator-detected Accept button (742,1807), 8s active call, ended via EndCall button (539,1807). Complete CALL_INVITE→ACCEPT→END cycle with no crash. SecurityException caught gracefully ("Phone state monitor skipped").
+
+### BUG-009: App disconnects on network switch (WiFi→Mobile→eSIM) — no auto-reconnect (OPEN)
+- **Severity:** High
+- **Symptom:** When switching between WiFi, Mobile, or eSIM networks, the app loses connection and does not automatically reconnect.
+- **Expected:** ConnectivityManager NetworkCallback should detect network change and trigger WebSocket reconnect.
+
+### BUG-010: Incoming calls fail when app closed/background — FCM not waking app reliably (OPEN)
+- **Severity:** Critical
+- **Symptom:** Incoming calls fail to ring when the app is closed or in the background. FCM does not reliably wake the app.
+
+### BUG-011: Call drops immediately after connecting — WebRTC P2P unstable (OPEN)
+- **Severity:** Critical
+- **Symptom:** After call connects, it drops within seconds. WebRTC peer-to-peer connection is unstable.
+
+### BUG-012: AdMob banner appears during active call (OPEN)
+- **Severity:** High
+- **Symptom:** Ad banner is visible during an active call in CallActivity. Ads should be paused/hidden during calls.
+
+### BUG-013: Saved contact after call shows phone number not phonebook name — no phonebook sync (OPEN)
+- **Severity:** Medium
+- **Symptom:** After a call ends and contact is saved, the contact list shows the raw phone number instead of the name from the Android phone book.
+
+### BUG-014: All Settings sections expanded by default — should all be collapsed (OPEN)
+- **Severity:** Low
+- **Symptom:** When opening Settings, all PreferenceCategory sections are expanded. They should default to collapsed state with tap-to-toggle.
+
+### BUG-015: No disconnect button next to connection status (OPEN)
+- **Severity:** Medium
+- **Symptom:** There is no button to manually disconnect/reconnect next to the connection status indicator in the toolbar.
+
+### BUG-016: Label "Anonymous Network" should be "Network" (OPEN)
+- **Severity:** Low
+- **Symptom:** The settings section for eSIM/network routing is labeled "Anonymous Network" which sounds suspicious. Should be simply "Network".
+
+### BUG-017: "New Call" FAB appears in all tabs — should only show in Dialer tab (OPEN)
+- **Severity:** Medium
+- **Symptom:** The floating action button "New Call" is visible in the Calls and Contacts tabs. It should only appear in the Dialer tab, or be hidden in Settings.
+
+### BUG-018: "Report a Bug" in Settings opens GitHub Issues — should open stealthx.tech/wiki/bug-report.html (OPEN)
+- **Severity:** Medium
+- **Symptom:** "Report a Bug" preference opens GitHub Issues directly instead of the user-friendly bug report form at stealthx.tech/wiki/bug-report.html.
+
+### BUG-019: "Check for Updates" opens Play Store for F-Droid/APK — should go to GitHub Releases (OPEN)
+- **Severity:** Medium
+- **Symptom:** For non-Play Store installs (F-Droid, APK sideload), "Check for Updates" incorrectly opens Play Store instead of GitHub Releases page.
+
+### BUG-020: IFR Token section should be last in Settings (OPEN)
+- **Severity:** Low
+- **Symptom:** IFR Token unlock section appears near the top of Settings. It should be the last section before Advanced/Reset.
+
+### BUG-021: Emergency Delete should be first in Settings (OPEN)
+- **Severity:** Low
+- **Symptom:** Emergency Delete (5-tap reset) is at the bottom of Settings in the Advanced section. For quick access during emergencies, it should be the first item.
+
+### BUG-022: eSIM status stays "connected" after switching to default network (OPEN)
+- **Severity:** Medium
+- **Symptom:** After enabling eSIM routing and then switching back to the default network, the eSIM status indicator still shows "connected".
+
+### BUG-023: No diagnostic log export — SecLog CSV export (Pro/Premium) (OPEN)
+- **Severity:** Low
+- **Symptom:** No way to export diagnostic logs for troubleshooting. Pro/Premium users should have a CSV export of SecLog data.
+
+### BUG-024: Random disconnects on network change — reconnects only after app restart (OPEN)
+- **Severity:** High
+- **Symptom:** Similar to BUG-009, random disconnects occur on network changes. The app only reconnects after a full restart, not automatically.
+
+### BUG-025: Phone normalization — +49 and 0049 and +49 151 234 567 treated as different numbers (OPEN)
+- **Severity:** High
+- **Symptom:** Different representations of the same phone number (+49xxx, 0049xxx, +49 151 234 567) are treated as different contacts. PhoneUtils.normalize() needs to strip all formatting chars including brackets and slashes.
 
 ### BUG-006: WireGuard VPN service never started after permission grant (FIXED)
 - **Symptom:** VPN toggle could be enabled, Android VPN permission dialog appeared and was accepted, but GhostVpnService never started. VPN status remained "Enabled — waiting for connection" forever.

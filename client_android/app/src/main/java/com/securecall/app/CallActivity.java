@@ -108,6 +108,9 @@ public class CallActivity extends AppCompatActivity {
         // ─── FLAG_SECURE: Prevent screenshots & screen recording ────
         applyFlagSecure();
 
+        // BUG-012: Pause ads during active call
+        com.securecall.app.ads.AdMobManager.INSTANCE.pauseForCall();
+
         setContentView(R.layout.activity_call);
 
         TextView connectionState = findViewById(R.id.connectionState);
