@@ -288,7 +288,7 @@
         <Preference
             android:key="pref_ifr_learn_more"
             android:title="Learn about IFR Token"
-            android:summary="Visit inferno.tech for details"
+            android:summary="Visit ifrunit.tech for details"
             android:icon="@drawable/ic_search" />
     </com.securecall.app.ui.CollapsiblePreferenceCategory>
 

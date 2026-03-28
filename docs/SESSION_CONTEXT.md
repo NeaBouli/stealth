@@ -91,7 +91,7 @@
 - SecLog diagnostic logging (Pro/Premium) with CSV export
 - eSIM settings gated by device capability + Pro/Premium tier
 - Preferred Network binding always applied on change
-- IFR Token "Learn about IFR" link to inferno.tech
+- IFR Token "Learn about IFR" link to ifrunit.tech
 - Matrix Integration wiki page + roadmap + landing page Coming Soon
 - Landing page: 3 new feature cards + 9 devices tested
 

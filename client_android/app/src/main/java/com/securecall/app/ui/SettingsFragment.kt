@@ -849,7 +849,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // Learn more about IFR Token
         findPreference<Preference>("pref_ifr_learn_more")?.setOnPreferenceClickListener {
-            openUrl("https://inferno.tech")
+            openUrl("https://ifrunit.tech")
             true
         }
     }
