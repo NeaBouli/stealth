@@ -136,6 +136,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         // On slow devices (e.g. Galaxy S7), any delay here causes an ANR.
         ensureForegroundImmediate()
         createIncomingCallChannel()
+        // Apply saved network preference before connecting (binds process to preferred network)
+        NetworkManager.bindToPreferredNetwork(this)
         client = HeartbeatClient(wsUrl, this)
         client?.connect()
         // BUG-009/024: Register network change callback for instant reconnect
