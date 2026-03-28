@@ -496,12 +496,18 @@ class SettingsFragment : PreferenceFragmentCompat() {
             } else {
                 isEnabled = true
                 value = com.securecall.app.net.NetworkManager.getPreferredTransport(ctx)
-                setOnPreferenceChangeListener { _, newValue ->
+                summary = when (com.securecall.app.net.NetworkManager.getPreferredTransport(ctx)) {
+                    "default" -> "Route calls through the best available network"
+                    else -> "Takes effect when only one network is active. For dual-network routing use WireGuard VPN."
+                }
+                setOnPreferenceChangeListener { pref, newValue ->
                     val transport = newValue as String
                     com.securecall.app.net.NetworkManager.setPreferredTransport(ctx, transport)
-                    // Always apply binding when transport changes (not just when eSIM routing is on)
                     com.securecall.app.net.NetworkManager.bindToPreferredNetwork(ctx)
-                    // Refresh network info display
+                    pref.summary = when (transport) {
+                        "default" -> "Route calls through the best available network"
+                        else -> "Takes effect when only one network is active. For dual-network routing use WireGuard VPN."
+                    }
                     findPreference<Preference>("pref_network_info")?.apply {
                         val info = com.securecall.app.net.NetworkManager.getActiveNetworkInfo(ctx)
                         summary = if (com.securecall.app.net.NetworkManager.isBound()) "$info (bound)" else info

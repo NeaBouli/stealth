@@ -225,16 +225,14 @@
 
     <!-- Network transport options -->
     <string-array name="network_transport_entries">
-        <item>System Default</item>
-        <item>WiFi Only</item>
-        <item>Mobile Data</item>
-        <item>eSIM</item>
+        <item>Default (recommended)</item>
+        <item>WiFi preferred</item>
+        <item>Mobile preferred</item>
     </string-array>
     <string-array name="network_transport_values">
         <item>default</item>
         <item>wifi</item>
         <item>cellular</item>
-        <item>esim</item>
     </string-array>
 
     <!-- Stealth Delete -->
