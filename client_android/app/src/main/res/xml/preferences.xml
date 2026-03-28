@@ -235,34 +235,25 @@
     <PreferenceCategory android:title="Support Development"
         app:initialExpandedChildrenCount="0">
         <Preference
-            android:key="pref_donate_toggle"
-            android:title="Show donation addresses &#x25BC;"
-            android:summary="ETH, BTC, SOL, IFR Token"
-            android:icon="@drawable/ic_lock" />
-        <Preference
             android:key="pref_donate_eth"
             android:title="ETH"
             android:summary="0xA0860f...2b275"
-            android:icon="@drawable/ic_lock"
-            android:visible="false" />
+            android:icon="@drawable/ic_lock" />
         <Preference
             android:key="pref_donate_btc"
             android:title="BTC"
             android:summary="bc1qu0z...9sse"
-            android:icon="@drawable/ic_lock"
-            android:visible="false" />
+            android:icon="@drawable/ic_lock" />
         <Preference
             android:key="pref_donate_sol"
             android:title="SOL"
             android:summary="7tXfgs...HXDv"
-            android:icon="@drawable/ic_lock"
-            android:visible="false" />
+            android:icon="@drawable/ic_lock" />
         <Preference
             android:key="pref_donate_ifr"
             android:title="IFR Token"
             android:summary="Lock tokens at ifrunit.tech for Premium access"
-            android:icon="@drawable/ic_shield"
-            android:visible="false" />
+            android:icon="@drawable/ic_shield" />
     </PreferenceCategory>
 
     <!-- BUG-020: IFR Token section LAST -->

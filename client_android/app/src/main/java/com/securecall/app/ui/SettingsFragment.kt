@@ -253,10 +253,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
-    private var donationExpanded = false
-
     private fun setupDonationPrefs() {
-        val donationKeys = listOf("pref_donate_eth", "pref_donate_btc", "pref_donate_sol", "pref_donate_ifr")
         val addresses = mapOf(
             "pref_donate_eth" to "0xA0860f872a9cAB34817D9a764e71ab43B942b275",
             "pref_donate_btc" to "bc1qu0z0yur24cck25wc6rmack9tvczvx6g50y9sse",
@@ -264,41 +261,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         )
         val ctx = requireContext()
 
-        // Nuclear fix: force collapsed on every call, clear any saved visibility state
-        donationExpanded = false
-        for (key in donationKeys) {
-            val p = findPreference<Preference>(key)
-            if (p != null) {
-                p.isVisible = false
-                p.isEnabled = true
-            }
-        }
-        // Also clear donation-related SharedPreferences visibility flags
-        preferenceManager.sharedPreferences?.edit()?.apply {
-            for (key in donationKeys) { remove("${key}_visible") }
-            apply()
-        }
-
-        // Toggle button (TB-012)
-        val togglePref = findPreference<Preference>("pref_donate_toggle")
-        togglePref?.title = "Show donation addresses \u25BC"
-        togglePref?.summary = "ETH, BTC, SOL, IFR Token"
-        togglePref?.setOnPreferenceClickListener { pref ->
-            donationExpanded = !donationExpanded
-            android.util.Log.d("Settings", "Donation toggle: expanded=$donationExpanded")
-            for (key in donationKeys) {
-                val p = findPreference<Preference>(key)
-                if (p != null) {
-                    p.isVisible = donationExpanded
-                } else {
-                    android.util.Log.w("Settings", "Donation pref not found: $key")
-                }
-            }
-            pref.title = if (donationExpanded) "Hide donation addresses \u25B2" else "Show donation addresses \u25BC"
-            pref.summary = if (donationExpanded) "Tap to collapse" else "ETH, BTC, SOL, IFR Token"
-            true
-        }
-
+        // Donation addresses — copy to clipboard on tap (collapse handled by initialExpandedChildrenCount)
         for ((key, addr) in addresses) {
             findPreference<Preference>(key)?.apply {
                 summary = addr
