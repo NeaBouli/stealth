@@ -26,7 +26,8 @@ object EmergencyBroadcastManager {
         val severity: Severity,
         val dismissable: Boolean = true,
         val showUpdateButton: Boolean = false,
-        val showStealthDelete: Boolean = false
+        val showStealthDelete: Boolean = false,
+        val openUrl: String? = null
     ) {
         fun title(): String = if (Locale.getDefault().language == "de") titleDe else titleEn
         fun body(): String = if (Locale.getDefault().language == "de") bodyDe else bodyEn
@@ -127,6 +128,16 @@ object EmergencyBroadcastManager {
             severity = Severity.INFO,
             dismissable = true,
             showUpdateButton = true
+        ),
+        11 to EmergencyTemplate(
+            icon = "\uD83D\uDCE2", // megaphone
+            titleEn = "Official Announcement",
+            titleDe = "Offizielle Mitteilung",
+            bodyEn = "An important announcement has been published.\n\n\u2500\u2500\u2500\n\nEine wichtige Mitteilung wurde ver\u00F6ffentlicht.",
+            bodyDe = "Eine wichtige Mitteilung wurde ver\u00F6ffentlicht.\n\n\u2500\u2500\u2500\n\nAn important announcement has been published.",
+            severity = Severity.HIGH,
+            dismissable = true,
+            openUrl = "https://stealthx.tech/wiki/announcements.html"
         )
     )
 

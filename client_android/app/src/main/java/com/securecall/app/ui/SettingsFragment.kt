@@ -240,10 +240,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
         )
         val ctx = requireContext()
 
-        // Force collapsed on every start (reset state)
+        // Nuclear fix: force collapsed on every call, clear any saved visibility state
         donationExpanded = false
         for (key in donationKeys) {
-            findPreference<Preference>(key)?.isVisible = false
+            val p = findPreference<Preference>(key)
+            if (p != null) {
+                p.isVisible = false
+                p.isEnabled = true
+            }
+        }
+        // Also clear donation-related SharedPreferences visibility flags
+        preferenceManager.sharedPreferences?.edit()?.apply {
+            for (key in donationKeys) { remove("${key}_visible") }
+            apply()
         }
 
         // Toggle button (TB-012)

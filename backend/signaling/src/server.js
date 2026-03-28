@@ -1370,7 +1370,8 @@ const TEMPLATE_META = {
   7: { icon: "⚠️", title: "Network Compromise Warning" },
   8: { icon: "🟢", title: "All Clear" },
   9: { icon: "🔄", title: "Update Available" },
-  10: { icon: "🧪", title: "Beta Update Available" }
+  10: { icon: "🧪", title: "Beta Update Available" },
+  11: { icon: "📢", title: "Official Announcement" }
 };
 
 let lastBroadcast = {
@@ -1396,8 +1397,8 @@ app.get("/status/live", (req, res) => {
 
 app.post("/admin/broadcast", requireAdmin, (req, res) => {
   const { template_id } = req.body;
-  if (!template_id || template_id < 1 || template_id > 10) {
-    return res.status(400).json({ error: "invalid template_id (1-10)" });
+  if (!template_id || template_id < 1 || template_id > 11) {
+    return res.status(400).json({ error: "invalid template_id (1-11)" });
   }
 
   // Broadcast to all connected WebSocket clients

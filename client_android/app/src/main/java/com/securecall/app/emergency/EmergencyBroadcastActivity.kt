@@ -79,52 +79,37 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
 
         // Update button — auto-detects Play Store vs sideload
         if (t.showUpdateButton) {
-            layout.addView(Button(this).apply {
-                text = "Update Now"
-                textSize = 16f
-                gravity = android.view.Gravity.CENTER
-                minimumHeight = (48 * resources.displayMetrics.density).toInt()
-                setOnClickListener {
-                    com.securecall.app.update.UpdateManager.openUpdate(this@EmergencyBroadcastActivity)
-                }
-                setPadding(0, 0, 0, pad)
+            layout.addView(makeRoundedButton("Update Now", 0xFF4CAF50.toInt()) {
+                com.securecall.app.update.UpdateManager.openUpdate(this@EmergencyBroadcastActivity)
+            })
+        }
+
+        // Open URL button (for announcements etc.)
+        if (t.openUrl != null) {
+            layout.addView(makeRoundedButton("Read Now", 0xFF2196F3.toInt()) {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(t.openUrl)))
             })
         }
 
         // Stealth Delete button
         if (t.showStealthDelete) {
-            layout.addView(Button(this).apply {
-                text = "STEALTH DELETE"
-                textSize = 16f
-                setBackgroundColor(0xFF000000.toInt())
-                setTextColor(0xFFFF0000.toInt())
-                setOnClickListener {
-                    // Trigger stealth delete — same as 5-tap reset
-                    val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
-                    prefs.edit().clear().apply()
-                    val defaultPrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this@EmergencyBroadcastActivity)
-                    defaultPrefs.edit().clear().apply()
-                    // Clear all databases
-                    for (db in databaseList()) { deleteDatabase(db) }
-                    // Clear cache
-                    cacheDir.deleteRecursively()
-                    // Restart app
-                    val intent = packageManager.getLaunchIntentForPackage(packageName)
-                    intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(intent)
-                    Runtime.getRuntime().exit(0)
-                }
-                setPadding(0, 0, 0, pad)
+            layout.addView(makeRoundedButton("EMERGENCY DELETE", 0xFFFF0000.toInt()) {
+                val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
+                prefs.edit().clear().apply()
+                val defaultPrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this@EmergencyBroadcastActivity)
+                defaultPrefs.edit().clear().apply()
+                for (db in databaseList()) { deleteDatabase(db) }
+                cacheDir.deleteRecursively()
+                val restartIntent = packageManager.getLaunchIntentForPackage(packageName)
+                restartIntent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(restartIntent)
+                Runtime.getRuntime().exit(0)
             })
         }
 
         // Dismiss button (only if dismissable)
         if (t.dismissable) {
-            layout.addView(Button(this).apply {
-                text = "I understand"
-                textSize = 14f
-                setOnClickListener { finish() }
-            })
+            layout.addView(makeRoundedButton("I understand", 0xFF555555.toInt()) { finish() })
         } else {
             layout.addView(TextView(this).apply {
                 text = if (t.showStealthDelete) "" else "This alert cannot be dismissed."
@@ -142,5 +127,32 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
             super.onBackPressed()
         }
         // Block back button for non-dismissable alerts
+    }
+
+    private fun makeRoundedButton(label: String, color: Int, onClick: () -> Unit): Button {
+        val dp = resources.displayMetrics.density
+        return Button(this).apply {
+            text = label
+            textSize = 16f
+            setTextColor(0xFFFFFFFF.toInt())
+            gravity = android.view.Gravity.CENTER
+            minimumHeight = (48 * dp).toInt()
+            setPadding((24 * dp).toInt(), (12 * dp).toInt(), (24 * dp).toInt(), (12 * dp).toInt())
+            val shape = android.graphics.drawable.GradientDrawable().apply {
+                setColor(color)
+                cornerRadius = 24 * dp
+            }
+            background = shape
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = android.view.Gravity.CENTER_HORIZONTAL
+                topMargin = (8 * dp).toInt()
+                bottomMargin = (8 * dp).toInt()
+            }
+            layoutParams = lp
+            setOnClickListener { onClick() }
+        }
     }
 }
