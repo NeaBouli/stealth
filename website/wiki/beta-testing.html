@@ -138,8 +138,8 @@
             <h2>3. Upgrade the App (for advanced testing)</h2>
             <p>Settings &rarr; Enter Activation Code:</p>
             <table style="width:100%;max-width:400px;font-size:14px">
-                <tr><td style="padding:6px 12px;color:#FFD700;font-weight:600">Pro Version</td><td style="padding:6px 12px;font-family:monospace;color:#ccc">TEST-PRO1-CODE</td></tr>
-                <tr><td style="padding:6px 12px;color:#FF4444;font-weight:600">Premium Version</td><td style="padding:6px 12px;font-family:monospace;color:#ccc">TEST-PREM-CODE</td></tr>
+                <tr><td style="padding:6px 12px;color:#FFD700;font-weight:600">Pro Version</td><td style="padding:6px 12px;font-family:monospace;color:#ccc">BETA-PRO0-2026</td></tr>
+                <tr><td style="padding:6px 12px;color:#FF4444;font-weight:600">Premium Version</td><td style="padding:6px 12px;font-family:monospace;color:#ccc">BETA-PREM-2026</td></tr>
             </table>
 
             <h2>4. Install Updates</h2>
@@ -167,8 +167,9 @@
             <h2>6. Report Bugs</h2>
             <p>Please report bugs via:</p>
             <ul>
+                <li><a href="https://stealthx.tech/wiki/bug-report.html" target="_blank" rel="noopener">Bug Report Form</a> (preferred)</li>
                 <li><a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">GitHub Issues</a></li>
-                <li>Email to the developer</li>
+                <li>Email to kaspartisan@proton.me</li>
             </ul>
             <p>Bug reports should include:</p>
             <ul>
@@ -188,11 +189,17 @@
             <h2>What to Test</h2>
             <ul>
                 <li>Encrypted calls between different devices</li>
-                <li>Add contacts (manual + Invite Link)</li>
+                <li>Add contacts (manual + Invite Link + QR Code)</li>
                 <li>Settings persist after app restart?</li>
                 <li>Upgrade to Pro/Premium via activation code</li>
                 <li>Toggle Dark/Light mode</li>
-                <li>Navigation bar overlaps app? (Samsung S21+)</li>
+                <li>Auto-reconnect when switching WiFi &harr; Mobile</li>
+                <li>Disconnect/Reconnect button in toolbar</li>
+                <li>Settings sections collapse (tap &#9654;) and expand (tap &#9660;)</li>
+                <li>Invite via QR Code (Contacts &rarr; Invite &rarr; Show QR)</li>
+                <li>Check for Updates (should open GitHub for sideload, Play Store for Play installs)</li>
+                <li>Report a Bug (should open stealthx.tech/wiki/bug-report.html)</li>
+                <li>Emergency Delete (Settings &rarr; tap 5 times on Emergency Delete)</li>
             </ul>
 
             <h2>Changelog</h2>
@@ -206,6 +213,8 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.12</td><td style="padding:6px 0;color:#888">24</td><td style="padding:6px 0">29.03.2026</td><td style="padding:6px 0;color:#ccc">Dark mode default, collapsible settings &#9654;/&#9660;, auto-reconnect, eSIM gated, preferred network fix, ifrunit.tech link, diagnostic logs CSV, phone normalization, eSIM feature card</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.11</td><td style="padding:6px 0;color:#888">22</td><td style="padding:6px 0">28.03.2026</td><td style="padding:6px 0;color:#ccc">Connect button colors green/grey/yellow, reconnect fix, SecLog Pro/Premium, EBS rounded buttons, template 11, dark mode, 12 bugs fixed</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.10</td><td style="padding:6px 0;color:#888">21</td><td style="padding:6px 0">28.03.2026</td><td style="padding:6px 0;color:#ccc">Deep Link Invite, QR Code, Contacts online/offline sort, Donation collapsed, Samsung Lock Screen fix, GA4, Bing, Impressum update</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.6</td><td style="padding:6px 0;color:#888">16</td><td style="padding:6px 0">26.03.2026</td><td style="padding:6px 0;color:#ccc">FCM persistence, Emergency Delete, Pro/Premium labels, FLAG_SECURE fix, AdMob 23.6.0, Invite Dialog with Deep Link, Contacts filter, Verified Badge, SPA router</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.4</td><td style="padding:6px 0;color:#888">14</td><td style="padding:6px 0">25.03.2026</td><td style="padding:6px 0;color:#ccc">FCM Push Notifications fixed, One-Click Update System, UpdateManager auto-detect</td></tr>
@@ -225,7 +234,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">16 (1.0.6-free)</td><td style="padding:6px 0">26.03.2026</td><td style="padding:6px 0;color:#ccc">12,332 phones, 6,436 tablets</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">24 (1.0.12-free)</td><td style="padding:6px 0">29.03.2026</td><td style="padding:6px 0;color:#ccc">Alpha Track &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">22 (1.0.11-free)</td><td style="padding:6px 0">28.03.2026</td><td style="padding:6px 0;color:#ccc">Alpha Track &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">21 (1.0.10-free)</td><td style="padding:6px 0">28.03.2026</td><td style="padding:6px 0;color:#ccc">Alpha Track &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">16 (1.0.6-free)</td><td style="padding:6px 0">26.03.2026</td><td style="padding:6px 0;color:#ccc">12,332 phones, 6,436 tablets</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">14 (1.0.4-free)</td><td style="padding:6px 0">25.03.2026</td><td style="padding:6px 0;color:#ccc">12,332 phones, 6,436 tablets</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">13 (1.0.3-free)</td><td style="padding:6px 0">24.03.2026</td><td style="padding:6px 0;color:#ccc">12,332 phones, 6,436 tablets</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">12 (1.0.2-free)</td><td style="padding:6px 0">24.03.2026</td><td style="padding:6px 0;color:#ccc">18,873 devices</td></tr>
@@ -253,11 +265,28 @@
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-007</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">SMS invite link incorrect</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-008</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Support Development section not collapsible</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-009</td><td style="padding:6px 0;color:#888">Free</td><td style="padding:6px 0;color:#ccc">Ad banner not collapsible</td><td style="padding:6px 0;color:#888">WONTFIX</td></tr>
-                    <tr><td style="padding:6px 0">TB-010</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">No invite system</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-010</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">No invite system</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-011</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Network disconnect on WiFi&rarr;Mobile switch</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-012</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Incoming calls fail when app closed</td><td style="padding:6px 0;color:#FFC107">OPEN</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-013</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Call drops immediately after connect</td><td style="padding:6px 0;color:#FFC107">OPEN</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-014</td><td style="padding:6px 0;color:#888">Free</td><td style="padding:6px 0;color:#ccc">Ad banner during active call</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-015</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">All settings expanded by default</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-016</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">No disconnect button</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-017</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Label &ldquo;Anonymous Network&rdquo;</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-018</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">New Call FAB in all tabs</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-019</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Report a Bug opens wrong page</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-020</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Check for Updates wrong store</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-021</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">IFR section not last in settings</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-022</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Emergency Delete not first</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-023</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">eSIM status stale after network switch</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-024</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Phone normalization +49 vs 0049</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-025</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Settings sections cannot collapse</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-026</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Reconnect loop on manual reconnect</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr><td style="padding:6px 0">TB-027</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">inferno.tech link wrong &mdash; ifrunit.tech</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
                 </tbody>
             </table></div>
 
-            <h2>Active Testers (12)</h2>
+            <h2>Active Testers (15)</h2>
             <table style="width:100%;max-width:500px;font-size:13px">
                 <thead>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
@@ -278,10 +307,13 @@
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.04)"><td style="padding:4px 0;color:#888">9</td><td style="padding:4px 0;color:#ccc;font-family:monospace;font-size:12px">p............a@gmail.com</td><td style="padding:4px 0;color:#4ade80">Active</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.04)"><td style="padding:4px 0;color:#888">10</td><td style="padding:4px 0;color:#ccc;font-family:monospace;font-size:12px">r......s@gmail.com</td><td style="padding:4px 0;color:#4ade80">Active</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.04)"><td style="padding:4px 0;color:#888">11</td><td style="padding:4px 0;color:#ccc;font-family:monospace;font-size:12px">z......r@gmail.com</td><td style="padding:4px 0;color:#4ade80">Active</td></tr>
-                    <tr><td style="padding:4px 0;color:#888">12</td><td style="padding:4px 0;color:#ccc;font-family:monospace;font-size:12px">u..........m@gmail.com</td><td style="padding:4px 0;color:#4ade80">Active</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04)"><td style="padding:4px 0;color:#888">12</td><td style="padding:4px 0;color:#ccc;font-family:monospace;font-size:12px">u..........m@gmail.com</td><td style="padding:4px 0;color:#4ade80">Active</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04)"><td style="padding:4px 0;color:#888">13</td><td style="padding:4px 0;color:#ccc;font-family:monospace;font-size:12px">r..........1@gmail.com</td><td style="padding:4px 0;color:#4ade80">Active</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04)"><td style="padding:4px 0;color:#888">14</td><td style="padding:4px 0;color:#ccc;font-family:monospace;font-size:12px">b..........r@googlemail.com</td><td style="padding:4px 0;color:#4ade80">Active</td></tr>
+                    <tr><td style="padding:4px 0;color:#888">15</td><td style="padding:4px 0;color:#ccc;font-family:monospace;font-size:12px">c...........4@gmail.com</td><td style="padding:4px 0;color:#4ade80">Active</td></tr>
                 </tbody>
             </table>
-            <p style="color:#666;font-size:12px;margin-top:12px">Target: 15 testers &nbsp;&middot;&nbsp; Currently enrolled: 12 &nbsp;&middot;&nbsp; 3 slots remaining &nbsp;&middot;&nbsp; Android only &mdash; Gmail address required</p>
+            <p style="color:#666;font-size:12px;margin-top:12px">Target: 15 testers &nbsp;&middot;&nbsp; Currently enrolled: 15 &nbsp;&middot;&nbsp; 0 slots remaining &mdash; full &nbsp;&middot;&nbsp; Android only &mdash; Gmail address required</p>
 
             <div class="wiki-doc-footer">
                 <span class="end-mark">Document End // Classification: Restricted</span>
