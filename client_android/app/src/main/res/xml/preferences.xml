@@ -2,7 +2,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- BUG-021: Emergency Delete FIRST for quick access -->
+    <!-- BUG-021: Emergency Delete FIRST — always expanded -->
     <PreferenceCategory android:title="@string/settings_advanced">
         <Preference
             android:key="pref_reset_app"
@@ -11,19 +11,17 @@
             android:icon="@drawable/ic_settings" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/settings_account"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="@string/settings_account">
         <Preference
             android:key="pref_tier"
             android:title="@string/settings_tier"
             android:selectable="false"
             android:icon="@drawable/ic_shield" />
-
         <Preference
             android:key="pref_upgrade"
             android:title="@string/upgrade_to_pro"
             android:icon="@drawable/ic_add" />
-
         <EditTextPreference
             android:key="pref_activation_code"
             android:title="@string/pref_activation_code"
@@ -31,18 +29,15 @@
             android:dialogTitle="@string/pref_activation_code_dialog"
             android:inputType="textCapCharacters"
             android:icon="@drawable/ic_lock" />
-
         <Preference
             android:key="pref_activate_button"
             android:title="@string/pref_activate"
             android:icon="@drawable/ic_shield" />
-
         <Preference
             android:key="pref_client_id"
             android:title="@string/settings_client_id"
             android:selectable="true"
             android:icon="@drawable/ic_contacts" />
-
         <EditTextPreference
             android:key="pref_phone_number"
             android:title="@string/pref_phone_number"
@@ -50,10 +45,10 @@
             android:dialogTitle="@string/pref_phone_number_dialog"
             android:inputType="phone"
             android:icon="@drawable/ic_call" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
-    <PreferenceCategory android:title="@string/settings_security"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="@string/settings_security">
         <Preference
             android:key="pref_cert_pinning"
             android:title="@string/pref_cert_pinning"
@@ -69,57 +64,53 @@
             android:title="@string/pref_hardware_keystore"
             android:selectable="false"
             android:icon="@drawable/ic_lock" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
-    <PreferenceCategory android:title="@string/settings_anti_recording"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="@string/settings_anti_recording">
         <SwitchPreferenceCompat
             android:key="pref_block_screenshots"
             android:title="@string/pref_block_screenshots"
             android:summary="@string/pref_block_screenshots_summary"
             android:defaultValue="true"
             android:icon="@drawable/ic_shield" />
-
         <SwitchPreferenceCompat
             android:key="pref_exclusive_mic"
             android:title="@string/pref_exclusive_mic"
             android:summary="@string/pref_exclusive_mic_summary"
             android:defaultValue="true"
             android:icon="@drawable/ic_mic" />
-
         <SwitchPreferenceCompat
             android:key="pref_detect_recording"
             android:title="@string/pref_detect_recording"
             android:summary="@string/pref_detect_recording_summary"
             android:defaultValue="true"
             android:icon="@drawable/ic_lock" />
-
         <Preference
             android:key="pref_security_level"
             android:title="@string/pref_security_level"
             android:selectable="false"
             android:icon="@drawable/ic_shield" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
-    <PreferenceCategory android:title="@string/settings_privacy_calls"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="@string/settings_privacy_calls">
         <SwitchPreferenceCompat
             android:key="pref_background_service"
             android:title="@string/pref_background_service"
             android:summary="@string/pref_background_service_summary"
             android:defaultValue="true"
             android:icon="@drawable/ic_shield" />
-
         <SwitchPreferenceCompat
             android:key="pref_call_history"
             android:title="@string/pref_call_history"
             android:summary="@string/pref_call_history_summary"
             android:defaultValue="true"
             android:icon="@drawable/ic_call_history" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
-    <PreferenceCategory android:title="@string/settings_appearance"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="@string/settings_appearance">
         <ListPreference
             android:key="pref_dark_mode"
             android:title="@string/settings_dark_mode"
@@ -127,29 +118,26 @@
             android:entryValues="@array/dark_mode_values"
             android:defaultValue="dark"
             android:icon="@drawable/ic_settings" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
-    <PreferenceCategory android:title="@string/settings_anon_network"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="@string/settings_anon_network">
         <Preference
             android:key="pref_esim_setup"
             android:title="@string/pref_esim_setup"
             android:summary="@string/pref_esim_setup_summary"
             android:icon="@drawable/ic_shield" />
-
         <SwitchPreferenceCompat
             android:key="pref_esim_routing"
             android:title="@string/pref_esim_routing"
             android:summary="@string/pref_esim_routing_summary"
             android:defaultValue="false"
             android:icon="@drawable/ic_lock" />
-
         <Preference
             android:key="pref_network_info"
             android:title="@string/pref_network_info"
             android:selectable="false"
             android:icon="@drawable/ic_shield" />
-
         <ListPreference
             android:key="pref_network_transport"
             android:title="@string/pref_network_transport"
@@ -157,39 +145,36 @@
             android:entryValues="@array/network_transport_values"
             android:defaultValue="default"
             android:icon="@drawable/ic_settings" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
-    <PreferenceCategory android:title="@string/settings_vpn"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="@string/settings_vpn">
         <SwitchPreferenceCompat
             android:key="pref_vpn_enabled"
             android:title="@string/pref_vpn_enabled"
             android:summary="@string/pref_vpn_enabled_summary"
             android:defaultValue="false"
             android:icon="@drawable/ic_lock" />
-
         <Preference
             android:key="pref_vpn_status"
             android:title="@string/pref_vpn_status"
             android:selectable="false"
             android:icon="@drawable/ic_shield" />
-
         <Preference
             android:key="pref_vpn_config"
             android:title="@string/pref_vpn_config"
             android:summary="@string/pref_vpn_config_summary"
             android:icon="@drawable/ic_settings" />
-
         <SwitchPreferenceCompat
             android:key="pref_vpn_kill_switch"
             android:title="@string/pref_vpn_kill_switch"
             android:summary="@string/pref_vpn_kill_switch_summary"
             android:defaultValue="false"
             android:icon="@drawable/ic_shield" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
-    <PreferenceCategory android:title="@string/settings_about"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="@string/settings_about">
         <Preference
             android:key="pref_version"
             android:title="@string/settings_version"
@@ -230,10 +215,10 @@
             android:title="@string/settings_licenses"
             android:selectable="false"
             android:icon="@drawable/ic_lock" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
-    <PreferenceCategory android:title="Support Development"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="Support Development">
         <Preference
             android:key="pref_donate_eth"
             android:title="ETH"
@@ -254,10 +239,10 @@
             android:title="IFR Token"
             android:summary="Lock tokens at ifrunit.tech for Premium access"
             android:icon="@drawable/ic_shield" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
-    <PreferenceCategory android:title="Diagnostics"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="Diagnostics">
         <SwitchPreferenceCompat
             android:key="pref_seclog_enabled"
             android:title="Enable Diagnostic Logs"
@@ -274,17 +259,16 @@
             android:title="Clear Logs"
             android:summary="Delete all collected log entries"
             android:icon="@drawable/ic_settings" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
     <!-- BUG-020: IFR Token section LAST -->
-    <PreferenceCategory android:title="@string/settings_ifr_unlock"
-        app:initialExpandedChildrenCount="0">
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:title="@string/settings_ifr_unlock">
         <Preference
             android:key="pref_ifr_status"
             android:title="@string/pref_ifr_status"
             android:selectable="false"
             android:icon="@drawable/ic_shield" />
-
         <EditTextPreference
             android:key="pref_ifr_wallet"
             android:title="@string/pref_ifr_wallet"
@@ -292,17 +276,15 @@
             android:dialogTitle="@string/pref_ifr_wallet_dialog"
             android:inputType="text"
             android:icon="@drawable/ic_lock" />
-
         <Preference
             android:key="pref_ifr_verify"
             android:title="@string/pref_ifr_verify"
             android:icon="@drawable/ic_shield" />
-
         <Preference
             android:key="pref_ifr_walletconnect"
             android:title="@string/pref_ifr_walletconnect"
             android:summary="@string/pref_ifr_walletconnect_summary"
             android:icon="@drawable/ic_lock" />
-    </PreferenceCategory>
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
 </PreferenceScreen>
