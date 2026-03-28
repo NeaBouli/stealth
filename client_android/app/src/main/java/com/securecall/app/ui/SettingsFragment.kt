@@ -180,6 +180,28 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Refresh SecureCall ID summary in case it changed
         val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
         findPreference<Preference>("pref_client_id")?.summary = prefs.getString("client_id", "Not registered")
+
+        // BUG-022: Refresh network info + bound status on every resume
+        refreshNetworkStatus()
+    }
+
+    /** BUG-022: Refresh network info so eSIM status doesn't stay stale. */
+    private fun refreshNetworkStatus() {
+        val ctx = context ?: return
+        findPreference<Preference>("pref_network_info")?.apply {
+            val info = com.securecall.app.net.NetworkManager.getActiveNetworkInfo(ctx)
+            summary = if (com.securecall.app.net.NetworkManager.isBound()) {
+                "$info (bound)"
+            } else {
+                info
+            }
+        }
+        // Also refresh eSIM routing toggle to match current state
+        findPreference<SwitchPreferenceCompat>("pref_esim_routing")?.apply {
+            if (isEnabled) {
+                isChecked = com.securecall.app.net.NetworkManager.isEsimRoutingEnabled(ctx)
+            }
+        }
     }
 
     @Deprecated("Deprecated in Java")
