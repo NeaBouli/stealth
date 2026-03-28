@@ -63,6 +63,6 @@ class CollapsiblePreferenceCategory @JvmOverloads constructor(
 
     private fun updateTitle() {
         val base = originalTitle ?: return
-        title = if (isExpanded) "$base  \u25BC" else "$base  \u25B6"
+        title = if (isExpanded) "\u25BC  $base" else "\u25B6  $base"
     }
 }
