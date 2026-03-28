@@ -497,9 +497,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 isEnabled = true
                 value = com.securecall.app.net.NetworkManager.getPreferredTransport(ctx)
                 setOnPreferenceChangeListener { _, newValue ->
-                    com.securecall.app.net.NetworkManager.setPreferredTransport(ctx, newValue as String)
-                    if (com.securecall.app.net.NetworkManager.isEsimRoutingEnabled(ctx)) {
-                        com.securecall.app.net.NetworkManager.bindToPreferredNetwork(ctx)
+                    val transport = newValue as String
+                    com.securecall.app.net.NetworkManager.setPreferredTransport(ctx, transport)
+                    // Always apply binding when transport changes (not just when eSIM routing is on)
+                    com.securecall.app.net.NetworkManager.bindToPreferredNetwork(ctx)
+                    // Refresh network info display
+                    findPreference<Preference>("pref_network_info")?.apply {
+                        val info = com.securecall.app.net.NetworkManager.getActiveNetworkInfo(ctx)
+                        summary = if (com.securecall.app.net.NetworkManager.isBound()) "$info (bound)" else info
                     }
                     true
                 }
@@ -840,6 +845,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
+        }
+
+        // Learn more about IFR Token
+        findPreference<Preference>("pref_ifr_learn_more")?.setOnPreferenceClickListener {
+            openUrl("https://inferno.tech")
+            true
         }
     }
 
