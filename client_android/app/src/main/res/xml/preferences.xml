@@ -125,7 +125,7 @@
             android:title="@string/settings_dark_mode"
             android:entries="@array/dark_mode_entries"
             android:entryValues="@array/dark_mode_values"
-            android:defaultValue="system"
+            android:defaultValue="dark"
             android:icon="@drawable/ic_settings" />
     </PreferenceCategory>
 
@@ -254,6 +254,26 @@
             android:title="IFR Token"
             android:summary="Lock tokens at ifrunit.tech for Premium access"
             android:icon="@drawable/ic_shield" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Diagnostics"
+        app:initialExpandedChildrenCount="0">
+        <SwitchPreferenceCompat
+            android:key="pref_seclog_enabled"
+            android:title="Enable Diagnostic Logs"
+            android:summary="Collect WebSocket, FCM, Call and Network events"
+            android:defaultValue="false"
+            android:icon="@drawable/ic_settings" />
+        <Preference
+            android:key="pref_seclog_export"
+            android:title="Export Logs as CSV"
+            android:summary="Share diagnostic log file"
+            android:icon="@drawable/ic_shield" />
+        <Preference
+            android:key="pref_seclog_clear"
+            android:title="Clear Logs"
+            android:summary="Delete all collected log entries"
+            android:icon="@drawable/ic_settings" />
     </PreferenceCategory>
 
     <!-- BUG-020: IFR Token section LAST -->

@@ -523,6 +523,7 @@ public class CallActivity extends AppCompatActivity {
         connectionState.postDelayed(() -> {
             isCallActive = true;
             callStartTimeMs = System.currentTimeMillis();
+            com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(CallActivity.this, "CALL", "Call active: " + callContactName);
             connectionState.setText(R.string.call_active);
             connectionState.setTextColor(getResources().getColor(R.color.call_active_green, getTheme()));
             callTimer.setBase(SystemClock.elapsedRealtime());
@@ -726,6 +727,7 @@ public class CallActivity extends AppCompatActivity {
         isEnding = true;
         stopRingbackTone();
         Log.d(TAG, "endCall() — stopping call");
+        com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(this, "CALL", "Call ended: " + callContactName);
 
         // Send CALL_END signaling and clear callbacks
         // CRITICAL: Clear callbacks BEFORE clearSession() to prevent WebRTC close()

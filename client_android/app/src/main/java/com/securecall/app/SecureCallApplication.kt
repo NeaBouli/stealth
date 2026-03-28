@@ -21,9 +21,9 @@ class SecureCallApplication : Application() {
             android.util.Log.e("SecureCallApp", "Failed to start foreground service", e)
         }
 
-        // Restore dark mode preference before any activity renders
+        // Restore dark mode preference before any activity renders (default: dark)
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        when (prefs.getString("pref_dark_mode", "system")) {
+        when (prefs.getString("pref_dark_mode", "dark")) {
             "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
             "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)

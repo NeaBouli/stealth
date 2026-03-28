@@ -314,6 +314,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         registerClient()
         setupCallSignalingCallbacks()
         statusCallbackOnline?.invoke()
+        com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Connected")
         // Send FCM token to backend after WS connect so push works when app is killed
         com.securecall.app.fcm.FcmTokenManager.ensureTokenRegistered(this)
     }
@@ -436,6 +437,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.d("WS_SERVICE", "WebSocket disconnected")
         isConnected = false
         statusCallbackOffline?.invoke()
+        com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Disconnected")
         // HeartbeatClient owns reconnect — do NOT schedule here
     }
 
@@ -451,6 +453,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         isConnected = false
         errorCallback?.invoke(t)
         statusCallbackOffline?.invoke()
+        com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Error: ${t.message}")
         // Reconnect is handled by HeartbeatClient — do NOT call scheduleReconnect() here
     }
 
@@ -619,6 +622,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 // Only reconnect if network was previously lost (not on initial registration)
                 if (networkWasLost) {
                     Log.d("WS_SERVICE", "NetworkCallback: network available after loss — triggering reconnect")
+                    com.securecall.app.debug.SecLogManager.logIfEnabled(this@WebSocketService, "NET", "Network available — reconnecting")
                     networkWasLost = false
                     client?.forceReconnect()
                 } else {
@@ -627,6 +631,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             }
             override fun onLost(network: android.net.Network) {
                 Log.w("WS_SERVICE", "NetworkCallback: network lost")
+                com.securecall.app.debug.SecLogManager.logIfEnabled(this@WebSocketService, "NET", "Network lost")
                 networkWasLost = true
                 isConnected = false
                 statusCallbackOffline?.invoke()

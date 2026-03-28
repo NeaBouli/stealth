@@ -161,6 +161,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Donation addresses — copy to clipboard on tap
         setupDonationPrefs()
 
+        // SecLog Diagnostics (Pro/Premium only)
+        setupSecLog(effectiveTier)
+
         // Stealth-delete: 5-tap rapid trigger on "Reset App"
         findPreference<Preference>("pref_reset_app")?.setOnPreferenceClickListener {
             handleResetTap()
@@ -251,6 +254,60 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun openUrl(url: String) {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+
+    /** SecLog diagnostics — Pro/Premium only. */
+    private fun setupSecLog(effectiveTier: String) {
+        val isFree = effectiveTier == "FREE"
+        val ctx = requireContext()
+
+        findPreference<SwitchPreferenceCompat>("pref_seclog_enabled")?.apply {
+            if (isFree) {
+                isEnabled = false
+                summary = getString(R.string.pref_premium_feature)
+                isChecked = false
+            } else {
+                isEnabled = true
+                isChecked = com.securecall.app.debug.SecLogManager.isEnabled(ctx)
+                setOnPreferenceChangeListener { _, newValue ->
+                    com.securecall.app.debug.SecLogManager.setEnabled(ctx, newValue as Boolean)
+                    updateSecLogSummary()
+                    true
+                }
+            }
+        }
+        findPreference<Preference>("pref_seclog_export")?.apply {
+            if (isFree) {
+                isEnabled = false
+                summary = getString(R.string.pref_premium_feature)
+            } else {
+                setOnPreferenceClickListener {
+                    com.securecall.app.debug.SecLogManager.exportCsv(ctx)
+                    true
+                }
+            }
+        }
+        findPreference<Preference>("pref_seclog_clear")?.apply {
+            if (isFree) {
+                isEnabled = false
+                summary = getString(R.string.pref_premium_feature)
+            } else {
+                setOnPreferenceClickListener {
+                    com.securecall.app.debug.SecLogManager.clearLogs()
+                    android.widget.Toast.makeText(ctx, "Logs cleared", android.widget.Toast.LENGTH_SHORT).show()
+                    updateSecLogSummary()
+                    true
+                }
+            }
+        }
+        updateSecLogSummary()
+    }
+
+    private fun updateSecLogSummary() {
+        val count = com.securecall.app.debug.SecLogManager.getEntryCount()
+        findPreference<Preference>("pref_seclog_export")?.let {
+            if (it.isEnabled) it.summary = "$count entries"
+        }
     }
 
     private fun setupDonationPrefs() {

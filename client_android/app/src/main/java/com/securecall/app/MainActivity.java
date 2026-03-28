@@ -303,6 +303,7 @@ public class MainActivity extends AppCompatActivity {
             ws.forceReconnect();
             toolbar.setSubtitle("Reconnecting\u2026");
             toolbar.setSubtitleTextColor(getResources().getColor(android.R.color.darker_gray, null));
+            tintConnectionButton(0xFFFFC107); // yellow during reconnect
             Toast.makeText(this, "Reconnecting\u2026", Toast.LENGTH_SHORT).show();
         }
     }
@@ -578,6 +579,7 @@ public class MainActivity extends AppCompatActivity {
                         toolbar.setSubtitle("\u25CF Connected");
                         toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_active_green, null));
                     }
+                    tintConnectionButton(0xFF4CAF50); // green
                 });
                 return kotlin.Unit.INSTANCE;
             });
@@ -587,6 +589,7 @@ public class MainActivity extends AppCompatActivity {
                         toolbar.setSubtitle("\u25CF Disconnected");
                         toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_end_red, null));
                     }
+                    tintConnectionButton(0xFF9E9E9E); // gray
                 });
                 return kotlin.Unit.INSTANCE;
             });
@@ -594,13 +597,26 @@ public class MainActivity extends AppCompatActivity {
             if (ws.isConnected()) {
                 toolbar.setSubtitle("\u25CF Connected");
                 toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_active_green, null));
+                tintConnectionButton(0xFF4CAF50);
             } else {
                 toolbar.setSubtitle("\u25CF Disconnected");
                 toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_end_red, null));
+                tintConnectionButton(0xFF9E9E9E);
             }
         } else {
             // Service not started yet — retry after a short delay
             new android.os.Handler(getMainLooper()).postDelayed(this::wireConnectionStatusCallbacks, 1000);
+        }
+    }
+
+    /** Tint the connection toolbar button to reflect current status. */
+    private void tintConnectionButton(int color) {
+        if (toolbar == null) return;
+        android.view.Menu menu = toolbar.getMenu();
+        if (menu == null) return;
+        android.view.MenuItem item = menu.findItem(R.id.action_connection);
+        if (item != null && item.getIcon() != null) {
+            item.getIcon().setTint(color);
         }
     }
 

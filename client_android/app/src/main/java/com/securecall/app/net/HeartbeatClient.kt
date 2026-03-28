@@ -146,17 +146,16 @@ class HeartbeatClient(
     /** Force-cancel the socket (immediate, no close frame) and schedule reconnect. */
     fun forceReconnect() {
         Log.w("HB", "forceReconnect() — cancelling socket")
+        isClosed = false // Clear manual-disconnect flag so reconnect works
         stopHeartbeat()
         state = State.DISCONNECTED
+        reconnectPending = false
         val oldWs = ws
         ws = null
-        // cancel() fires onFailure() which would also call scheduleReconnect(),
-        // so set a flag to prevent double-scheduling
         try { oldWs?.cancel() } catch (_: Exception) {}
-        // Schedule reconnect only if onFailure hasn't already done it
-        if (!reconnectPending) {
-            scheduleReconnect()
-        }
+        // Connect immediately instead of scheduling with backoff
+        reconnectDelay = 2000L
+        connect()
     }
 
     fun getLastSeen(): Long = _lastSeen

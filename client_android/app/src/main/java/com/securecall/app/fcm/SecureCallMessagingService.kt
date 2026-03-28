@@ -27,6 +27,7 @@ class SecureCallMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         Log.d(TAG, "FCM message received: ${message.data}")
+        com.securecall.app.debug.SecLogManager.logIfEnabled(this, "FCM", "Received: ${message.data["type"] ?: "unknown"}")
 
         val type = message.data["type"] ?: return
         when (type) {
