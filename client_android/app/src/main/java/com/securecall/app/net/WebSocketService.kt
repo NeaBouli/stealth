@@ -560,6 +560,14 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         client?.forceReconnect()
     }
 
+    /** BUG-015: Manual disconnect by user — closes connection without auto-reconnect. */
+    fun manualDisconnect() {
+        Log.w("WS_SERVICE", "Manual disconnect by user")
+        isConnected = false
+        statusCallbackOffline?.invoke()
+        client?.close()
+    }
+
     // BACKEND-56: Debug-Funktion zum künstlichen Trennen
     fun forceDisconnectForDebug() {
         Log.w("WS_SERVICE", "Force-disconnect triggered (debug)")

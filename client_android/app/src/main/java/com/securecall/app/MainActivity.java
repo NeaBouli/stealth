@@ -115,6 +115,10 @@ public class MainActivity extends AppCompatActivity {
                 BottomNavigationView nav = findViewById(R.id.bottomNav);
                 nav.setSelectedItemId(R.id.nav_settings);
                 return true;
+            } else if (item.getItemId() == R.id.action_connection) {
+                // BUG-015: Disconnect/Reconnect toggle
+                handleConnectionToggle();
+                return true;
             }
             return false;
         });
@@ -271,6 +275,36 @@ public class MainActivity extends AppCompatActivity {
                 Log.w(TAG, "Failed to notify invite accepted: " + e.getMessage());
             }
         }).start();
+    }
+
+    /** BUG-015: Disconnect/Reconnect toggle from toolbar button. */
+    private void handleConnectionToggle() {
+        com.securecall.app.net.WebSocketService ws =
+                com.securecall.app.net.WebSocketService.Companion.getInstance();
+        if (ws == null) {
+            Toast.makeText(this, "Service not ready", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (ws.isConnected()) {
+            // Connected → show disconnect confirmation
+            new android.app.AlertDialog.Builder(this)
+                .setTitle("Disconnect")
+                .setMessage("Disconnect from SecureCall server?\nYou won't receive calls while disconnected.")
+                .setPositiveButton("Disconnect", (d, w) -> {
+                    ws.manualDisconnect();
+                    toolbar.setSubtitle("\u25CF Disconnected");
+                    toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_end_red, null));
+                    Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+        } else {
+            // Disconnected → reconnect
+            ws.forceReconnect();
+            toolbar.setSubtitle("Reconnecting\u2026");
+            toolbar.setSubtitleTextColor(getResources().getColor(android.R.color.darker_gray, null));
+            Toast.makeText(this, "Reconnecting\u2026", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void showFragment(Fragment fragment) {
