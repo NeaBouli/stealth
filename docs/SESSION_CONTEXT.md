@@ -1,5 +1,5 @@
 # StealthX / SecureCall — Handover Document
-**Date:** 28.03.2026
+**Date:** 28.03.2026 (final checkpoint)
 **Predecessor session:** Available for questions in same chat
 
 ---
@@ -34,7 +34,7 @@
 ## Git Tags (recent)
 | Tag | Description |
 |---|---|
-| v1.0.10 | Latest — deep link, QR invite, contacts sort, donation fix |
+| v1.0.11-stable | Latest checkpoint — deep link, QR invite, contacts sort, donation fix |
 | v1.0.9-alpha | Alpha track versionCode 20 |
 | v1.0.8 | EBS template 10, contact filter, verified badge |
 | v1.0.7 | Invite dialog, verified badge, contacts filter |
