@@ -420,53 +420,64 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun configureAnonymousNetwork(effectiveTier: String) {
-        val isPremium = TierManager.isPremium(requireContext())
+        val isProOrPremium = effectiveTier == "PRO" || effectiveTier == "PREMIUM"
         val ctx = requireContext()
 
-        // FIX 2: Hide eSIM options if device doesn't support eSIM
+        // Check eSIM hardware capability
         val hasEsim = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
             val euicc = ctx.getSystemService(android.telephony.euicc.EuiccManager::class.java)
             euicc?.isEnabled == true
         } else false
 
         findPreference<Preference>("pref_esim_setup")?.apply {
-            if (!hasEsim) {
-                isVisible = false
-            } else if (!isPremium) {
-                isEnabled = false
-                summary = getString(R.string.pref_premium_feature)
-            } else {
-                isEnabled = true
-                setOnPreferenceClickListener {
-                    try {
-                        val intent = android.content.Intent(android.provider.Settings.ACTION_NETWORK_OPERATOR_SETTINGS)
-                        startActivity(intent)
-                    } catch (_: Exception) {
+            when {
+                !hasEsim -> {
+                    isEnabled = false
+                    summary = "eSIM not supported on this device"
+                }
+                !isProOrPremium -> {
+                    isEnabled = false
+                    summary = getString(R.string.pref_premium_feature)
+                }
+                else -> {
+                    isEnabled = true
+                    summary = getString(R.string.pref_esim_setup_summary)
+                    setOnPreferenceClickListener {
                         try {
-                            val intent = android.content.Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS)
-                            startActivity(intent)
+                            startActivity(android.content.Intent(android.provider.Settings.ACTION_NETWORK_OPERATOR_SETTINGS))
                         } catch (_: Exception) {
-                            android.widget.Toast.makeText(ctx, "eSIM settings not available on this device", android.widget.Toast.LENGTH_SHORT).show()
+                            try {
+                                startActivity(android.content.Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS))
+                            } catch (_: Exception) {
+                                android.widget.Toast.makeText(ctx, "eSIM settings not available", android.widget.Toast.LENGTH_SHORT).show()
+                            }
                         }
+                        true
                     }
-                    true
                 }
             }
         }
 
         findPreference<SwitchPreferenceCompat>("pref_esim_routing")?.apply {
-            if (!hasEsim) {
-                isVisible = false
-            } else if (!isPremium) {
-                isChecked = false
-                isEnabled = false
-                summary = getString(R.string.pref_premium_feature)
-            } else {
-                isChecked = com.securecall.app.net.NetworkManager.isEsimRoutingEnabled(ctx)
-                isEnabled = true
-                setOnPreferenceChangeListener { _, newValue ->
-                    com.securecall.app.net.NetworkManager.setEsimRouting(ctx, newValue as Boolean)
-                    true
+            when {
+                !hasEsim -> {
+                    isEnabled = false
+                    isChecked = false
+                    summary = "eSIM not available on this device"
+                }
+                !isProOrPremium -> {
+                    isEnabled = false
+                    isChecked = false
+                    summary = getString(R.string.pref_premium_feature)
+                }
+                else -> {
+                    isEnabled = true
+                    isChecked = com.securecall.app.net.NetworkManager.isEsimRoutingEnabled(ctx)
+                    summary = getString(R.string.pref_esim_routing_summary)
+                    setOnPreferenceChangeListener { _, newValue ->
+                        com.securecall.app.net.NetworkManager.setEsimRouting(ctx, newValue as Boolean)
+                        true
+                    }
                 }
             }
         }
@@ -479,7 +490,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<ListPreference>("pref_network_transport")?.apply {
-            if (!isPremium) {
+            if (!isProOrPremium) {
                 isEnabled = false
                 summary = getString(R.string.pref_premium_feature)
             } else {
