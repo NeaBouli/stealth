@@ -93,6 +93,7 @@
                 <span class="sidebar-label">Project</span>
                 <nav class="sidebar-nav">
                     <a href="roadmap.html" class="active">Roadmap</a>
+                    <a href="matrix-integration.html">Matrix Integration</a>
                     <a href="changelog.html">Changelog</a>
                 </nav>
             </div>
@@ -186,8 +187,21 @@
                 <li class="pending">Widget for quick-call &mdash; home screen widget for one-tap calling to favorite contacts</li>
             </ul>
 
+            <!-- MATRIX INTEGRATION -->
+            <div class="section-break">Matrix Integration (v1.7 &mdash; v2.2)</div>
+
+            <h2>Matrix Protocol Integration</h2>
+            <p>SecureCall is integrating with the <a href="https://matrix.org" target="_blank" rel="noopener">Matrix</a> federated network &mdash; the open protocol used by the German Bundeswehr, Mozilla, and 28M+ users worldwide. <a href="matrix-integration.html">Full details &rarr;</a></p>
+
+            <ul class="checklist">
+                <li class="pending">v1.7 &mdash; Matrix contact exchange &mdash; share SecureCall ID via Matrix DM, QR code, deep link. No SDK required.</li>
+                <li class="pending">v2.0 &mdash; Matrix federation &mdash; Synapse/Dendrite homeserver, @sc_xxx:stealthx.tech IDs, cross-platform calling</li>
+                <li class="pending">v2.1 &mdash; Olm E2E signaling encryption &mdash; encrypt call signaling metadata via Matrix Olm</li>
+                <li class="pending">v2.2 &mdash; Group calls via MSC3401 &mdash; multi-party encrypted calls through Matrix rooms</li>
+            </ul>
+
             <!-- LONG-RANGE OBJECTIVES -->
-            <div class="section-break">Long-Range Objectives (v1.0+)</div>
+            <div class="section-break">Long-Range Objectives</div>
 
             <h2>Future Vision</h2>
             <p>These long-range objectives represent the strategic direction for SecureCall beyond the Android platform. Each item requires significant research and development effort and will be prioritized based on community feedback and security requirements.</p>
@@ -197,7 +211,6 @@
                 <li class="pending">Desktop Client &mdash; Linux, macOS, and Windows applications for secure calls from any platform</li>
                 <li class="pending">Post-Quantum Cryptography &mdash; migration to Kyber/ML-KEM for quantum-resistant key exchange</li>
                 <li class="pending">GhostNet multi-hop relay network &mdash; onion-routed transport for metadata resistance</li>
-                <li class="pending">Federation support &mdash; self-hosted server instances with cross-server calling</li>
                 <li class="pending">End-to-end encrypted messaging &mdash; secure text communication alongside voice</li>
                 <li class="pending">GhostOS &mdash; hardened Android distribution optimized for SecureCall and privacy</li>
             </ul>

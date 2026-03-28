@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Integration — SecureCall Wiki</title>
+    <meta name="description" content="How SecureCall will connect to 28M+ Matrix users — roadmap, architecture, and federation plan without compromising crypto.">
+    <meta name="theme-color" content="#0a0a12">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://stealthx.tech/wiki/matrix-integration.html">
+    <meta property="og:title" content="Matrix Integration — SecureCall Wiki">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://stealthx.tech/wiki/matrix-integration.html">
+    <meta property="og:site_name" content="SecureCall">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="stylesheet" href="../css/wiki-v2.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="../logo.png">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2L60E8E7R"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-V2L60E8E7R");</script>
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#audit">Audit</a>
+                <a href="../#compare">Compare</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="../#lifetime" style="color:#FFD700">Lifetime</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="../faq.html">FAQ</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                    <a href="ifr-unlock.html">IFR Token Unlock</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="faq.html">FAQ</a>
+                    <a href="beta-testing.html">Beta Testing</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="bug-report.html">Bug Report</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="matrix-integration.html" class="active">Matrix Integration</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">Matrix Integration</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-MATRIX</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <div class="wiki-page-header">
+                <div class="wiki-classification">Classification: Restricted &middot; SC-MATRIX</div>
+                <h1 class="wiki-page-title">Matrix Integration &mdash; Roadmap &amp; Architecture</h1>
+                <p class="wiki-page-subtitle">How SecureCall will connect to 28M+ Matrix users &mdash; without compromising your crypto.</p>
+            </div>
+            <p class="wiki-meta">SecureCall Matrix federation strategy &mdash; architecture, phases, and timeline &middot; Last updated March 2026</p>
+
+            <!-- WHY MATRIX -->
+            <div class="section-break">Why Matrix?</div>
+
+            <h2>Why Matrix?</h2>
+            <p>Matrix is an open, federated communication protocol &mdash; not a product, but a protocol, much like SMTP is for email. It is used by the <strong>German Bundeswehr</strong>, <strong>Mozilla</strong>, <strong>KDE</strong>, and a growing number of governments and enterprises that require sovereignty over their communication infrastructure.</p>
+            <p>With over <strong>28 million accounts</strong> across thousands of federated homeservers, Matrix represents the largest open communication network outside of email itself.</p>
+            <p>SecureCall already shares the same cryptographic primitives that Matrix relies on: <strong>X25519</strong> for key exchange, <strong>WebRTC</strong> for real-time transport, and the <strong>Double Ratchet</strong> algorithm for forward secrecy. This alignment makes Matrix the natural federation target &mdash; no cryptographic compromises are required.</p>
+
+            <!-- PHASE 1 -->
+            <div class="section-break">Phase 1: Contact Exchange (v1.7)</div>
+
+            <h2>Phase 1: Contact Exchange (v1.7)</h2>
+            <p>The first integration phase uses Matrix purely as an <strong>identity sharing channel</strong>. Users share their SecureCall ID via Matrix direct messages, leveraging the existing ecosystem of Matrix clients like <strong>Element</strong>, <strong>FluffyChat</strong>, and others.</p>
+
+            <h3>How It Works</h3>
+            <p>Deep links in the format <code>securecall://contact/ID</code> work natively from any Matrix client. QR codes encode the same URI scheme, enabling seamless contact exchange in person or over Matrix.</p>
+
+            <h3>What Changes</h3>
+            <p>No backend changes are required. No Matrix SDK is needed on the SecureCall side &mdash; the integration relies entirely on Android <strong>Share Intent</strong> to send the deep link into any Matrix client. Matrix never sees audio data and never knows a call happened. It simply carries the contact identifier.</p>
+
+            <!-- PHASE 2 -->
+            <div class="section-break">Phase 2: Full Federation (v2.0)</div>
+
+            <h2>Phase 2: Full Federation (v2.0)</h2>
+            <p>The second phase replaces the Node.js signaling server with a <strong>Matrix homeserver</strong> (Synapse or Dendrite), enabling true federation across the Matrix network.</p>
+
+            <h3>Matrix IDs for SecureCall Users</h3>
+            <p>Every SecureCall user receives a Matrix ID in the format <code>@sc_xxx:stealthx.tech</code>. Any Matrix user, on any homeserver, can initiate a call to a SecureCall user using this identifier.</p>
+
+            <h3>Call Signaling via MSC2746</h3>
+            <p>Call signaling follows the <strong>MSC2746</strong> specification, the Matrix standard for VoIP call signaling. This ensures interoperability with any compliant Matrix client.</p>
+
+            <h3>Crypto Layer Unchanged</h3>
+            <p>The entire crypto layer &mdash; <strong>XChaCha20-Poly1305</strong> encryption, the <strong>Rust crypto engine</strong>, and <strong>GhostNet</strong> relay routing &mdash; stays completely untouched. Federation changes the signaling transport, not the security model.</p>
+
+            <!-- WHAT MATRIX DOES NOT DO -->
+            <div class="section-break">What Matrix Does NOT Do</div>
+
+            <h2>What Matrix Does NOT Do</h2>
+            <p>It is critical to understand the strict boundary between Matrix and SecureCall&rsquo;s security layer:</p>
+            <ul>
+                <li><strong>Matrix never handles audio.</strong> All voice data flows peer-to-peer via WebRTC, encrypted end-to-end with XChaCha20-Poly1305.</li>
+                <li><strong>Matrix never decrypts calls.</strong> It has no access to session keys, ratchet state, or any cryptographic material.</li>
+                <li><strong>Matrix never stores call metadata.</strong> No call duration, no participant lists, no timestamps are persisted on any homeserver.</li>
+                <li><strong>Matrix only relays SDP signaling</strong> &mdash; the WebRTC handshake that establishes the peer-to-peer connection. After signaling completes, Matrix drops out entirely.</li>
+            </ul>
+            <p>SecureCall&rsquo;s <strong>XChaCha20-Poly1305</strong> encryption and <strong>Rust crypto engine</strong> are non-negotiable and remain unchanged regardless of the signaling transport used.</p>
+
+            <!-- ROADMAP TIMELINE -->
+            <div class="section-break">Roadmap Timeline</div>
+
+            <h2>Roadmap Timeline</h2>
+            <p>The Matrix integration follows a phased rollout across four releases:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Version</th>
+                        <th>Feature</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>v1.7</strong></td>
+                        <td>Matrix contact exchange (Share Intent + Deep Link + QR)</td>
+                        <td>Planned</td>
+                    </tr>
+                    <tr>
+                        <td><strong>v2.0</strong></td>
+                        <td>Matrix federation (Synapse homeserver, @user:stealthx.tech)</td>
+                        <td>Planned</td>
+                    </tr>
+                    <tr>
+                        <td><strong>v2.1</strong></td>
+                        <td>Olm E2E signaling encryption</td>
+                        <td>Planned</td>
+                    </tr>
+                    <tr>
+                        <td><strong>v2.2</strong></td>
+                        <td>Group calls via MSC3401</td>
+                        <td>Planned</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Vendetta Labs &mdash; Greece</p>
+                <p><a href="../">Home</a> | <a href="../privacy.html">Privacy Policy</a> | <a href="../impressum.html">Impressum</a> | <a href="../disclaimer.html">Disclaimer</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>
