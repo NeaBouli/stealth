@@ -454,15 +454,65 @@
                     <h3>Diagnostic Logs (Pro/Premium)</h3>
                     <p>Enable SecLog to capture connection, call, and network events. Export as CSV for troubleshooting. Your data stays on your device.</p>
                 </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon green">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                    </div>
+                    <h3>WireGuard VPN (Premium)</h3>
+                    <p>Built-in WireGuard tunnel routes all SecureCall traffic through your VPN. Kill switch included. Real GoBackend &mdash; not a wrapper.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-1">
+                    <div class="feature-icon red-accent">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    </div>
+                    <h3>Anti-Recording Protection</h3>
+                    <p>FLAG_SECURE blocks screenshots. Exclusive microphone prevents spy apps. Screen recording detection alerts you in real time.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-2">
+                    <div class="feature-icon blue">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <h3>Auto-Reconnect</h3>
+                    <p>Seamless reconnection on WiFi/Mobile/eSIM network switches. ConnectivityManager detects changes instantly &mdash; no manual restart needed.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon yellow">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </div>
+                    <h3>FCM Push Notifications</h3>
+                    <p>Receive calls even when the app is closed. Firebase Cloud Messaging wakes your device for incoming encrypted calls.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-1">
+                    <div class="feature-icon green">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    <h3>IFR Token &amp; WalletConnect</h3>
+                    <p>Lock IFR tokens on-chain for lifetime Premium access. WalletConnect v2 lets you verify directly from MetaMask or any Web3 wallet.</p>
+                </div>
             </div>
 
             <!-- Coming Soon -->
             <div style="margin-top:64px;padding:32px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.15);border-radius:16px">
-                <h3 style="color:#4ade80;margin-bottom:12px">Coming Soon &mdash; Matrix Protocol Integration</h3>
-                <p style="color:#aaa;font-size:14px;line-height:1.7">SecureCall is integrating with the <a href="https://matrix.org" target="_blank" rel="noopener" style="color:#4ade80">Matrix</a> federated network &mdash; the open protocol used by the German Bundeswehr, Mozilla, and 28M+ users worldwide.</p>
-                <p style="color:#888;font-size:13px;line-height:1.7;margin-top:8px"><strong style="color:#aaa">v1.7:</strong> Share your SecureCall ID via any Matrix client (Element, FluffyChat). QR codes and deep links work across platforms.<br>
-                <strong style="color:#aaa">v2.0:</strong> Full federation &mdash; be reachable from 28M+ Matrix users at @sc_xxx:stealthx.tech, without compromising your crypto.</p>
-                <p style="margin-top:12px"><a href="wiki/matrix-integration.html" style="color:#4ade80;font-size:13px">Read the full architecture document &rarr;</a></p>
+                <h3 style="color:#4ade80;margin-bottom:16px">Coming Soon</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
+                        <p style="color:#aaa;font-size:13px;margin:0"><strong style="color:#4ade80">v1.7</strong> &mdash; Matrix Contact Exchange</p>
+                        <p style="color:#666;font-size:12px;margin:4px 0 0">Share SecureCall ID via Element, FluffyChat, or any Matrix client</p>
+                    </div>
+                    <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
+                        <p style="color:#aaa;font-size:13px;margin:0"><strong style="color:#4ade80">v2.0</strong> &mdash; Matrix Federation</p>
+                        <p style="color:#666;font-size:12px;margin:4px 0 0">Reachable from 28M+ Matrix users at @sc_xxx:stealthx.tech</p>
+                    </div>
+                    <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
+                        <p style="color:#aaa;font-size:13px;margin:0"><strong style="color:#4ade80">v2.2</strong> &mdash; Group Calls (MSC3401)</p>
+                        <p style="color:#666;font-size:12px;margin:4px 0 0">Encrypted multi-party calls via Matrix rooms</p>
+                    </div>
+                    <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
+                        <p style="color:#aaa;font-size:13px;margin:0"><strong style="color:#4ade80">v2.3</strong> &mdash; iOS Client + Biometric Lock</p>
+                        <p style="color:#666;font-size:12px;margin:4px 0 0">Native Swift app with shared Rust crypto engine</p>
+                    </div>
+                </div>
+                <p style="margin-top:16px"><a href="wiki/matrix-integration.html" style="color:#4ade80;font-size:13px">Matrix architecture document &rarr;</a> &nbsp; <a href="wiki/roadmap.html" style="color:#4ade80;font-size:13px">Full roadmap &rarr;</a></p>
             </div>
         </div>
     </section>

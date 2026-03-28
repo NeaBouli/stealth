@@ -27,9 +27,9 @@
 | Tab S4 | ce12182c68644439037e | Free | +491752536807 |
 
 ## Current Version
-- versionCode: 22 / versionName: 1.0.11
-- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v22.aab
-- Play Store: Alpha Track, Release 21 live (v22 ready to upload)
+- versionCode: 23 / versionName: 1.0.12
+- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v23.aab
+- Play Store: Alpha Track, Release 21 live (v23 ready to upload)
 
 ## Git Tags (recent)
 | Tag | Description |
@@ -81,7 +81,19 @@
 - BUG-017 FIX: New Call FAB hidden in Calls/Contacts tabs
 - BUG-012 FIX: Ads paused during active call (pauseForCall/resumeAfterCall)
 - BUG-021/020 FIX: Emergency Delete first, IFR Token last in Settings
-- BUG-014 FIX: All Settings sections collapsed by default
+- BUG-014 FIX: CollapsiblePreferenceCategory — tap to expand AND collapse with arrow
+- BUG-019 FIX: Check for Updates detects install source (sideload → GitHub Releases)
+- BUG-015 FIX: Disconnect/Reconnect button in toolbar (green/gray/yellow tint)
+- BUG-022 FIX: eSIM status refreshes on every Settings visit
+- BUG-009/024 FIX: Auto-reconnect on network change via ConnectivityManager NetworkCallback
+- Dark mode as default for new installs
+- Reconnect fix: forceReconnect() clears isClosed, connects immediately
+- SecLog diagnostic logging (Pro/Premium) with CSV export
+- eSIM settings gated by device capability + Pro/Premium tier
+- Preferred Network binding always applied on change
+- IFR Token "Learn about IFR" link to inferno.tech
+- Matrix Integration wiki page + roadmap + landing page Coming Soon
+- Landing page: 3 new feature cards + 9 devices tested
 
 ## Previous Fixes (Mar 25-28)
 - FCM Token persistence (survives Railway redeploy)
