@@ -366,15 +366,15 @@ class DialerFragment : Fragment() {
     }
 
     private fun normalizePhone(number: String): String {
-        return number.replace(Regex("[^0-9+]"), "")
+        return com.securecall.app.data.PhoneUtils.normalize(number, context)
     }
 
     private fun loadAllContacts() {
         val appContacts = ContactRepository.getAll(requireContext())
         val phoneContacts = loadPhoneContacts()
-        val appPhoneNumbers = appContacts.map { it.phoneOrId.replace("\\s".toRegex(), "") }.toSet()
+        val appPhoneNumbers = appContacts.map { normalizePhone(it.phoneOrId) }.toSet()
         val uniquePhoneContacts = phoneContacts.filter { pc ->
-            pc.phoneOrId.replace("\\s".toRegex(), "") !in appPhoneNumbers
+            normalizePhone(pc.phoneOrId) !in appPhoneNumbers
         }
         allContacts = appContacts + uniquePhoneContacts
     }

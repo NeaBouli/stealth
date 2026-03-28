@@ -825,7 +825,7 @@ public class CallActivity extends AppCompatActivity {
         if (originalPhone.isEmpty() || callContactId.isEmpty()) return false;
         if (!callContactId.startsWith("android-")) return false;
         // Check if already saved in contacts (by clientId or phone number)
-        String normalizedPhone = originalPhone.replaceAll("[^0-9+]", "");
+        String normalizedPhone = com.securecall.app.data.PhoneUtils.INSTANCE.normalize(originalPhone, this);
         java.util.List<com.securecall.app.data.Contact> contacts =
                 com.securecall.app.data.ContactRepository.INSTANCE.getAll(this);
         for (com.securecall.app.data.Contact c : contacts) {
@@ -833,7 +833,7 @@ public class CallActivity extends AppCompatActivity {
                 Log.d(TAG, "shouldOfferContactSave: already saved by clientId");
                 return false;
             }
-            String cNorm = c.getPhoneOrId().replaceAll("[^0-9+]", "");
+            String cNorm = com.securecall.app.data.PhoneUtils.INSTANCE.normalize(c.getPhoneOrId(), this);
             if (!cNorm.isEmpty() && cNorm.equals(normalizedPhone)) {
                 Log.d(TAG, "shouldOfferContactSave: already saved by phone number");
                 return false;
