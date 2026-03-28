@@ -47,7 +47,7 @@
     <string name="settings_wiki">Documentation</string>
     <string name="settings_wiki_summary">Wiki &amp; user guides</string>
     <string name="settings_report_bug">Report a Bug</string>
-    <string name="settings_report_bug_summary">Open a GitHub issue</string>
+    <string name="settings_report_bug_summary">Report a bug via our form</string>
     <string name="settings_privacy">Privacy Policy</string>
     <string name="settings_privacy_summary">How we protect your data</string>
     <string name="settings_licenses">Open Source Licenses</string>
