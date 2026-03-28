@@ -100,6 +100,10 @@ object NetworkManager {
                 boundNetwork = network
                 cm.bindProcessToNetwork(network)
                 com.securecall.app.debug.SecLogManager.log("NET", "Bound to $transport")
+                // Force WebSocket to reconnect on the newly bound network
+                // (existing sockets stay on the old network until closed)
+                Log.d(TAG, "Triggering WebSocket reconnect on bound network: $transport")
+                WebSocketService.instance?.forceReconnect()
             }
 
             override fun onLost(network: Network) {
@@ -133,4 +137,6 @@ object NetworkManager {
     }
 
     fun isBound(): Boolean = boundNetwork != null
+
+    fun getBoundNetwork(): android.net.Network? = boundNetwork
 }

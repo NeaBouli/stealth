@@ -63,10 +63,29 @@ class HeartbeatClient(
     private var okClient = buildClient()
 
     private fun buildClient(): OkHttpClient {
-        return OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
             .readTimeout(0, TimeUnit.MILLISECONDS)
             .pingInterval(5, TimeUnit.SECONDS)
-            .build()
+        // Use bound network's socket factory if process is bound to a specific network
+        val boundNet = NetworkManager.getBoundNetwork()
+        if (boundNet != null) {
+            builder.socketFactory(boundNet.socketFactory)
+            builder.dns(object : okhttp3.Dns {
+                override fun lookup(hostname: String): List<java.net.InetAddress> {
+                    return boundNet.getAllByName(hostname).toList()
+                }
+            })
+            Log.d("HB", "OkHttpClient using bound network socketFactory + DNS")
+        }
+        return builder.build()
+    }
+
+    /** Rebuild OkHttpClient with current network binding. Called after network change. */
+    fun rebuildClient() {
+        try { okClient.dispatcher.cancelAll() } catch (_: Exception) {}
+        try { okClient.connectionPool.evictAll() } catch (_: Exception) {}
+        okClient = buildClient()
+        Log.d("HB", "OkHttpClient rebuilt with current network binding")
     }
 
     fun connect() {
@@ -145,7 +164,7 @@ class HeartbeatClient(
 
     /** Force-cancel the socket (immediate, no close frame) and schedule reconnect. */
     fun forceReconnect() {
-        Log.w("HB", "forceReconnect() — cancelling socket")
+        Log.w("HB", "forceReconnect() — cancelling socket + rebuilding client")
         isClosed = false // Clear manual-disconnect flag so reconnect works
         stopHeartbeat()
         state = State.DISCONNECTED
@@ -153,6 +172,8 @@ class HeartbeatClient(
         val oldWs = ws
         ws = null
         try { oldWs?.cancel() } catch (_: Exception) {}
+        // Rebuild OkHttpClient to pick up new network binding
+        rebuildClient()
         // Connect immediately instead of scheduling with backoff
         reconnectDelay = 2000L
         connect()
