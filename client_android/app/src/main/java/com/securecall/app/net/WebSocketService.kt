@@ -124,6 +124,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         private const val INCOMING_CALL_NOTIFICATION_ID = 1002
     }
 
+    // BUG-009/024: Network change monitor for auto-reconnect
+    private var networkCallback: android.net.ConnectivityManager.NetworkCallback? = null
+
     override fun onCreate() {
         super.onCreate()
         Log.d("WS_SERVICE", "onCreate")
@@ -135,6 +138,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         createIncomingCallChannel()
         client = HeartbeatClient(wsUrl, this)
         client?.connect()
+        // BUG-009/024: Register network change callback for instant reconnect
+        registerNetworkChangeCallback()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -151,6 +156,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onDestroy() {
         Log.d("WS_SERVICE", "onDestroy")
         instance = null
+        unregisterNetworkChangeCallback()
         stopAudioPlayback()
         client?.close()
         super.onDestroy()
@@ -596,6 +602,52 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.w("WS_SERVICE", "ensureConnected() — not connected, triggering reconnect")
         client?.forceReconnect()
         return false
+    }
+
+    /**
+     * BUG-009/024: Register a system-wide network change callback.
+     * When the device switches between WiFi, Mobile, or eSIM, trigger an immediate reconnect
+     * instead of waiting for the 45s heartbeat timeout.
+     */
+    @Volatile private var networkWasLost = false
+
+    private fun registerNetworkChangeCallback() {
+        val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+            ?: return
+        val callback = object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: android.net.Network) {
+                // Only reconnect if network was previously lost (not on initial registration)
+                if (networkWasLost) {
+                    Log.d("WS_SERVICE", "NetworkCallback: network available after loss — triggering reconnect")
+                    networkWasLost = false
+                    client?.forceReconnect()
+                } else {
+                    Log.d("WS_SERVICE", "NetworkCallback: initial network available (no action)")
+                }
+            }
+            override fun onLost(network: android.net.Network) {
+                Log.w("WS_SERVICE", "NetworkCallback: network lost")
+                networkWasLost = true
+                isConnected = false
+                statusCallbackOffline?.invoke()
+            }
+        }
+        networkCallback = callback
+        try {
+            cm.registerDefaultNetworkCallback(callback)
+            Log.d("WS_SERVICE", "NetworkCallback registered for auto-reconnect")
+        } catch (e: Exception) {
+            Log.w("WS_SERVICE", "Failed to register NetworkCallback: ${e.message}")
+        }
+    }
+
+    private fun unregisterNetworkChangeCallback() {
+        val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+            ?: return
+        networkCallback?.let {
+            try { cm.unregisterNetworkCallback(it) } catch (_: Exception) {}
+        }
+        networkCallback = null
     }
 
     /**
