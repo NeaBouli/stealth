@@ -10,23 +10,23 @@
 | BUG-006 | WireGuard VPN service never started after permission grant | FIXED | High | dedb2ab + 6990c78 |
 | BUG-007 | Contacts cache empty after app restart — presence skipped | FIXED | Medium | 0681cc7 |
 | BUG-008 | CallActivity crash: SecurityException on PhoneStateListener | FIXED | Critical | a90c7fc |
-| BUG-009 | App disconnects on network switch (WiFi→Mobile→eSIM) — no auto-reconnect | OPEN | High | — |
+| BUG-009 | App disconnects on network switch (WiFi→Mobile→eSIM) — no auto-reconnect | FIXED | High | 4174031 |
 | BUG-010 | Incoming calls fail when app closed/background — FCM not waking app reliably | OPEN | Critical | — |
 | BUG-011 | Call drops immediately after connecting — WebRTC P2P unstable | OPEN | Critical | — |
-| BUG-012 | AdMob banner appears during active call | OPEN | High | — |
+| BUG-012 | AdMob banner appears during active call | FIXED | High | df52218 |
 | BUG-013 | Saved contact after call shows phone number not phonebook name | OPEN | Medium | — |
-| BUG-014 | All Settings sections expanded by default — should all be collapsed | OPEN | Low | — |
-| BUG-015 | No disconnect button next to connection status | OPEN | Medium | — |
-| BUG-016 | Label "Anonymous Network" should be "Network" | OPEN | Low | — |
-| BUG-017 | "New Call" FAB appears in all tabs — should only show in Dialer tab | OPEN | Medium | — |
-| BUG-018 | "Report a Bug" opens GitHub Issues — should open bug-report.html | OPEN | Medium | — |
-| BUG-019 | "Check for Updates" opens Play Store for F-Droid/APK installs | OPEN | Medium | — |
-| BUG-020 | IFR Token section should be last in Settings | OPEN | Low | — |
-| BUG-021 | Emergency Delete should be first in Settings | OPEN | Low | — |
-| BUG-022 | eSIM status stays "connected" after switching to default network | OPEN | Medium | — |
+| BUG-014 | All Settings sections expanded by default — should all be collapsed | FIXED | Low | df52218 |
+| BUG-015 | Disconnect button next to connection status | FIXED | Medium | 073895c |
+| BUG-016 | Label "Anonymous Network" → "Network" | FIXED | Low | df52218 |
+| BUG-017 | "New Call" FAB hidden in non-dialer tabs | FIXED | Medium | df52218 |
+| BUG-018 | "Report a Bug" opens bug-report.html | FIXED | Medium | df52218 |
+| BUG-019 | "Check for Updates" → GitHub for sideload/F-Droid | FIXED | Medium | 285d89f |
+| BUG-020 | IFR Token section last in Settings | FIXED | Low | df52218 |
+| BUG-021 | Emergency Delete first in Settings | FIXED | Low | df52218 |
+| BUG-022 | eSIM status refreshes on Settings visit | FIXED | Medium | c149200 |
 | BUG-023 | No diagnostic log export — SecLog CSV export (Pro/Premium) | OPEN | Low | — |
-| BUG-024 | Random disconnects on network change — reconnects only after app restart | OPEN | High | — |
-| BUG-025 | Phone normalization — +49/0049/+49 151 treated as different numbers | OPEN | High | — |
+| BUG-024 | Random disconnects on network change — auto-reconnect via NetworkCallback | FIXED | High | 4174031 |
+| BUG-025 | Phone normalization — full E.164 normalization | FIXED | High | df52218 + 991e5af |
 
 ## Fix Details
 

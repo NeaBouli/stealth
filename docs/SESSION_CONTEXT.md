@@ -27,14 +27,14 @@
 | Tab S4 | ce12182c68644439037e | Free | +491752536807 |
 
 ## Current Version
-- versionCode: 21 / versionName: 1.0.10
-- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v21.aab
-- Play Store: Alpha Track, Release 21 live
+- versionCode: 22 / versionName: 1.0.11
+- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v22.aab
+- Play Store: Alpha Track, Release 21 live (v22 ready to upload)
 
 ## Git Tags (recent)
 | Tag | Description |
 |---|---|
-| v1.0.11-stable | Latest checkpoint — deep link, QR invite, contacts sort, donation fix |
+| v1.0.11-stable | 12 bugs fixed — phone norm, auto-reconnect, settings, ads, disconnect btn |
 | v1.0.9-alpha | Alpha track versionCode 20 |
 | v1.0.8 | EBS template 10, contact filter, verified badge |
 | v1.0.7 | Invite dialog, verified badge, contacts filter |
@@ -74,7 +74,16 @@
 | 14 | b..........r@googlemail.com | Active |
 | 15 | c...........4@gmail.com | Active |
 
-## Recent Fixes (this session, Mar 25-28)
+## Recent Fixes (this session, Mar 28 — Bug Sprint)
+- BUG-025 FIX: Phone normalization — PhoneUtils.normalize() strips all formatting, 00→+ conversion
+- BUG-018 FIX: Report a Bug → stealthx.tech/wiki/bug-report.html
+- BUG-016 FIX: "Anonymous Network" → "Network"
+- BUG-017 FIX: New Call FAB hidden in Calls/Contacts tabs
+- BUG-012 FIX: Ads paused during active call (pauseForCall/resumeAfterCall)
+- BUG-021/020 FIX: Emergency Delete first, IFR Token last in Settings
+- BUG-014 FIX: All Settings sections collapsed by default
+
+## Previous Fixes (Mar 25-28)
 - FCM Token persistence (survives Railway redeploy)
 - FLAG_SECURE tier-based (Free=off, Pro=toggle, Premium=always)
 - Emergency Delete: 5-tap instant wipe
@@ -98,11 +107,21 @@
 |---|---|---|
 | TODO-029 | Google Play Service Account (billing verification) | HIGH |
 | TODO-033 | Firebase + AdMob linking | MEDIUM |
+| TODO-044 | Kontakt-Sync mit Telefonbuch (BUG-013) | MEDIUM |
+| TODO-045 | SecLog Diagnose-Export CSV (BUG-023) | LOW |
 | TODO-010 | Self-hosted TURN (coturn) | LOW |
 
+## Open Bugs
+| ID | Description | Severity |
+|---|---|---|
+| BUG-010 | FCM not waking app reliably (incoming calls when closed) | CRITICAL |
+| BUG-011 | WebRTC P2P unstable (call drops after connecting) | CRITICAL |
+| BUG-013 | Saved contact shows phone number not phonebook name | MEDIUM |
+| BUG-023 | No diagnostic log export (SecLog CSV) | LOW |
+
 ## Next Session Steps
-1. Monitor 14-day closed testing phase
-2. Process tester bug reports (gh issue list --label user-report)
-3. Build v1.0.11 if bugs found
-4. Prepare for Production release after testing phase
-5. Google Play Service Account for billing verification
+1. Fix BUG-010 (FCM wake) + BUG-011 (WebRTC stability) — CRITICAL
+2. Upload v22 AAB to Play Store Alpha Track
+3. Monitor 14-day closed testing phase
+4. Google Play Service Account for billing verification
+5. Production release after testing phase
