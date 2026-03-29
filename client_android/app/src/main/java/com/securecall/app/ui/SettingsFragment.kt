@@ -347,9 +347,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val activateButton = findPreference<Preference>("pref_activate_button")
 
         if (isUpgraded) {
-            // Already Pro/Premium — hide input, show status, hide upgrade button
+            // Already Pro/Premium — hide input, show status
             codePref?.isVisible = false
-            findPreference<Preference>("pref_upgrade")?.isVisible = false
+            // Only hide upgrade button for Premium (Pro can still upgrade to Premium)
+            if (effectiveTier == "PREMIUM") {
+                findPreference<Preference>("pref_upgrade")?.isVisible = false
+            }
             activateButton?.apply {
                 title = getString(R.string.pref_plan_active, effectiveTier)
                 isEnabled = false

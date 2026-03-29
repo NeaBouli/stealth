@@ -7,10 +7,9 @@ import androidx.preference.PreferenceViewHolder
 
 /**
  * Custom PreferenceCategory that supports both expand AND collapse.
- * Standard Android PreferenceCategory with initialExpandedChildrenCount only supports expand.
  *
- * All children start hidden (collapsed). Tapping the category header toggles visibility.
- * Arrow indicator: ▶ collapsed, ▼ expanded.
+ * Respects programmatically hidden preferences: tracks visibility state
+ * before collapsing so expand only restores prefs that were visible.
  */
 class CollapsiblePreferenceCategory @JvmOverloads constructor(
     context: Context,
@@ -20,9 +19,10 @@ class CollapsiblePreferenceCategory @JvmOverloads constructor(
     private var isExpanded = false
     private var originalTitle: CharSequence? = null
     private var attached = false
+    // Keys of preferences that were visible before last collapse
+    private var visibleBeforeCollapse: Set<String>? = null
 
     init {
-        // PreferenceCategory is not selectable by default — we need clicks
         isSelectable = false
     }
 
@@ -32,14 +32,20 @@ class CollapsiblePreferenceCategory @JvmOverloads constructor(
             originalTitle = title
             attached = true
         }
-        // Collapse all children on attach
-        collapseChildren()
-        updateTitle()
+        // Initial state: collapsed. Don't snapshot yet (SettingsFragment hasn't configured visibility)
+        // Use a small delay to let SettingsFragment finish setting up
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            if (!isExpanded) {
+                // Snapshot current visibility (set by SettingsFragment) then collapse
+                snapshotVisible()
+                hideAll()
+                updateTitle()
+            }
+        }
     }
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
-        // Force the entire header row to be clickable
         holder.itemView.isClickable = true
         holder.itemView.isFocusable = true
         holder.itemView.setOnClickListener {
@@ -49,15 +55,36 @@ class CollapsiblePreferenceCategory @JvmOverloads constructor(
         }
     }
 
-    private fun collapseChildren() {
+    private fun snapshotVisible() {
+        val visible = mutableSetOf<String>()
+        for (i in 0 until preferenceCount) {
+            val pref = getPreference(i)
+            if (pref.isVisible && pref.key != null) {
+                visible.add(pref.key)
+            }
+        }
+        visibleBeforeCollapse = visible
+    }
+
+    private fun hideAll() {
         for (i in 0 until preferenceCount) {
             getPreference(i).isVisible = false
         }
     }
 
+    private fun collapseChildren() {
+        // Save which were visible before collapsing
+        snapshotVisible()
+        hideAll()
+    }
+
     private fun expandChildren() {
+        val snapshot = visibleBeforeCollapse
         for (i in 0 until preferenceCount) {
-            getPreference(i).isVisible = true
+            val pref = getPreference(i)
+            // Restore only prefs that were visible before last collapse
+            // If no snapshot exists (first expand), show all
+            pref.isVisible = snapshot == null || pref.key == null || pref.key in snapshot
         }
     }
 
