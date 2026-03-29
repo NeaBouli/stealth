@@ -1,5 +1,5 @@
 # StealthX / SecureCall — Handover Document
-**Date:** 28.03.2026 (final checkpoint)
+**Date:** 30.03.2026 (session checkpoint)
 **Predecessor session:** Available for questions in same chat
 
 ---
@@ -27,13 +27,16 @@
 | Tab S4 | ce12182c68644439037e | Free | +491752536807 |
 
 ## Current Version
-- versionCode: 23 / versionName: 1.0.12
-- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v23.aab
-- Play Store: Alpha Track, Release 21 live (v23 ready to upload)
+- versionCode: 28 / versionName: 1.0.12
+- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v28.aab
+- APK: ~/Documents/SecureCall-Release/final/app-free-release-v28.apk
+- GitHub Release: https://github.com/NeaBouli/stealth/releases/tag/v1.0.12
+- Play Store: Alpha Track, 15/15 testers (v28 ready to upload)
 
 ## Git Tags (recent)
 | Tag | Description |
 |---|---|
+| v1.0.12 | versionCode 28 — IFR link, upgrade button, collapsible fix, battery protection |
 | v1.0.11-stable | 12 bugs fixed — phone norm, auto-reconnect, settings, ads, disconnect btn |
 | v1.0.9-alpha | Alpha track versionCode 20 |
 | v1.0.8 | EBS template 10, contact filter, verified badge |
@@ -118,9 +121,11 @@
 | ID | Task | Priority |
 |---|---|---|
 | TODO-029 | Google Play Service Account (billing verification) | HIGH |
+| TODO-046 | VpnService-based network traffic steering (eSIM routing) | HIGH |
+| TODO-047 | Deactivate beta codes before production | HIGH |
+| TODO-030 | Store Listing DE in Play Console | MEDIUM |
 | TODO-033 | Firebase + AdMob linking | MEDIUM |
 | TODO-044 | Kontakt-Sync mit Telefonbuch (BUG-013) | MEDIUM |
-| TODO-045 | SecLog Diagnose-Export CSV (BUG-023) | LOW |
 | TODO-010 | Self-hosted TURN (coturn) | LOW |
 
 ## Open Bugs
@@ -129,7 +134,7 @@
 | BUG-010 | FCM not waking app reliably (incoming calls when closed) | CRITICAL |
 | BUG-011 | WebRTC P2P unstable (call drops after connecting) | CRITICAL |
 | BUG-013 | Saved contact shows phone number not phonebook name | MEDIUM |
-| BUG-023 | No diagnostic log export (SecLog CSV) | LOW |
+| BUG-026 | eSIM routing needs VpnService (Coming Soon in UI) | HIGH |
 
 ## Release Rules
 - Bei jedem Play Store Release: GitHub Release mit aktuellem APK synchron halten
@@ -138,7 +143,7 @@
 
 ## Next Session Steps
 1. Fix BUG-010 (FCM wake) + BUG-011 (WebRTC stability) — CRITICAL
-2. Upload v27 AAB to Play Store Alpha Track
+2. Upload v28 AAB to Play Store Alpha Track
 3. Monitor 14-day closed testing phase
 4. Google Play Service Account for billing verification
 5. Deactivate beta codes before production (TODO-047)
