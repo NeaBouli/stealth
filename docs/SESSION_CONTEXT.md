@@ -131,9 +131,15 @@
 | BUG-013 | Saved contact shows phone number not phonebook name | MEDIUM |
 | BUG-023 | No diagnostic log export (SecLog CSV) | LOW |
 
+## Release Rules
+- Bei jedem Play Store Release: GitHub Release mit aktuellem APK synchron halten
+- GitHub Release URL: https://github.com/NeaBouli/stealth/releases/tag/v1.0.12
+- Beta Activation Codes (BETA-PRO0-2026 / BETA-PREM-2026) VOR Production deaktivieren
+
 ## Next Session Steps
 1. Fix BUG-010 (FCM wake) + BUG-011 (WebRTC stability) — CRITICAL
-2. Upload v22 AAB to Play Store Alpha Track
+2. Upload v27 AAB to Play Store Alpha Track
 3. Monitor 14-day closed testing phase
 4. Google Play Service Account for billing verification
-5. Production release after testing phase
+5. Deactivate beta codes before production (TODO-047)
+6. Production release after testing phase

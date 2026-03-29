@@ -41,12 +41,13 @@
 | TODO-040 | Deep Link Invite | securecall://add-contact + QR code |
 | TODO-041 | Bug Report Form | wiki/bug-report.html → GitHub Issues |
 
-## OPEN (9)
+## OPEN (10)
 
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
 | TODO-029 | Google Play Service Account | HIGH | For billing purchase verification (manual) |
 | TODO-046 | VpnService-based network traffic steering | HIGH | Required for eSIM routing + Preferred Network — BUG-026 |
+| TODO-047 | Deactivate beta codes before production | HIGH | BETA-PRO0-2026 + BETA-PREM-2026 → disable after Go-Live, reset devices to Free |
 | TODO-030 | Store Listing DE in Play Console | MEDIUM | marketing/play_store/de/store_listing.md ready |
 | TODO-033 | Firebase + AdMob linking | MEDIUM | AdMob Console → Firebase (manual) |
 | TODO-044 | Kontakt-Sync mit Telefonbuch | MEDIUM | Namen nach Anruf aus Phonebook uebernehmen — BUG-013 |
