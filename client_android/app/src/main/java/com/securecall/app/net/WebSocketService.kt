@@ -127,6 +127,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // BUG-009/024: Network change monitor for auto-reconnect
     private var networkCallback: android.net.ConnectivityManager.NetworkCallback? = null
 
+    // BUG-027: Partial wake lock keeps CPU alive for heartbeats on Samsung A-series
+    private var cpuWakeLock: android.os.PowerManager.WakeLock? = null
+
     override fun onCreate() {
         super.onCreate()
         Log.d("WS_SERVICE", "onCreate")
@@ -136,12 +139,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         // On slow devices (e.g. Galaxy S7), any delay here causes an ANR.
         ensureForegroundImmediate()
         createIncomingCallChannel()
+        // BUG-027: Acquire partial wake lock to keep heartbeats alive on Samsung devices
+        acquireCpuWakeLock()
         // Apply saved network preference before connecting (binds process to preferred network)
         NetworkManager.bindToPreferredNetwork(this)
         client = HeartbeatClient(wsUrl, this)
         client?.connect()
         // BUG-009/024: Register network change callback for instant reconnect
         registerNetworkChangeCallback()
+        // BUG-027: Schedule self-restart alarm in case Samsung kills the service
+        scheduleServiceRestart()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -152,16 +159,76 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        Log.d("WS_SERVICE", "App swiped away — service continues in background")
+        Log.d("WS_SERVICE", "App swiped away — scheduling restart")
+        // BUG-027: Samsung may kill service after swipe — schedule immediate restart
+        try {
+            val restartIntent = Intent(this, WebSocketService::class.java)
+            val pi = android.app.PendingIntent.getService(
+                this, 1, restartIntent,
+                android.app.PendingIntent.FLAG_ONE_SHOT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+            val am = getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+            am.set(
+                android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                android.os.SystemClock.elapsedRealtime() + 3000, // 3 seconds
+                pi
+            )
+        } catch (e: Exception) {
+            Log.w("WS_SERVICE", "Failed to schedule restart after swipe: ${e.message}")
+        }
     }
 
     override fun onDestroy() {
         Log.d("WS_SERVICE", "onDestroy")
         instance = null
         unregisterNetworkChangeCallback()
+        releaseCpuWakeLock()
         stopAudioPlayback()
         client?.close()
         super.onDestroy()
+    }
+
+    /** BUG-027: Partial wake lock keeps CPU alive for WebSocket heartbeats on aggressive OEMs. */
+    private fun acquireCpuWakeLock() {
+        if (cpuWakeLock != null) return
+        try {
+            val pm = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+            cpuWakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "securecall:ws_heartbeat")
+            cpuWakeLock?.acquire()
+            Log.d("WS_SERVICE", "CPU wake lock acquired for heartbeats")
+        } catch (e: Exception) {
+            Log.w("WS_SERVICE", "Failed to acquire wake lock: ${e.message}")
+        }
+    }
+
+    private fun releaseCpuWakeLock() {
+        cpuWakeLock?.let {
+            if (it.isHeld) it.release()
+            cpuWakeLock = null
+            Log.d("WS_SERVICE", "CPU wake lock released")
+        }
+    }
+
+    /** BUG-027: Schedule AlarmManager to restart the service if Samsung kills it. */
+    private fun scheduleServiceRestart() {
+        try {
+            val intent = Intent(this, WebSocketService::class.java)
+            val pi = android.app.PendingIntent.getService(
+                this, 0, intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+            val am = getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+            // Repeat every 15 minutes — if service is alive, onStartCommand just returns START_STICKY
+            am.setInexactRepeating(
+                android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                android.os.SystemClock.elapsedRealtime() + 15 * 60 * 1000,
+                15 * 60 * 1000,
+                pi
+            )
+            Log.d("WS_SERVICE", "Service restart alarm scheduled (every 15 min)")
+        } catch (e: Exception) {
+            Log.w("WS_SERVICE", "Failed to schedule service restart: ${e.message}")
+        }
     }
 
     // ===================== Public API =====================

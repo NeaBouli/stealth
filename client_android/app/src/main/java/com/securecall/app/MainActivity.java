@@ -398,16 +398,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** FIX 7: Request battery optimization exemption so calls work with screen off. */
+    /**
+     * BUG-027: Request battery optimization exemption.
+     * Re-asks every 7 days if user hasn't granted it yet.
+     * Critical for Samsung A-series which aggressively kill background services.
+     */
     @android.annotation.SuppressLint("BatteryLife")
     private void requestBatteryOptimizationExemption() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
             if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
-                // Only ask once — check if we already asked
                 SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
-                if (!prefs.getBoolean("battery_opt_asked", false)) {
-                    prefs.edit().putBoolean("battery_opt_asked", true).apply();
+                long lastAsked = prefs.getLong("battery_opt_last_asked", 0);
+                long now = System.currentTimeMillis();
+                // Re-ask every 7 days if not granted
+                if (now - lastAsked > 7 * 24 * 60 * 60 * 1000L) {
+                    prefs.edit().putLong("battery_opt_last_asked", now).apply();
                     try {
                         Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
                         intent.setData(android.net.Uri.parse("package:" + getPackageName()));
@@ -417,7 +423,36 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
+            // Samsung-specific: try to open Samsung's own battery settings
+            openSamsungBatterySettings();
         }
+    }
+
+    /** BUG-027: Samsung has extra battery restrictions beyond standard Android. */
+    private void openSamsungBatterySettings() {
+        SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+        if (prefs.getBoolean("samsung_battery_shown", false)) return;
+        // Only on Samsung devices
+        if (!android.os.Build.MANUFACTURER.equalsIgnoreCase("samsung")) return;
+        // Show once — explain to user
+        prefs.edit().putBoolean("samsung_battery_shown", true).apply();
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Samsung Battery Optimization")
+            .setMessage("Samsung may stop SecureCall from running in the background.\n\n"
+                + "To receive calls reliably:\n"
+                + "Settings → Apps → SecureCall → Battery → Unrestricted\n\n"
+                + "Open battery settings now?")
+            .setPositiveButton("Open Settings", (d, w) -> {
+                try {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    intent.setData(android.net.Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    android.util.Log.w("MainActivity", "Failed to open app settings", e);
+                }
+            })
+            .setNegativeButton("Later", null)
+            .show();
     }
 
     private void requestPhoneNumberPermission() {
