@@ -459,26 +459,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<SwitchPreferenceCompat>("pref_esim_routing")?.apply {
-            when {
-                !hasEsim -> {
-                    isEnabled = false
-                    isChecked = false
-                    summary = "eSIM not available on this device"
-                }
-                !isProOrPremium -> {
-                    isEnabled = false
-                    isChecked = false
-                    summary = getString(R.string.pref_premium_feature)
-                }
-                else -> {
-                    isEnabled = true
-                    isChecked = com.securecall.app.net.NetworkManager.isEsimRoutingEnabled(ctx)
-                    summary = getString(R.string.pref_esim_routing_summary)
-                    setOnPreferenceChangeListener { _, newValue ->
-                        com.securecall.app.net.NetworkManager.setEsimRouting(ctx, newValue as Boolean)
-                        true
-                    }
-                }
+            // eSIM traffic steering requires VpnService — not yet implemented
+            isEnabled = false
+            isChecked = false
+            summary = when {
+                !hasEsim -> "eSIM not available on this device"
+                else -> "Coming Soon \u2014 requires VpnService-based traffic steering"
             }
         }
 
@@ -496,18 +482,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
             } else {
                 isEnabled = true
                 value = com.securecall.app.net.NetworkManager.getPreferredTransport(ctx)
-                summary = when (com.securecall.app.net.NetworkManager.getPreferredTransport(ctx)) {
-                    "default" -> "Route calls through the best available network"
-                    else -> "Takes effect when only one network is active. For dual-network routing use WireGuard VPN."
-                }
+                summary = "Effective when switching networks (e.g. WiFi off \u2192 Mobile)"
                 setOnPreferenceChangeListener { pref, newValue ->
                     val transport = newValue as String
                     com.securecall.app.net.NetworkManager.setPreferredTransport(ctx, transport)
                     com.securecall.app.net.NetworkManager.bindToPreferredNetwork(ctx)
-                    pref.summary = when (transport) {
-                        "default" -> "Route calls through the best available network"
-                        else -> "Takes effect when only one network is active. For dual-network routing use WireGuard VPN."
-                    }
+                    pref.summary = "Effective when switching networks (e.g. WiFi off \u2192 Mobile)"
                     findPreference<Preference>("pref_network_info")?.apply {
                         val info = com.securecall.app.net.NetworkManager.getActiveNetworkInfo(ctx)
                         summary = if (com.securecall.app.net.NetworkManager.isBound()) "$info (bound)" else info

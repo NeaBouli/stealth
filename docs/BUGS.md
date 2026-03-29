@@ -27,8 +27,17 @@
 | BUG-023 | No diagnostic log export — SecLog CSV export (Pro/Premium) | OPEN | Low | — |
 | BUG-024 | Random disconnects on network change — auto-reconnect via NetworkCallback | FIXED | High | 4174031 |
 | BUG-025 | Phone normalization — full E.164 normalization | FIXED | High | df52218 + 991e5af |
+| BUG-026 | eSIM Call Routing + Preferred Network — OkHttp pool bypasses bindProcessToNetwork() | OPEN | High | — |
 
 ## Fix Details
+
+### BUG-026: eSIM Call Routing + Preferred Network bypass (OPEN)
+- **Symptom:** `bindProcessToNetwork()` and `socketFactory` do not reliably route OkHttp WebSocket traffic when both WiFi and Cellular are active simultaneously.
+- **Root Cause:** OkHttp connection pooling reuses sockets created before the network binding. DNS resolution may also route through the default network.
+- **Tested:** S10 Premium — binding applied in logs but `/proc/PID/net/tcp` shows WiFi IP on all connections.
+- **Fix Required:** VpnService-based traffic steering (intercept at OS level, not app level).
+- **Workaround:** Feature works when only one network is active (e.g. WiFi off → Mobile).
+- **Status:** eSIM routing disabled in UI, Preferred Network shows honest disclaimer.
 
 ### BUG-001: Online status dots inconsistent (FIXED)
 - Reduced STATUS_REFRESH_INTERVAL from 30s to 15s for faster dot transitions

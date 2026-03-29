@@ -46,8 +46,7 @@
 | ID | Task | Priority | Notes |
 |----|------|----------|-------|
 | TODO-029 | Google Play Service Account | HIGH | For billing purchase verification (manual) |
-| TODO-042 | Auto-Reconnect bei Netzwerkwechsel | HIGH | ConnectivityManager NetworkCallback — BUG-009/024 |
-| TODO-043 | Ads waehrend aktiver Anrufe unterdruecken | HIGH | AdMob pause in CallActivity — BUG-012 |
+| TODO-046 | VpnService-based network traffic steering | HIGH | Required for eSIM routing + Preferred Network — BUG-026 |
 | TODO-030 | Store Listing DE in Play Console | MEDIUM | marketing/play_store/de/store_listing.md ready |
 | TODO-033 | Firebase + AdMob linking | MEDIUM | AdMob Console → Firebase (manual) |
 | TODO-044 | Kontakt-Sync mit Telefonbuch | MEDIUM | Namen nach Anruf aus Phonebook uebernehmen — BUG-013 |
