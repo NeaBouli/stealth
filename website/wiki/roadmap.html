@@ -125,13 +125,13 @@
                 <h1 class="wiki-page-title">Strategic Development Roadmap</h1>
                 <p class="wiki-page-subtitle">Development roadmap and upcoming features.</p>
             </div>
-            <p class="wiki-meta">SecureCall development roadmap &mdash; completed, active, and planned features &middot; Last updated March 2026</p>
+            <p class="wiki-meta">SecureCall development roadmap &mdash; completed, active, and planned features &middot; Last updated March 30, 2026</p>
 
             <!-- OBJECTIVES ACHIEVED -->
-            <div class="section-break">Objectives Achieved (v1.0.6)</div>
+            <div class="section-break">Objectives Achieved (v1.0.12)</div>
 
             <h2>Completed Milestones</h2>
-            <p>The following objectives have been fully implemented, tested, and verified in the current <strong>v1.0.6</strong> release. These form the foundation of the SecureCall platform.</p>
+            <p>The following objectives have been fully implemented, tested, and verified in the current <strong>v1.0.12</strong> release (versionCode 28). All 20 tests pass on 3 physical devices.</p>
 
             <ul class="checklist">
                 <li class="done">End-to-End Encryption (XChaCha20-Poly1305 + X25519 key exchange)</li>
@@ -155,36 +155,40 @@
                 <li class="done">Invite System with Deep Link &amp; SPA router</li>
                 <li class="done">Emergency Delete (STEALTH-DELETE) &mdash; 5-tap instant wipe</li>
                 <li class="done">One-Click Update System &mdash; UpdateManager auto-detect</li>
-                <li class="done">F-Droid variant &mdash; in preparation (coming soon)</li>
+                <li class="done">Auto-reconnect on network change (ConnectivityManager NetworkCallback)</li>
+                <li class="done">Diagnostic Logs + CSV Export (Pro/Premium SecLog)</li>
+                <li class="done">Phone Normalization &mdash; E.164 format, 00&rarr;+ conversion</li>
+                <li class="done">Collapsible Settings Sections with &#9654;/&#9660; toggle</li>
+                <li class="done">Samsung Battery Kill Protection (WakeLock, AlarmManager, BootReceiver)</li>
+                <li class="done">Dark Mode as default</li>
+                <li class="done">Connect/Disconnect Button with status colors</li>
+                <li class="done">Beta Testing &mdash; 15/15 testers enrolled, Alpha Track live</li>
             </ul>
 
             <!-- ACTIVE OPERATIONS -->
             <div class="section-break">Active Operations</div>
 
             <h2>Currently In Progress</h2>
-            <p>These objectives are actively being worked on and represent the immediate priorities before the first public release.</p>
+            <p>These objectives are actively being worked on for the next release cycle.</p>
 
             <ul class="checklist">
-                <li class="pending">Beta Testing &mdash; 12 of 15 target testers enrolled, 14-day validation period in progress</li>
-                <li class="pending">Google Play Store Launch &mdash; pending successful 14-day beta + Audit Report submission</li>
-                <li class="pending">Audit Report &mdash; preparation and submission to Google Play</li>
-                <li class="pending">F-Droid Release &mdash; build and publish Google-free APK variant</li>
-                <li class="pending">Production Server &mdash; scaling Railway infrastructure and monitoring</li>
+                <li class="pending">BUG-010: FCM background wakeup reliability &mdash; incoming calls when app closed</li>
+                <li class="pending">BUG-011: WebRTC call stability &mdash; call drops after connecting</li>
+                <li class="pending">Google Play Store Production Launch &mdash; pending beta validation</li>
+                <li class="pending">Google Play Service Account for billing verification (TODO-029)</li>
             </ul>
 
-            <!-- PLANNED OPERATIONS -->
-            <div class="section-break">Planned Operations (v0.3)</div>
+            <!-- PLANNED v1.1 -->
+            <div class="section-break">Planned (v1.1)</div>
 
-            <h2>Next Release Features</h2>
-            <p>The following features are planned for the <strong>v0.3</strong> release cycle. These extend SecureCall&rsquo;s capabilities while maintaining the security-first design philosophy.</p>
+            <h2>Next Release</h2>
+            <p>Critical bug fixes and production preparation.</p>
 
             <ul class="checklist">
-                <li class="pending">WebRTC upgrade &mdash; migration to the latest WebRTC specification for improved compatibility and performance</li>
-                <li class="pending">Improved NAT traversal &mdash; enhanced ICE candidate gathering and fallback strategies for restrictive networks</li>
-                <li class="pending">Group Calls (Pro/Premium) &mdash; encrypted multi-party calls supporting up to 5 simultaneous participants</li>
-                <li class="pending">Encrypted call recording &mdash; local-only recording with device-bound encryption keys (Premium tier only)</li>
-                <li class="pending">Biometric lock &mdash; fingerprint or face authentication required to open the app</li>
-                <li class="pending">Widget for quick-call &mdash; home screen widget for one-tap calling to favorite contacts</li>
+                <li class="pending">FCM + WebRTC critical call fixes</li>
+                <li class="pending">German Store Listing in Play Console (TODO-030)</li>
+                <li class="pending">Firebase + AdMob Console integration (TODO-033)</li>
+                <li class="pending">Beta activation codes deactivation + IAP (TODO-047)</li>
             </ul>
 
             <!-- MATRIX INTEGRATION -->

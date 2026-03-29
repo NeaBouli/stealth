@@ -14,14 +14,16 @@
 [![Crypto: XChaCha20-Poly1305](https://img.shields.io/badge/Crypto-XChaCha20--Poly1305-7C6CFF.svg)](docs/SECURITY_DESIGN.md)
 [![Security: Audited](https://img.shields.io/badge/Security-Audited-orange.svg)](docs/SECURITY_AUDIT_REPORT.md)
 [![Rust Crypto Engine](https://img.shields.io/badge/Engine-Rust-DEA584.svg)](core_crypto/)
-[![GitHub Pages](https://img.shields.io/badge/Website-Live-34D399.svg)](https://neabouli.github.io/stealth/)
+[![Version](https://img.shields.io/badge/Version-v1.0.12-4ade80.svg)](https://github.com/NeaBouli/stealth/releases/tag/v1.0.12)
+[![Website](https://img.shields.io/badge/Website-stealthx.tech-34D399.svg)](https://stealthx.tech)
+[![Testers](https://img.shields.io/badge/Beta_Testers-15-blue.svg)](https://play.google.com/apps/testing/com.securecall.app.free)
 
 ---
 
 **SecureCall is a voice communication app built from the ground up for privacy.**
 No metadata. No compromises. Every call is encrypted end-to-end using military-grade cryptography.
 
-[Website](https://neabouli.github.io/stealth/) | [Features](#features) | [Security](#security) | [Documentation](#documentation) | [FAQ](#faq)
+[Website](https://stealthx.tech) | [Play Store Beta](https://play.google.com/apps/testing/com.securecall.app.free) | [Download APK](https://github.com/NeaBouli/stealth/releases/latest) | [Features](#features) | [Security](#security)
 
 </div>
 

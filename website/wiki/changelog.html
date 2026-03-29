@@ -124,31 +124,81 @@
                 <h1 class="wiki-page-title">Operations Log</h1>
                 <p class="wiki-page-subtitle">Version history, release notes, and changelog.</p>
             </div>
-            <p class="wiki-meta">SecureCall version history and changelog &middot; Last updated March 2026</p>
+            <p class="wiki-meta">SecureCall version history and changelog &middot; Last updated March 30, 2026</p>
 
             <div class="info-box info">
-                Format based on <a href="https://keepachangelog.com/" target="_blank" rel="noopener">Keep a Changelog</a>. All notable changes to the SecureCall project are documented here. Phases are listed in reverse chronological order.
+                All notable changes to the SecureCall project. Versions in reverse chronological order. 20 tests verified on 3 physical devices (S10 Premium, S7 Pro, Tab S4 Free).
             </div>
 
-            <!-- UNRELEASED -->
-            <div class="section-break">[Active] &mdash; v1.0.6 (Build 16) &mdash; March 2026</div>
-
-            <!-- Phase 14 -->
-            <h3>Phase 14: Beta Launch + Analytics + App Releases (March 2026)</h3>
+            <div class="section-break">v1.0.12 (versionCode 28) &mdash; March 29, 2026</div>
+            <h3>Bug Sprint + Feature Polish</h3>
             <ul>
-                <li>Google Analytics 4 (GA4) tag <code>G-V2L60E8E7R</code> deployed across all 23 HTML pages</li>
-                <li>Bing Webmaster verification meta tag added to <code>index.html</code></li>
-                <li><code>BingSiteAuth.xml</code> created and deployed to website root</li>
-                <li>Beta testing phase started &mdash; 12 active testers enrolled (target: 15)</li>
-                <li><strong>v1.0.6 (Build 16)</strong> &mdash; 26.03.2026: FCM persistence, Emergency Delete, Pro/Premium labels, FLAG_SECURE fix, AdMob 23.6.0, Invite Dialog with Deep Link, Contacts filter, Verified Badge, SPA router</li>
-                <li><strong>v1.0.4 (Build 14)</strong> &mdash; 25.03.2026: FCM Push Notifications fixed, One-Click Update System, UpdateManager auto-detect</li>
-                <li><strong>v1.0.3 (Build 13)</strong> &mdash; 24.03.2026: Navbar Overlap Fix (S21+), Phone Number Persistence, Contact Detection, SMS Link Fix, Support Development collapsible, Invite System, EBS Templates 9+10, Live Status Dashboard</li>
-                <li><strong>v1.0.2 (Build 12)</strong> &mdash; 24.03.2026: Peer-not-found Fix, Phone Number Fix, Navbar Overlap, Invite System, EBS Templates</li>
-                <li><strong>v1.0.0 (Build 10)</strong> &mdash; 24.03.2026: First internal test release</li>
+                <li>Dark mode as default for new installs</li>
+                <li>Connect/Disconnect button with color indicator (green/grey/yellow)</li>
+                <li>Settings sections collapsible with arrow (tap &#9654; expand, &#9660; collapse)</li>
+                <li>Auto-reconnect on network change (ConnectivityManager NetworkCallback)</li>
+                <li>Phone normalization (+49, 0049, +49 151 234 567 all treated as same number)</li>
+                <li>Diagnostic logs + CSV export via Share Sheet (Pro/Premium)</li>
+                <li>IFR Learn More &rarr; ifrunit.tech (click handler fixed)</li>
+                <li>Upgrade button tier-aware: hidden for Premium, &ldquo;Upgrade to Premium&rdquo; for Pro</li>
+                <li>Samsung A-series battery kill protection (WakeLock, AlarmManager, BootReceiver)</li>
+                <li>Update mirror: release&rarr;Play Store, debug/sideload&rarr;GitHub</li>
+                <li>eSIM routing + Preferred Network marked Coming Soon (needs VpnService)</li>
+                <li>CollapsiblePreferenceCategory respects programmatically hidden prefs</li>
+                <li>Emergency Delete first in Settings, IFR Token last</li>
+                <li>&ldquo;Anonymous Network&rdquo; renamed to &ldquo;Network&rdquo;</li>
+                <li>FAB hidden in all tabs except Dialer</li>
+                <li>Report a Bug opens stealthx.tech/wiki/bug-report.html</li>
+                <li>Matrix Integration wiki page + roadmap entries</li>
+                <li>Landing page: 16 feature cards + 4 Coming Soon items</li>
+                <li>14+ bugs fixed (BUG-009 through BUG-025)</li>
             </ul>
 
-            <!-- Phase 13 -->
-            <div class="section-break">[Completed] &mdash; v0.2-beta &mdash; February 2026</div>
+            <div class="section-break">v1.0.10 (versionCode 21) &mdash; March 28, 2026</div>
+            <h3>Invite System + Contact Improvements</h3>
+            <ul>
+                <li>Deep Link Invite system (securecall://add-contact)</li>
+                <li>QR Code contact exchange</li>
+                <li>Contacts: online first, offline below, search shows all</li>
+                <li>Donation section always collapsed on start</li>
+                <li>Deep link: Add Contact dialog with name + Call Now option</li>
+                <li>Samsung Lock Screen fullScreenIntent fix</li>
+                <li>GA4 + Bing Webmaster verification on all pages</li>
+                <li>Impressum: contact form + 24100 Kalamata address</li>
+            </ul>
+
+            <div class="section-break">v1.0.6 (versionCode 16) &mdash; March 26, 2026</div>
+            <h3>FCM + Emergency Delete + Labels</h3>
+            <ul>
+                <li>FCM Token persistence across Railway redeploys</li>
+                <li>Emergency Delete (STEALTH-DELETE) &mdash; 5-tap instant wipe</li>
+                <li>Pro/Premium feature labels + upgrade hints</li>
+                <li>FLAG_SECURE tier-based (Free=off, Pro=toggle, Premium=always)</li>
+                <li>AdMob SDK 23.0.0 &rarr; 23.6.0</li>
+                <li>Invite Dialog with Deep Link + SPA router</li>
+                <li>Contacts filter + Verified Badge</li>
+            </ul>
+
+            <div class="section-break">v1.0.4 (versionCode 14) &mdash; March 25, 2026</div>
+            <h3>Push Notifications + Update System</h3>
+            <ul>
+                <li>FCM Push Notifications fixed (API key + persistent tokens)</li>
+                <li>One-Click Update System (UpdateManager auto-detect)</li>
+            </ul>
+
+            <div class="section-break">v1.0.0 (versionCode 10) &mdash; March 24, 2026</div>
+            <h3>First Internal Test Release</h3>
+            <ul>
+                <li>E2E encrypted calling with XChaCha20-Poly1305 + X25519</li>
+                <li>Rust crypto engine with JNI bridge</li>
+                <li>WebRTC P2P audio with Opus 48kHz</li>
+                <li>3 product tiers (Free/Pro/Premium)</li>
+                <li>WireGuard VPN (Premium)</li>
+                <li>Anti-Recording Protection (6 layers)</li>
+                <li>Material Design 3 UI</li>
+            </ul>
+
+            <div class="section-break">Pre-release &mdash; February 2026</div>
 
             <h3>Phase 13: Website Rebuild</h3>
             <ul>
