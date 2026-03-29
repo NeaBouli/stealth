@@ -92,6 +92,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // IFR Token Unlock section
         configureIfrUnlock(effectiveTier)
 
+        // IFR Learn More link — set directly (not inside configureIfrUnlock to avoid lambda issues)
+        findPreference<Preference>("pref_ifr_learn_more")?.apply {
+            isSelectable = true
+            setOnPreferenceClickListener {
+                openUrl("https://ifrunit.tech")
+                true
+            }
+        }
+
         // SecureCall ID (tap to copy) — read fresh from SharedPreferences each time
         val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
         findPreference<Preference>("pref_client_id")?.apply {
