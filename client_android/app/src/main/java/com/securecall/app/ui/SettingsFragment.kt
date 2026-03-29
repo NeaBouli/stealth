@@ -67,9 +67,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-        // Upgrade button (only for FREE effective tier)
+        // Upgrade button — hidden for Premium, shows "Upgrade to Premium" for Pro
         findPreference<Preference>("pref_upgrade")?.apply {
-            isVisible = TierManager.isFreeTier(requireContext())
+            when (effectiveTier) {
+                "PREMIUM" -> isVisible = false
+                "PRO" -> { isVisible = true; title = "Upgrade to Premium" }
+                else -> { isVisible = true; title = getString(R.string.upgrade_to_pro) }
+            }
             setOnPreferenceClickListener {
                 try {
                     val intent = Intent()
