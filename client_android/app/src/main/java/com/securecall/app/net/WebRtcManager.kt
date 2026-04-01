@@ -34,6 +34,9 @@ class WebRtcManager(
     @Volatile
     private var isClosed = false
 
+    // WebRTC stats timer for SecLog
+    private var statsTimer: java.util.Timer? = null
+
     // Pending queues for messages that arrive before init() completes
     private var pendingOffer: String? = null
     private var pendingAnswer: String? = null
@@ -143,11 +146,52 @@ class WebRtcManager(
         return dc.send(buf)
     }
 
+    private fun startStatsLogging() {
+        statsTimer?.cancel()
+        statsTimer = java.util.Timer().apply {
+            scheduleAtFixedRate(object : java.util.TimerTask() {
+                override fun run() {
+                    val pc = peerConnection ?: return
+                    try {
+                        pc.getStats { report ->
+                            report.statsMap.values.forEach { stats ->
+                                when (stats.type) {
+                                    "candidate-pair" -> {
+                                        if (stats.members["state"] == "succeeded") {
+                                            val local = stats.members["localCandidateId"] ?: ""
+                                            val remote = stats.members["remoteCandidateId"] ?: ""
+                                            com.securecall.app.debug.SecLogManager.log("STATS",
+                                                "Active pair: local=$local remote=$remote")
+                                        }
+                                    }
+                                    "inbound-rtp" -> {
+                                        val pkts = stats.members["packetsReceived"] ?: "0"
+                                        val lost = stats.members["packetsLost"] ?: "0"
+                                        val jitter = stats.members["jitter"] ?: "0"
+                                        com.securecall.app.debug.SecLogManager.log("STATS",
+                                            "RX: pkts=$pkts lost=$lost jitter=$jitter")
+                                    }
+                                    "outbound-rtp" -> {
+                                        val pkts = stats.members["packetsSent"] ?: "0"
+                                        com.securecall.app.debug.SecLogManager.log("STATS",
+                                            "TX: pkts=$pkts")
+                                    }
+                                }
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+            }, 5000, 10000) // Start after 5s, repeat every 10s
+        }
+    }
+
     /** Tear down everything */
     fun close() {
         Log.d(TAG, "Closing WebRTC")
         isClosed = true  // Prevent callbacks from firing after close
         isDataChannelOpen = false
+        statsTimer?.cancel()
+        statsTimer = null
         try { dataChannel?.close() } catch (_: Exception) {}
         try { peerConnection?.close() } catch (_: Exception) {}
         try { factory?.dispose() } catch (_: Exception) {}
@@ -183,8 +227,10 @@ class WebRtcManager(
             Log.d(TAG, "ICE connection state: $state")
             com.securecall.app.debug.SecLogManager.log("ICE", "State: $state")
             when (state) {
-                PeerConnection.IceConnectionState.CONNECTED ->
+                PeerConnection.IceConnectionState.CONNECTED -> {
                     com.securecall.app.debug.SecLogManager.log("ICE", "P2P connected — audio should flow")
+                    startStatsLogging()
+                }
                 PeerConnection.IceConnectionState.FAILED -> {
                     com.securecall.app.debug.SecLogManager.log("ICE", "FAILED — no audio path found")
                     Log.d(TAG, "ICE FAILED — peer disconnected, triggering call teardown")

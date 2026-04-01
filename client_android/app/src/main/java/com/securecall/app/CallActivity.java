@@ -797,6 +797,8 @@ public class CallActivity extends AppCompatActivity {
                 );
                 CallHistoryRepository.INSTANCE.add(this, record);
                 Log.d(TAG, "Call history saved: " + callType + " " + callContactName + " " + durationSecs + "s");
+                com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(this, "CALL",
+                    "Duration: " + durationSecs + "s, type: " + callType + ", contact: " + callContactName);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to save call history", e);
             }
