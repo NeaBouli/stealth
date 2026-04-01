@@ -24,12 +24,22 @@ if (process.env.NODE_ENV === "production" && (!process.env.TURN_USER || !process
 }
 
 const ICE_SERVERS = [
+  { urls: "stun:stun.relay.metered.ca:80" },
   { urls: process.env.STUN_URL || "stun:stun.l.google.com:19302" },
-  ...(process.env.TURN_URL ? [{
-    urls: process.env.TURN_URL,
-    username: process.env.TURN_USER,
-    credential: process.env.TURN_PASS
-  }] : [])
+  ...(process.env.TURN_USER && process.env.TURN_PASS ? [
+    // UDP TURN (standard, fastest)
+    { urls: "turn:a.relay.metered.ca:80?transport=udp",
+      username: process.env.TURN_USER, credential: process.env.TURN_PASS },
+    // TCP TURN (works through most firewalls)
+    { urls: "turn:a.relay.metered.ca:80?transport=tcp",
+      username: process.env.TURN_USER, credential: process.env.TURN_PASS },
+    // TCP TURN on port 443 (works through VPNs + strict firewalls)
+    { urls: "turn:a.relay.metered.ca:443?transport=tcp",
+      username: process.env.TURN_USER, credential: process.env.TURN_PASS },
+    // TLS TURN on port 443 (maximum VPN compatibility)
+    { urls: "turns:a.relay.metered.ca:443?transport=tcp",
+      username: process.env.TURN_USER, credential: process.env.TURN_PASS }
+  ] : [])
 ];
 
 // --- Security Configuration ---

@@ -49,10 +49,15 @@ class WebRtcManager(
             PeerConnection.IceServer.builder(BuildConfig.STUN_URL).createIceServer()
         )
         Log.d(TAG, "Using ${iceServers.size} ICE servers (dynamic=${dynamicIceServers != null})")
+        com.securecall.app.debug.SecLogManager.log("ICE", "Init: ${iceServers.size} servers (dynamic=${dynamicIceServers != null})")
+        iceServers.forEach { server ->
+            Log.d(TAG, "  ICE server: ${server.urls}")
+        }
 
         val rtcConfig = PeerConnection.RTCConfiguration(iceServers).apply {
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
             continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
+            iceTransportsType = PeerConnection.IceTransportsType.ALL
         }
 
         peerConnection = factory?.createPeerConnection(rtcConfig, pcObserver)

@@ -849,10 +849,59 @@ public class CallActivity extends AppCompatActivity {
             // Keep screen on while dialog is visible
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             showSaveContactDialog();
+        } else if (shouldOfferVerify()) {
+            // BUG-031: Offer to verify unverified contact after call
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            showVerifyDialog();
         } else {
             releaseProximitySensor();
             finish();
         }
+    }
+
+    /** BUG-031: Check if we should offer to verify an unverified contact after call. */
+    private boolean shouldOfferVerify() {
+        if (callContactId.isEmpty()) return false;
+        java.util.List<com.securecall.app.data.Contact> contacts =
+                com.securecall.app.data.ContactRepository.INSTANCE.getAll(this);
+        for (com.securecall.app.data.Contact c : contacts) {
+            if ((c.getPhoneOrId().equals(callContactId) ||
+                 (c.getSecureId() != null && c.getSecureId().equals(callContactId))) &&
+                !c.isVerified()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void showVerifyDialog() {
+        if (isFinishing() || isDestroyed()) { releaseProximitySensor(); finish(); return; }
+        new AlertDialog.Builder(this)
+            .setTitle("Verify " + callContactName + "?")
+            .setMessage("You just had a call with " + callContactName + ". Verify this contact?")
+            .setPositiveButton("Verify \u2713", (d, w) -> {
+                java.util.List<com.securecall.app.data.Contact> contacts =
+                        com.securecall.app.data.ContactRepository.INSTANCE.getAll(this);
+                for (com.securecall.app.data.Contact c : contacts) {
+                    if (c.getPhoneOrId().equals(callContactId) ||
+                        (c.getSecureId() != null && c.getSecureId().equals(callContactId))) {
+                        com.securecall.app.data.Contact verified = c.copy(
+                            c.getId(), c.getName(), c.getPhoneOrId(), c.getCreatedAt(),
+                            c.isPhoneContact(), c.getSecureId(), true, c.isBlocked());
+                        com.securecall.app.data.ContactRepository.INSTANCE.update(this, verified);
+                        Toast.makeText(this, callContactName + " verified \u2713", Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                }
+                releaseProximitySensor();
+                finish();
+            })
+            .setNegativeButton("Skip", (d, w) -> {
+                releaseProximitySensor();
+                finish();
+            })
+            .setCancelable(false)
+            .show();
     }
 
     /** Check if we should offer to save this contact (phone→clientId resolved, not already saved). */

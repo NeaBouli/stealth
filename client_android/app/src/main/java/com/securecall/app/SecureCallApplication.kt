@@ -25,8 +25,8 @@ class SecureCallApplication : Application() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         when (prefs.getString("pref_dark_mode", "dark")) {
             "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-            else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            "system" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES) // dark = default
         }
 
         // Initialize WebRTC PeerConnectionFactory on a background thread.
