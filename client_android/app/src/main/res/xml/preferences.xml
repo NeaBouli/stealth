@@ -201,6 +201,11 @@
             android:summary="@string/settings_wiki_summary"
             android:icon="@drawable/ic_search" />
         <Preference
+            android:key="pref_user_manual"
+            android:title="User Manual"
+            android:summary="Complete guide to SecureCall"
+            android:icon="@drawable/ic_search" />
+        <Preference
             android:key="pref_report_bug"
             android:title="@string/settings_report_bug"
             android:summary="@string/settings_report_bug_summary"

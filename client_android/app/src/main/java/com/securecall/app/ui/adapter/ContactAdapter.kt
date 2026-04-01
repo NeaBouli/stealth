@@ -36,7 +36,7 @@ class ContactAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contact = contacts[position]
-        holder.txtName.text = contact.name
+        holder.txtName.text = if (contact.isVerified) "${contact.name} \u2713" else contact.name
         // Show phone + SecureID if both are available
         val subtitle = if (contact.secureId != null && !contact.phoneOrId.startsWith("android-")) {
             "${contact.phoneOrId} | ${contact.secureId}"

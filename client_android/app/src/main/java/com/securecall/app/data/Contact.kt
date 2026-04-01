@@ -9,7 +9,9 @@ data class Contact(
     val phoneOrId: String,
     val createdAt: Long = System.currentTimeMillis(),
     val isPhoneContact: Boolean = false,
-    val secureId: String? = null
+    val secureId: String? = null,
+    val isVerified: Boolean = false,
+    val isBlocked: Boolean = false
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
@@ -17,6 +19,8 @@ data class Contact(
         put("phoneOrId", phoneOrId)
         put("createdAt", createdAt)
         if (secureId != null) put("secureId", secureId)
+        if (isVerified) put("isVerified", true)
+        if (isBlocked) put("isBlocked", true)
     }
 
     companion object {
@@ -25,7 +29,9 @@ data class Contact(
             name = json.getString("name"),
             phoneOrId = json.getString("phoneOrId"),
             createdAt = json.optLong("createdAt", System.currentTimeMillis()),
-            secureId = json.optString("secureId", "").let { if (it.isEmpty()) null else it }
+            secureId = json.optString("secureId", "").let { if (it.isEmpty()) null else it },
+            isVerified = json.optBoolean("isVerified", false),
+            isBlocked = json.optBoolean("isBlocked", false)
         )
     }
 }

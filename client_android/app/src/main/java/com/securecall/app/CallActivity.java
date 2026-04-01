@@ -900,7 +900,8 @@ public class CallActivity extends AppCompatActivity {
                 com.securecall.app.data.Contact contact = new com.securecall.app.data.Contact(
                     java.util.UUID.randomUUID().toString(),
                     callContactName, savePhoneOrId,
-                    System.currentTimeMillis(), false, saveSecureId
+                    System.currentTimeMillis(), false, saveSecureId,
+                    false, false
                 );
                 com.securecall.app.data.ContactRepository.INSTANCE.save(this, contact);
                 com.securecall.app.ui.ContactsFragment.Companion.invalidateCache();

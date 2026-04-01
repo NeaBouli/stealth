@@ -251,6 +251,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             openUrl("https://github.com/NeaBouli/stealth/wiki")
             true
         }
+        findPreference<Preference>("pref_user_manual")?.setOnPreferenceClickListener {
+            openUrl("https://stealthx.tech/wiki/user-manual.html")
+            true
+        }
         findPreference<Preference>("pref_report_bug")?.setOnPreferenceClickListener {
             openUrl("https://stealthx.tech/wiki/bug-report.html")
             true

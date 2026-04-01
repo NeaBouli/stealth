@@ -653,16 +653,41 @@ class ContactsFragment : Fragment() {
 
     private fun showContactMenu(contact: Contact) {
         val ctx = context ?: return
-        val options = arrayOf("Delete Contact")
+        val verifyLabel = if (contact.isVerified) "Verified \u2713" else "\u2705 Verify Contact"
+        val blockLabel = if (contact.isBlocked) "\u2705 Unblock Contact" else "\uD83D\uDEAB Block Contact"
+        val options = arrayOf(verifyLabel, blockLabel, "\uD83D\uDDD1 Delete Contact")
         android.app.AlertDialog.Builder(ctx)
             .setTitle(contact.name)
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> {
-                        com.securecall.app.data.ContactRepository.deleteByPhoneOrId(ctx, contact.phoneOrId)
+                    0 -> { // Verify / Unverify
+                        val updated = contact.copy(isVerified = !contact.isVerified)
+                        com.securecall.app.data.ContactRepository.update(ctx, updated)
                         invalidateCache()
                         loadContactsAsync(forceRefresh = true)
-                        android.widget.Toast.makeText(ctx, "${contact.name} deleted", android.widget.Toast.LENGTH_SHORT).show()
+                        val msg = if (updated.isVerified) "${contact.name} verified \u2713" else "${contact.name} unverified"
+                        android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    1 -> { // Block / Unblock
+                        val updated = contact.copy(isBlocked = !contact.isBlocked)
+                        com.securecall.app.data.ContactRepository.update(ctx, updated)
+                        invalidateCache()
+                        loadContactsAsync(forceRefresh = true)
+                        val msg = if (updated.isBlocked) "${contact.name} blocked" else "${contact.name} unblocked"
+                        android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    2 -> { // Delete with confirmation
+                        android.app.AlertDialog.Builder(ctx)
+                            .setTitle("Delete ${contact.name}?")
+                            .setMessage("This will permanently remove this contact.")
+                            .setPositiveButton("Delete") { _, _ ->
+                                com.securecall.app.data.ContactRepository.deleteByPhoneOrId(ctx, contact.phoneOrId)
+                                invalidateCache()
+                                loadContactsAsync(forceRefresh = true)
+                                android.widget.Toast.makeText(ctx, "${contact.name} deleted", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show()
                     }
                 }
             }

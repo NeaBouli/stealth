@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Manual — SecureCall Wiki</title>
+    <meta name="description" content="Complete guide to using SecureCall — installation, contacts, calls, settings, security, and troubleshooting.">
+    <meta name="theme-color" content="#0a0a12">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://stealthx.tech/wiki/user-manual.html">
+    <meta property="og:title" content="User Manual — SecureCall Wiki">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://stealthx.tech/wiki/user-manual.html">
+    <meta property="og:site_name" content="SecureCall">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/wiki.css">
+    <link rel="stylesheet" href="../css/wiki-v2.css">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="../logo.png">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2L60E8E7R"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-V2L60E8E7R");</script>
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="../" class="nav-logo">
+                <img src="../logo.png" alt="SecureCall" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="../#features">Features</a>
+                <a href="../#security">Security</a>
+                <a href="../#audit">Audit</a>
+                <a href="../#compare">Compare</a>
+                <a href="../#pricing">Pricing</a>
+                <a href="../#lifetime" style="color:#FFD700">Lifetime</a>
+                <a href="./" class="active">Wiki</a>
+                <a href="../faq.html">FAQ</a>
+                <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="../#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="wiki-layout">
+        <aside class="wiki-sidebar" id="wikiSidebar">
+            <a href="../" class="sidebar-home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Back to Main Site
+            </a>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Getting Started</span>
+                <nav class="sidebar-nav">
+                    <a href="./">Overview</a>
+                    <a href="installation-guide.html">Installation Guide</a>
+                    <a href="getting-started.html">Quick Start</a>
+                    <a href="ifr-unlock.html">IFR Token Unlock</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">User Guide</span>
+                <nav class="sidebar-nav">
+                    <a href="user-manual.html" class="active">User Manual</a>
+                    <a href="faq.html">FAQ</a>
+                    <a href="beta-testing.html">Beta Testing</a>
+                    <a href="troubleshooting.html">Troubleshooting</a>
+                    <a href="bug-report.html">Bug Report</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Security</span>
+                <nav class="sidebar-nav">
+                    <a href="security-design.html">Security Design</a>
+                    <a href="security-audit.html">Security Audit</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Technical</span>
+                <nav class="sidebar-nav">
+                    <a href="architecture.html">Architecture</a>
+                    <a href="api-reference.html">API Reference</a>
+                </nav>
+            </div>
+            <div class="sidebar-section">
+                <span class="sidebar-label">Project</span>
+                <nav class="sidebar-nav">
+                    <a href="roadmap.html">Roadmap</a>
+                    <a href="matrix-integration.html">Matrix Integration</a>
+                    <a href="changelog.html">Changelog</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="wiki-content">
+            <button class="wiki-sidebar-toggle" onclick="document.getElementById('wikiSidebar').classList.toggle('open')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Navigation
+            </button>
+
+            <div class="breadcrumbs">
+                <a href="../">Home</a>
+                <span class="sep">&#9656;</span>
+                <a href="./" class="active">Wiki</a>
+                <span class="sep">&#9656;</span>
+                <span class="current">User Manual</span>
+            </div>
+
+            <div class="classified-banner">
+                <span>Classification: Restricted</span>
+                <span class="doc-id">SC-MANUAL</span>
+                <span class="division">StealthX // SecureCall</span>
+            </div>
+
+            <div class="wiki-page-header">
+                <div class="wiki-classification">Classification: Restricted &middot; SC-MANUAL</div>
+                <h1 class="wiki-page-title">User Manual</h1>
+                <p class="wiki-page-subtitle">Complete guide to using SecureCall.</p>
+            </div>
+            <p class="wiki-meta">SecureCall user manual &mdash; installation, contacts, calls, settings, security, and troubleshooting &middot; Last updated April 1, 2026</p>
+
+            <!-- GETTING STARTED -->
+            <div class="section-break">Getting Started</div>
+
+            <h2>Installation &amp; Setup</h2>
+            <p>Get SecureCall running on your device in under two minutes.</p>
+
+            <ul>
+                <li><strong>Install from Play Store Beta</strong> &mdash; join the beta program on Google Play, or download the APK directly from <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>.</li>
+                <li><strong>Complete onboarding</strong> &mdash; swipe through the 4 onboarding screens to learn the basics.</li>
+                <li><strong>Enter your phone number</strong> &mdash; when prompted, enter your phone number to create your SecureCall ID.</li>
+                <li><strong>Grant permissions</strong> &mdash; allow <strong>Microphone</strong> (required for calls) and <strong>Notifications</strong> (required for incoming call alerts).</li>
+            </ul>
+
+            <!-- CONTACTS -->
+            <div class="section-break">Contacts</div>
+
+            <h2>Managing Contacts</h2>
+            <p>SecureCall uses its own contact list &mdash; separate from your phone contacts &mdash; to protect your privacy.</p>
+
+            <ul>
+                <li><strong>Add contact manually</strong> &mdash; go to the Contacts tab, search by phone number, and add the contact.</li>
+                <li><strong>Add via Invite Link</strong> &mdash; share your personal invite link: <code>stealthx.tech/invite/YOUR-ID</code>. Recipients tap the link to add you automatically.</li>
+                <li><strong>Add via QR Code</strong> &mdash; go to Contacts &rarr; Invite &rarr; Show QR Code. The other person scans it with their SecureCall app.</li>
+                <li><strong>Verify contact</strong> &mdash; long-press a contact &rarr; &ldquo;Verify Contact&rdquo;. Verified contacts display a &#10003; badge confirming their identity.</li>
+                <li><strong>Block contact</strong> &mdash; long-press a contact &rarr; &ldquo;Block Contact&rdquo;. Blocked contacts cannot call you.</li>
+                <li><strong>Delete contact</strong> &mdash; long-press a contact &rarr; &ldquo;Delete Contact&rdquo;. This removes the contact from your list permanently.</li>
+            </ul>
+
+            <!-- MAKING CALLS -->
+            <div class="section-break">Making Calls</div>
+
+            <h2>Voice Calls</h2>
+            <p>All calls are encrypted end-to-end. No one &mdash; not even SecureCall &mdash; can listen to your conversations.</p>
+
+            <ul>
+                <li><strong>Outgoing call</strong> &mdash; open the Dialer tab, enter the phone number or select a contact, and tap the Call button.</li>
+                <li><strong>Incoming call</strong> &mdash; when a call arrives, tap <strong>Accept</strong> to answer or <strong>Decline</strong> to reject.</li>
+                <li><strong>During a call</strong> &mdash; use the on-screen buttons: <strong>Mute</strong> (toggle microphone), <strong>Speaker</strong> (toggle loudspeaker), and <strong>End Call</strong> (hang up).</li>
+                <li><strong>No audio?</strong> &mdash; check your volume level, disable any active VPN, and try switching from Mobile Data to WiFi (or vice versa).</li>
+            </ul>
+
+            <!-- SETTINGS -->
+            <div class="section-break">Settings</div>
+
+            <h2>App Settings</h2>
+            <p>Configure SecureCall to match your security needs and preferences.</p>
+
+            <ul>
+                <li><strong>Account</strong> &mdash; view your current tier (Free / Pro / Premium) and upgrade using an activation code.</li>
+                <li><strong>Security</strong> &mdash; certificate pinning and device attestation status (read-only, always enabled).</li>
+                <li><strong>Anti-Recording</strong> &mdash; screenshot blocking, exclusive microphone access, and recording detection. Protects against screen recording and spy apps.</li>
+                <li><strong>Calls</strong> &mdash; background service toggle (keeps app alive for incoming calls) and call history on/off.</li>
+                <li><strong>Appearance</strong> &mdash; switch between Dark, Light, or System theme mode.</li>
+                <li><strong>Network</strong> &mdash; view active network information and set your preferred network type.</li>
+                <li><strong>VPN</strong> &mdash; configure WireGuard VPN for encrypted network tunneling (Premium tier only).</li>
+                <li><strong>Diagnostics</strong> &mdash; enable SecLog diagnostic logging, export logs as CSV, or clear all logs (Pro and Premium tiers).</li>
+                <li><strong>Emergency Delete</strong> &mdash; tap the Emergency Delete button 5 times rapidly to wipe all SecureCall data from your device instantly.</li>
+            </ul>
+
+            <!-- SECURITY -->
+            <div class="section-break">Security</div>
+
+            <h2>Security Features</h2>
+            <p>SecureCall is built with a zero-trust security model. Every layer is designed to protect your privacy.</p>
+
+            <ul>
+                <li><strong>End-to-end encryption</strong> &mdash; all calls are encrypted with <strong>XChaCha20-Poly1305</strong>, a military-grade authenticated cipher.</li>
+                <li><strong>X25519 key exchange</strong> &mdash; new encryption keys are generated for every single call. Previous calls cannot be decrypted even if a key is compromised.</li>
+                <li><strong>Verified badge</strong> &mdash; confirms the identity of your contact. Verify contacts in person by comparing fingerprints.</li>
+                <li><strong>Emergency Delete</strong> &mdash; destroys all SecureCall data (keys, contacts, call history, settings) in under one second.</li>
+                <li><strong>Anti-Recording</strong> &mdash; detects screen recording apps, spy software, and unauthorized microphone access in real time.</li>
+            </ul>
+
+            <!-- TROUBLESHOOTING -->
+            <div class="section-break">Troubleshooting</div>
+
+            <h2>Common Issues</h2>
+            <p>Quick fixes for the most common problems. For detailed troubleshooting, see the <a href="troubleshooting.html">Troubleshooting Guide</a>.</p>
+
+            <ul>
+                <li><strong>No audio during call</strong> &mdash; raise the media volume on your device, disable any active VPN, and try switching between WiFi and Mobile Data.</li>
+                <li><strong>Call disconnected</strong> &mdash; check your WiFi or Mobile Data connection. If the connection dropped, tap the <strong>Reconnect</strong> button to re-establish the call.</li>
+                <li><strong>Contact not found</strong> &mdash; verify the SecureCall ID format is correct. The contact must have SecureCall installed and registered.</li>
+                <li><strong>Ads during call</strong> &mdash; upgrade to Pro tier to remove ads completely. On the Free tier, ads are paused automatically during active calls.</li>
+            </ul>
+
+            <div class="wiki-doc-footer">
+                <span class="end-mark">Document End // Classification: Restricted</span>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Vendetta Labs &mdash; Greece</p>
+                <p><a href="../">Home</a> | <a href="../privacy.html">Privacy Policy</a> | <a href="../impressum.html">Impressum</a> | <a href="../disclaimer.html">Disclaimer</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../js/main.js"></script>
+</body>
+</html>

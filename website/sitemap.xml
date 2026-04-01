@@ -127,6 +127,12 @@
         <priority>0.7</priority>
     </url>
     <url>
+        <loc>https://stealthx.tech/wiki/user-manual.html</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
         <loc>https://stealthx.tech/wiki/changelog.html</loc>
         <lastmod>2026-03-30</lastmod>
         <changefreq>weekly</changefreq>
