@@ -757,7 +757,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         val callerPhone = prefs.getString("confirmed_phone_number", "") ?: ""
         val json = """{"type":"CALL_INVITE","to":"$targetId","pubKey":"$pubKeyB64","callerPhone":"$callerPhone"}"""
         client?.send(json)
-        Log.d("WS_SERVICE", "CALL_INVITE sent to $targetId (callerPhone=$callerPhone)")
+        // BUG-032: Mark call active during ringing — prevents heartbeat staleness from killing the WS
+        client?.setCallActive(true)
+        Log.d("WS_SERVICE", "CALL_INVITE sent to $targetId (callerPhone=$callerPhone, callActive=true)")
     }
 
     fun sendCallAccept(sessionId: String) {

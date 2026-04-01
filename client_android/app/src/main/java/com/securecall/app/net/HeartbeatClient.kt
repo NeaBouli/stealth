@@ -65,7 +65,7 @@ class HeartbeatClient(
     private fun buildClient(): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .readTimeout(0, TimeUnit.MILLISECONDS)
-            .pingInterval(5, TimeUnit.SECONDS)
+            .pingInterval(15, TimeUnit.SECONDS) // BUG-032: 5s was too aggressive for VPN connections
         // Use bound network's socket factory if process is bound to a specific network
         val boundNet = NetworkManager.getBoundNetwork()
         if (boundNet != null) {

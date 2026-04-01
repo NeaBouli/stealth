@@ -140,13 +140,13 @@ class IncomingCallActivity : AppCompatActivity() {
         startRingtone()
         startVibration()
 
-        // Ring timeout: auto-decline after 45 seconds to prevent infinite ringing
+        // Ring timeout: auto-decline after 60 seconds to give callee time to answer
         ringTimeoutHandler = android.os.Handler(android.os.Looper.getMainLooper())
         ringTimeoutRunnable = Runnable {
-            Log.d(TAG, "Ring timeout (45s) — auto-declining")
+            Log.d(TAG, "Ring timeout (60s) — auto-declining")
             declineCall()
         }
-        ringTimeoutHandler?.postDelayed(ringTimeoutRunnable!!, 45000)
+        ringTimeoutHandler?.postDelayed(ringTimeoutRunnable!!, 60000)
 
         // Backup: also use callback for caller hangup during ringing
         ws?.setOnCallEnded { endedSessionId ->
