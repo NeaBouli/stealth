@@ -156,7 +156,15 @@ class WebRtcManager(
     private val pcObserver = object : PeerConnection.Observer {
         override fun onIceCandidate(candidate: IceCandidate) {
             if (isClosed) return
-            Log.d(TAG, "Local ICE candidate: ${candidate.sdp.take(60)}...")
+            val candidateType = when {
+                candidate.sdp.contains("typ host") -> "host"
+                candidate.sdp.contains("typ srflx") -> "srflx"
+                candidate.sdp.contains("typ relay") -> "relay (TURN)"
+                candidate.sdp.contains("typ prflx") -> "prflx"
+                else -> "unknown"
+            }
+            Log.d(TAG, "Local ICE candidate [$candidateType]: ${candidate.sdp.take(60)}...")
+            com.securecall.app.debug.SecLogManager.log("ICE", "Candidate: $candidateType")
             val json = JSONObject().apply {
                 put("candidate", candidate.sdp)
                 put("sdpMid", candidate.sdpMid)
@@ -168,10 +176,21 @@ class WebRtcManager(
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState) {
             if (isClosed) return
             Log.d(TAG, "ICE connection state: $state")
-            if (state == PeerConnection.IceConnectionState.FAILED ||
-                state == PeerConnection.IceConnectionState.DISCONNECTED) {
-                Log.d(TAG, "ICE $state — peer disconnected, triggering call teardown")
-                onPeerDisconnect?.invoke()
+            com.securecall.app.debug.SecLogManager.log("ICE", "State: $state")
+            when (state) {
+                PeerConnection.IceConnectionState.CONNECTED ->
+                    com.securecall.app.debug.SecLogManager.log("ICE", "P2P connected — audio should flow")
+                PeerConnection.IceConnectionState.FAILED -> {
+                    com.securecall.app.debug.SecLogManager.log("ICE", "FAILED — no audio path found")
+                    Log.d(TAG, "ICE FAILED — peer disconnected, triggering call teardown")
+                    onPeerDisconnect?.invoke()
+                }
+                PeerConnection.IceConnectionState.DISCONNECTED -> {
+                    com.securecall.app.debug.SecLogManager.log("ICE", "DISCONNECTED — peer lost")
+                    Log.d(TAG, "ICE DISCONNECTED — triggering call teardown")
+                    onPeerDisconnect?.invoke()
+                }
+                else -> {}
             }
         }
 

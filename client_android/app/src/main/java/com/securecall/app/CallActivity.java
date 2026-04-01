@@ -495,6 +495,37 @@ public class CallActivity extends AppCompatActivity {
     }
 
     /**
+     * BUG-030: Configure audio manager for voice call.
+     * Sets MODE_IN_COMMUNICATION and raises STREAM_VOICE_CALL to max volume.
+     */
+    private int savedAudioMode = -1;
+    private int savedStreamVolume = -1;
+
+    private void configureCallAudio() {
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (am == null) return;
+        // Save current state for restoration
+        savedAudioMode = am.getMode();
+        savedStreamVolume = am.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
+        // Set communication mode — routes audio through earpiece
+        am.setMode(AudioManager.MODE_IN_COMMUNICATION);
+        // Set voice call volume to max
+        int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
+        am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, maxVol, 0);
+        Log.d(TAG, "Audio configured: MODE_IN_COMMUNICATION, volume=" + maxVol + "/" + maxVol);
+        com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(this, "AUDIO",
+                "Mode=IN_COMMUNICATION, volume=" + maxVol + "/" + maxVol);
+    }
+
+    private void restoreCallAudio() {
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (am == null) return;
+        if (savedAudioMode >= 0) am.setMode(savedAudioMode);
+        if (savedStreamVolume >= 0) am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, savedStreamVolume, 0);
+        Log.d(TAG, "Audio restored to previous mode");
+    }
+
+    /**
      * Acquire PROXIMITY_SCREEN_OFF_WAKE_LOCK — system automatically turns screen
      * off when proximity sensor detects near, and back on when far.
      */
@@ -524,6 +555,9 @@ public class CallActivity extends AppCompatActivity {
             isCallActive = true;
             callStartTimeMs = System.currentTimeMillis();
             com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(CallActivity.this, "CALL", "Call active: " + callContactName);
+
+            // BUG-030: Configure audio for voice call — set mode + max volume
+            configureCallAudio();
             connectionState.setText(R.string.call_active);
             connectionState.setTextColor(getResources().getColor(R.color.call_active_green, getTheme()));
             callTimer.setBase(SystemClock.elapsedRealtime());
@@ -726,6 +760,7 @@ public class CallActivity extends AppCompatActivity {
         if (isEnding) return;
         isEnding = true;
         stopRingbackTone();
+        restoreCallAudio(); // BUG-030: restore audio mode + volume
         Log.d(TAG, "endCall() — stopping call");
         com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(this, "CALL", "Call ended: " + callContactName);
 

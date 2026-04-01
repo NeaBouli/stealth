@@ -28,6 +28,9 @@
 | BUG-024 | Random disconnects on network change — auto-reconnect via NetworkCallback | FIXED | High | 4174031 |
 | BUG-025 | Phone normalization — full E.164 normalization | FIXED | High | df52218 + 991e5af |
 | BUG-026 | eSIM Call Routing + Preferred Network — OkHttp pool bypasses bindProcessToNetwork() | OPEN | High | — |
+| BUG-029 | No audio after call connected — VPN+VPN blocks TURN UDP relay | OPEN | Critical | — |
+| BUG-030 | Audio too quiet — MODE_IN_COMMUNICATION not set, volume not maxed | FIXED | High | — |
+| BUG-031 | Contact not verified after call — no verification prompt | OPEN | Medium | — |
 
 ## Fix Details
 

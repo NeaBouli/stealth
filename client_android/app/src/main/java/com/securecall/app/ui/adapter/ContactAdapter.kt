@@ -16,7 +16,8 @@ class ContactAdapter(
     private val onlinePhones: Set<String> = emptySet(),
     private val onlineClientIds: Set<String> = emptySet(),
     private val hideOnlineStatus: Boolean = false,
-    private val onCallClick: ((Contact) -> Unit)? = null
+    private val onCallClick: ((Contact) -> Unit)? = null,
+    private val onLongClick: ((Contact) -> Unit)? = null
 ) : RecyclerView.Adapter<ContactAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -86,6 +87,12 @@ class ContactAdapter(
 
         holder.btnCall.setOnClickListener {
             onCallClick?.invoke(contact)
+        }
+
+        // Long-press context menu (Verify/Block/Delete)
+        holder.itemView.setOnLongClickListener {
+            onLongClick?.invoke(contact)
+            true
         }
     }
 

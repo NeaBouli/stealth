@@ -644,10 +644,30 @@ class ContactsFragment : Fragment() {
         } else {
             recycler.visibility = View.VISIBLE
             emptyState.visibility = View.GONE
-            recycler.adapter = ContactAdapter(contacts, registeredPhones, onlinePhones, cachedOnlineClientIds, isFreeTier()) { contact ->
-                startCall(contact)
-            }
+            recycler.adapter = ContactAdapter(contacts, registeredPhones, onlinePhones, cachedOnlineClientIds, isFreeTier(),
+                onCallClick = { contact -> startCall(contact) },
+                onLongClick = { contact -> showContactMenu(contact) }
+            )
         }
+    }
+
+    private fun showContactMenu(contact: Contact) {
+        val ctx = context ?: return
+        val options = arrayOf("Delete Contact")
+        android.app.AlertDialog.Builder(ctx)
+            .setTitle(contact.name)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        com.securecall.app.data.ContactRepository.deleteByPhoneOrId(ctx, contact.phoneOrId)
+                        invalidateCache()
+                        loadContactsAsync(forceRefresh = true)
+                        android.widget.Toast.makeText(ctx, "${contact.name} deleted", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun startCall(contact: Contact) {
