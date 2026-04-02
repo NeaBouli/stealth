@@ -661,6 +661,8 @@ class ContactsFragment : Fragment() {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> { // Verify / Unverify
+                        // Ensure contact exists in repository (may be phone-book only)
+                        com.securecall.app.data.ContactRepository.save(ctx, contact)
                         val updated = contact.copy(isVerified = !contact.isVerified)
                         com.securecall.app.data.ContactRepository.update(ctx, updated)
                         invalidateCache()
@@ -669,6 +671,7 @@ class ContactsFragment : Fragment() {
                         android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_SHORT).show()
                     }
                     1 -> { // Block / Unblock
+                        com.securecall.app.data.ContactRepository.save(ctx, contact)
                         val updated = contact.copy(isBlocked = !contact.isBlocked)
                         com.securecall.app.data.ContactRepository.update(ctx, updated)
                         invalidateCache()
