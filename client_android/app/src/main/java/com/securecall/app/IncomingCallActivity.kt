@@ -207,6 +207,7 @@ class IncomingCallActivity : AppCompatActivity() {
         saveMissedCall()
         val ws = com.securecall.app.net.WebSocketService.instance
         if (sessionId.isNotEmpty()) ws?.sendCallEnd(sessionId)
+        ws?.clearSession() // BUG-032: clear session so next call isn't rejected as BUSY
         finish()
     }
 
