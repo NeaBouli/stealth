@@ -117,7 +117,7 @@
                 <h1 class="wiki-page-title">Beta Testing Guide</h1>
                 <p class="wiki-page-subtitle">Install, test, and report bugs during the beta testing phase.</p>
             </div>
-            <p class="wiki-meta">SecureCall beta testing procedures &middot; Last updated March 2026</p>
+            <p class="wiki-meta">SecureCall beta testing procedures &middot; Last updated April 2026</p>
 
             <h2>1. Install the App</h2>
             <ul>
@@ -183,7 +183,7 @@
             <ul>
                 <li>App displays &ldquo;com.securecall.app.free&rdquo; as package name</li>
                 <li>WireGuard VPN requires own server configuration</li>
-                <li>App not yet in public Play Store</li>
+                <li>App available on Google Play (Closed Testing)</li>
             </ul>
 
             <h2>What to Test</h2>
@@ -200,6 +200,11 @@
                 <li>Check for Updates (should open GitHub for sideload, Play Store for Play installs)</li>
                 <li>Report a Bug (should open stealthx.tech/wiki/bug-report.html)</li>
                 <li>Emergency Delete (Settings &rarr; tap 5 times on Emergency Delete)</li>
+                <li>Long-press contact &rarr; Verify / Block / Delete</li>
+                <li>Dark mode default on fresh install</li>
+                <li>Disconnect button (green/grey indicator)</li>
+                <li>Diagnostic logs CSV export (Pro/Premium &mdash; Settings &rarr; SecLog)</li>
+                <li>User Manual link in Settings &rarr; About</li>
             </ul>
 
             <h2>Changelog</h2>
@@ -213,6 +218,11 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.12</td><td style="padding:6px 0;color:#888">30</td><td style="padding:6px 0">02.04.2026</td><td style="padding:6px 0;color:#ccc">BUG-028/029/030/031/032 fixed, long-press Verify/Block/Delete, User Manual in Settings, SecLog ICE/TURN/Audio events, 73 website fixes</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.12</td><td style="padding:6px 0;color:#888">29</td><td style="padding:6px 0">01.04.2026</td><td style="padding:6px 0;color:#ccc">Call stability, OkHttp ping 15s (VPN-friendly), TURN TCP/TLS fallback</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.12</td><td style="padding:6px 0;color:#888">28</td><td style="padding:6px 0">30.03.2026</td><td style="padding:6px 0;color:#ccc">IFR link fix, upgrade button tier-aware, collapsible settings visibility fix</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.12</td><td style="padding:6px 0;color:#888">27</td><td style="padding:6px 0">30.03.2026</td><td style="padding:6px 0;color:#ccc">Update mirror flavor-based (debug&rarr;GitHub, release&rarr;Play Store)</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.12</td><td style="padding:6px 0;color:#888">26</td><td style="padding:6px 0">29.03.2026</td><td style="padding:6px 0;color:#ccc">eSIM routing Coming Soon, network binding disclaimer</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.12</td><td style="padding:6px 0;color:#888">24</td><td style="padding:6px 0">29.03.2026</td><td style="padding:6px 0;color:#ccc">Dark mode default, collapsible settings &#9654;/&#9660;, auto-reconnect, eSIM gated, preferred network fix, ifrunit.tech link, diagnostic logs CSV, phone normalization, eSIM feature card</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.11</td><td style="padding:6px 0;color:#888">22</td><td style="padding:6px 0">28.03.2026</td><td style="padding:6px 0;color:#ccc">Connect button colors green/grey/yellow, reconnect fix, SecLog Pro/Premium, EBS rounded buttons, template 11, dark mode, 12 bugs fixed</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">1.0.10</td><td style="padding:6px 0;color:#888">21</td><td style="padding:6px 0">28.03.2026</td><td style="padding:6px 0;color:#ccc">Deep Link Invite, QR Code, Contacts online/offline sort, Donation collapsed, Samsung Lock Screen fix, GA4, Bing, Impressum update</td></tr>
@@ -224,7 +234,7 @@
                 </tbody>
             </table></div>
 
-            <h2>Play Store Releases (Internal Testing)</h2>
+            <h2>Play Store Releases (Closed Testing)</h2>
             <div class="wiki-table-wrap"><table class="wiki-table">
                 <thead>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
@@ -234,6 +244,11 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">30 (1.0.12-free)</td><td style="padding:6px 0">02.04.2026</td><td style="padding:6px 0;color:#ccc">Closed Testing &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">29 (1.0.12-free)</td><td style="padding:6px 0">01.04.2026</td><td style="padding:6px 0;color:#ccc">Internal Testing &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">28 (1.0.12-free)</td><td style="padding:6px 0">30.03.2026</td><td style="padding:6px 0;color:#ccc">Closed Testing &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">27 (1.0.12-free)</td><td style="padding:6px 0">30.03.2026</td><td style="padding:6px 0;color:#ccc">Closed Testing &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">26 (1.0.12-free)</td><td style="padding:6px 0">29.03.2026</td><td style="padding:6px 0;color:#ccc">Closed Testing &mdash; 170 countries</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">24 (1.0.12-free)</td><td style="padding:6px 0">29.03.2026</td><td style="padding:6px 0;color:#ccc">Alpha Track &mdash; 170 countries</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">22 (1.0.11-free)</td><td style="padding:6px 0">28.03.2026</td><td style="padding:6px 0;color:#ccc">Alpha Track &mdash; 170 countries</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">21 (1.0.10-free)</td><td style="padding:6px 0">28.03.2026</td><td style="padding:6px 0;color:#ccc">Alpha Track &mdash; 170 countries</td></tr>
@@ -282,7 +297,12 @@
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-024</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Phone normalization +49 vs 0049</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-025</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Settings sections cannot collapse</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-026</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Reconnect loop on manual reconnect</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
-                    <tr><td style="padding:6px 0">TB-027</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">inferno.tech link wrong &mdash; ifrunit.tech</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-027</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">inferno.tech link wrong &mdash; ifrunit.tech</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-028</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Dark mode not active after OTA update</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-029</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">TURN relay fails over VPN (TCP/TLS fallback missing)</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-030</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Audio volume too low on some devices</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0">TB-031</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Verify dialog not shown after call ends</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
+                    <tr><td style="padding:6px 0">TB-032</td><td style="padding:6px 0;color:#888">All</td><td style="padding:6px 0;color:#ccc">Call drops during ringing &mdash; OkHttp ping 5s too aggressive, ring timeout missing</td><td style="padding:6px 0;color:#4ade80">FIXED</td></tr>
                 </tbody>
             </table></div>
 
