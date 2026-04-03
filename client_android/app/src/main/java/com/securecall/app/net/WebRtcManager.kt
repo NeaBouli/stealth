@@ -32,7 +32,8 @@ class WebRtcManager(
         private set
 
     @Volatile
-    private var isClosed = false
+    var isClosed = false
+        private set
 
     // WebRTC stats timer for SecLog
     private var statsTimer: java.util.Timer? = null

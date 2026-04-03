@@ -815,6 +815,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             onDataReceived = { data -> onBinaryMessage(data) },
             onPeerDisconnect = {
                 Log.d("WS_SERVICE", "WebRTC peer disconnected — ending call")
+                cancelCallEndGrace() // BUG-011: cancel any pending server CALL_END grace
                 _onCallEnded?.invoke(sessionId)
             }
         )
@@ -1070,23 +1071,60 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         } catch (_: Exception) {}
     }
 
+    // BUG-011: Delayed CALL_END handler for peer_disconnected during active call
+    private var callEndGraceHandler: android.os.Handler? = null
+    private var callEndGraceRunnable: Runnable? = null
+
+    /** Cancel any pending CALL_END grace timer (e.g. peer reconnected). */
+    fun cancelCallEndGrace() {
+        callEndGraceRunnable?.let { callEndGraceHandler?.removeCallbacks(it) }
+        callEndGraceHandler = null
+        callEndGraceRunnable = null
+    }
+
     private fun handleIncomingCallEnd(json: String) {
         try {
             val obj = org.json.JSONObject(json)
             if (obj.optString("type") == "CALL_END") {
                 val sessionId = obj.optString("sessionId", "")
-                Log.d("WS_SERVICE", "CALL_END received, sessionId=$sessionId")
-                _currentSessionId = null
-                // Kill all audio immediately — belt-and-suspenders
-                killAllAudio()
-                // Dismiss IncomingCallActivity if it's showing (caller cancelled during ringing)
-                com.securecall.app.IncomingCallActivity.dismissIfActive(sessionId)
-                // Also dismiss the incoming call notification directly
-                val nm = getSystemService(android.app.NotificationManager::class.java)
-                nm.cancel(INCOMING_CALL_NOTIFICATION_ID)
-                _onCallEnded?.invoke(sessionId)
+                val reason = obj.optString("reason", "")
+                Log.d("WS_SERVICE", "CALL_END received, sessionId=$sessionId, reason=$reason")
+
+                // BUG-011: If the server says "peer_disconnected" but WebRTC ICE is still
+                // alive or in grace period, delay the call end by 15s to allow reconnection.
+                // The server fires CALL_END when the peer's WebSocket dies (e.g. WiFi toggle),
+                // but the P2P audio path may still recover via ICE restart.
+                val rtc = webRtcManager
+                if (reason == "peer_disconnected" && rtc != null && !rtc.isClosed) {
+                    Log.d("WS_SERVICE", "BUG-011: peer_disconnected but WebRTC active — delaying CALL_END 15s")
+                    com.securecall.app.debug.SecLogManager.log("CALL", "Delaying CALL_END (peer_disconnected) — waiting 15s for peer reconnect")
+                    cancelCallEndGrace()
+                    callEndGraceHandler = android.os.Handler(android.os.Looper.getMainLooper())
+                    callEndGraceRunnable = Runnable {
+                        Log.w("WS_SERVICE", "BUG-011: peer did not reconnect in 15s — ending call now")
+                        com.securecall.app.debug.SecLogManager.log("CALL", "Peer reconnect timeout — ending call")
+                        executeCallEnd(sessionId)
+                    }
+                    callEndGraceHandler?.postDelayed(callEndGraceRunnable!!, 15_000)
+                    return
+                }
+
+                executeCallEnd(sessionId)
             }
         } catch (_: Exception) {}
+    }
+
+    private fun executeCallEnd(sessionId: String) {
+        cancelCallEndGrace()
+        _currentSessionId = null
+        // Kill all audio immediately — belt-and-suspenders
+        killAllAudio()
+        // Dismiss IncomingCallActivity if it's showing (caller cancelled during ringing)
+        com.securecall.app.IncomingCallActivity.dismissIfActive(sessionId)
+        // Also dismiss the incoming call notification directly
+        val nm = getSystemService(android.app.NotificationManager::class.java)
+        nm.cancel(INCOMING_CALL_NOTIFICATION_ID)
+        _onCallEnded?.invoke(sessionId)
     }
 
     /** Handle SECUREID_CHANGED: a device reinstalled and got a new SecureID for the same phone number. */
