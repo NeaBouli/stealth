@@ -124,7 +124,7 @@
                 <h1 class="wiki-page-title">Security Audit Report</h1>
                 <p class="wiki-page-subtitle">Security audit findings, remediations, and regression test results.</p>
             </div>
-            <p class="wiki-meta">Internal security audit findings and remediations for SecureCall &middot; Last updated February 2026</p>
+            <p class="wiki-meta">Internal security audit findings and remediations for SecureCall &middot; Last updated April 2026</p>
 
             <!-- SUMMARY -->
             <div class="section-break">Summary</div>
@@ -331,8 +331,8 @@
                 </thead>
                 <tbody>
                     <tr><td>S10</td><td>Galaxy S10 (RF8N313QMFL)</td><td><strong>Premium</strong></td><td>+4915231794100</td><td>Android 12</td></tr>
-                    <tr><td>S7</td><td>Galaxy S7 (ce10160adc00152604)</td><td><strong>Free</strong></td><td>+4915203487046</td><td>Android 8</td></tr>
-                    <tr><td>Tab S4</td><td>Galaxy Tab S4 (ce12182c68644439037e)</td><td><strong>Pro</strong></td><td>+491752536807</td><td>Android 10</td></tr>
+                    <tr><td>S7</td><td>Galaxy S7 (ce10160adc00152604)</td><td><strong>Pro</strong></td><td>+4915203487046</td><td>Android 8</td></tr>
+                    <tr><td>Tab S4</td><td>Galaxy Tab S4 (ce12182c68644439037e)</td><td><strong>Free</strong></td><td>+491752536807</td><td>Android 10</td></tr>
                 </tbody>
             </table>
 
@@ -358,7 +358,7 @@
                     <tr><td>2.2</td><td>S7 &rarr; S10: Reverse direction</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                     <tr><td>2.3</td><td>S10 &rarr; S4: Cross-tier (Premium &rarr; Pro)</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                     <tr><td>2.4</td><td>S4 &rarr; S10: Reverse direction</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
-                    <tr><td>2.5</td><td>S7 &rarr; S4: Cross-tier (Free &rarr; Pro), full signaling verified</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>2.5</td><td>S7 &rarr; S4: Cross-tier (Pro &rarr; Free), full signaling verified</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                     <tr><td>2.6</td><td>S4 &rarr; S7: Reverse direction</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                 </tbody>
             </table>
@@ -394,7 +394,7 @@
                 </thead>
                 <tbody>
                     <tr><td>5.1</td><td>S10 (Premium): shows "PREMIUM", eSIM/VPN enabled, all security ON</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
-                    <tr><td>5.2</td><td>S7 (Free): shows "FREE", eSIM/VPN locked with "PREMIUM feature"</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
+                    <tr><td>5.2</td><td>S7 (Pro): shows "PRO", eSIM/VPN locked with "PREMIUM feature"</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                     <tr><td>5.3</td><td>S4 (Pro): shows "PRO", eSIM/VPN locked, anti-recording toggleable</td><td style="color:#4ade80"><strong>PASS</strong></td></tr>
                 </tbody>
             </table>
@@ -412,7 +412,7 @@
             </table>
 
             <div class="info-box info">
-                <strong>Test Date:</strong> March 17, 2026 &mdash; All tests conducted on physical devices over WiFi and mobile data connections. Server: Railway (wss://protective-healing-production.up.railway.app). Build: v0.2-beta. Commit: <code>543d77f</code>.
+                <strong>Test Date:</strong> March 17, 2026 &mdash; All tests conducted on physical devices over WiFi and mobile data connections. Server: Railway (wss://protective-healing-production.up.railway.app). Build: v1.0.12 (versionCode 30).
             </div>
 
             <!-- FULL REPORT -->

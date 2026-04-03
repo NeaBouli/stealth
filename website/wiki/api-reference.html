@@ -124,7 +124,7 @@
                 <h1 class="wiki-page-title">Signaling Protocol Reference</h1>
                 <p class="wiki-page-subtitle">WebSocket signaling protocol and message type reference.</p>
             </div>
-            <p class="wiki-meta">WebSocket signaling API documentation for SecureCall developers &middot; Last updated February 2026</p>
+            <p class="wiki-meta">WebSocket signaling API documentation for SecureCall developers &middot; Last updated April 2026</p>
 
             <!-- SIGNALING SERVER API -->
             <div class="section-break">Signaling Server API</div>
@@ -370,7 +370,7 @@ Content-Type: application/json
             </table>
 
             <div class="info-box warning">
-                <strong>Heartbeat requirement:</strong> The Android client sends keepalive pings every 8 seconds (via <code>HeartbeatClient</code>) to maintain the connection. If the server does not receive any message for 60 seconds, it will close the WebSocket connection. The client implements exponential backoff reconnection (1s to 30s max) to handle disconnections gracefully.
+                <strong>Heartbeat requirement:</strong> The Android client sends keepalive pings every 15 seconds (via <code>HeartbeatClient</code>) to maintain the connection. If the server does not receive any message for 60 seconds, it will close the WebSocket connection. The client implements exponential backoff reconnection (1s to 30s max) to handle disconnections gracefully.
             </div>
 
             <!-- TURN CREDENTIALS -->

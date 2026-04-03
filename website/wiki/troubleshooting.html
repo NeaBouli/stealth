@@ -124,7 +124,7 @@
                 <h1 class="wiki-page-title">Fault Diagnosis &amp; Troubleshooting</h1>
                 <p class="wiki-page-subtitle">Common issues and solutions for SecureCall.</p>
             </div>
-            <p class="wiki-meta">Common issues and fixes for SecureCall &middot; Last updated February 2026</p>
+            <p class="wiki-meta">Common issues and fixes for SecureCall &middot; Last updated April 2026</p>
 
             <!-- COMMON ISSUES -->
             <div class="section-break">Common Issues</div>
@@ -134,7 +134,7 @@
             <ul>
                 <li><strong>Storage space:</strong> Ensure you have at least 50 MB of free storage. Go to Settings &rarr; Storage to verify.</li>
                 <li><strong>Unknown sources:</strong> If installing via APK (not Google Play), you must enable "Install from unknown sources" for the app you are using to open the APK (e.g., your file manager or browser). Navigate to Settings &rarr; Apps &rarr; Special access &rarr; Install unknown apps.</li>
-                <li><strong>Android version:</strong> SecureCall requires Android 10 (API 29) or higher. Older devices are not supported.</li>
+                <li><strong>Android version:</strong> SecureCall requires Android 7.0 (API 24) or higher. Older devices are not supported.</li>
                 <li><strong>Conflicting installation:</strong> If a previous version is already installed with a different signing key, uninstall the old version first, then try again.</li>
                 <li><strong>Restart device:</strong> In rare cases, a device restart resolves installation failures caused by stale package manager state.</li>
             </ul>
@@ -157,7 +157,7 @@
             <ul>
                 <li><strong>Check internet connectivity:</strong> Verify that WiFi or mobile data is active and working (try loading a webpage in your browser)</li>
                 <li><strong>Switch networks:</strong> Try switching between WiFi and mobile data. Some corporate or public WiFi networks block WebSocket connections on non-standard ports.</li>
-                <li><strong>Wait and retry:</strong> The signaling server runs on Railway's free tier and may experience cold starts (5&ndash;10 second delay on first request after idle periods). Wait a few seconds and try again.</li>
+                <li><strong>Wait and retry:</strong> The signaling server runs on Railway. If the connection takes a few seconds on first attempt, wait and try again.</li>
                 <li><strong>Force stop and restart:</strong> Go to Settings &rarr; Apps &rarr; SecureCall &rarr; Force Stop, then reopen the app. This clears any stale WebSocket connection state.</li>
                 <li><strong>Check server status:</strong> The server may be temporarily down for maintenance. You can check status by visiting the <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub repository</a> for any announcements.</li>
             </ul>
@@ -183,7 +183,7 @@
                 <li><strong>Free tier limit:</strong> The free tier has a 15-minute call duration limit. Calls are automatically terminated when this limit is reached. Upgrade to Pro for unlimited calls.</li>
                 <li><strong>Battery optimization:</strong> Android may kill background processes to save battery. Go to Settings &rarr; Apps &rarr; SecureCall &rarr; Battery &rarr; "Don't optimize" (or "Unrestricted") to prevent this.</li>
                 <li><strong>Background service:</strong> Ensure the "Background Service" toggle is enabled in SecureCall's Settings. This keeps the WebSocket connection alive via a foreground service notification.</li>
-                <li><strong>NAT timeout:</strong> Some routers aggressively time out UDP connections. The app's keepalive pings (every 8 seconds) should prevent this, but extremely restrictive networks may still cause issues.</li>
+                <li><strong>NAT timeout:</strong> Some routers aggressively time out UDP connections. The app's keepalive pings (every 15 seconds) should prevent this, but extremely restrictive networks may still cause issues.</li>
             </ul>
 
             <h2>Echo or Feedback</h2>
@@ -217,7 +217,7 @@
                     <tr>
                         <td><strong>No group calls</strong></td>
                         <td>Only 1:1 voice calls are supported</td>
-                        <td>Planned for v0.3</td>
+                        <td>Planned</td>
                     </tr>
                     <tr>
                         <td><strong>No messaging</strong></td>
@@ -235,9 +235,9 @@
                         <td>By design</td>
                     </tr>
                     <tr>
-                        <td><strong>Cold starts (Railway)</strong></td>
-                        <td>Signaling server hosted on Railway free tier may have 5&ndash;10 second cold start delays</td>
-                        <td>Expected on free tier</td>
+                        <td><strong>Initial connection delay</strong></td>
+                        <td>Signaling server may occasionally have brief connection delays</td>
+                        <td>Retry after a few seconds</td>
                     </tr>
                 </tbody>
             </table>
@@ -297,7 +297,7 @@
             <div class="section-break">Device Compatibility</div>
 
             <h2>Supported Devices</h2>
-            <p>SecureCall requires Android 10 (API level 29) or higher. The app has been tested on the following devices:</p>
+            <p>SecureCall requires Android 7.0 (API level 24) or higher. The app has been tested on the following devices:</p>
 
             <table>
                 <thead>
@@ -342,7 +342,7 @@
                 <tbody>
                     <tr>
                         <td><strong>Android Version</strong></td>
-                        <td>Android 10 (API 29) or higher</td>
+                        <td>Android 7.0 (API 24) or higher</td>
                     </tr>
                     <tr>
                         <td><strong>Free Space</strong></td>
