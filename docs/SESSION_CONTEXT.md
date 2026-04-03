@@ -1,6 +1,6 @@
 # StealthX / SecureCall — Handover Document
-**Date:** 30.03.2026 (session checkpoint)
-**Predecessor session:** Available for questions in same chat
+**Date:** 03.04.2026 (session checkpoint)
+**Predecessor session:** 30.03.2026
 
 ---
 
@@ -27,21 +27,21 @@
 | Tab S4 | ce12182c68644439037e | Free | +491752536807 |
 
 ## Current Version
-- versionCode: 28 / versionName: 1.0.12
+- versionCode: 30 / versionName: 1.0.12
 - AAB: ~/Documents/SecureCall-Release/final/app-free-release-v28.aab
 - APK: ~/Documents/SecureCall-Release/final/app-free-release-v28.apk
 - GitHub Release: https://github.com/NeaBouli/stealth/releases/tag/v1.0.12
-- Play Store: Alpha Track, 15/15 testers (v28 ready to upload)
+- Play Store: Alpha Track, 15/15 testers
 
 ## Git Tags (recent)
 | Tag | Description |
 |---|---|
+| v1.0.12-stable-website-fix | 73 website inconsistencies fixed (prices, legal, versions, devices) |
 | v1.0.12 | versionCode 28 — IFR link, upgrade button, collapsible fix, battery protection |
 | v1.0.11-stable | 12 bugs fixed — phone norm, auto-reconnect, settings, ads, disconnect btn |
 | v1.0.9-alpha | Alpha track versionCode 20 |
 | v1.0.8 | EBS template 10, contact filter, verified badge |
 | v1.0.7 | Invite dialog, verified badge, contacts filter |
-| v4.0-fcm-fixed | FCM push notifications working |
 
 ## Backend Endpoints (Live)
 - GET /health, /status/live, /status/last-broadcast
@@ -77,7 +77,29 @@
 | 14 | b..........r@googlemail.com | Active |
 | 15 | c...........4@gmail.com | Active |
 
-## Recent Fixes (this session, Mar 28 — Bug Sprint)
+## Recent Fixes (Apr 3 session)
+- 73 website inconsistencies fixed across 19 HTML files (commit 3cbb1df)
+  - Legal: Germany→Greece, BDSG removed (matches Impressum)
+  - Prices: USD→EUR standardized (€3.49/€4.99 monthly, €15/€25 lifetime)
+  - Android: API 29→API 24 (minSdk 24 = Android 7.0)
+  - Devices: S7=Pro, Tab S4=Free in security-audit (was swapped)
+  - Versions: versionCode 28→30, removed v0.2-beta references
+  - Heartbeat: 8s→15s, "open source"→"source available"
+  - Railway "free tier" removed, WalletConnect "coming soon"→available
+  - Beta codes hidden from public page, F-Droid "available"→"planned"
+  - Sitemap: added invite.html + announcements.html
+  - Dates: "February 2026"→"April 2026" on 12 pages
+
+## Recent Fixes (Mar 30 session — BUG-028 through BUG-032)
+- BUG-028: OkHttp ping timeout fix (5s→15s for VPN connections)
+- BUG-029: HeartbeatClient anti-flap recovery mode
+- BUG-030: Ring timeout handler (60s auto-decline)
+- BUG-031: clearSession() after decline/dismiss prevents stale session
+- BUG-032: BUSY loop fix — clearSession() after decline
+- Long-press contact: Verify / Block / Delete actions
+- User Manual page (wiki/user-manual.html) linked from Settings
+
+## Previous Fixes (Mar 28 — Bug Sprint)
 - BUG-025 FIX: Phone normalization — PhoneUtils.normalize() strips all formatting, 00→+ conversion
 - BUG-018 FIX: Report a Bug → stealthx.tech/wiki/bug-report.html
 - BUG-016 FIX: "Anonymous Network" → "Network"
@@ -142,9 +164,9 @@
 - Beta Activation Codes (BETA-PRO0-2026 / BETA-PREM-2026) VOR Production deaktivieren
 
 ## Next Session Steps
-1. Fix BUG-010 (FCM wake) + BUG-011 (WebRTC stability) — CRITICAL
-2. Upload v28 AAB to Play Store Alpha Track
-3. Monitor 14-day closed testing phase
-4. Google Play Service Account for billing verification
+1. Wait for tester feedback on vC30 build
+2. Fix BUG-010 (FCM wake) + BUG-011 (WebRTC stability) — CRITICAL
+3. Fix BUG-013 (contact sync — phonebook name display)
+4. Google Play Service Account for billing verification (TODO-029)
 5. Deactivate beta codes before production (TODO-047)
 6. Production release after testing phase
