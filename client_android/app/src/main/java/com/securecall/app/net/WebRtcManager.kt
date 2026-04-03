@@ -37,6 +37,11 @@ class WebRtcManager(
     // WebRTC stats timer for SecLog
     private var statsTimer: java.util.Timer? = null
 
+    // BUG-011: ICE reconnect grace period — don't kill call on transient DISCONNECTED
+    private var iceDisconnectHandler: android.os.Handler? = null
+    private var iceDisconnectRunnable: Runnable? = null
+    private val ICE_RECONNECT_TIMEOUT_MS = 10_000L // 10 seconds grace period
+
     // Pending queues for messages that arrive before init() completes
     private var pendingOffer: String? = null
     private var pendingAnswer: String? = null
@@ -190,6 +195,7 @@ class WebRtcManager(
         Log.d(TAG, "Closing WebRTC")
         isClosed = true  // Prevent callbacks from firing after close
         isDataChannelOpen = false
+        cancelIceDisconnectTimeout()
         statsTimer?.cancel()
         statsTimer = null
         try { dataChannel?.close() } catch (_: Exception) {}
@@ -198,6 +204,26 @@ class WebRtcManager(
         dataChannel = null
         peerConnection = null
         factory = null
+    }
+
+    // BUG-011: ICE reconnect grace period helpers
+    private fun scheduleIceDisconnectTimeout() {
+        cancelIceDisconnectTimeout()
+        iceDisconnectHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        iceDisconnectRunnable = Runnable {
+            if (!isClosed) {
+                Log.w(TAG, "ICE did not recover in ${ICE_RECONNECT_TIMEOUT_MS}ms — ending call")
+                com.securecall.app.debug.SecLogManager.log("ICE", "Grace period expired — call teardown")
+                onPeerDisconnect?.invoke()
+            }
+        }
+        iceDisconnectHandler?.postDelayed(iceDisconnectRunnable!!, ICE_RECONNECT_TIMEOUT_MS)
+    }
+
+    private fun cancelIceDisconnectTimeout() {
+        iceDisconnectRunnable?.let { iceDisconnectHandler?.removeCallbacks(it) }
+        iceDisconnectHandler = null
+        iceDisconnectRunnable = null
     }
 
     // ===================== PeerConnection Observer =====================
@@ -227,19 +253,25 @@ class WebRtcManager(
             Log.d(TAG, "ICE connection state: $state")
             com.securecall.app.debug.SecLogManager.log("ICE", "State: $state")
             when (state) {
-                PeerConnection.IceConnectionState.CONNECTED -> {
+                PeerConnection.IceConnectionState.CONNECTED,
+                PeerConnection.IceConnectionState.COMPLETED -> {
                     com.securecall.app.debug.SecLogManager.log("ICE", "P2P connected — audio should flow")
+                    // BUG-011: Cancel any pending disconnect timeout — ICE recovered
+                    cancelIceDisconnectTimeout()
                     startStatsLogging()
                 }
                 PeerConnection.IceConnectionState.FAILED -> {
                     com.securecall.app.debug.SecLogManager.log("ICE", "FAILED — no audio path found")
-                    Log.d(TAG, "ICE FAILED — peer disconnected, triggering call teardown")
+                    Log.d(TAG, "ICE FAILED — no recovery possible, triggering call teardown")
+                    cancelIceDisconnectTimeout()
                     onPeerDisconnect?.invoke()
                 }
                 PeerConnection.IceConnectionState.DISCONNECTED -> {
-                    com.securecall.app.debug.SecLogManager.log("ICE", "DISCONNECTED — peer lost")
-                    Log.d(TAG, "ICE DISCONNECTED — triggering call teardown")
-                    onPeerDisconnect?.invoke()
+                    // BUG-011: Don't kill call immediately — give ICE 10s to reconnect.
+                    // Transient disconnects (WiFi↔mobile, brief signal loss) often recover.
+                    com.securecall.app.debug.SecLogManager.log("ICE", "DISCONNECTED — waiting ${ICE_RECONNECT_TIMEOUT_MS}ms for recovery")
+                    Log.d(TAG, "ICE DISCONNECTED — starting ${ICE_RECONNECT_TIMEOUT_MS}ms grace period")
+                    scheduleIceDisconnectTimeout()
                 }
                 else -> {}
             }
