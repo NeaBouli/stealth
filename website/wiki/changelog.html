@@ -237,35 +237,10 @@
                 <li>Material Design 3 UI</li>
             </ul>
 
-            <div class="section-break">Pre-release &mdash; February 2026</div>
-
-            <h3>Security Audit &mdash; February 15, 2026</h3>
+            <div class="section-break">Security Audit &mdash; February 15, 2026</div>
             <ul>
-                <li>Comprehensive internal security audit covering Android client, Rust crypto engine, and Node.js backend</li>
-                <li>48 findings identified: 7 Critical, 18 High, 23 Medium</li>
-                <li>All Critical and High findings fixed and verified (see <a href="security-audit.html">Security Audit Report</a>)</li>
-                <li>Key fixes: crypto stubs replaced, plaintext fallback removed, buffer overflow patched, debug endpoints removed</li>
-            </ul>
-
-            <h3>Development Phases (6&ndash;13)</h3>
-            <ul>
-                <li>Website rebuild with military/tactical dark theme, wiki documentation system, SEO, sitemap</li>
-                <li>Production deployment: Railway backend, GitHub Pages website, Metered.ca TURN</li>
-                <li>6-layer anti-recording protection (AudioFocus, ScreenRecording, Microphone, Accessibility, CallRecording, FLAG_SECURE)</li>
-                <li>Play Store listings (DE + EN), privacy policy, beta testing plan</li>
-                <li>Material Design 3 UI with dynamic theming and dark/light mode</li>
-                <li>R8/ProGuard, Firebase Crashlytics (Free tier opt-out), debug UI gating</li>
-                <li>Opus 48kHz audio, FCM push notifications, background call handling</li>
-                <li>Google Play Billing (3 tiers), feature flags via FeatureProviderRegistry</li>
-            </ul>
-
-            <h3>Initial Development (Phases 1&ndash;5)</h3>
-            <ul>
-                <li>Monorepo: Android client (Kotlin), Node.js backend, Rust crypto engine, website</li>
-                <li>XChaCha20-Poly1305 encryption, X25519 key exchange, HKDF-SHA256 key derivation</li>
-                <li>JNI bridge (Rust &rarr; Kotlin via C++ CMake)</li>
-                <li>WebSocket signaling server for call setup and key exchange</li>
-                <li>Basic UI: dialer, contacts, call history, settings</li>
+                <li>48 findings: 7 Critical, 18 High, 23 Medium</li>
+                <li>All Critical and High fixed and verified &mdash; <a href="security-audit.html">Full Report</a></li>
             </ul>
 
             <div class="wiki-doc-footer">
