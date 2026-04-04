@@ -75,15 +75,34 @@ object PhoneBookResolver {
 
         // 2-3. Try SecureCall internal contacts
         val contacts = ContactRepository.getAll(context)
-        val contactByClientId = contacts.find { it.phoneOrId == clientId }
-        if (contactByClientId != null) return contactByClientId.name
 
+        // 2a. By SecureID (exact match on phoneOrId)
+        val contactByClientId = contacts.find { it.phoneOrId == clientId }
+        if (contactByClientId != null && contactByClientId.name.isNotBlank()
+            && contactByClientId.name != clientId) return contactByClientId.name
+
+        // 2b. By SecureID in secureId field (contact saved by phone, secureId linked later)
+        if (clientId.startsWith("android-")) {
+            val contactBySecureId = contacts.find { it.secureId == clientId }
+            if (contactBySecureId != null && contactBySecureId.name.isNotBlank()) {
+                // BUG-013: Also try phone book with this contact's phone number
+                val phoneFromContact = contactBySecureId.phoneOrId
+                if (!phoneFromContact.startsWith("android-")) {
+                    val phoneBookName = resolvePhoneNumber(context, phoneFromContact)
+                    if (phoneBookName != null) return phoneBookName
+                }
+                return contactBySecureId.name
+            }
+        }
+
+        // 3. By normalized phone number
         if (phoneNumber.isNotEmpty()) {
             val normalizedCaller = PhoneUtils.normalize(phoneNumber, context)
             val contactByPhone = contacts.find {
-                PhoneUtils.normalize(it.phoneOrId, context) == normalizedCaller
+                !it.phoneOrId.startsWith("android-") &&
+                PhoneUtils.matches(it.phoneOrId, phoneNumber, context)
             }
-            if (contactByPhone != null) return contactByPhone.name
+            if (contactByPhone != null && contactByPhone.name.isNotBlank()) return contactByPhone.name
         }
 
         // 4-5. Fallback to raw phone or clientId

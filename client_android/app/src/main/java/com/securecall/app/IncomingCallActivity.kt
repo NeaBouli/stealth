@@ -269,10 +269,11 @@ class IncomingCallActivity : AppCompatActivity() {
                 contactName = callerDisplayName,
                 contactId = callerClientId,
                 type = com.securecall.app.data.CallType.MISSED,
-                durationSeconds = 0
+                durationSeconds = 0,
+                phoneNumber = callerPhone.ifEmpty { null } // BUG-013: save phone for name re-resolution
             )
             com.securecall.app.data.CallHistoryRepository.add(this, record)
-            Log.d(TAG, "Missed call saved: $callerDisplayName")
+            Log.d(TAG, "Missed call saved: $callerDisplayName (phone=$callerPhone)")
             postMissedCallNotification()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save missed call", e)

@@ -49,18 +49,30 @@ class CallsFragment : Fragment() {
         showRecords(records)
         Thread({
             try {
+                var anyUpdated = false
                 val enriched = records.map { record ->
                     val name = record.contactName
                     if (name.startsWith("android-") || name.matches(Regex("^[+\\d\\s\\-()]+$"))) {
-                        val phoneForLookup = if (!record.contactId.isNullOrBlank() && !record.contactId.startsWith("android-"))
-                            record.contactId else name
-                        val resolved = com.securecall.app.data.PhoneBookResolver.resolvePhoneNumber(ctx, phoneForLookup)
-                        if (resolved != null) record.copy(contactName = resolved) else record
+                        // BUG-013: Use resolveCallerName() which checks BOTH phone book AND SecureCall contacts
+                        val clientId = record.contactId ?: ""
+                        // Try phoneNumber field first, then contactId, then name as fallback
+                        val phoneForLookup = record.phoneNumber
+                            ?: (if (clientId.isNotBlank() && !clientId.startsWith("android-")) clientId else "")
+                        val phoneFallback = if (phoneForLookup.isNotEmpty()) phoneForLookup else name
+                        val resolved = com.securecall.app.data.PhoneBookResolver.resolveCallerName(ctx, clientId, phoneFallback)
+                        if (resolved != name && resolved != clientId && !resolved.matches(Regex("^[+\\d\\s\\-()]+$"))) {
+                            anyUpdated = true
+                            // BUG-013: Persist enriched name so it doesn't flicker on next load
+                            val updated = record.copy(contactName = resolved)
+                            CallHistoryRepository.update(ctx, updated)
+                            updated
+                        } else record
                     } else record
                 }
                 activity?.runOnUiThread {
                     if (isAdded) showRecords(enriched)
                 }
+                if (anyUpdated) Log.d(TAG, "BUG-013: Enriched and persisted call history names")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to enrich call history", e)
             }

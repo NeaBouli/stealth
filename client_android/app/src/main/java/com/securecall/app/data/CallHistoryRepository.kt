@@ -37,6 +37,12 @@ object CallHistoryRepository {
         persist(context, all)
     }
 
+    /** BUG-013: Update a record in-place (e.g. after name enrichment). */
+    fun update(context: Context, record: CallRecord) {
+        val all = getAll(context).map { if (it.id == record.id) record else it }
+        persist(context, all)
+    }
+
     private fun persist(context: Context, records: List<CallRecord>) {
         val arr = JSONArray()
         records.forEach { arr.put(it.toJson()) }

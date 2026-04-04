@@ -790,10 +790,13 @@ public class CallActivity extends AppCompatActivity {
                     durationSecs = (int) ((System.currentTimeMillis() - callStartTimeMs) / 1000);
                 }
                 CallType callType = isIncomingCall ? CallType.INCOMING : CallType.OUTGOING;
+                // BUG-013: Save phoneNumber for future name re-resolution
+                String savePhone = !originalPhone.isEmpty() ? originalPhone : null;
                 CallRecord record = new CallRecord(
                     java.util.UUID.randomUUID().toString(),
                     callContactName, callContactId, callType,
-                    System.currentTimeMillis(), durationSecs, true
+                    System.currentTimeMillis(), durationSecs, true,
+                    savePhone
                 );
                 CallHistoryRepository.INSTANCE.add(this, record);
                 Log.d(TAG, "Call history saved: " + callType + " " + callContactName + " " + durationSecs + "s");

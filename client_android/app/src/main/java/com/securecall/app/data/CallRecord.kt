@@ -12,7 +12,8 @@ data class CallRecord(
     val type: CallType,
     val timestamp: Long = System.currentTimeMillis(),
     val durationSeconds: Int = 0,
-    val encrypted: Boolean = true
+    val encrypted: Boolean = true,
+    val phoneNumber: String? = null // BUG-013: actual phone number for name re-resolution
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
@@ -22,6 +23,7 @@ data class CallRecord(
         put("timestamp", timestamp)
         put("durationSeconds", durationSeconds)
         put("encrypted", encrypted)
+        if (!phoneNumber.isNullOrEmpty()) put("phoneNumber", phoneNumber)
     }
 
     companion object {
@@ -32,7 +34,8 @@ data class CallRecord(
             type = CallType.valueOf(json.getString("type")),
             timestamp = json.getLong("timestamp"),
             durationSeconds = json.optInt("durationSeconds", 0),
-            encrypted = json.optBoolean("encrypted", true)
+            encrypted = json.optBoolean("encrypted", true),
+            phoneNumber = json.optString("phoneNumber", "").ifEmpty { null }
         )
     }
 }
