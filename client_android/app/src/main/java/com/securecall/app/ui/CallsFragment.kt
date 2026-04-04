@@ -139,8 +139,9 @@ class CallsFragment : Fragment() {
         // If name is just a number/ID, prompt user for a name
         if (name.startsWith("android-") || name.matches(Regex("^[+\\d\\s\\-()]+$"))) {
             val input = android.widget.EditText(ctx)
-            input.hint = "Contact name"
-            input.setText(if (name.startsWith("android-")) "" else name)
+            input.hint = "Name, Alias"
+            input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS
+            // EditText stays empty — phone number is shown as subtitle, not in the field
             android.app.AlertDialog.Builder(ctx)
                 .setTitle("Save Contact")
                 .setMessage(phone)
