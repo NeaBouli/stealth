@@ -616,6 +616,7 @@ class ContactsFragment : Fragment() {
     private fun isContactRegistered(contact: Contact): Boolean {
         return contact.phoneOrId.startsWith("android-") ||
             contact.secureId != null ||
+            !contact.isPhoneContact || // App-saved contacts always show (not from phone book)
             registeredPhones.contains(contact.phoneOrId.replace(Regex("[^0-9+]"), ""))
     }
 
