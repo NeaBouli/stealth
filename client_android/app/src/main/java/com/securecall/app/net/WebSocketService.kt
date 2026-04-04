@@ -35,6 +35,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     @Volatile var isConnected: Boolean = false
         private set
 
+    // BUG-034: Registration gate — true only after REGISTER is processed by server
+    @Volatile var isRegistered: Boolean = false
+        private set
+
+    // BUG-010: FCM-delivered session ID — prevents duplicate IncomingCallActivity on WS reconnect
+    @Volatile private var fcmPendingSessionId: String? = null
+
+    // BUG-034: Queued outgoing calls waiting for WS registration
+    private val pendingCallQueue = mutableListOf<() -> Unit>()
+
     // Call signaling state and callbacks (private backing fields)
     // Volatile: callbacks are set on UI thread but read on WebRTC/WS threads
     @Volatile private var _currentSessionId: String? = null
@@ -102,6 +112,17 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     fun getLocalClientId(): String? {
         val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
         return prefs.getString("client_id", null)
+    }
+
+    /**
+     * BUG-010: Called by FCM handler to prevent duplicate IncomingCallActivity.
+     * When WS reconnects and receives the same CALL_INVITE, it will be suppressed
+     * because we already started the activity from FCM.
+     */
+    fun setFcmPendingSession(sessionId: String) {
+        fcmPendingSessionId = sessionId
+        _currentSessionId = sessionId // Mark session active so BUSY isn't sent for same call
+        Log.d("WS_SERVICE", "BUG-010: FCM pending session set: $sessionId")
     }
 
     // HeartbeatClient owns ALL heartbeat + reconnect logic.
@@ -380,12 +401,24 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onConnected() {
         Log.d("WS_SERVICE", "WebSocket connected — registering client")
         isConnected = true
+        isRegistered = false // BUG-034: not registered until server processes REGISTER
         registerClient()
         setupCallSignalingCallbacks()
         statusCallbackOnline?.invoke()
         com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Connected")
         // Send FCM token to backend after WS connect so push works when app is killed
         com.securecall.app.fcm.FcmTokenManager.ensureTokenRegistered(this)
+        // BUG-034: Mark as registered after 1.5s delay (server processes REGISTER quickly)
+        // Then flush any queued outgoing calls
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            if (isConnected) {
+                isRegistered = true
+                Log.d("WS_SERVICE", "BUG-034: isRegistered=true — flushing ${pendingCallQueue.size} pending calls")
+                com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Registered — ${pendingCallQueue.size} queued calls")
+                pendingCallQueue.forEach { it.invoke() }
+                pendingCallQueue.clear()
+            }
+        }, 1500)
     }
 
     private fun setupCallSignalingCallbacks() {
@@ -505,6 +538,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onDisconnected() {
         Log.d("WS_SERVICE", "WebSocket disconnected")
         isConnected = false
+        isRegistered = false // BUG-034: reset registration state
         statusCallbackOffline?.invoke()
         com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Disconnected")
         // HeartbeatClient owns reconnect — do NOT schedule here
@@ -520,6 +554,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onError(t: Throwable) {
         Log.e("WS_SERVICE", "WebSocket error", t)
         isConnected = false
+        isRegistered = false // BUG-034: reset registration state on error
+        pendingCallQueue.clear() // BUG-034: clear queued calls — will re-queue on reconnect
         errorCallback?.invoke(t)
         statusCallbackOffline?.invoke()
         com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Error: ${t.message}")
@@ -743,6 +779,14 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // ===================== Call Signaling =====================
 
     fun sendCallInvite(targetId: String) {
+        // BUG-034: If WS is not yet registered after reconnect, queue the call
+        if (!isRegistered) {
+            Log.w("WS_SERVICE", "BUG-034: WS not registered yet — queuing call to $targetId")
+            com.securecall.app.debug.SecLogManager.log("WS", "Call to $targetId queued — waiting for registration")
+            pendingCallQueue.add { sendCallInvite(targetId) }
+            return
+        }
+
         var pubKeyB64 = ""
         if (com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
             val keypair = com.securecall.crypto.CoreCrypto.generateKeyPair()
@@ -992,6 +1036,21 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     val sessionId = obj.optString("sessionId", "")
                     val from = obj.optString("from", "")
                     val callerPhone = obj.optString("callerPhone", "")
+
+                    // BUG-010: If FCM already delivered this call, suppress duplicate.
+                    // IncomingCallActivity is already ringing — just store the pubKey and session.
+                    if (fcmPendingSessionId == sessionId) {
+                        Log.d("WS_SERVICE", "BUG-010: CALL_INVITE suppressed (FCM already delivered session $sessionId)")
+                        val pubKeyB64 = obj.optString("pubKey", "")
+                        if (pubKeyB64.isNotEmpty()) {
+                            remotePubKey = android.util.Base64.decode(pubKeyB64, android.util.Base64.NO_WRAP)
+                            Log.d("WS_SERVICE", "Stored caller's X25519 public key (from WS after FCM)")
+                        }
+                        _currentSessionId = sessionId
+                        fcmPendingSessionId = null // Clear — WS has taken over
+                        return
+                    }
+
                     // FIX 1: Busy signal — reject if already in active call
                     if (_currentSessionId != null) {
                         Log.d("WS_SERVICE", "BUSY: rejecting CALL_INVITE from $from (already in session $_currentSessionId)")

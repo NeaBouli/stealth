@@ -54,6 +54,7 @@ class IncomingCallActivity : AppCompatActivity() {
     private var callerPhone: String = ""
     private var callerDisplayName: String = ""
     private var accepted = false
+    private var fromFcm = false // BUG-010: true when launched from FCM without WS
     private var ringtonePlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
     private var ringTimeoutHandler: android.os.Handler? = null
@@ -92,11 +93,14 @@ class IncomingCallActivity : AppCompatActivity() {
         sessionId = intent.getStringExtra("sessionId") ?: ""
         callerClientId = intent.getStringExtra("callerClientId") ?: ""
         callerPhone = intent.getStringExtra("callerPhone") ?: ""
-        Log.d(TAG, "Incoming call: session=$sessionId, from=$callerClientId, phone=$callerPhone")
+        fromFcm = intent.getBooleanExtra("from_fcm", false)
+        Log.d(TAG, "Incoming call: session=$sessionId, from=$callerClientId, phone=$callerPhone, fromFcm=$fromFcm")
 
         // Check if this call was already cancelled before we launched
+        // BUG-010: Skip this check when launched from FCM — WS may not be connected yet,
+        // so getCurrentSessionId() will be null. That's expected, not a cancelled call.
         val ws = com.securecall.app.net.WebSocketService.instance
-        if (ws?.getCurrentSessionId() == null && sessionId.isNotEmpty()) {
+        if (!fromFcm && ws?.getCurrentSessionId() == null && sessionId.isNotEmpty()) {
             Log.d(TAG, "Call already cancelled before IncomingCallActivity created")
             saveMissedCallFromIntent()
             dismissIncomingCallNotification()
@@ -184,10 +188,52 @@ class IncomingCallActivity : AppCompatActivity() {
         cancelRingTimeout()
         stopRingtoneAndVibration()
         dismissIncomingCallNotification()
-        Log.d(TAG, "Accepting call, session=$sessionId")
-        val ws = com.securecall.app.net.WebSocketService.instance
-        ws?.sendCallAccept(sessionId)
+        Log.d(TAG, "Accepting call, session=$sessionId, fromFcm=$fromFcm")
 
+        val ws = com.securecall.app.net.WebSocketService.instance
+
+        // BUG-010: If launched from FCM, WS may not be connected yet.
+        // Wait for WS to be ready (up to 10s) before sending CALL_ACCEPT.
+        if (fromFcm && (ws == null || !ws.isConnected)) {
+            Log.d(TAG, "BUG-010: WS not connected — waiting for reconnect before CALL_ACCEPT")
+            com.securecall.app.debug.SecLogManager.log("CALL", "FCM accept — waiting for WS reconnect")
+            waitForWsAndAccept()
+        } else {
+            ws?.sendCallAccept(sessionId)
+            launchCallActivity()
+        }
+    }
+
+    /**
+     * BUG-010: Wait for WS to reconnect (up to 10s), then send CALL_ACCEPT.
+     * Polls every 500ms. If timeout, launch CallActivity anyway — the WS
+     * reconnect + server CALL_INVITE will eventually pair them.
+     */
+    private fun waitForWsAndAccept() {
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        val startTime = System.currentTimeMillis()
+        val checkRunnable = object : Runnable {
+            override fun run() {
+                val ws = com.securecall.app.net.WebSocketService.instance
+                val elapsed = System.currentTimeMillis() - startTime
+                if (ws != null && ws.isConnected) {
+                    Log.d(TAG, "BUG-010: WS connected after ${elapsed}ms — sending CALL_ACCEPT")
+                    com.securecall.app.debug.SecLogManager.log("CALL", "WS ready after ${elapsed}ms — sending CALL_ACCEPT")
+                    ws.sendCallAccept(sessionId)
+                    launchCallActivity()
+                } else if (elapsed > 10_000) {
+                    Log.w(TAG, "BUG-010: WS reconnect timeout (10s) — launching CallActivity anyway")
+                    com.securecall.app.debug.SecLogManager.log("CALL", "WS reconnect timeout — launching CallActivity without CALL_ACCEPT")
+                    launchCallActivity()
+                } else {
+                    handler.postDelayed(this, 500)
+                }
+            }
+        }
+        handler.postDelayed(checkRunnable, 500)
+    }
+
+    private fun launchCallActivity() {
         val intent = Intent(this, CallActivity::class.java).apply {
             putExtra("sessionId", sessionId)
             putExtra("callerName", callerDisplayName)
