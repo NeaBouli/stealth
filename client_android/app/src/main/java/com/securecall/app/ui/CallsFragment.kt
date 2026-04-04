@@ -113,6 +113,8 @@ class CallsFragment : Fragment() {
         val options = mutableListOf<String>()
         if (!isSaved) {
             options.add("Save as Contact")
+        } else {
+            options.add("Edit Contact")
         }
         options.add(if (isBlocked) "Unblock Number" else "Block Number")
         options.add("Delete from History")
@@ -123,6 +125,7 @@ class CallsFragment : Fragment() {
                 val action = options[which]
                 when {
                     action == "Save as Contact" -> saveAsContact(record)
+                    action == "Edit Contact" -> editContact(record, existingContact!!)
                     action.contains("Block") || action.contains("Unblock") -> toggleBlock(record, existingContact)
                     action == "Delete from History" -> deleteFromHistory(record)
                 }
@@ -171,6 +174,37 @@ class CallsFragment : Fragment() {
         ContactsFragment.invalidateCache()
         android.widget.Toast.makeText(ctx, "$name saved", android.widget.Toast.LENGTH_SHORT).show()
         Log.d(TAG, "Contact saved from call history: $name -> $savePhoneOrId")
+    }
+
+    private fun editContact(record: CallRecord, contact: com.securecall.app.data.Contact) {
+        val ctx = context ?: return
+        val input = android.widget.EditText(ctx)
+        input.hint = "Name, Alias"
+        input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS
+        input.setText(contact.name)
+        input.selectAll()
+        val phone = record.phoneNumber ?: contact.phoneOrId
+        android.app.AlertDialog.Builder(ctx)
+            .setTitle("Edit Contact")
+            .setMessage(phone)
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                val newName = input.text.toString().trim()
+                if (newName.isNotEmpty() && newName != contact.name) {
+                    val updated = contact.copy(name = newName)
+                    com.securecall.app.data.ContactRepository.update(ctx, updated)
+                    // Update call history records too
+                    val records = CallHistoryRepository.getAll(ctx)
+                    records.filter { it.contactId == record.contactId || it.phoneNumber == record.phoneNumber }
+                        .forEach { CallHistoryRepository.update(ctx, it.copy(contactName = newName)) }
+                    ContactsFragment.invalidateCache()
+                    loadHistory()
+                    android.widget.Toast.makeText(ctx, "Contact updated", android.widget.Toast.LENGTH_SHORT).show()
+                    Log.d(TAG, "Contact edited: ${contact.name} -> $newName")
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun toggleBlock(record: CallRecord, existingContact: com.securecall.app.data.Contact?) {
