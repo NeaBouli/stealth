@@ -14,7 +14,8 @@ import java.util.*
 
 class CallHistoryAdapter(
     records: List<CallRecord>,
-    private val onItemClick: ((CallRecord) -> Unit)? = null
+    private val onItemClick: ((CallRecord) -> Unit)? = null,
+    private val onItemLongClick: ((CallRecord) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val items = buildGroupedList(records)
@@ -50,6 +51,10 @@ class CallHistoryAdapter(
                 (holder as RecordVH).bind(item.record)
                 holder.itemView.setOnClickListener {
                     onItemClick?.invoke(item.record)
+                }
+                holder.itemView.setOnLongClickListener {
+                    onItemLongClick?.invoke(item.record)
+                    true
                 }
             }
         }
