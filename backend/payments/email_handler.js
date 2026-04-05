@@ -73,20 +73,29 @@ async function sendWithResend(to, subject, html) {
   return result;
 }
 
-// --- Brevo Provider ---
+// --- Brevo Provider (SMTP via Nodemailer) ---
 
 async function sendWithBrevo(to, subject, html) {
-  const SibApiV3Sdk = require("@getbrevo/brevo");
-  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-  apiInstance.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
+  const nodemailer = require("nodemailer");
+  // Brevo SMTP: user = account email (BREVO_SMTP_USER env var), pass = SMTP key
+  const smtpUser = process.env.BREVO_SMTP_USER || process.env.BREVO_EMAIL || "";
+  if (!smtpUser) throw new Error("BREVO_SMTP_USER not set");
+  const transporter = nodemailer.createTransport({
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: smtpUser,
+      pass: process.env.BREVO_API_KEY  // xsmtpsib-... SMTP key
+    }
+  });
 
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-  sendSmtpEmail.sender = { name: "SecureCall", email: "noreply@stealthx.tech" };
-  sendSmtpEmail.to = [{ email: to }];
-  sendSmtpEmail.subject = subject;
-  sendSmtpEmail.htmlContent = html;
-
-  return await apiInstance.sendTransacEmail(sendSmtpEmail);
+  return await transporter.sendMail({
+    from: '"SecureCall" <noreply@stealthx.tech>',
+    to: to,
+    subject: subject,
+    html: html
+  });
 }
 
 // --- Main Send Function (Resend → Brevo fallback) ---

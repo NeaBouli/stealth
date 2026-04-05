@@ -16,6 +16,7 @@
     "ethers": "^6.16.0",
     "express": "^4.19.0",
     "firebase-admin": "^13.7.0",
+    "nodemailer": "^8.0.4",
     "resend": "^6.10.0",
     "stripe": "^22.0.0",
     "uuid": "^9.0.1",

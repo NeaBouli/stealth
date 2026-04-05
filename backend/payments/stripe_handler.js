@@ -203,7 +203,24 @@ function setupRoutes(app) {
     res.json({ received: true });
   });
 
-  console.log("[STRIPE] Routes enabled: POST /stripe/create-checkout, POST /stripe/webhook");
+  // Test email endpoint (admin only)
+  app.post("/stripe/test-email", async (req, res) => {
+    const adminKey = req.headers["x-admin-key"];
+    if (adminKey !== process.env.ADMIN_API_KEY) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { email, code } = req.body;
+    if (!email) return res.status(400).json({ error: "Missing email" });
+    try {
+      const { sendActivationCode } = require("./email_handler");
+      const sent = await sendActivationCode(email, code || "PREM-TEST-0000-0000", "premium");
+      res.json({ success: sent, message: sent ? "Email sent to " + email : "All providers failed" });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  console.log("[STRIPE] Routes enabled: POST /stripe/create-checkout, POST /stripe/webhook, POST /stripe/test-email");
 }
 
 module.exports = { createCheckoutSession, handleWebhook, generateActivationCode, setupRoutes, PRODUCTS };
