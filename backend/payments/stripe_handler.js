@@ -12,15 +12,15 @@
  *
  *    Produkt 1: "SecureCall Pro"
  *    → Preis: €3.49 / Monat (recurring)
- *    → Notiere: price_xxxxxxxxxxxxxxxxx  → STRIPE_PRO_PRICE_ID
+ *    → Notiere: price_xxxxxxxxxxxxxxxxx  → price_1TInrMBcyoLtm3FAWcdsNUX3
  *
  *    Produkt 2: "SecureCall Premium"
  *    → Preis: €4.99 / Monat (recurring)
- *    → Notiere: price_xxxxxxxxxxxxxxxxx  → STRIPE_PREMIUM_PRICE_ID
+ *    → Notiere: price_xxxxxxxxxxxxxxxxx  → price_1TInt2BcyoLtm3FAPOw0vJ5p
  *
  *    Produkt 3: "SecureCall Premium Lifetime"
  *    → Preis: €49.00 einmalig (one_time)
- *    → Notiere: price_xxxxxxxxxxxxxxxxx  → STRIPE_LIFETIME_PRICE_ID
+ *    → Notiere: price_xxxxxxxxxxxxxxxxx  → price_1TInt8BcyoLtm3FACbPJZZPg
  *
  * 3. Webhook erstellen:
  *    → URL: https://protective-healing-production.up.railway.app/stripe/webhook
@@ -30,9 +30,7 @@
  * 4. Environment Variables in Railway setzen:
  *    STRIPE_SECRET_KEY=sk_test_... (oder sk_live_...)
  *    STRIPE_WEBHOOK_SECRET=whsec_...
- *    STRIPE_PRO_PRICE_ID=price_...
- *    STRIPE_PREMIUM_PRICE_ID=price_...
- *    STRIPE_LIFETIME_PRICE_ID=price_...
+ *    (Price IDs are hardcoded below — no env vars needed)
  *
  * ═══════════════════════════════════════════════════════════════
  *
@@ -47,19 +45,19 @@
 const PRODUCTS = {
   pro_monthly: {
     name: "SecureCall Pro",
-    priceEnvVar: "STRIPE_PRO_PRICE_ID",
+    priceId: "price_1TInrMBcyoLtm3FAWcdsNUX3",
     mode: "subscription",
     tier: "pro"
   },
   premium_monthly: {
     name: "SecureCall Premium",
-    priceEnvVar: "STRIPE_PREMIUM_PRICE_ID",
+    priceId: "price_1TInt2BcyoLtm3FAPOw0vJ5p",
     mode: "subscription",
     tier: "premium"
   },
   premium_lifetime: {
     name: "SecureCall Premium Lifetime",
-    priceEnvVar: "STRIPE_LIFETIME_PRICE_ID",
+    priceId: "price_1TInt8BcyoLtm3FACbPJZZPg",
     mode: "payment",
     tier: "premium"
   }
@@ -75,8 +73,8 @@ async function createCheckoutSession(stripe, productKey, customerEmail) {
   const product = PRODUCTS[productKey];
   if (!product) throw new Error(`Unknown product: ${productKey}`);
 
-  const priceId = process.env[product.priceEnvVar];
-  if (!priceId) throw new Error(`Missing env var: ${product.priceEnvVar}`);
+  const priceId = product.priceId;
+  if (!priceId) throw new Error(`Missing priceId for: ${productKey}`);
 
   const sessionParams = {
     line_items: [{ price: priceId, quantity: 1 }],
