@@ -237,21 +237,23 @@ function setupRoutes(app) {
       } catch (e) { errors.push({ provider: "resend", error: e.message }); }
     }
 
-    // Try Brevo
-    if (process.env.BREVO_API_KEY && process.env.BREVO_SMTP_USER) {
+    // Try Brevo (HTTP REST API)
+    if (process.env.BREVO_API_KEY) {
       try {
-        const nodemailer = require("nodemailer");
-        const transporter = nodemailer.createTransport({
-          host: "smtp-relay.brevo.com", port: 465, secure: true,
-          auth: { user: process.env.BREVO_SMTP_USER, pass: process.env.BREVO_API_KEY }
+        const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: { "api-key": process.env.BREVO_API_KEY, "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({
+            sender: { name: "SecureCall", email: process.env.BREVO_SMTP_USER || "noreply@stealthx.tech" },
+            to: [{ email }], subject: "SecureCall Test",
+            htmlContent: "<p>Code: " + (code || "TEST") + "</p>"
+          })
         });
-        const result = await transporter.sendMail({
-          from: '"SecureCall" <noreply@stealthx.tech>', to: email,
-          subject: "SecureCall Test", html: "<p>Code: " + (code || "TEST") + "</p>"
-        });
+        const brevoBody = await brevoRes.text();
+        if (!brevoRes.ok) throw new Error(`${brevoRes.status}: ${brevoBody}`);
         sent = true;
-        return res.json({ success: true, provider: "brevo", debug, messageId: result.messageId });
-      } catch (e) { errors.push({ provider: "brevo", error: e.message }); }
+        return res.json({ success: true, provider: "brevo-http", debug, result: JSON.parse(brevoBody) });
+      } catch (e) { errors.push({ provider: "brevo-http", error: e.message }); }
     }
 
     res.json({ success: false, debug, errors });
