@@ -10,17 +10,25 @@ let resend = null;
 function getResend() {
   if (!resend) {
     const apiKey = process.env.RESEND_API_KEY;
+    console.log("[EMAIL] RESEND_API_KEY:", apiKey ? `set (${apiKey.substring(0, 8)}...)` : "NOT SET");
     if (!apiKey) {
       console.warn("[EMAIL] RESEND_API_KEY not set — email delivery disabled");
       return null;
     }
-    const { Resend } = require("resend");
-    resend = new Resend(apiKey);
+    try {
+      const { Resend } = require("resend");
+      resend = new Resend(apiKey);
+      console.log("[EMAIL] Resend client initialized");
+    } catch (err) {
+      console.error("[EMAIL] Failed to initialize Resend:", err.message);
+      return null;
+    }
   }
   return resend;
 }
 
 async function sendActivationCode(toEmail, code, tier) {
+  console.log("[EMAIL] sendActivationCode called:", toEmail, code, tier);
   const r = getResend();
   if (!r) {
     console.warn("[EMAIL] Skipping email (Resend not configured):", toEmail, code);

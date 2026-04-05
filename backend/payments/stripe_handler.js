@@ -106,32 +106,41 @@ async function createCheckoutSession(stripe, productKey, customerEmail) {
  * On checkout.session.completed → generate activation code.
  */
 async function handleWebhook(event) {
+  console.log("[STRIPE] === WEBHOOK RECEIVED ===");
+  console.log("[STRIPE] Event type:", event.type);
+  console.log("[STRIPE] RESEND_API_KEY set:", !!process.env.RESEND_API_KEY);
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const tier = session.metadata.tier || "premium";
-    const productKey = session.metadata.product || "premium_lifetime";
-    const email = session.customer_email || "unknown";
+    const tier = session.metadata?.tier || "premium";
+    const productKey = session.metadata?.product || "premium_lifetime";
+    const email = session.customer_email || session.customer_details?.email || "unknown";
+
+    console.log("[STRIPE] Customer email:", email);
+    console.log("[STRIPE] Tier:", tier, "Product:", productKey);
 
     // Generate unique activation code
     const code = generateActivationCode(tier);
-
-    console.log(`[STRIPE] Payment completed: ${email} → ${tier} code: ${code} (product: ${productKey})`);
+    console.log("[STRIPE] Activation code generated:", code);
 
     // Send activation code via email
     if (email && email !== "unknown") {
       try {
         const { sendActivationCode } = require("./email_handler");
-        await sendActivationCode(email, code, tier);
+        console.log("[STRIPE] Calling sendActivationCode()...");
+        const sent = await sendActivationCode(email, code, tier);
+        console.log("[STRIPE] Email send result:", sent);
       } catch (err) {
-        console.error("[STRIPE] Email delivery failed:", err.message);
+        console.error("[STRIPE] Email delivery failed:", err.message, err.stack);
       }
+    } else {
+      console.warn("[STRIPE] No customer email — skipping email delivery");
     }
-
-    // TODO: Send code via email (SendGrid, Resend, etc.)
-    // TODO: Store in activation_codes for server-side validation
 
     return { code, tier, email, productKey };
   }
+
+  console.log("[STRIPE] Unhandled event type:", event.type);
   return null;
 }
 
