@@ -33,6 +33,7 @@
 | BUG-031 | Contact not verified after call — no verification prompt | OPEN | Medium | — |
 | BUG-034 | 0s duration calls after WS reconnect — CALL_INVITE sent before REGISTER processed | FIXED | High | 6d05712 |
 | BUG-035 | DNS resolution failure after network switch — rapid 2s retries drain battery | FIXED | Medium | 6d05712 |
+| BUG-036 | Dialer Tastatur — kein ABC Toggle für alphanumerische Custom Call IDs | OPEN | Medium | — |
 
 ## Fix Details
 

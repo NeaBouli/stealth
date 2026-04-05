@@ -101,24 +101,74 @@
 ## Open TODOs
 | ID | Task | Priority |
 |---|---|---|
-| TODO-029 | Google Play Service Account (billing verification) | HIGH |
+| TODO-048 | Brevo als Email Backup (Resend gesperrt) | HIGH |
+| TODO-049 | Resend Account entsperren (Support Ticket offen) | HIGH |
+| TODO-053 | Tester-Codes per Email verteilen (30 PREM Codes) | HIGH |
+| TODO-056 | Play Store Service Account (= TODO-029) | HIGH |
+| TODO-050 | Stripe Live-Modus aktivieren | MEDIUM |
+| TODO-051 | Custom Call ID Feature (Website + Backend + App) | MEDIUM |
+| TODO-052 | Dialer Tastatur — ABC Toggle für Custom IDs | MEDIUM |
+| TODO-055 | AGB updaten — Custom Call ID Bedingungen | MEDIUM |
+| TODO-057 | DE Store Listing in Play Console eintragen | MEDIUM |
 | TODO-046 | VpnService-based network traffic steering (eSIM routing) | MEDIUM |
+| TODO-033 | Firebase + AdMob linking | MEDIUM |
+| TODO-054 | payment-success.html Stripe Links auf Live aktualisieren | LOW |
+| TODO-010 | Self-hosted TURN (coturn) | LOW |
 | ~~TODO-047~~ | ~~Deactivate beta codes before production~~ | DONE |
 | ~~TODO-030~~ | ~~Store Listing DE~~ — marketing/play_store_de.txt | DONE |
-| TODO-033 | Firebase + AdMob linking | MEDIUM |
-| TODO-010 | Self-hosted TURN (coturn) | LOW |
 
-### TODO-029: Google Play Service Account
+### TODO-048: Brevo als Email Backup
+- Resend Account gesperrt (Support Ticket offen)
+- **Brevo.com** als Alternative: kostenlos, sofort verfügbar
+- `BREVO_API_KEY` in Railway setzen
+- `email_handler.js`: Fallback auf Brevo wenn Resend fails
+
+### TODO-049: Resend Account entsperren
+- Support Ticket gesendet (Critical)
+- Warten auf Resend Response
+
+### TODO-050: Stripe Live-Modus aktivieren
+- Test-Modus → Live-Modus wenn Beta abgeschlossen
+- Live Secret Key in Railway ersetzen (`sk_test_` → `sk_live_`)
+- Live Webhook Endpoint registrieren
+- Neue Payment Links für Live-Modus erstellen
+- Landing Page Links aktualisieren + TEST MODE Banner entfernen
+
+### TODO-051: Custom Call ID Feature
+- **Website:** stealthx.tech/custom-id Generator
+- **Preise:** $1 (10+ Zeichen), $2 (5-9 Zeichen), $5 (3-4 Zeichen)
+- 1-2 Zeichen: nur Dev Team reserviert
+- **Passwortschutz:** ID + Passwort bei Aktivierung
+- **Gerätemigration:** ID + Passwort auf neuem Gerät eingeben → altes Gerät automatisch deaktiviert
+- **Backend:** ID-Verfügbarkeit prüfen, reservieren, speichern
+- **App:** Settings → Custom Call ID eingeben + Passwort
+- Nur für Premium User
+- Einmal gekauft = dauerhaft (an Passwort gebunden)
+
+### TODO-052: Dialer Tastatur — ABC Toggle
+- Dialer zeigt nur Ziffernblock, kein Toggle zwischen 123 ↔ ABC
+- Nötig für alphanumerische SecureCall-IDs (z.B. "marco", "trump")
+- Fix: Toggle-Button im Dialer hinzufügen
+
+### TODO-053: Tester-Codes per Email verteilen
+- 30 Premium Codes generiert (`backend/codes/tester_codes_2026.json` — gitignored)
+- Warten auf Resend/Brevo → dann manuell versenden
+
+### TODO-055: AGB updaten — Custom Call ID
+- Passwort vergessen = ID verloren (kein Support)
+- ID ist an Passwort gebunden, nicht an Person
+- Keine Rückerstattung bei Passwortverlust
+
+### TODO-056: Play Store Service Account
 - **Gehe zu:** play.google.com/console → Setup → API Zugriff
-- **Google Cloud Projekt verknüpfen** (oder neues erstellen)
-- **Service Account erstellen** mit Play Console Rechten (Financial Data, App Management)
-- **JSON Key herunterladen** → sicher aufbewahren (NIE in Git!)
-- **Wird benötigt für:** automatische AAB-Uploads, Billing-Verifikation, Subscription-Status-Abfrage
+- Google Cloud Projekt verknüpfen, Service Account erstellen
+- JSON Key herunterladen → sicher aufbewahren (NIE in Git!)
+- Benötigt für: automatische AAB-Uploads, Billing-Verifikation
 - **Status:** MANUAL STEP — Kaspartizan muss dies selbst in Play Console durchführen
 
 ### TODO-046: VpnService-basiertes Traffic Steering
 - **Benötigt für:** eSIM Call Routing, Preferred Network Bindung
-- **Problem:** OkHttp connection pooling umgeht `bindProcessToNetwork()` — Sockets bleiben auf altem Interface
+- **Problem:** OkHttp connection pooling umgeht `bindProcessToNetwork()`
 - **Lösung:** Eigener VpnService der Traffic auf OS-Ebene auf das richtige Interface leitet
 - **Status:** OPEN — hohe Komplexität, nach Production angehen
 - **Workaround:** Feature funktioniert wenn nur ein Netzwerk aktiv (z.B. WiFi aus → nur Mobile)
@@ -128,6 +178,7 @@
 |---|---|---|
 | BUG-026 | eSIM routing needs VpnService (Coming Soon in UI) | HIGH |
 | BUG-029 | No audio after call connected — VPN+VPN blocks TURN UDP relay | MEDIUM |
+| BUG-036 | Dialer Tastatur — kein ABC Toggle für alphanumerische IDs | MEDIUM |
 | BUG-023 | No diagnostic log export — SecLog CSV export (Pro/Premium) | LOW |
 
 **No critical bugs remaining.**
@@ -145,8 +196,9 @@
 - Terms of Service: stealthx.tech/terms.html
 
 ## Next Session Steps
-1. Wait for tester feedback on v1.0.13 (vC31)
-2. Upload AAB to Play Console Alpha Track
-3. Google Play Service Account for billing verification (TODO-029)
-4. Stripe account einrichten für Website-Käufe (€49 Premium Code)
-5. Production release after testing phase
+1. Brevo Email Backup einrichten (TODO-048) — Tester-Codes versenden
+2. Custom Call ID Feature planen (TODO-051 + TODO-052)
+3. Upload AAB v1.0.13 to Play Console Alpha Track
+4. Play Store Service Account (TODO-056) — Kaspartizan manuell
+5. Stripe Live-Modus nach Beta (TODO-050)
+6. Production release nach Tester-Feedback
