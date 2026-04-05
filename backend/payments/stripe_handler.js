@@ -1,75 +1,187 @@
 /**
- * Stripe + PayPal Checkout Handler (Grundstruktur)
+ * Stripe Checkout Handler for SecureCall
  *
- * TODO: Connect to live Stripe account before production.
+ * ═══════════════════════════════════════════════════════════════
+ * SETUP (Kaspartizan muss dies in Stripe Dashboard durchführen):
+ * ═══════════════════════════════════════════════════════════════
  *
- * Environment Variables needed:
- *   STRIPE_SECRET_KEY        — sk_live_... or sk_test_...
- *   STRIPE_WEBHOOK_SECRET    — whsec_...
- *   STRIPE_PREMIUM_PRICE_ID  — price_... (€49 one-time Premium Activation Code)
+ * 1. Gehe zu: https://dashboard.stripe.com/test/products (Sandbox)
+ *    oder https://dashboard.stripe.com/products (Live)
+ *
+ * 2. Erstelle 3 Produkte:
+ *
+ *    Produkt 1: "SecureCall Pro"
+ *    → Preis: €3.49 / Monat (recurring)
+ *    → Notiere: price_xxxxxxxxxxxxxxxxx  → STRIPE_PRO_PRICE_ID
+ *
+ *    Produkt 2: "SecureCall Premium"
+ *    → Preis: €4.99 / Monat (recurring)
+ *    → Notiere: price_xxxxxxxxxxxxxxxxx  → STRIPE_PREMIUM_PRICE_ID
+ *
+ *    Produkt 3: "SecureCall Premium Lifetime"
+ *    → Preis: €49.00 einmalig (one_time)
+ *    → Notiere: price_xxxxxxxxxxxxxxxxx  → STRIPE_LIFETIME_PRICE_ID
+ *
+ * 3. Webhook erstellen:
+ *    → URL: https://protective-healing-production.up.railway.app/stripe/webhook
+ *    → Events: checkout.session.completed
+ *    → Notiere: whsec_xxxxxxxx  → STRIPE_WEBHOOK_SECRET
+ *
+ * 4. Environment Variables in Railway setzen:
+ *    STRIPE_SECRET_KEY=sk_test_... (oder sk_live_...)
+ *    STRIPE_WEBHOOK_SECRET=whsec_...
+ *    STRIPE_PRO_PRICE_ID=price_...
+ *    STRIPE_PREMIUM_PRICE_ID=price_...
+ *    STRIPE_LIFETIME_PRICE_ID=price_...
+ *
+ * ═══════════════════════════════════════════════════════════════
  *
  * Flow:
- *   1. User clicks "Buy Premium Code" on stealthx.tech
- *   2. POST /api/create-checkout → Stripe Checkout Session
- *   3. User pays via card/PayPal/SEPA
+ *   1. User clicks "Buy" on stealthx.tech
+ *   2. POST /stripe/create-checkout → Stripe Checkout Session
+ *   3. User pays via card/SEPA/Klarna
  *   4. Stripe fires webhook → generate activation code
- *   5. Redirect to success page with code
+ *   5. Redirect to success page with code displayed
  */
 
-// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const PRODUCTS = {
+  pro_monthly: {
+    name: "SecureCall Pro",
+    priceEnvVar: "STRIPE_PRO_PRICE_ID",
+    mode: "subscription",
+    tier: "pro"
+  },
+  premium_monthly: {
+    name: "SecureCall Premium",
+    priceEnvVar: "STRIPE_PREMIUM_PRICE_ID",
+    mode: "subscription",
+    tier: "premium"
+  },
+  premium_lifetime: {
+    name: "SecureCall Premium Lifetime",
+    priceEnvVar: "STRIPE_LIFETIME_PRICE_ID",
+    mode: "payment",
+    tier: "premium"
+  }
+};
 
 /**
- * Create a Stripe Checkout session for a Premium Activation Code purchase.
+ * Create a Stripe Checkout session.
+ * @param {object} stripe - initialized Stripe instance
+ * @param {string} productKey - one of: pro_monthly, premium_monthly, premium_lifetime
+ * @param {string} customerEmail - optional
  */
-async function createCheckoutSession(customerEmail) {
-  /* --- UNCOMMENT WHEN STRIPE IS CONFIGURED ---
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [{
-      price: process.env.STRIPE_PREMIUM_PRICE_ID,
-      quantity: 1,
-    }],
-    mode: 'payment',
-    success_url: 'https://stealthx.tech/payment-success?session_id={CHECKOUT_SESSION_ID}',
-    cancel_url: 'https://stealthx.tech/#pricing',
-    customer_email: customerEmail,
-    metadata: { tier: 'premium', type: 'activation_code' }
-  });
+async function createCheckoutSession(stripe, productKey, customerEmail) {
+  const product = PRODUCTS[productKey];
+  if (!product) throw new Error(`Unknown product: ${productKey}`);
+
+  const priceId = process.env[product.priceEnvVar];
+  if (!priceId) throw new Error(`Missing env var: ${product.priceEnvVar}`);
+
+  const sessionParams = {
+    line_items: [{ price: priceId, quantity: 1 }],
+    mode: product.mode,
+    success_url: "https://stealthx.tech/payment-success.html?session_id={CHECKOUT_SESSION_ID}",
+    cancel_url: "https://stealthx.tech/#pricing",
+    metadata: { tier: product.tier, product: productKey }
+  };
+
+  if (customerEmail) sessionParams.customer_email = customerEmail;
+
+  // SEPA + Klarna for EU customers (card is always included)
+  if (product.mode === "payment") {
+    sessionParams.payment_method_types = ["card", "klarna", "sepa_debit"];
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionParams);
   return session;
-  */
-  throw new Error('Stripe not yet configured');
 }
 
 /**
  * Handle Stripe webhook events.
- * On checkout.session.completed → generate activation code + email to customer.
+ * On checkout.session.completed → generate activation code.
  */
-async function handleWebhook(event) {
-  if (event.type === 'checkout.session.completed') {
+function handleWebhook(event) {
+  if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const tier = session.metadata.tier || 'premium';
-    const email = session.customer_email;
+    const tier = session.metadata.tier || "premium";
+    const productKey = session.metadata.product || "premium_lifetime";
+    const email = session.customer_email || "unknown";
 
     // Generate unique activation code
     const code = generateActivationCode(tier);
 
-    console.log(`[STRIPE] Payment completed: ${email} → ${tier} code: ${code}`);
+    console.log(`[STRIPE] Payment completed: ${email} → ${tier} code: ${code} (product: ${productKey})`);
 
-    // TODO: Send code via email (SendGrid, SES, etc.)
-    // TODO: Store in database for tracking
+    // TODO: Send code via email (SendGrid, Resend, etc.)
+    // TODO: Store in activation_codes for server-side validation
 
-    return { code, tier, email };
+    return { code, tier, email, productKey };
   }
+  return null;
 }
 
 /**
  * Generate a unique activation code in PREM-XXXX-XXXX-XXXX format.
  */
 function generateActivationCode(tier) {
-  const prefix = tier === 'premium' ? 'PREM' : 'PRO';
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  const part = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  const crypto = require("crypto");
+  const prefix = tier === "premium" ? "PREM" : "PRO";
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const part = () => Array.from({ length: 4 }, () => chars[crypto.randomInt(chars.length)]).join("");
   return `${prefix}-${part()}-${part()}-${part()}`;
 }
 
-module.exports = { createCheckoutSession, handleWebhook, generateActivationCode };
+/**
+ * Express route setup — call from server.js:
+ *   require('./payments/stripe_handler').setupRoutes(app);
+ */
+function setupRoutes(app) {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    console.warn("[STRIPE] STRIPE_SECRET_KEY not set — Stripe routes disabled");
+    return;
+  }
+
+  const stripe = require("stripe")(secretKey);
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  // Create checkout session
+  app.post("/stripe/create-checkout", async (req, res) => {
+    try {
+      const { product, email } = req.body;
+      const session = await createCheckoutSession(stripe, product || "premium_lifetime", email);
+      res.json({ url: session.url, sessionId: session.id });
+    } catch (err) {
+      console.error("[STRIPE] Checkout error:", err.message);
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  // Webhook (Stripe sends raw body)
+  app.post("/stripe/webhook", require("express").raw({ type: "application/json" }), (req, res) => {
+    let event;
+    try {
+      if (webhookSecret) {
+        event = stripe.webhooks.constructEvent(req.body, req.headers["stripe-signature"], webhookSecret);
+      } else {
+        event = JSON.parse(req.body);
+      }
+    } catch (err) {
+      console.error("[STRIPE] Webhook signature verification failed:", err.message);
+      return res.status(400).send("Webhook error");
+    }
+
+    const result = handleWebhook(event);
+    if (result) {
+      // TODO: Store code in activationCodes array + save to file
+      console.log("[STRIPE] Activation code generated:", result.code);
+    }
+
+    res.json({ received: true });
+  });
+
+  console.log("[STRIPE] Routes enabled: POST /stripe/create-checkout, POST /stripe/webhook");
+}
+
+module.exports = { createCheckoutSession, handleWebhook, generateActivationCode, setupRoutes, PRODUCTS };
