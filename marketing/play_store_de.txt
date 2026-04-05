@@ -1,0 +1,85 @@
+═══════════════════════════════════════════════════
+Google Play Store Listing — Deutsch (DE)
+Stand: April 2026
+═══════════════════════════════════════════════════
+
+APP-NAME (30 Zeichen):
+SecureCall — Sichere Anrufe
+
+KURZBESCHREIBUNG (80 Zeichen):
+Ende-zu-Ende verschlüsselte Sprachanrufe. Kein Konto erforderlich.
+
+VOLLSTÄNDIGE BESCHREIBUNG:
+
+SecureCall ist eine Android-App für abhörsichere Sprachanrufe.
+Kein Konto, keine Telefonnummer, keine persönlichen Daten erforderlich.
+
+Aufgrund unserer Priorisierung auf Anonymität bieten wir keinen persönlichen Support an. Community-Support erfolgt ausschließlich über GitHub Issues.
+
+🔐 VERSCHLÜSSELUNG
+• XChaCha20-Poly1305 Ende-zu-Ende-Verschlüsselung
+• X25519 Schlüsselaustausch pro Anruf
+• Rust-Kryptographie-Engine für maximale Sicherheit
+• Quellcode öffentlich einsehbar (Source Available)
+
+📞 ANRUFE
+• Kristallklare Sprachqualität (Opus 48kHz)
+• Automatische Wiederverbindung bei Netzwechsel
+• Funktioniert über WiFi, Mobile und VPN
+• Eingehende Anrufe auch wenn App geschlossen (FCM Push)
+• WebRTC Peer-to-Peer — kein Server hört mit
+
+🛡️ SICHERHEIT
+• Kein Metadaten-Logging auf unseren Servern
+• STEALTH-DELETE: 5-faches Tippen löscht alle Daten sofort
+• Anti-Aufnahme-Erkennung (Pro/Premium)
+• Screenshot-Schutz (Pro/Premium)
+• WireGuard VPN integriert (Premium)
+• Hardware-Keystore Verschlüsselung (Premium)
+
+💰 TARIFE
+• Kostenlos: Verschlüsselte Anrufe, 10 Kontakte, 15 Min. Limit, mit Werbung
+• Pro (€3,49/Monat): Unbegrenzte Anrufe und Kontakte, keine Werbung
+• Premium (€4,99/Monat): Maximale Sicherheit + WireGuard VPN + Zero Telemetry
+• Lifetime Premium: Einmalzahlung €49 — kein Abo nötig
+
+🔑 IFR TOKEN UNLOCK
+• Sperren Sie IFR-Token für lebenslanges Pro oder Premium
+• Ihre Token bleiben in Ihrem Besitz — jederzeit entsperrbar
+• WalletConnect v2 kompatibel
+• 1.000 IFR = Pro | 5.000 IFR = Premium
+
+👥 KONTAKTE
+• Telefonbuch-Synchronisation
+• QR-Code Kontaktaustausch
+• Einladungs-Links per WhatsApp, Telegram, Signal, SMS
+• Online-Status Anzeige (Pro/Premium)
+
+📋 BERECHTIGUNGEN
+• Mikrofon: Für Sprachanrufe erforderlich
+• Benachrichtigungen: Für eingehende Anrufe
+• Kontakte: Für Telefonbuch-Abgleich (optional)
+
+Mindestanforderung: Android 7.0 (API 24)
+Getestet auf 38 Android-Geräten (Samsung, Pixel, Xiaomi, OnePlus u.a.)
+
+═══════════════════════════════════════════════════
+WAS IST NEU (Release Notes v1.0.13):
+═══════════════════════════════════════════════════
+
+Fehlerbehebungen und Stabilitätsverbesserungen:
+• FCM Wakeup: App klingelt zuverlässig auch wenn geschlossen
+• Kontaktnamen werden korrekt aus dem Telefonbuch angezeigt
+• Verbindungsstabilität nach Netzwerkwechsel verbessert
+• Anrufverlauf: Kontakte speichern, bearbeiten, sperren per Long-Press
+
+═══════════════════════════════════════════════════
+SCREENSHOTS (empfohlene Texte):
+═══════════════════════════════════════════════════
+
+1. "Ende-zu-Ende verschlüsselt" — Anrufbildschirm
+2. "Kein Konto nötig" — Startbildschirm mit Kontakten
+3. "Anti-Aufnahme Schutz" — Pro/Premium Features
+4. "WireGuard VPN integriert" — Premium Settings
+5. "STEALTH-DELETE" — Notfall-Löschung
+6. "IFR Token = Lifetime Access" — Wallet-Verbindung

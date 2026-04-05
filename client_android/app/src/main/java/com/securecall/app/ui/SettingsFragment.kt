@@ -263,6 +263,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             openUrl("https://stealthx.tech/privacy.html")
             true
         }
+        findPreference<Preference>("pref_terms")?.setOnPreferenceClickListener {
+            openUrl("https://stealthx.tech/terms.html")
+            true
+        }
         findPreference<Preference>("pref_licenses")?.setOnPreferenceClickListener {
             openUrl("https://stealthx.tech/disclaimer.html")
             true
@@ -426,6 +430,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     val msg = when (error) {
                         "invalid" -> getString(R.string.activation_error_invalid)
                         "exhausted" -> getString(R.string.activation_error_exhausted)
+                        "max_devices" -> "Code already activated on maximum devices"
                         "timeout", "not_connected" -> getString(R.string.activation_error_connection)
                         else -> "Activation failed: $error"
                     }

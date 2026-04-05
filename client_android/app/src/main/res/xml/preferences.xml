@@ -216,6 +216,11 @@
             android:summary="@string/settings_privacy_summary"
             android:icon="@drawable/ic_shield" />
         <Preference
+            android:key="pref_terms"
+            android:title="Terms of Service"
+            android:summary="Activation codes, subscriptions, IFR tokens"
+            android:icon="@drawable/ic_settings" />
+        <Preference
             android:key="pref_licenses"
             android:title="@string/settings_licenses"
             android:selectable="false"

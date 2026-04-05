@@ -102,11 +102,26 @@
 | ID | Task | Priority |
 |---|---|---|
 | TODO-029 | Google Play Service Account (billing verification) | HIGH |
-| TODO-046 | VpnService-based network traffic steering (eSIM routing) | HIGH |
+| TODO-046 | VpnService-based network traffic steering (eSIM routing) | MEDIUM |
 | ~~TODO-047~~ | ~~Deactivate beta codes before production~~ | DONE |
-| TODO-030 | Store Listing DE in Play Console | MEDIUM |
+| ~~TODO-030~~ | ~~Store Listing DE~~ — marketing/play_store_de.txt | DONE |
 | TODO-033 | Firebase + AdMob linking | MEDIUM |
 | TODO-010 | Self-hosted TURN (coturn) | LOW |
+
+### TODO-029: Google Play Service Account
+- **Gehe zu:** play.google.com/console → Setup → API Zugriff
+- **Google Cloud Projekt verknüpfen** (oder neues erstellen)
+- **Service Account erstellen** mit Play Console Rechten (Financial Data, App Management)
+- **JSON Key herunterladen** → sicher aufbewahren (NIE in Git!)
+- **Wird benötigt für:** automatische AAB-Uploads, Billing-Verifikation, Subscription-Status-Abfrage
+- **Status:** MANUAL STEP — Kaspartizan muss dies selbst in Play Console durchführen
+
+### TODO-046: VpnService-basiertes Traffic Steering
+- **Benötigt für:** eSIM Call Routing, Preferred Network Bindung
+- **Problem:** OkHttp connection pooling umgeht `bindProcessToNetwork()` — Sockets bleiben auf altem Interface
+- **Lösung:** Eigener VpnService der Traffic auf OS-Ebene auf das richtige Interface leitet
+- **Status:** OPEN — hohe Komplexität, nach Production angehen
+- **Workaround:** Feature funktioniert wenn nur ein Netzwerk aktiv (z.B. WiFi aus → nur Mobile)
 
 ## Open Bugs
 | ID | Description | Severity |
@@ -123,9 +138,15 @@
 - Beta Activation Codes (BETA-PRO0-2026 / BETA-PREM-2026) VOR Production deaktivieren
 - **NEVER** call admin/broadcast from dev/AI session — only Kaspartizan
 
+## Support Policy
+- Aufgrund der Priorisierung auf Anonymität bieten wir keinen persönlichen Support an
+- Community-Support: GitHub Issues only
+- Bug Reports: stealthx.tech/wiki/bug-report.html
+- Terms of Service: stealthx.tech/terms.html
+
 ## Next Session Steps
 1. Wait for tester feedback on v1.0.13 (vC31)
 2. Upload AAB to Play Console Alpha Track
 3. Google Play Service Account for billing verification (TODO-029)
-4. Deactivate beta codes before production (TODO-047)
+4. Stripe account einrichten für Website-Käufe (€49 Premium Code)
 5. Production release after testing phase

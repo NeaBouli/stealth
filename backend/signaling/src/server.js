@@ -134,41 +134,41 @@ let activationCodes = [];
 // Hardcoded fallback codes (used if file is missing on deployment platform)
 // NOTE: Beta codes DEACTIVATED for production (TODO-047). Tester codes below.
 const FALLBACK_CODES = [
-  {code: "TEST-PRO1-CODE", tier: "pro", maxUses: 10, currentUses: 0, usedBy: null},
-  {code: "TEST-PREM-CODE", tier: "premium", maxUses: 10, currentUses: 0, usedBy: null},
+  {code: "TEST-PRO1-CODE", tier: "pro", maxUses: 10, currentUses: 0, usedBy: []},
+  {code: "TEST-PREM-CODE", tier: "premium", maxUses: 10, currentUses: 0, usedBy: []},
   // DEACTIVATED: {code: "BETA-PRO0-2026", tier: "pro", maxUses: 50, currentUses: 0},
   // DEACTIVATED: {code: "BETA-PREM-2026", tier: "premium", maxUses: 25, currentUses: 0},
   // 30 Premium Tester Reward Codes (single-use each)
-  {code: "PREM-1A7B-WCHQ-ZW3X", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-MUMC-L1B2-5QYP", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-0CO3-6X3Y-LL29", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-ES4X-LDCT-LZ8U", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-BUXR-XSO7-R4B6", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-Q44J-JDLE-I4YW", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-TBZP-7FAT-GA0Z", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-VU8M-VEVB-35LI", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-X3DY-WO92-56RM", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-5BM8-Q21J-3GNX", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-EO6I-JG95-7S3D", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-D6J0-XXD5-FYBX", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-THXA-T71H-F1RA", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-CVEI-5J47-HET2", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-RJR9-5RZ3-H2X2", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-P5IA-2KL6-DAHD", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-GLQP-OFOF-4ZSS", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-3ME6-KBKG-DDQZ", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-143G-6ETG-FBOV", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-83Z7-OZMZ-ITPJ", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-IL0Y-AINQ-HNDS", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-2J7H-50RL-AGK3", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-2LPK-895J-6F6J", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-G5UM-KVKP-CLZN", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-495K-IL3T-22GE", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-RGTW-O4ZC-9PVB", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-7YDP-G8AF-VA7I", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-XGRK-Y8OE-X20U", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-EDQ0-OP6I-EJS6", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
-  {code: "PREM-T0V0-1YQ5-WY07", tier: "premium", maxUses: 1, currentUses: 0, usedBy: null},
+  {code: "PREM-1A7B-WCHQ-ZW3X", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-MUMC-L1B2-5QYP", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-0CO3-6X3Y-LL29", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-ES4X-LDCT-LZ8U", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-BUXR-XSO7-R4B6", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-Q44J-JDLE-I4YW", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-TBZP-7FAT-GA0Z", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-VU8M-VEVB-35LI", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-X3DY-WO92-56RM", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-5BM8-Q21J-3GNX", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-EO6I-JG95-7S3D", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-D6J0-XXD5-FYBX", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-THXA-T71H-F1RA", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-CVEI-5J47-HET2", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-RJR9-5RZ3-H2X2", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-P5IA-2KL6-DAHD", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-GLQP-OFOF-4ZSS", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-3ME6-KBKG-DDQZ", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-143G-6ETG-FBOV", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-83Z7-OZMZ-ITPJ", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-IL0Y-AINQ-HNDS", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-2J7H-50RL-AGK3", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-2LPK-895J-6F6J", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-G5UM-KVKP-CLZN", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-495K-IL3T-22GE", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-RGTW-O4ZC-9PVB", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-7YDP-G8AF-VA7I", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-XGRK-Y8OE-X20U", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-EDQ0-OP6I-EJS6", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
+  {code: "PREM-T0V0-1YQ5-WY07", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
 ];
 
 function loadActivationCodes() {
@@ -1215,45 +1215,47 @@ wss.on("connection", (ws, req) => {
       }
 
       const myClientId = getClientId(connId);
+      const devices = Array.isArray(entry.usedBy) ? entry.usedBy : (entry.usedBy ? [entry.usedBy] : []);
 
-      // Single-use code: if already used by a different device, reject
-      if (entry.usedBy && entry.usedBy !== myClientId) {
-        console.log("[ACTIVATION] Code already used by another device:", code, "owner:", entry.usedBy, "attempted:", myClientId);
+      // Already activated on this device? Allow re-activation (idempotent)
+      if (devices.includes(myClientId)) {
+        console.log("[ACTIVATION] Code re-activated on same device:", code, "by:", myClientId);
         return ws.send(JSON.stringify({
           type: "ACTIVATE_CODE_RESULT",
-          success: false,
-          error: "already_used"
+          success: true,
+          tier: entry.tier,
+          code: code,
+          slot: devices.indexOf(myClientId) + 1,
+          maxSlots: entry.maxUses
         }));
       }
 
-      // Multi-use codes (TEST-*): check usage count
-      if (entry.maxUses > 1) {
-        const sessionUses = codeUsageCount.get(code) || 0;
-        const totalUses = entry.currentUses + sessionUses;
-        if (totalUses >= entry.maxUses) {
-          console.log("[ACTIVATION] Code exhausted:", code, "(total:", totalUses, "/", entry.maxUses, ")");
-          return ws.send(JSON.stringify({
-            type: "ACTIVATE_CODE_RESULT",
-            success: false,
-            error: "exhausted"
-          }));
-        }
-        codeUsageCount.set(code, sessionUses + 1);
+      // All device slots used? Reject.
+      if (devices.length >= entry.maxUses) {
+        console.log("[ACTIVATION] Code exhausted:", code, "devices:", devices.length, "/", entry.maxUses, "attempted:", myClientId);
+        return ws.send(JSON.stringify({
+          type: "ACTIVATE_CODE_RESULT",
+          success: false,
+          error: "max_devices",
+          message: `Code already used on ${entry.maxUses} devices`
+        }));
       }
 
-      // Success — lock code to this device (single-use) or increment count (multi-use)
-      if (entry.maxUses <= 1) {
-        entry.usedBy = myClientId;
-        entry.usedAt = new Date().toISOString();
-      }
-      console.log("[ACTIVATION] Code redeemed:", code, "-> tier:", entry.tier, "by:", myClientId);
-      saveActivationCodes(); // Persist to file (survives redeploy if filesystem available)
+      // Success — register this device
+      devices.push(myClientId);
+      entry.usedBy = devices;
+      entry.currentUses = devices.length;
+      const slot = devices.length;
+      console.log("[ACTIVATION] Code redeemed:", code, "-> tier:", entry.tier, "by:", myClientId, "slot:", slot + "/" + entry.maxUses);
+      saveActivationCodes();
 
       return ws.send(JSON.stringify({
         type: "ACTIVATE_CODE_RESULT",
         success: true,
         tier: entry.tier,
-        code: code
+        code: code,
+        slot: slot,
+        maxSlots: entry.maxUses
       }));
     }
 
