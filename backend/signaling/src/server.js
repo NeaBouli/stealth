@@ -132,11 +132,43 @@ const CODES_FILE = path.join(__dirname, "..", "data", "activation_codes.json");
 let activationCodes = [];
 
 // Hardcoded fallback codes (used if file is missing on deployment platform)
+// NOTE: Beta codes DEACTIVATED for production (TODO-047). Tester codes below.
 const FALLBACK_CODES = [
   {code: "TEST-PRO1-CODE", tier: "pro", maxUses: 10, currentUses: 0},
   {code: "TEST-PREM-CODE", tier: "premium", maxUses: 10, currentUses: 0},
-  {code: "BETA-PRO0-2026", tier: "pro", maxUses: 50, currentUses: 0},
-  {code: "BETA-PREM-2026", tier: "premium", maxUses: 25, currentUses: 0}
+  // DEACTIVATED: {code: "BETA-PRO0-2026", tier: "pro", maxUses: 50, currentUses: 0},
+  // DEACTIVATED: {code: "BETA-PREM-2026", tier: "premium", maxUses: 25, currentUses: 0},
+  // 30 Premium Tester Reward Codes (single-use each)
+  {code: "PREM-1A7B-WCHQ-ZW3X", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-MUMC-L1B2-5QYP", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-0CO3-6X3Y-LL29", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-ES4X-LDCT-LZ8U", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-BUXR-XSO7-R4B6", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-Q44J-JDLE-I4YW", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-TBZP-7FAT-GA0Z", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-VU8M-VEVB-35LI", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-X3DY-WO92-56RM", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-5BM8-Q21J-3GNX", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-EO6I-JG95-7S3D", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-D6J0-XXD5-FYBX", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-THXA-T71H-F1RA", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-CVEI-5J47-HET2", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-RJR9-5RZ3-H2X2", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-P5IA-2KL6-DAHD", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-GLQP-OFOF-4ZSS", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-3ME6-KBKG-DDQZ", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-143G-6ETG-FBOV", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-83Z7-OZMZ-ITPJ", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-IL0Y-AINQ-HNDS", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-2J7H-50RL-AGK3", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-2LPK-895J-6F6J", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-G5UM-KVKP-CLZN", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-495K-IL3T-22GE", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-RGTW-O4ZC-9PVB", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-7YDP-G8AF-VA7I", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-XGRK-Y8OE-X20U", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-EDQ0-OP6I-EJS6", tier: "premium", maxUses: 1, currentUses: 0},
+  {code: "PREM-T0V0-1YQ5-WY07", tier: "premium", maxUses: 1, currentUses: 0},
 ];
 
 function loadActivationCodes() {

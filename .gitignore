@@ -45,3 +45,7 @@ securecall-release-key.jks.bak
 *.key
 docs/wireguard/*_private*
 .env.local
+
+# Activation codes (contain real single-use codes — never commit)
+backend/codes/activation_codes.json
+backend/codes/tester_codes_2026.json

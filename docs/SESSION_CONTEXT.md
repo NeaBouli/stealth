@@ -54,8 +54,11 @@
 - Local: /Users/gio/Desktop/stealth/.env.local
 
 ## Activation Codes
-- Pro: TEST-PRO1-CODE, BETA-PRO0-2026
-- Premium: TEST-PREM-CODE, BETA-PREM-2026
+- Pro: TEST-PRO1-CODE (dev only, 10 uses)
+- Premium: TEST-PREM-CODE (dev only, 10 uses)
+- ~~BETA-PRO0-2026~~ DEACTIVATED
+- ~~BETA-PREM-2026~~ DEACTIVATED
+- 30 x PREM-XXXX-XXXX-XXXX tester reward codes (see backend/codes/tester_codes_2026.json — gitignored)
 
 ## EBS Templates (1-10)
 1 CRITICAL, 2 Security, 3 Update Required, 4 Maintenance, 5 Stealth,
@@ -100,7 +103,7 @@
 |---|---|---|
 | TODO-029 | Google Play Service Account (billing verification) | HIGH |
 | TODO-046 | VpnService-based network traffic steering (eSIM routing) | HIGH |
-| TODO-047 | Deactivate beta codes before production | HIGH |
+| ~~TODO-047~~ | ~~Deactivate beta codes before production~~ | DONE |
 | TODO-030 | Store Listing DE in Play Console | MEDIUM |
 | TODO-033 | Firebase + AdMob linking | MEDIUM |
 | TODO-010 | Self-hosted TURN (coturn) | LOW |
