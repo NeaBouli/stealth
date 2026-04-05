@@ -11,10 +11,10 @@
 | BUG-007 | Contacts cache empty after app restart — presence skipped | FIXED | Medium | 0681cc7 |
 | BUG-008 | CallActivity crash: SecurityException on PhoneStateListener | FIXED | Critical | a90c7fc |
 | BUG-009 | App disconnects on network switch (WiFi→Mobile→eSIM) — no auto-reconnect | FIXED | High | 4174031 |
-| BUG-010 | Incoming calls fail when app closed/background — FCM not waking app reliably | OPEN | Critical | — |
-| BUG-011 | Call drops immediately after connecting — WebRTC P2P unstable | OPEN | Critical | — |
+| BUG-010 | Incoming calls fail when app closed/background — FCM not waking app reliably | FIXED | Critical | 6d05712 |
+| BUG-011 | Call drops immediately after connecting — WebRTC P2P unstable | FIXED | Critical | 9b9c3b2 |
 | BUG-012 | AdMob banner appears during active call | FIXED | High | df52218 |
-| BUG-013 | Saved contact after call shows phone number not phonebook name | OPEN | Medium | — |
+| BUG-013 | Saved contact after call shows phone number not phonebook name | FIXED | Medium | 766ee9e |
 | BUG-014 | All Settings sections expanded by default — should all be collapsed | FIXED | Low | df52218 |
 | BUG-015 | Disconnect button next to connection status | FIXED | Medium | 073895c |
 | BUG-016 | Label "Anonymous Network" → "Network" | FIXED | Low | df52218 |
@@ -31,6 +31,8 @@
 | BUG-029 | No audio after call connected — VPN+VPN blocks TURN UDP relay | OPEN | Critical | — |
 | BUG-030 | Audio too quiet — MODE_IN_COMMUNICATION not set, volume not maxed | FIXED | High | — |
 | BUG-031 | Contact not verified after call — no verification prompt | OPEN | Medium | — |
+| BUG-034 | 0s duration calls after WS reconnect — CALL_INVITE sent before REGISTER processed | FIXED | High | 6d05712 |
+| BUG-035 | DNS resolution failure after network switch — rapid 2s retries drain battery | FIXED | Medium | 6d05712 |
 
 ## Fix Details
 
@@ -99,21 +101,19 @@
 - **Symptom:** When switching between WiFi, Mobile, or eSIM networks, the app loses connection and does not automatically reconnect.
 - **Expected:** ConnectivityManager NetworkCallback should detect network change and trigger WebSocket reconnect.
 
-### BUG-010: Incoming calls fail when app closed/background — FCM not waking app reliably (OPEN)
-- **Severity:** Critical
-- **Symptom:** Incoming calls fail to ring when the app is closed or in the background. FCM does not reliably wake the app.
+### BUG-010: FCM CALL_INVITE not waking app (FIXED — 6d05712)
+- **Fix:** SecureCallMessagingService.handleFcmCallInvite() starts IncomingCallActivity directly from FCM without waiting for WS. Acquires WakeLock, shows full-screen notification, triggers WS reconnect in background. Duplicate suppression via fcmPendingSessionId prevents double-ring. IncomingCallActivity.waitForWsAndAccept() polls for WS (max 10s) before sending CALL_ACCEPT.
+- **Tested:** Server confirms pushSent:true for offline clients. FCM delivery verified on all 3 devices.
 
-### BUG-011: Call drops immediately after connecting — WebRTC P2P unstable (OPEN)
-- **Severity:** Critical
-- **Symptom:** After call connects, it drops within seconds. WebRTC peer-to-peer connection is unstable.
+### BUG-011: Call drops after connecting — ICE reconnect grace period (FIXED — 9b9c3b2)
+- **Fix:** 15s grace period on server CALL_END(peer_disconnected) when WebRTC ICE is still active. Survives WiFi toggle during call. cancelCallEndGrace() clears timer if peer reconnects.
 
 ### BUG-012: AdMob banner appears during active call (OPEN)
 - **Severity:** High
 - **Symptom:** Ad banner is visible during an active call in CallActivity. Ads should be paused/hidden during calls.
 
-### BUG-013: Saved contact after call shows phone number not phonebook name — no phonebook sync (OPEN)
-- **Severity:** Medium
-- **Symptom:** After a call ends and contact is saved, the contact list shows the raw phone number instead of the name from the Android phone book.
+### BUG-013: Contact name sync — shows number instead of name (FIXED — 766ee9e)
+- **Fix:** PhoneBookResolver.resolveCallerName() now checks secureId field and phone book via stored phone. CallsFragment enrichment uses resolveCallerName() (phone book + SecureCall contacts) instead of resolvePhoneNumber() (phone book only) and persists enriched names. CallRecord stores phoneNumber for future re-resolution. App-saved contacts always visible in Contacts tab (isPhoneContact=false → always registered).
 
 ### BUG-014: All Settings sections expanded by default — should all be collapsed (OPEN)
 - **Severity:** Low
