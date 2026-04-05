@@ -53,6 +53,8 @@ const ipConnections = new Map();
 
 // --- App Setup ---
 const app = express();
+// Stripe webhook needs raw body for signature verification — must come BEFORE express.json()
+app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 // CORS configuration

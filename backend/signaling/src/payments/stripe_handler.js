@@ -172,8 +172,8 @@ function setupRoutes(app) {
     }
   });
 
-  // Webhook (Stripe sends raw body)
-  app.post("/stripe/webhook", require("express").raw({ type: "application/json" }), async (req, res) => {
+  // Webhook (raw body middleware is applied globally in server.js before express.json())
+  app.post("/stripe/webhook", async (req, res) => {
     let event;
     try {
       if (webhookSecret) {
