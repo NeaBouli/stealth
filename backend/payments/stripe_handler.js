@@ -211,13 +211,50 @@ function setupRoutes(app) {
     }
     const { email, code } = req.body;
     if (!email) return res.status(400).json({ error: "Missing email" });
-    try {
-      const { sendActivationCode } = require("./email_handler");
-      const sent = await sendActivationCode(email, code || "PREM-TEST-0000-0000", "premium");
-      res.json({ success: sent, message: sent ? "Email sent to " + email : "All providers failed" });
-    } catch (e) {
-      res.status(500).json({ error: e.message });
+
+    // Return debug info about env vars
+    const debug = {
+      RESEND_API_KEY: process.env.RESEND_API_KEY ? `set (${process.env.RESEND_API_KEY.substring(0, 10)}...)` : "NOT SET",
+      BREVO_API_KEY: process.env.BREVO_API_KEY ? `set (${process.env.BREVO_API_KEY.substring(0, 12)}...)` : "NOT SET",
+      BREVO_SMTP_USER: process.env.BREVO_SMTP_USER || "NOT SET"
+    };
+
+    const errors = [];
+    let sent = false;
+
+    // Try Resend
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const { Resend } = require("resend");
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const result = await resend.emails.send({
+          from: "SecureCall <noreply@stealthx.tech>", to: email,
+          subject: "SecureCall Test", html: "<p>Code: " + (code || "TEST") + "</p>"
+        });
+        if (result.error) throw new Error(JSON.stringify(result.error));
+        sent = true;
+        return res.json({ success: true, provider: "resend", debug, result: result.data });
+      } catch (e) { errors.push({ provider: "resend", error: e.message }); }
     }
+
+    // Try Brevo
+    if (process.env.BREVO_API_KEY && process.env.BREVO_SMTP_USER) {
+      try {
+        const nodemailer = require("nodemailer");
+        const transporter = nodemailer.createTransport({
+          host: "smtp-relay.brevo.com", port: 587, secure: false,
+          auth: { user: process.env.BREVO_SMTP_USER, pass: process.env.BREVO_API_KEY }
+        });
+        const result = await transporter.sendMail({
+          from: '"SecureCall" <noreply@stealthx.tech>', to: email,
+          subject: "SecureCall Test", html: "<p>Code: " + (code || "TEST") + "</p>"
+        });
+        sent = true;
+        return res.json({ success: true, provider: "brevo", debug, messageId: result.messageId });
+      } catch (e) { errors.push({ provider: "brevo", error: e.message }); }
+    }
+
+    res.json({ success: false, debug, errors });
   });
 
   console.log("[STRIPE] Routes enabled: POST /stripe/create-checkout, POST /stripe/webhook, POST /stripe/test-email");
