@@ -1681,7 +1681,7 @@ app.get("/metrics", (req, res) => {
 
 // --- Stripe Payment Routes (disabled if STRIPE_SECRET_KEY not set) ---
 try {
-  const stripeHandler = require('../../payments/stripe_handler');
+  const stripeHandler = require('./payments/stripe_handler');
   stripeHandler.setupRoutes(app);
 } catch (e) {
   console.warn("[STRIPE] Could not load stripe_handler:", e.message);
