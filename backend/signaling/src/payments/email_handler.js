@@ -82,8 +82,8 @@ async function sendWithBrevo(to, subject, html) {
   if (!smtpUser) throw new Error("BREVO_SMTP_USER not set");
   const transporter = nodemailer.createTransport({
     host: "smtp-relay.brevo.com",
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     auth: {
       user: smtpUser,
       pass: process.env.BREVO_API_KEY  // xsmtpsib-... SMTP key
