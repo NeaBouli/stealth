@@ -105,7 +105,7 @@ async function createCheckoutSession(stripe, productKey, customerEmail) {
  * Handle Stripe webhook events.
  * On checkout.session.completed → generate activation code.
  */
-function handleWebhook(event) {
+async function handleWebhook(event) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const tier = session.metadata.tier || "premium";
@@ -116,6 +116,16 @@ function handleWebhook(event) {
     const code = generateActivationCode(tier);
 
     console.log(`[STRIPE] Payment completed: ${email} → ${tier} code: ${code} (product: ${productKey})`);
+
+    // Send activation code via email
+    if (email && email !== "unknown") {
+      try {
+        const { sendActivationCode } = require("./email_handler");
+        await sendActivationCode(email, code, tier);
+      } catch (err) {
+        console.error("[STRIPE] Email delivery failed:", err.message);
+      }
+    }
 
     // TODO: Send code via email (SendGrid, Resend, etc.)
     // TODO: Store in activation_codes for server-side validation
@@ -163,7 +173,7 @@ function setupRoutes(app) {
   });
 
   // Webhook (Stripe sends raw body)
-  app.post("/stripe/webhook", require("express").raw({ type: "application/json" }), (req, res) => {
+  app.post("/stripe/webhook", require("express").raw({ type: "application/json" }), async (req, res) => {
     let event;
     try {
       if (webhookSecret) {
@@ -176,10 +186,9 @@ function setupRoutes(app) {
       return res.status(400).send("Webhook error");
     }
 
-    const result = handleWebhook(event);
+    const result = await handleWebhook(event);
     if (result) {
-      // TODO: Store code in activationCodes array + save to file
-      console.log("[STRIPE] Activation code generated:", result.code);
+      console.log("[STRIPE] Activation code generated:", result.code, "sent to:", result.email);
     }
 
     res.json({ received: true });

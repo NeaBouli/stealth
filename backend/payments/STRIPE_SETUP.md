@@ -86,10 +86,40 @@ Response:
 - SEPA-Lastschrift (EU)
 - Klarna (EU — Rechnung, Ratenzahlung)
 
-## Nächste Schritte
-1. Kaspartizan: Stripe Account + Produkte anlegen
-2. Env Variables in Railway setzen
-3. `setupRoutes(app)` in server.js einbinden
-4. Website: "Buy" Button → POST /stripe/create-checkout → redirect to session.url
-5. payment-success.html Seite erstellen (zeigt Code an)
-6. Email-Versand des Codes (SendGrid/Resend)
+## Resend Email Setup (Activation Code Delivery)
+
+1. **Account erstellen:** https://resend.com
+2. **Domain verifizieren:** stealthx.tech (DNS TXT record)
+3. **API Key generieren** → Railway env var: `RESEND_API_KEY`
+4. **Absender:** `SecureCall <noreply@stealthx.tech>`
+
+### Flow nach Zahlung:
+```
+User zahlt → Stripe Webhook → Code generiert → Resend Email → Kunde erhält Code
+                                                                    ↓
+                                              payment-success.html zeigt Anleitung
+```
+
+### Railway Environment Variables (komplett):
+```
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+RESEND_API_KEY=re_...
+```
+
+## Payment Links (Stripe-hosted, kein Backend nötig)
+- Premium Lifetime €49: `https://buy.stripe.com/test_28E3cu3Sf545baKgeL6g800`
+- Pro €3.49/mo: `https://buy.stripe.com/test_00w4gyewTaop1AabYv6g801`
+- Premium €4.99/mo: `https://buy.stripe.com/test_5kQ3cu88vdABgv44w36g802`
+
+## Status
+- [x] Stripe Produkte + Preise angelegt
+- [x] Payment Links auf Landing Page (Test-Modus)
+- [x] stripe_handler.js mit Routes
+- [x] server.js: setupRoutes() eingebunden
+- [x] payment-success.html erstellt
+- [x] email_handler.js mit Resend
+- [ ] RESEND_API_KEY in Railway setzen (Kaspartizan)
+- [ ] Domain stealthx.tech in Resend verifizieren (Kaspartizan)
+- [ ] Test-Zahlung durchführen + Email-Empfang prüfen
+- [ ] Live-Modus: sk_test → sk_live, Payment Links → Live Links
