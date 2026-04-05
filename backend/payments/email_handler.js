@@ -87,7 +87,7 @@ async function sendWithBrevo(to, subject, html) {
       "Accept": "application/json"
     },
     body: JSON.stringify({
-      sender: { name: "SecureCall", email: process.env.BREVO_SMTP_USER || "noreply@stealthx.tech" },
+      sender: { name: "SecureCall", email: "noreply@stealthx.tech" },
       to: [{ email: to }],
       subject: subject,
       htmlContent: html

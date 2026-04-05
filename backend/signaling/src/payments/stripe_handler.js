@@ -244,7 +244,7 @@ function setupRoutes(app) {
           method: "POST",
           headers: { "api-key": process.env.BREVO_API_KEY, "Content-Type": "application/json", "Accept": "application/json" },
           body: JSON.stringify({
-            sender: { name: "SecureCall", email: process.env.BREVO_SMTP_USER || "noreply@stealthx.tech" },
+            sender: { name: "SecureCall", email: "noreply@stealthx.tech" },
             to: [{ email }], subject: "SecureCall Test",
             htmlContent: "<p>Code: " + (code || "TEST") + "</p>"
           })
