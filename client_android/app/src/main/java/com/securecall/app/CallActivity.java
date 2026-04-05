@@ -189,6 +189,14 @@ public class CallActivity extends AppCompatActivity {
             Log.d(TAG, "Incoming call accepted: session=" + sessionId);
             startTransportAndTimer(connectionState, callTimer);
         } else {
+            // F-Droid trial check: block outgoing calls if trial expired and still FREE
+            if (!com.securecall.app.trial.TrialManager.INSTANCE.isTrialActive(this)
+                    && "FREE".equals(com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this))) {
+                connectionState.setText("Trial expired — enter activation code or lock IFR tokens to continue");
+                connectionState.setTextColor(getResources().getColor(R.color.stealthx_red, getTheme()));
+                connectionState.postDelayed(this::endCall, 4000);
+                return;
+            }
             // Outgoing call — send CALL_INVITE, wait for CALL_ACCEPT
             String targetId = phoneNumber;
             connectionState.setText(R.string.call_ringing);

@@ -63,23 +63,37 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         updateCurrentTierDisplay()
         updateLifetimePricing()
 
+        // Sideload/ADB installs: hide IAP buttons, show code/IFR only
+        val isPlayStore = com.securecall.app.update.UpdateManager.getUpdateUrl(this).contains("market://")
+        if (!isPlayStore) {
+            Log.d(TAG, "Non-Play-Store install — hiding IAP subscription buttons")
+            findViewById<Button>(R.id.btnProMonthly).visibility = android.view.View.GONE
+            findViewById<Button>(R.id.btnPremiumMonthly).visibility = android.view.View.GONE
+            findViewById<Button>(R.id.btnActivationCode).visibility = android.view.View.GONE
+            findViewById<Button>(R.id.btnRestore).visibility = android.view.View.GONE
+            // Show sideload hint
+            tvStatus.text = "Sideload install — upgrade via Activation Code in Settings or IFR Token"
+        }
+
         billingManager = BillingManager(this, this)
-        billingManager.init()
+        if (isPlayStore) billingManager.init()
 
         // Lifetime buttons
         btnProLifetime.setOnClickListener {
+            if (!isPlayStore) { showSideloadHint(); return@setOnClickListener }
             launchPurchase(BuildConfig.SKU_PRO_LIFETIME)
         }
         btnPremiumLifetime.setOnClickListener {
+            if (!isPlayStore) { showSideloadHint(); return@setOnClickListener }
             launchPurchase(BuildConfig.SKU_PREMIUM_LIFETIME)
         }
 
-        // Activation Code purchase button
+        // Activation Code purchase button (Play Store only)
         findViewById<Button>(R.id.btnActivationCode).setOnClickListener {
             launchPurchase(BuildConfig.SKU_PREMIUM_ACTIVATION_CODE)
         }
 
-        // Subscription buttons
+        // Subscription buttons (Play Store only)
         findViewById<Button>(R.id.btnProMonthly).setOnClickListener {
             launchPurchase(BuildConfig.SKU_PRO_MONTHLY)
         }
@@ -93,7 +107,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
             launchPurchase(BuildConfig.SKU_PREMIUM_YEARLY)
         }
 
-        // Restore
+        // Restore (Play Store only)
         findViewById<Button>(R.id.btnRestore).setOnClickListener {
             tvStatus.text = "Restoring purchases..."
             billingManager.destroy()
@@ -120,6 +134,10 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         btnPremiumLifetime.text = "Buy PREMIUM Lifetime — ${PricingCalculator.formatPrice(premiumPrice)}"
         tvPremiumNextPrice.text = "Next buyer pays: ${PricingCalculator.formatPrice(premiumNextPrice)}"
         progressPremiumSold.progress = premiumSold
+    }
+
+    private fun showSideloadHint() {
+        Toast.makeText(this, "Go to Settings → Activation Code to upgrade", Toast.LENGTH_LONG).show()
     }
 
     private fun launchPurchase(sku: String) {
