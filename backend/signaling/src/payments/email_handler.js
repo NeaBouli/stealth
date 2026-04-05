@@ -1,48 +1,16 @@
 /**
- * Email delivery for activation codes via Resend.
+ * Email delivery for activation codes.
+ * Primary: Resend (RESEND_API_KEY)
+ * Fallback: Brevo (BREVO_API_KEY)
  *
- * Requires: RESEND_API_KEY env var in Railway.
- * Sender: noreply@stealthx.tech (domain must be verified in Resend dashboard).
+ * Sender: noreply@stealthx.tech (domain must be verified in both dashboards).
  */
 
-let resend = null;
+// --- Email HTML Template ---
 
-function getResend() {
-  if (!resend) {
-    const apiKey = process.env.RESEND_API_KEY;
-    console.log("[EMAIL] RESEND_API_KEY:", apiKey ? `set (${apiKey.substring(0, 8)}...)` : "NOT SET");
-    if (!apiKey) {
-      console.warn("[EMAIL] RESEND_API_KEY not set — email delivery disabled");
-      return null;
-    }
-    try {
-      const { Resend } = require("resend");
-      resend = new Resend(apiKey);
-      console.log("[EMAIL] Resend client initialized");
-    } catch (err) {
-      console.error("[EMAIL] Failed to initialize Resend:", err.message);
-      return null;
-    }
-  }
-  return resend;
-}
-
-async function sendActivationCode(toEmail, code, tier) {
-  console.log("[EMAIL] sendActivationCode called:", toEmail, code, tier);
-  const r = getResend();
-  if (!r) {
-    console.warn("[EMAIL] Skipping email (Resend not configured):", toEmail, code);
-    return false;
-  }
-
+function generateEmailHTML(code, tier) {
   const tierName = tier === "premium" ? "Premium" : "Pro";
-
-  try {
-    const result = await r.emails.send({
-      from: "SecureCall <noreply@stealthx.tech>",
-      to: toEmail,
-      subject: `Your SecureCall ${tierName} Activation Code`,
-      html: `
+  return `
 <div style="background:#0a0a12;color:#e0e0e0;font-family:'Courier New',monospace;padding:40px;max-width:600px;margin:0 auto;">
   <div style="text-align:center;margin-bottom:24px;">
     <span style="font-size:32px;font-weight:bold;color:#ff4444;">SecureCall</span>
@@ -87,15 +55,77 @@ async function sendActivationCode(toEmail, code, tier) {
     Vendetta Labs &mdash; Kalamata, Greece (EU) | <a href="https://stealthx.tech" style="color:#555;">stealthx.tech</a><br>
     No personal data stored. This email address is not retained after delivery.
   </p>
-</div>`
-    });
-
-    console.log("[EMAIL] Activation code sent to:", toEmail, "id:", result?.data?.id || "ok");
-    return true;
-  } catch (err) {
-    console.error("[EMAIL] Failed to send activation code:", err.message);
-    return false;
-  }
+</div>`;
 }
 
-module.exports = { sendActivationCode };
+// --- Resend Provider ---
+
+async function sendWithResend(to, subject, html) {
+  const { Resend } = require("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const result = await resend.emails.send({
+    from: "SecureCall <noreply@stealthx.tech>",
+    to,
+    subject,
+    html
+  });
+  if (result.error) throw new Error(result.error.message || JSON.stringify(result.error));
+  return result;
+}
+
+// --- Brevo Provider ---
+
+async function sendWithBrevo(to, subject, html) {
+  const SibApiV3Sdk = require("@getbrevo/brevo");
+  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+  apiInstance.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
+
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+  sendSmtpEmail.sender = { name: "SecureCall", email: "noreply@stealthx.tech" };
+  sendSmtpEmail.to = [{ email: to }];
+  sendSmtpEmail.subject = subject;
+  sendSmtpEmail.htmlContent = html;
+
+  return await apiInstance.sendTransacEmail(sendSmtpEmail);
+}
+
+// --- Main Send Function (Resend → Brevo fallback) ---
+
+async function sendActivationCode(toEmail, code, tier) {
+  console.log("[EMAIL] sendActivationCode:", toEmail, code, tier);
+
+  const tierName = tier === "premium" ? "Premium" : "Pro";
+  const subject = `Your SecureCall ${tierName} Activation Code`;
+  const html = generateEmailHTML(code, tier);
+
+  // 1. Try Resend
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const result = await sendWithResend(toEmail, subject, html);
+      console.log("[EMAIL] Sent via Resend to:", toEmail, "id:", result?.data?.id || "ok");
+      return true;
+    } catch (err) {
+      console.error("[EMAIL] Resend failed:", err.message, "— trying Brevo...");
+    }
+  } else {
+    console.log("[EMAIL] RESEND_API_KEY not set — skipping Resend");
+  }
+
+  // 2. Fallback: Brevo
+  if (process.env.BREVO_API_KEY) {
+    try {
+      const result = await sendWithBrevo(toEmail, subject, html);
+      console.log("[EMAIL] Sent via Brevo to:", toEmail, "messageId:", result?.messageId || "ok");
+      return true;
+    } catch (err) {
+      console.error("[EMAIL] Brevo failed:", err.message);
+    }
+  } else {
+    console.log("[EMAIL] BREVO_API_KEY not set — skipping Brevo");
+  }
+
+  console.error("[EMAIL] ALL providers failed for:", toEmail, "code:", code);
+  return false;
+}
+
+module.exports = { sendActivationCode, generateEmailHTML };

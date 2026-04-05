@@ -86,25 +86,37 @@ Response:
 - SEPA-Lastschrift (EU)
 - Klarna (EU — Rechnung, Ratenzahlung)
 
-## Resend Email Setup (Activation Code Delivery)
+## Email Delivery (Resend + Brevo Fallback)
 
-1. **Account erstellen:** https://resend.com
-2. **Domain verifizieren:** stealthx.tech (DNS TXT record)
-3. **API Key generieren** → Railway env var: `RESEND_API_KEY`
-4. **Absender:** `SecureCall <noreply@stealthx.tech>`
+**Reihenfolge:** Resend (primär) → Brevo (Backup)
+
+### Resend Setup
+1. **Account:** https://resend.com
+2. **Domain verifizieren:** stealthx.tech (DNS TXT)
+3. **API Key** → `RESEND_API_KEY`
+4. **Status:** Account gesperrt (Support Ticket offen)
+
+### Brevo Setup (Backup)
+1. **Account:** https://brevo.com (kostenlos, 300 Emails/Tag)
+2. **Settings → SMTP & API → API Keys → Generate**
+3. **Domain verifizieren:** stealthx.tech
+4. **API Key** → `BREVO_API_KEY=xkeysib-...`
 
 ### Flow nach Zahlung:
 ```
-User zahlt → Stripe Webhook → Code generiert → Resend Email → Kunde erhält Code
-                                                                    ↓
-                                              payment-success.html zeigt Anleitung
+User zahlt → Stripe Webhook → Code generiert
+  → Resend Email (primär)
+  → falls Resend fehlschlägt → Brevo Email (Backup)
+  → Kunde erhält Code im Posteingang
+  → Redirect zu payment-success.html
 ```
 
 ### Railway Environment Variables (komplett):
 ```
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-RESEND_API_KEY=re_...
+RESEND_API_KEY=re_...          (primär — aktuell gesperrt)
+BREVO_API_KEY=xkeysib-...     (Backup — sofort einsetzbar)
 ```
 
 ## Payment Links (Stripe-hosted, kein Backend nötig)
