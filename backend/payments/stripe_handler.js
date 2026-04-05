@@ -40,6 +40,12 @@
  *   3. User pays via card/SEPA/Klarna
  *   4. Stripe fires webhook → generate activation code
  *   5. Redirect to success page with code displayed
+ *
+ * PAYMENT LINKS (Stripe-hosted, no backend needed):
+ *   Premium Lifetime €49: https://buy.stripe.com/test_28E3cu3Sf545baKgeL6g800
+ *   Pro €3.49/mo:         https://buy.stripe.com/test_00w4gyewTaop1AabYv6g801
+ *   Premium €4.99/mo:     https://buy.stripe.com/test_5kQ3cu88vdABgv44w36g802
+ *   (These work independently of the API routes below — used on landing page)
  */
 
 const PRODUCTS = {
