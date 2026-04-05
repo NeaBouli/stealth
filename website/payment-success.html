@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful — SecureCall</title>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="logo.png">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2L60E8E7R"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-V2L60E8E7R");</script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a12;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 560px;
+            width: 90%;
+            text-align: center;
+            padding: 48px 32px;
+        }
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(0, 230, 118, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 40px;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00E676;
+            margin-bottom: 12px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #aaa;
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+        .step-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        .step-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #FFD700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .step-card ol {
+            list-style: none;
+            counter-reset: step;
+            padding: 0;
+        }
+        .step-card li {
+            counter-increment: step;
+            padding: 8px 0;
+            font-size: 15px;
+            color: #ccc;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .step-card li:last-child { border-bottom: none; }
+        .step-card li::before {
+            content: counter(step);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255,215,0,0.15);
+            color: #FFD700;
+            font-size: 12px;
+            font-weight: 700;
+            margin-right: 12px;
+        }
+        .note {
+            font-size: 13px;
+            color: #888;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+        .links {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .links a {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+        .links a:hover { opacity: 0.85; }
+        .btn-primary {
+            background: #D32F2F;
+            color: #fff;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            color: #ccc;
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="checkmark">&#10003;</div>
+        <h1>Payment Successful</h1>
+        <p class="subtitle">
+            Your activation code has been generated.<br>
+            Check your inbox &mdash; code delivered instantly.
+        </p>
+
+        <div class="step-card">
+            <h3>Activate Premium</h3>
+            <ol>
+                <li>Open <strong>SecureCall</strong> on your Android device</li>
+                <li>Go to <strong>Settings</strong> (gear icon)</li>
+                <li>Scroll to <strong>Activation Code</strong></li>
+                <li>Enter your code and tap <strong>Activate</strong></li>
+                <li>Premium unlocks instantly &mdash; app restarts</li>
+            </ol>
+        </div>
+
+        <p class="note">
+            Your code works on up to 2 devices. No account needed &mdash; just the code.<br>
+            Keep it safe. Due to our commitment to anonymity, we cannot recover lost codes.
+        </p>
+
+        <div class="links">
+            <a href="./" class="btn-primary">Back to SecureCall</a>
+            <a href="wiki/user-manual.html" class="btn-secondary">User Manual</a>
+        </div>
+    </div>
+</body>
+</html>
