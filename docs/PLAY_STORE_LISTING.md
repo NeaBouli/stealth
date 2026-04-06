@@ -57,6 +57,9 @@ Generate a one-time gift code for a friend. They enter it in Settings → instan
 
 Upgrade to Pro or Premium for an ad-free experience.
 
+🌐 LANGUAGE
+App UI adapts to device language settings. English is the default language.
+
 📦 ALSO AVAILABLE ON
 • F-Droid — ad-free, no Google tracking (coming soon)
 • Direct APK: github.com/NeaBouli/stealth/releases

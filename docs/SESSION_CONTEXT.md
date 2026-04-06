@@ -113,7 +113,7 @@
 | TODO-070 | Stripe Live Payment Links auf Website aktualisieren (nach Live-Mode) | MEDIUM | OPEN |
 | TODO-071 | Audio Quality manueller Test nach BUG-037/038/039 Fixes (S7 → Tab S4) | MEDIUM | OPEN |
 | TODO-072 | Custom Call ID Stripe Checkout auf Website testen (custom-id.html) | MEDIUM | OPEN |
-| TODO-073 | DE Store Listing in Play Console manuell eintragen | MEDIUM | MANUAL |
+| ~~TODO-073~~ | ~~DE Store Listing~~ — entfällt, Google Play übersetzt automatisch | — | DONE |
 | TODO-061 | WalletConnect vollständige Implementierung (aktuell "Coming Soon") | MEDIUM | OPEN |
 | TODO-062 | TURN Credential Rotation (aktuell hardcoded in build.gradle → Runtime-Fetch) | MEDIUM | OPEN |
 | TODO-074 | F-Droid APK Build + GitHub Release (assembleFdroidRelease) | MEDIUM | OPEN |
@@ -137,6 +137,7 @@
 | ~~TODO-055~~ | AGB updaten — Custom Call ID | 2026-04-06 |
 | ~~TODO-058~~ | Google Search Coverage: Sitemap, canonical, noindex, JSON-LD | 2026-04-07 |
 | ~~TODO-057~~ | DE Store Listing (marketing/play_store_de.txt) | 2026-04-05 |
+| ~~TODO-073~~ | DE Store Listing in Play Console — entfällt, Google übersetzt automatisch | 2026-04-07 |
 | ~~TODO-047~~ | Deactivate beta codes before production | 2026-04-05 |
 | ~~TODO-030~~ | Store Listing DE | 2026-04-03 |
 
