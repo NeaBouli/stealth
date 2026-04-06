@@ -99,4 +99,4 @@ function saveLicenses() {
 
 loadLicenses();
 
-module.exports = { getCurrentPrice, getNextPrice, getRemainingLicenses, recordSale, getStatus, LICENSES };
+module.exports = { getCurrentPrice, getNextPrice, getRemainingLicenses, recordSale, getStatus, saveLicenses, LICENSES };
