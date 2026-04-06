@@ -105,7 +105,7 @@
 | TODO-053 | Tester-Codes per Email verteilen (30 PREM Codes) | HIGH | OPEN |
 | TODO-056 | Play Store Service Account (= TODO-029) | HIGH | MANUAL |
 | TODO-067 | Production Release vorbereiten (nach 14 Tage Closed Test) | HIGH | OPEN |
-| TODO-069 | Alle Claude/AI Spuren aus GitHub entfernen (vor Production) | HIGH | OPEN |
+| ~~TODO-069~~ | ~~Alle Claude/AI Spuren aus GitHub entfernen~~ — keine gefunden in Code | — | DONE |
 | TODO-050 | Stripe Live-Modus aktivieren | MEDIUM | OPEN |
 | TODO-051 | Custom Call ID Feature (Website + Backend + App) | MEDIUM | IN PROGRESS |
 | TODO-059 | Custom Call ID — In-App Settings UI (Eingabe + Passwort) | MEDIUM | OPEN |
@@ -138,6 +138,7 @@
 | ~~TODO-058~~ | Google Search Coverage: Sitemap, canonical, noindex, JSON-LD | 2026-04-07 |
 | ~~TODO-057~~ | DE Store Listing (marketing/play_store_de.txt) | 2026-04-05 |
 | ~~TODO-073~~ | DE Store Listing in Play Console — entfällt, Google übersetzt automatisch | 2026-04-07 |
+| ~~TODO-069~~ | AI Spuren entfernen — CLAUDE.md untracked, keine AI-Refs in Code | 2026-04-07 |
 | ~~TODO-047~~ | Deactivate beta codes before production | 2026-04-05 |
 | ~~TODO-030~~ | Store Listing DE | 2026-04-03 |
 
