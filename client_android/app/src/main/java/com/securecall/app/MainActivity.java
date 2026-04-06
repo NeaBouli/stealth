@@ -188,12 +188,15 @@ public class MainActivity extends AppCompatActivity {
 
         // Handle invite deep link: stealthx.tech/invite/{secureId}
         handleInviteDeepLink(getIntent());
+        // Handle custom-id deep link: securecall://custom-id?id=xxx&token=xxx
+        handleCustomIdDeepLink(getIntent());
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         handleInviteDeepLink(intent);
+        handleCustomIdDeepLink(intent);
     }
 
     private void handleInviteDeepLink(Intent intent) {
@@ -273,6 +276,63 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Invite accepted notification sent");
             } catch (Exception e) {
                 Log.w(TAG, "Failed to notify invite accepted: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    private void handleCustomIdDeepLink(Intent intent) {
+        if (intent == null || intent.getData() == null) return;
+        android.net.Uri data = intent.getData();
+        if (!"securecall".equals(data.getScheme()) || !"custom-id".equals(data.getHost())) return;
+
+        String customId = data.getQueryParameter("id");
+        String token = data.getQueryParameter("token");
+        if (customId == null || customId.isEmpty() || token == null || token.isEmpty()) return;
+
+        Log.d(TAG, "Custom ID deep link received: id=" + customId);
+
+        // Verify token + activate custom ID via backend
+        activateCustomId(customId, token);
+        intent.setData(null);
+    }
+
+    private void activateCustomId(String customId, String token) {
+        SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+        String deviceId = prefs.getString("client_id", "");
+        if (deviceId.isEmpty()) {
+            android.widget.Toast.makeText(this, "Device not registered yet. Please wait.", android.widget.Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        new Thread(() -> {
+            try {
+                String serverUrl = com.securecall.app.BuildConfig.SIGNAL_WS_URL
+                        .replace("wss://", "https://").replace("ws://", "http://").replace("/signal", "");
+                String json = "{\"id\":\"" + customId + "\",\"deviceId\":\"" + deviceId + "\",\"token\":\"" + token + "\"}";
+                okhttp3.RequestBody body = okhttp3.RequestBody.create(json, okhttp3.MediaType.parse("application/json"));
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(serverUrl + "/custom-id/activate-token")
+                        .post(body).build();
+                okhttp3.Response response = new okhttp3.OkHttpClient().newCall(request).execute();
+                String respBody = response.body() != null ? response.body().string() : "";
+
+                runOnUiThread(() -> {
+                    if (response.isSuccessful() && respBody.contains("\"success\":true")) {
+                        prefs.edit().putString("custom_call_id", customId).apply();
+                        new android.app.AlertDialog.Builder(this)
+                            .setTitle("Custom ID Activated")
+                            .setMessage("Your Custom Call ID \"" + customId + "\" is now active!\n\nOthers can call you using this ID.")
+                            .setPositiveButton("OK", (d, w) -> recreate())
+                            .setCancelable(false)
+                            .show();
+                    } else {
+                        android.widget.Toast.makeText(this, "Activation failed: " + respBody, android.widget.Toast.LENGTH_LONG).show();
+                    }
+                });
+            } catch (Exception e) {
+                runOnUiThread(() ->
+                    android.widget.Toast.makeText(this, "Connection error: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show()
+                );
             }
         }).start();
     }

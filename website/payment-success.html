@@ -118,6 +118,9 @@
             transition: opacity 0.2s;
         }
         .links a:hover { opacity: 0.85; }
+        .qr-section { text-align: center; margin: 24px 0; }
+        .qr-section canvas { border-radius: 12px; margin: 12px auto; display: block; }
+        .qr-section .deep-link { font-family: monospace; font-size: 11px; color: #666; word-break: break-all; margin-top: 8px; }
         .btn-primary {
             background: #D32F2F;
             color: #fff;
@@ -154,10 +157,38 @@
             Keep it safe. Due to our commitment to anonymity, we cannot recover lost codes.
         </p>
 
+        <div id="qrSection" class="qr-section" style="display:none;">
+            <h3 style="color:#00E676; margin-bottom:8px;">Custom ID Ready!</h3>
+            <p style="color:#aaa; font-size:14px; margin-bottom:12px;">Scan this QR code with your device camera to activate your Custom ID.</p>
+            <canvas id="qrCanvas"></canvas>
+            <div class="deep-link" id="deepLinkDisplay"></div>
+        </div>
+
         <div class="links">
             <a href="./" class="btn-primary">Back to SecureCall</a>
             <a href="wiki/user-manual.html" class="btn-secondary">User Manual</a>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const customId = params.get("custom_id");
+        const token = params.get("token");
+        if (customId && token) {
+            const deepLink = "securecall://custom-id?id=" + encodeURIComponent(customId) + "&token=" + encodeURIComponent(token);
+            const qrSection = document.getElementById("qrSection");
+            const qrCanvas = document.getElementById("qrCanvas");
+            const deepLinkDisplay = document.getElementById("deepLinkDisplay");
+
+            qrSection.style.display = "block";
+            deepLinkDisplay.textContent = deepLink;
+
+            if (typeof QRCode !== "undefined") {
+                QRCode.toCanvas(qrCanvas, deepLink, { width: 256, margin: 2, color: { dark: "#ffffff", light: "#0a0a12" } });
+            }
+        }
+    })();
+    </script>
 </body>
 </html>

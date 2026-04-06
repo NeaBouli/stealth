@@ -151,6 +151,12 @@
         <priority>0.5</priority>
     </url>
     <url>
+        <loc>https://stealthx.tech/wiki/custom-id.html</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
         <loc>https://stealthx.tech/wiki/announcements.html</loc>
         <lastmod>2026-04-06</lastmod>
         <changefreq>weekly</changefreq>

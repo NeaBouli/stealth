@@ -114,6 +114,96 @@ function setupRoutes(app, requireAdmin) {
     res.json(activate(id, deviceId, password));
   });
 
+  // Purchase via Stripe Checkout
+  const PRICE_IDS = {
+    100: "price_1TJITIBcyoLtm3FA0qZyTL5O",  // 10+ chars = $1
+    200: "price_1TJITKBcyoLtm3FARalsHHII",  // 5-9 chars = $2
+    500: "price_1TJITNBcyoLtm3FAlvw1HlRY"   // 3-4 chars = $5
+  };
+
+  app.post("/custom-id/purchase", async (req, res) => {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) return res.status(503).json({ error: "payments_disabled" });
+
+    const { id, password } = req.body;
+    if (!id || !password) return res.status(400).json({ error: "missing_fields" });
+    if (password.length < 8) return res.status(400).json({ error: "password_too_short" });
+
+    const check = isAvailable(id);
+    if (!check.available) return res.status(400).json(check);
+
+    const priceId = PRICE_IDS[check.price];
+    if (!priceId) return res.status(400).json({ error: "invalid_price" });
+
+    try {
+      const stripe = require("stripe")(secretKey);
+
+      // Hash password and store as pending (not yet activated)
+      const pendingToken = crypto.randomBytes(32).toString("hex");
+
+      const session = await stripe.checkout.sessions.create({
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: "payment",
+        success_url: `https://stealthx.tech/payment-success.html?custom_id=${encodeURIComponent(check.id)}&token=${pendingToken}`,
+        cancel_url: "https://stealthx.tech/wiki/custom-id.html",
+        metadata: {
+          type: "custom_id",
+          custom_id: check.id,
+          pending_token: pendingToken,
+          password_hash: hashPassword(password).hash,
+          password_salt: hashPassword(password).salt
+        },
+        payment_method_types: ["card", "klarna", "sepa_debit"]
+      });
+
+      console.log(`[CUSTOM-ID] Purchase session created: ${check.id} ($${check.price / 100})`);
+      res.json({ url: session.url, sessionId: session.id });
+    } catch (err) {
+      console.error("[CUSTOM-ID] Stripe error:", err.message);
+      res.status(500).json({ error: "checkout_failed" });
+    }
+  });
+
+  // Activate via token (from deep link after Stripe payment)
+  app.post("/custom-id/activate-token", (req, res) => {
+    const { id, deviceId, token } = req.body;
+    if (!id || !deviceId || !token) {
+      return res.status(400).json({ error: "missing_fields" });
+    }
+
+    const normalized = id.toLowerCase().trim();
+
+    // Check if this ID was already activated (token already used)
+    if (customIds[normalized] && customIds[normalized].deviceId) {
+      // Allow re-activation on same device
+      if (customIds[normalized].deviceId === deviceId) {
+        return res.json({ success: true, transferred: false, message: "already_active" });
+      }
+      return res.status(400).json({ error: "already_activated_on_other_device" });
+    }
+
+    // For token-based activation, we trust the purchase token
+    // The ID should have been reserved during Stripe checkout
+    if (!ID_REGEX.test(normalized) || normalized.length <= 2) {
+      return res.status(400).json({ error: "invalid_id" });
+    }
+
+    // Register the ID with the device (no password needed for initial token activation)
+    if (!customIds[normalized]) {
+      customIds[normalized] = {
+        deviceId,
+        purchasedAt: new Date().toISOString(),
+        tier: "premium_only",
+        activationToken: token
+      };
+    } else {
+      customIds[normalized].deviceId = deviceId;
+    }
+    saveIds();
+    console.log(`[CUSTOM-ID] Token activation: ${normalized} -> ${deviceId}`);
+    res.json({ success: true, transferred: false });
+  });
+
   // List all IDs (admin only)
   if (requireAdmin) {
     app.get("/admin/custom-ids", requireAdmin, (req, res) => {
@@ -128,7 +218,7 @@ function setupRoutes(app, requireAdmin) {
     });
   }
 
-  console.log("[CUSTOM-ID] Routes: GET /custom-id/check, POST /custom-id/activate");
+  console.log("[CUSTOM-ID] Routes: GET /custom-id/check, POST /custom-id/activate, POST /custom-id/purchase");
 }
 
 loadIds();

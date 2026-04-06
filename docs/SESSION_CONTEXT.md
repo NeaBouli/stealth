@@ -101,14 +101,15 @@
 ## Open TODOs
 | ID | Task | Priority |
 |---|---|---|
-| TODO-048 | Brevo als Email Backup (Resend gesperrt) | HIGH |
+| ~~TODO-048~~ | ~~Brevo als Email Backup (Resend gesperrt)~~ | DONE |
+| ~~TODO-058~~ | ~~Google Search Coverage: Sitemap, canonical tags, noindex fixes~~ | DONE |
 | TODO-049 | Resend Account entsperren (Support Ticket offen) | HIGH |
 | TODO-053 | Tester-Codes per Email verteilen (30 PREM Codes) | HIGH |
 | TODO-056 | Play Store Service Account (= TODO-029) | HIGH |
 | TODO-050 | Stripe Live-Modus aktivieren | MEDIUM |
 | TODO-051 | Custom Call ID Feature (Website + Backend + App) | MEDIUM |
-| TODO-052 | Dialer Tastatur — ABC Toggle für Custom IDs | MEDIUM |
-| TODO-055 | AGB updaten — Custom Call ID Bedingungen | MEDIUM |
+| ~~TODO-052~~ | ~~Dialer Tastatur — ABC Toggle für Custom IDs~~ | DONE |
+| ~~TODO-055~~ | ~~AGB updaten — Custom Call ID Bedingungen~~ | DONE |
 | TODO-057 | DE Store Listing in Play Console eintragen | MEDIUM |
 | TODO-046 | VpnService-based network traffic steering (eSIM routing) | MEDIUM |
 | TODO-033 | Firebase + AdMob linking | MEDIUM |
@@ -178,7 +179,7 @@
 |---|---|---|
 | BUG-026 | eSIM routing needs VpnService (Coming Soon in UI) | HIGH |
 | BUG-029 | No audio after call connected — VPN+VPN blocks TURN UDP relay | MEDIUM |
-| BUG-036 | Dialer Tastatur — kein ABC Toggle für alphanumerische IDs | MEDIUM |
+| ~~BUG-036~~ | ~~Dialer Tastatur — kein ABC Toggle für alphanumerische IDs~~ | DONE |
 | BUG-023 | No diagnostic log export — SecLog CSV export (Pro/Premium) | LOW |
 
 **No critical bugs remaining.**

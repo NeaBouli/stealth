@@ -106,6 +106,13 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="securecall" android:host="add-contact" />
             </intent-filter>
+            <!-- Custom Call ID deep link: securecall://custom-id?id=xxx&token=xxx -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="securecall" android:host="custom-id" />
+            </intent-filter>
         </activity>
 
         <activity android:name=".SettingsActivity" />
