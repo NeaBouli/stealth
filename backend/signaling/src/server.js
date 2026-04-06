@@ -1689,6 +1689,51 @@ try {
   console.warn("[STRIPE] Could not load stripe_handler:", e.message);
 }
 
+// --- License Pricing API ---
+const licenses = require('./licenses');
+
+app.get('/licenses/status', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.json(licenses.getStatus());
+});
+
+app.post('/stripe/create-dynamic-checkout', async (req, res) => {
+  const { tier } = req.body;
+  if (!tier || !['pro_lifetime', 'premium_lifetime'].includes(tier)) {
+    return res.status(400).json({ error: 'Invalid tier' });
+  }
+  const price = licenses.getCurrentPrice(tier);
+  if (price === null) {
+    return res.status(410).json({ error: 'Sold out' });
+  }
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    return res.status(503).json({ error: 'Stripe not configured' });
+  }
+  try {
+    const stripe = require('stripe')(secretKey);
+    const lic = licenses.LICENSES[tier];
+    const session = await stripe.checkout.sessions.create({
+      line_items: [{
+        price_data: {
+          currency: 'eur',
+          product: lic.stripeProductId,
+          unit_amount: price
+        },
+        quantity: 1
+      }],
+      mode: 'payment',
+      success_url: 'https://stealthx.tech/payment-success.html?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: 'https://stealthx.tech/#pricing',
+      metadata: { tier, type: 'lifetime_dynamic' }
+    });
+    res.json({ url: session.url, sessionId: session.id, price });
+  } catch (err) {
+    console.error('[LICENSES] Checkout error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Start Server ---
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, "0.0.0.0", () => {

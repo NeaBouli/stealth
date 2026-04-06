@@ -1019,7 +1019,7 @@
                     <div class="pricing-badge" style="background:#FFD700;color:#000">Limited: 100 Licenses</div>
                     <div class="pricing-tier" style="color:#FFD700">Pro Lifetime</div>
                     <div class="pricing-price">
-                        <span class="amount" style="color:#FFD700">€15</span>
+                        <span class="amount" id="proPrice" style="color:#FFD700">€15</span>
                         <span class="period">one-time</span>
                     </div>
                     <div class="pricing-divider"></div>
@@ -1041,13 +1041,13 @@
                         <li class="included">Lifetime updates included</li>
                         <li class="included">Early adopter pricing</li>
                     </ul>
-                    <a href="https://buy.stripe.com/test_00w4gyewTaop1AabYv6g801" target="_blank" rel="noopener" class="btn btn-primary btn-block" style="background:#FFD700;color:#000;border-color:#FFD700">Buy Pro Lifetime</a>
+                    <a id="btnProLifetime" href="https://buy.stripe.com/test_00w4gyewTaop1AabYv6g801" target="_blank" rel="noopener" class="btn btn-primary btn-block" style="background:#FFD700;color:#000;border-color:#FFD700">Buy Pro Lifetime</a>
                 </div>
                 <div class="pricing-card featured reveal reveal-delay-1" style="border-color:#FF4444">
                     <div class="pricing-badge" style="background:#FF4444">Limited: 100 Licenses</div>
                     <div class="pricing-tier" style="color:#FF4444">Premium Lifetime</div>
                     <div class="pricing-price">
-                        <span class="amount" style="color:#FF4444">€25</span>
+                        <span class="amount" id="premiumPrice" style="color:#FF4444">€25</span>
                         <span class="period">one-time</span>
                     </div>
                     <div class="pricing-divider"></div>
@@ -1069,7 +1069,7 @@
                         <li class="included">Lifetime updates included</li>
                         <li class="included">Early adopter pricing</li>
                     </ul>
-                    <a href="https://buy.stripe.com/test_28E3cu3Sf545baKgeL6g800" target="_blank" rel="noopener" class="btn btn-primary btn-block" style="background:#FF4444;border-color:#FF4444">Buy Premium Lifetime</a>
+                    <a id="btnPremiumLifetime" href="https://buy.stripe.com/test_28E3cu3Sf545baKgeL6g800" target="_blank" rel="noopener" class="btn btn-primary btn-block" style="background:#FF4444;border-color:#FF4444">Buy Premium Lifetime</a>
                 </div>
                 <div class="pricing-card featured reveal reveal-delay-2" style="border-color:#00E676">
                     <div class="pricing-badge" style="background:#00E676;color:#000">🎁 Gift Option</div>
@@ -1269,6 +1269,33 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script>
+    (async function loadLicensePrices(){
+      try{
+        const r=await fetch('https://protective-healing-production.up.railway.app/licenses/status');
+        const d=await r.json();
+        const fmt=c=>'€'+(c/100).toFixed(2);
+        // Pro
+        const p=d.pro_lifetime;
+        if(p){
+          document.getElementById('proPrice').textContent=fmt(p.currentPrice);
+          document.getElementById('proRemaining').textContent=p.remaining+' / 100';
+          document.getElementById('proNextPrice').textContent=fmt(p.nextPrice);
+          document.getElementById('proBar').style.width=p.sold+'%';
+          if(p.soldOut)document.getElementById('btnProLifetime').textContent='Sold Out';
+        }
+        // Premium
+        const pm=d.premium_lifetime;
+        if(pm){
+          document.getElementById('premiumPrice').textContent=fmt(pm.currentPrice);
+          document.getElementById('premiumRemaining').textContent=pm.remaining+' / 100';
+          document.getElementById('premiumNextPrice').textContent=fmt(pm.nextPrice);
+          document.getElementById('premiumBar').style.width=pm.sold+'%';
+          if(pm.soldOut)document.getElementById('btnPremiumLifetime').textContent='Sold Out';
+        }
+      }catch(e){console.warn('License prices unavailable:',e.message)}
+    })();
+    </script>
     <style>
     @keyframes pulse-green{0%,100%{opacity:1;box-shadow:0 0 6px #22c55e}50%{opacity:.4;box-shadow:0 0 12px #22c55e}}
     @keyframes pulse-red{0%,100%{opacity:1;box-shadow:0 0 6px #ef4444}50%{opacity:.4;box-shadow:0 0 18px #ef4444}}

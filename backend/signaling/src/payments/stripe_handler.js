@@ -119,6 +119,14 @@ async function handleWebhook(event) {
     console.log("[STRIPE] Customer email:", email);
     console.log("[STRIPE] Tier:", tier, "Product:", productKey);
 
+    // Record sale for dynamic pricing
+    if (session.metadata?.type === "lifetime_dynamic" && (tier === "pro_lifetime" || tier === "premium_lifetime")) {
+      try {
+        const { recordSale } = require("../licenses");
+        recordSale(tier);
+      } catch (e) { console.error("[STRIPE] recordSale failed:", e.message); }
+    }
+
     // Generate unique activation code
     const code = generateActivationCode(tier);
     console.log("[STRIPE] Activation code generated:", code);
