@@ -71,25 +71,25 @@
         <Button android:id="@+id/btn1" style="@style/Widget.SecureCall.DialButton"
             android:text="1" android:tag="1" />
         <Button android:id="@+id/btn2" style="@style/Widget.SecureCall.DialButton"
-            android:text="2\nABC" android:tag="2" />
+            android:text="2" android:tag="2" />
         <Button android:id="@+id/btn3" style="@style/Widget.SecureCall.DialButton"
-            android:text="3\nDEF" android:tag="3" />
+            android:text="3" android:tag="3" />
 
         <!-- Row 2: 4 5 6 -->
         <Button android:id="@+id/btn4" style="@style/Widget.SecureCall.DialButton"
-            android:text="4\nGHI" android:tag="4" />
+            android:text="4" android:tag="4" />
         <Button android:id="@+id/btn5" style="@style/Widget.SecureCall.DialButton"
-            android:text="5\nJKL" android:tag="5" />
+            android:text="5" android:tag="5" />
         <Button android:id="@+id/btn6" style="@style/Widget.SecureCall.DialButton"
-            android:text="6\nMNO" android:tag="6" />
+            android:text="6" android:tag="6" />
 
         <!-- Row 3: 7 8 9 -->
         <Button android:id="@+id/btn7" style="@style/Widget.SecureCall.DialButton"
-            android:text="7\nPQRS" android:tag="7" />
+            android:text="7" android:tag="7" />
         <Button android:id="@+id/btn8" style="@style/Widget.SecureCall.DialButton"
-            android:text="8\nTUV" android:tag="8" />
+            android:text="8" android:tag="8" />
         <Button android:id="@+id/btn9" style="@style/Widget.SecureCall.DialButton"
-            android:text="9\nWXYZ" android:tag="9" />
+            android:text="9" android:tag="9" />
 
         <!-- Row 4: */ABC  0  # -->
         <Button android:id="@+id/btnStar" style="@style/Widget.SecureCall.DialButton"
