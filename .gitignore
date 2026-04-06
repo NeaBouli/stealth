@@ -49,3 +49,8 @@ docs/wireguard/*_private*
 # Activation codes (contain real single-use codes — never commit)
 backend/codes/activation_codes.json
 backend/codes/tester_codes_2026.json
+
+# Google Play Service Account key (NEVER commit)
+sxslot-*.json
+*-service-account*.json
+keys/
