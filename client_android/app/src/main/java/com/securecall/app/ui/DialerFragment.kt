@@ -63,6 +63,7 @@ class DialerFragment : Fragment() {
                     phoneNumber.clear()
                     phoneNumber.append(displayText)
                     btnBackspace.visibility = if (phoneNumber.isNotEmpty()) View.VISIBLE else View.GONE
+                    filterContacts() // Trigger suggestions on keyboard input (ABC mode)
                 }
             }
         })
@@ -123,7 +124,6 @@ class DialerFragment : Fragment() {
 
         // ABC ↔ 123 toggle — switches between dialpad and keyboard for Custom Call IDs
         val btnToggle = view.findViewById<Button>(R.id.btnToggleAlpha)
-        var isAlphaMode = false
         btnToggle.setOnClickListener {
             isAlphaMode = !isAlphaMode
             if (isAlphaMode) {
@@ -171,19 +171,28 @@ class DialerFragment : Fragment() {
         filterContacts()
     }
 
+    private var isAlphaMode = false
+
     private fun filterContacts() {
-        val digits = phoneNumber.toString()
-        if (digits.isEmpty()) {
+        val input = phoneNumber.toString()
+        if (input.isEmpty()) {
             contactSuggestions.visibility = View.GONE
             return
         }
 
         val matches = allContacts.filter { contact ->
-            // Match by phone number (contains typed digits)
-            val normalizedPhone = normalizePhone(contact.phoneOrId)
-            normalizedPhone.contains(digits) ||
-            // Match by T9 name search
-            matchesT9(contact.name, digits)
+            if (isAlphaMode) {
+                // ABC mode: match by name, SecureID, or phone — text search
+                val q = input.lowercase()
+                contact.name.lowercase().contains(q) ||
+                contact.phoneOrId.lowercase().contains(q) ||
+                (contact.secureId?.lowercase()?.contains(q) == true)
+            } else {
+                // Numeric mode: match by phone number or T9
+                val normalizedPhone = normalizePhone(contact.phoneOrId)
+                normalizedPhone.contains(input) ||
+                matchesT9(contact.name, input)
+            }
         }
 
         if (matches.isNotEmpty()) {
@@ -222,8 +231,6 @@ class DialerFragment : Fragment() {
     }
 
     private fun handleCall() {
-        // Read from EditText (source of truth) — the StringBuilder may be out of sync
-        // if the user pasted text or the fragment was recreated
         var number = phoneNumber.toString().trim()
         if (number.isEmpty()) {
             number = phoneDisplay.text.toString().trim()
@@ -233,7 +240,24 @@ class DialerFragment : Fragment() {
             return
         }
 
-        // Check if a saved or phone contact matches this number
+        // ABC mode: treat input as Custom Call ID or name — call directly as SecureID
+        if (isAlphaMode && !number.startsWith("+") && !number.matches(Regex("^[0-9+]+$"))) {
+            val ws = com.securecall.app.net.WebSocketService.instance
+            if (ws == null || !ws.isConnected) {
+                ws?.forceReconnect()
+                Toast.makeText(requireContext(), "Reconnecting to server, please try again", Toast.LENGTH_SHORT).show()
+                return
+            }
+            // Try as direct SecureCall ID
+            val intent = Intent(requireContext(), CallActivity::class.java).apply {
+                putExtra("callerName", number)
+                putExtra("phoneNumber", number) // Server resolves custom IDs
+            }
+            startActivity(intent)
+            return
+        }
+
+        // Numeric mode: check contacts by phone number
         val normalized = normalizePhone(number)
         val match = allContacts.find { normalizePhone(it.phoneOrId) == normalized }
 
