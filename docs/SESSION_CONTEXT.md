@@ -99,30 +99,43 @@
 - BUG-032: BUSY loop fix — clearSession() after decline
 
 ## Open TODOs
-| ID | Task | Priority |
-|---|---|---|
-| ~~TODO-048~~ | ~~Brevo als Email Backup (Resend gesperrt)~~ | DONE |
-| ~~TODO-058~~ | ~~Google Search Coverage: Sitemap, canonical tags, noindex fixes~~ | DONE |
-| TODO-049 | Resend Account entsperren (Support Ticket offen) | HIGH |
-| TODO-053 | Tester-Codes per Email verteilen (30 PREM Codes) | HIGH |
-| TODO-056 | Play Store Service Account (= TODO-029) | HIGH |
-| TODO-050 | Stripe Live-Modus aktivieren | MEDIUM |
-| TODO-051 | Custom Call ID Feature (Website + Backend + App) | MEDIUM |
-| ~~TODO-052~~ | ~~Dialer Tastatur — ABC Toggle für Custom IDs~~ | DONE |
-| ~~TODO-055~~ | ~~AGB updaten — Custom Call ID Bedingungen~~ | DONE |
-| TODO-057 | DE Store Listing in Play Console eintragen | MEDIUM |
-| TODO-046 | VpnService-based network traffic steering (eSIM routing) | MEDIUM |
-| TODO-033 | Firebase + AdMob linking | MEDIUM |
-| TODO-054 | payment-success.html Stripe Links auf Live aktualisieren | LOW |
-| TODO-010 | Self-hosted TURN (coturn) | LOW |
-| ~~TODO-047~~ | ~~Deactivate beta codes before production~~ | DONE |
-| ~~TODO-030~~ | ~~Store Listing DE~~ — marketing/play_store_de.txt | DONE |
+| ID | Task | Priority | Status |
+|---|---|---|---|
+| TODO-049 | Resend Account entsperren (Support Ticket offen) | HIGH | OPEN |
+| TODO-053 | Tester-Codes per Email verteilen (30 PREM Codes) | HIGH | OPEN |
+| TODO-056 | Play Store Service Account (= TODO-029) | HIGH | MANUAL |
+| TODO-067 | Production Release vorbereiten (nach 14 Tage Closed Test) | HIGH | OPEN |
+| TODO-069 | Alle Claude/AI Spuren aus GitHub entfernen (vor Production) | HIGH | OPEN |
+| TODO-050 | Stripe Live-Modus aktivieren | MEDIUM | OPEN |
+| TODO-051 | Custom Call ID Feature (Website + Backend + App) | MEDIUM | IN PROGRESS |
+| TODO-059 | Custom Call ID — In-App Settings UI (Eingabe + Passwort) | MEDIUM | OPEN |
+| TODO-060 | Custom Call ID — manueller Transfer mit Passwort (Gerätewechsel) | MEDIUM | OPEN |
+| TODO-070 | Stripe Live Payment Links auf Website aktualisieren (nach Live-Mode) | MEDIUM | OPEN |
+| TODO-071 | Audio Quality manueller Test nach BUG-037/038/039 Fixes (S7 → Tab S4) | MEDIUM | OPEN |
+| TODO-072 | Custom Call ID Stripe Checkout auf Website testen (custom-id.html) | MEDIUM | OPEN |
+| TODO-073 | DE Store Listing in Play Console manuell eintragen | MEDIUM | MANUAL |
+| TODO-061 | WalletConnect vollständige Implementierung (aktuell "Coming Soon") | MEDIUM | OPEN |
+| TODO-062 | TURN Credential Rotation (aktuell hardcoded in build.gradle → Runtime-Fetch) | MEDIUM | OPEN |
+| TODO-063 | IFR Wallet Token-Anzeige (Anzahl IFR wird nicht angezeigt) | LOW | OPEN |
+| TODO-064 | WireGuard VPN Test-Konfiguration (nicht funktional ohne Config) | LOW | OPEN |
+| TODO-065 | FLAG_SECURE Screenshot-Blocking (inkonsistent auf verschiedenen Geräten) | LOW | OPEN |
+| TODO-066 | FCM Push Notifications für eingehende Calls im Hintergrund (testen + verifizieren) | LOW | OPEN |
+| TODO-068 | GitHub Releases sync mit Play Store versionCode (immer sync halten) | LOW | OPEN |
+| TODO-046 | VpnService-based network traffic steering (eSIM routing) | LOW | DEFERRED |
+| TODO-033 | Firebase + AdMob linking | LOW | OPEN |
+| TODO-054 | payment-success.html Stripe Links auf Live aktualisieren | LOW | OPEN |
+| TODO-010 | Self-hosted TURN (coturn) | LOW | DEFERRED |
 
-### TODO-048: Brevo als Email Backup
-- Resend Account gesperrt (Support Ticket offen)
-- **Brevo.com** als Alternative: kostenlos, sofort verfügbar
-- `BREVO_API_KEY` in Railway setzen
-- `email_handler.js`: Fallback auf Brevo wenn Resend fails
+### Erledigte TODOs (letzte 7 Tage)
+| ID | Task | Erledigt |
+|---|---|---|
+| ~~TODO-048~~ | Brevo als Email Backup | 2026-04-06 |
+| ~~TODO-052~~ | Dialer Tastatur — ABC Toggle | 2026-04-06 |
+| ~~TODO-055~~ | AGB updaten — Custom Call ID | 2026-04-06 |
+| ~~TODO-058~~ | Google Search Coverage: Sitemap, canonical, noindex, JSON-LD | 2026-04-07 |
+| ~~TODO-057~~ | DE Store Listing (marketing/play_store_de.txt) | 2026-04-05 |
+| ~~TODO-047~~ | Deactivate beta codes before production | 2026-04-05 |
+| ~~TODO-030~~ | Store Listing DE | 2026-04-03 |
 
 ### TODO-049: Resend Account entsperren
 - Support Ticket gesendet (Critical)
@@ -135,43 +148,24 @@
 - Neue Payment Links für Live-Modus erstellen
 - Landing Page Links aktualisieren + TEST MODE Banner entfernen
 
-### TODO-051: Custom Call ID Feature
-- **Website:** stealthx.tech/custom-id Generator
-- **Preise:** $1 (10+ Zeichen), $2 (5-9 Zeichen), $5 (3-4 Zeichen)
-- 1-2 Zeichen: nur Dev Team reserviert
-- **Passwortschutz:** ID + Passwort bei Aktivierung
-- **Gerätemigration:** ID + Passwort auf neuem Gerät eingeben → altes Gerät automatisch deaktiviert
-- **Backend:** ID-Verfügbarkeit prüfen, reservieren, speichern
-- **App:** Settings → Custom Call ID eingeben + Passwort
-- Nur für Premium User
-- Einmal gekauft = dauerhaft (an Passwort gebunden)
-
-### TODO-052: Dialer Tastatur — ABC Toggle
-- Dialer zeigt nur Ziffernblock, kein Toggle zwischen 123 ↔ ABC
-- Nötig für alphanumerische SecureCall-IDs (z.B. "marco", "trump")
-- Fix: Toggle-Button im Dialer hinzufügen
+### TODO-051: Custom Call ID Feature (IN PROGRESS)
+- **Website:** wiki/custom-id.html mit Live-Generator + Stripe Checkout (DONE 2026-04-07)
+- **Backend:** /custom-id/check, /custom-id/activate, /custom-id/purchase, /custom-id/activate-token (DONE 2026-04-07)
+- **App:** Deep Link Handler securecall://custom-id (DONE 2026-04-07)
+- **OFFEN:** TODO-059 In-App Settings UI, TODO-060 Passwort-Transfer, TODO-072 E2E Test
 
 ### TODO-053: Tester-Codes per Email verteilen
 - 30 Premium Codes generiert (`backend/codes/tester_codes_2026.json` — gitignored)
 - Warten auf Resend/Brevo → dann manuell versenden
 
-### TODO-055: AGB updaten — Custom Call ID
-- Passwort vergessen = ID verloren (kein Support)
-- ID ist an Passwort gebunden, nicht an Person
-- Keine Rückerstattung bei Passwortverlust
-
 ### TODO-056: Play Store Service Account
 - **Gehe zu:** play.google.com/console → Setup → API Zugriff
 - Google Cloud Projekt verknüpfen, Service Account erstellen
 - JSON Key herunterladen → sicher aufbewahren (NIE in Git!)
-- Benötigt für: automatische AAB-Uploads, Billing-Verifikation
 - **Status:** MANUAL STEP — Kaspartizan muss dies selbst in Play Console durchführen
 
 ### TODO-046: VpnService-basiertes Traffic Steering
-- **Benötigt für:** eSIM Call Routing, Preferred Network Bindung
-- **Problem:** OkHttp connection pooling umgeht `bindProcessToNetwork()`
-- **Lösung:** Eigener VpnService der Traffic auf OS-Ebene auf das richtige Interface leitet
-- **Status:** OPEN — hohe Komplexität, nach Production angehen
+- **Status:** DEFERRED — hohe Komplexität, nach Production angehen
 - **Workaround:** Feature funktioniert wenn nur ein Netzwerk aktiv (z.B. WiFi aus → nur Mobile)
 
 ## Open Bugs
@@ -179,8 +173,15 @@
 |---|---|---|
 | BUG-026 | eSIM routing needs VpnService (Coming Soon in UI) | HIGH |
 | BUG-029 | No audio after call connected — VPN+VPN blocks TURN UDP relay | MEDIUM |
-| ~~BUG-036~~ | ~~Dialer Tastatur — kein ABC Toggle für alphanumerische IDs~~ | DONE |
 | BUG-023 | No diagnostic log export — SecLog CSV export (Pro/Premium) | LOW |
+
+### Erledigte Bugs (letzte 7 Tage)
+| ID | Description | Fixed In |
+|---|---|---|
+| ~~BUG-036~~ | Dialer Tastatur — kein ABC Toggle | 2026-04-06 |
+| ~~BUG-037~~ | ICE MAXBUNDLE — nur 4 ICE Pairs | 2026-04-07 |
+| ~~BUG-038~~ | Doppeltes audio guard bei Call active | 2026-04-07 |
+| ~~BUG-039~~ | Audio Latenz vor config | 2026-04-07 |
 
 **No critical bugs remaining.**
 
@@ -197,9 +198,10 @@
 - Terms of Service: stealthx.tech/terms.html
 
 ## Next Session Steps
-1. Brevo Email Backup einrichten (TODO-048) — Tester-Codes versenden
-2. Custom Call ID Feature planen (TODO-051 + TODO-052)
-3. Upload AAB v1.0.13 to Play Console Alpha Track
-4. Play Store Service Account (TODO-056) — Kaspartizan manuell
-5. Stripe Live-Modus nach Beta (TODO-050)
-6. Production release nach Tester-Feedback
+1. TODO-071: Audio Quality Test S7 → Tab S4 (nach BUG-037/038/039 Fixes)
+2. TODO-072: Custom Call ID Stripe Checkout E2E testen
+3. TODO-059: Custom Call ID In-App Settings UI
+4. TODO-053: Tester-Codes versenden (wenn Brevo/Resend läuft)
+5. TODO-067: Production Release vorbereiten
+6. TODO-050: Stripe Live-Modus nach Beta
+7. TODO-069: AI Spuren entfernen vor Production

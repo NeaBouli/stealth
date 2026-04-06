@@ -33,7 +33,10 @@
 | BUG-031 | Contact not verified after call — no verification prompt | OPEN | Medium | — |
 | BUG-034 | 0s duration calls after WS reconnect — CALL_INVITE sent before REGISTER processed | FIXED | High | 6d05712 |
 | BUG-035 | DNS resolution failure after network switch — rapid 2s retries drain battery | FIXED | Medium | 6d05712 |
-| BUG-036 | Dialer Tastatur — kein ABC Toggle für alphanumerische Custom Call IDs | OPEN | Medium | — |
+| BUG-036 | Dialer Tastatur — kein ABC Toggle für alphanumerische Custom Call IDs | FIXED | Medium | 8f818eb |
+| BUG-037 | ICE MAXBUNDLE — nur 4 ICE Candidates statt volles Gathering | FIXED | Medium | 21e6ca2 |
+| BUG-038 | Doppeltes audio guard — Call active Zustand inkonsistent | FIXED | Medium | 21e6ca2 |
+| BUG-039 | Audio Latenz — pre-config Verzögerung beim Call-Start | FIXED | Medium | 21e6ca2 |
 
 ## Fix Details
 
@@ -75,7 +78,7 @@
 - Free tier had screenshot toggle disabled — now enabled as opt-in (default OFF)
 - All 4 Activities now consistently apply FLAG_SECURE
 
-### BUG-007: Contacts cache empty after app restart — presence skipped (OPEN)
+### BUG-007: Contacts cache empty after app restart — presence skipped (FIXED)
 - **Symptom:** After app force-stop or restart, `refreshOnlineStatus()` logs "no registered phones cached, skipping" repeatedly. Online dots never appear until a full BATCH_PHONE_LOOKUP completes (up to 5 minutes).
 - **Root Cause:** `cachedRegisteredPhones` is a `companion object` volatile Set in `ContactsFragment.kt:47`. It is populated only by `finalizeResults()` after `BATCH_PHONE_LOOKUP`. On app restart, the companion object is re-initialized to `emptySet()`. Since `refreshOnlineStatus()` checks `cachedRegisteredPhones` and skips if empty, presence never works until the next batch lookup.
 - **Evidence:** S7 Pro logcat 2026-03-19 11:22–11:23 — repeated "no registered phones cached, skipping" after app restart.
@@ -97,7 +100,7 @@
 - **Fix:** Wrapped `telephonyManager.listen()` in try-catch for `SecurityException`. If permission is missing, phone state monitoring is gracefully skipped — calls work normally without it.
 - **Verified:** Fully automated call test 2026-03-19 21:49–21:50. S7→S10 call initiated via ADB tap, accepted via uiautomator-detected Accept button (742,1807), 8s active call, ended via EndCall button (539,1807). Complete CALL_INVITE→ACCEPT→END cycle with no crash. SecurityException caught gracefully ("Phone state monitor skipped").
 
-### BUG-009: App disconnects on network switch (WiFi→Mobile→eSIM) — no auto-reconnect (OPEN)
+### BUG-009: App disconnects on network switch (WiFi→Mobile→eSIM) — no auto-reconnect (FIXED)
 - **Severity:** High
 - **Symptom:** When switching between WiFi, Mobile, or eSIM networks, the app loses connection and does not automatically reconnect.
 - **Expected:** ConnectivityManager NetworkCallback should detect network change and trigger WebSocket reconnect.
@@ -109,46 +112,46 @@
 ### BUG-011: Call drops after connecting — ICE reconnect grace period (FIXED — 9b9c3b2)
 - **Fix:** 15s grace period on server CALL_END(peer_disconnected) when WebRTC ICE is still active. Survives WiFi toggle during call. cancelCallEndGrace() clears timer if peer reconnects.
 
-### BUG-012: AdMob banner appears during active call (OPEN)
+### BUG-012: AdMob banner appears during active call (FIXED)
 - **Severity:** High
 - **Symptom:** Ad banner is visible during an active call in CallActivity. Ads should be paused/hidden during calls.
 
 ### BUG-013: Contact name sync — shows number instead of name (FIXED — 766ee9e)
 - **Fix:** PhoneBookResolver.resolveCallerName() now checks secureId field and phone book via stored phone. CallsFragment enrichment uses resolveCallerName() (phone book + SecureCall contacts) instead of resolvePhoneNumber() (phone book only) and persists enriched names. CallRecord stores phoneNumber for future re-resolution. App-saved contacts always visible in Contacts tab (isPhoneContact=false → always registered).
 
-### BUG-014: All Settings sections expanded by default — should all be collapsed (OPEN)
+### BUG-014: All Settings sections expanded by default — should all be collapsed (FIXED)
 - **Severity:** Low
 - **Symptom:** When opening Settings, all PreferenceCategory sections are expanded. They should default to collapsed state with tap-to-toggle.
 
-### BUG-015: No disconnect button next to connection status (OPEN)
+### BUG-015: No disconnect button next to connection status (FIXED)
 - **Severity:** Medium
 - **Symptom:** There is no button to manually disconnect/reconnect next to the connection status indicator in the toolbar.
 
-### BUG-016: Label "Anonymous Network" should be "Network" (OPEN)
+### BUG-016: Label "Anonymous Network" should be "Network" (FIXED)
 - **Severity:** Low
 - **Symptom:** The settings section for eSIM/network routing is labeled "Anonymous Network" which sounds suspicious. Should be simply "Network".
 
-### BUG-017: "New Call" FAB appears in all tabs — should only show in Dialer tab (OPEN)
+### BUG-017: "New Call" FAB appears in all tabs — should only show in Dialer tab (FIXED)
 - **Severity:** Medium
 - **Symptom:** The floating action button "New Call" is visible in the Calls and Contacts tabs. It should only appear in the Dialer tab, or be hidden in Settings.
 
-### BUG-018: "Report a Bug" in Settings opens GitHub Issues — should open stealthx.tech/wiki/bug-report.html (OPEN)
+### BUG-018: "Report a Bug" in Settings opens GitHub Issues — should open stealthx.tech/wiki/bug-report.html (FIXED)
 - **Severity:** Medium
 - **Symptom:** "Report a Bug" preference opens GitHub Issues directly instead of the user-friendly bug report form at stealthx.tech/wiki/bug-report.html.
 
-### BUG-019: "Check for Updates" opens Play Store for F-Droid/APK — should go to GitHub Releases (OPEN)
+### BUG-019: "Check for Updates" opens Play Store for F-Droid/APK — should go to GitHub Releases (FIXED)
 - **Severity:** Medium
 - **Symptom:** For non-Play Store installs (F-Droid, APK sideload), "Check for Updates" incorrectly opens Play Store instead of GitHub Releases page.
 
-### BUG-020: IFR Token section should be last in Settings (OPEN)
+### BUG-020: IFR Token section should be last in Settings (FIXED)
 - **Severity:** Low
 - **Symptom:** IFR Token unlock section appears near the top of Settings. It should be the last section before Advanced/Reset.
 
-### BUG-021: Emergency Delete should be first in Settings (OPEN)
+### BUG-021: Emergency Delete should be first in Settings (FIXED)
 - **Severity:** Low
 - **Symptom:** Emergency Delete (5-tap reset) is at the bottom of Settings in the Advanced section. For quick access during emergencies, it should be the first item.
 
-### BUG-022: eSIM status stays "connected" after switching to default network (OPEN)
+### BUG-022: eSIM status stays "connected" after switching to default network (FIXED)
 - **Severity:** Medium
 - **Symptom:** After enabling eSIM routing and then switching back to the default network, the eSIM status indicator still shows "connected".
 
@@ -156,11 +159,11 @@
 - **Severity:** Low
 - **Symptom:** No way to export diagnostic logs for troubleshooting. Pro/Premium users should have a CSV export of SecLog data.
 
-### BUG-024: Random disconnects on network change — reconnects only after app restart (OPEN)
+### BUG-024: Random disconnects on network change — reconnects only after app restart (FIXED)
 - **Severity:** High
 - **Symptom:** Similar to BUG-009, random disconnects occur on network changes. The app only reconnects after a full restart, not automatically.
 
-### BUG-025: Phone normalization — +49 and 0049 and +49 151 234 567 treated as different numbers (OPEN)
+### BUG-025: Phone normalization — +49 and 0049 and +49 151 234 567 treated as different numbers (FIXED)
 - **Severity:** High
 - **Symptom:** Different representations of the same phone number (+49xxx, 0049xxx, +49 151 234 567) are treated as different contacts. PhoneUtils.normalize() needs to strip all formatting chars including brackets and slashes.
 
@@ -175,3 +178,18 @@
   - Keepalive packets flowing bidirectionally ✅
   - S7→S10 call during active VPN: 21s E2E-encrypted call ✅
   - VPN stop: clean tunnel DOWN ✅
+
+### BUG-036: Dialer Tastatur — kein ABC Toggle (FIXED — 8f818eb)
+- **Fix:** Toggle-Button im Dialer zwischen 123 ↔ ABC Modus hinzugefügt. ABC-Modus zeigt Buchstaben-Suggestions für alphanumerische Custom Call IDs.
+
+### BUG-037: ICE MAXBUNDLE — nur 4 ICE Candidates (FIXED — 21e6ca2)
+- **Symptom:** WebRTC ICE gathering produzierte nur 4 Kandidaten statt vollständiges Gathering.
+- **Fix:** MAXBUNDLE SDP Policy korrigiert, volles ICE Candidate Gathering aktiviert.
+
+### BUG-038: Doppeltes audio guard bei Call active (FIXED — 21e6ca2)
+- **Symptom:** Audio guard wurde doppelt aktiviert wenn Call bereits aktiv war, führte zu inkonsistentem Zustand.
+- **Fix:** Guard-Check vor Audio-Initialisierung verhindert doppelte Aktivierung.
+
+### BUG-039: Audio Latenz — pre-config Verzögerung (FIXED — 21e6ca2)
+- **Symptom:** Spürbare Latenz beim Call-Start bevor Audio-Konfiguration abgeschlossen.
+- **Fix:** Audio-Konfiguration wird vor dem Call-Start vorbereitet statt erst nach Verbindung.
