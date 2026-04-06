@@ -62,7 +62,7 @@
         android:layout_height="0dp"
         android:layout_weight="3"
         android:columnCount="3"
-        android:rowCount="4"
+        android:rowCount="5"
         android:paddingHorizontal="24dp"
         android:layout_gravity="center"
         android:useDefaultMargins="false">
@@ -91,13 +91,23 @@
         <Button android:id="@+id/btn9" style="@style/Widget.SecureCall.DialButton"
             android:text="9\nWXYZ" android:tag="9" />
 
-        <!-- Row 4: * 0 # -->
+        <!-- Row 4: */ABC  0  # -->
         <Button android:id="@+id/btnStar" style="@style/Widget.SecureCall.DialButton"
             android:text="*" android:tag="*" />
         <Button android:id="@+id/btn0" style="@style/Widget.SecureCall.DialButton"
             android:text="0\n+" android:tag="0" />
         <Button android:id="@+id/btnHash" style="@style/Widget.SecureCall.DialButton"
             android:text="#" android:tag="#" />
+
+        <!-- Row 5: ABC toggle -->
+        <Button android:id="@+id/btnToggleAlpha"
+            style="@style/Widget.SecureCall.DialButton"
+            android:text="ABC"
+            android:textSize="14sp"
+            android:textColor="#FFD700"
+            android:contentDescription="Switch to text input for Custom Call IDs"
+            android:layout_columnSpan="3"
+            android:layout_gravity="fill_horizontal" />
     </GridLayout>
 
     <!-- Call button -->

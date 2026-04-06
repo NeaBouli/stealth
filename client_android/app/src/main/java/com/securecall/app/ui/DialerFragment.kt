@@ -121,6 +121,37 @@ class DialerFragment : Fragment() {
             true
         }
 
+        // ABC ↔ 123 toggle — switches between dialpad and keyboard for Custom Call IDs
+        val btnToggle = view.findViewById<Button>(R.id.btnToggleAlpha)
+        var isAlphaMode = false
+        btnToggle.setOnClickListener {
+            isAlphaMode = !isAlphaMode
+            if (isAlphaMode) {
+                phoneDisplay.inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                    android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
+                    android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                phoneDisplay.showSoftInputOnFocus = true
+                phoneDisplay.hint = "Enter Call ID or number"
+                dialPad.visibility = View.GONE
+                btnToggle.text = "123"
+                btnToggle.setTextColor(resources.getColor(R.color.call_active_green, null))
+                // Show keyboard
+                phoneDisplay.requestFocus()
+                val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                imm.showSoftInput(phoneDisplay, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            } else {
+                phoneDisplay.inputType = android.text.InputType.TYPE_CLASS_PHONE
+                phoneDisplay.showSoftInputOnFocus = false
+                phoneDisplay.hint = getString(R.string.dialer_enter_number)
+                dialPad.visibility = View.VISIBLE
+                btnToggle.text = "ABC"
+                btnToggle.setTextColor(resources.getColor(android.R.color.holo_orange_light, null))
+                // Hide keyboard
+                val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                imm.hideSoftInputFromWindow(phoneDisplay.windowToken, 0)
+            }
+        }
+
         // Call button
         view.findViewById<FloatingActionButton>(R.id.fabCall).setOnClickListener {
             handleCall()

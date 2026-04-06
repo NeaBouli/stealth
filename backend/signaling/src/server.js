@@ -1689,6 +1689,14 @@ try {
   console.warn("[STRIPE] Could not load stripe_handler:", e.message);
 }
 
+// --- Custom Call ID API ---
+try {
+  const customIds = require('./custom_ids');
+  customIds.setupRoutes(app, requireAdmin);
+} catch (e) {
+  console.warn("[CUSTOM-ID] Could not load:", e.message);
+}
+
 // --- License Pricing API ---
 const licenses = require('./licenses');
 
