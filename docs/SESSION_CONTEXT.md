@@ -116,6 +116,8 @@
 | TODO-073 | DE Store Listing in Play Console manuell eintragen | MEDIUM | MANUAL |
 | TODO-061 | WalletConnect vollständige Implementierung (aktuell "Coming Soon") | MEDIUM | OPEN |
 | TODO-062 | TURN Credential Rotation (aktuell hardcoded in build.gradle → Runtime-Fetch) | MEDIUM | OPEN |
+| TODO-074 | F-Droid APK Build + GitHub Release (assembleFdroidRelease) | MEDIUM | OPEN |
+| TODO-076 | F-Droid Trial Expired UI — Dialog + Buttons nach 30 Tagen | MEDIUM | OPEN |
 | TODO-063 | IFR Wallet Token-Anzeige (Anzahl IFR wird nicht angezeigt) | LOW | OPEN |
 | TODO-064 | WireGuard VPN Test-Konfiguration (nicht funktional ohne Config) | LOW | OPEN |
 | TODO-065 | FLAG_SECURE Screenshot-Blocking (inkonsistent auf verschiedenen Geräten) | LOW | OPEN |
@@ -124,6 +126,7 @@
 | TODO-046 | VpnService-based network traffic steering (eSIM routing) | LOW | DEFERRED |
 | TODO-033 | Firebase + AdMob linking | LOW | OPEN |
 | TODO-054 | payment-success.html Stripe Links auf Live aktualisieren | LOW | OPEN |
+| TODO-075 | F-Droid Repository Einreichung (fdroid.org, nach Production) | LOW | DEFERRED |
 | TODO-010 | Self-hosted TURN (coturn) | LOW | DEFERRED |
 
 ### Erledigte TODOs (letzte 7 Tage)
@@ -163,6 +166,24 @@
 - Google Cloud Projekt verknüpfen, Service Account erstellen
 - JSON Key herunterladen → sicher aufbewahren (NIE in Git!)
 - **Status:** MANUAL STEP — Kaspartizan muss dies selbst in Play Console durchführen
+
+### TODO-074: F-Droid APK Build + GitHub Release
+- `./gradlew assembleFdroidRelease`
+- APK: `app-fdroid-release.apk`
+- GitHub Release mit fdroid tag erstellen
+- Package: `com.securecall.app.fdroid` (kein Google Services, kein AdMob)
+
+### TODO-075: F-Droid Repository Einreichung
+- fdroid.org/packages/ submission
+- `fdroid/metadata/` Dateien prüfen (siehe `docs/FDROID_SETUP.md`)
+- **Status:** DEFERRED — nach Production Release
+
+### TODO-076: F-Droid Trial Expired UI
+- Nach 30 Tagen Trial: Dialog anzeigen
+- Text: "Trial expired — enter activation code or lock IFR tokens"
+- Button → Settings → Activation Code
+- Button → Settings → IFR Token (WalletConnect)
+- Nur für fdroid Flavor (free/pro/premium haben kein Trial)
 
 ### TODO-046: VpnService-basiertes Traffic Steering
 - **Status:** DEFERRED — hohe Komplexität, nach Production angehen
