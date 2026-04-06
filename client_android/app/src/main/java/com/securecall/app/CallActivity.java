@@ -187,6 +187,7 @@ public class CallActivity extends AppCompatActivity {
         } else if (isIncoming) {
             // Already accepted from IncomingCallActivity
             Log.d(TAG, "Incoming call accepted: session=" + sessionId);
+            prepareCallAudio(); // BUG-039: pre-configure audio before ICE
             startTransportAndTimer(connectionState, callTimer);
         } else {
             // F-Droid trial check: block outgoing calls if trial expired and still FREE
@@ -209,6 +210,9 @@ public class CallActivity extends AppCompatActivity {
                 ws.ensureConnected();
                 connectionState.setText("Reconnecting\u2026");
             }
+
+            // BUG-039: Pre-configure audio BEFORE ICE to reduce latency
+            prepareCallAudio();
 
             if (ws != null && targetId != null && !targetId.isEmpty()) {
                 ws.setOnCallAccepted(acceptedSessionId -> {
@@ -509,7 +513,14 @@ public class CallActivity extends AppCompatActivity {
     private int savedAudioMode = -1;
     private int savedStreamVolume = -1;
 
+    private volatile boolean audioConfigured = false; // BUG-038: guard against double init
+
     private void configureCallAudio() {
+        if (audioConfigured) {
+            Log.w(TAG, "configureCallAudio() already called — skipping duplicate");
+            return;
+        }
+        audioConfigured = true;
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
         if (am == null) return;
         // Save current state for restoration
@@ -525,7 +536,18 @@ public class CallActivity extends AppCompatActivity {
                 "Mode=IN_COMMUNICATION, volume=" + maxVol + "/" + maxVol);
     }
 
+    /** BUG-039: Prepare audio BEFORE ICE connects — reduces latency. */
+    private void prepareCallAudio() {
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (am == null) return;
+        am.setMode(AudioManager.MODE_IN_COMMUNICATION);
+        int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
+        am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, maxVol, 0);
+        Log.d(TAG, "Audio pre-configured for call (BUG-039)");
+    }
+
     private void restoreCallAudio() {
+        audioConfigured = false; // BUG-038: reset guard
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
         if (am == null) return;
         if (savedAudioMode >= 0) am.setMode(savedAudioMode);

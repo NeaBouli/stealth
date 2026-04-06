@@ -67,6 +67,9 @@ class WebRtcManager(
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
             continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
             iceTransportsType = PeerConnection.IceTransportsType.ALL
+            // BUG-037: Force all media onto a single transport — prevents multiple active ICE pairs
+            bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
+            rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
         }
 
         peerConnection = factory?.createPeerConnection(rtcConfig, pcObserver)
