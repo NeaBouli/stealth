@@ -62,7 +62,7 @@
         android:layout_height="0dp"
         android:layout_weight="3"
         android:columnCount="3"
-        android:rowCount="5"
+        android:rowCount="4"
         android:paddingHorizontal="24dp"
         android:layout_gravity="center"
         android:useDefaultMargins="false">
@@ -99,16 +99,19 @@
         <Button android:id="@+id/btnHash" style="@style/Widget.SecureCall.DialButton"
             android:text="#" android:tag="#" />
 
-        <!-- Row 5: ABC toggle -->
-        <Button android:id="@+id/btnToggleAlpha"
-            style="@style/Widget.SecureCall.DialButton"
-            android:text="ABC"
-            android:textSize="14sp"
-            android:textColor="#FFD700"
-            android:contentDescription="Switch to text input for Custom Call IDs"
-            android:layout_columnSpan="3"
-            android:layout_gravity="fill_horizontal" />
     </GridLayout>
+
+    <!-- ABC/123 toggle — OUTSIDE GridLayout so it stays visible in both modes -->
+    <Button android:id="@+id/btnToggleAlpha"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginHorizontal="24dp"
+        android:text="ABC"
+        android:textSize="16sp"
+        android:textColor="#FFD700"
+        android:textStyle="bold"
+        android:background="@android:color/transparent"
+        android:contentDescription="Switch to text input for Custom Call IDs" />
 
     <!-- Call button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
