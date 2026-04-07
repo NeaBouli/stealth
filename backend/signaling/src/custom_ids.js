@@ -1,7 +1,10 @@
 /**
- * Custom Call ID system.
- * Users purchase a custom alphanumeric ID (e.g. "marco", "trump")
- * protected by a password for device migration.
+ * Custom Call ID system with HMAC-SHA256 privacy protection.
+ *
+ * IDs are stored as HMAC-SHA256(pepper, id) keys — never in cleartext.
+ * Pepper = secret server key from env var ID_HASH_PEPPER (set in Railway).
+ * DeviceIds remain cleartext (random strings, needed for call routing).
+ * Passwords use PBKDF2-SHA512 with per-record salt (100k iterations).
  *
  * Pricing: 10+ chars = $1, 5-9 chars = $2, 3-4 chars = $5, 1-2 chars = reserved
  */
@@ -15,6 +18,32 @@ const ID_REGEX = /^[a-z0-9][a-z0-9-]{0,28}[a-z0-9]$|^[a-z0-9]$/;
 
 let customIds = {};
 
+// ─── HMAC / Pepper ──────────────────────────────────────────
+
+function getPepper() {
+  return process.env.ID_HASH_PEPPER || null;
+}
+
+/**
+ * Convert a cleartext custom ID to a storage key.
+ * With pepper: HMAC-SHA256(pepper, normalizedId) → 64-char hex.
+ * Without pepper (local dev): passthrough cleartext.
+ */
+function idToKey(normalizedId) {
+  const pepper = getPepper();
+  if (!pepper) return normalizedId;
+  return crypto.createHmac("sha256", pepper).update(normalizedId).digest("hex");
+}
+
+/**
+ * Check if a storage key looks like an HMAC (64-char hex).
+ */
+function isHmacKey(key) {
+  return /^[0-9a-f]{64}$/.test(key);
+}
+
+// ─── Persistence ────────────────────────────────────────────
+
 function loadIds() {
   try {
     customIds = JSON.parse(fs.readFileSync(IDS_FILE, "utf8"));
@@ -22,6 +51,7 @@ function loadIds() {
   } catch (e) {
     customIds = {};
   }
+  migrateToHmac();
 }
 
 function saveIds() {
@@ -32,6 +62,40 @@ function saveIds() {
     console.error("[CUSTOM-ID] Save failed:", e.message);
   }
 }
+
+/**
+ * Auto-migrate cleartext keys to HMAC keys on startup.
+ * Cleartext keys match ID_REGEX; HMAC keys are 64-char hex.
+ * Only runs when pepper is available.
+ */
+function migrateToHmac() {
+  const pepper = getPepper();
+  if (!pepper) {
+    console.warn("[CUSTOM-ID] ID_HASH_PEPPER not set — IDs stored in cleartext (set env var for production)");
+    return;
+  }
+
+  const keys = Object.keys(customIds);
+  let migrated = 0;
+  for (const key of keys) {
+    if (!isHmacKey(key) && ID_REGEX.test(key)) {
+      const hmacKey = idToKey(key);
+      const data = customIds[key];
+      data.idLength = key.length; // preserve length for pricing
+      customIds[hmacKey] = data;
+      delete customIds[key];
+      migrated++;
+    }
+  }
+  if (migrated > 0) {
+    saveIds();
+    console.log(`[CUSTOM-ID] Migrated ${migrated} cleartext IDs to HMAC-SHA256 storage`);
+  } else if (keys.length > 0) {
+    console.log("[CUSTOM-ID] All IDs already HMAC-protected");
+  }
+}
+
+// ─── Password hashing (PBKDF2-SHA512) ──────────────────────
 
 function hashPassword(password, salt) {
   if (!salt) salt = crypto.randomBytes(16).toString("hex");
@@ -44,6 +108,8 @@ function verifyPassword(password, storedHash, storedSalt) {
   return hash === storedHash;
 }
 
+// ─── Pricing ────────────────────────────────────────────────
+
 function getPrice(id) {
   const len = id.length;
   if (len <= 2) return null; // reserved
@@ -52,11 +118,14 @@ function getPrice(id) {
   return 100;                // $1.00
 }
 
+// ─── Core functions ─────────────────────────────────────────
+
 function isAvailable(id) {
   const normalized = id.toLowerCase().trim();
   if (!ID_REGEX.test(normalized)) return { available: false, error: "invalid_format" };
   if (normalized.length <= 2) return { available: false, error: "reserved" };
-  if (customIds[normalized]) return { available: false, error: "taken" };
+  const key = idToKey(normalized);
+  if (customIds[key]) return { available: false, error: "taken" };
   const price = getPrice(normalized);
   return { available: true, price, id: normalized };
 }
@@ -66,7 +135,8 @@ function activate(id, deviceId, password) {
   if (!ID_REGEX.test(normalized)) return { success: false, error: "invalid_format" };
   if (normalized.length <= 2) return { success: false, error: "reserved" };
 
-  const existing = customIds[normalized];
+  const key = idToKey(normalized);
+  const existing = customIds[key];
   if (existing) {
     // Already owned — check password for re-activation or transfer
     if (!verifyPassword(password, existing.passwordHash, existing.passwordSalt)) {
@@ -76,23 +146,38 @@ function activate(id, deviceId, password) {
     existing.deviceId = deviceId;
     existing.lastTransfer = new Date().toISOString();
     saveIds();
-    console.log(`[CUSTOM-ID] Transfer: ${normalized} -> ${deviceId}`);
+    console.log(`[CUSTOM-ID] Transfer: ${key.substring(0, 12)}... -> ${deviceId}`);
     return { success: true, transferred: true };
   }
 
   // New registration
   const { hash, salt } = hashPassword(password);
-  customIds[normalized] = {
+  customIds[key] = {
     deviceId,
     passwordHash: hash,
     passwordSalt: salt,
+    idLength: normalized.length,
     purchasedAt: new Date().toISOString(),
     tier: "premium_only"
   };
   saveIds();
-  console.log(`[CUSTOM-ID] Registered: ${normalized} -> ${deviceId}`);
+  console.log(`[CUSTOM-ID] Registered: ${key.substring(0, 12)}... -> ${deviceId}`);
   return { success: true, transferred: false };
 }
+
+/**
+ * Resolve a custom ID to a deviceId (used by call routing).
+ * Input: cleartext ID → HMAC lookup → return deviceId.
+ */
+function resolve(id) {
+  if (!id) return null;
+  const normalized = id.toLowerCase().trim();
+  const key = idToKey(normalized);
+  const entry = customIds[key];
+  return (entry && entry.deviceId) ? entry.deviceId : null;
+}
+
+// ─── HTTP Routes ────────────────────────────────────────────
 
 function setupRoutes(app, requireAdmin) {
   // Check availability (public)
@@ -156,7 +241,7 @@ function setupRoutes(app, requireAdmin) {
         payment_method_types: ["card", "klarna", "sepa_debit"]
       });
 
-      console.log(`[CUSTOM-ID] Purchase session created: ${check.id} ($${check.price / 100})`);
+      console.log(`[CUSTOM-ID] Purchase session created ($${check.price / 100})`);
       res.json({ url: session.url, sessionId: session.id });
     } catch (err) {
       console.error("[CUSTOM-ID] Stripe error:", err.message);
@@ -172,49 +257,49 @@ function setupRoutes(app, requireAdmin) {
     }
 
     const normalized = id.toLowerCase().trim();
+    const key = idToKey(normalized);
 
     // Check if this ID was already activated (token already used)
-    if (customIds[normalized] && customIds[normalized].deviceId) {
+    if (customIds[key] && customIds[key].deviceId) {
       // Allow re-activation on same device
-      if (customIds[normalized].deviceId === deviceId) {
+      if (customIds[key].deviceId === deviceId) {
         return res.json({ success: true, transferred: false, message: "already_active" });
       }
       return res.status(400).json({ error: "already_activated_on_other_device" });
     }
 
     // For token-based activation, we trust the purchase token
-    // The ID should have been reserved during Stripe checkout
     if (!ID_REGEX.test(normalized) || normalized.length <= 2) {
       return res.status(400).json({ error: "invalid_id" });
     }
 
     // Register the ID with the device (no password needed for initial token activation)
-    if (!customIds[normalized]) {
-      customIds[normalized] = {
+    if (!customIds[key]) {
+      customIds[key] = {
         deviceId,
+        idLength: normalized.length,
         purchasedAt: new Date().toISOString(),
         tier: "premium_only",
         activationToken: token
       };
     } else {
-      customIds[normalized].deviceId = deviceId;
+      customIds[key].deviceId = deviceId;
     }
     saveIds();
-    console.log(`[CUSTOM-ID] Token activation: ${normalized} -> ${deviceId}`);
+    console.log(`[CUSTOM-ID] Token activation: ${key.substring(0, 12)}... -> ${deviceId}`);
     res.json({ success: true, transferred: false });
   });
 
-  // List all IDs (admin only)
+  // List all IDs (admin only) — shows HMAC keys, not cleartext
   if (requireAdmin) {
     app.get("/admin/custom-ids", requireAdmin, (req, res) => {
-      const ids = Object.entries(customIds).map(([id, data]) => ({
-        id,
+      const ids = Object.entries(customIds).map(([key, data]) => ({
+        hmacKey: key.substring(0, 16) + "...",
         deviceId: data.deviceId,
         purchasedAt: data.purchasedAt,
-        length: id.length,
-        price: getPrice(id)
+        idLength: data.idLength || null
       }));
-      res.json({ count: ids.length, ids });
+      res.json({ count: ids.length, hmacProtected: !!getPepper(), ids });
     });
   }
 
@@ -224,26 +309,15 @@ function setupRoutes(app, requireAdmin) {
     if (!id) return res.status(400).json({ found: false, error: "missing_id" });
     const deviceId = resolve(id);
     if (deviceId) {
-      res.json({ found: true, deviceId, id });
+      res.json({ found: true, deviceId });
     } else {
-      res.json({ found: false, id });
+      res.json({ found: false });
     }
   });
 
-  console.log("[CUSTOM-ID] Routes: GET /custom-id/check, GET /custom-id/resolve, POST /custom-id/activate, POST /custom-id/purchase");
+  console.log(`[CUSTOM-ID] Routes ready | HMAC: ${getPepper() ? "ENABLED" : "DISABLED (set ID_HASH_PEPPER)"}`);
 }
 
 loadIds();
-
-/**
- * Resolve a custom ID to a deviceId.
- * Returns the deviceId string if found, or null.
- */
-function resolve(id) {
-  if (!id) return null;
-  const normalized = id.toLowerCase().trim();
-  const entry = customIds[normalized];
-  return (entry && entry.deviceId) ? entry.deviceId : null;
-}
 
 module.exports = { isAvailable, activate, getPrice, resolve, setupRoutes };
