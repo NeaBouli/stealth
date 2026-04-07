@@ -13,6 +13,7 @@ const pkd = require("./pkd");
 const rateLimit = require("./rate_limit");
 const subscriptions = require("./subscriptions");
 const fcm = require("./fcm");
+const customIds = require("./custom_ids");
 
 // Initialize Firebase Cloud Messaging
 fcm.initFcm();
@@ -663,13 +664,21 @@ wss.on("connection", (ws, req) => {
 
       const sessionId = uuidv4();
 
-      // Resolve target: try clientId first, then phone number lookup
+      // Resolve target: try clientId first, then custom ID, then phone number
       let targetClientId = msg.to;
       if (!clientIds.has(targetClientId)) {
-        const phoneLookup = phoneNumbers.get(normalizePhone(targetClientId));
-        if (phoneLookup) {
-          console.log("[ROUTING] Phone resolved:", targetClientId, "->", phoneLookup);
-          targetClientId = phoneLookup;
+        // Try custom ID resolution
+        const customDeviceId = customIds.resolve(targetClientId);
+        if (customDeviceId) {
+          console.log("[ROUTING] Custom ID resolved:", targetClientId, "->", customDeviceId);
+          targetClientId = customDeviceId;
+        } else {
+          // Try phone number lookup
+          const phoneLookup = phoneNumbers.get(normalizePhone(targetClientId));
+          if (phoneLookup) {
+            console.log("[ROUTING] Phone resolved:", targetClientId, "->", phoneLookup);
+            targetClientId = phoneLookup;
+          }
         }
       }
 
@@ -704,19 +713,19 @@ wss.on("connection", (ws, req) => {
           callerPhone: msg.callerPhone || ""
         });
       } else {
-        // Peer is offline — try FCM push
-        const fcmToken = fcmTokens.get(msg.to);
+        // Peer is offline — try FCM push (use resolved targetClientId for token lookup)
+        const fcmToken = fcmTokens.get(targetClientId) || fcmTokens.get(msg.to);
         if (fcmToken && fcm.isInitialized()) {
           routingTable.set(sessionId, {
             sessionId,
             from: myClientId,
-            to: msg.to,
+            to: targetClientId,
             state: "INVITE_PENDING_PUSH",
             created: Date.now(),
             updated: Date.now()
           });
 
-          console.log("[ROUTING] INVITE (offline, sending push):", myClientId, "->", msg.to, "session:", sessionId);
+          console.log("[ROUTING] INVITE (offline, sending push):", myClientId, "->", targetClientId, "session:", sessionId);
 
           fcm.sendCallInvitePush(fcmToken, sessionId, myClientId);
 
@@ -725,7 +734,7 @@ wss.on("connection", (ws, req) => {
             ok: true,
             sessionId,
             from: myClientId,
-            to: msg.to,
+            to: targetClientId,
             pushSent: true
           }));
         } else {
@@ -1691,10 +1700,9 @@ try {
 
 // --- Custom Call ID API ---
 try {
-  const customIds = require('./custom_ids');
   customIds.setupRoutes(app, requireAdmin);
 } catch (e) {
-  console.warn("[CUSTOM-ID] Could not load:", e.message);
+  console.warn("[CUSTOM-ID] Could not load routes:", e.message);
 }
 
 // --- License Pricing API ---

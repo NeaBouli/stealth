@@ -218,9 +218,32 @@ function setupRoutes(app, requireAdmin) {
     });
   }
 
-  console.log("[CUSTOM-ID] Routes: GET /custom-id/check, POST /custom-id/activate, POST /custom-id/purchase");
+  // Resolve custom ID to deviceId (public — used by call routing)
+  app.get("/custom-id/resolve", (req, res) => {
+    const id = (req.query.id || "").toLowerCase().trim();
+    if (!id) return res.status(400).json({ found: false, error: "missing_id" });
+    const deviceId = resolve(id);
+    if (deviceId) {
+      res.json({ found: true, deviceId, id });
+    } else {
+      res.json({ found: false, id });
+    }
+  });
+
+  console.log("[CUSTOM-ID] Routes: GET /custom-id/check, GET /custom-id/resolve, POST /custom-id/activate, POST /custom-id/purchase");
 }
 
 loadIds();
 
-module.exports = { isAvailable, activate, getPrice, setupRoutes };
+/**
+ * Resolve a custom ID to a deviceId.
+ * Returns the deviceId string if found, or null.
+ */
+function resolve(id) {
+  if (!id) return null;
+  const normalized = id.toLowerCase().trim();
+  const entry = customIds[normalized];
+  return (entry && entry.deviceId) ? entry.deviceId : null;
+}
+
+module.exports = { isAvailable, activate, getPrice, resolve, setupRoutes };
