@@ -415,6 +415,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 isRegistered = true
                 Log.d("WS_SERVICE", "BUG-034: isRegistered=true — flushing ${pendingCallQueue.size} pending calls")
                 com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Registered — ${pendingCallQueue.size} queued calls")
+                // BUG-040: Pre-fetch ICE/TURN credentials so they're cached before a call
+                IceServerFetcher.prefetch()
                 pendingCallQueue.forEach { it.invoke() }
                 pendingCallQueue.clear()
             }
