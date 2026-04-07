@@ -255,6 +255,26 @@
                 <li>1-2 characters: Reserved (not available)</li>
             </ul>
 
+            <h3>Privacy by Design (HMAC-SHA256)</h3>
+            <p>Your Custom ID is protected by state-of-the-art cryptographic hashing:</p>
+            <ul>
+                <li><strong>Never stored in cleartext</strong> &mdash; Your Custom ID is stored exclusively as a cryptographic hash (HMAC-SHA256 with a server-side secret key). The original ID cannot be reconstructed from this hash.</li>
+                <li><strong>Not even we know your ID</strong> &mdash; Our servers store only the hash. The operators of SecureCall cannot see, read, or recover your Custom ID.</li>
+                <li><strong>Password hashing</strong> &mdash; Your password is stored using PBKDF2-SHA512 with 100,000 iterations and a unique per-record salt. It is never stored in cleartext.</li>
+                <li><strong>GDPR / DSGVO compliant</strong> &mdash; This architecture ensures data minimization by design. No personally identifiable information is stored on our servers.</li>
+            </ul>
+
+            <h3>Device Migration</h3>
+            <ul>
+                <li>Enter your Custom ID and password on the new device to transfer ownership.</li>
+                <li>The previous device is <strong>immediately deactivated</strong>.</li>
+                <li>Only you possess the ID + password combination &mdash; no support intervention is possible or needed.</li>
+            </ul>
+
+            <div class="info-box warning">
+                <strong>No recovery possible.</strong> If you lose your Custom ID or password, the ID cannot be recovered, reset, or reassigned &mdash; by you or by us. The ID remains permanently reserved and cannot be reused by anyone. No refund will be issued for lost credentials. This is an intentional privacy guarantee: no backdoor means no attack vector. <strong>Store your ID and password in a password manager.</strong>
+            </div>
+
             <!-- ════════════════════════════════════════════════════ -->
             <!-- SUPPORT POLICY                                      -->
             <!-- ════════════════════════════════════════════════════ -->

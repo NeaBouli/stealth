@@ -400,7 +400,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 android.widget.Toast.makeText(ctx, "Device not registered yet", android.widget.Toast.LENGTH_SHORT).show()
                 return@setOnPreferenceClickListener true
             }
-            submitCustomId(id, password, deviceId, false)
+            showCustomIdConfirmation(id, password, deviceId, false)
             true
         }
 
@@ -413,7 +413,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 return@setOnPreferenceClickListener true
             }
             val deviceId = prefs.getString("client_id", "") ?: ""
-            submitCustomId(id, password, deviceId, true)
+            showCustomIdConfirmation(id, password, deviceId, true)
             true
         }
 
@@ -421,6 +421,43 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("pref_custom_id_buy")?.setOnPreferenceClickListener {
             openUrl("https://stealthx.tech/wiki/custom-id.html")
             true
+        }
+    }
+
+    private fun showCustomIdConfirmation(id: String, password: String, deviceId: String, isTransfer: Boolean) {
+        val ctx = requireContext()
+        val checkBox = android.widget.CheckBox(ctx).apply {
+            text = "I understand \u2014 I have saved my password"
+            setTextColor(0xFFCCCCCC.toInt())
+            setPadding(0, 16, 0, 0)
+        }
+        val layout = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            val dp = (24 * resources.displayMetrics.density).toInt()
+            setPadding(dp, dp / 2, dp, 0)
+            addView(android.widget.TextView(ctx).apply {
+                text = "\u26A0\uFE0F Important: Save your password securely.\n\n" +
+                    "If you lose your password, your Custom ID cannot be recovered. " +
+                    "No replacement or refund will be issued.\n\n" +
+                    "Your ID and password are stored as one-way cryptographic hashes. " +
+                    "Not even we can see or recover them."
+                setTextColor(0xFFDDDDDD.toInt())
+                textSize = 14f
+            })
+            addView(checkBox)
+        }
+        val dialog = android.app.AlertDialog.Builder(ctx, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
+            .setTitle("Custom ID \u2014 No Recovery Possible")
+            .setView(layout)
+            .setPositiveButton("Confirm") { _, _ ->
+                submitCustomId(id, password, deviceId, isTransfer)
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+        dialog.show()
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
+        checkBox.setOnCheckedChangeListener { _, isChecked ->
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.isEnabled = isChecked
         }
     }
 
