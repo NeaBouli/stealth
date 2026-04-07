@@ -124,7 +124,7 @@
 | TODO-066 | FCM Push Notifications für eingehende Calls im Hintergrund (testen + verifizieren) | LOW | OPEN |
 | TODO-068 | GitHub Releases sync mit Play Store versionCode (immer sync halten) | LOW | OPEN |
 | TODO-046 | VpnService-based network traffic steering (eSIM routing) | LOW | DEFERRED |
-| TODO-033 | Firebase + AdMob linking | LOW | OPEN |
+| ~~TODO-033~~ | ~~Firebase + AdMob linking~~ — Code vollständig, Console-Linking manuell | — | DONE |
 | TODO-054 | payment-success.html Stripe Links auf Live aktualisieren | LOW | OPEN |
 | TODO-075 | F-Droid Repository Einreichung (fdroid.org, nach Production) | LOW | DEFERRED |
 | TODO-010 | Self-hosted TURN (coturn) | LOW | DEFERRED |
