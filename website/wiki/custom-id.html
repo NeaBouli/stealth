@@ -167,6 +167,10 @@
                 <span class="division">StealthX // Identity</span>
             </div>
 
+            <div style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.4);border-radius:8px;padding:12px 16px;margin:16px 0;text-align:center;color:#FFD700;font-weight:600;font-size:14px;">
+                &#9888; TEST MODE &mdash; Payments are in Stripe test mode. No real charges. Use card 4242 4242 4242 4242.
+            </div>
+
             <div class="wiki-page-header">
                 <div class="wiki-classification">Classification: Restricted &middot; SC-CID</div>
                 <h1 class="wiki-page-title">Custom Call ID</h1>
@@ -314,6 +318,11 @@
         const API = "https://protective-healing-production.up.railway.app";
         const PRICES = { 100: "$1.00", 200: "$2.00", 500: "$5.00" };
         const PRICE_IDS = { 100: "price_1TJITIBcyoLtm3FA0qZyTL5O", 200: "price_1TJITKBcyoLtm3FARalsHHII", 500: "price_1TJITNBcyoLtm3FAlvw1HlRY" };
+        const PAYMENT_LINKS = {
+            100: "https://buy.stripe.com/test_6oUbJ09cz2VX1Aa2nV6g803",
+            200: "https://buy.stripe.com/test_eVq8wOewT4017YyfaH6g804",
+            500: "https://buy.stripe.com/test_6oUcN43SfeEFbaK5A76g805"
+        };
 
         const idInput = document.getElementById("idInput");
         const idStatus = document.getElementById("idStatus");
@@ -411,11 +420,17 @@
                 if (data.url) {
                     window.location.href = data.url;
                 } else {
+                    // Fallback to direct Payment Link
+                    var link = PAYMENT_LINKS[currentPrice];
+                    if (link) { window.location.href = link; return; }
                     alert("Error: " + (data.error || "Unknown error"));
                     purchaseBtn.disabled = false;
                     purchaseBtn.textContent = "Purchase Custom ID";
                 }
             } catch (e) {
+                // Backend down — fallback to direct Stripe Payment Link
+                var link = PAYMENT_LINKS[currentPrice];
+                if (link) { window.location.href = link; return; }
                 alert("Connection error. Please try again.");
                 purchaseBtn.disabled = false;
                 purchaseBtn.textContent = "Purchase Custom ID";
