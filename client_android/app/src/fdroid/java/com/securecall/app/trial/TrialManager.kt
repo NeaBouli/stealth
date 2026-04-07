@@ -1,6 +1,10 @@
 package com.securecall.app.trial
 
+import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 
 /**
@@ -47,5 +51,55 @@ object TrialManager {
         } else {
             "Trial expired — enter activation code or lock IFR tokens"
         }
+    }
+
+    /**
+     * Shows a non-cancelable dialog when trial has expired.
+     * Offers: Enter Activation Code, Lock IFR Tokens, Learn More.
+     */
+    fun showTrialExpiredDialog(activity: Activity) {
+        if (activity.isFinishing || activity.isDestroyed) return
+
+        AlertDialog.Builder(activity)
+            .setTitle("\uD83D\uDD12 Trial Period Ended")
+            .setMessage(
+                "Your 30-day free trial has ended.\n\n" +
+                "To continue making calls, choose one of the following options:"
+            )
+            .setCancelable(false)
+            .setPositiveButton("Enter Activation Code") { _, _ ->
+                try {
+                    val intent = Intent()
+                    intent.setClassName(activity.packageName, "com.securecall.app.SettingsActivity")
+                    activity.startActivity(intent)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not open Settings: ${e.message}")
+                }
+            }
+            .setNeutralButton("Lock IFR Tokens") { _, _ ->
+                try {
+                    val intent = Intent()
+                    intent.setClassName(activity.packageName, "com.securecall.app.SettingsActivity")
+                    activity.startActivity(intent)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not open Settings: ${e.message}")
+                }
+            }
+            .setNegativeButton("Learn More") { _, _ ->
+                activity.startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse("https://stealthx.tech/wiki/ifr-unlock.html"))
+                )
+            }
+            .show()
+    }
+
+    /**
+     * Returns true if the trial expired dialog should be shown at app start.
+     * Only for FREE tier users whose trial has expired.
+     */
+    fun shouldShowExpiredDialog(context: Context): Boolean {
+        if (isTrialActive(context)) return false
+        val tier = com.securecall.app.config.TierManager.getCurrentTier(context)
+        return tier == "FREE"
     }
 }

@@ -117,7 +117,7 @@
 | TODO-061 | WalletConnect vollständige Implementierung (aktuell "Coming Soon") | MEDIUM | OPEN |
 | TODO-062 | TURN Credential Rotation (aktuell hardcoded in build.gradle → Runtime-Fetch) | MEDIUM | OPEN |
 | TODO-074 | F-Droid APK Build + GitHub Release (assembleFdroidRelease) | MEDIUM | OPEN |
-| TODO-076 | F-Droid Trial Expired UI — Dialog + Buttons nach 30 Tagen | MEDIUM | OPEN |
+| ~~TODO-076~~ | ~~F-Droid Trial Expired UI — Dialog + Buttons nach 30 Tagen~~ | — | DONE |
 | TODO-063 | IFR Wallet Token-Anzeige (Anzahl IFR wird nicht angezeigt) | LOW | OPEN |
 | TODO-064 | WireGuard VPN Test-Konfiguration (nicht funktional ohne Config) | LOW | OPEN |
 | TODO-065 | FLAG_SECURE Screenshot-Blocking (inkonsistent auf verschiedenen Geräten) | LOW | OPEN |

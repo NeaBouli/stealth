@@ -190,6 +190,11 @@ public class MainActivity extends AppCompatActivity {
         handleInviteDeepLink(getIntent());
         // Handle custom-id deep link: securecall://custom-id?id=xxx&token=xxx
         handleCustomIdDeepLink(getIntent());
+
+        // F-Droid trial: show expired dialog at app start if applicable
+        if (com.securecall.app.trial.TrialManager.INSTANCE.shouldShowExpiredDialog(this)) {
+            com.securecall.app.trial.TrialManager.INSTANCE.showTrialExpiredDialog(this);
+        }
     }
 
     @Override
@@ -618,6 +623,24 @@ public class MainActivity extends AppCompatActivity {
         checkMissedCallBadge();
         // Always clear launcher badge (notification-based) when user opens the app
         clearMissedCallNotifications();
+        // F-Droid trial banner
+        updateTrialBanner();
+    }
+
+    private void updateTrialBanner() {
+        if (toolbar == null) return;
+        long remaining = com.securecall.app.trial.TrialManager.INSTANCE.getDaysRemaining(this);
+        boolean trialActive = com.securecall.app.trial.TrialManager.INSTANCE.isTrialActive(this);
+        String tier = com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this);
+        if ("FREE".equals(tier) && trialActive && remaining <= 30) {
+            String title = "StealthX";
+            if (remaining <= 5) {
+                title = "StealthX  \u26A0\uFE0F Trial: " + remaining + "d left";
+            } else if (remaining < 30) {
+                title = "StealthX  \u23F3 Trial: " + remaining + "d";
+            }
+            toolbar.setTitle(title);
+        }
     }
 
     private void checkMissedCallBadge() {

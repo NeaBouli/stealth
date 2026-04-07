@@ -193,9 +193,9 @@ public class CallActivity extends AppCompatActivity {
             // F-Droid trial check: block outgoing calls if trial expired and still FREE
             if (!com.securecall.app.trial.TrialManager.INSTANCE.isTrialActive(this)
                     && "FREE".equals(com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this))) {
-                connectionState.setText("Trial expired — enter activation code or lock IFR tokens to continue");
+                connectionState.setText("Trial expired");
                 connectionState.setTextColor(getResources().getColor(R.color.stealthx_red, getTheme()));
-                connectionState.postDelayed(this::endCall, 4000);
+                com.securecall.app.trial.TrialManager.INSTANCE.showTrialExpiredDialog(this);
                 return;
             }
             // Outgoing call — send CALL_INVITE, wait for CALL_ACCEPT
