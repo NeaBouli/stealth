@@ -108,8 +108,8 @@
 | ~~TODO-069~~ | ~~Alle Claude/AI Spuren aus GitHub entfernen~~ — keine gefunden in Code | — | DONE |
 | TODO-050 | Stripe Live-Modus aktivieren | MEDIUM | OPEN |
 | TODO-051 | Custom Call ID Feature (Website + Backend + App) | MEDIUM | IN PROGRESS |
-| TODO-059 | Custom Call ID — In-App Settings UI (Eingabe + Passwort) | MEDIUM | OPEN |
-| TODO-060 | Custom Call ID — manueller Transfer mit Passwort (Gerätewechsel) | MEDIUM | OPEN |
+| ~~TODO-059~~ | ~~Custom Call ID — In-App Settings UI (Eingabe + Passwort)~~ | — | DONE |
+| ~~TODO-060~~ | ~~Custom Call ID — manueller Transfer mit Passwort (Gerätewechsel)~~ | — | DONE |
 | TODO-070 | Stripe Live Payment Links auf Website aktualisieren (nach Live-Mode) | MEDIUM | OPEN |
 | TODO-071 | Audio Quality manueller Test nach BUG-037/038/039 Fixes (S7 → Tab S4) | MEDIUM | OPEN |
 | TODO-072 | Custom Call ID Stripe Checkout auf Website testen (custom-id.html) | MEDIUM | OPEN |

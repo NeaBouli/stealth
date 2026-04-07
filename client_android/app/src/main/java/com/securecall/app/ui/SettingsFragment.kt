@@ -12,6 +12,8 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import com.securecall.app.BuildConfig
 import com.securecall.app.R
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import com.securecall.app.config.FeatureProviderRegistry
 import com.securecall.app.config.TierManager
 
@@ -86,6 +88,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
+        // Custom Call ID section (Premium only)
+        configureCustomCallId(effectiveTier)
+
         // Activation code section
         configureActivationCode(effectiveTier)
 
@@ -101,10 +106,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        // SecureCall ID (tap to copy) — read fresh from SharedPreferences each time
+        // SecureCall ID (tap to copy) — show custom ID if set, otherwise random ID
         val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
         findPreference<Preference>("pref_client_id")?.apply {
-            summary = prefs.getString("client_id", "Not registered")
+            val customId = prefs.getString("custom_call_id", null)
+            val clientId = prefs.getString("client_id", "Not registered")
+            summary = if (!customId.isNullOrEmpty()) "$customId ($clientId)" else clientId
             setOnPreferenceClickListener {
                 val ctx = requireContext()
                 val freshId = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
@@ -195,7 +202,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
         super.onResume()
         // Refresh SecureCall ID summary in case it changed
         val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
-        findPreference<Preference>("pref_client_id")?.summary = prefs.getString("client_id", "Not registered")
+        val customId = prefs.getString("custom_call_id", null)
+        val clientId = prefs.getString("client_id", "Not registered")
+        findPreference<Preference>("pref_client_id")?.summary =
+            if (!customId.isNullOrEmpty()) "$customId ($clientId)" else clientId
 
         // BUG-022: Refresh network info + bound status on every resume
         refreshNetworkStatus()
@@ -356,6 +366,118 @@ class SettingsFragment : PreferenceFragmentCompat() {
             openUrl("https://ifrunit.tech")
             true
         }
+    }
+
+    private fun configureCustomCallId(effectiveTier: String) {
+        val isPremium = effectiveTier == "PREMIUM"
+        val category = findPreference<com.securecall.app.ui.CollapsiblePreferenceCategory>("pref_category_custom_id")
+        val ctx = requireContext()
+        val prefs = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+
+        // Only visible for Premium users
+        category?.isVisible = isPremium
+        if (!isPremium) return
+
+        // Show current custom ID
+        val currentId = prefs.getString("custom_call_id", null)
+        findPreference<Preference>("pref_custom_id_status")?.summary =
+            if (currentId.isNullOrEmpty()) "Not set" else currentId
+
+        // Activate button
+        findPreference<Preference>("pref_custom_id_activate")?.setOnPreferenceClickListener {
+            val id = findPreference<EditTextPreference>("pref_custom_id_input")?.text?.trim()?.lowercase() ?: ""
+            val password = findPreference<EditTextPreference>("pref_custom_id_password")?.text ?: ""
+            if (id.length < 3) {
+                android.widget.Toast.makeText(ctx, "ID must be at least 3 characters", android.widget.Toast.LENGTH_SHORT).show()
+                return@setOnPreferenceClickListener true
+            }
+            if (password.length < 8) {
+                android.widget.Toast.makeText(ctx, "Password must be at least 8 characters", android.widget.Toast.LENGTH_SHORT).show()
+                return@setOnPreferenceClickListener true
+            }
+            val deviceId = prefs.getString("client_id", "") ?: ""
+            if (deviceId.isEmpty()) {
+                android.widget.Toast.makeText(ctx, "Device not registered yet", android.widget.Toast.LENGTH_SHORT).show()
+                return@setOnPreferenceClickListener true
+            }
+            submitCustomId(id, password, deviceId, false)
+            true
+        }
+
+        // Transfer button
+        findPreference<Preference>("pref_custom_id_transfer")?.setOnPreferenceClickListener {
+            val id = findPreference<EditTextPreference>("pref_custom_id_input")?.text?.trim()?.lowercase() ?: ""
+            val password = findPreference<EditTextPreference>("pref_custom_id_password")?.text ?: ""
+            if (id.isEmpty() || password.length < 8) {
+                android.widget.Toast.makeText(ctx, "Enter your existing ID and password", android.widget.Toast.LENGTH_SHORT).show()
+                return@setOnPreferenceClickListener true
+            }
+            val deviceId = prefs.getString("client_id", "") ?: ""
+            submitCustomId(id, password, deviceId, true)
+            true
+        }
+
+        // Buy button → open website
+        findPreference<Preference>("pref_custom_id_buy")?.setOnPreferenceClickListener {
+            openUrl("https://stealthx.tech/wiki/custom-id.html")
+            true
+        }
+    }
+
+    private fun submitCustomId(id: String, password: String, deviceId: String, isTransfer: Boolean) {
+        val ctx = requireContext()
+        val activateBtn = findPreference<Preference>("pref_custom_id_activate")
+        val transferBtn = findPreference<Preference>("pref_custom_id_transfer")
+        activateBtn?.isEnabled = false
+        transferBtn?.isEnabled = false
+        activateBtn?.summary = "Processing\u2026"
+
+        Thread {
+            try {
+                val serverUrl = BuildConfig.SIGNAL_WS_URL
+                    .replace("wss://", "https://").replace("ws://", "http://").replace("/signal", "")
+                val json = """{"id":"$id","password":"$password","deviceId":"$deviceId"}"""
+                val mediaType = "application/json".toMediaTypeOrNull()
+                val body = json.toRequestBody(mediaType)
+                val request = okhttp3.Request.Builder()
+                    .url("$serverUrl/custom-id/activate")
+                    .post(body).build()
+                val response = okhttp3.OkHttpClient().newCall(request).execute()
+                val respBody = response.body?.string() ?: ""
+
+                activity?.runOnUiThread {
+                    if (!isAdded) return@runOnUiThread
+                    activateBtn?.isEnabled = true
+                    transferBtn?.isEnabled = true
+                    activateBtn?.summary = "Register this ID on your device"
+
+                    if (response.isSuccessful && respBody.contains("\"success\":true")) {
+                        val prefs = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+                        prefs.edit().putString("custom_call_id", id).apply()
+                        findPreference<Preference>("pref_custom_id_status")?.summary = id
+                        val msg = if (isTransfer) "ID \"$id\" transferred to this device!" else "Custom ID \"$id\" activated!"
+                        android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
+                    } else {
+                        val error = when {
+                            respBody.contains("wrong_password") -> "Wrong password"
+                            respBody.contains("invalid_format") -> "Invalid ID format"
+                            respBody.contains("reserved") -> "This ID is reserved"
+                            respBody.contains("password_too_short") -> "Password too short (min 8)"
+                            else -> "Failed: $respBody"
+                        }
+                        android.widget.Toast.makeText(ctx, error, android.widget.Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                activity?.runOnUiThread {
+                    if (!isAdded) return@runOnUiThread
+                    activateBtn?.isEnabled = true
+                    transferBtn?.isEnabled = true
+                    activateBtn?.summary = "Register this ID on your device"
+                    android.widget.Toast.makeText(ctx, "Connection error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
     }
 
     private fun configureActivationCode(effectiveTier: String) {

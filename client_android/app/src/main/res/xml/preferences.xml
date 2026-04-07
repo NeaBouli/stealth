@@ -48,6 +48,46 @@
     </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
     <com.securecall.app.ui.CollapsiblePreferenceCategory
+        android:key="pref_category_custom_id"
+        android:title="Custom Call ID">
+        <Preference
+            android:key="pref_custom_id_status"
+            android:title="Current ID"
+            android:summary="Not set"
+            android:selectable="false"
+            android:icon="@drawable/ic_contacts" />
+        <EditTextPreference
+            android:key="pref_custom_id_input"
+            android:title="Custom ID"
+            android:summary="Enter your desired ID (3-30 characters)"
+            android:dialogTitle="Enter Custom Call ID"
+            android:inputType="textNoSuggestions"
+            android:icon="@drawable/ic_lock" />
+        <EditTextPreference
+            android:key="pref_custom_id_password"
+            android:title="Password"
+            android:summary="Min. 8 characters — needed for device transfer"
+            android:dialogTitle="Enter Password"
+            android:inputType="textPassword"
+            android:icon="@drawable/ic_shield" />
+        <Preference
+            android:key="pref_custom_id_activate"
+            android:title="Activate"
+            android:summary="Register this ID on your device"
+            android:icon="@drawable/ic_shield" />
+        <Preference
+            android:key="pref_custom_id_transfer"
+            android:title="Transfer to this device"
+            android:summary="Move an existing ID to this device with password"
+            android:icon="@drawable/ic_settings" />
+        <Preference
+            android:key="pref_custom_id_buy"
+            android:title="Buy Custom ID"
+            android:summary="View pricing and purchase on stealthx.tech"
+            android:icon="@drawable/ic_add" />
+    </com.securecall.app.ui.CollapsiblePreferenceCategory>
+
+    <com.securecall.app.ui.CollapsiblePreferenceCategory
         android:title="@string/settings_security">
         <Preference
             android:key="pref_cert_pinning"
