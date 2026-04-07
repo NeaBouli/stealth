@@ -32,7 +32,36 @@ cd client_android
 ## F-Droid Metadata
 Metadata file: `fdroid/metadata/com.securecall.app.fdroid.yml`
 
-## Submission
-1. Fork [F-Droid Data](https://gitlab.com/fdroid/fdroiddata)
-2. Add metadata YAML
-3. Submit merge request
+## Current Release
+- Version: 1.0.13-fdroid (versionCode 31)
+- APK: `releases/app-fdroid-release-v31.apk` (77 MB)
+- Tag: `v4.0-fcm-fixed`
+
+## F-Droid Submission Guide
+
+### Step 1: Fork fdroiddata
+- Go to: https://gitlab.com/fdroid/fdroiddata
+- Click "Fork" to create your copy
+
+### Step 2: Add metadata
+- Copy `fdroid/metadata/com.securecall.app.fdroid.yml`
+- Into your fork at: `metadata/com.securecall.app.fdroid.yml`
+
+### Step 3: Create Merge Request
+- Title: `New app: SecureCall — E2E encrypted calls`
+- Description: Include app summary and privacy note
+- Target branch: `master`
+
+### Step 4: Review process
+- F-Droid team reviews (typically 1-4 weeks)
+- They build the app from source themselves
+- Address any feedback in MR comments
+
+### Pre-submission checklist
+- [x] No hardcoded API keys in fdroid flavor
+- [x] No Google Play Services in fdroid flavor
+- [x] Firebase/Crashlytics plugins disabled for fdroid
+- [x] Telemetry + analytics disabled (CompileTimeFeatureProvider)
+- [x] Build reproducible (`assembleFdroidRelease` works)
+- [ ] License: currently StealthX Source Available — F-Droid prefers FOSS (GPL, Apache, MIT)
+- [ ] Create stable release tag matching metadata commit ref
