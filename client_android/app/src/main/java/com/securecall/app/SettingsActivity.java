@@ -1,8 +1,6 @@
 package com.securecall.app;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.WindowManager;
 import androidx.appcompat.app.AppCompatActivity;
 import com.securecall.app.ui.SettingsFragment;
 
@@ -26,18 +24,6 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void applyFlagSecure() {
-        try {
-            String tier = com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this);
-            if ("FREE".equals(tier)) { getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE); return; }
-            if ("PREMIUM".equals(tier)) { getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE); return; }
-            SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
-            if (prefs.getBoolean("pref_block_screenshots", true)) {
-                getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
-            } else {
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
-            }
-        } catch (Exception e) {
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
-        }
+        com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this);
     }
 }

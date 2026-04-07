@@ -18,6 +18,7 @@ class QrCodeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this)
 
         val inviteLink = intent.getStringExtra("invite_link") ?: ""
         val contactName = intent.getStringExtra("contact_name") ?: ""

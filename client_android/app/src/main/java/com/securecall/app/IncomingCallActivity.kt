@@ -64,12 +64,7 @@ class IncomingCallActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         // FLAG_SECURE: prevent screenshots of incoming call screen
-        val tier = com.securecall.app.config.TierManager.getCurrentTier(this)
-        if (tier != "FREE") {
-            window.setFlags(
-                android.view.WindowManager.LayoutParams.FLAG_SECURE,
-                android.view.WindowManager.LayoutParams.FLAG_SECURE)
-        }
+        com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this)
 
         // Show over lock screen and wake device for incoming calls
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {

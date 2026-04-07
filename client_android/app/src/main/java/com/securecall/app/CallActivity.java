@@ -318,32 +318,7 @@ public class CallActivity extends AppCompatActivity {
      * Apply FLAG_SECURE based on tier and user preferences.
      */
     private void applyFlagSecure() {
-        try {
-            String tier = FeatureProviderRegistry.INSTANCE.get().getTier();
-            boolean isFree = "FREE".equals(tier);
-            boolean isPremium = "PREMIUM".equals(tier);
-
-            if (isFree) {
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
-                return;
-            }
-            if (isPremium) {
-                getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
-                Log.d(TAG, "FLAG_SECURE applied (Premium)");
-                return;
-            }
-            // Pro: follow toggle
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            if (prefs.getBoolean("pref_block_screenshots", true)) {
-                getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
-                Log.d(TAG, "FLAG_SECURE applied (Pro toggle ON)");
-            } else {
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
-            }
-        } catch (Exception e) {
-            // Fail safe: apply
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
-        }
+        com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this);
     }
 
     /**

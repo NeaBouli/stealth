@@ -1058,16 +1058,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 if (!preferenceManager.sharedPreferences!!.contains("pref_block_screenshots")) {
                     isChecked = true
                 }
-                setOnPreferenceChangeListener { _, newValue ->
-                    // Immediately apply FLAG_SECURE change
-                    val enabled = newValue as Boolean
-                    val window = activity?.window
-                    if (enabled) {
-                        window?.setFlags(
-                            android.view.WindowManager.LayoutParams.FLAG_SECURE,
-                            android.view.WindowManager.LayoutParams.FLAG_SECURE)
-                    } else {
-                        window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                setOnPreferenceChangeListener { _, _ ->
+                    // Immediately re-apply FLAG_SECURE after preference write
+                    activity?.let {
+                        it.window?.decorView?.post {
+                            com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(it)
+                        }
                     }
                     true
                 }

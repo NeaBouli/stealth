@@ -25,6 +25,7 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
 
         // Keep screen on
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this)
 
         val templateId = intent.getIntExtra("template_id", -1)
         template = EmergencyBroadcastManager.TEMPLATES[templateId]
