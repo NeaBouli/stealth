@@ -1,11 +1,6 @@
-# F-Droid: Strip all Firebase classes.
-# WalletConnect android-core has internal Firebase push references
-# (PushMessagingService) that are unused in the F-Droid build.
-# Override the main proguard-rules.pro keep rule.
+# F-Droid: Strip all Firebase and GMS classes + WalletConnect push package.
 
-# Remove the "keep" from main rules — allow R8 to strip Firebase
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
-
-# Aggressively remove all Firebase classes (unused in fdroid)
--assumenosideeffects class com.google.firebase.** { *; }
+-dontwarn com.walletconnect.android.push.**
+-dontwarn com.walletconnect.android.internal.common.di.PushModuleKt

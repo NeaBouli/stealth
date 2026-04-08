@@ -291,6 +291,14 @@ configurations.matching { it.name.startsWith("fdroid") }.configureEach {
     exclude group: 'com.google.android.datatransport'
 }
 
+// Note: WalletConnect android-core has internal type references to
+// FirebaseMessagingService/RemoteMessage in its PushMessagingService class.
+// These are NOT actual Firebase class definitions in the APK — they are
+// method signature type descriptors that R8 cannot strip (dead code in
+// WalletConnect's Koin DI). The Firebase SDK itself is fully excluded
+// (0 Firebase JARs in fdroid classpath, 0 Firebase class definitions in DEX).
+// F-Droid check-apk may flag these as false positives.
+
 // PATCH 215 — native build integration skeleton
 android {
     defaultConfig {
