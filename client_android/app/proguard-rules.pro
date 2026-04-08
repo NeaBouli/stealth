@@ -10,8 +10,10 @@
 -keep class okio.** { *; }
 
 # ---- Firebase ----
--keep class com.google.firebase.** { *; }
+# Note: -keep removed. Firebase classes are kept naturally via usage in free/pro/premium.
+# For fdroid: proguard-fdroid.pro strips them via assumenosideeffects.
 -dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
 
 # ---- JNI / Native Methods ----
 -keep class com.securecall.crypto.CoreCrypto {

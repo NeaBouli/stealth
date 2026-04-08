@@ -1,11 +1,23 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
-// Google Services + Crashlytics plugins applied conditionally.
-// For fdroid builds, these are fully disabled (no Firebase at all).
-// The afterEvaluate block below disables their tasks for fdroid.
+// Google Services + Crashlytics: applied for all flavors but fully neutralized
+// for fdroid (tasks disabled, deps excluded, generated code stripped).
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
+
+// Immediately disable google-services JSON processing for fdroid.
+// This prevents the plugin from generating FirebaseInitProvider and
+// injecting Firebase class references into the fdroid variant.
+googleServices {
+    missingGoogleServicesStrategy = "ignore"
+}
+project.afterEvaluate {
+    // Remove the google-services-generated resource values for fdroid
+    tasks.matching { it.name ==~ /process.*Fdroid.*GoogleServices/ }.configureEach {
+        enabled = false
+    }
+}
 
 android {
     namespace "com.securecall.app"
@@ -118,6 +130,7 @@ android {
             dimension "tier"
             applicationIdSuffix ".fdroid"
             versionNameSuffix "-fdroid"
+            proguardFiles 'proguard-fdroid.pro'
 
             buildConfigField "String", "TIER", "\"FREE\""
             buildConfigField "int", "MAX_CALL_DURATION_MINUTES", "15"
@@ -222,6 +235,7 @@ dependencies {
     implementation 'com.wireguard.android:tunnel:1.0.20260102'
 
     // WalletConnect v2 — Sign client for IFR token wallet verification
+    // fdroid: Firebase excluded via configurations block below
     implementation("com.walletconnect:android-core:1.26.0") {
         exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
     }
