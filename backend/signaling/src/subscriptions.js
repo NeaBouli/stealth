@@ -1,8 +1,9 @@
 /**
  * Subscription Management Module
  *
- * Map-based in-memory subscription store for SecureCall.
+ * Persistent subscription store for SecureCall.
  * Tracks client subscription tiers, purchase tokens, and expiry.
+ * Persisted to data/subscriptions.json (survives server restarts).
  *
  * Data structure:
  *   Map<clientId, { clientId, tier, purchaseToken, productId, expiresAt, verifiedAt }>
@@ -13,8 +14,42 @@
  *   const sub = subscriptions.getSubscription(clientId);
  */
 
-// In-Memory Store: clientId -> { clientId, tier, purchaseToken, productId, expiresAt, verifiedAt }
+const fs = require("fs");
+const path = require("path");
+
+const SUBS_FILE = path.join(__dirname, "..", "data", "subscriptions.json");
+
+// Persistent store: clientId -> subscription entry
 const subscriptions = new Map();
+
+// ─── Persistence ────────────────────────────────────────────
+
+function loadSubscriptions() {
+  try {
+    if (fs.existsSync(SUBS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(SUBS_FILE, "utf8"));
+      for (const [k, v] of Object.entries(data)) {
+        subscriptions.set(k, v);
+      }
+      console.log(`[SUBSCRIPTION] Loaded ${subscriptions.size} persisted subscriptions`);
+    }
+  } catch (e) {
+    console.error("[SUBSCRIPTION] Load failed:", e.message);
+  }
+}
+
+function saveSubscriptions() {
+  try {
+    fs.mkdirSync(path.dirname(SUBS_FILE), { recursive: true });
+    const obj = {};
+    for (const [k, v] of subscriptions) obj[k] = v;
+    fs.writeFileSync(SUBS_FILE, JSON.stringify(obj, null, 2));
+  } catch (e) {
+    console.error("[SUBSCRIPTION] Save failed:", e.message);
+  }
+}
+
+// ─── Tier + Expiry Logic ────────────────────────────────────
 
 /**
  * Derives the subscription tier from a productId string.
@@ -31,18 +66,25 @@ function deriveTier(productId) {
 
 /**
  * Calculates expiry date based on productId billing period.
- * - Contains 'yearly'  -> 365 days from now
- * - Contains 'monthly' -> 30 days from now (default)
+ * - Contains 'lifetime' -> 100 years (effectively never)
+ * - Contains 'yearly'   -> 365 days from now
+ * - Contains 'monthly'  -> 30 days from now (default)
  */
 function calculateExpiry(productId) {
   const lower = productId.toLowerCase();
   const now = Date.now();
+  const DAY = 24 * 60 * 60 * 1000;
+  if (lower.includes("lifetime") || lower.includes("activation_code")) {
+    return now + 100 * 365 * DAY; // ~100 years
+  }
   if (lower.includes("yearly")) {
-    return now + 365 * 24 * 60 * 60 * 1000;
+    return now + 365 * DAY;
   }
   // Default to monthly (30 days)
-  return now + 30 * 24 * 60 * 60 * 1000;
+  return now + 30 * DAY;
 }
+
+// ─── Core Functions ─────────────────────────────────────────
 
 /**
  * Verifies (stores/updates) a subscription for the given clientId.
@@ -63,6 +105,7 @@ function verifySubscription(clientId, purchaseToken, productId) {
   };
 
   subscriptions.set(clientId, entry);
+  saveSubscriptions();
   return { tier, expiresAt };
 }
 
@@ -78,16 +121,25 @@ function getSubscription(clientId) {
  * Returns true if found and deleted, false otherwise.
  */
 function expireSubscription(clientId) {
-  return subscriptions.delete(clientId);
+  const deleted = subscriptions.delete(clientId);
+  if (deleted) saveSubscriptions();
+  return deleted;
 }
 
 /**
- * Returns the tier string for a clientId, or 'FREE' if no subscription exists.
+ * Returns the tier string for a clientId, or 'FREE' if no subscription
+ * exists or if the subscription has expired.
  */
 function getTier(clientId) {
   const entry = subscriptions.get(clientId);
-  return entry ? entry.tier : "FREE";
+  if (!entry) return "FREE";
+  if (Date.now() > entry.expiresAt) return "FREE";
+  return entry.tier;
 }
+
+// ─── Init ───────────────────────────────────────────────────
+
+loadSubscriptions();
 
 module.exports = {
   verifySubscription,

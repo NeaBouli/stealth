@@ -1082,18 +1082,23 @@ wss.on("connection", (ws, req) => {
     // SUBSCRIPTION_VERIFY — Verify and store subscription
     // ===========================
     if (msg.type === "SUBSCRIPTION_VERIFY") {
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        ws.send(JSON.stringify({ type: "ERROR", error: "not_registered" }));
+        return;
+      }
       const { purchaseToken, productId } = msg;
       if (!purchaseToken || !productId) {
         ws.send(JSON.stringify({ type: "ERROR", message: "Missing purchaseToken or productId" }));
         return;
       }
-      const result = subscriptions.verifySubscription(connId, purchaseToken, productId);
+      const result = subscriptions.verifySubscription(myClientId, purchaseToken, productId);
       ws.send(JSON.stringify({
         type: "SUBSCRIPTION_VERIFY_ACK",
         tier: result.tier,
         expiresAt: result.expiresAt
       }));
-      console.log(`[SUBSCRIPTION] Verified: connId=${connId}, tier=${result.tier}`);
+      console.log(`[SUBSCRIPTION] Verified: ${myClientId}, tier=${result.tier}, product=${productId}`);
       return;
     }
 
