@@ -63,5 +63,5 @@ Metadata file: `fdroid/metadata/com.securecall.app.fdroid.yml`
 - [x] Firebase/Crashlytics plugins disabled for fdroid
 - [x] Telemetry + analytics disabled (CompileTimeFeatureProvider)
 - [x] Build reproducible (`assembleFdroidRelease` works)
-- [ ] License: currently StealthX Source Available — F-Droid prefers FOSS (GPL, Apache, MIT)
+- [x] License: GPL-3.0-only (F-Droid compliant)
 - [ ] Create stable release tag matching metadata commit ref

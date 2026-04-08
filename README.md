@@ -9,7 +9,7 @@
 
 *Powered by the StealthX Platform*
 
-[![Source Available](https://img.shields.io/badge/Source-Available-blue.svg)](LICENSE)
+[![GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-34A853.svg)](https://developer.android.com)
 [![Crypto: XChaCha20-Poly1305](https://img.shields.io/badge/Crypto-XChaCha20--Poly1305-7C6CFF.svg)](docs/SECURITY_DESIGN.md)
 [![Security: Audited](https://img.shields.io/badge/Security-Audited-orange.svg)](docs/SECURITY_AUDIT_REPORT.md)
@@ -36,7 +36,7 @@ No metadata. No compromises. Every call is encrypted end-to-end using military-g
 - **Zero-Knowledge Architecture** -- The server facilitates connections but cannot decrypt calls. No call content, no metadata, no logs.
 - **Anti-Recording Protection** -- Active detection of screen recording, microphone hijacking, and spy apps (Pro/Premium).
 - **Rust Crypto Core** -- All cryptographic operations run in a native Rust library via JNI -- no Java crypto, no OpenSSL.
-- **Source Available** -- The complete source code is publicly available for independent security review.
+- **GPL-3.0 Licensed** -- The complete source code is open source and independently auditable.
 
 ## Architecture
 
@@ -87,11 +87,11 @@ Complete documentation is available in the [Wiki](https://github.com/NeaBouli/st
 
 ## Building from Source
 
-> **This repository is Source Available, not Open Source.**
+> **This repository is licensed under GPL-3.0.**
 >
-> You may NOT build, distribute, or sell this app yourself.
-> Download the official app from Google Play Store only.
-> The source code is published for security auditing and transparency.
+> You may build, modify, and distribute the client under the terms of the
+> GNU General Public License v3. The SecureCall name and branding are
+> trademarked (see LICENSE for additional terms under Section 7).
 
 See the [LICENSE](LICENSE) for full terms.
 
@@ -119,9 +119,9 @@ For the full privacy policy, see [Privacy Policy](https://neabouli.github.io/ste
 ## FAQ
 
 <details>
-<summary><strong>Why can't I build the app myself?</strong></summary>
+<summary><strong>Can I build the app myself?</strong></summary>
 
-SecureCall is published under a source-available license. The code is open for inspection and security auditing, but compiling, distributing, or creating derivative works is not permitted. This ensures a single, verified distribution channel through the official app store listing.
+Yes. SecureCall is GPL-3.0 licensed. You can build, modify, and redistribute the client code. The official F-Droid build is available without Google services. Note: the SecureCall name and branding are trademarked and require permission for use in derivative works.
 
 </details>
 
