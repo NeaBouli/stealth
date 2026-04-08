@@ -39,23 +39,19 @@ RepoType: git
 Repo: https://github.com/NeaBouli/stealth.git
 
 Builds:
-  - versionName: 0.2-beta-fdroid
-    versionCode: 2
-    commit: v2.4-broadcast
-    subdir: client_android/app
-    gradle:
-      - fdroid
-
   - versionName: 1.0.13
     versionCode: 31
     commit: v1.0.13-fdroid
     subdir: client_android/app
     gradle:
       - fdroid
+    scanignore:
+      - client_android/app/build.gradle
+      - client_android/app/src/main/jniLibs/
     prebuild:
       - echo "sdk.dir=$ANDROID_HOME" > ../local.properties
 
-AutoUpdateMode: Version v%v
+AutoUpdateMode: Version
 UpdateCheckMode: Tags
 CurrentVersion: 1.0.13
 CurrentVersionCode: 31
