@@ -1,18 +1,14 @@
 Categories:
   - Phone & SMS
   - Security
-
 License: GPL-3.0-only
 AuthorName: StealthX / Vendetta Labs
 AuthorWebSite: https://neabouli.github.io/stealth/
 WebSite: https://neabouli.github.io/stealth/
 SourceCode: https://github.com/NeaBouli/stealth
 IssueTracker: https://github.com/NeaBouli/stealth/issues
-
 AutoName: SecureCall
-
 Summary: End-to-end encrypted voice calls - no phone number required
-
 Description: |
   SecureCall is a privacy-first encrypted calling app.
   No phone number, no account, no personal data required.
@@ -34,7 +30,6 @@ Description: |
   Services, no Firebase, no AdMob, no Crashlytics.
   After 30 days, unlock outgoing calls with an activation code
   or by locking IFR tokens via WalletConnect.
-
 RepoType: git
 Repo: https://github.com/NeaBouli/stealth.git
 
@@ -45,16 +40,16 @@ Builds:
     subdir: client_android/app
     gradle:
       - fdroid
+    prebuild:
+      - printf 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nandroid.enableJetifier=true\nandroid.enableGlobalSynthetics=true\n'
+        > ../gradle.properties
+      - echo "sdk.dir=$$ANDROID_HOME" > ../local.properties
     scanignore:
       - client_android/app/build.gradle
       - client_android/build.gradle
       - client_android/app/src/main/jniLibs/
     scandelete:
       - core_crypto/target/
-    prebuild:
-      - printf 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nandroid.enableJetifier=true\nandroid.enableGlobalSynthetics=true\n'
-        > ../gradle.properties
-      - echo "sdk.dir=$$ANDROID_HOME" > ../local.properties
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags

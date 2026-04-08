@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+
+// Google Services + Crashlytics plugins applied conditionally.
+// For fdroid builds, these are fully disabled (no Firebase at all).
+// The afterEvaluate block below disables their tasks for fdroid.
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 
@@ -234,10 +238,16 @@ dependencies {
     // QR Code generation (ZXing)
     implementation 'com.google.zxing:core:3.5.2'
 
-    // Firebase
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
-    implementation 'com.google.firebase:firebase-messaging'
-    implementation 'com.google.firebase:firebase-crashlytics-ktx'
+    // Firebase (excluded from fdroid flavor — no Google services)
+    freeImplementation platform('com.google.firebase:firebase-bom:32.7.0')
+    freeImplementation 'com.google.firebase:firebase-messaging'
+    freeImplementation 'com.google.firebase:firebase-crashlytics-ktx'
+    proImplementation platform('com.google.firebase:firebase-bom:32.7.0')
+    proImplementation 'com.google.firebase:firebase-messaging'
+    proImplementation 'com.google.firebase:firebase-crashlytics-ktx'
+    premiumImplementation platform('com.google.firebase:firebase-bom:32.7.0')
+    premiumImplementation 'com.google.firebase:firebase-messaging'
+    premiumImplementation 'com.google.firebase:firebase-crashlytics-ktx'
 
     // Unit Tests (JVM)
     testImplementation 'junit:junit:4.13.2'
@@ -258,6 +268,13 @@ afterEvaluate {
     tasks.matching { it.name.contains("Fdroid") && (it.name.contains("GoogleServices") || it.name.contains("Crashlytics")) }.configureEach {
         enabled = false
     }
+}
+
+// Exclude all Firebase/GMS dependencies from fdroid configurations
+configurations.matching { it.name.startsWith("fdroid") }.configureEach {
+    exclude group: 'com.google.firebase'
+    exclude group: 'com.google.android.gms'
+    exclude group: 'com.google.android.datatransport'
 }
 
 // PATCH 215 — native build integration skeleton
