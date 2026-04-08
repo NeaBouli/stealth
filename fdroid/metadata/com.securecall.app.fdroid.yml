@@ -48,7 +48,7 @@ Builds:
 
   - versionName: 1.0.13-fdroid
     versionCode: 31
-    commit: v4.0-fcm-fixed
+    commit: v1.0.13-fdroid
     subdir: client_android/app
     gradle:
       - fdroid
