@@ -728,10 +728,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             override fun onAvailable(network: android.net.Network) {
                 // Only reconnect if network was previously lost (not on initial registration)
                 if (networkWasLost) {
-                    Log.d("WS_SERVICE", "NetworkCallback: network available after loss — triggering reconnect")
-                    com.securecall.app.debug.SecLogManager.logIfEnabled(this@WebSocketService, "NET", "Network available — reconnecting")
+                    // BUG-4: Delay reconnect 2s after network switch — DNS may not be ready
+                    // immediately (especially on Samsung devices with aggressive power management)
+                    Log.d("WS_SERVICE", "NetworkCallback: network available after loss — delaying reconnect 2s for DNS")
+                    com.securecall.app.debug.SecLogManager.logIfEnabled(this@WebSocketService, "NET", "Network available — waiting 2s for DNS")
                     networkWasLost = false
-                    client?.forceReconnect()
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        Log.d("WS_SERVICE", "NetworkCallback: DNS delay complete — reconnecting now")
+                        com.securecall.app.debug.SecLogManager.logIfEnabled(this@WebSocketService, "NET", "DNS delay done — reconnecting")
+                        client?.forceReconnect()
+                    }, 2000)
                 } else {
                     Log.d("WS_SERVICE", "NetworkCallback: initial network available (no action)")
                 }

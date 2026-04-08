@@ -43,6 +43,11 @@ class WebRtcManager(
     private var iceDisconnectRunnable: Runnable? = null
     private val ICE_RECONNECT_TIMEOUT_MS = 10_000L // 10 seconds grace period
 
+    // Track whether ICE is in grace period — DataChannel close should not
+    // immediately end the call if ICE recovery is still possible
+    @Volatile
+    private var iceInGracePeriod = false
+
     // Pending queues for messages that arrive before init() completes
     private var pendingOffer: String? = null
     private var pendingAnswer: String? = null
@@ -166,11 +171,17 @@ class WebRtcManager(
                             report.statsMap.values.forEach { stats ->
                                 when (stats.type) {
                                     "candidate-pair" -> {
-                                        if (stats.members["state"] == "succeeded") {
+                                        // BUG-2 FIX: Only log the nominated pair (the one carrying data).
+                                        // Multiple pairs can have state=succeeded from connectivity checks,
+                                        // but only the nominated pair is actively used for media transport.
+                                        val nominated = stats.members["nominated"]
+                                        if (nominated == "true" || nominated == true) {
                                             val local = stats.members["localCandidateId"] ?: ""
                                             val remote = stats.members["remoteCandidateId"] ?: ""
+                                            val bytesSent = stats.members["bytesSent"] ?: "0"
+                                            val bytesRecv = stats.members["bytesReceived"] ?: "0"
                                             com.securecall.app.debug.SecLogManager.log("STATS",
-                                                "Active pair: local=$local remote=$remote")
+                                                "Active pair: local=$local remote=$remote (tx=$bytesSent rx=$bytesRecv)")
                                         }
                                     }
                                     "inbound-rtp" -> {
@@ -213,9 +224,11 @@ class WebRtcManager(
     // BUG-011: ICE reconnect grace period helpers
     private fun scheduleIceDisconnectTimeout() {
         cancelIceDisconnectTimeout()
+        iceInGracePeriod = true
         iceDisconnectHandler = android.os.Handler(android.os.Looper.getMainLooper())
         iceDisconnectRunnable = Runnable {
             if (!isClosed) {
+                iceInGracePeriod = false
                 Log.w(TAG, "ICE did not recover in ${ICE_RECONNECT_TIMEOUT_MS}ms — ending call")
                 com.securecall.app.debug.SecLogManager.log("ICE", "Grace period expired — call teardown")
                 onPeerDisconnect?.invoke()
@@ -225,6 +238,7 @@ class WebRtcManager(
     }
 
     private fun cancelIceDisconnectTimeout() {
+        iceInGracePeriod = false
         iceDisconnectRunnable?.let { iceDisconnectHandler?.removeCallbacks(it) }
         iceDisconnectHandler = null
         iceDisconnectRunnable = null
@@ -315,8 +329,26 @@ class WebRtcManager(
             if (isDataChannelOpen) {
                 Log.d(TAG, "DataChannel opened — P2P audio transport active")
             } else if (state == DataChannel.State.CLOSED) {
-                Log.d(TAG, "DataChannel closed — peer disconnected, triggering call teardown")
-                onPeerDisconnect?.invoke()
+                // BUG-1 FIX: Don't immediately end call on DataChannel close.
+                // ICE DISCONNECTED and DataChannel CLOSED often fire simultaneously.
+                // If ICE is in grace period, let the ICE timer handle teardown.
+                if (iceInGracePeriod) {
+                    Log.d(TAG, "DataChannel closed during ICE grace period — deferring to ICE timeout")
+                    com.securecall.app.debug.SecLogManager.log("ICE", "DataChannel closed — ICE grace active, waiting")
+                } else {
+                    val iceState = peerConnection?.iceConnectionState()
+                    if (iceState == PeerConnection.IceConnectionState.CONNECTED ||
+                        iceState == PeerConnection.IceConnectionState.COMPLETED) {
+                        // DataChannel closed but ICE is healthy — likely intentional remote hangup
+                        Log.d(TAG, "DataChannel closed (ICE still connected) — ending call")
+                        onPeerDisconnect?.invoke()
+                    } else {
+                        // ICE not connected — give it the standard grace period
+                        Log.d(TAG, "DataChannel closed (ICE=$iceState) — starting grace period")
+                        com.securecall.app.debug.SecLogManager.log("ICE", "DataChannel closed — starting ${ICE_RECONNECT_TIMEOUT_MS}ms grace")
+                        scheduleIceDisconnectTimeout()
+                    }
+                }
             }
         }
 
