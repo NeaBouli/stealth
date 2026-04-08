@@ -52,7 +52,9 @@ Builds:
     scandelete:
       - core_crypto/target/
     prebuild:
-      - echo "sdk.dir=$ANDROID_HOME" > ../local.properties
+      - printf 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nandroid.enableJetifier=true\nandroid.enableGlobalSynthetics=true\n'
+        > ../gradle.properties
+      - echo "sdk.dir=$$ANDROID_HOME" > ../local.properties
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
