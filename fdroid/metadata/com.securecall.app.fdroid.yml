@@ -11,7 +11,7 @@ IssueTracker: https://github.com/NeaBouli/stealth/issues
 
 AutoName: SecureCall
 
-Summary: End-to-end encrypted voice calls — no phone number required
+Summary: End-to-end encrypted voice calls - no phone number required
 
 Description: |
   SecureCall is a privacy-first encrypted calling app.
@@ -20,7 +20,7 @@ Description: |
   Features:
   * XChaCha20-Poly1305 end-to-end encryption
   * X25519 key exchange + DTLS-SRTP media transport
-  * No phone number required — identified by SecureID
+  * No phone number required - identified by SecureID
   * Custom Call ID support
   * STEALTH-DELETE: 5-tap emergency data wipe
   * Emergency Broadcast System
@@ -30,7 +30,7 @@ Description: |
   * No ads, no tracking, no telemetry
 
   F-Droid Edition:
-  This build contains no proprietary libraries — no Google Play
+  This build contains no proprietary libraries - no Google Play
   Services, no Firebase, no AdMob, no Crashlytics.
   After 30 days, unlock outgoing calls with an activation code
   or by locking IFR tokens via WalletConnect.
@@ -47,7 +47,10 @@ Builds:
       - fdroid
     scanignore:
       - client_android/app/build.gradle
+      - client_android/build.gradle
       - client_android/app/src/main/jniLibs/
+    scandelete:
+      - core_crypto/target/
     prebuild:
       - echo "sdk.dir=$ANDROID_HOME" > ../local.properties
 
