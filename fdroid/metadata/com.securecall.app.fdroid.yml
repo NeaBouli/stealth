@@ -46,7 +46,7 @@ Builds:
     gradle:
       - fdroid
 
-  - versionName: 1.0.13-fdroid
+  - versionName: 1.0.13
     versionCode: 31
     commit: v1.0.13-fdroid
     subdir: client_android/app
@@ -57,5 +57,5 @@ Builds:
 
 AutoUpdateMode: Version v%v
 UpdateCheckMode: Tags
-CurrentVersion: 1.0.13-fdroid
+CurrentVersion: 1.0.13
 CurrentVersionCode: 31
