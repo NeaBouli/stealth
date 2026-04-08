@@ -45,7 +45,6 @@ Builds:
         > ../gradle.properties
       - echo "sdk.dir=$$ANDROID_HOME" > ../local.properties
     scanignore:
-      - client_android/app/build.gradle
       - client_android/build.gradle
       - client_android/app/src/main/jniLibs/
     scandelete:
