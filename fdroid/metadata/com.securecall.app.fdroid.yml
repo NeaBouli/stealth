@@ -57,13 +57,11 @@ Builds:
     prebuild:
       - printf 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nandroid.enableJetifier=true\nandroid.enableGlobalSynthetics=true\n'
         > ../gradle.properties
-      - echo "sdk.dir=$$ANDROID_HOME" > ../local.properties
+      - echo sdk.dir=/opt/android-sdk > ../local.properties
       - sed -i "s/apply plugin.*crashlytics.*//g" ../build.gradle || true
       - sed -i "s/com.google.firebase.crashlytics.*//g" ../build.gradle || true
-      - export PATH="$$HOME/.cargo/bin:$$PATH" && export RUSTUP_HOME="$$HOME/.rustup"
-        && export CARGO_HOME="$$HOME/.cargo" && cd ../../core_crypto && cargo ndk
-        -t arm64-v8a -t armeabi-v7a -t x86_64 -o ../client_android/app/src/main/jniLibs
-        build --release
+      - cd ../../core_crypto && /home/vagrant/.cargo/bin/cargo ndk -t arm64-v8a -t armeabi-v7a
+        -t x86_64 -o ../client_android/app/src/main/jniLibs build --release
     scanignore:
       - client_android/build.gradle
     scandelete:
