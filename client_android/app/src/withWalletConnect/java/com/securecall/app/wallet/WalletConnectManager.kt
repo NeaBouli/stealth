@@ -128,6 +128,8 @@ object WalletConnectManager {
             Log.d(TAG, "WalletConnect initialized with project $PROJECT_ID")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize WalletConnect: ${e.message}", e)
+        } catch (e: NoClassDefFoundError) {
+            Log.e(TAG, "WalletConnect missing dependency (PushClient) — init skipped: ${e.message}")
         }
     }
 
