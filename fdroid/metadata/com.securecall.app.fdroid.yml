@@ -53,20 +53,21 @@ Builds:
       - chown -R vagrant:vagrant /home/vagrant/.cargo /home/vagrant/.rustup
     gradle:
       - fdroid
-    ndk: 27.0.12077973
     prebuild:
-      - printf 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nandroid.enableJetifier=true\nandroid.enableGlobalSynthetics=true\n'
+      - printf 'org.gradle.jvmargs=-Xmx2048m
+        -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nandroid.enableJetifier=true\nandroid.enableGlobalSynthetics=true\n'
         > ../gradle.properties
       - echo sdk.dir=/opt/android-sdk > ../local.properties
       - sed -i "s/apply plugin.*crashlytics.*//g" ../build.gradle || true
       - sed -i "s/com.google.firebase.crashlytics.*//g" ../build.gradle || true
-      - cd ../../core_crypto && /home/vagrant/.cargo/bin/cargo ndk -t arm64-v8a -t armeabi-v7a
-        -t x86_64 -o ../client_android/app/src/main/jniLibs build --release
+      - cd ../../core_crypto && /home/vagrant/.cargo/bin/cargo ndk -t arm64-v8a -t
+        armeabi-v7a -t x86_64 -o ../client_android/app/src/main/jniLibs build --release
     scanignore:
       - client_android/build.gradle
     scandelete:
       - client_android/app/src/main/jniLibs/
       - core_crypto/target/
+    ndk: 27.0.12077973
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
