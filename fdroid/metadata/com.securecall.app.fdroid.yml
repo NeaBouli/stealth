@@ -40,6 +40,10 @@ Builds:
     commit: v1.0.13-fdroid
     subdir: client_android/app
     ndk: 27.0.12077973
+    sudo:
+      - apt-get update
+      - apt-get install -y rustc cargo
+      - cargo install cargo-ndk --version "^3"
     gradle:
       - fdroid
     prebuild:
@@ -50,7 +54,6 @@ Builds:
       - sed -i "s/com.google.firebase.crashlytics.*//g" ../build.gradle || true
       - rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
         || true
-      - cargo install cargo-ndk --version "^3" || true
       - cd ../../core_crypto && cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 -o
         ../client_android/app/src/main/jniLibs build --release
     scanignore:
