@@ -209,6 +209,12 @@ android {
     testOptions {
         unitTests.returnDefaultValues = true
     }
+
+    sourceSets {
+        free.java.srcDirs += 'src/withWalletConnect/java'
+        pro.java.srcDirs += 'src/withWalletConnect/java'
+        premium.java.srcDirs += 'src/withWalletConnect/java'
+    }
 }
 
 dependencies {
@@ -235,11 +241,23 @@ dependencies {
     implementation 'com.wireguard.android:tunnel:1.0.20260102'
 
     // WalletConnect v2 — Sign client for IFR token wallet verification
-    // fdroid: Firebase excluded via configurations block below
-    implementation("com.walletconnect:android-core:1.26.0") {
+    // fdroid: excluded entirely (android-core has Firebase type refs that fail F-Droid scanner)
+    freeImplementation("com.walletconnect:android-core:1.26.0") {
         exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
     }
-    implementation("com.walletconnect:sign:2.26.0") {
+    freeImplementation("com.walletconnect:sign:2.26.0") {
+        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
+    }
+    proImplementation("com.walletconnect:android-core:1.26.0") {
+        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
+    }
+    proImplementation("com.walletconnect:sign:2.26.0") {
+        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
+    }
+    premiumImplementation("com.walletconnect:android-core:1.26.0") {
+        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
+    }
+    premiumImplementation("com.walletconnect:sign:2.26.0") {
         exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
     }
 
@@ -293,19 +311,22 @@ configurations.matching { it.name.startsWith("fdroid") }.configureEach {
 
 // Note: WalletConnect android-core has internal type references to
 // FirebaseMessagingService/RemoteMessage in its PushMessagingService class.
-// These are NOT actual Firebase class definitions in the APK — they are
-// method signature type descriptors that R8 cannot strip (dead code in
-// WalletConnect's Koin DI). The Firebase SDK itself is fully excluded
-// (0 Firebase JARs in fdroid classpath, 0 Firebase class definitions in DEX).
-// F-Droid check-apk may flag these as false positives.
+// Solution: WalletConnect is fully excluded from the fdroid flavor.
+// fdroid gets a no-op WalletConnectManager stub (src/fdroid/java/.../wallet/).
+// free/pro/premium share the real impl via src/withWalletConnect/java/.
 
-// PATCH 215 — native build integration skeleton
+// PATCH 215 — native build integration skeleton (Opus JNI codec)
 android {
     defaultConfig {
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++17"
+                // Only build for ARM — x86_64 Opus linker fails and is emulator-only
+                abiFilters "arm64-v8a", "armeabi-v7a"
             }
+        }
+        ndk {
+            abiFilters "arm64-v8a", "armeabi-v7a"
         }
     }
 
