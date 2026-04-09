@@ -49,6 +49,9 @@ Builds:
       - /root/.cargo/bin/rustup target add aarch64-linux-android armv7-linux-androideabi
         x86_64-linux-android
       - /root/.cargo/bin/cargo install cargo-ndk --version "^3"
+      - cp -r /root/.cargo /home/vagrant/.cargo
+      - cp -r /root/.rustup /home/vagrant/.rustup
+      - chown -R vagrant:vagrant /home/vagrant/.cargo /home/vagrant/.rustup
     gradle:
       - fdroid
     prebuild:
@@ -57,8 +60,10 @@ Builds:
       - echo "sdk.dir=$$ANDROID_HOME" > ../local.properties
       - sed -i "s/apply plugin.*crashlytics.*//g" ../build.gradle || true
       - sed -i "s/com.google.firebase.crashlytics.*//g" ../build.gradle || true
-      - cd ../../core_crypto && /root/.cargo/bin/cargo ndk -t arm64-v8a -t armeabi-v7a
-        -t x86_64 -o ../client_android/app/src/main/jniLibs build --release
+      - export PATH="$$HOME/.cargo/bin:$$PATH" && export RUSTUP_HOME="$$HOME/.rustup"
+        && export CARGO_HOME="$$HOME/.cargo" && cd ../../core_crypto && cargo ndk
+        -t arm64-v8a -t armeabi-v7a -t x86_64 -o ../client_android/app/src/main/jniLibs
+        build --release
     scanignore:
       - client_android/build.gradle
     scandelete:
