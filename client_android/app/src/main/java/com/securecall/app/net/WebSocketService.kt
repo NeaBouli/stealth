@@ -39,6 +39,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     @Volatile var isRegistered: Boolean = false
         private set
 
+    // Guard: prevent double-register on rapid reconnect (network flap)
+    @Volatile private var registerPending: Boolean = false
+
     // BUG-010: FCM-delivered session ID — prevents duplicate IncomingCallActivity on WS reconnect
     @Volatile private var fcmPendingSessionId: String? = null
 
@@ -399,9 +402,15 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // ===================== HeartbeatClient.Listener =====================
 
     override fun onConnected() {
+        // Guard: prevent double-register on rapid reconnect
+        if (registerPending) {
+            Log.d("WS_SERVICE", "WebSocket connected but register already pending — skipping")
+            return
+        }
         Log.d("WS_SERVICE", "WebSocket connected — registering client")
         isConnected = true
         isRegistered = false // BUG-034: not registered until server processes REGISTER
+        registerPending = true
         registerClient()
         setupCallSignalingCallbacks()
         statusCallbackOnline?.invoke()
@@ -411,6 +420,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         // BUG-034: Mark as registered after 1.5s delay (server processes REGISTER quickly)
         // Then flush any queued outgoing calls
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            registerPending = false
             if (isConnected) {
                 isRegistered = true
                 Log.d("WS_SERVICE", "BUG-034: isRegistered=true — flushing ${pendingCallQueue.size} pending calls")
@@ -541,6 +551,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.d("WS_SERVICE", "WebSocket disconnected")
         isConnected = false
         isRegistered = false // BUG-034: reset registration state
+        registerPending = false // Allow re-register on next connect
         statusCallbackOffline?.invoke()
         com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Disconnected")
         // HeartbeatClient owns reconnect — do NOT schedule here

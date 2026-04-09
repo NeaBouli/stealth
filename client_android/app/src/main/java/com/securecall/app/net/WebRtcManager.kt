@@ -58,10 +58,7 @@ class WebRtcManager(
             .setOptions(PeerConnectionFactory.Options())
             .createPeerConnectionFactory()
 
-        val iceServers = dynamicIceServers ?: listOf(
-            // Fallback: STUN only (no TURN relay) if dynamic fetch failed
-            PeerConnection.IceServer.builder(BuildConfig.STUN_URL).createIceServer()
-        )
+        val iceServers = dynamicIceServers ?: buildFallbackIceServers()
         Log.d(TAG, "Using ${iceServers.size} ICE servers (dynamic=${dynamicIceServers != null})")
         com.securecall.app.debug.SecLogManager.log("ICE", "Init: ${iceServers.size} servers (dynamic=${dynamicIceServers != null})")
         iceServers.forEach { server ->
@@ -95,6 +92,29 @@ class WebRtcManager(
             pendingIceCandidates.clear()
             candidates.forEach { onRemoteIceCandidate(it) }
         }
+    }
+
+    /**
+     * Fallback ICE servers when dynamic fetch fails.
+     * Includes STUN + public TURN relay to ensure calls work even without
+     * backend-fetched credentials. Without TURN, calls between devices
+     * on different networks (mobile/WiFi) will fail.
+     */
+    private fun buildFallbackIceServers(): List<PeerConnection.IceServer> {
+        Log.w(TAG, "Dynamic ICE fetch failed — using hardcoded fallback (STUN + TURN)")
+        com.securecall.app.debug.SecLogManager.log("ICE", "Fallback: hardcoded STUN + public TURN")
+        return listOf(
+            PeerConnection.IceServer.builder(BuildConfig.STUN_URL).createIceServer(),
+            PeerConnection.IceServer.builder("stun:stun.relay.metered.ca:80").createIceServer(),
+            PeerConnection.IceServer.builder("turn:openrelay.metered.ca:80")
+                .setUsername("openrelayproject")
+                .setPassword("openrelayproject")
+                .createIceServer(),
+            PeerConnection.IceServer.builder("turn:openrelay.metered.ca:443?transport=tcp")
+                .setUsername("openrelayproject")
+                .setPassword("openrelayproject")
+                .createIceServer()
+        )
     }
 
     /** Caller: create DataChannel + SDP offer */
