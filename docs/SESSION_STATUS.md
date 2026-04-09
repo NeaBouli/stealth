@@ -6,9 +6,10 @@ Aufgabe: S10 Build fix, ICE Fallback 4-Server (2 STUN + 2 TURN), Double-Register
 Letzter Commit: 281afd2
 
 ## CC2 — F-Droid Pipeline
-Status: [x] Erledigt (check apk WC false positive offen)
-Aufgabe: rewritemeta fix, AD_ID entfernt, Firebase stripped, Billing Fixes
-Letzter Commit: 6787498
+Status: [x] 8/9 GRÜN — check apk + rewritemeta FIXED, tools check pre-existing
+Aufgabe: WalletConnect fdroid exclusion + stub, rewritemeta formatting, MR comment posted
+Letzter Commit: 5cfdcce
+Pipeline: 2442349451 (8/9 green)
 
 ## Sync-Regel
 - Nach jedem Commit diese Datei updaten
