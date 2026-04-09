@@ -40,7 +40,6 @@ Builds:
     versionCode: 31
     commit: v1.0.13-fdroid
     subdir: client_android/app
-    ndk: 27.0.12077973
     sudo:
       - apt-get update -y
       - apt-get install -y curl build-essential
@@ -54,6 +53,7 @@ Builds:
       - chown -R vagrant:vagrant /home/vagrant/.cargo /home/vagrant/.rustup
     gradle:
       - fdroid
+    ndk: 27.0.12077973
     prebuild:
       - printf 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nandroid.enableJetifier=true\nandroid.enableGlobalSynthetics=true\n'
         > ../gradle.properties
@@ -70,5 +70,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.0.13
-CurrentVersionCode: 31
+CurrentVersion: 1.0.13-fdroid
+CurrentVersionCode: 33
