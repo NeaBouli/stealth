@@ -7,6 +7,7 @@ AuthorWebSite: https://neabouli.github.io/stealth/
 WebSite: https://neabouli.github.io/stealth/
 SourceCode: https://github.com/NeaBouli/stealth
 IssueTracker: https://github.com/NeaBouli/stealth/issues
+
 AutoName: SecureCall
 Summary: End-to-end encrypted voice calls - no phone number required
 Description: |
@@ -41,9 +42,13 @@ Builds:
     subdir: client_android/app
     ndk: 27.0.12077973
     sudo:
-      - apt-get update
-      - apt-get install -y rustc cargo
-      - cargo install cargo-ndk --version "^3"
+      - apt-get update -y
+      - apt-get install -y curl build-essential
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        --default-toolchain stable --no-modify-path
+      - /root/.cargo/bin/rustup target add aarch64-linux-android armv7-linux-androideabi
+        x86_64-linux-android
+      - /root/.cargo/bin/cargo install cargo-ndk --version "^3"
     gradle:
       - fdroid
     prebuild:
@@ -52,10 +57,8 @@ Builds:
       - echo "sdk.dir=$$ANDROID_HOME" > ../local.properties
       - sed -i "s/apply plugin.*crashlytics.*//g" ../build.gradle || true
       - sed -i "s/com.google.firebase.crashlytics.*//g" ../build.gradle || true
-      - rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
-        || true
-      - cd ../../core_crypto && cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 -o
-        ../client_android/app/src/main/jniLibs build --release
+      - cd ../../core_crypto && /root/.cargo/bin/cargo ndk -t arm64-v8a -t armeabi-v7a
+        -t x86_64 -o ../client_android/app/src/main/jniLibs build --release
     scanignore:
       - client_android/build.gradle
     scandelete:
