@@ -321,12 +321,10 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++17"
-                // Only build for ARM — x86_64 Opus linker fails and is emulator-only
-                abiFilters "arm64-v8a", "armeabi-v7a"
             }
         }
         ndk {
-            abiFilters "arm64-v8a", "armeabi-v7a"
+            abiFilters "arm64-v8a", "armeabi-v7a", "x86_64"
         }
     }
 

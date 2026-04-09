@@ -6,9 +6,10 @@ project("securecall")
 set(OPUS_BUILD_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
 set(OPUS_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(OPUS_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
-set(OPUS_DISABLE_INTRINSICS ON CACHE BOOL "" FORCE)
 set(OPUS_FIXED_POINT OFF CACHE BOOL "" FORCE)
 set(OPUS_ENABLE_FLOAT_API ON CACHE BOOL "" FORCE)
+# Note: OPUS_DISABLE_INTRINSICS removed — was causing x86_64 linker failure.
+# Opus SSE/AVX intrinsics are safe on x86_64 Android targets.
 add_subdirectory(opus)
 
 # ---- securecall JNI library ----
