@@ -9,7 +9,6 @@ SourceCode: https://github.com/NeaBouli/stealth
 IssueTracker: https://github.com/NeaBouli/stealth/issues
 
 AutoName: SecureCall
-Summary: End-to-end encrypted voice calls - no phone number required
 Description: |
   SecureCall is a privacy-first encrypted calling app.
   No phone number, no account, no personal data required.
