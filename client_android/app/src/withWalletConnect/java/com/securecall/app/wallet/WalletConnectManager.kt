@@ -144,64 +144,73 @@ object WalletConnectManager {
             return
         }
 
-        connectCallback = callback
+        // Wrap the entire body in catch(Throwable) to handle any runtime class
+        // loading / method resolution failure from the WalletConnect SDK.
+        // F-010: android-core 1.26.0 vs sign 2.26.0 version mismatch can throw
+        // NoSuchMethodError (getDeletedPairingFlow…) and ClassNotFoundException.
+        try {
+            connectCallback = callback
 
-        val namespaces = mapOf(
-            "eip155" to Sign.Model.Namespace.Proposal(
-                chains = listOf("eip155:1"), // Ethereum mainnet
-                methods = listOf("eth_sendTransaction", "personal_sign"),
-                events = listOf("chainChanged", "accountsChanged")
+            val namespaces = mapOf(
+                "eip155" to Sign.Model.Namespace.Proposal(
+                    chains = listOf("eip155:1"), // Ethereum mainnet
+                    methods = listOf("eth_sendTransaction", "personal_sign"),
+                    events = listOf("chainChanged", "accountsChanged")
+                )
             )
-        )
 
-        val pairing = CoreClient.Pairing.create { error ->
-            val msg = error.throwable.message ?: "unknown"
-            Log.e(TAG, "Pairing create error: $msg")
-            if (msg.contains("403") || msg.contains("Forbidden")) {
-                callback(false, "Invalid WalletConnect Project ID — register at cloud.reown.com")
-            } else {
-                callback(false, "Pairing failed: $msg")
-            }
-        } ?: run {
-            callback(false, "Failed to create pairing")
-            return
-        }
-
-        pendingPairingUri = pairing.uri
-        Log.d(TAG, "Pairing URI generated")
-
-        val connectParams = Sign.Params.Connect(
-            namespaces = namespaces,
-            optionalNamespaces = null,
-            properties = null,
-            pairing = pairing
-        )
-
-        SignClient.connect(
-            connect = connectParams,
-            onSuccess = { _: String ->
-                Log.d(TAG, "Connect request sent")
-
-                // Try to open in any installed wallet app
-                try {
-                    val wcIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pairing.uri))
-                    wcIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(wcIntent)
-                } catch (e: Throwable) {
-                    Log.w(TAG, "No wallet app found for WC URI, showing manual option")
-                    callback(false, "no_wallet_app")
-                }
-            },
-            onError = { error: Sign.Model.Error ->
+            val pairing = CoreClient.Pairing.create { error ->
                 val msg = error.throwable.message ?: "unknown"
-                Log.e(TAG, "Connect error: $msg")
-                if (msg.contains("403") || msg.contains("Forbidden") || msg.contains("Connection error")) {
-                    callback(false, "WalletConnect Project ID not registered — contact developer")
+                Log.e(TAG, "Pairing create error: $msg")
+                if (msg.contains("403") || msg.contains("Forbidden")) {
+                    callback(false, "Invalid WalletConnect Project ID — register at cloud.reown.com")
                 } else {
-                    callback(false, "Connection failed: $msg")
+                    callback(false, "Pairing failed: $msg")
                 }
+            } ?: run {
+                callback(false, "Failed to create pairing")
+                return
             }
-        )
+
+            pendingPairingUri = pairing.uri
+            Log.d(TAG, "Pairing URI generated")
+
+            val connectParams = Sign.Params.Connect(
+                namespaces = namespaces,
+                optionalNamespaces = null,
+                properties = null,
+                pairing = pairing
+            )
+
+            SignClient.connect(
+                connect = connectParams,
+                onSuccess = { _: String ->
+                    Log.d(TAG, "Connect request sent")
+
+                    // Try to open in any installed wallet app
+                    try {
+                        val wcIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pairing.uri))
+                        wcIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(wcIntent)
+                    } catch (e: Throwable) {
+                        Log.w(TAG, "No wallet app found for WC URI, showing manual option")
+                        callback(false, "no_wallet_app")
+                    }
+                },
+                onError = { error: Sign.Model.Error ->
+                    val msg = error.throwable.message ?: "unknown"
+                    Log.e(TAG, "Connect error: $msg")
+                    if (msg.contains("403") || msg.contains("Forbidden") || msg.contains("Connection error")) {
+                        callback(false, "WalletConnect Project ID not registered — contact developer")
+                    } else {
+                        callback(false, "Connection failed: $msg")
+                    }
+                }
+            )
+        } catch (e: Throwable) {
+            Log.w(TAG, "WalletConnect unavailable: ${e.message}")
+            callback(false, "WalletConnect unavailable")
+        }
     }
 
     /**
@@ -257,28 +266,33 @@ object WalletConnectManager {
      * and store the result with METHOD_WALLETCONNECT (no 30-day expiry).
      */
     fun verifyAndUnlock(context: Context, walletAddress: String, callback: (Boolean, String) -> Unit) {
-        val ws = com.securecall.app.net.WebSocketService.instance
-        if (ws == null || !ws.isConnected) {
-            callback(false, "Not connected to server")
-            return
-        }
-
-        ws.verifyIfrLock(walletAddress) { success, tier, amount, error ->
-            if (success && tier.isNotEmpty()) {
-                IfrLockManager.storeVerificationResult(
-                    context, walletAddress, tier, amount,
-                    IfrLockManager.METHOD_WALLETCONNECT
-                )
-                Log.d(TAG, "WalletConnect verification: $amount IFR → $tier (permanent)")
-                callback(true, "Unlocked $tier with $amount IFR (permanent)")
-            } else {
-                val msg = when (error) {
-                    "insufficient" -> "Insufficient IFR balance ($amount held)"
-                    "not_connected" -> "Server not connected"
-                    else -> "Verification failed: $error"
-                }
-                callback(false, msg)
+        try {
+            val ws = com.securecall.app.net.WebSocketService.instance
+            if (ws == null || !ws.isConnected) {
+                callback(false, "Not connected to server")
+                return
             }
+
+            ws.verifyIfrLock(walletAddress) { success, tier, amount, error ->
+                if (success && tier.isNotEmpty()) {
+                    IfrLockManager.storeVerificationResult(
+                        context, walletAddress, tier, amount,
+                        IfrLockManager.METHOD_WALLETCONNECT
+                    )
+                    Log.d(TAG, "WalletConnect verification: $amount IFR → $tier (permanent)")
+                    callback(true, "Unlocked $tier with $amount IFR (permanent)")
+                } else {
+                    val msg = when (error) {
+                        "insufficient" -> "Insufficient IFR balance ($amount held)"
+                        "not_connected" -> "Server not connected"
+                        else -> "Verification failed: $error"
+                    }
+                    callback(false, msg)
+                }
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "WalletConnect unavailable: ${e.message}")
+            callback(false, "WalletConnect unavailable")
         }
     }
 }
