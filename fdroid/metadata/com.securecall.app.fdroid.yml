@@ -43,8 +43,8 @@ Builds:
     sudo:
       - apt-get update -y
       - apt-get install -y curl build-essential
-      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        --default-toolchain stable --no-modify-path
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain
+        stable --no-modify-path
       - /root/.cargo/bin/rustup target add aarch64-linux-android armv7-linux-androideabi
         x86_64-linux-android
       - /root/.cargo/bin/cargo install cargo-ndk --version "^3"
@@ -54,7 +54,7 @@ Builds:
     gradle:
       - fdroid
     prebuild:
-      - printf 'org.gradle.jvmargs=-Xmx2048m
+      - printf 'org.gradle.jvmargs=-Xmx2048m 
         -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nandroid.enableJetifier=true\nandroid.enableGlobalSynthetics=true\n'
         > ../gradle.properties
       - echo sdk.dir=/opt/android-sdk > ../local.properties
