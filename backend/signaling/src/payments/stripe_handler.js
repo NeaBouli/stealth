@@ -102,54 +102,126 @@ async function createCheckoutSession(stripe, productKey, customerEmail) {
 }
 
 /**
- * Handle Stripe webhook events.
- * On checkout.session.completed → generate activation code.
+ * Resolve tier + productKey from Stripe session line_items.
+ * Payment Links don't include metadata, so we derive it from the priceId.
+ * Returns { tier, productKey } or null if unknown.
  */
-async function handleWebhook(event) {
+function resolveTierFromPriceId(priceId) {
+  if (!priceId) return null;
+  for (const [key, p] of Object.entries(PRODUCTS)) {
+    if (p.priceId === priceId) {
+      return { tier: p.tier, productKey: key };
+    }
+  }
+  // Custom ID purchases — use special productKey, no activation code
+  const customIdPrices = {
+    "price_1TJITIBcyoLtm3FA0qZyTL5O": "custom_id_standard",
+    "price_1TJITKBcyoLtm3FARalsHHII": "custom_id_short",
+    "price_1TJITNBcyoLtm3FAlvw1HlRY": "custom_id_ultra"
+  };
+  if (customIdPrices[priceId]) {
+    return { tier: "custom_id", productKey: customIdPrices[priceId] };
+  }
+  return null;
+}
+
+/**
+ * Handle Stripe webhook events.
+ * On checkout.session.completed → generate activation code + send email.
+ *
+ * @param {Object} event   Stripe webhook event
+ * @param {Object} stripe  Stripe SDK instance (needed to fetch line_items)
+ * @param {Array}  activationCodesRef  Live reference to server.js activationCodes array
+ */
+async function handleWebhook(event, stripe, activationCodesRef) {
   console.log("[STRIPE] === WEBHOOK RECEIVED ===");
   console.log("[STRIPE] Event type:", event.type);
   console.log("[STRIPE] RESEND_API_KEY set:", !!process.env.RESEND_API_KEY);
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    const tier = session.metadata?.tier || "premium";
-    const productKey = session.metadata?.product || "premium_lifetime";
-    const email = session.customer_email || session.customer_details?.email || "unknown";
-
-    console.log("[STRIPE] Customer email:", email);
-    console.log("[STRIPE] Tier:", tier, "Product:", productKey);
-
-    // Record sale for dynamic pricing
-    if (session.metadata?.type === "lifetime_dynamic" && (tier === "pro_lifetime" || tier === "premium_lifetime")) {
-      try {
-        const { recordSale } = require("../licenses");
-        recordSale(tier);
-      } catch (e) { console.error("[STRIPE] recordSale failed:", e.message); }
-    }
-
-    // Generate unique activation code
-    const code = generateActivationCode(tier);
-    console.log("[STRIPE] Activation code generated:", code);
-
-    // Send activation code via email
-    if (email && email !== "unknown") {
-      try {
-        const { sendActivationCode } = require("./email_handler");
-        console.log("[STRIPE] Calling sendActivationCode()...");
-        const sent = await sendActivationCode(email, code, tier);
-        console.log("[STRIPE] Email send result:", sent);
-      } catch (err) {
-        console.error("[STRIPE] Email delivery failed:", err.message, err.stack);
-      }
-    } else {
-      console.warn("[STRIPE] No customer email — skipping email delivery");
-    }
-
-    return { code, tier, email, productKey };
+  if (event.type !== "checkout.session.completed") {
+    console.log("[STRIPE] Unhandled event type:", event.type);
+    return null;
   }
 
-  console.log("[STRIPE] Unhandled event type:", event.type);
-  return null;
+  const session = event.data.object;
+  const email = session.customer_email || session.customer_details?.email || null;
+  console.log("[STRIPE] Session id:", session.id, "email:", email);
+
+  // 1. Resolve tier + productKey — first from metadata (created via API), then from line_items (Payment Links)
+  let tier = session.metadata?.tier;
+  let productKey = session.metadata?.product;
+
+  if (!tier || !productKey) {
+    // Payment Links path — fetch line_items from Stripe API
+    try {
+      const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 5 });
+      const priceId = lineItems?.data?.[0]?.price?.id;
+      console.log("[STRIPE] Resolved priceId from line_items:", priceId);
+      const resolved = resolveTierFromPriceId(priceId);
+      if (resolved) {
+        tier = resolved.tier;
+        productKey = resolved.productKey;
+      }
+    } catch (e) {
+      console.error("[STRIPE] Failed to fetch line_items:", e.message);
+    }
+  }
+
+  if (!tier) {
+    console.warn("[STRIPE] Could not determine tier for session:", session.id);
+    return null;
+  }
+
+  console.log("[STRIPE] Tier:", tier, "ProductKey:", productKey);
+
+  // 2. Custom ID purchases are handled separately (no activation code)
+  if (tier === "custom_id") {
+    console.log("[STRIPE] Custom ID purchase — handled by custom_ids.js flow");
+    return { tier, productKey, email };
+  }
+
+  // 3. Generate unique activation code
+  const code = generateActivationCode(tier);
+  console.log("[STRIPE] Activation code generated:", code);
+
+  // 4. Record sale + inject into activationCodes array (so ACTIVATE_CODE handler finds it)
+  try {
+    const soldCodes = require("./sold_codes");
+    soldCodes.recordSale({
+      code,
+      tier,
+      email: email || "unknown",
+      stripeSessionId: session.id,
+      productKey,
+      activationCodesRef
+    });
+  } catch (err) {
+    console.error("[STRIPE] Failed to record sold code:", err.message);
+  }
+
+  // 5. Record dynamic-pricing sale if applicable
+  if (session.metadata?.type === "lifetime_dynamic" && (tier === "pro_lifetime" || tier === "premium_lifetime")) {
+    try {
+      const { recordSale } = require("../licenses");
+      recordSale(tier);
+    } catch (e) { console.error("[STRIPE] licenses.recordSale failed:", e.message); }
+  }
+
+  // 6. Send activation code via email
+  if (email) {
+    try {
+      const { sendActivationCode } = require("./email_handler");
+      console.log("[STRIPE] Calling sendActivationCode()...");
+      const sent = await sendActivationCode(email, code, tier);
+      console.log("[STRIPE] Email send result:", sent);
+    } catch (err) {
+      console.error("[STRIPE] Email delivery failed:", err.message, err.stack);
+    }
+  } else {
+    console.warn("[STRIPE] No customer email — code saved but not delivered:", code);
+  }
+
+  return { code, tier, email, productKey };
 }
 
 /**
@@ -165,9 +237,12 @@ function generateActivationCode(tier) {
 
 /**
  * Express route setup — call from server.js:
- *   require('./payments/stripe_handler').setupRoutes(app);
+ *   require('./payments/stripe_handler').setupRoutes(app, activationCodesRef);
+ *
+ * @param {Object} app  Express app
+ * @param {Array}  activationCodesRef  Live reference to server.js activationCodes array
  */
-function setupRoutes(app) {
+function setupRoutes(app, activationCodesRef) {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
     console.warn("[STRIPE] STRIPE_SECRET_KEY not set — Stripe routes disabled");
@@ -203,12 +278,16 @@ function setupRoutes(app) {
       return res.status(400).send("Webhook error");
     }
 
-    const result = await handleWebhook(event);
-    if (result) {
-      console.log("[STRIPE] Activation code generated:", result.code, "sent to:", result.email);
+    try {
+      const result = await handleWebhook(event, stripe, activationCodesRef);
+      if (result?.code) {
+        console.log("[STRIPE] Activation code generated:", result.code, "sent to:", result.email);
+      }
+      res.json({ received: true });
+    } catch (err) {
+      console.error("[STRIPE] Webhook handler error:", err.message, err.stack);
+      res.status(500).json({ error: "webhook_handler_failed" });
     }
-
-    res.json({ received: true });
   });
 
   // Test email endpoint (admin only)

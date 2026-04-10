@@ -184,6 +184,20 @@ function loadActivationCodes() {
     console.warn("[ACTIVATION] Could not load activation_codes.json:", e.message, "— using fallback codes");
     activationCodes = FALLBACK_CODES.map(c => ({...c}));
   }
+
+  // Also load codes generated from Stripe purchases (sold_codes.json)
+  try {
+    const sold = require("./payments/sold_codes").loadAsActivationCodes();
+    if (sold.length > 0) {
+      // De-duplicate: skip codes already present
+      const existing = new Set(activationCodes.map(c => c.code));
+      const toAdd = sold.filter(c => !existing.has(c.code));
+      activationCodes.push(...toAdd);
+      console.log(`[ACTIVATION] Merged ${toAdd.length} sold codes from Stripe purchases`);
+    }
+  } catch (e) {
+    console.warn("[ACTIVATION] Could not load sold_codes.json:", e.message);
+  }
 }
 
 function saveActivationCodes() {
@@ -1698,7 +1712,8 @@ app.get("/metrics", (req, res) => {
 // --- Stripe Payment Routes (disabled if STRIPE_SECRET_KEY not set) ---
 try {
   const stripeHandler = require('./payments/stripe_handler');
-  stripeHandler.setupRoutes(app);
+  // Pass activationCodes reference so new codes from purchases are usable immediately
+  stripeHandler.setupRoutes(app, activationCodes);
 } catch (e) {
   console.warn("[STRIPE] Could not load stripe_handler:", e.message);
 }
