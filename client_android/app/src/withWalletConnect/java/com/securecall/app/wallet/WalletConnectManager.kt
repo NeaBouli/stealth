@@ -126,10 +126,12 @@ object WalletConnectManager {
 
             isInitialized = true
             Log.d(TAG, "WalletConnect initialized with project $PROJECT_ID")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize WalletConnect: ${e.message}", e)
-        } catch (e: NoClassDefFoundError) {
-            Log.e(TAG, "WalletConnect missing dependency (PushClient) — init skipped: ${e.message}")
+        } catch (e: Throwable) {
+            // Catches Exception, Error, NoClassDefFoundError, ClassNotFoundException,
+            // NoSuchMethodError, LinkageError, etc. WalletConnect's android-core
+            // pulls Firebase/PushClient/DeletedPairingFlow refs that may not be bundled
+            // or may mismatch at runtime (Crashlytics F-010: 2 different crashes on vC34).
+            Log.e(TAG, "WalletConnect init failed (non-fatal): ${e.message}")
         }
     }
 
@@ -185,7 +187,7 @@ object WalletConnectManager {
                     val wcIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pairing.uri))
                     wcIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(wcIntent)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     Log.w(TAG, "No wallet app found for WC URI, showing manual option")
                     callback(false, "no_wallet_app")
                 }
@@ -216,7 +218,7 @@ object WalletConnectManager {
                     accounts.first().substringAfterLast(":")
                 } else null
             } else connectedAddress
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.w(TAG, "Error getting session: ${e.message}")
             connectedAddress
         }
@@ -244,7 +246,7 @@ object WalletConnectManager {
             } else {
                 connectedAddress = null
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e(TAG, "Disconnect failed: ${e.message}")
             connectedAddress = null
         }

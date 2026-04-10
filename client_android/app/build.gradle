@@ -27,8 +27,8 @@ android {
         applicationId "com.securecall.app"
         minSdkVersion 24
         targetSdkVersion 35
-        versionCode 34
-        versionName "1.0.13"
+        versionCode 35
+        versionName "1.0.14"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

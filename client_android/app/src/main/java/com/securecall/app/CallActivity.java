@@ -92,6 +92,21 @@ public class CallActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // F-009 FIX — Show the call UI over the lock screen so the user can interact
+        // (mute/speaker/hangup) without having to unlock the device first.
+        // Required on Android 8.1+ via setShowWhenLocked/setTurnScreenOn APIs, with
+        // fallback to Window flags for older versions.
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+        } else {
+            getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+            );
+        }
+
         activeInstance = this;
 
         // Debug: log all intent extras
