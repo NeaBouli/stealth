@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You — SecureCall</title>
+    <meta name="robots" content="noindex">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="logo.png">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2L60E8E7R"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-V2L60E8E7R");</script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a12;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 640px;
+            width: 90%;
+            text-align: center;
+            padding: 48px 32px;
+        }
+        .checkmark {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: rgba(0, 230, 118, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 44px;
+            color: #00E676;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: #00E676;
+            margin-bottom: 12px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #aaa;
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+        .step-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        .step-card h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFD700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        .step-card ol {
+            list-style: none;
+            counter-reset: step;
+            padding: 0;
+        }
+        .step-card li {
+            counter-increment: step;
+            padding: 10px 0;
+            font-size: 15px;
+            color: #ccc;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: flex-start;
+        }
+        .step-card li:last-child { border-bottom: none; }
+        .step-card li::before {
+            content: counter(step);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(255,215,0,0.15);
+            color: #FFD700;
+            font-size: 13px;
+            font-weight: 700;
+            margin-right: 14px;
+            flex-shrink: 0;
+        }
+        .info-box {
+            background: rgba(255,152,0,0.08);
+            border: 1px solid rgba(255,152,0,0.25);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            text-align: left;
+            font-size: 14px;
+            color: #ccc;
+            line-height: 1.6;
+        }
+        .info-box strong { color: #FF9800; }
+        .note {
+            font-size: 13px;
+            color: #888;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+        .links {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .links a {
+            display: inline-block;
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+        .links a:hover { opacity: 0.85; }
+        .btn-primary {
+            background: #D32F2F;
+            color: #fff;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            color: #ccc;
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .order-ref {
+            font-family: monospace;
+            font-size: 11px;
+            color: #666;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="checkmark">&#10003;</div>
+        <h1>Thank you!</h1>
+        <p class="subtitle">
+            Your payment was successful. You&rsquo;ll receive a confirmation email within a few minutes.
+        </p>
+
+        <div class="step-card">
+            <h3>Activate your upgrade</h3>
+            <ol>
+                <li>Check your inbox for the confirmation email (incl. receipt)</li>
+                <li>Open <strong>SecureCall</strong> on your Android device</li>
+                <li>Go to <strong>Settings</strong> &rarr; <strong>Konto</strong></li>
+                <li>Tap <strong>Activation Code</strong> and enter the code from the email</li>
+                <li>Your Pro / Premium tier unlocks instantly &mdash; app restarts</li>
+            </ol>
+        </div>
+
+        <div class="info-box">
+            <strong>Don&rsquo;t have SecureCall yet?</strong><br>
+            Download StealthX / SecureCall from
+            <a href="https://github.com/NeaBouli/stealth/releases" style="color:#FF9800" target="_blank" rel="noopener">GitHub Releases</a>
+            or
+            <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" style="color:#FF9800" target="_blank" rel="noopener">Google Play</a>.
+            Install, then return here and follow the activation steps above.
+        </div>
+
+        <p class="note">
+            Your code works on up to 2 devices. No account needed &mdash; just the code.<br>
+            Keep it safe. Due to our commitment to anonymity, we cannot recover lost codes.<br>
+            Questions? Contact <a href="mailto:support@stealthx.app" style="color:#aaa">support@stealthx.app</a>
+        </p>
+
+        <div class="links">
+            <a href="./" class="btn-primary">Back to SecureCall</a>
+            <a href="wiki/user-manual.html" class="btn-secondary">User Manual</a>
+        </div>
+
+        <p class="order-ref" id="orderRef"></p>
+    </div>
+    <script>
+    (function() {
+        // Stripe Payment Links append ?session_id=... on redirect when configured.
+        // Display the session id (last 12 chars) as a light reference for the user.
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get("session_id");
+        if (sessionId) {
+            const tail = sessionId.length > 12 ? sessionId.slice(-12) : sessionId;
+            document.getElementById("orderRef").textContent = "Order ref: …" + tail;
+        }
+    })();
+    </script>
+</body>
+</html>
