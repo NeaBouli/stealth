@@ -325,11 +325,9 @@
         const API = "https://protective-healing-production.up.railway.app";
         const PRICES = { 100: "$1.00", 200: "$2.00", 500: "$5.00" };
         const PRICE_IDS = { 100: "price_1TJITIBcyoLtm3FA0qZyTL5O", 200: "price_1TJITKBcyoLtm3FARalsHHII", 500: "price_1TJITNBcyoLtm3FAlvw1HlRY" };
-        const PAYMENT_LINKS = {
-            100: "https://buy.stripe.com/test_6oUbJ09cz2VX1Aa2nV6g803",
-            200: "https://buy.stripe.com/test_eVq8wOewT4017YyfaH6g804",
-            500: "https://buy.stripe.com/test_6oUcN43SfeEFbaK5A76g805"
-        };
+        // NOTE: No fallback Payment Links — raw Payment Links bypass the
+        // custom_id metadata flow (password_hash, pending_token) and would
+        // lose the purchase. If the backend is down, show an error instead.
 
         const idInput = document.getElementById("idInput");
         const idStatus = document.getElementById("idStatus");
@@ -427,18 +425,15 @@
                 if (data.url) {
                     window.location.href = data.url;
                 } else {
-                    // Fallback to direct Payment Link
-                    var link = PAYMENT_LINKS[currentPrice];
-                    if (link) { window.location.href = link; return; }
-                    alert("Error: " + (data.error || "Unknown error"));
+                    alert("Error: " + (data.error || "Unknown error") +
+                          "\n\nPlease try again in a moment.");
                     purchaseBtn.disabled = false;
                     purchaseBtn.textContent = "Purchase Custom ID";
                 }
             } catch (e) {
-                // Backend down — fallback to direct Stripe Payment Link
-                var link = PAYMENT_LINKS[currentPrice];
-                if (link) { window.location.href = link; return; }
-                alert("Connection error. Please try again.");
+                alert("Connection error — please try again in a moment.\n\n" +
+                      "The purchase cannot proceed without a backend connection " +
+                      "(your custom ID + password need to be registered before payment).");
                 purchaseBtn.disabled = false;
                 purchaseBtn.textContent = "Purchase Custom ID";
             }
