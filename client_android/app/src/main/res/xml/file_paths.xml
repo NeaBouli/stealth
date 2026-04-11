@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
+    <!-- SecLog CSV export -->
     <cache-path name="seclog" path="/" />
+    <!-- In-app update APK download location (mirrors DownloadManager target) -->
+    <external-files-path name="update_dl" path="Download/update/" />
 </paths>

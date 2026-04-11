@@ -249,7 +249,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("pref_check_update")?.apply {
             summary = com.securecall.app.update.UpdateManager.getUpdateLabel()
             setOnPreferenceClickListener {
-                com.securecall.app.update.UpdateManager.openUpdate(requireContext())
+                val act = activity
+                if (act != null) {
+                    com.securecall.app.update.UpdateManager.checkAndPromptUpdate(act)
+                } else {
+                    com.securecall.app.update.UpdateManager.openUpdate(requireContext())
+                }
                 true
             }
         }

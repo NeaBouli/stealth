@@ -195,6 +195,11 @@ public class MainActivity extends AppCompatActivity {
         if (com.securecall.app.trial.TrialManager.INSTANCE.shouldShowExpiredDialog(this)) {
             com.securecall.app.trial.TrialManager.INSTANCE.showTrialExpiredDialog(this);
         }
+
+        // Throttled background check for new releases — silent if up-to-date.
+        // Only fires for sideload / unknown-store installs; Play Store and
+        // F-Droid clients handle their own update notifications.
+        com.securecall.app.update.UpdateManager.maybeAutoCheck(this);
     }
 
     @Override
