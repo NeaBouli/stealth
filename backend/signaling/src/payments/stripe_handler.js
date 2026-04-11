@@ -48,22 +48,27 @@
  *   (These work independently of the API routes below — used on landing page)
  */
 
+// Price IDs: LIVE (acct_1QJAg3BtrTFeYCjz) + TEST fallback (acct_1TInNU...)
+// Both are accepted by resolveTierFromPriceId() so either account's events map correctly.
 const PRODUCTS = {
   pro_monthly: {
     name: "SecureCall Pro",
-    priceId: "price_1TInrMBcyoLtm3FAWcdsNUX3",
+    priceId: "price_1TKwynBtrTFeYCjzOcWAenMz",        // LIVE
+    priceIdTest: "price_1TInrMBcyoLtm3FAWcdsNUX3",    // TEST
     mode: "subscription",
     tier: "pro"
   },
   premium_monthly: {
     name: "SecureCall Premium",
-    priceId: "price_1TInt2BcyoLtm3FAPOw0vJ5p",
+    priceId: "price_1TKwyoBtrTFeYCjzAPvvfr3j",        // LIVE
+    priceIdTest: "price_1TInt2BcyoLtm3FAPOw0vJ5p",    // TEST
     mode: "subscription",
     tier: "premium"
   },
   premium_lifetime: {
     name: "SecureCall Premium Lifetime",
-    priceId: "price_1TInt8BcyoLtm3FACbPJZZPg",
+    priceId: "price_1TKwypBtrTFeYCjzME5rbsnv",        // LIVE
+    priceIdTest: "price_1TInt8BcyoLtm3FACbPJZZPg",    // TEST
     mode: "payment",
     tier: "premium"
   }
@@ -109,7 +114,7 @@ async function createCheckoutSession(stripe, productKey, customerEmail) {
 function resolveTierFromPriceId(priceId) {
   if (!priceId) return null;
   for (const [key, p] of Object.entries(PRODUCTS)) {
-    if (p.priceId === priceId) {
+    if (p.priceId === priceId || p.priceIdTest === priceId) {
       return { tier: p.tier, productKey: key };
     }
   }
