@@ -35,9 +35,9 @@ RepoType: git
 Repo: https://github.com/NeaBouli/stealth.git
 
 Builds:
-  - versionName: 1.0.16
-    versionCode: 37
-    commit: v1.0.16-fdroid
+  - versionName: 1.0.17
+    versionCode: 38
+    commit: v1.0.17-fdroid
     subdir: client_android/app
     sudo:
       - apt-get update -y
@@ -70,5 +70,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.0.16
-CurrentVersionCode: 37
+CurrentVersion: 1.0.17
+CurrentVersionCode: 38
