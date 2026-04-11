@@ -2,7 +2,6 @@ package com.securecall.app.update
 
 import android.app.Activity
 import android.app.AlertDialog
-import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -185,104 +184,47 @@ object UpdateManager {
                 append("\n\nWhat's new:\n")
                 append(info.changelog.trim())
             }
+            append(
+                "\n\nTap \"Open Download\" to get the APK from GitHub. " +
+                    "Your browser or download manager handles the rest — open the .apk file when " +
+                    "it's finished to install."
+            )
         }
 
         AlertDialog.Builder(activity)
             .setTitle("Update available")
             .setMessage(message)
-            .setPositiveButton("Download & Install") { _, _ ->
-                startDownload(activity, info)
+            .setPositiveButton("Open Download") { _, _ ->
+                openBrowser(activity, info.apkUrl)
             }
-            .setNeutralButton("Changelog") { _, _ ->
-                activity.startActivity(
-                    Intent(Intent.ACTION_VIEW, Uri.parse(info.releaseUrl))
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                )
+            .setNeutralButton("Release Page") { _, _ ->
+                openBrowser(activity, info.releaseUrl)
             }
             .setNegativeButton("Later") { d, _ -> d.dismiss() }
             .setCancelable(true)
             .show()
     }
 
-    @Suppress("DEPRECATION")
-    private fun startDownload(activity: Activity, info: UpdateInfo) {
-        // ProgressDialog is deprecated but perfectly fine for a short,
-        // one-off progress indicator on a modal action. No need for a
-        // fancy custom dialog just for this.
-        val progress = ProgressDialog(activity).apply {
-            setTitle("Updating SecureCall")
-            setMessage("Downloading new version…")
-            setIndeterminate(true)
-            setCancelable(false)
-            isIndeterminate = true
-            show()
+    /**
+     * Hand the URL off to whatever the user's default browser or download
+     * manager is. This is intentionally the ONLY way sideload users reach the
+     * new APK — the app never writes or launches the APK itself, which means
+     * no REQUEST_INSTALL_PACKAGES permission is needed (Play Console compliance).
+     */
+    private fun openBrowser(activity: Activity, url: String) {
+        try {
+            activity.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        } catch (t: Throwable) {
+            Log.w(TAG, "No browser available to open $url: ${t.message}")
+            Toast.makeText(
+                activity,
+                "No browser available — visit github.com/NeaBouli/stealth/releases",
+                Toast.LENGTH_LONG,
+            ).show()
         }
-
-        UpdateDownloader.download(
-            context = activity,
-            apkUrl = info.apkUrl,
-            onProgress = { /* enqueue id — DownloadManager shows its own notification */ },
-            onComplete = { file ->
-                Handler(Looper.getMainLooper()).post {
-                    try {
-                        progress.dismiss()
-                    } catch (_: Throwable) {
-                    }
-                    if (activity.isFinishing || activity.isDestroyed) return@post
-                    if (file == null) {
-                        Toast.makeText(
-                            activity,
-                            "Download failed — check your network and try again.",
-                            Toast.LENGTH_LONG,
-                        ).show()
-                        return@post
-                    }
-                    when (val result = UpdateInstaller.install(activity, file)) {
-                        UpdateInstaller.Result.Launched -> Unit
-                        UpdateInstaller.Result.NeedsPermission -> {
-                            AlertDialog.Builder(activity)
-                                .setTitle("One more step")
-                                .setMessage(
-                                    "Android asks you to allow installs from SecureCall. " +
-                                        "Toggle \"Allow from this source\" and return here, then tap " +
-                                        "\"Install Now\" to finish."
-                                )
-                                .setPositiveButton("Install Now") { _, _ ->
-                                    // After user grants the permission and returns, re-run the install.
-                                    val retry = UpdateInstaller.install(activity, file)
-                                    if (retry is UpdateInstaller.Result.NeedsPermission) {
-                                        Toast.makeText(
-                                            activity,
-                                            "Permission still not granted.",
-                                            Toast.LENGTH_LONG,
-                                        ).show()
-                                    }
-                                }
-                                .setNegativeButton("Cancel", null)
-                                .show()
-                        }
-                        is UpdateInstaller.Result.SignatureMismatch -> {
-                            AlertDialog.Builder(activity)
-                                .setTitle("Security check failed")
-                                .setMessage(
-                                    "The downloaded update is not signed by the SecureCall team. " +
-                                        "The update has been discarded.\n\n${result.detail}"
-                                )
-                                .setPositiveButton("OK", null)
-                                .show()
-                            UpdateDownloader.cancel(activity)
-                        }
-                        is UpdateInstaller.Result.Failed -> {
-                            Toast.makeText(
-                                activity,
-                                "Install failed: ${result.reason}",
-                                Toast.LENGTH_LONG,
-                            ).show()
-                        }
-                    }
-                }
-            }
-        )
     }
 
     // ─── Store routing helpers ──────────────────────────────────

@@ -29,11 +29,6 @@
 
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
-    <!-- In-app update flow (sideload installs only — Play Store and F-Droid
-         routes defer to their respective client apps). Needed so the app can
-         hand a downloaded APK to the system package installer. -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-
     <!-- Package visibility for invite features (Android 11+) -->
     <queries>
         <package android:name="com.whatsapp" />
@@ -50,11 +45,6 @@
         <intent>
             <action android:name="android.intent.action.SEND" />
             <data android:mimeType="text/plain" />
-        </intent>
-        <!-- So the installer Intent can resolve .apk mime type on Android 11+ -->
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:mimeType="application/vnd.android.package-archive" />
         </intent>
     </queries>
 
