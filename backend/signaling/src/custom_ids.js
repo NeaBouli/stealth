@@ -199,11 +199,11 @@ function setupRoutes(app, requireAdmin) {
     res.json(activate(id, deviceId, password));
   });
 
-  // Purchase via Stripe Checkout
+  // Purchase via Stripe Checkout — LIVE account acct_1QJAg3BtrTFeYCjz
   const PRICE_IDS = {
-    100: "price_1TJITIBcyoLtm3FA0qZyTL5O",  // 10+ chars = $1
-    200: "price_1TJITKBcyoLtm3FARalsHHII",  // 5-9 chars = $2
-    500: "price_1TJITNBcyoLtm3FAlvw1HlRY"   // 3-4 chars = $5
+    100: "price_1TKxNkBtrTFeYCjzl0M45HMg",  // 10+ chars = $1
+    200: "price_1TKxNmBtrTFeYCjz4goI2OUM",  // 5-9 chars = $2
+    500: "price_1TKxNoBtrTFeYCjzsOBMR9VM"   // 3-4 chars = $5
   };
 
   app.post("/custom-id/purchase", async (req, res) => {

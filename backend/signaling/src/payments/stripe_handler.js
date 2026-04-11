@@ -120,6 +120,11 @@ function resolveTierFromPriceId(priceId) {
   }
   // Custom ID purchases — use special productKey, no activation code
   const customIdPrices = {
+    // LIVE (acct_1QJAg3...)
+    "price_1TKxNkBtrTFeYCjzl0M45HMg": "custom_id_standard",  // $1 (10+ chars)
+    "price_1TKxNmBtrTFeYCjz4goI2OUM": "custom_id_short",     // $2 (5-9 chars)
+    "price_1TKxNoBtrTFeYCjzsOBMR9VM": "custom_id_ultra",     // $5 (3-4 chars)
+    // TEST (acct_1TInNU... Sandbox)
     "price_1TJITIBcyoLtm3FA0qZyTL5O": "custom_id_standard",
     "price_1TJITKBcyoLtm3FARalsHHII": "custom_id_short",
     "price_1TJITNBcyoLtm3FAlvw1HlRY": "custom_id_ultra"
