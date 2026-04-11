@@ -114,7 +114,7 @@ object UpdateChecker {
         }
 
         if (bestCode <= BuildConfig.VERSION_CODE) {
-            Log.d(
+            Log.w(
                 TAG,
                 "Already up-to-date (installed=${BuildConfig.VERSION_CODE}, latest=$bestCode)"
             )
@@ -127,7 +127,7 @@ object UpdateChecker {
             ?: Regex("""v(\d+\.\d+\.\d+)""").find(bestUrl)?.groupValues?.get(1)
             ?: ""
 
-        Log.d(
+        Log.w(
             TAG,
             "Update available: installed=${BuildConfig.VERSION_CODE} → latest=$bestCode ($versionName)"
         )

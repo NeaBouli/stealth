@@ -57,7 +57,7 @@ object UpdateManager {
     @JvmStatic
     fun checkAndPromptUpdate(activity: Activity) {
         val source = InstallSource.resolve(activity)
-        Log.d(TAG, "Manual check — install source: $source")
+        Log.w(TAG, "Manual check — install source: $source")
 
         when (source) {
             InstallSource.PLAY_STORE -> openPlayStore(activity)
@@ -79,7 +79,7 @@ object UpdateManager {
     fun maybeAutoCheck(activity: Activity) {
         val source = InstallSource.resolve(activity)
         if (source != InstallSource.SIDELOAD && source != InstallSource.OTHER_STORE) {
-            Log.d(TAG, "Auto-check skipped for source=$source (handled by store)")
+            Log.w(TAG, "Auto-check skipped for source=$source (handled by store)")
             return
         }
 
@@ -87,11 +87,11 @@ object UpdateManager {
         val last = prefs.getLong(KEY_LAST_CHECK, 0L)
         val now = System.currentTimeMillis()
         if (now - last < CHECK_INTERVAL_MS) {
-            Log.d(TAG, "Auto-check throttled — next in ${((CHECK_INTERVAL_MS - (now - last)) / 3600_000L)}h")
+            Log.w(TAG, "Auto-check throttled — next in ${((CHECK_INTERVAL_MS - (now - last)) / 3600_000L)}h")
             return
         }
         prefs.edit().putLong(KEY_LAST_CHECK, now).apply()
-
+        Log.w(TAG, "Auto-check firing (source=$source)")
         runInAppCheck(activity, manual = false)
     }
 
@@ -146,6 +146,7 @@ object UpdateManager {
             Handler(Looper.getMainLooper()).post {
                 if (activity.isFinishing || activity.isDestroyed) return@post
                 if (info == null) {
+                    Log.w(TAG, "Update check result: up-to-date (v${BuildConfig.VERSION_NAME})")
                     if (manual) {
                         Toast.makeText(
                             activity,
@@ -155,6 +156,7 @@ object UpdateManager {
                     }
                     return@post
                 }
+                Log.w(TAG, "Update check result: update available vC${info.versionCode}")
                 if (!manual && shouldSkip(activity, info.versionCode)) return@post
                 showUpdateDialog(activity, info)
             }
