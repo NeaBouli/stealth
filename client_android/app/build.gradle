@@ -1,6 +1,13 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
+// Guard: pro and premium flavors are internal-only (testing, not distribution).
+// They are excluded from the build unless -Pinternal is passed on the command line.
+//   Normal:   ./gradlew assembleFreeRelease        → builds
+//             ./gradlew assembleProRelease         → task does not exist
+//   Internal: ./gradlew -Pinternal assembleProDebug → builds
+def allowInternalFlavors = project.hasProperty('internal')
+
 // Google Services + Crashlytics: applied for all flavors but fully neutralized
 // for fdroid (tasks disabled, deps excluded, generated code stripped).
 apply plugin: 'com.google.gms.google-services'
@@ -151,6 +158,14 @@ android {
             buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
             buildConfigField "boolean", "BILLING_ENABLED", "false"
+        }
+    }
+
+    // Suppress pro/premium variants unless -Pinternal is set
+    variantFilter { variant ->
+        def flavorName = variant.flavors*.name
+        if (!allowInternalFlavors && (flavorName.contains('pro') || flavorName.contains('premium'))) {
+            setIgnore(true)
         }
     }
 
