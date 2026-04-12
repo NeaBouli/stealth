@@ -162,11 +162,10 @@
             <p style="color:#666;margin-bottom:24px">Information in accordance with EU E-Commerce Directive (2000/31/EC)</p>
 
             <h2>Service Provider</h2>
-            <p>Vendetta Labs</p>
             <div class="personal-data">
-                <div class="canvas-field"><canvas id="ownerEN" height="28"></canvas></div>
+                <div class="canvas-field"><canvas id="ownerEN" height="28"></canvas></div><br>
+                <div class="canvas-field"><canvas id="addrEN" height="28"></canvas></div>
             </div>
-            <p>24100 Kalamata, Greece / European Union</p>
 
             <h2>Contact</h2>
             <p><a href="#contact-form" style="color:#FF9800;text-decoration:underline">Send us a message</a> (contact form below)</p>
@@ -194,11 +193,10 @@
             <p style="color:#666;margin-bottom:24px">Angaben gem. &sect; 5 TMG / EU E-Commerce-Richtlinie (2000/31/EG)</p>
 
             <h2>Dienstanbieter</h2>
-            <p>Vendetta Labs</p>
             <div class="personal-data">
-                <div class="canvas-field"><canvas id="ownerDE" height="28"></canvas></div>
+                <div class="canvas-field"><canvas id="ownerDE" height="28"></canvas></div><br>
+                <div class="canvas-field"><canvas id="addrDE" height="28"></canvas></div>
             </div>
-            <p>24100 Kalamata, Griechenland / Europ&auml;ische Union</p>
 
             <h2>Kontakt</h2>
             <p><a href="#contact-form" style="color:#FF9800;text-decoration:underline">Nachricht senden</a> (Kontaktformular unten)</p>
@@ -226,11 +224,10 @@
             <p style="color:#666;margin-bottom:24px">&#928;&#955;&#951;&#961;&#959;&#966;&#959;&#961;&#943;&#949;&#962; &#963;&#973;&#956;&#966;&#969;&#957;&#945; &#956;&#949; &#964;&#951;&#957; &#927;&#948;&#951;&#947;&#943;&#945; &#917;&#917; 2000/31/&#917;&#922;</p>
 
             <h2>&#928;&#940;&#961;&#959;&#967;&#959;&#962; &#933;&#960;&#951;&#961;&#949;&#963;&#953;&#974;&#957;</h2>
-            <p>Vendetta Labs</p>
             <div class="personal-data">
-                <div class="canvas-field"><canvas id="ownerEL" height="28"></canvas></div>
+                <div class="canvas-field"><canvas id="ownerEL" height="28"></canvas></div><br>
+                <div class="canvas-field"><canvas id="addrEL" height="28"></canvas></div>
             </div>
-            <p>24100 &#922;&#945;&#955;&#945;&#956;&#940;&#964;&#945;, &#917;&#955;&#955;&#940;&#948;&#945; / &#917;&#965;&#961;&#969;&#960;&#945;&#970;&#954;&#942; &#904;&#957;&#969;&#963;&#951;</p>
 
             <h2>&#917;&#960;&#953;&#954;&#959;&#953;&#957;&#969;&#957;&#943;&#945;</h2>
             <p><a href="#contact-form" style="color:#FF9800;text-decoration:underline">&#931;&#964;&#949;&#943;&#955;&#964;&#949; &#956;&#942;&#957;&#965;&#956;&#945;</a> (&#966;&#972;&#961;&#956;&#945; &#949;&#960;&#953;&#954;&#959;&#953;&#957;&#969;&#957;&#943;&#945;&#962;)</p>
@@ -291,7 +288,7 @@
     // ── Canvas Rendering (Anti-Scraping) ──
     function renderCanvases() {
         const dpr = window.devicePixelRatio || 1;
-        const ownerText = '\u0393\u03B9\u03CE\u03C1\u03B3\u03BF\u03C2 \u039C\u03B1\u03C1\u03B9\u03CC\u03C4\u03C4\u03B9';
+        const ownerText = 'Vendetta Labs';
         const emailText = 'kaspartisan' + '@' + 'proton.me';
 
         function drawText(canvasId, text, fontSize, color, width) {
@@ -309,9 +306,16 @@
             ctx.fillText(text, 0, fontSize);
         }
 
-        // Owner name canvases
+        const addrText = 'Lakonikis 127, 24100 Kalamata, Greece';
+
+        // Company name canvases
         ['ownerEN', 'ownerDE', 'ownerEL', 'respEN', 'respDE', 'respEL'].forEach(function(id) {
-            drawText(id, ownerText, 16, '#e2e8f0', 260);
+            drawText(id, ownerText, 16, '#e2e8f0', 200);
+        });
+
+        // Address canvases
+        ['addrEN', 'addrDE', 'addrEL'].forEach(function(id) {
+            drawText(id, addrText, 14, '#ccc', 360);
         });
 
         // Email canvases
