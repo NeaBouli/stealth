@@ -255,38 +255,18 @@ dependencies {
     // WireGuard VPN tunnel (Premium only, uses GoBackend with Noise_IKpsk2)
     implementation 'com.wireguard.android:tunnel:1.0.20260102'
 
-    // WalletConnect v2 — Sign client for IFR token wallet verification
-    // fdroid: excluded entirely (android-core has Firebase type refs that fail F-Droid scanner)
-    // CRITICAL: sign:2.26.0 pulls android-core:1.28.0 transitively, but 1.28.0 moved
-    // PushModuleKt into the push-client module (not bundled). Force android-core to 1.26.0
-    // which ships PushModuleKt inside android-core itself. PushClient + PushInterface stubs
-    // are provided in src/main/java/com/walletconnect/android/push/ to satisfy class loader.
-    // BouncyCastle: foundation needs Ed25519 from bcprov. Exclude jdk15on (old) and use
-    // jdk18on (modern, Android-compatible) to avoid duplicate classes with web3j.
-    // Let Gradle resolve android-core to 1.28.0 (pulled by sign:2.26.0).
-    // 1.28.0 moved PushModuleKt to push-client, but PushClient + PushInterface stubs
-    // in src/main/java/com/walletconnect/android/push/ satisfy the class loader.
-    freeImplementation("com.walletconnect:android-core:1.26.0") {
-        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
-    }
-    freeImplementation("com.walletconnect:sign:2.26.0") {
-        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
-    }
-    freeImplementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
-    proImplementation("com.walletconnect:android-core:1.26.0") {
-        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
-    }
-    proImplementation("com.walletconnect:sign:2.26.0") {
-        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
-    }
-    proImplementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
-    premiumImplementation("com.walletconnect:android-core:1.26.0") {
-        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
-    }
-    premiumImplementation("com.walletconnect:sign:2.26.0") {
-        exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
-    }
-    premiumImplementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
+    // Reown AppKit (WalletConnect successor) — wallet connection for IFR token verification
+    // fdroid: excluded entirely (contains proprietary type references)
+    // BOM manages all Reown module versions consistently
+    freeImplementation(platform("com.reown:android-bom:1.4.1"))
+    freeImplementation("com.reown:android-core")
+    freeImplementation("com.reown:appkit")
+    proImplementation(platform("com.reown:android-bom:1.4.1"))
+    proImplementation("com.reown:android-core")
+    proImplementation("com.reown:appkit")
+    premiumImplementation(platform("com.reown:android-bom:1.4.1"))
+    premiumImplementation("com.reown:android-core")
+    premiumImplementation("com.reown:appkit")
 
     // Google Play Billing (FREE flavor only)
     freeImplementation 'com.android.billingclient:billing-ktx:6.2.1'
