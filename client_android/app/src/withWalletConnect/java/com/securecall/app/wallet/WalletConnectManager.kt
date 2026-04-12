@@ -23,7 +23,7 @@ object WalletConnectManager {
     // Dashboard: https://cloud.reown.com/app/83571cb4-8aa5-4b4b-bc0e-b9b098785fc7
     // REQUIRED: Add Android platform with allowed app IDs:
     //   com.securecall.app.free, com.securecall.app.pro, com.securecall.app.premium
-    private const val PROJECT_ID = "83571cb48aa54b4bbc0eb9b098785fc7"
+    private const val PROJECT_ID = "83571cb4-8aa5-4b4b-bc0e-b9b098785fc7"
 
     @Volatile
     var isInitialized = false
@@ -52,7 +52,7 @@ object WalletConnectManager {
             )
 
             CoreClient.initialize(
-                projectId = PROJECT_ID,
+                relayServerUrl = "wss://relay.walletconnect.com?projectId=$PROJECT_ID",
                 connectionType = ConnectionType.AUTOMATIC,
                 application = application,
                 metaData = metadata
@@ -148,12 +148,6 @@ object WalletConnectManager {
             return
         }
 
-        if (!relayConnected) {
-            Log.w(TAG, "Relay not connected — cannot pair")
-            callback(false, "WalletConnect relay not connected.\n\nThis usually means the Reown Cloud project needs Android platform configured.\n\nUse manual wallet entry instead (enter your 0x address above).")
-            return
-        }
-
         try {
             connectCallback = callback
 
@@ -200,14 +194,22 @@ object WalletConnectManager {
                 onError = { error: Modal.Model.Error ->
                     val msg = error.throwable.message ?: "unknown"
                     Log.e(TAG, "Connect error: $msg")
-                    callback(false, "Connection failed: $msg")
+                    if (msg.contains("Timed out") || msg.contains("403") || msg.contains("Subscribe")) {
+                        callback(false, "WalletConnect relay unavailable — known SDK issue.\n\nUse manual wallet entry instead.")
+                    } else {
+                        callback(false, "Connection failed: $msg")
+                    }
                     connectCallback = null
                 }
             )
         } catch (e: Throwable) {
             val msg = e.message ?: ""
             Log.w(TAG, "AppKit connect failed: $msg")
-            callback(false, "WalletConnect connection failed: $msg")
+            if (msg.contains("Timed out") || msg.contains("Subscribe") || msg.contains("Publish")) {
+                callback(false, "WalletConnect relay timed out — known SDK issue (reown-kotlin #240).\n\nUse manual wallet entry instead (enter 0x address above).")
+            } else {
+                callback(false, "WalletConnect connection failed: $msg")
+            }
             connectCallback = null
         }
     }
