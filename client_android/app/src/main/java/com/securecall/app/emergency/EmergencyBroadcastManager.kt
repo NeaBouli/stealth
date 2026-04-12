@@ -113,8 +113,8 @@ object EmergencyBroadcastManager {
             icon = "\uD83D\uDD04", // arrows counterclockwise
             titleEn = "Update Available",
             titleDe = "Update verf\u00FCgbar",
-            bodyEn = "A new version of SecureCall is available on Google Play. Update now for the latest features and improvements.",
-            bodyDe = "Eine neue Version von SecureCall ist im Google Play Store verf\u00FCgbar. Jetzt aktualisieren.",
+            bodyEn = "A new version of SecureCall is available. Tap \"Update Now\" to get the latest features and security improvements.",
+            bodyDe = "Eine neue Version von SecureCall ist verf\u00FCgbar. Tippen Sie auf \"Update Now\" f\u00FCr die neuesten Funktionen und Sicherheitsverbesserungen.",
             severity = Severity.INFO,
             dismissable = true,
             showUpdateButton = true
@@ -123,8 +123,8 @@ object EmergencyBroadcastManager {
             icon = "\uD83E\uDDEA", // test tube
             titleEn = "Beta Update Available",
             titleDe = "Beta-Update verf\u00FCgbar",
-            bodyEn = "A new version of SecureCall is available.\n\nTo update:\n1. Open Google Play Store\n2. Tap your profile \u2192 Manage apps\n3. Find SecureCall \u2192 Update\n\nOr use your beta tester link from the invitation email.\n\n\u2500\u2500\u2500\n\nEine neue Version von SecureCall ist verf\u00FCgbar.\n\nSo aktualisieren:\n1. Google Play Store \u00F6ffnen\n2. Profilbild \u2192 Apps verwalten\n3. SecureCall suchen \u2192 Aktualisieren\n\nOder den Beta-Tester-Link aus der Einladungs-Email nutzen.",
-            bodyDe = "Eine neue Version von SecureCall ist verf\u00FCgbar.\n\nSo aktualisieren:\n1. Google Play Store \u00F6ffnen\n2. Profilbild \u2192 Apps verwalten\n3. SecureCall suchen \u2192 Aktualisieren\n\nOder den Beta-Tester-Link aus der Einladungs-Email nutzen.\n\n\u2500\u2500\u2500\n\nA new version of SecureCall is available.\n\nTo update:\n1. Open Google Play Store\n2. Tap your profile \u2192 Manage apps\n3. Find SecureCall \u2192 Update\n\nOr use your beta tester link from the invitation email.",
+            bodyEn = "A new beta version of SecureCall is available.\n\nTap \"Update Now\" below to open your app store or download page.\n\nAlternatively, use the beta tester link from your invitation email.\n\n\u2500\u2500\u2500\n\nEine neue Beta-Version von SecureCall ist verf\u00FCgbar.\n\nTippen Sie unten auf \"Update Now\", um Ihren App-Store oder die Download-Seite zu \u00F6ffnen.\n\nAlternativ den Beta-Tester-Link aus der Einladungs-Email nutzen.",
+            bodyDe = "Eine neue Beta-Version von SecureCall ist verf\u00FCgbar.\n\nTippen Sie unten auf \"Update Now\", um Ihren App-Store oder die Download-Seite zu \u00F6ffnen.\n\nAlternativ den Beta-Tester-Link aus der Einladungs-Email nutzen.\n\n\u2500\u2500\u2500\n\nA new beta version of SecureCall is available.\n\nTap \"Update Now\" below to open your app store or download page.\n\nOr use the beta tester link from your invitation email.",
             severity = Severity.INFO,
             dismissable = true,
             showUpdateButton = true

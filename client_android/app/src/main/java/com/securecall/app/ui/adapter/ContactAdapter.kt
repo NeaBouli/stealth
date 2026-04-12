@@ -89,6 +89,11 @@ class ContactAdapter(
             onCallClick?.invoke(contact)
         }
 
+        // Short press on entire row also triggers call (same as tapping the call icon)
+        holder.itemView.setOnClickListener {
+            onCallClick?.invoke(contact)
+        }
+
         // Long-press context menu (Verify/Block/Delete)
         holder.itemView.setOnLongClickListener {
             onLongClick?.invoke(contact)

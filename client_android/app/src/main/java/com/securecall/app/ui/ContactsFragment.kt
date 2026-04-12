@@ -630,9 +630,12 @@ class ContactsFragment : Fragment() {
             updateList(sorted, showRegistrationBadge = false)
         } else {
             // Search: show ALL contacts, with registration status
+            // Normalize query for phone number matching (strip spaces, dashes, parens)
+            val normalizedQuery = query.replace(Regex("[^0-9+a-zA-Z]"), "")
             val filtered = allContacts.filter {
                 it.name.contains(query, ignoreCase = true) ||
-                it.phoneOrId.contains(query, ignoreCase = true)
+                it.phoneOrId.contains(query, ignoreCase = true) ||
+                it.phoneOrId.replace(Regex("[^0-9+]"), "").contains(normalizedQuery)
             }.sortedWith(compareByDescending<Contact> { isContactRegistered(it) }.thenBy { it.name })
             updateList(filtered, showRegistrationBadge = true)
         }

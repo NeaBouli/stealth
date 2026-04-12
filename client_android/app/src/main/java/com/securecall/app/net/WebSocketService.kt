@@ -1282,10 +1282,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     fun updateForegroundMode(enabled: Boolean) {
+        Log.w("WS_SERVICE", "updateForegroundMode: enabled=$enabled")
         if (enabled) {
             startForegroundWithNotification()
         } else {
             stopForeground(STOP_FOREGROUND_REMOVE)
+            foregroundStarted = false // Reset so startForeground() is called again when re-enabled
+            // Samsung sometimes keeps the notification after stopForeground — force-cancel it
+            val nm = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+            nm.cancel(NOTIFICATION_ID)
+            Log.w("WS_SERVICE", "stopForeground + cancel notification — background service disabled")
         }
     }
 

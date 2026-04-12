@@ -238,7 +238,7 @@ function setupRoutes(app, requireAdmin) {
           password_hash: hashPassword(password).hash,
           password_salt: hashPassword(password).salt
         },
-        payment_method_types: ["card", "klarna"]
+        payment_method_types: ["card", "klarna", "paypal", "link"]
       });
 
       console.log(`[CUSTOM-ID] Purchase session created ($${check.price / 100})`);

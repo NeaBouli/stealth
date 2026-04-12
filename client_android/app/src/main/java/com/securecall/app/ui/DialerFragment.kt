@@ -196,7 +196,7 @@ class DialerFragment : Fragment() {
         }
 
         if (matches.isNotEmpty()) {
-            contactSuggestions.adapter = ContactAdapter(matches) { contact ->
+            contactSuggestions.adapter = ContactAdapter(matches, onCallClick = { contact ->
                 if (contact.phoneOrId.startsWith("android-")) {
                     // Pre-call health check
                     val ws = com.securecall.app.net.WebSocketService.instance
@@ -214,7 +214,7 @@ class DialerFragment : Fragment() {
                     // Phone number — try server lookup first
                     resolveAndCall(contact.name, contact.phoneOrId)
                 }
-            }
+            })
             contactSuggestions.visibility = View.VISIBLE
         } else {
             contactSuggestions.visibility = View.GONE

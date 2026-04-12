@@ -50,6 +50,10 @@ function generateEmailHTML(code, tier) {
          style="display:inline-block;background:rgba(255,255,255,0.08);color:#ccc;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;margin:6px;font-size:14px;border:1px solid rgba(255,255,255,0.12);">
         Direct APK Download
       </a>
+      <a href="https://f-droid.org/packages/com.securecall.app.fdroid/"
+         style="display:inline-block;background:rgba(255,255,255,0.08);color:#ccc;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;margin:6px;font-size:14px;border:1px solid rgba(255,255,255,0.12);">
+        F-Droid
+      </a>
     </div>
   </div>
 
