@@ -201,9 +201,9 @@ function setupRoutes(app, requireAdmin) {
 
   // Purchase via Stripe Checkout — LIVE account acct_1QJAg3BtrTFeYCjz
   const PRICE_IDS = {
-    100: "price_1TKxNkBtrTFeYCjzl0M45HMg",  // 10+ chars = $1
-    200: "price_1TKxNmBtrTFeYCjz4goI2OUM",  // 5-9 chars = $2
-    500: "price_1TKxNoBtrTFeYCjzsOBMR9VM"   // 3-4 chars = $5
+    100: "price_1TLU2wBtrTFeYCjzHdkjKxHQ",  // 10+ chars = €1
+    200: "price_1TLU34BtrTFeYCjzt86MqEZq",  // 5-9 chars = €2
+    500: "price_1TLU35BtrTFeYCjzXs6Z3QyP"   // 3-4 chars = €5
   };
 
   app.post("/custom-id/purchase", async (req, res) => {
