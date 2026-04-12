@@ -257,27 +257,36 @@ dependencies {
 
     // WalletConnect v2 — Sign client for IFR token wallet verification
     // fdroid: excluded entirely (android-core has Firebase type refs that fail F-Droid scanner)
-    // android-core 1.28.0 (pulled by sign:2.26.0) references PushClient at runtime.
-    // PushClient is not bundled — NoClassDefFoundError is caught in WalletConnectManager.init().
-    // Exclude jdk15on to avoid duplicate classes with jdk18on (from web3j).
+    // CRITICAL: sign:2.26.0 pulls android-core:1.28.0 transitively, but 1.28.0 moved
+    // PushModuleKt into the push-client module (not bundled). Force android-core to 1.26.0
+    // which ships PushModuleKt inside android-core itself. PushClient + PushInterface stubs
+    // are provided in src/main/java/com/walletconnect/android/push/ to satisfy class loader.
+    // BouncyCastle: foundation needs Ed25519 from bcprov. Exclude jdk15on (old) and use
+    // jdk18on (modern, Android-compatible) to avoid duplicate classes with web3j.
+    // Let Gradle resolve android-core to 1.28.0 (pulled by sign:2.26.0).
+    // 1.28.0 moved PushModuleKt to push-client, but PushClient + PushInterface stubs
+    // in src/main/java/com/walletconnect/android/push/ satisfy the class loader.
     freeImplementation("com.walletconnect:android-core:1.26.0") {
         exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
     }
     freeImplementation("com.walletconnect:sign:2.26.0") {
         exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
     }
+    freeImplementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
     proImplementation("com.walletconnect:android-core:1.26.0") {
         exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
     }
     proImplementation("com.walletconnect:sign:2.26.0") {
         exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
     }
+    proImplementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
     premiumImplementation("com.walletconnect:android-core:1.26.0") {
         exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
     }
     premiumImplementation("com.walletconnect:sign:2.26.0") {
         exclude group: "org.bouncycastle", module: "bcprov-jdk15on"
     }
+    premiumImplementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
 
     // Google Play Billing (FREE flavor only)
     freeImplementation 'com.android.billingclient:billing-ktx:6.2.1'

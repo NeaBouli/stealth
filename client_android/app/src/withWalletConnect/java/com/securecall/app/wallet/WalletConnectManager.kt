@@ -34,6 +34,7 @@ object WalletConnectManager {
     private var pendingPairingUri: String? = null
 
     private var connectCallback: ((Boolean, String) -> Unit)? = null
+    private var dappDelegateSet = false
 
     /**
      * Initialize WalletConnect Core + SignClient. Must be called from Application.onCreate().
@@ -61,16 +62,46 @@ object WalletConnectManager {
                 }
             }
 
+            // Mark initialized after CoreClient succeeds (synchronous part).
+            // SignClient init may fail if relay hasn't connected (async 403).
+            isInitialized = true
+            Log.d(TAG, "CoreClient initialized — isInitialized=true")
+
+            // Best-effort: initialize SignClient + DappDelegate now.
+            // If it fails (relay not connected, Koin resolution error), connect() retries.
+            initSignClient()
+
+            Log.d(TAG, "WalletConnect initialized with project $PROJECT_ID")
+        } catch (e: Throwable) {
+            Log.e(TAG, "WalletConnect init failed (non-fatal): ${e.message}")
+        }
+    }
+
+    /**
+     * Initialize SignClient and set the DappDelegate. Safe to call multiple times.
+     */
+    private fun initSignClient() {
+        try {
             val signParams = Sign.Params.Init(core = CoreClient)
             SignClient.initialize(signParams) { error ->
                 Log.e(TAG, "SignClient init error: ${error.throwable.message}")
             }
+            setupDappDelegate()
+        } catch (e: Throwable) {
+            Log.w(TAG, "SignClient init deferred: ${e.message}")
+        }
+    }
 
+    /**
+     * Set up the DappDelegate for session callbacks. Idempotent.
+     */
+    private fun setupDappDelegate() {
+        if (dappDelegateSet) return
+        try {
             SignClient.setDappDelegate(object : SignClient.DappDelegate {
                 override fun onSessionApproved(approvedSession: Sign.Model.ApprovedSession) {
                     val accounts = approvedSession.accounts
                     if (accounts.isNotEmpty()) {
-                        // Account format: "eip155:1:0x1234..."
                         val address = accounts.first().substringAfterLast(":")
                         connectedAddress = address
                         Log.d(TAG, "Session approved — wallet: $address")
@@ -123,15 +154,9 @@ object WalletConnectManager {
                     Log.e(TAG, "Sign error: ${error.throwable.message}")
                 }
             })
-
-            isInitialized = true
-            Log.d(TAG, "WalletConnect initialized with project $PROJECT_ID")
+            dappDelegateSet = true
         } catch (e: Throwable) {
-            // Catches Exception, Error, NoClassDefFoundError, ClassNotFoundException,
-            // NoSuchMethodError, LinkageError, etc. WalletConnect's android-core
-            // pulls Firebase/PushClient/DeletedPairingFlow refs that may not be bundled
-            // or may mismatch at runtime (Crashlytics F-010: 2 different crashes on vC34).
-            Log.e(TAG, "WalletConnect init failed (non-fatal): ${e.message}")
+            Log.w(TAG, "setDappDelegate failed: ${e.message}")
         }
     }
 
@@ -144,16 +169,15 @@ object WalletConnectManager {
             return
         }
 
-        // Wrap the entire body in catch(Throwable) to handle any runtime class
-        // loading / method resolution failure from the WalletConnect SDK.
-        // F-010: android-core 1.26.0 vs sign 2.26.0 version mismatch can throw
-        // NoSuchMethodError (getDeletedPairingFlow…) and ClassNotFoundException.
+        // Retry SignClient init if it failed during Application.onCreate
+        initSignClient()
+
         try {
             connectCallback = callback
 
             val namespaces = mapOf(
                 "eip155" to Sign.Model.Namespace.Proposal(
-                    chains = listOf("eip155:1"), // Ethereum mainnet
+                    chains = listOf("eip155:1"),
                     methods = listOf("eth_sendTransaction", "personal_sign"),
                     events = listOf("chainChanged", "accountsChanged")
                 )
@@ -186,8 +210,6 @@ object WalletConnectManager {
                 connect = connectParams,
                 onSuccess = { _: String ->
                     Log.d(TAG, "Connect request sent")
-
-                    // Try to open in any installed wallet app
                     try {
                         val wcIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pairing.uri))
                         wcIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -213,19 +235,13 @@ object WalletConnectManager {
         }
     }
 
-    /**
-     * Get current session's wallet address, if any.
-     */
     fun getConnectedWallet(): String? {
         if (!isInitialized) return connectedAddress
         return try {
             val sessions = SignClient.getListOfActiveSessions()
             if (sessions.isNotEmpty()) {
-                val accounts = sessions.first().namespaces.values
-                    .flatMap { it.accounts }
-                if (accounts.isNotEmpty()) {
-                    accounts.first().substringAfterLast(":")
-                } else null
+                val accounts = sessions.first().namespaces.values.flatMap { it.accounts }
+                if (accounts.isNotEmpty()) accounts.first().substringAfterLast(":") else null
             } else connectedAddress
         } catch (e: Throwable) {
             Log.w(TAG, "Error getting session: ${e.message}")
@@ -233,9 +249,6 @@ object WalletConnectManager {
         }
     }
 
-    /**
-     * Disconnect current session.
-     */
     fun disconnect(context: Context) {
         try {
             val sessions = SignClient.getListOfActiveSessions()
@@ -243,14 +256,8 @@ object WalletConnectManager {
                 val topic = sessions.first().topic
                 SignClient.disconnect(
                     Sign.Params.Disconnect(topic),
-                    onSuccess = {
-                        connectedAddress = null
-                        Log.d(TAG, "Disconnected successfully")
-                    },
-                    onError = { error ->
-                        Log.e(TAG, "Disconnect error: ${error.throwable.message}")
-                        connectedAddress = null
-                    }
+                    onSuccess = { connectedAddress = null; Log.d(TAG, "Disconnected") },
+                    onError = { error -> Log.e(TAG, "Disconnect error: ${error.throwable.message}"); connectedAddress = null }
                 )
             } else {
                 connectedAddress = null
@@ -261,10 +268,6 @@ object WalletConnectManager {
         }
     }
 
-    /**
-     * After wallet is connected, verify IFR token balance via the signaling server
-     * and store the result with METHOD_WALLETCONNECT (no 30-day expiry).
-     */
     fun verifyAndUnlock(context: Context, walletAddress: String, callback: (Boolean, String) -> Unit) {
         try {
             val ws = com.securecall.app.net.WebSocketService.instance
@@ -272,13 +275,9 @@ object WalletConnectManager {
                 callback(false, "Not connected to server")
                 return
             }
-
             ws.verifyIfrLock(walletAddress) { success, tier, amount, error ->
                 if (success && tier.isNotEmpty()) {
-                    IfrLockManager.storeVerificationResult(
-                        context, walletAddress, tier, amount,
-                        IfrLockManager.METHOD_WALLETCONNECT
-                    )
+                    IfrLockManager.storeVerificationResult(context, walletAddress, tier, amount, IfrLockManager.METHOD_WALLETCONNECT)
                     Log.d(TAG, "WalletConnect verification: $amount IFR → $tier (permanent)")
                     callback(true, "Unlocked $tier with $amount IFR (permanent)")
                 } else {
