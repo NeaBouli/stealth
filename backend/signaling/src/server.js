@@ -1780,7 +1780,7 @@ app.post('/stripe/create-dynamic-checkout', async (req, res) => {
       success_url: 'https://stealthx.tech/payment-success.html?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://stealthx.tech/#pricing',
       metadata: { tier, type: 'lifetime_dynamic' },
-      payment_method_types: ['card', 'klarna', 'paypal', 'link']
+      payment_method_types: ['card', 'klarna', 'link']
     });
     res.json({ url: session.url, sessionId: session.id, price });
   } catch (err) {

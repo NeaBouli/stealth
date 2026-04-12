@@ -94,7 +94,7 @@ async function createCheckoutSession(stripe, productKey, customerEmail) {
 
   // SEPA + Klarna for EU customers (card is always included)
   if (product.mode === "payment") {
-    sessionParams.payment_method_types = ["card", "klarna", "paypal", "link"];
+    sessionParams.payment_method_types = ["card", "klarna", "link"];
   }
 
   const session = await stripe.checkout.sessions.create(sessionParams);
