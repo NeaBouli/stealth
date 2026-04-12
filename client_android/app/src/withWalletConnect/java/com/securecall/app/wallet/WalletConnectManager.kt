@@ -230,8 +230,16 @@ object WalletConnectManager {
                 }
             )
         } catch (e: Throwable) {
-            Log.w(TAG, "WalletConnect unavailable: ${e.message}")
-            callback(false, "WalletConnect unavailable")
+            val msg = e.message ?: ""
+            Log.w(TAG, "WalletConnect connect failed: $msg")
+            when {
+                msg.contains("initialized", ignoreCase = true) || msg.contains("SignClient") ->
+                    callback(false, "WalletConnect relay connection failed — Project ID may be invalid. Use manual wallet entry instead.")
+                msg.contains("403") || msg.contains("Forbidden") ->
+                    callback(false, "WalletConnect Project ID rejected — register at cloud.reown.com")
+                else ->
+                    callback(false, "WalletConnect connection failed: $msg")
+            }
         }
     }
 
@@ -290,8 +298,8 @@ object WalletConnectManager {
                 }
             }
         } catch (e: Throwable) {
-            Log.w(TAG, "WalletConnect unavailable: ${e.message}")
-            callback(false, "WalletConnect unavailable")
+            Log.w(TAG, "verifyAndUnlock failed: ${e.message}")
+            callback(false, "Verification failed — use manual wallet entry instead")
         }
     }
 }
