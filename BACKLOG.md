@@ -5,6 +5,17 @@
 
 ## 🟡 Nächste Session
 <!-- Nächste konkrete Tasks -->
+- **TODO-097** WalletConnect SDK PushClient Bug fixen
+  - `isInitialized=false` — `com.walletconnect.android.push.client.PushClient` nicht auflösbar
+  - `catch(Throwable)` verhindert Crash, aber Connect Wallet bleibt blockiert
+  - Fix: PushClient dependency excluden oder Stub-Klasse bereitstellen
+- **TODO-098** Dependabot: 7 npm Vulnerabilities (5 high)
+  - `cd backend/signaling && npm audit` → prüfen + fixen
+- **TODO-099** Resend API Key in Railway env setzen
+  - Email-Delivery aktuell nur über Brevo, Resend als Fallback konfigurieren
+- **TODO-100** Audio Test S10→Samsung A (anderes Endgerät, manuell)
+- **TODO-101** Stripe "myproduct" Test-Produkte archivieren (manuell im Dashboard)
+- **TODO-102** Custom ID Preise USD→EUR im Stripe Dashboard umstellen
 - **TODO-088** F-002 Backup-Mechanismus (Datenverlust nach Uninstall)
   - SecureID + Kontakte + Settings gehen bei Uninstall verloren (SharedPreferences)
   - Option A: Cloud-Backup (encrypted unter SecureID)
@@ -34,6 +45,30 @@
 
 ## ✅ Erledigt
 <!-- Session 2026-04-10 / 2026-04-11 / 2026-04-12 -->
+
+### Kontakte/Dialer/Invite Bug-Fixes (2026-04-12)
+- [x] **BUG-041** Dialer Suggestion Tap no-op — Kotlin trailing lambda ging an `onLongClick` statt `onCallClick`
+  - Fix: Named parameter `onCallClick = { ... }` in `DialerFragment.kt:199`
+- [x] **BUG-042** Kontakte-Suche ignoriert Nummernformat — `phoneOrId.contains(query)` ohne Normalisierung
+  - Fix: Zusätzlicher `replace(Regex("[^0-9+]"), "")` Vergleich in `ContactsFragment.kt:633`
+- [x] **BUG-043** Kontakt-Zeile nicht klickbar — nur Call-Icon hatte `setOnClickListener`
+  - Fix: `itemView.setOnClickListener { onCallClick?.invoke(contact) }` in `ContactAdapter.kt:88`
+- [x] **BUG-044** Samsung: Notification bleibt nach `stopForeground(REMOVE)`
+  - Fix: Expliziter `NotificationManager.cancel(NOTIFICATION_ID)` in `WebSocketService.kt`
+- [x] **BUG-045** `foregroundStarted` nicht zurückgesetzt → Re-enable skippt `startForeground()`
+  - Fix: `foregroundStarted = false` im OFF-Branch von `updateForegroundMode()`
+- [x] **BUG-046** Broadcast Template 9+10 hardcoded "Google Play" für alle Install-Sources
+  - Fix: Generischer Text "Tap Update Now" statt "on Google Play"
+- [x] **Email-Template** F-Droid Download-Link hinzugefügt in `email_handler.js`
+
+### Volltest Premium auf 3 Geräten (2026-04-12)
+- [x] Kontakte: Suche nach Name + Nummer, Call via Zeile + Icon, Verify, Block, Delete
+- [x] Dialer: Nummer → PHONE_LOOKUP → Call, ABC-Mode, T9, Invite-Dialog
+- [x] Cross-Call: S10↔S7, S7↔Tab S4 — bidirektional, ICE CONNECTED, Audio OK
+- [x] Anti-Recording: FLAG_SECURE (12 Byte Screenshot), Kaspersky+Diktiergerät WARNING, Continuous Monitor 5s
+- [x] Background Service: Toggle AN→AUS→AN, Notification korrekt entfernt/wiederhergestellt
+- [x] Network Settings: Preferred Network (Default/WiFi/Mobile), WS Reconnect, VPN Config Dialog, Kill Switch
+- [x] IFR Token: Manual Verify (200M IFR → PREMIUM), Wallet Binding (1 Wallet pro Gerät), 30-day Expiry
 
 ### Test-Session vC34 (2026-04-10)
 - [x] **TODO-075** Phase 1: App-Lifecycle + Core Calling Tests (T001-T033)
@@ -160,4 +195,4 @@
 - [x] **TODO-074** F-Droid APK Build — DONE (2026-04-07)
 
 ---
-*Zuletzt aktualisiert: 2026-04-12*
+*Zuletzt aktualisiert: 2026-04-12 (Nacht-Session — Kontakte+Security+Network+IFR Volltest)*
