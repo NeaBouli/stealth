@@ -19,8 +19,10 @@ import com.securecall.app.config.IfrLockManager
 object WalletConnectManager {
 
     private const val TAG = "WalletConnect"
-    // Reown Cloud Project ID — hex format without dashes (dashboard UUID stripped)
-    // Dashboard: https://cloud.reown.com — must add com.securecall.app.* to allowed app IDs
+    // Reown Cloud Project ID — same as Inferno (ifrunit.tech) project.
+    // Dashboard: https://cloud.reown.com/app/83571cb4-8aa5-4b4b-bc0e-b9b098785fc7
+    // REQUIRED: Add Android platform with allowed app IDs:
+    //   com.securecall.app.free, com.securecall.app.pro, com.securecall.app.premium
     private const val PROJECT_ID = "83571cb48aa54b4bbc0eb9b098785fc7"
 
     @Volatile
@@ -30,6 +32,9 @@ object WalletConnectManager {
     @Volatile
     var connectedAddress: String? = null
         private set
+
+    @Volatile
+    private var relayConnected = false
 
     private var connectCallback: ((Boolean, String) -> Unit)? = null
 
@@ -113,11 +118,16 @@ object WalletConnectManager {
                 override fun onRequestExpired(request: Modal.Model.ExpiredRequest) {}
 
                 override fun onConnectionStateChange(state: Modal.Model.ConnectionState) {
+                    relayConnected = state.isAvailable
                     Log.d(TAG, "Connection state: ${state.isAvailable}")
                 }
 
                 override fun onError(error: Modal.Model.Error) {
-                    Log.e(TAG, "AppKit error: ${error.throwable.message}")
+                    val msg = error.throwable.message ?: ""
+                    Log.e(TAG, "AppKit error: $msg")
+                    if (msg.contains("403") || msg.contains("Invalid project")) {
+                        Log.e(TAG, "Dashboard fix needed: add com.securecall.app.* to Allowed Application IDs at cloud.reown.com")
+                    }
                 }
             })
 
@@ -135,6 +145,12 @@ object WalletConnectManager {
     fun connect(context: Context, callback: (Boolean, String) -> Unit) {
         if (!isInitialized) {
             callback(false, "WalletConnect not initialized")
+            return
+        }
+
+        if (!relayConnected) {
+            Log.w(TAG, "Relay not connected — cannot pair")
+            callback(false, "WalletConnect relay not connected.\n\nThis usually means the Reown Cloud project needs Android platform configured.\n\nUse manual wallet entry instead (enter your 0x address above).")
             return
         }
 
