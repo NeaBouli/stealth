@@ -19,7 +19,9 @@ import com.securecall.app.config.IfrLockManager
 object WalletConnectManager {
 
     private const val TAG = "WalletConnect"
-    private const val PROJECT_ID = "83571cb4-8aa5-4b4b-bc0e-b9b098785fc7"
+    // Reown Cloud Project ID — hex format without dashes (dashboard UUID stripped)
+    // Dashboard: https://cloud.reown.com — must add com.securecall.app.* to allowed app IDs
+    private const val PROJECT_ID = "83571cb48aa54b4bbc0eb9b098785fc7"
 
     @Volatile
     var isInitialized = false
