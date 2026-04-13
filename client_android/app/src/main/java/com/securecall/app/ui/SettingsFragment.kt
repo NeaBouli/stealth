@@ -930,29 +930,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     com.securecall.app.config.IfrLockManager.clearIfrUnlock(ctx)
                     android.widget.Toast.makeText(ctx, "Wallet disconnected", android.widget.Toast.LENGTH_SHORT).show()
                     configureIfrUnlock(effectiveTier)
-                } else if (!com.securecall.app.wallet.WalletConnectManager.isInitialized) {
-                    android.widget.Toast.makeText(ctx, "WalletConnect initializing...", android.widget.Toast.LENGTH_SHORT).show()
                 } else {
-                    // Start WalletConnect pairing with 30s timeout (TB-011)
-                    summary = "Connecting..."
-                    isEnabled = false
-                    val timeoutHandler = android.os.Handler(android.os.Looper.getMainLooper())
-                    val timeoutRunnable = Runnable {
-                        if (isAdded) {
-                            isEnabled = true
-                            summary = getString(R.string.pref_ifr_walletconnect_summary)
-                            android.widget.Toast.makeText(ctx, "Connection timed out — try again", android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    timeoutHandler.postDelayed(timeoutRunnable, 30000)
+                    // Open wallet chooser → paste address → verify IFR balance
                     com.securecall.app.wallet.WalletConnectManager.connect(ctx) { success, result ->
-                        timeoutHandler.removeCallbacks(timeoutRunnable)
                         activity?.runOnUiThread {
                             if (!isAdded) return@runOnUiThread
-                            isEnabled = true
                             if (success) {
-                                // Wallet connected — now verify IFR balance
-                                summary = "Connected: ${result.take(6)}...${result.takeLast(4)} — Verifying..."
+                                summary = "Verifying ${result.take(6)}...${result.takeLast(4)}..."
                                 com.securecall.app.wallet.WalletConnectManager.verifyAndUnlock(ctx, result) { verified, msg ->
                                     activity?.runOnUiThread {
                                         if (!isAdded) return@runOnUiThread
@@ -964,9 +948,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                                         }
                                     }
                                 }
-                            } else if (result == "no_wallet_app") {
-                                summary = "No wallet app found — install MetaMask or Trust Wallet"
-                            } else {
+                            } else if (result != "Cancelled") {
                                 summary = result
                             }
                         }

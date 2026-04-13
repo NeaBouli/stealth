@@ -5,13 +5,9 @@ import android.content.Context
 import android.util.Log
 
 /**
- * F-Droid stub — WalletConnect is not available in the fdroid flavor
- * because the WalletConnect SDK contains proprietary Firebase type references.
- * Users can unlock via activation code instead.
+ * F-Droid stub — wallet connection uses activation codes instead.
  */
 object WalletConnectManager {
-
-    private const val TAG = "WalletConnect"
 
     @Volatile
     var isInitialized = false
@@ -22,18 +18,18 @@ object WalletConnectManager {
         private set
 
     fun init(application: Application) {
-        Log.d(TAG, "WalletConnect not available in F-Droid build")
+        isInitialized = true
+        Log.d("WalletConnect", "F-Droid build — wallet connect via activation codes only")
     }
 
     fun connect(context: Context, callback: (Boolean, String) -> Unit) {
-        callback(false, "WalletConnect is not available in the F-Droid edition. Use an activation code to unlock.")
+        callback(false, "Wallet connect is not available in the F-Droid edition.\nUse an activation code or enter your wallet address manually above.")
     }
 
     fun getConnectedWallet(): String? = null
-
-    fun disconnect(context: Context) {}
+    fun disconnect(context: Context) { connectedAddress = null }
 
     fun verifyAndUnlock(context: Context, walletAddress: String, callback: (Boolean, String) -> Unit) {
-        callback(false, "WalletConnect is not available in the F-Droid edition")
+        callback(false, "Not available in F-Droid edition")
     }
 }

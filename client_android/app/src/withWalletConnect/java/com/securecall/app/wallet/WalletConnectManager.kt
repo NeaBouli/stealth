@@ -1,29 +1,37 @@
 package com.securecall.app.wallet
 
+import android.app.Activity
+import android.app.AlertDialog
 import android.app.Application
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.util.Log
-import com.reown.android.Core
-import com.reown.android.CoreClient
-import com.reown.android.relay.ConnectionType
-import com.reown.appkit.client.AppKit
-import com.reown.appkit.client.Modal
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.Toast
 import com.securecall.app.config.IfrLockManager
 
 /**
- * Reown AppKit integration for IFR token wallet verification.
- * Replaces WalletConnect SDK 2.x (PushClient/relay auth issues).
+ * Wallet connection for IFR token verification via deep links.
  *
- * WalletConnect-verified wallets get permanent tier unlock (no 30-day expiry).
+ * No external SDK needed — opens wallet apps directly and lets the user
+ * paste their address. Backend verifies IFR balance on Ethereum.
+ *
+ * Replaces Reown AppKit which had unresolved relay 403 bug (reown-kotlin #240).
  */
 object WalletConnectManager {
 
     private const val TAG = "WalletConnect"
-    // Reown Cloud Project ID — same as Inferno (ifrunit.tech) project.
-    // Dashboard: https://cloud.reown.com/app/83571cb4-8aa5-4b4b-bc0e-b9b098785fc7
-    // REQUIRED: Add Android platform with allowed app IDs:
-    //   com.securecall.app.free, com.securecall.app.pro, com.securecall.app.premium
-    private const val PROJECT_ID = "83571cb4-8aa5-4b4b-bc0e-b9b098785fc7"
+    private val WALLET_REGEX = "^0x[0-9a-fA-F]{40}$".toRegex()
+
+    private val WALLETS = listOf(
+        WalletApp("MetaMask", "io.metamask", "https://metamask.app.link"),
+        WalletApp("Trust Wallet", "com.wallet.crypto.trustapp", "https://link.trustwallet.com"),
+        WalletApp("Rainbow", "me.rainbow", "https://rnbwapp.com"),
+        WalletApp("Coinbase Wallet", "org.toshi", "https://go.cb-w.com")
+    )
 
     @Volatile
     var isInitialized = false
@@ -33,208 +41,134 @@ object WalletConnectManager {
     var connectedAddress: String? = null
         private set
 
-    @Volatile
-    private var relayConnected = false
+    data class WalletApp(val name: String, val packageName: String, val deepLink: String)
 
-    private var connectCallback: ((Boolean, String) -> Unit)? = null
-
-    /**
-     * Initialize Reown AppKit. Must be called from Application.onCreate().
-     */
     fun init(application: Application) {
-        try {
-            val metadata = Core.Model.AppMetaData(
-                name = "SecureCall",
-                description = "Encrypted P2P calling app — verify IFR token holdings",
-                url = "https://github.com/NeaBouli/stealth",
-                icons = listOf("https://raw.githubusercontent.com/NeaBouli/stealth/main/website/icon.png"),
-                redirect = "securecall://wc"
-            )
-
-            CoreClient.initialize(
-                relayServerUrl = "wss://relay.walletconnect.com?projectId=$PROJECT_ID",
-                connectionType = ConnectionType.AUTOMATIC,
-                application = application,
-                metaData = metadata
-            ) { error ->
-                Log.e(TAG, "CoreClient init error: ${error.throwable.message}")
-            }
-
-            AppKit.initialize(
-                init = Modal.Params.Init(CoreClient),
-                onSuccess = {
-                    Log.d(TAG, "AppKit initialized successfully")
-                },
-                onError = { error ->
-                    Log.e(TAG, "AppKit init error: ${error.throwable.message}")
-                }
-            )
-
-            AppKit.setDelegate(object : AppKit.ModalDelegate {
-                override fun onSessionApproved(approvedSession: Modal.Model.ApprovedSession) {
-                    // Extract wallet address from WalletConnect session
-                    val wcSession = approvedSession as? Modal.Model.ApprovedSession.WalletConnectSession
-                    val accounts = wcSession?.accounts ?: emptyList()
-                    if (accounts.isNotEmpty()) {
-                        // Account format: "eip155:1:0x1234..."
-                        val address = accounts.first().substringAfterLast(":")
-                        connectedAddress = address
-                        Log.d(TAG, "Session approved — wallet: $address")
-                        connectCallback?.invoke(true, address)
-                        connectCallback = null
-                    } else {
-                        // Coinbase or other session — try getAccount()
-                        val account = try { AppKit.getAccount() } catch (_: Throwable) { null }
-                        if (account != null) {
-                            connectedAddress = account.address
-                            Log.d(TAG, "Session approved (non-WC) — wallet: ${account.address}")
-                            connectCallback?.invoke(true, account.address)
-                            connectCallback = null
-                        }
-                    }
-                }
-
-                override fun onSessionRejected(rejectedSession: Modal.Model.RejectedSession) {
-                    Log.w(TAG, "Session rejected: ${rejectedSession.reason}")
-                    connectedAddress = null
-                    connectCallback?.invoke(false, "Wallet rejected connection")
-                    connectCallback = null
-                }
-
-                override fun onSessionUpdate(updatedSession: Modal.Model.UpdatedSession) {}
-                override fun onSessionEvent(sessionEvent: Modal.Model.SessionEvent) {}
-                override fun onSessionEvent(event: Modal.Model.Event) {}
-                override fun onSessionExtend(session: Modal.Model.Session) {}
-
-                override fun onSessionDelete(deletedSession: Modal.Model.DeletedSession) {
-                    Log.d(TAG, "Session deleted")
-                    connectedAddress = null
-                }
-
-                override fun onSessionRequestResponse(response: Modal.Model.SessionRequestResponse) {}
-                override fun onSessionAuthenticateResponse(response: Modal.Model.SessionAuthenticateResponse) {}
-                override fun onSIWEAuthenticationResponse(response: Modal.Model.SIWEAuthenticateResponse) {}
-                override fun onProposalExpired(proposal: Modal.Model.ExpiredProposal) {}
-                override fun onRequestExpired(request: Modal.Model.ExpiredRequest) {}
-
-                override fun onConnectionStateChange(state: Modal.Model.ConnectionState) {
-                    relayConnected = state.isAvailable
-                    Log.d(TAG, "Connection state: ${state.isAvailable}")
-                }
-
-                override fun onError(error: Modal.Model.Error) {
-                    val msg = error.throwable.message ?: ""
-                    Log.e(TAG, "AppKit error: $msg")
-                    if (msg.contains("403") || msg.contains("Invalid project")) {
-                        Log.e(TAG, "Dashboard fix needed: add com.securecall.app.* to Allowed Application IDs at cloud.reown.com")
-                    }
-                }
-            })
-
-            isInitialized = true
-            Log.d(TAG, "Reown AppKit initialized — isInitialized=true (project=$PROJECT_ID)")
-        } catch (e: Throwable) {
-            Log.e(TAG, "AppKit init failed (non-fatal): ${e.message}")
-        }
+        isInitialized = true
+        Log.d(TAG, "Wallet connect ready (deep link mode — no external SDK)")
     }
 
     /**
-     * Start wallet connection via AppKit.
-     * Creates a pairing URI and triggers the connection flow.
+     * Show wallet chooser dialog, open selected wallet, then prompt for address paste.
      */
     fun connect(context: Context, callback: (Boolean, String) -> Unit) {
-        if (!isInitialized) {
-            callback(false, "WalletConnect not initialized")
+        if (context !is Activity) {
+            callback(false, "Cannot show dialog — not an Activity context")
             return
         }
+        val activity = context
+        val pm = activity.packageManager
 
-        try {
-            connectCallback = callback
+        // Build list: installed wallets first, then "Enter manually"
+        val installed = WALLETS.filter { isInstalled(pm, it.packageName) }
+        val notInstalled = WALLETS.filter { !isInstalled(pm, it.packageName) }
 
-            val namespaces = mapOf(
-                "eip155" to Modal.Model.Namespace.Proposal(
-                    chains = listOf("eip155:1"),
-                    methods = listOf("eth_sendTransaction", "personal_sign"),
-                    events = listOf("chainChanged", "accountsChanged")
-                )
-            )
+        val items = mutableListOf<String>()
+        installed.forEach { items.add("\uD83D\uDFE2 ${it.name}") }  // green dot = installed
+        notInstalled.forEach { items.add("\u26AA ${it.name} (not installed)") }
+        items.add("\u270F\uFE0F Enter wallet address manually")
 
-            val pairing = CoreClient.Pairing.create { error ->
-                Log.e(TAG, "Pairing create error: ${error.throwable.message}")
-            }
-
-            if (pairing == null) {
-                callback(false, "Failed to create pairing")
-                return
-            }
-
-            val connectParams = Modal.Params.Connect(
-                namespaces = namespaces,
-                optionalNamespaces = null,
-                properties = null,
-                pairing = pairing
-            )
-
-            AppKit.connect(
-                connect = connectParams,
-                onSuccess = { uri: String ->
-                    Log.d(TAG, "Connect request sent, opening wallet")
-                    try {
-                        val wcIntent = android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse(pairing.uri)
-                        )
-                        wcIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(wcIntent)
-                    } catch (e: Throwable) {
-                        Log.w(TAG, "No wallet app found: ${e.message}")
-                        callback(false, "no_wallet_app")
+        AlertDialog.Builder(activity)
+            .setTitle("\uD83D\uDD17 Connect Wallet")
+            .setItems(items.toTypedArray()) { _, which ->
+                when {
+                    which < installed.size -> {
+                        // Open installed wallet, then show paste dialog
+                        val wallet = installed[which]
+                        openWalletApp(activity, wallet)
+                        // Show paste dialog after a short delay (user switches to wallet, copies address, comes back)
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            if (!activity.isFinishing && !activity.isDestroyed) {
+                                showPasteDialog(activity, wallet.name, callback)
+                            }
+                        }, 1500)
                     }
-                },
-                onError = { error: Modal.Model.Error ->
-                    val msg = error.throwable.message ?: "unknown"
-                    Log.e(TAG, "Connect error: $msg")
-                    if (msg.contains("Timed out") || msg.contains("403") || msg.contains("Subscribe")) {
-                        callback(false, "WalletConnect relay unavailable — known SDK issue.\n\nUse manual wallet entry instead.")
-                    } else {
-                        callback(false, "Connection failed: $msg")
+                    which < installed.size + notInstalled.size -> {
+                        // Not installed — still show paste dialog (user might have address from another source)
+                        val wallet = notInstalled[which - installed.size]
+                        Toast.makeText(activity, "${wallet.name} not installed — enter address manually", Toast.LENGTH_SHORT).show()
+                        showPasteDialog(activity, null, callback)
                     }
-                    connectCallback = null
+                    else -> {
+                        // Manual entry
+                        showPasteDialog(activity, null, callback)
+                    }
                 }
-            )
-        } catch (e: Throwable) {
-            val msg = e.message ?: ""
-            Log.w(TAG, "AppKit connect failed: $msg")
-            if (msg.contains("Timed out") || msg.contains("Subscribe") || msg.contains("Publish")) {
-                callback(false, "WalletConnect relay timed out — known SDK issue (reown-kotlin #240).\n\nUse manual wallet entry instead (enter 0x address above).")
-            } else {
-                callback(false, "WalletConnect connection failed: $msg")
             }
-            connectCallback = null
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun openWalletApp(activity: Activity, wallet: WalletApp) {
+        try {
+            // Try launching the wallet app directly
+            val launchIntent = activity.packageManager.getLaunchIntentForPackage(wallet.packageName)
+            if (launchIntent != null) {
+                activity.startActivity(launchIntent)
+                Log.d(TAG, "Opened ${wallet.name} via launch intent")
+            } else {
+                // Fallback to deep link
+                activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(wallet.deepLink)))
+                Log.d(TAG, "Opened ${wallet.name} via deep link")
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed to open ${wallet.name}: ${e.message}")
         }
     }
 
-    fun getConnectedWallet(): String? {
-        if (!isInitialized) return connectedAddress
-        return try {
-            AppKit.getAccount()?.address ?: connectedAddress
-        } catch (e: Throwable) {
-            connectedAddress
+    private fun showPasteDialog(activity: Activity, walletName: String?, callback: (Boolean, String) -> Unit) {
+        val layout = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            val pad = (20 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, 0)
         }
+
+        val input = EditText(activity).apply {
+            hint = "0x..."
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            textSize = 14f
+            setSingleLine(true)
+        }
+        layout.addView(input)
+
+        val msg = if (walletName != null) {
+            "Open $walletName → copy your wallet address → paste here:"
+        } else {
+            "Paste your Ethereum wallet address (0x...):"
+        }
+
+        AlertDialog.Builder(activity)
+            .setTitle("\uD83D\uDCCB Paste Wallet Address")
+            .setMessage(msg)
+            .setView(layout)
+            .setPositiveButton("Verify") { _, _ ->
+                val address = input.text.toString().trim()
+                if (WALLET_REGEX.matches(address)) {
+                    connectedAddress = address
+                    Log.d(TAG, "Wallet address entered: ${address.take(6)}...${address.takeLast(4)}")
+                    callback(true, address)
+                } else {
+                    Toast.makeText(activity, "Invalid address — must be 0x followed by 40 hex characters", Toast.LENGTH_LONG).show()
+                    callback(false, "Invalid wallet address format")
+                }
+            }
+            .setNegativeButton(android.R.string.cancel) { _, _ ->
+                callback(false, "Cancelled")
+            }
+            .show()
     }
+
+    fun getConnectedWallet(): String? = connectedAddress
 
     fun disconnect(context: Context) {
-        try {
-            AppKit.disconnect(
-                onSuccess = { connectedAddress = null; Log.d(TAG, "Disconnected") },
-                onError = { error: Throwable -> Log.e(TAG, "Disconnect error: ${error.message}"); connectedAddress = null }
-            )
-        } catch (e: Throwable) {
-            Log.e(TAG, "Disconnect failed: ${e.message}")
-            connectedAddress = null
-        }
+        connectedAddress = null
+        Log.d(TAG, "Wallet disconnected")
     }
 
+    /**
+     * Verify IFR token balance via backend and unlock tier.
+     * Uses METHOD_WALLETCONNECT for permanent unlock (no 30-day expiry).
+     */
     fun verifyAndUnlock(context: Context, walletAddress: String, callback: (Boolean, String) -> Unit) {
         try {
             val ws = com.securecall.app.net.WebSocketService.instance
@@ -248,11 +182,13 @@ object WalletConnectManager {
                         context, walletAddress, tier, amount,
                         IfrLockManager.METHOD_WALLETCONNECT
                     )
-                    Log.d(TAG, "Verification: $amount IFR → $tier (permanent)")
+                    connectedAddress = walletAddress
+                    Log.d(TAG, "Verified: $amount IFR → $tier (permanent)")
                     callback(true, "Unlocked $tier with $amount IFR (permanent)")
                 } else {
                     val msg = when (error) {
                         "insufficient" -> "Insufficient IFR balance ($amount held)"
+                        "wallet_bound" -> "This wallet is already linked to another device"
                         "not_connected" -> "Server not connected"
                         else -> "Verification failed: $error"
                     }
@@ -260,7 +196,16 @@ object WalletConnectManager {
                 }
             }
         } catch (e: Throwable) {
-            callback(false, "Verification failed — use manual wallet entry instead")
+            callback(false, "Verification failed: ${e.message}")
+        }
+    }
+
+    private fun isInstalled(pm: PackageManager, packageName: String): Boolean {
+        return try {
+            pm.getPackageInfo(packageName, 0)
+            true
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
         }
     }
 }

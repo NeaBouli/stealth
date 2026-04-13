@@ -255,18 +255,9 @@ dependencies {
     // WireGuard VPN tunnel (Premium only, uses GoBackend with Noise_IKpsk2)
     implementation 'com.wireguard.android:tunnel:1.0.20260102'
 
-    // Reown AppKit (WalletConnect successor) — wallet connection for IFR token verification
-    // fdroid: excluded entirely (contains proprietary type references)
-    // BOM manages all Reown module versions consistently
-    freeImplementation(platform("com.reown:android-bom:1.4.1"))
-    freeImplementation("com.reown:android-core")
-    freeImplementation("com.reown:appkit")
-    proImplementation(platform("com.reown:android-bom:1.4.1"))
-    proImplementation("com.reown:android-core")
-    proImplementation("com.reown:appkit")
-    premiumImplementation(platform("com.reown:android-bom:1.4.1"))
-    premiumImplementation("com.reown:android-core")
-    premiumImplementation("com.reown:appkit")
+    // Wallet connection for IFR token verification — NO external SDK needed.
+    // Uses deep links to open wallet apps (MetaMask/Trust) + manual address paste.
+    // Reown AppKit removed due to unresolved relay 403 bug (reown-kotlin #240/#74).
 
     // Google Play Billing (FREE flavor only)
     freeImplementation 'com.android.billingclient:billing-ktx:6.2.1'
