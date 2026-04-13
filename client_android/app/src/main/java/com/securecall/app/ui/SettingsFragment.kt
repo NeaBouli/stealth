@@ -931,23 +931,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     android.widget.Toast.makeText(ctx, "Wallet disconnected", android.widget.Toast.LENGTH_SHORT).show()
                     configureIfrUnlock(effectiveTier)
                 } else {
-                    // Open wallet chooser → paste address → verify IFR balance
+                    // SIWE wallet verification flow
                     com.securecall.app.wallet.WalletConnectManager.connect(ctx) { success, result ->
                         activity?.runOnUiThread {
                             if (!isAdded) return@runOnUiThread
                             if (success) {
-                                summary = "Verifying ${result.take(6)}...${result.takeLast(4)}..."
-                                com.securecall.app.wallet.WalletConnectManager.verifyAndUnlock(ctx, result) { verified, msg ->
-                                    activity?.runOnUiThread {
-                                        if (!isAdded) return@runOnUiThread
-                                        android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
-                                        if (verified) {
-                                            configureIfrUnlock(effectiveTier)
-                                        } else {
-                                            summary = msg
-                                        }
-                                    }
-                                }
+                                // SIWE verified — tier already set inside WalletConnectManager
+                                android.widget.Toast.makeText(ctx, result, android.widget.Toast.LENGTH_LONG).show()
+                                configureIfrUnlock(effectiveTier)
+                            } else if (result == "manual_fallback") {
+                                // User chose manual entry — click the wallet address pref instead
+                                android.widget.Toast.makeText(ctx, "Enter your wallet address above and tap Verify Lock", android.widget.Toast.LENGTH_LONG).show()
                             } else if (result != "Cancelled") {
                                 summary = result
                             }

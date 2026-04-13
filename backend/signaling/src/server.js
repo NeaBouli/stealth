@@ -1682,6 +1682,116 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
   });
 });
 
+// --- SIWE (Sign-In with Ethereum) — cryptographic wallet verification ---
+const siweChallenges = new Map(); // nonce → { deviceId, message, createdAt }
+const SIWE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Cleanup expired challenges every 60s
+setInterval(() => {
+  const now = Date.now();
+  for (const [nonce, data] of siweChallenges) {
+    if (now - data.createdAt > SIWE_TTL_MS) siweChallenges.delete(nonce);
+  }
+}, 60000);
+
+app.get("/siwe/challenge", (req, res) => {
+  const deviceId = (req.query.deviceId || "").trim();
+  if (!deviceId) return res.status(400).json({ error: "missing_device_id" });
+
+  const nonce = crypto.randomBytes(32).toString("hex");
+  const issuedAt = new Date().toISOString();
+  const message =
+    "SecureCall wants you to verify your Ethereum wallet.\n\n" +
+    "Device: " + deviceId + "\n" +
+    "Nonce: " + nonce + "\n" +
+    "Issued At: " + issuedAt + "\n\n" +
+    "This request will expire in 5 minutes.";
+
+  siweChallenges.set(nonce, { deviceId, message, createdAt: Date.now() });
+  console.log("[SIWE] Challenge issued for", deviceId, "nonce:", nonce.substring(0, 12) + "...");
+  res.json({ nonce, message });
+});
+
+app.post("/siwe/verify", async (req, res) => {
+  const { walletAddress, signature, nonce, deviceId } = req.body;
+
+  // Validate input
+  if (!walletAddress || !signature || !nonce || !deviceId) {
+    return res.status(400).json({ success: false, error: "missing_fields" });
+  }
+  if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
+    return res.status(400).json({ success: false, error: "invalid_address" });
+  }
+
+  // Check nonce
+  const challenge = siweChallenges.get(nonce);
+  if (!challenge) {
+    return res.json({ success: false, error: "invalid_nonce" });
+  }
+  if (challenge.deviceId !== deviceId) {
+    return res.json({ success: false, error: "device_mismatch" });
+  }
+  if (Date.now() - challenge.createdAt > SIWE_TTL_MS) {
+    siweChallenges.delete(nonce);
+    return res.json({ success: false, error: "challenge_expired" });
+  }
+
+  // Invalidate nonce immediately (replay protection)
+  siweChallenges.delete(nonce);
+
+  // Verify signature via ethers.verifyMessage
+  try {
+    const recovered = ethers.verifyMessage(challenge.message, signature);
+    if (recovered.toLowerCase() !== walletAddress.toLowerCase()) {
+      console.log("[SIWE] Signature mismatch: recovered=" + recovered + " expected=" + walletAddress);
+      return res.json({ success: false, error: "signature_invalid" });
+    }
+  } catch (e) {
+    console.error("[SIWE] Signature verification error:", e.message);
+    return res.json({ success: false, error: "signature_invalid" });
+  }
+
+  // Check wallet binding
+  const existing = walletMappings.find(w => w.wallet.toLowerCase() === walletAddress.toLowerCase());
+  if (existing && existing.clientId !== deviceId && existing.method === "walletconnect") {
+    // Already SIWE-bound to another device — reject
+    return res.json({ success: false, error: "wallet_bound", boundTo: existing.clientId.substring(0, 8) + "..." });
+  }
+  // If manual-bound to another device → SIWE overrides (verified > unverified)
+
+  // Verify IFR balance
+  let result;
+  try {
+    result = await verifyIfrLock(walletAddress);
+  } catch (e) {
+    console.error("[SIWE] Balance check error:", e.message);
+    return res.json({ success: false, error: "balance_check_failed" });
+  }
+
+  if (!result.success) {
+    return res.json({ success: false, tier: "", lockedAmount: result.lockedAmount || "0", error: result.error || "insufficient" });
+  }
+
+  // Store/update wallet mapping with method=walletconnect (SIWE verified)
+  const idx = walletMappings.findIndex(w => w.wallet.toLowerCase() === walletAddress.toLowerCase());
+  const mapping = {
+    wallet: walletAddress.toLowerCase(),
+    clientId: deviceId,
+    tier: result.tier,
+    method: "walletconnect",
+    lastVerified: Date.now(),
+    verifiedAt: existing?.verifiedAt || Date.now()
+  };
+  if (idx >= 0) walletMappings[idx] = mapping;
+  else walletMappings.push(mapping);
+  saveWalletMappings();
+
+  console.log("[SIWE] Wallet verified:", walletAddress, "→", result.tier, "(", result.lockedAmount, "IFR) device:", deviceId);
+  res.json({ success: true, tier: result.tier, lockedAmount: result.lockedAmount });
+});
+
+console.log("[SIWE] Endpoints ready: GET /siwe/challenge, POST /siwe/verify");
+
 // --- Health Check Endpoint ---
 app.get("/health", (req, res) => {
   res.json({
