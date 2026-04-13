@@ -6,7 +6,9 @@ title = "StealthX Custom Gitleaks Config"
     '''node_modules''',
     '''\.git''',
     '''package-lock\.json''',
-    '''yarn\.lock'''
+    '''yarn\.lock''',
+    '''docs/AUDIT_NETWORK\.md''',
+    '''docs/RAILWAY_ENV_VARS\.md'''
   ]
 
 [[rules]]
