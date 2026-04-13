@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureCall — Sign Wallet Verification</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0a0a12; color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  padding: 24px 16px;
+}
+.logo { font-size: 28px; font-weight: 800; color: #ff4444; margin-bottom: 4px; }
+.sub { font-size: 11px; color: #666; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 24px; }
+.card {
+  background: #11131a; border: 1px solid #1f2330; border-radius: 12px;
+  padding: 20px; width: 100%; max-width: 480px; margin-bottom: 16px;
+}
+h2 { color: #ff4444; font-size: 16px; margin-bottom: 12px; }
+.msg-box {
+  background: #0a0a12; border: 1px solid #2a2a3a; border-radius: 8px;
+  padding: 12px; font-size: 12px; color: #888; word-break: break-all;
+  max-height: 120px; overflow-y: auto; margin-bottom: 12px;
+}
+.result-box {
+  background: #0a0a12; border: 2px solid #ff4444; border-radius: 8px;
+  padding: 16px; text-align: center; margin: 8px 0;
+}
+.result-box code {
+  font-size: 13px; color: #ff4444; word-break: break-all;
+  font-family: 'Courier New', monospace; display: block; margin: 8px 0;
+  user-select: all; -webkit-user-select: all;
+}
+.label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; }
+.btn {
+  display: block; width: 100%; padding: 14px; border: none; border-radius: 8px;
+  font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px;
+  transition: opacity 0.2s;
+}
+.btn:active { opacity: 0.7; }
+.btn-red { background: #ff4444; color: #fff; }
+.btn-dark { background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid rgba(255,255,255,0.12); }
+.btn-green { background: #00C853; color: #fff; }
+.status { text-align: center; color: #888; font-size: 14px; padding: 20px 0; }
+.error { color: #ff4444; text-align: center; padding: 12px; font-size: 14px; }
+.success { color: #00E676; }
+.back-hint {
+  background: rgba(255,152,0,0.08); border: 1px solid rgba(255,152,0,0.25);
+  border-radius: 8px; padding: 14px; margin-top: 12px; text-align: center;
+  color: #FF9800; font-size: 13px; line-height: 1.6;
+}
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="logo">SecureCall</div>
+<div class="sub">Wallet Verification</div>
+
+<!-- Step 1: Connect -->
+<div class="card" id="step-connect">
+  <h2>Step 1 — Connect Wallet</h2>
+  <p style="color:#aaa;font-size:13px;margin-bottom:12px;">
+    Connect your Ethereum wallet to prove ownership.
+  </p>
+  <button class="btn btn-red" id="btn-connect" onclick="connectWallet()">Connect Wallet</button>
+  <div id="connect-status" class="status hidden"></div>
+</div>
+
+<!-- Step 2: Sign -->
+<div class="card hidden" id="step-sign">
+  <h2>Step 2 — Sign Message</h2>
+  <p style="color:#aaa;font-size:13px;margin-bottom:8px;">Sign this challenge to verify ownership:</p>
+  <div class="msg-box" id="challenge-msg"></div>
+  <button class="btn btn-red" id="btn-sign" onclick="signMessage()">Sign Message</button>
+  <div id="sign-status" class="status hidden"></div>
+</div>
+
+<!-- Step 3: Result -->
+<div class="card hidden" id="step-result">
+  <h2 class="success">Signed Successfully</h2>
+
+  <div class="result-box">
+    <div class="label">Wallet Address</div>
+    <code id="result-address"></code>
+    <button class="btn btn-dark" onclick="copyText('result-address')">Copy Address</button>
+  </div>
+
+  <div class="result-box" style="margin-top:12px;">
+    <div class="label">Signature</div>
+    <code id="result-signature"></code>
+    <button class="btn btn-dark" onclick="copyText('result-signature')">Copy Signature</button>
+  </div>
+
+  <div class="back-hint">
+    Go back to <strong>SecureCall</strong> and paste both values<br>
+    in the verification dialog.
+  </div>
+</div>
+
+<!-- No wallet -->
+<div class="card hidden" id="no-wallet">
+  <div class="error">
+    No Ethereum wallet detected.<br><br>
+    Open this page inside <strong>MetaMask Browser</strong><br>
+    (MetaMask app &rarr; Entdecken/Explore &rarr; paste URL).
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const nonce = params.get('nonce') || '';
+const deviceId = params.get('deviceId') || '';
+const message = params.get('message') ? decodeURIComponent(params.get('message')) : '';
+
+let userAccount = null;
+
+// Show challenge message
+if (message) {
+  document.getElementById('challenge-msg').textContent = message;
+}
+
+// Check for wallet
+window.addEventListener('load', () => {
+  if (!window.ethereum) {
+    document.getElementById('step-connect').classList.add('hidden');
+    document.getElementById('no-wallet').classList.remove('hidden');
+  }
+});
+
+async function connectWallet() {
+  const btn = document.getElementById('btn-connect');
+  const status = document.getElementById('connect-status');
+  btn.disabled = true;
+  btn.textContent = 'Connecting...';
+  status.classList.remove('hidden');
+  status.textContent = 'Requesting accounts...';
+
+  try {
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (accounts.length === 0) throw new Error('No accounts');
+    userAccount = accounts[0];
+    status.textContent = 'Connected: ' + userAccount.substring(0, 6) + '...' + userAccount.substring(38);
+    status.classList.add('success');
+
+    // Auto-advance to Step 2
+    setTimeout(() => {
+      document.getElementById('step-connect').classList.add('hidden');
+      document.getElementById('step-sign').classList.remove('hidden');
+    }, 800);
+  } catch (e) {
+    status.textContent = 'Failed: ' + (e.message || e);
+    status.style.color = '#ff4444';
+    btn.disabled = false;
+    btn.textContent = 'Connect Wallet';
+  }
+}
+
+async function signMessage() {
+  if (!userAccount) return;
+  const btn = document.getElementById('btn-sign');
+  const status = document.getElementById('sign-status');
+  btn.disabled = true;
+  btn.textContent = 'Signing...';
+  status.classList.remove('hidden');
+  status.textContent = 'Confirm in your wallet...';
+
+  const msgToSign = message || (
+    'SecureCall wants you to verify your Ethereum wallet.\n\n' +
+    'Device: ' + deviceId + '\n' +
+    'Nonce: ' + nonce + '\n' +
+    'Issued At: ' + new Date().toISOString() + '\n\n' +
+    'This request will expire in 5 minutes.'
+  );
+
+  try {
+    const signature = await window.ethereum.request({
+      method: 'personal_sign',
+      params: [msgToSign, userAccount]
+    });
+
+    // Show result
+    document.getElementById('step-sign').classList.add('hidden');
+    document.getElementById('step-result').classList.remove('hidden');
+    document.getElementById('result-address').textContent = userAccount;
+    document.getElementById('result-signature').textContent = signature;
+  } catch (e) {
+    status.textContent = 'Signing failed: ' + (e.message || e);
+    status.style.color = '#ff4444';
+    btn.disabled = false;
+    btn.textContent = 'Sign Message';
+  }
+}
+
+function copyText(elementId) {
+  const text = document.getElementById(elementId).textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target;
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.style.background = '#00C853';
+      btn.style.color = '#fff';
+      setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 1500);
+    });
+  } else {
+    // Fallback: select all
+    const range = document.createRange();
+    range.selectNodeContents(document.getElementById(elementId));
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  }
+}
+</script>
+</body>
+</html>

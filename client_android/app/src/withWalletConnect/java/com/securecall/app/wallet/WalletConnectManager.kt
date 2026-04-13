@@ -3,8 +3,6 @@ package com.securecall.app.wallet
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.Application
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,8 +10,6 @@ import android.net.Uri
 import android.util.Log
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
 import android.widget.Toast
 import com.securecall.app.config.IfrLockManager
 import okhttp3.MediaType.Companion.toMediaType
@@ -112,7 +108,6 @@ object WalletConnectManager {
     }
 
     private fun startSiweFlow(activity: Activity, wallet: WalletApp, callback: (Boolean, String) -> Unit) {
-        // Step 1: Get challenge from backend (background thread)
         val prefs = activity.getSharedPreferences("securecall_prefs", Context.MODE_PRIVATE)
         val deviceId = prefs.getString("client_id", null) ?: "unknown"
 
@@ -127,113 +122,77 @@ object WalletConnectManager {
                     callback(false, "Challenge request failed")
                     return@runOnUiThread
                 }
-                // Step 2: Show SIWE dialog
-                showSiweDialog(activity, wallet, challenge.first, challenge.second, deviceId, callback)
+                val nonce = challenge.first
+                val message = challenge.second
+
+                // Open signing page in MetaMask's built-in browser via deep link
+                val encodedMsg = Uri.encode(message)
+                val encodedDevice = Uri.encode(deviceId)
+                val signingUrl = "https://stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg"
+
+                // MetaMask deep link format: opens URL inside MetaMask's dApp browser
+                val mmDeepLink = when (wallet.packageName) {
+                    "io.metamask" -> "https://metamask.app.link/dapp/stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg"
+                    "com.wallet.crypto.trustapp" -> "https://link.trustwallet.com/open_url?coin_id=60&url=${Uri.encode(signingUrl)}"
+                    else -> signingUrl
+                }
+
+                try {
+                    activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(mmDeepLink)))
+                    Log.d(TAG, "Opened signing page in ${wallet.name} browser")
+                } catch (e: Throwable) {
+                    Log.w(TAG, "Deep link failed, opening in default browser: ${e.message}")
+                    activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(signingUrl)))
+                }
+
+                // After user signs and comes back, show paste dialog
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    if (!activity.isFinishing && !activity.isDestroyed) {
+                        showVerifyDialog(activity, nonce, deviceId, callback)
+                    }
+                }, 2000)
             }
         }, "siwe-challenge").start()
     }
 
-    private fun fetchChallenge(deviceId: String): Pair<String, String>? { // nonce, message
-        return try {
-            val url = "$BACKEND_URL/siwe/challenge?deviceId=${Uri.encode(deviceId)}"
-            val request = Request.Builder().url(url).get().build()
-            val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) return null
-            val json = JSONObject(response.body?.string() ?: return null)
-            val nonce = json.getString("nonce")
-            val message = json.getString("message")
-            Log.d(TAG, "Challenge received, nonce: ${nonce.take(12)}...")
-            Pair(nonce, message)
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to fetch challenge: ${e.message}")
-            null
-        }
-    }
-
-    private fun showSiweDialog(
-        activity: Activity, wallet: WalletApp,
-        nonce: String, message: String, deviceId: String,
+    /**
+     * Dialog to paste wallet address + signature after signing in MetaMask browser.
+     */
+    private fun showVerifyDialog(
+        activity: Activity, nonce: String, deviceId: String,
         callback: (Boolean, String) -> Unit
     ) {
         val dp = activity.resources.displayMetrics.density
         val pad = (16 * dp).toInt()
 
-        val scroll = ScrollView(activity)
         val layout = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(pad, pad, pad, 0)
         }
-        scroll.addView(layout)
-
-        // Challenge message display
-        val msgLabel = TextView(activity).apply {
-            text = "\uD83D\uDD12 Sign this message in ${wallet.name}:"
-            textSize = 14f
-            setTextColor(0xFFDDDDDD.toInt())
-        }
-        layout.addView(msgLabel)
-
-        val msgBox = TextView(activity).apply {
-            text = message
-            textSize = 12f
-            setTextColor(0xFF999999.toInt())
-            setBackgroundColor(0xFF1A1A2E.toInt())
-            val p = (8 * dp).toInt()
-            setPadding(p, p, p, p)
-            setTextIsSelectable(true)
-        }
-        layout.addView(msgBox)
-
-        // Wallet address input
-        val addrLabel = TextView(activity).apply {
-            text = "\n\uD83D\uDCCB Wallet Address:"
-            textSize = 13f
-            setTextColor(0xFFBBBBBB.toInt())
-        }
-        layout.addView(addrLabel)
 
         val addrInput = EditText(activity).apply {
-            hint = "0x..."
+            hint = "Wallet Address (0x...)"
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            textSize = 13f
-            setSingleLine(true)
+            textSize = 13f; setSingleLine(true)
         }
         layout.addView(addrInput)
 
-        // Signature input
-        val sigLabel = TextView(activity).apply {
-            text = "\n\u270D\uFE0F Signature:"
-            textSize = 13f
-            setTextColor(0xFFBBBBBB.toInt())
-        }
-        layout.addView(sigLabel)
-
         val sigInput = EditText(activity).apply {
-            hint = "0x... (paste from wallet)"
+            hint = "Signature (0x... from MetaMask)"
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            textSize = 13f
-            setSingleLine(true)
+            textSize = 13f; setSingleLine(true)
         }
         layout.addView(sigInput)
 
         val dialog = AlertDialog.Builder(activity)
-            .setTitle("\uD83D\uDD10 Sign-In with Ethereum")
-            .setView(scroll)
-            .setPositiveButton("Verify", null) // set below to prevent auto-dismiss
-            .setNeutralButton("Copy Message", null)
+            .setTitle("\uD83D\uDD10 Paste Signed Values")
+            .setMessage("Copy your wallet address and signature from the MetaMask signing page:")
+            .setView(layout)
+            .setPositiveButton("Verify", null)
             .setNegativeButton("Cancel") { _, _ -> callback(false, "Cancelled") }
             .create()
 
         dialog.setOnShowListener {
-            // Copy Message button
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                clipboard.setPrimaryClip(ClipData.newPlainText("SIWE Challenge", message))
-                Toast.makeText(activity, "Message copied! Now sign it in ${wallet.name}", Toast.LENGTH_SHORT).show()
-                openWalletApp(activity, wallet)
-            }
-
-            // Verify button
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val address = addrInput.text.toString().trim()
                 val signature = sigInput.text.toString().trim()
@@ -243,7 +202,7 @@ object WalletConnectManager {
                     return@setOnClickListener
                 }
                 if (!SIG_REGEX.matches(signature)) {
-                    Toast.makeText(activity, "Invalid signature format (must be 0x + 130 hex chars)", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(activity, "Invalid signature (must be 0x + 130 hex chars)", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
 
@@ -268,11 +227,10 @@ object WalletConnectManager {
                             dialog.getButton(AlertDialog.BUTTON_POSITIVE).text = "Verify"
                             val error = result?.optString("error", "unknown") ?: "network_error"
                             val msg = when (error) {
-                                "signature_invalid" -> "Signature verification failed — make sure you signed the exact message"
+                                "signature_invalid" -> "Signature verification failed — did you sign the exact message?"
                                 "wallet_bound" -> "This wallet is already linked to another device"
                                 "insufficient" -> "Insufficient IFR (need 1,000 for Pro / 5,000 for Premium)"
-                                "invalid_nonce" -> "Challenge expired — tap Cancel and try again"
-                                "challenge_expired" -> "Challenge expired (5 min) — tap Cancel and try again"
+                                "invalid_nonce", "challenge_expired" -> "Challenge expired — try again"
                                 "balance_check_failed" -> "Ethereum RPC unavailable — try again later"
                                 else -> "Verification failed: $error"
                             }
@@ -283,6 +241,23 @@ object WalletConnectManager {
             }
         }
         dialog.show()
+    }
+
+    private fun fetchChallenge(deviceId: String): Pair<String, String>? { // nonce, message
+        return try {
+            val url = "$BACKEND_URL/siwe/challenge?deviceId=${Uri.encode(deviceId)}"
+            val request = Request.Builder().url(url).get().build()
+            val response = httpClient.newCall(request).execute()
+            if (!response.isSuccessful) return null
+            val json = JSONObject(response.body?.string() ?: return null)
+            val nonce = json.getString("nonce")
+            val message = json.getString("message")
+            Log.d(TAG, "Challenge received, nonce: ${nonce.take(12)}...")
+            Pair(nonce, message)
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to fetch challenge: ${e.message}")
+            null
+        }
     }
 
     private fun submitSiweVerification(
