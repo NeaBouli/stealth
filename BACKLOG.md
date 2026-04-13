@@ -5,10 +5,7 @@
 
 ## 🟡 Nächste Session
 <!-- Nächste konkrete Tasks -->
-- **TODO-097** WalletConnect SDK PushClient Bug fixen
-  - `isInitialized=false` — `com.walletconnect.android.push.client.PushClient` nicht auflösbar
-  - `catch(Throwable)` verhindert Crash, aber Connect Wallet bleibt blockiert
-  - Fix: PushClient dependency excluden oder Stub-Klasse bereitstellen
+- **UPLOAD** vC39 AAB auf Play Console (`~/Desktop/securecall-free-v1.0.18-vC39.aab`)
 - **TODO-098** Dependabot: 7 npm Vulnerabilities (5 high)
   - `cd backend/signaling && npm audit` → prüfen + fixen
 - **TODO-099** Resend API Key in Railway env setzen
@@ -16,6 +13,9 @@
 - **TODO-100** Audio Test S10→Samsung A (anderes Endgerät, manuell)
 - **TODO-101** Stripe "myproduct" Test-Produkte archivieren (manuell im Dashboard)
 - **TODO-102** Custom ID Preise USD→EUR im Stripe Dashboard umstellen
+- **TODO-103** Reown Dashboard: Prüfe ob Android App IDs korrekt konfiguriert sind
+  - cloud.reown.com → Project → App IDs: com.securecall.app.free/pro/premium
+  - Aktuell: SIWE funktioniert ohne Reown SDK, aber Dashboard sollte stimmen
 - **TODO-088** F-002 Backup-Mechanismus (Datenverlust nach Uninstall)
   - SecureID + Kontakte + Settings gehen bei Uninstall verloren (SharedPreferences)
   - Option A: Cloud-Backup (encrypted unter SecureID)
@@ -44,7 +44,25 @@
 - F-Droid: firebase_crashlytics/analytics meta-data Einträge aus Manifest entfernen (harmlos aber F-Droid Scanner meckert evtl.)
 
 ## ✅ Erledigt
-<!-- Session 2026-04-10 / 2026-04-11 / 2026-04-12 -->
+<!-- Session 2026-04-10 / 2026-04-11 / 2026-04-12 / 2026-04-13 -->
+
+### SIWE + WalletConnect Overhaul (2026-04-13)
+- [x] **TODO-097** WalletConnect → SIWE Wallet Verification (DONE)
+  - Reown AppKit SDK komplett entfernt (unresolved relay 403, reown-kotlin #240)
+  - SIWE (Sign-In with Ethereum) implementiert:
+    - Backend: GET /siwe/challenge + POST /siwe/verify (ethers.verifyMessage)
+    - Client: MetaMask browser deep link (metamask://dapp/) → stealthx.tech/siwe.html
+    - Website: siwe.html signing page (window.ethereum.personal_sign)
+  - Kryptografischer Beweis des Wallet-Besitzes
+  - Wallet-Bindung auch ohne IFR (auto-aktiviert bei Token-Eingang)
+  - 5-min Challenge TTL + Nonce Replay Protection
+  - Zero external SDK dependency (war ~15MB Reown libs)
+
+### Release v1.0.18 vC39 (2026-04-13)
+- [x] GitHub Release: https://github.com/NeaBouli/stealth/releases/tag/v1.0.18-stable
+- [x] F-Droid: Tag v1.0.18-fdroid, GitLab metadata updated
+- [x] GitHub CI: yamllint trailing-spaces fix (.yamllint.yml)
+- [x] GitLab: checkupdates + rewritemeta compliance
 
 ### Kontakte/Dialer/Invite Bug-Fixes (2026-04-12)
 - [x] **BUG-041** Dialer Suggestion Tap no-op — Kotlin trailing lambda ging an `onLongClick` statt `onCallClick`
@@ -195,4 +213,4 @@
 - [x] **TODO-074** F-Droid APK Build — DONE (2026-04-07)
 
 ---
-*Zuletzt aktualisiert: 2026-04-12 (Nacht-Session — Kontakte+Security+Network+IFR Volltest)*
+*Zuletzt aktualisiert: 2026-04-13 (SIWE Wallet Verification + v1.0.18 Release)*

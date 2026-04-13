@@ -1,6 +1,6 @@
 # StealthX / SecureCall — Handover Document
-**Date:** 12.04.2026 (session checkpoint)
-**Predecessor session:** 10.04.2026
+**Date:** 13.04.2026 (session checkpoint)
+**Predecessor session:** 12.04.2026
 
 ---
 
@@ -28,22 +28,22 @@
 | Tab S4 | ce12182c68644439037e | Free | +491752536807 | android-ee2e746b |
 
 ## Current Version
-- versionCode: 38 / versionName: 1.0.17
-- AAB: ~/Documents/SecureCall-Release/final/app-free-release-v38.aab
-- APK: ~/Documents/SecureCall-Release/final/app-free-release-v38.apk
-- F-Droid APK: ~/Desktop/SecureCall-v1.0.17-fdroid.apk
-- GitHub Release: https://github.com/NeaBouli/stealth/releases/tag/v1.0.17-stable
-- Play Store: Alpha Track, vC38 uploaded, Pro €3.49/mo + Premium €4.99/mo aktiv
+- versionCode: 39 / versionName: 1.0.18
+- AAB: ~/Desktop/securecall-free-v1.0.18-vC39.aab
+- APK: ~/Desktop/securecall-free-v1.0.18-vC39.apk
+- F-Droid APK: ~/Desktop/securecall-fdroid-v1.0.18-vC39.apk
+- GitHub Release: https://github.com/NeaBouli/stealth/releases/tag/v1.0.18-stable
+- Play Store: Alpha Track, vC39 AAB ready for upload
 
 ## Git Tags (recent)
 | Tag | Description |
 |---|---|
-| v1.0.17-stable | vC38 — REQUEST_INSTALL_PACKAGES removed, Play Console compliance |
-| v1.0.17-fdroid | vC38 — F-Droid build, GitLab Pipeline 2446464856 |
-| v1.0.16-stable | vC37 — In-app updater for sideload users |
+| v1.0.18-stable | vC39 — SIWE wallet verification, 6 bug fixes, Reown SDK removed |
+| v1.0.18-fdroid | vC39 — F-Droid build |
+| session-2026-04-13-complete | Rollback point for full session |
+| v1.0.17-stable | vC38 — REQUEST_INSTALL_PACKAGES removed |
+| v1.0.16-stable | vC37 — In-app updater |
 | v1.0.15-stable | vC36 — WalletConnect catch-Throwable + lock-screen call UI |
-| v1.0.14-stable | vC35 — WalletConnect crash fix + lock screen fix |
-| v1.0.13-stable | vC31 — BUG-010/011/013/034/035 fixed, call history long-press |
 
 ## Backend Endpoints (Live)
 - GET /health, /status/live, /status/last-broadcast
@@ -207,9 +207,10 @@
 - Terms of Service: stealthx.tech/terms.html
 
 ## Next Session Steps
-1. TODO-097: WalletConnect SDK PushClient Bug fixen (Connect Wallet blockiert)
-2. TODO-098: npm audit — 7 Vulnerabilities im Backend
+1. **UPLOAD vC39 to Play Store** — AAB: ~/Desktop/securecall-free-v1.0.18-vC39.aab
+2. TODO-098: npm audit — 7 Vulnerabilities im Backend (5 high)
 3. TODO-067: Production Release vorbereiten (Closed Test seit 10.04)
 4. TODO-053: Tester-Codes versenden (Brevo aktiv)
-5. TODO-100: Audio Test S10→Samsung A (anderes Endgerät)
+5. TODO-100: Audio Test S10→Samsung A (anderes Endgerät, manuell)
 6. TODO-101/102: Stripe Dashboard aufräumen (Test-Produkte, USD→EUR)
+7. F-Droid: Prüfe ob GitLab Pipeline checkupdates+rewritemeta+build alle grün sind
