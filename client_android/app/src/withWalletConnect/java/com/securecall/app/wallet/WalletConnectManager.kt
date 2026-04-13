@@ -125,16 +125,16 @@ object WalletConnectManager {
                 val nonce = challenge.first
                 val message = challenge.second
 
-                // Open signing page in MetaMask's built-in browser via deep link
+                // Open signing page in wallet's built-in dApp browser
                 val encodedMsg = Uri.encode(message)
                 val encodedDevice = Uri.encode(deviceId)
-                val signingUrl = "https://stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg"
+                val pageUrl = "https://stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg"
 
-                // MetaMask deep link format: opens URL inside MetaMask's dApp browser
+                // Each wallet has a different deep link format for its in-app browser
                 val mmDeepLink = when (wallet.packageName) {
-                    "io.metamask" -> "https://metamask.app.link/dapp/stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg"
-                    "com.wallet.crypto.trustapp" -> "https://link.trustwallet.com/open_url?coin_id=60&url=${Uri.encode(signingUrl)}"
-                    else -> signingUrl
+                    "io.metamask" -> "metamask://dapp/stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg"
+                    "com.wallet.crypto.trustapp" -> "https://link.trustwallet.com/open_url?coin_id=60&url=${Uri.encode(pageUrl)}"
+                    else -> pageUrl
                 }
 
                 try {
@@ -142,7 +142,7 @@ object WalletConnectManager {
                     Log.d(TAG, "Opened signing page in ${wallet.name} browser")
                 } catch (e: Throwable) {
                     Log.w(TAG, "Deep link failed, opening in default browser: ${e.message}")
-                    activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(signingUrl)))
+                    activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(pageUrl)))
                 }
 
                 // After user signs and comes back, show paste dialog

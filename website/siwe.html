@@ -122,13 +122,23 @@ if (message) {
   document.getElementById('challenge-msg').textContent = message;
 }
 
-// Check for wallet
-window.addEventListener('load', () => {
-  if (!window.ethereum) {
+// Wait for wallet injection (MetaMask browser injects with delay)
+let walletCheckAttempts = 0;
+function checkWallet() {
+  walletCheckAttempts++;
+  if (window.ethereum) {
+    document.getElementById('step-connect').classList.remove('hidden');
+    document.getElementById('no-wallet').classList.add('hidden');
+    return;
+  }
+  if (walletCheckAttempts < 20) { // retry for 10 seconds
+    setTimeout(checkWallet, 500);
+  } else {
     document.getElementById('step-connect').classList.add('hidden');
     document.getElementById('no-wallet').classList.remove('hidden');
   }
-});
+}
+window.addEventListener('load', checkWallet);
 
 async function connectWallet() {
   const btn = document.getElementById('btn-connect');
