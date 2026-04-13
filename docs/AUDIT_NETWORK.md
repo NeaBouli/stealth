@@ -60,8 +60,8 @@ OkHttp uses the JVM default `ProxySelector` and `SSLSocketFactory`. No custom pr
 
 TURN credentials are hardcoded in `build.gradle`:
 ```
-TURN_USERNAME = "REDACTED_TURN_USERNAME"
-TURN_PASSWORD = "REDACTED_TURN_PASSWORD"
+TURN_USERNAME = "YOUR_TURN_USERNAME"
+TURN_PASSWORD = "YOUR_TURN_PASSWORD"
 ```
 
 These are baked into every APK and extractable via decompilation. Already tracked as BUG-2 in HANDOVER.md and TODO-003 in TODO.md.

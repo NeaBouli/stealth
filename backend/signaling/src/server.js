@@ -467,7 +467,7 @@ app.delete("/key/:id", (req, res) => {
 // --- Subscription Admin API ---
 app.get("/api/subscription/:clientId", (req, res) => {
   const adminKey = req.headers["x-admin-key"];
-  if (adminKey !== process.env.ADMIN_KEY && adminKey !== "dev-admin-key") {
+  if (adminKey !== process.env.ADMIN_KEY) {
     return res.status(403).json({ error: "Forbidden" });
   }
   const sub = subscriptions.getSubscription(req.params.clientId);

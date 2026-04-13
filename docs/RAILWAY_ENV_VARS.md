@@ -16,8 +16,8 @@ https://railway.com/project/263caa21-e6f6-4075-9470-22427cfcf5f9
 | `PORT` | `8080` |
 | `STUN_URL` | `stun:stun.l.google.com:19302` |
 | `TURN_URL` | `turn:a.relay.metered.ca:443?transport=tcp` |
-| `TURN_USER` | `REDACTED_TURN_USERNAME` |
-| `TURN_PASS` | `REDACTED_TURN_PASSWORD` |
+| `TURN_USER` | `YOUR_TURN_USERNAME` |
+| `TURN_PASS` | `YOUR_TURN_PASSWORD` |
 | `ADMIN_API_KEY` | *(generate with `openssl rand -base64 32`)* |
 
 ## Generate ADMIN_API_KEY
