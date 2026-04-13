@@ -1768,16 +1768,16 @@ app.post("/siwe/verify", async (req, res) => {
     return res.json({ success: false, error: "balance_check_failed" });
   }
 
-  if (!result.success) {
-    return res.json({ success: false, tier: "", lockedAmount: result.lockedAmount || "0", error: result.error || "insufficient" });
-  }
+  // SIWE signature is valid — always bind wallet to device (even if insufficient IFR).
+  // This way, when user buys IFR later, the 24h re-verify will pick up the new balance.
+  const tier = result.success ? result.tier : "";
+  const amount = result.lockedAmount || "0";
 
-  // Store/update wallet mapping with method=walletconnect (SIWE verified)
   const idx = walletMappings.findIndex(w => w.wallet.toLowerCase() === walletAddress.toLowerCase());
   const mapping = {
     wallet: walletAddress.toLowerCase(),
     clientId: deviceId,
-    tier: result.tier,
+    tier: tier,
     method: "walletconnect",
     lastVerified: Date.now(),
     verifiedAt: existing?.verifiedAt || Date.now()
@@ -1786,8 +1786,13 @@ app.post("/siwe/verify", async (req, res) => {
   else walletMappings.push(mapping);
   saveWalletMappings();
 
-  console.log("[SIWE] Wallet verified:", walletAddress, "→", result.tier, "(", result.lockedAmount, "IFR) device:", deviceId);
-  res.json({ success: true, tier: result.tier, lockedAmount: result.lockedAmount });
+  if (result.success) {
+    console.log("[SIWE] Wallet verified:", walletAddress, "→", tier, "(", amount, "IFR) device:", deviceId);
+    res.json({ success: true, tier: tier, lockedAmount: amount, walletBound: true });
+  } else {
+    console.log("[SIWE] Wallet bound (insufficient):", walletAddress, "(", amount, "IFR) device:", deviceId);
+    res.json({ success: false, tier: "", lockedAmount: amount, error: "insufficient", walletBound: true });
+  }
 });
 
 console.log("[SIWE] Endpoints ready: GET /siwe/challenge, POST /siwe/verify");

@@ -223,18 +223,36 @@ object WalletConnectManager {
                             dialog.dismiss()
                             callback(true, "Unlocked $tier with $amount IFR (permanent, SIWE verified)")
                         } else {
-                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
-                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).text = "Verify"
                             val error = result?.optString("error", "unknown") ?: "network_error"
-                            val msg = when (error) {
-                                "signature_invalid" -> "Signature verification failed — did you sign the exact message?"
-                                "wallet_bound" -> "This wallet is already linked to another device"
-                                "insufficient" -> "Insufficient IFR (need 1,000 for Pro / 5,000 for Premium)"
-                                "invalid_nonce", "challenge_expired" -> "Challenge expired — try again"
-                                "balance_check_failed" -> "Ethereum RPC unavailable — try again later"
-                                else -> "Verification failed: $error"
+                            val walletBound = result?.optBoolean("walletBound", false) ?: false
+                            val amount = result?.optString("lockedAmount", "0") ?: "0"
+
+                            if (error == "insufficient" && walletBound) {
+                                // Wallet SIWE-verified but not enough IFR — store binding anyway
+                                connectedAddress = address
+                                // Store as walletconnect method but without tier
+                                val prefs = activity.getSharedPreferences("securecall_prefs", Context.MODE_PRIVATE)
+                                prefs.edit()
+                                    .putString("ifr_wallet_address", address.lowercase())
+                                    .putString("ifr_locked_amount", amount)
+                                    .putString("ifr_verification_method", IfrLockManager.METHOD_WALLETCONNECT)
+                                    .putLong("ifr_last_verified", System.currentTimeMillis())
+                                    .putLong("ifr_wallet_verified_at", System.currentTimeMillis())
+                                    .apply()
+                                dialog.dismiss()
+                                callback(true, "Wallet verified & connected ($amount IFR held).\nNeed 1,000 IFR for Pro / 5,000 for Premium.\nTier activates automatically when you hold enough IFR.")
+                            } else {
+                                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
+                                dialog.getButton(AlertDialog.BUTTON_POSITIVE).text = "Verify"
+                                val msg = when (error) {
+                                    "signature_invalid" -> "Signature verification failed — did you sign the exact message?"
+                                    "wallet_bound" -> "This wallet is already linked to another device"
+                                    "invalid_nonce", "challenge_expired" -> "Challenge expired — try again"
+                                    "balance_check_failed" -> "Ethereum RPC unavailable — try again later"
+                                    else -> "Verification failed: $error"
+                                }
+                                Toast.makeText(activity, msg, Toast.LENGTH_LONG).show()
                             }
-                            Toast.makeText(activity, msg, Toast.LENGTH_LONG).show()
                         }
                     }
                 }, "siwe-verify").start()
