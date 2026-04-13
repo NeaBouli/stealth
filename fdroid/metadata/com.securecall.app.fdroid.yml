@@ -53,7 +53,7 @@ Builds:
     gradle:
       - fdroid
     prebuild:
-      - printf 'org.gradle.jvmargs=-Xmx2048m
+      - printf 'org.gradle.jvmargs=-Xmx2048m 
         -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nandroid.enableJetifier=true\nandroid.enableGlobalSynthetics=true\n'
         > ../gradle.properties
       - echo sdk.dir=/opt/android-sdk > ../local.properties
