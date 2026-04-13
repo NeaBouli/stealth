@@ -70,5 +70,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.0.17
-CurrentVersionCode: 38
+CurrentVersion: 1.0.18
+CurrentVersionCode: 39
