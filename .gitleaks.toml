@@ -1,0 +1,31 @@
+title = "StealthX Custom Gitleaks Config"
+
+[allowlist]
+  description = "Global allowlist"
+  paths = [
+    '''node_modules''',
+    '''\.git''',
+    '''package-lock\.json''',
+    '''yarn\.lock'''
+  ]
+
+[[rules]]
+  description = "Stripe Secret Key"
+  id = "stripe-secret-key"
+  regex = '''sk_(live|test)_[a-zA-Z0-9]{20,}'''
+  tags = ["key", "stripe"]
+  severity = "CRITICAL"
+
+[[rules]]
+  description = "TURN Server Credentials"
+  id = "turn-credentials"
+  regex = '''(?i)(turn[_-]?(password|secret|credential))\s*[=:]\s*["']?[^\s"']{8,}'''
+  tags = ["credential", "turn"]
+  severity = "HIGH"
+
+[[rules]]
+  description = "Hardcoded API Key"
+  id = "hardcoded-api-key"
+  regex = '''(?i)(api[_-]?key|apikey|api[_-]?secret)\s*[=:]\s*["']?[a-zA-Z0-9_\-]{20,}["']?'''
+  tags = ["api", "key"]
+  severity = "HIGH"

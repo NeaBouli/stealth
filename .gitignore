@@ -44,6 +44,7 @@ securecall-release-key.jks.bak
 # WireGuard private keys
 *.key
 docs/wireguard/*_private*
+.env
 .env.local
 
 # Activation codes (contain real single-use codes — never commit)
