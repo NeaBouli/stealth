@@ -113,19 +113,24 @@ object UpdateManager {
      */
     @JvmStatic
     fun openUpdate(context: Context) {
-        val url = getUpdateUrl(context)
-        Log.d(TAG, "Opening update URL: $url")
-        if (url.startsWith("market://")) {
-            try {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                    setPackage(PLAY_PACKAGE)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                })
-                return
-            } catch (e: Exception) {
-                Log.w(TAG, "Play Store app not available: ${e.message}")
-            }
+        if (UpdateChecker.isAdbOnlyFlavor()) {
+            Toast.makeText(context, "Update via ADB only for this build", Toast.LENGTH_LONG).show()
+            return
         }
+        // If caller is an Activity, use the full in-app check flow (direct APK download)
+        if (context is Activity) {
+            val source = InstallSource.resolve(context)
+            Log.d(TAG, "openUpdate via Activity — source: $source")
+            when (source) {
+                InstallSource.PLAY_STORE -> openPlayStore(context)
+                InstallSource.FDROID -> openFDroid(context)
+                InstallSource.SIDELOAD, InstallSource.OTHER_STORE -> runInAppCheck(context, manual = true)
+            }
+            return
+        }
+        // Fallback for non-Activity contexts (service, broadcast receiver)
+        val url = getUpdateUrl(context)
+        Log.d(TAG, "Opening update URL (non-Activity fallback): $url")
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         })
