@@ -890,7 +890,7 @@ StealthX/SecureCall — Verschlüsselte Android P2P-Calling-App mit E2E-Encrypti
 - **Infra**: Railway (backend), GitHub (code), GitLab (F-Droid pipeline)
 
 ## Aktuelle Phase
-**v1.0.18 (vC39)** — Alpha Testing, AAB ready for Play Store Upload
+**v1.0.21 (vC42)** — Alpha Testing, Release-APKs auf allen Geräten, Update-System live
 
 ## START FLOW — Lies diese Dateien zuerst:
 1. `docs/SESSION_CONTEXT.md` — Vollständiger Projekt-Kontext + Handover
@@ -915,10 +915,11 @@ cd client_android
 ./gradlew assemblePremiumDebug -Pinternal       # Premium debug (internal only)
 ```
 
-## Devices (ADB)
-- S10: `RF8N313QMFL` (Premium, hat Sperrbildschirm-Muster)
-- S7: `ce10160adc00152604` (Pro)
-- Tab S4: `ce12182c68644439037e` (Free)
+## Devices (ADB) — Stand 14.04.2026
+- S10: `RF8N313QMFL` — Premium RELEASE vC42 (ADB-only updates)
+- S7: `ce10160adc00152604` — Free RELEASE vC42 (GitHub auto-update)
+- Tab S4: `ce12182c68644439037e` — Free RELEASE vC42 (GitHub auto-update)
+- WICHTIG: Alle Geräte haben RELEASE-Signaturen. NIE Debug-APK über Release installieren (Signatur-Mismatch → Install-Fehler).
 
 ## Do NOT touch
 - .env / .env.local
@@ -929,7 +930,39 @@ cd client_android
 
 ## Architektur-Entscheidungen
 - **WalletConnect/Reown SDK entfernt** — Relay 403 Bug (reown-kotlin #240). Stattdessen SIWE via MetaMask deep link. NICHT wieder einbauen. Siehe `memory/walletconnect_siwe.md`.
-- **NEVER** call `/admin/broadcast` from AI/dev session — nur Kaspartizan
+- **Broadcast:** `/admin/broadcast` darf von Claude Code gesendet werden wenn der User es explizit anweist. Admin-Key liegt in `.env.local`.
 - Pro/Premium Gradle Flavors hinter `-Pinternal` Guard — nicht in public Releases
+
+## DCARS — Don't Change A Running System (vC42 Baseline)
+
+**Rollback:** `pre-session-20260414-vC42` → Commit `20f7e13`
+
+Diese Module sind getestet und stabil. Bei zukünftigen Fixes NUR die betroffene Stelle anfassen, NICHT diese Module refactoren oder "verbessern":
+
+### Update-System (STABLE — 9/9 Tests bestanden)
+- `UpdateChecker.kt` — Flavor-aware APK matching via `BuildConfig.FLAVOR`
+- `UpdateManager.kt` — Install-Source-Erkennung (Sideload/Play/F-Droid/ADB-only)
+- `EmergencyBroadcastActivity.kt` — Update-Button flavor-aware
+- **Regel:** Free→GitHub, F-Droid→F-Droid, Premium/Pro→ADB only. NICHT ändern.
+
+### Contact System (STABLE)
+- `ContactRepository.kt` — Hidden-Phones-Liste für gelöschte Phone-Book-Kontakte
+- `ContactsFragment.kt` — Delete nutzt `delete(id)` + `deleteByPhoneOrId()` + `hidePhone()`
+- **Regel:** 3 Merge-Pfade filtern `hiddenPhones`. Alle 3 müssen konsistent bleiben.
+
+### WebRTC / ICE Grace Period (STABLE)
+- `WebRtcManager.kt` — 10s Grace Period bei ICE DISCONNECTED
+- **Regel:** `iceInGracePeriod=true` wird VOR Timer-Cancel gesetzt (Race-Condition-Fix). DataChannel CLOSED startet IMMER Grace Period.
+
+### Broadcast System (STABLE — 11 Templates)
+- `EmergencyBroadcastManager.kt` — Template 1-11, nur template_id wird übertragen
+- `EmergencyBroadcastActivity.kt` — Full-screen overlay, severity-basierte Farben
+- Backend: `/admin/broadcast` mit `x-admin-key` Header
+- **Regel:** Template-Texte sind client-seitig. Server kennt nur template_id.
+
+### Signing
+- Alle Geräte laufen auf RELEASE-Signaturen (securecall-release-key.jks)
+- Debug-APKs haben ANDERE Signatur → können NICHT über Release installiert werden
+- Zum Testen: entweder Release-APK bauen ODER erst deinstallieren dann Debug installieren
 
 ## Offene Tasks → siehe BACKLOG.md
