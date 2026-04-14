@@ -19,6 +19,14 @@ object UpdateChecker {
     private const val TAG = "UpdateChecker"
 
     /**
+     * Returns true for flavors distributed only via ADB (premium, pro).
+     * These builds have no public release assets on GitHub.
+     */
+    @JvmStatic
+    fun isAdbOnlyFlavor(): Boolean =
+        BuildConfig.FLAVOR == "premium" || BuildConfig.FLAVOR == "pro"
+
+    /**
      * GitHub API endpoint for the latest release of the stealth repo.
      * Returns a single release object with `tag_name`, `name`, `body`, `assets[]`.
      */
@@ -48,6 +56,10 @@ object UpdateChecker {
     @JvmStatic
     @Suppress("TooGenericExceptionCaught")
     fun checkLatest(): UpdateInfo? {
+        if (isAdbOnlyFlavor()) {
+            Log.w(TAG, "Flavor '${BuildConfig.FLAVOR}' is ADB-only — skipping update check")
+            return null
+        }
         return try {
             val request = Request.Builder()
                 .url(RELEASES_URL)
@@ -95,9 +107,9 @@ object UpdateChecker {
             val size = asset.optLong("size", 0L)
             if (!name.endsWith(".apk", ignoreCase = true)) continue
 
-            // Only free-tier APK — don't pick up fdroid/pro/premium if they ever land
-            // in the same release. Matches `securecall-free-*.apk` or `app-free-*.apk`.
-            if (!name.contains("free", ignoreCase = true)) continue
+            // Pick the APK matching the installed flavor (free → free, fdroid → fdroid).
+            // Premium/pro never reach here (blocked by isAdbOnlyFlavor() above).
+            if (!name.contains(BuildConfig.FLAVOR, ignoreCase = true)) continue
 
             val match = VC_PATTERN.find(name) ?: continue
             val code = match.groupValues[1].toIntOrNull() ?: continue
@@ -109,7 +121,7 @@ object UpdateChecker {
         }
 
         if (bestCode <= 0 || bestUrl.isEmpty()) {
-            Log.w(TAG, "No matching free APK asset in release")
+            Log.w(TAG, "No matching '${BuildConfig.FLAVOR}' APK asset in release")
             return null
         }
 

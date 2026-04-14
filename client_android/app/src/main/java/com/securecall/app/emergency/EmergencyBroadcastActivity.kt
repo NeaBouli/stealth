@@ -78,11 +78,21 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
             setPadding(0, 0, 0, pad * 2)
         })
 
-        // Update button — auto-detects Play Store vs sideload
+        // Update button — auto-detects Play Store vs sideload vs ADB-only
         if (t.showUpdateButton) {
-            layout.addView(makeRoundedButton("Update Now", 0xFF4CAF50.toInt()) {
-                com.securecall.app.update.UpdateManager.openUpdate(this@EmergencyBroadcastActivity)
-            })
+            if (com.securecall.app.update.UpdateChecker.isAdbOnlyFlavor()) {
+                layout.addView(makeRoundedButton("ADB Update Only", 0xFF888888.toInt()) {
+                    android.widget.Toast.makeText(
+                        this@EmergencyBroadcastActivity,
+                        "Update via ADB only for this build",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                })
+            } else {
+                layout.addView(makeRoundedButton("Update Now", 0xFF4CAF50.toInt()) {
+                    com.securecall.app.update.UpdateManager.openUpdate(this@EmergencyBroadcastActivity)
+                })
+            }
         }
 
         // Open URL button (for announcements etc.)

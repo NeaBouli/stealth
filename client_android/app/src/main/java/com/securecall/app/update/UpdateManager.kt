@@ -46,7 +46,8 @@ object UpdateManager {
      * Label for the Settings entry. Kept for backwards compat.
      */
     @JvmStatic
-    fun getUpdateLabel(): String = "Check for Updates"
+    fun getUpdateLabel(): String =
+        if (UpdateChecker.isAdbOnlyFlavor()) "Updates (ADB only)" else "Check for Updates"
 
     /**
      * **Manual** check — invoked from Settings → "Check for Updates".
@@ -55,6 +56,11 @@ object UpdateManager {
      */
     @JvmStatic
     fun checkAndPromptUpdate(activity: Activity) {
+        if (UpdateChecker.isAdbOnlyFlavor()) {
+            Log.w(TAG, "Manual check — ADB-only flavor '${BuildConfig.FLAVOR}'")
+            Toast.makeText(activity, "Update via ADB only for this build", Toast.LENGTH_LONG).show()
+            return
+        }
         val source = InstallSource.resolve(activity)
         Log.w(TAG, "Manual check — install source: $source")
 
@@ -76,6 +82,10 @@ object UpdateManager {
      */
     @JvmStatic
     fun maybeAutoCheck(activity: Activity) {
+        if (UpdateChecker.isAdbOnlyFlavor()) {
+            Log.w(TAG, "Auto-check skipped — ADB-only flavor '${BuildConfig.FLAVOR}'")
+            return
+        }
         val source = InstallSource.resolve(activity)
         if (source != InstallSource.SIDELOAD && source != InstallSource.OTHER_STORE) {
             Log.w(TAG, "Auto-check skipped for source=$source (handled by store)")
