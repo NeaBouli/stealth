@@ -6,6 +6,7 @@ import org.json.JSONArray
 object ContactRepository {
     private const val PREFS = "securecall_contacts"
     private const val KEY = "contacts_json"
+    private const val KEY_HIDDEN = "hidden_phones"
 
     fun getAll(context: Context): List<Contact> {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -88,6 +89,22 @@ object ContactRepository {
         }
         if (count > 0) persist(context, updated)
         return count
+    }
+
+    /** Hide a phone number so it won't reappear from the phone book. */
+    fun hidePhone(context: Context, phone: String) {
+        val normalized = phone.replace(Regex("[^0-9+]"), "")
+        if (normalized.isEmpty()) return
+        val hidden = getHiddenPhones(context).toMutableSet()
+        hidden.add(normalized)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putStringSet(KEY_HIDDEN, hidden).apply()
+    }
+
+    /** Returns set of normalized phone numbers that the user has dismissed. */
+    fun getHiddenPhones(context: Context): Set<String> {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getStringSet(KEY_HIDDEN, emptySet()) ?: emptySet()
     }
 
     private fun persist(context: Context, contacts: List<Contact>) {

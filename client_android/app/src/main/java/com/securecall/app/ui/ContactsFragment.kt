@@ -258,7 +258,8 @@ class ContactsFragment : Fragment() {
         val secureIdPhones = cachedClientIdToPhone
             .filter { it.key in appSecureIds }
             .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
-        val excludePhones = appPhoneNumbers + secureIdPhones
+        val hiddenPhones = ContactRepository.getHiddenPhones(ctx)
+        val excludePhones = appPhoneNumbers + secureIdPhones + hiddenPhones
 
         val uniquePhoneContacts = phoneContacts.filter { pc ->
             pc.phoneOrId.replace(Regex("[^0-9+]"), "") !in excludePhones
@@ -285,7 +286,8 @@ class ContactsFragment : Fragment() {
                 val secureIdPhones = cachedClientIdToPhone
                     .filter { it.key in appSecureIds }
                     .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
-                val excludePhones = appPhoneNumbers + secureIdPhones
+                val hiddenPhones = ContactRepository.getHiddenPhones(ctx)
+                val excludePhones = appPhoneNumbers + secureIdPhones + hiddenPhones
 
                 val uniquePhoneContacts = phoneContacts.filter { pc ->
                     pc.phoneOrId.replace(Regex("[^0-9+]"), "") !in excludePhones
@@ -508,7 +510,8 @@ class ContactsFragment : Fragment() {
         val secureIdPhones = cachedClientIdToPhone
             .filter { it.key in appSecureIds }
             .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
-        val excludePhones = appPhoneNumbers + secureIdPhones
+        val hiddenPhones = ContactRepository.getHiddenPhones(ctx)
+        val excludePhones = appPhoneNumbers + secureIdPhones + hiddenPhones
 
         val uniquePhoneContacts = phoneContacts.filter { pc ->
             pc.phoneOrId.replace(Regex("[^0-9+]"), "") !in excludePhones
@@ -688,7 +691,13 @@ class ContactsFragment : Fragment() {
                             .setTitle("Delete ${contact.name}?")
                             .setMessage("This will permanently remove this contact.")
                             .setPositiveButton("Delete") { _, _ ->
+                                // Delete from repository by ID and by phoneOrId (covers all storage paths)
+                                com.securecall.app.data.ContactRepository.delete(ctx, contact.id)
                                 com.securecall.app.data.ContactRepository.deleteByPhoneOrId(ctx, contact.phoneOrId)
+                                // Hide phone number so phone-book contacts don't reappear
+                                if (contact.isPhoneContact || !contact.phoneOrId.startsWith("android-")) {
+                                    com.securecall.app.data.ContactRepository.hidePhone(ctx, contact.phoneOrId)
+                                }
                                 invalidateCache()
                                 loadContactsAsync(forceRefresh = true)
                                 android.widget.Toast.makeText(ctx, "${contact.name} deleted", android.widget.Toast.LENGTH_SHORT).show()
