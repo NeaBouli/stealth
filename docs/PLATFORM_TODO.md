@@ -1,21 +1,41 @@
 # StealthX Platform — TODO & Memo
 
 ## KRITISCH (sofort)
-- [ ] SecureCall stable Tag setzen: git tag stable-2026-04-15
+- [ ] Railway ENV setzen:
+      ALLOWED_SIGNATURES=1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d
+      Erst dann ist Fork-Protection aktiv
+- [ ] F-Droid Submission SecureCall: NOCH NICHT EINGEREICHT
+      fdroid/fdroiddata MR erstellen auf GitLab
+      Anleitung: https://f-droid.org/en/docs/Submitting_to_F-Droid_Quick_Start_Guide/
+      Benoetigt: fdroid/metadata/com.securecall.app.free.yml
 - [ ] Chameleon v0.1.0-alpha: physisches Geraet Test ausstehend
 - [ ] IFR BuilderRegistry: Chameleon on-chain registrieren
 
 ## DIESE WOCHE
-- [ ] stealth repo: ICE-Monitoring in SecLog implementieren
-- [ ] stealth repo: STUN-Konfiguration optimieren
-- [ ] securechat repo: Kaspa SDK Android-Kompatibilitaet testen
+- [ ] stealth: ICE-Monitoring in SecLog (Relay Architektur v1.x)
+- [ ] stealth: STUN-Konfiguration optimieren
+- [ ] securechat: Kaspa SDK Android-Kompatibilitaet testen
 - [ ] Alle Repos: stable Tags setzen vor naechster Entwicklung
+      git tag stable-$(date +%Y-%m-%d) && git push origin --tags
 
 ## NAECHSTER MONAT
 - [ ] SecureCall v1.x: Tor-Signaling fuer WebRTC Handshake
 - [ ] SecureChat Phase 1: Core Messaging App Android starten
 - [ ] Chameleon: physisches Geraet Volltest
 - [ ] Trail of Bits: Audit-Anfrage stellen
+
+## MEMO FUER NEUE DEVS
+WICHTIG: Lies vor allem anderen:
+1. ECOSYSTEM.md — Produktuebersicht und IFR-Tiers
+2. docs/RELEASE_PROCESS.md — Wie Releases funktionieren
+3. docs/RELAY_ARCHITECTURE.md — Technische Architektur
+4. docs/PLATFORM_TODO.md — Was offen ist (diese Datei)
+
+NIEMALS:
+- Direkt auf main entwickeln
+- Stabile Features ohne Feature Branch anfassen
+- SecureCall App-Code ohne separaten Branch aendern
+- Stufen ueberspringen: 1 (intern) -> 2 (beta) -> 3 (live)
 
 ## MEMO — RELEASE REGELN
 1. NIE direkt auf main entwickeln — immer Feature Branch
