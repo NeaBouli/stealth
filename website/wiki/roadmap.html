@@ -229,6 +229,30 @@
                 <li class="pending">v2.2 &mdash; Group calls via MSC3401 &mdash; multi-party encrypted calls through Matrix rooms</li>
             </ul>
 
+            <!-- RELAY DECENTRALIZATION -->
+            <div class="section-break">Relay Decentralization (v1.x &mdash; v3.x)</div>
+
+            <h2>Relay Architecture Roadmap</h2>
+            <p>Based on the StealthX Relay Architecture Handbook v1.0. Goal: minimize relay dependency and metadata exposure through progressive decentralization.</p>
+
+            <h3>v1.x &mdash; Immediate (&lt; 4 Weeks)</h3>
+            <ul class="checklist">
+                <li class="pending">ICE-Monitoring in SecLog &mdash; connection_type logging (host/srflx/relay) for P2P baseline</li>
+                <li class="pending">STUN-Optimierung &mdash; multiple STUN servers, candidate prioritization for better NAT traversal</li>
+                <li class="pending">Tor-Signaling &mdash; WebRTC handshake over Tor/.onion (protects IP during connection setup)</li>
+            </ul>
+
+            <h3>v2.x &mdash; Medium-Term (1&ndash;3 Months)</h3>
+            <ul class="checklist">
+                <li class="pending"><span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.75rem;font-weight:600;">IN DEVELOPMENT</span> Self-hosted TURN Server as Tor Hidden Service (.onion)</li>
+                <li class="pending"><span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.75rem;font-weight:600;">IN DEVELOPMENT</span> UnifiedPush Evaluation &mdash; decentralized push as FCM alternative</li>
+            </ul>
+
+            <h3>v3.x &mdash; Long-Term</h3>
+            <ul class="checklist">
+                <li class="pending"><span style="background:#6366f1;color:#fff;padding:1px 6px;border-radius:4px;font-size:0.75rem;font-weight:600;">RESEARCH</span> Nym Mixnet Integration &mdash; timing-resistant privacy network (2027+)</li>
+            </ul>
+
             <!-- LONG-RANGE OBJECTIVES -->
             <div class="section-break">Long-Range Objectives</div>
 
