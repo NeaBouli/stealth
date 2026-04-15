@@ -6,7 +6,7 @@
 |---------|------|--------|-----|
 | SecureCall | NeaBouli/stealth | Live Beta | Android App |
 | SecureChat | NeaBouli/securechat | In Development | Android App + Site |
-| Chameleon | NeaBouli/chameleon | Alpha | Android App |
+| Chameleon | NeaBouli/chameleon | Alpha | Privacy OS — Part of SecureChat Ecosystem |
 
 ## Gemeinsamer Crypto Stack
 - Verschlüsselung: XChaCha20-Poly1305 (lazysodium)
@@ -25,6 +25,17 @@
 | >= 5.000 | Premium | Pro | Pro | — |
 | >= 6.000 | Premium | Elite | Elite | — |
 | >= 8.000 | Premium | Elite | Elite | Suite (alles) |
+
+## Produktstruktur
+
+```
+StealthX Platform
+├── SecureCall (stealthx.tech) — Voice App
+└── SecureChat (securechat.stealthx.tech) — Messaging Ecosystem
+    ├── SecureChat App — the Messenger
+    └── Chameleon (securechat.stealthx.tech/chameleon)
+        └── Privacy OS / Overlay Layer
+```
 
 ## Relay Architektur Roadmap (aus Handbuch v1.0)
 
