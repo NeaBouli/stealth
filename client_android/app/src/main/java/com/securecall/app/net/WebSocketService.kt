@@ -507,13 +507,41 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         }
         // Read device phone number if permission is granted
         val phoneNumber = getDevicePhoneNumber()
+        // App signature for fork protection — SHA-256 of signing certificate
+        val appSignature = getAppSignature()
         val json = if (phoneNumber != null) {
-            """{"type":"REGISTER","clientId":"$clientId","phoneNumber":"$phoneNumber"}"""
+            """{"type":"REGISTER","clientId":"$clientId","phoneNumber":"$phoneNumber","appSignature":"$appSignature"}"""
         } else {
-            """{"type":"REGISTER","clientId":"$clientId"}"""
+            """{"type":"REGISTER","clientId":"$clientId","appSignature":"$appSignature"}"""
         }
         client?.send(json)
         Log.d("WS_SERVICE", "REGISTER sent: $clientId, phone: ${phoneNumber ?: "none"}")
+    }
+
+    /** Returns SHA-256 hex digest of the app's signing certificate. */
+    private fun getAppSignature(): String {
+        return try {
+            val pm = packageManager
+            val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                pm.getPackageInfo(packageName, android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES)
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getPackageInfo(packageName, android.content.pm.PackageManager.GET_SIGNATURES)
+            }
+            val sig = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.signingInfo?.apkContentsSigners?.get(0)
+                    ?: return "unknown"
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.signatures?.get(0)
+                    ?: return "unknown"
+            }
+            val digest = java.security.MessageDigest.getInstance("SHA-256").digest(sig.toByteArray())
+            digest.joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            Log.w("WS_SERVICE", "Failed to get app signature: ${e.message}")
+            "unknown"
+        }
     }
 
     /** Re-register with the server (e.g. after manual phone number change in Settings). */

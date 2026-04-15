@@ -570,8 +570,22 @@ wss.on("connection", (ws, req) => {
         }));
       }
 
-      // TODO: Implement challenge-response auth using PKD public keys
-      // For now, accept registration if clientId is valid and not taken
+      // App signature verification — fork protection
+      // If ALLOWED_SIGNATURES is set, only allow clients with matching certificate fingerprint
+      const allowedSigs = process.env.ALLOWED_SIGNATURES;
+      if (allowedSigs && allowedSigs.trim().length > 0) {
+        const allowed = allowedSigs.split(",").map(s => s.trim().toLowerCase());
+        const clientSig = (msg.appSignature || "").toLowerCase();
+        if (!clientSig || !allowed.includes(clientSig)) {
+          console.log("[REGISTER] Rejected — unauthorized signature:", clientSig, "from", msg.clientId);
+          ws.send(JSON.stringify({
+            type: "ERROR",
+            error: "unauthorized_client",
+            message: "App signature not authorized"
+          }));
+          return ws.close(4003, "Unauthorized client");
+        }
+      }
 
       // Prüfen ob clientId bereits vergeben — allow reconnection by superseding old connection
       if (clientIds.has(msg.clientId)) {
