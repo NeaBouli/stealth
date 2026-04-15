@@ -56,8 +56,17 @@ StealthX Platform
 - securechat.stealthx.tech — SecureChat
 - ifrunit.tech — IFR Token
 
+## Fork-Schutz
+Alle StealthX Apps senden beim Server-Connect ihren
+App-Signatur-Hash (SHA-256 des Signing-Certs).
+Offizielle Server akzeptieren nur signierte Originalapps.
+Basis: Android PackageManager.GET_SIGNING_CERTIFICATES
+Implementierung: AppSignature.kt (chameleon/stealthx-ifr)
+Backend: signatureVerifier.js Middleware
+
 ## Shared Documentation
 Folgende Dokumente existieren in ALLEN drei Repos (identisch):
 - ECOSYSTEM.md (diese Datei)
 - docs/RELEASE_PROCESS.md
 - docs/RELAY_ARCHITECTURE.md (Zusammenfassung des Handbuchs)
+- docs/PRICING.md
