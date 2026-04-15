@@ -47,10 +47,15 @@
             <div class="nav-links" id="navLinks">
                 <a href="./#features">Features</a>
                 <a href="./#security">Security</a>
+                <a href="./#audit">Audit</a>
                 <a href="./#compare">Compare</a>
                 <a href="./#pricing">Pricing</a>
+                <a href="./#lifetime" style="color:#FFD700">Lifetime</a>
+                <a href="wiki/" style="color:var(--accent-light)">Wiki</a>
                 <a href="faq.html">FAQ</a>
                 <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
+                <a href="./#platform">Platform</a>
+                <a href="https://securechat.stealthx.tech/" target="_blank" rel="noopener" style="color:#00ff88;font-weight:700;">SecureChat</a>
                 <a href="./#download" class="btn btn-primary btn-sm nav-cta">Download</a>
             </div>
             <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
@@ -157,14 +162,25 @@
             <li>Associate calls with real identities</li>
             <li>Insert backdoors without the change being visible in our public source code</li>
         </ul>
+
+        <h2>StealthX Platform &mdash; Shared Crypto Stack</h2>
+        <p>SecureCall is part of the StealthX Platform. All three products share the same cryptographic foundation:</p>
+        <table>
+            <tr><th>Product</th><th>Encryption</th><th>Key Exchange</th><th>Forward Secrecy</th><th>Transport</th></tr>
+            <tr><td><strong>SecureCall</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Double Ratchet</td><td>WebRTC DTLS-SRTP</td></tr>
+            <tr><td><strong>SecureChat</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Double Ratchet</td><td>Tor/.onion Relay Nodes</td></tr>
+            <tr><td><strong>Chameleon</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Double Ratchet</td><td>Local + AIDL IPC</td></tr>
+        </table>
+        <p>No AES-GCM. No BouncyCastle. No custom cryptography. One stack, audited once, used everywhere.</p>
+        <p><a href="https://securechat.stealthx.tech/wiki/security-design.html" target="_blank" rel="noopener">SecureChat Security Design &rarr;</a> | <a href="https://github.com/NeaBouli/chameleon" target="_blank" rel="noopener">Chameleon on GitHub &rarr;</a></p>
     </div>
 
     <!-- ─── Footer ──────────────────────────────────────────── -->
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; 2026 Vendetta Labs &mdash; Greece</p>
-                <p><a href="./">Home</a> | <a href="privacy.html">Privacy Policy</a> | <a href="impressum.html">Impressum</a> | <a href="disclaimer.html">Disclaimer</a></p>
+                <p>&copy; 2026 Vendetta Labs &mdash; Greece &middot; Part of the <a href="./">StealthX Platform</a></p>
+                <p><a href="./">Home</a> | <a href="privacy.html">Privacy Policy</a> | <a href="terms.html">Terms</a> | <a href="impressum.html">Impressum</a> | <a href="disclaimer.html">Disclaimer</a> | <a href="https://securechat.stealthx.tech" target="_blank" rel="noopener">SecureChat</a></p>
             </div>
         </div>
     </footer>

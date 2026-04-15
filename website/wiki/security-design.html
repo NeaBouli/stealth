@@ -367,6 +367,72 @@
                 <li><a href="https://github.com/NeaBouli/stealth/blob/main/SECURITY.md" target="_blank" rel="noopener">Security Disclosure Policy</a> — Instructions for responsibly reporting vulnerabilities.</li>
             </ul>
 
+            <!-- SECTION 8: SECURECHAT SECURITY COMPARISON -->
+            <div class="section-break">SecureChat &mdash; Shared Security Model</div>
+
+            <h2>Cross-Product Security Comparison</h2>
+            <p>SecureChat, the messaging product of the StealthX Platform, shares the same cryptographic foundation as SecureCall but adapts the security model for asynchronous messaging and decentralized relay infrastructure.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>SecureCall</th>
+                        <th>SecureChat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Encryption</strong></td>
+                        <td>XChaCha20-Poly1305</td>
+                        <td>XChaCha20-Poly1305 (identical)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Key Exchange</strong></td>
+                        <td>X25519 ECDH</td>
+                        <td>X25519 ECDH (identical)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Forward Secrecy</strong></td>
+                        <td>Double Ratchet (per-call)</td>
+                        <td>Double Ratchet (per-message)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Transport</strong></td>
+                        <td>WebRTC DTLS-SRTP (P2P)</td>
+                        <td>Tor Hidden Services + Onion Routing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Identity</strong></td>
+                        <td>Anonymous SecureID</td>
+                        <td>Kaspa BlockDAG (on-chain anchor)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Relay</strong></td>
+                        <td>Centralized signaling server</td>
+                        <td>Decentralized Kaspa-incentivized nodes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IP Protection</strong></td>
+                        <td>GhostNet (Premium)</td>
+                        <td>2-hop Onion Routing (Pro), 3-hop (Elite)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Metadata</strong></td>
+                        <td>Minimal (signaling only)</td>
+                        <td>Zero (SMP-style unidirectional queues)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Crypto Library</strong></td>
+                        <td>Rust (native JNI)</td>
+                        <td>lazysodium-android (Kotlin)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>Both products target <strong>OWASP MASVS Level 2</strong> compliance. External security audit by Trail of Bits is recommended before public release of either product.</p>
+            <p><a href="https://securechat.stealthx.tech/wiki/security-design.html" target="_blank" rel="noopener">SecureChat Security Design &rarr;</a> | <a href="https://securechat.stealthx.tech/wiki/relay-architecture.html" target="_blank" rel="noopener">Relay Architecture &rarr;</a></p>
+
             <div class="wiki-doc-footer">
                 <span class="end-mark">Document End // Classification: Restricted</span>
             </div>
@@ -376,8 +442,8 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; 2026 Vendetta Labs &mdash; Greece</p>
-                <p><a href="../">Home</a> | <a href="../privacy.html">Privacy Policy</a> | <a href="../impressum.html">Impressum</a> | <a href="../disclaimer.html">Disclaimer</a></p>
+                <p>&copy; 2026 Vendetta Labs &mdash; Greece &middot; Part of the <a href="../">StealthX Platform</a></p>
+                <p><a href="../">Home</a> | <a href="../privacy.html">Privacy Policy</a> | <a href="../terms.html">Terms</a> | <a href="../impressum.html">Impressum</a> | <a href="../disclaimer.html">Disclaimer</a> | <a href="https://securechat.stealthx.tech" target="_blank" rel="noopener">SecureChat</a></p>
             </div>
         </div>
     </footer>
