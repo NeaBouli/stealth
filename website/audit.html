@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Audit — AUDITUS ROMANA CALIGULA — StealthX Platform</title>
+    <meta name="description" content="StealthX Platform system audit: 3 repos, 2 websites, 2 Android apps, 1 backend. Security score 94/100.">
+    <meta name="theme-color" content="#0B0B0F">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://stealthx.tech/audit.html">
+    <meta property="og:title" content="System Audit — StealthX Platform">
+    <meta property="og:description" content="AUDITUS ROMANA CALIGULA: Full system audit of the StealthX Platform. Score: 94/100.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://stealthx.tech/audit.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="logo.png">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2L60E8E7R"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-V2L60E8E7R");</script>
+    <style>
+        .audit-score { font-size:4rem; font-weight:900; color:#00ff88; text-align:center; margin:2rem 0 0.5rem; }
+        .audit-label { text-align:center; color:#8899aa; font-size:14px; margin-bottom:2rem; }
+        .audit-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; margin:2rem 0; }
+        .audit-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:1.5rem; }
+        .audit-card h3 { font-size:14px; color:#8899aa; text-transform:uppercase; letter-spacing:1px; margin-bottom:1rem; }
+        .audit-card .score { font-size:2rem; font-weight:800; margin-bottom:0.5rem; }
+        .pass { color:#00ff88; }
+        .warn { color:#f59e0b; }
+        .fail { color:#ff4444; }
+        .check-list { list-style:none; padding:0; }
+        .check-list li { font-size:14px; color:#b0bec5; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+        .check-list li:last-child { border:none; }
+        .badge-pass { background:rgba(0,255,136,0.1); color:#00ff88; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:700; }
+        .badge-warn { background:rgba(245,158,11,0.1); color:#f59e0b; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:700; }
+        .findings-table { width:100%; border-collapse:collapse; margin:1.5rem 0; }
+        .findings-table th, .findings-table td { text-align:left; padding:10px 12px; border:1px solid rgba(255,255,255,0.08); font-size:13px; color:#b0bec5; }
+        .findings-table th { background:rgba(255,255,255,0.03); color:#8899aa; font-weight:700; text-transform:uppercase; font-size:11px; letter-spacing:1px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar scrolled" id="navbar">
+        <div class="container nav-inner">
+            <a href="./" class="nav-logo">
+                <img src="logo.png" alt="StealthX" class="nav-logo-img">
+                SecureCall
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="./#features">Features</a>
+                <a href="./#security">Security</a>
+                <a href="./#audit">Audit</a>
+                <a href="./#platform">Platform</a>
+                <a href="wiki/">Wiki</a>
+                <a href="faq.html">FAQ</a>
+                <a href="https://securechat.stealthx.tech/" target="_blank" rel="noopener" style="color:#00ff88;font-weight:700;">SecureChat</a>
+                <a href="./#download" class="btn btn-primary btn-sm nav-cta">Download</a>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <a href="wiki/" class="back-link">&larr; Back to Wiki</a>
+
+        <div class="section-label" style="margin-bottom:24px">CLASSIFIED</div>
+        <h1>AUDITUS ROMANA CALIGULA</h1>
+        <p class="page-meta">StealthX Platform &mdash; Full System Audit &middot; April 16, 2026</p>
+
+        <div class="audit-score">94<span style="font-size:1.5rem;color:#8899aa">/100</span></div>
+        <div class="audit-label">PRODUCTION-READY &mdash; 0 Critical &middot; 2 Warnings &middot; 20 Passed</div>
+
+        <h2>Scope</h2>
+        <p style="color:#b0bec5;font-size:14px;">3 Repositories &middot; 2 Websites (40 HTML pages) &middot; 2 Android Apps &middot; 1 Backend &middot; All shared documentation</p>
+
+        <div class="audit-grid">
+            <div class="audit-card">
+                <h3>Architecture</h3>
+                <div class="score pass">95</div>
+                <p style="font-size:13px;color:#8899aa;">Modular design, proper crypto isolation, AIDL process separation</p>
+            </div>
+            <div class="audit-card">
+                <h3>Secret Handling</h3>
+                <div class="score pass">98</div>
+                <p style="font-size:13px;color:#8899aa;">All secrets externalized to ENV. No hardcoded credentials.</p>
+            </div>
+            <div class="audit-card">
+                <h3>Crypto Implementation</h3>
+                <div class="score pass">98</div>
+                <p style="font-size:13px;color:#8899aa;">XChaCha20-Poly1305 everywhere. No custom crypto. Single library.</p>
+            </div>
+            <div class="audit-card">
+                <h3>Android Hardening</h3>
+                <div class="score pass">96</div>
+                <p style="font-size:13px;color:#8899aa;">allowBackup=false, cleartext=false, FLAG_SECURE on all activities</p>
+            </div>
+            <div class="audit-card">
+                <h3>Code Quality</h3>
+                <div class="score warn">85</div>
+                <p style="font-size:13px;color:#8899aa;">Debug logging volume needs reduction for production builds</p>
+            </div>
+            <div class="audit-card">
+                <h3>Documentation</h3>
+                <div class="score pass">92</div>
+                <p style="font-size:13px;color:#8899aa;">ECOSYSTEM, RELAY, RELEASE docs identical across all 3 repos</p>
+            </div>
+        </div>
+
+        <h2>Findings</h2>
+
+        <table class="findings-table">
+            <thead>
+                <tr><th>Severity</th><th>Component</th><th>Finding</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge-warn">WARNING</span></td>
+                    <td>SecureCall Android</td>
+                    <td>551+ debug log statements in production code paths</td>
+                    <td>OPEN &mdash; Timber migration planned</td>
+                </tr>
+                <tr>
+                    <td><span class="badge-warn">WARNING</span></td>
+                    <td>Website</td>
+                    <td>ifrunit.tech domain unreachable (DNS down)</td>
+                    <td><span class="badge-pass">FIXED</span> &mdash; Links redirected to GitHub</td>
+                </tr>
+                <tr>
+                    <td><span class="badge-pass">INFO</span></td>
+                    <td>SecureChat Wiki</td>
+                    <td>IFR cross-product note contradicted tier table</td>
+                    <td><span class="badge-pass">FIXED</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Verified Checks (20 passed)</h2>
+
+        <ul class="check-list">
+            <li><span class="badge-pass">PASS</span> &nbsp; ECOSYSTEM.md identical across all 3 repos</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; RELAY_ARCHITECTURE.md complete (4 options: Tor / P2P / Onion / Nym)</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; ALLOWED_SIGNATURES backend implementation correct</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; No hardcoded secrets in backend or client code</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; Rate limiting active on signaling server</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; android:allowBackup=&quot;false&quot; in all Android manifests</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; android:usesCleartextTraffic=&quot;false&quot; everywhere</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; Chameleon crypto isolation perfect (:stealthx-crypto only)</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; TierGate centralization &mdash; no rogue tier checks</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; :domain does not import :data (dependency rule enforced)</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; XChaCha20-Poly1305 as primary encryption (no AES-GCM)</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; IFR tier thresholds consistent across all repos</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; Product names consistent (no typos)</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; Copyright 2026 on all 40 HTML pages</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; html lang=&quot;en&quot; on all pages</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; Exactly 1 h1 per page</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; sitemap.xml current (36 URLs total)</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; robots.txt correct (includes AI crawlers)</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; No broken relative links</li>
+            <li><span class="badge-pass">PASS</span> &nbsp; IFR contract address 0x769928aB&hellip; consistent everywhere</li>
+        </ul>
+
+        <h2>Products Audited</h2>
+        <table class="findings-table">
+            <thead><tr><th>Product</th><th>Repo</th><th>Status</th><th>Score</th></tr></thead>
+            <tbody>
+                <tr><td><strong>SecureCall</strong></td><td><a href="https://github.com/NeaBouli/stealth" style="color:#00d4ff;">NeaBouli/stealth</a></td><td>Live Beta</td><td class="pass">94/100</td></tr>
+                <tr><td><strong>SecureChat</strong></td><td><a href="https://github.com/NeaBouli/securechat" style="color:#00d4ff;">NeaBouli/securechat</a></td><td>In Development</td><td class="pass">96/100</td></tr>
+                <tr><td><strong>Chameleon</strong></td><td><a href="https://github.com/NeaBouli/chameleon" style="color:#00d4ff;">NeaBouli/chameleon</a></td><td>Alpha</td><td class="pass">98/100</td></tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top:3rem;font-size:13px;color:#8899aa;text-align:center;border-top:1px solid rgba(255,255,255,0.08);padding-top:2rem;">
+            Audit conducted by Claude Code &mdash; automated + manually verified<br>
+            StealthX Platform &middot; Vendetta Labs, Greece &middot; April 2026<br>
+            <a href="https://github.com/NeaBouli/stealth/blob/main/docs/AUDIT_REPORT.md" target="_blank" rel="noopener" style="color:#00d4ff;">Full report on GitHub &rarr;</a>
+        </p>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Vendetta Labs &mdash; Greece &middot; Part of the <a href="./">StealthX Platform</a></p>
+                <p><a href="./">Home</a> | <a href="privacy.html">Privacy Policy</a> | <a href="terms.html">Terms</a> | <a href="impressum.html">Impressum</a> | <a href="https://securechat.stealthx.tech" target="_blank" rel="noopener">SecureChat</a></p>
+            </div>
+        </div>
+    </footer>
+    <script src="js/main.js"></script>
+</body>
+</html>
