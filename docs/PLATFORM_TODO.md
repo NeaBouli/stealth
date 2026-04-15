@@ -4,10 +4,10 @@
 - [ ] Railway ENV setzen:
       ALLOWED_SIGNATURES=1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d
       Erst dann ist Fork-Protection aktiv
-- [ ] F-Droid Submission SecureCall: NOCH NICHT EINGEREICHT
-      fdroid/fdroiddata MR erstellen auf GitLab
-      Anleitung: https://f-droid.org/en/docs/Submitting_to_F-Droid_Quick_Start_Guide/
-      Benoetigt: fdroid/metadata/com.securecall.app.free.yml
+- [x] F-Droid Submission SecureCall: EINGEREICHT
+      MR: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/36557
+      Package: com.securecall.app.free
+      Status: Wartet auf F-Droid Review
 - [ ] Chameleon v0.1.0-alpha: physisches Geraet Test ausstehend
 - [ ] IFR BuilderRegistry: Chameleon on-chain registrieren
 
