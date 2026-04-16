@@ -17,9 +17,36 @@
 | **CLIENT-HIGH-002 PII im Logcat + LOGGING_LEVEL** | ✅ CODE GEFIXT — APK-REBUILD NÖTIG | Commit `35ce2f2` — User bekommt Fix erst mit v1.0.22-Rollout |
 | **HIGH-002, -004, -005, CLIENT-CRIT-001/-002, CLIENT-HIGH-001, MED-\*** | 🟠 OFFEN | siehe Audit-Sektion |
 
-## Follow-up Fragen / Items aus diesen Fixes
-- **Custom-ID-Aktivierungs-Bug** (entdeckt bei HIGH-006): `/custom-id/activate-token` validiert `token` nicht gegen eine gespeicherte Pending-Purchase. Jeder, der das Format eines freien Custom IDs kennt, kann ihn ohne Stripe-Payment registrieren. Zusätzlich: Passwort wird bei Purchase eingesammelt, aber nie in `customIds[key]` gespeichert → Transfer-per-Passwort funktioniert nicht. Sollte zusammen in einem separaten Commit gefixt werden (pending_activations.json mit passwordHash/Salt, activate-token validiert token + übernimmt password in customIds).
-- **Android APK v1.0.22 muss gebaut + released werden** damit User die PII-Redaktion bekommen.
+## Folgendes wurde nach Items 1-6 zusätzlich abgeschlossen (Session Fortsetzung)
+
+| Problem | Status | Deploy / APK |
+|---|---|---|
+| **HIGH-002 FCM supersede hardening** | ✅ GEFIXT | Commit `32c6ba3` live |
+| **HIGH-005 Heartbeat-Grace in Active-Calls** | ✅ GEFIXT | Commit `32c6ba3` live — 180s Timeout statt 60s |
+| **HIGH-004 Activation-Code-Race** | ✅ N/A | Node single-threaded, kein echter Race — dokumentiert |
+| **CRIT-001 WebRTC-Relay-Hijack** | ✅ N/A | `getSessionPeer()` filtert bereits — False Positive des Audits |
+| **Custom-ID Token-Validation + Password-Persistence** | ✅ GEFIXT | Commit `32c6ba3` — `pending_activations.json` mit 1h-TTL, Token single-use |
+| **Subscription Verify Endpoint** | ✅ GEFIXT | `POST /subscription/status` live auf Railway |
+| **CLIENT-CRIT-001 + CLIENT-MED-002 REGISTER_ACK Flow** | ✅ GEFIXT in v1.0.22 | Commit `354dd81` — flush nur nach `REGISTERED`, nicht mehr nach 1.5s-Timer |
+| **CLIENT-HIGH-001 4003-Stop-Retry** | ✅ GEFIXT in v1.0.22 | `HeartbeatClient.onClosing` stoppt bei 4000-4099 |
+| **CLIENT-CRIT-002 Subscription Re-Sync** | ✅ GEFIXT in v1.0.22 | `verifyAgainstServer()` auf onResume, 6h-Rate-Limit |
+| **APK v1.0.22 Build + Install auf allen 3 Geräten** | ✅ VERIFIZIERT | S10 premium (43-premium), S7 free, Tab S4 free — alle REGISTERN sauber, FCM persistiert |
+
+## Test-Ergebnisse v1.0.22 (stand 2026-04-16 23:52 Athen)
+- Railway Runtime-Logs zeigen:
+  - `android-3bdecc0e` (S10, +491752536807) → REGISTER + FCM Token persisted ✅
+  - `android-29f5caae` (S7/TabS4, +306982138623) → REGISTER + FCM Token persisted ✅
+  - **0 `not_registered`-Errors** nach v1.0.22-Install (vorher bei jedem Reconnect)
+- S10 Logcat: keine `unauthorized_client`, kein 4003-Loop, kein reconnect-Spin
+
+## Noch TODO vor Launch
+1. **APK v1.0.22-fdroid** build (läuft im Hintergrund) + F-Droid Update-Request
+2. **APK-Release**: free APK auf stealthx.tech hochladen + Release-Notes schreiben
+3. **Nach ausreichender Adoption (~2 Wochen)** Railway `ALLOWED_SIGNATURES` wieder setzen zur Aktivierung der Fork-Protection
+
+## Offene Items (nicht kritisch für Launch)
+- Restliche MEDIUM-Findings aus Audit (Phone-Lookup Rate-Limit, SDP-Bandwidth, Gift-Code-String-Dates, Auth-Failure-Logs)
+- Global Uncaught Exception Handler in SecureCallApplication (Audit-Empfehlung)
 
 ---
 
