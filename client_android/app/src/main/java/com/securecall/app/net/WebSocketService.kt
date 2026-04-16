@@ -298,7 +298,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
             val pending = _phoneLookupCallback
             if (pending === callback) {
-                Log.w("WS_SERVICE", "PHONE_LOOKUP timeout for $phoneNumber")
+                // Fix CLIENT-HIGH-002 (2026-04-16): redact phone — Log.w is not stripped by ProGuard.
+                Log.w("WS_SERVICE", "PHONE_LOOKUP timeout (phone redacted)")
                 _phoneLookupCallback = null
                 callback(null)
             }

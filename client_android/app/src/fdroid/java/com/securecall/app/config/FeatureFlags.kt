@@ -21,7 +21,8 @@ object FeatureFlags {
     const val RECONNECT_STRATEGY = "basic"
     const val MULTI_DEVICE_SUPPORT = false
     const val AGGRESSIVE_KEY_ROTATION = false
-    const val LOGGING_LEVEL = "DEBUG"
+    // Fix CLIENT-HIGH-002 (2026-04-16): WARN in release — F-Droid flags PII in DEBUG logs.
+    const val LOGGING_LEVEL = "WARN"
     val isUnlimitedCalls: Boolean get() = MAX_CALL_DURATION_MINUTES == 0
     val isUnlimitedContacts: Boolean get() = MAX_CONTACTS == 0
     const val SECURITY_ENFORCEMENT = "WARN"

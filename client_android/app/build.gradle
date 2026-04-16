@@ -66,7 +66,10 @@ android {
             buildConfigField "boolean", "DEBUGGER_DETECTION", "false"
             buildConfigField "boolean", "EMULATOR_DETECTION", "false"
             buildConfigField "boolean", "HARDWARE_KEYSTORE_REQUIRED", "false"
-            buildConfigField "String", "LOGGING_LEVEL", "\"DEBUG\""
+            // Fix CLIENT-HIGH-002 (2026-04-16): release builds should not emit AppLogger.d/i.
+            // Log.d calls are already stripped by ProGuard -assumenosideeffects, but
+            // the AppLogger facade checks this string at runtime.
+            buildConfigField "String", "LOGGING_LEVEL", "\"WARN\""
             buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
 
@@ -154,7 +157,9 @@ android {
             buildConfigField "boolean", "DEBUGGER_DETECTION", "false"
             buildConfigField "boolean", "EMULATOR_DETECTION", "false"
             buildConfigField "boolean", "HARDWARE_KEYSTORE_REQUIRED", "false"
-            buildConfigField "String", "LOGGING_LEVEL", "\"DEBUG\""
+            // Fix CLIENT-HIGH-002 (2026-04-16): fdroid release must not log at DEBUG
+            // level — F-Droid reviewers flag PII in logcat, and AppLogger.d/i checks this.
+            buildConfigField "String", "LOGGING_LEVEL", "\"WARN\""
             buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
             buildConfigField "boolean", "BILLING_ENABLED", "false"

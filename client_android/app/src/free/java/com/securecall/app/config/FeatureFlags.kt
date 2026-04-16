@@ -35,7 +35,8 @@ object FeatureFlags {
     const val AGGRESSIVE_KEY_ROTATION = false
 
     // --- Logging ---
-    const val LOGGING_LEVEL = "DEBUG"
+    // Fix CLIENT-HIGH-002 (2026-04-16): WARN in release to match build.gradle.
+    const val LOGGING_LEVEL = "WARN"
 
     // --- Helpers ---
     val isUnlimitedCalls: Boolean get() = MAX_CALL_DURATION_MINUTES == 0

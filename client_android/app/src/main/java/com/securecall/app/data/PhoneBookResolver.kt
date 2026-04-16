@@ -49,7 +49,9 @@ object PhoneBookResolver {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "PhoneLookup failed for $phoneNumber", e)
+            // Fix CLIENT-HIGH-002 (2026-04-16): redact phone number — Log.e is not
+            // stripped by ProGuard, so raw numbers would end up in logcat / bug reports.
+            Log.e(TAG, "PhoneLookup failed (phone redacted)", e)
         }
         return null
     }
