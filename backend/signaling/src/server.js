@@ -500,10 +500,16 @@ const wss = new WebSocket.Server({
   path: "/signal",
   maxPayload: 64 * 1024, // 64 KB max message size
   verifyClient: (info, done) => {
-    // Origin validation
+    // Origin validation.
+    // Fix (2026-04-16): native mobile clients (OkHttp WebSocket on Android/iOS)
+    // do not send an Origin header — Origin is a browser-only SOP concept.
+    // We only reject requests that DO send an Origin that is not in the
+    // allowlist (blocks cross-site attacks from malicious web pages).
+    // Missing Origin passes through; those clients cannot be CSRF-hijacked
+    // because they are not browsers.
     if (ALLOWED_ORIGINS.length > 0) {
       const origin = info.origin || info.req.headers.origin;
-      if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+      if (origin && !ALLOWED_ORIGINS.includes(origin)) {
         return done(false, 403, "Origin not allowed");
       }
     }
