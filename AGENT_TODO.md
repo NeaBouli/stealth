@@ -1,15 +1,25 @@
 # SecureCall / StealthX — Agent Debug Session 2026-04-16
 
-## Status Überblick (Stand 2026-04-16 22:12 Athen / 19:12 UTC)
+## Status Überblick (Stand 2026-04-16 22:35 Athen / 19:35 UTC)
 
 | Problem | Status | Deployment |
 |---|---|---|
 | **P0 Connection-Loop** (alle User können nicht verbinden) | ✅ GEFIXT | Railway `ALLOWED_SIGNATURES` entfernt, Deploy `44c59057` SUCCESS |
+| **CRIT-001 WebRTC-Relay-Hijack** (Audit-Claim) | ❌ FALSE POSITIVE | `getSessionPeer()` prüft bereits Teilnehmerschaft, kein Bug |
 | **CRIT-002 PII-Broadcast** (`SECUREID_CHANGED` sendet Raw-Phone) | ✅ GEFIXT | Commit `b610663`, Deploy `efeca16f` SUCCESS |
 | **CRIT-003 Concurrent File-Writes** (Race auf JSON-Persistenz) | ✅ GEFIXT | Commit `b610663`, Deploy `efeca16f` SUCCESS |
-| **CRIT-001 WebRTC-Relay-Hijack** (Audit-Claim) | ❌ FALSE POSITIVE | `getSessionPeer()` prüft bereits Teilnehmerschaft, kein Bug |
-| **NEW — CRIT-004 FCM/JSON-Persistenz auf Railway** | 🔴 OFFEN | `/app/data` nicht beschreibbar (`EACCES`) — braucht Persistent Volume |
-| **HIGH-001..-007, CLIENT-CRIT-001/-002, CLIENT-HIGH-001/-002** | 🟠 OFFEN | siehe Audit-Sektion unten |
+| **CRIT-004 Railway Persistent Volume** | ✅ GEFIXT | Volume `143a832d` @ `/app/data`, Deploy `36509e3d`/`be900c28` SUCCESS — FCM persistiert |
+| **HIGH-001 CORS Wildcard-Fallback** | ✅ GEFIXT | Commit `b79d9f7`, Railway Env `ALLOWED_ORIGINS=stealthx.tech,www.stealthx.tech` |
+| **HIGH-003 Stripe-Webhook-Idempotenz** | ✅ GEFIXT | Commit `b79d9f7`, `stripe_processed_events.json` mit 14d-TTL |
+| **HIGH-006 Password aus Stripe-Metadata** | ✅ GEFIXT | Commit `b79d9f7`, nur `pending_token` in Stripe-Metadata |
+| **HIGH-007 Admin-Key vereinheitlicht** | ✅ GEFIXT | Commit `b79d9f7`, alle Endpoints nutzen `ADMIN_API_KEY` |
+| **Regression nach HIGH-001** (Android rejected wg. fehlendem Origin) | ✅ GEFIXT | Commit `be3c47d`, `verifyClient` erlaubt origin-less native Clients |
+| **CLIENT-HIGH-002 PII im Logcat + LOGGING_LEVEL** | ✅ CODE GEFIXT — APK-REBUILD NÖTIG | Commit `35ce2f2` — User bekommt Fix erst mit v1.0.22-Rollout |
+| **HIGH-002, -004, -005, CLIENT-CRIT-001/-002, CLIENT-HIGH-001, MED-\*** | 🟠 OFFEN | siehe Audit-Sektion |
+
+## Follow-up Fragen / Items aus diesen Fixes
+- **Custom-ID-Aktivierungs-Bug** (entdeckt bei HIGH-006): `/custom-id/activate-token` validiert `token` nicht gegen eine gespeicherte Pending-Purchase. Jeder, der das Format eines freien Custom IDs kennt, kann ihn ohne Stripe-Payment registrieren. Zusätzlich: Passwort wird bei Purchase eingesammelt, aber nie in `customIds[key]` gespeichert → Transfer-per-Passwort funktioniert nicht. Sollte zusammen in einem separaten Commit gefixt werden (pending_activations.json mit passwordHash/Salt, activate-token validiert token + übernimmt password in customIds).
+- **Android APK v1.0.22 muss gebaut + released werden** damit User die PII-Redaktion bekommen.
 
 ---
 
