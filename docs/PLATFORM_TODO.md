@@ -12,11 +12,28 @@
 - [ ] IFR BuilderRegistry: Chameleon on-chain registrieren
 
 ## DIESE WOCHE
+- [x] SecureChat v0.1.0-alpha gebaut (SC-00 bis SC-09 DONE)
+- [x] Emergency Broadcast Modul (SC-10 Stub) erstellt
+- [x] ifrunit.tech Links korrigiert (8 Links)
 - [ ] stealth: ICE-Monitoring in SecLog (Relay Architektur v1.x)
 - [ ] stealth: STUN-Konfiguration optimieren
 - [ ] securechat: Kaspa SDK Android-Kompatibilitaet testen
-- [ ] Alle Repos: stable Tags setzen vor naechster Entwicklung
-      git tag stable-$(date +%Y-%m-%d) && git push origin --tags
+- [x] Alle Repos: stable Tags gesetzt (stable-2026-04-16-pre-appdev)
+
+## OFFEN — SC-10 Emergency Broadcast
+- [ ] BroadcastManager Implementation (Phase 2 — Q3 2026)
+- [ ] Transport via Kaspa Relay Nodes
+- [ ] UI vollstaendig (aktuell Stub/Placeholder)
+- [ ] Unit Tests fuer Broadcast-Verschluesselung
+
+## KRITISCH (nach SecureChat Release)
+- [ ] SecureChat Release-Keystore erstellen + APK signieren
+- [ ] SecureChat SHA-256 Fingerprint in docs/RELAY_NODE_SECURITY.md
+- [ ] ifrunit.tech DNS/Hosting pruefen — war nicht erreichbar
+- [ ] Trail of Bits Audit-Anfrage stellen
+- [ ] SecureCall: 551 Log.d() → Timber migrieren
+- [ ] SecureCall: stealthxId additiv zu REGISTER-Message
+- [ ] Backend: stealthxId im REGISTER Handler speichern
 
 ## NAECHSTER MONAT
 - [ ] SecureCall v1.x: Tor-Signaling fuer WebRTC Handshake

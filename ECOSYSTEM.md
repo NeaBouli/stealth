@@ -5,7 +5,7 @@
 | Produkt | Repo | Status | Typ |
 |---------|------|--------|-----|
 | SecureCall | NeaBouli/stealth | Live Beta | Android App |
-| SecureChat | NeaBouli/securechat | In Development | Android App + Site |
+| SecureChat | NeaBouli/securechat | v0.1.0-alpha (Internal Alpha) | Android App + Site |
 | Chameleon | NeaBouli/chameleon | Alpha | Privacy OS — Part of SecureChat Ecosystem |
 
 ## Gemeinsamer Crypto Stack
@@ -50,6 +50,19 @@ StealthX Platform
   Kaspa Node-Registry on-chain, 2-Hop Onion Routing (Pro)
 - Phase 3 (Q4 2026): 3-Hop Onion Routing (Elite),
   Cover Traffic, Pluggable Transports (obfs4/Snowflake)
+
+## SecureChat Feature Matrix
+
+| Feature | Tier | Status | Beschreibung |
+|---------|------|--------|-------------|
+| E2E Messaging | Free | v0.1.0-alpha | XChaCha20-Poly1305 + Double Ratchet |
+| QR/NFC Key Exchange | Free | v0.1.0-alpha | Safety Number (6x4) |
+| Unlimited Contacts | Pro | Phase 2 | >=2.000 IFR oder EUR 9 Lifetime |
+| Kaspa Identity | Pro | Phase 2 | On-chain Public Key |
+| 2-Hop Onion Routing | Pro | Phase 2 | Tor Hidden Services |
+| 3-Hop Onion Routing | Elite | Phase 3 | Maximale Anonymität |
+| Decoy Profile | Elite | Phase 3 | Wrong PIN → Empty Profile |
+| Emergency Broadcast | Elite | SC-10 Stub — Phase 2 | Verschlüsselter Alert an alle Kontakte |
 
 ## Websites
 - stealthx.tech — SecureCall + Platform Hub
