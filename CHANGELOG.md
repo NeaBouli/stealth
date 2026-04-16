@@ -7,6 +7,35 @@ Format orientiert sich an "Keep a Changelog" + sicherheitskritischen Erweiterung
 
 ---
 
+## [1.0.22] — 2026-04-17 — vC43
+
+### Fixed
+- **REGISTERED-gated registration** — client only proceeds after server ACK
+- **Close code 4003 stop** — unauthorized client signature rejects cleanly
+- **Subscription resync** — inconsistent tier state auto-corrected
+- **HIGH-002/005** — signaling server hardening
+- **Custom-ID token validation** — proper JWT verification
+- **Subscription verify endpoint** — server-side state check
+- **SECUREID_CHANGED hardened** — atomic JSON writes prevent race conditions
+
+### Security
+- **Origin-less WS clients allowed** — native apps without browser Origin header
+- **CORS allowlist hardened** — signaling server restricts origins
+- **Stripe idempotency** — duplicate webhook calls safe
+- **Admin key unified** — single source of truth
+- **PII redacted from release logs** — LOGGING_LEVEL tightened
+
+### Verified
+- Samsung S10 (Premium), S7 (Free), Tab S4 (Free)
+
+### Release Artifacts
+- `securecall-v1.0.22-free.apk` — Free tier (Firebase/FCM)
+- `securecall-v1.0.22-premium.apk` — Premium tier (internal)
+- `securecall-v1.0.22-fdroid.apk` — F-Droid edition (no proprietary libs)
+- APK SHA-256 signing cert: `1e0a8eb4...c88c3fdb21d`
+
+---
+
 ## [1.0.17] — 2026-04-12 — vC38
 
 ### Fixed

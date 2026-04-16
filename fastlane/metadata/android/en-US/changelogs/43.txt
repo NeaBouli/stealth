@@ -1,0 +1,19 @@
+v1.0.22 — REGISTERED-gated registration + server hardening.
+
+Fixed:
+* REGISTERED-gated registration — client only proceeds after server ACK
+* Close code 4003 stop — unauthorized client signature rejects cleanly
+* Subscription resync — inconsistent tier state auto-corrected
+* HIGH-002/005 — signaling server hardening
+* Custom-ID token validation — proper JWT verification
+* Subscription verify endpoint — server-side state check
+
+Security:
+* Origin-less WS clients allowed — native apps no longer require browser Origin
+* CORS allowlist hardened — signaling server restricts origins
+* Stripe idempotency — duplicate webhook calls safe
+* Admin key unified — single source of truth
+* SECUREID_CHANGED hardened — atomic JSON writes
+* PII redacted from release logs — LOGGING_LEVEL tightened
+
+Verified on: Samsung S10, S7, Tab S4.

@@ -16,6 +16,9 @@
 - [ ] IFR BuilderRegistry: Chameleon on-chain registrieren
 
 ## DIESE WOCHE
+- [x] SecureCall v1.0.22 released (GitHub Release + APKs)
+- [x] F-Droid YML v1.0.22 aktualisiert (commit fda8b53f)
+- [x] Fastlane changelog 43.txt added
 - [x] SecureChat v0.1.0-alpha gebaut (SC-00 bis SC-09 DONE)
 - [x] Emergency Broadcast Modul (SC-10 Stub) erstellt
 - [x] ifrunit.tech Links korrigiert (8 Links)
