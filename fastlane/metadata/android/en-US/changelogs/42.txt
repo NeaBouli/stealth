@@ -1,0 +1,7 @@
+v1.0.21 — Initial F-Droid release.
+
+* End-to-end encrypted voice calls (XChaCha20-Poly1305)
+* X25519 key exchange, DTLS-SRTP media transport
+* Rust native crypto via cargo-ndk
+* No proprietary dependencies (no Google Play Services, Firebase, AdMob)
+* GPL-3.0-only license

@@ -1,0 +1,21 @@
+SecureCall is a privacy-first encrypted calling app.
+No phone number, no account, no personal data required.
+
+Features:
+* XChaCha20-Poly1305 end-to-end encryption
+* X25519 key exchange + DTLS-SRTP media transport
+* No phone number required — identified by SecureID
+* Custom Call ID support
+* STEALTH-DELETE: 5-tap emergency data wipe
+* Emergency Broadcast System
+* WalletConnect v2 for IFR token verification
+* Unlock with activation code or IFR token lock
+* No ads, no tracking, no telemetry
+
+F-Droid Edition:
+This build contains no proprietary libraries — no Google Play
+Services, no Firebase, no AdMob, no Crashlytics.
+After 30 days, unlock outgoing calls with an activation code
+or by locking IFR tokens via WalletConnect.
+
+Part of the StealthX Platform (stealthx.tech).
