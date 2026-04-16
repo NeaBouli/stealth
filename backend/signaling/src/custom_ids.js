@@ -14,9 +14,13 @@ const path = require("path");
 const crypto = require("crypto");
 
 const IDS_FILE = path.join(__dirname, "..", "data", "custom_ids.json");
+const PENDING_FILE = path.join(__dirname, "..", "data", "pending_activations.json");
+const PENDING_TTL_MS = 60 * 60 * 1000; // 1 hour — Stripe redirect happens immediately
 const ID_REGEX = /^[a-z0-9][a-z0-9-]{0,28}[a-z0-9]$|^[a-z0-9]$/;
 
 let customIds = {};
+// token -> { customId, passwordHash, passwordSalt, createdAt }
+const pendingActivations = new Map();
 
 // ─── HMAC / Pepper ──────────────────────────────────────────
 
@@ -63,6 +67,44 @@ function saveIds() {
     fs.renameSync(tmp, IDS_FILE);
   } catch (e) {
     console.error("[CUSTOM-ID] Save failed:", e.message);
+  }
+}
+
+// ─── Pending activation storage (token-based) ─────────────────
+// Replaces the broken flow that put password_hash in Stripe metadata.
+// Tokens are opaque random bytes; the password hash stays server-side.
+function loadPendingActivations() {
+  try {
+    if (!fs.existsSync(PENDING_FILE)) return;
+    const raw = JSON.parse(fs.readFileSync(PENDING_FILE, "utf8"));
+    const now = Date.now();
+    let pruned = 0;
+    for (const [token, entry] of Object.entries(raw || {})) {
+      if (entry && typeof entry.createdAt === "number" && now - entry.createdAt < PENDING_TTL_MS) {
+        pendingActivations.set(token, entry);
+      } else {
+        pruned++;
+      }
+    }
+    console.log(`[CUSTOM-ID] Loaded ${pendingActivations.size} pending activations (pruned ${pruned} stale)`);
+  } catch (e) {
+    console.warn("[CUSTOM-ID] Could not load pending activations:", e.message);
+  }
+}
+
+function savePendingActivations() {
+  try {
+    fs.mkdirSync(path.dirname(PENDING_FILE), { recursive: true });
+    const obj = {};
+    const now = Date.now();
+    for (const [token, entry] of pendingActivations) {
+      if (now - entry.createdAt < PENDING_TTL_MS) obj[token] = entry;
+    }
+    const tmp = PENDING_FILE + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(obj, null, 2));
+    fs.renameSync(tmp, PENDING_FILE);
+  } catch (e) {
+    console.error("[CUSTOM-ID] Failed to persist pending activations:", e.message);
   }
 }
 
@@ -226,21 +268,23 @@ function setupRoutes(app, requireAdmin) {
     try {
       const stripe = require("stripe")(secretKey);
 
-      // Hash password and store as pending (not yet activated)
+      // Fix HIGH-006 + token-validation follow-up (2026-04-16):
+      // - Password hash is kept server-side (not in Stripe metadata).
+      // - Token is a cryptographically random 32-byte value persisted
+      //   to pending_activations.json with a 1h TTL.
+      // - activate-token now validates the token against this store and
+      //   copies passwordHash/passwordSalt into customIds on activation,
+      //   so transfer-by-password actually works.
       const pendingToken = crypto.randomBytes(32).toString("hex");
+      const { hash: passwordHash, salt: passwordSalt } = hashPassword(password);
+      pendingActivations.set(pendingToken, {
+        customId: check.id,
+        passwordHash,
+        passwordSalt,
+        createdAt: Date.now()
+      });
+      savePendingActivations();
 
-      // Fix HIGH-006 (2026-04-16): do NOT store password_hash/password_salt in
-      // Stripe metadata — anyone with Stripe Dashboard access could read hashes
-      // and crack them offline. The metadata is now opaque (type, custom_id,
-      // pending_token only). The original code also double-called hashPassword,
-      // producing two independent salts per checkout — i.e. the stored hash/salt
-      // pair was already garbage, so removing it is a no-op for the activation
-      // flow (activate-token never read these fields anyway).
-      //
-      // FOLLOW-UP (not fixed here, separate ticket): /custom-id/activate-token
-      // should validate `token` against a locally-stored pending_activations
-      // record before granting the ID. Without that check, any caller can
-      // register any free custom ID by supplying an arbitrary token string.
       const session = await stripe.checkout.sessions.create({
         line_items: [{ price: priceId, quantity: 1 }],
         mode: "payment",
@@ -263,6 +307,10 @@ function setupRoutes(app, requireAdmin) {
   });
 
   // Activate via token (from deep link after Stripe payment)
+  // Fix (2026-04-16): validate token against pending_activations + copy the
+  // password hash into the ID record so subsequent transfers via /custom-id/activate
+  // can verify ownership. Previously any caller could mint any free custom ID by
+  // supplying an arbitrary token string.
   app.post("/custom-id/activate-token", (req, res) => {
     const { id, deviceId, token } = req.body;
     if (!id || !deviceId || !token) {
@@ -281,24 +329,50 @@ function setupRoutes(app, requireAdmin) {
       return res.status(400).json({ error: "already_activated_on_other_device" });
     }
 
-    // For token-based activation, we trust the purchase token
     if (!ID_REGEX.test(normalized) || normalized.length <= 2) {
       return res.status(400).json({ error: "invalid_id" });
     }
 
-    // Register the ID with the device (no password needed for initial token activation)
+    // Validate the token: must exist in pending_activations, match the requested
+    // custom_id, and still be within the 1h TTL window.
+    const pending = pendingActivations.get(token);
+    if (!pending) {
+      console.warn("[CUSTOM-ID] activate-token rejected: unknown token (possibly replayed or expired)");
+      return res.status(400).json({ error: "invalid_or_expired_token" });
+    }
+    if (pending.customId !== normalized) {
+      console.warn("[CUSTOM-ID] activate-token rejected: token/id mismatch");
+      return res.status(400).json({ error: "token_id_mismatch" });
+    }
+    if (Date.now() - pending.createdAt > PENDING_TTL_MS) {
+      pendingActivations.delete(token);
+      savePendingActivations();
+      return res.status(400).json({ error: "token_expired" });
+    }
+
+    // Register the ID with the device + persist the password hash so the owner
+    // can later transfer / re-claim via /custom-id/activate (password-based flow).
     if (!customIds[key]) {
       customIds[key] = {
         deviceId,
         idLength: normalized.length,
         purchasedAt: new Date().toISOString(),
         tier: "premium_only",
-        activationToken: token
+        activationToken: token,
+        passwordHash: pending.passwordHash,
+        passwordSalt: pending.passwordSalt
       };
     } else {
       customIds[key].deviceId = deviceId;
+      customIds[key].passwordHash = pending.passwordHash;
+      customIds[key].passwordSalt = pending.passwordSalt;
     }
     saveIds();
+
+    // Token is single-use — prevent replay.
+    pendingActivations.delete(token);
+    savePendingActivations();
+
     console.log(`[CUSTOM-ID] Token activation: ${key.substring(0, 12)}... -> ${deviceId}`);
     res.json({ success: true, transferred: false });
   });
@@ -332,5 +406,6 @@ function setupRoutes(app, requireAdmin) {
 }
 
 loadIds();
+loadPendingActivations();
 
 module.exports = { isAvailable, activate, getPrice, resolve, setupRoutes };

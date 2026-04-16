@@ -494,6 +494,38 @@ app.get("/api/subscription/:clientId", (req, res) => {
   res.json(sub);
 });
 
+// --- Client-facing subscription status (CLIENT-CRIT-002 support) ---
+// The client polls this endpoint (on resume, once per day) to detect
+// server-side cancellations / chargebacks. We require the caller to supply
+// the purchaseToken they originally registered with, otherwise we return
+// FREE — this prevents a random clientId from learning another user's tier.
+//
+// Responses:
+//   { valid: true,  tier, expiresAt, verifiedAt }
+//   { valid: false, tier: "FREE", reason: "not_found" | "expired" | "token_mismatch" }
+app.post("/subscription/status", (req, res) => {
+  const { clientId, purchaseToken } = req.body || {};
+  if (!clientId || typeof clientId !== "string") {
+    return res.status(400).json({ error: "missing_client_id" });
+  }
+  const sub = subscriptions.getSubscription(clientId);
+  if (!sub) {
+    return res.json({ valid: false, tier: "FREE", reason: "not_found" });
+  }
+  if (purchaseToken && sub.purchaseToken && purchaseToken !== sub.purchaseToken) {
+    return res.json({ valid: false, tier: "FREE", reason: "token_mismatch" });
+  }
+  if (Date.now() > sub.expiresAt) {
+    return res.json({ valid: false, tier: "FREE", reason: "expired", expiresAt: sub.expiresAt });
+  }
+  res.json({
+    valid: true,
+    tier: sub.tier,
+    expiresAt: sub.expiresAt,
+    verifiedAt: sub.verifiedAt
+  });
+});
+
 // --- WebSocket Setup ---
 const wss = new WebSocket.Server({
   server,
@@ -610,15 +642,22 @@ wss.on("connection", (ws, req) => {
         }
       }
 
-      // Prüfen ob clientId bereits vergeben — allow reconnection by superseding old connection
+      // Prüfen ob clientId bereits vergeben — allow reconnection by superseding old connection.
+      // Fix HIGH-002 (2026-04-16): on supersede, drop the victim's stored FCM token so a
+      // hijacker cannot inherit push-notification routing. The legitimate owner will
+      // re-send their FCM token on the next REGISTER_FCM_TOKEN after reconnect.
       if (clientIds.has(msg.clientId)) {
         const existingConnId = clientIds.get(msg.clientId);
         if (existingConnId !== connId) {
-          // Supersede old connection — allow re-registration on reconnect
           const oldClient = clients.get(existingConnId);
           if (oldClient) {
             console.log("[REGISTER] Superseding old connection for", msg.clientId, "(old connId:", existingConnId, ")");
             try { oldClient.ws.close(1000, "Superseded"); } catch(e) {}
+          }
+          if (fcmTokens.has(msg.clientId)) {
+            fcmTokens.delete(msg.clientId);
+            saveFcmTokens();
+            console.log("[REGISTER] Cleared FCM token on supersede for", msg.clientId);
           }
         }
         clientIds.delete(msg.clientId);
