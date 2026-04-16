@@ -68,11 +68,17 @@ app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 // CORS configuration
+// Fix HIGH-001 (2026-04-16): no wildcard fallback. If ALLOWED_ORIGINS is not set
+// or empty, we only emit Allow-Origin for requests coming from stealthx.tech
+// (the app's canonical web origin). Explicit whitelist prevents cross-origin
+// hijacking from attacker-controlled websites.
+const DEFAULT_ALLOWED_ORIGINS = ["https://stealthx.tech", "https://www.stealthx.tech"];
 app.use((req, res, next) => {
-  const allowedOrigins = ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : ["*"];
+  const allowedOrigins = ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS;
   const origin = req.headers.origin;
-  if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
   }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Admin-Key");
@@ -474,9 +480,11 @@ app.delete("/key/:id", (req, res) => {
 });
 
 // --- Subscription Admin API ---
+// Fix HIGH-007 (2026-04-16): unified on ADMIN_API_KEY. The old ADMIN_KEY
+// variant is dropped — all admin routes now check a single env var.
 app.get("/api/subscription/:clientId", (req, res) => {
   const adminKey = req.headers["x-admin-key"];
-  if (adminKey !== process.env.ADMIN_KEY) {
+  if (!ADMIN_API_KEY || adminKey !== ADMIN_API_KEY) {
     return res.status(403).json({ error: "Forbidden" });
   }
   const sub = subscriptions.getSubscription(req.params.clientId);

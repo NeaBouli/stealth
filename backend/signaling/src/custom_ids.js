@@ -229,6 +229,18 @@ function setupRoutes(app, requireAdmin) {
       // Hash password and store as pending (not yet activated)
       const pendingToken = crypto.randomBytes(32).toString("hex");
 
+      // Fix HIGH-006 (2026-04-16): do NOT store password_hash/password_salt in
+      // Stripe metadata — anyone with Stripe Dashboard access could read hashes
+      // and crack them offline. The metadata is now opaque (type, custom_id,
+      // pending_token only). The original code also double-called hashPassword,
+      // producing two independent salts per checkout — i.e. the stored hash/salt
+      // pair was already garbage, so removing it is a no-op for the activation
+      // flow (activate-token never read these fields anyway).
+      //
+      // FOLLOW-UP (not fixed here, separate ticket): /custom-id/activate-token
+      // should validate `token` against a locally-stored pending_activations
+      // record before granting the ID. Without that check, any caller can
+      // register any free custom ID by supplying an arbitrary token string.
       const session = await stripe.checkout.sessions.create({
         line_items: [{ price: priceId, quantity: 1 }],
         mode: "payment",
@@ -237,9 +249,7 @@ function setupRoutes(app, requireAdmin) {
         metadata: {
           type: "custom_id",
           custom_id: check.id,
-          pending_token: pendingToken,
-          password_hash: hashPassword(password).hash,
-          password_salt: hashPassword(password).salt
+          pending_token: pendingToken
         },
         payment_method_types: ["card", "klarna", "link"]
       });

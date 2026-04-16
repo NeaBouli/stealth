@@ -147,10 +147,65 @@ function resolveTierFromPriceId(priceId) {
  * @param {Object} stripe  Stripe SDK instance (needed to fetch line_items)
  * @param {Array}  activationCodesRef  Live reference to server.js activationCodes array
  */
+// Fix HIGH-003 (2026-04-16): Stripe webhook idempotency.
+// Stripe retries webhooks on any non-2xx response or timeout, so a single
+// checkout can fire the same event.id multiple times. Without this guard,
+// every retry minted a new activation code + recorded a duplicate sale.
+//
+// We persist processed event ids to data/stripe_processed_events.json (now
+// backed by the Railway volume after CRIT-004). Entries older than 14 days
+// are pruned on load — Stripe's retry window is ≤72h so 14d is a generous
+// safety margin.
+const fs = require("fs");
+const path = require("path");
+const PROCESSED_FILE = path.join(__dirname, "..", "..", "data", "stripe_processed_events.json");
+const PROCESSED_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const processedEvents = new Map(); // eventId -> processedAtMs
+
+function loadProcessedEvents() {
+  try {
+    if (!fs.existsSync(PROCESSED_FILE)) return;
+    const raw = JSON.parse(fs.readFileSync(PROCESSED_FILE, "utf8"));
+    const now = Date.now();
+    let pruned = 0;
+    for (const [id, ts] of Object.entries(raw || {})) {
+      if (typeof ts === "number" && now - ts < PROCESSED_TTL_MS) {
+        processedEvents.set(id, ts);
+      } else {
+        pruned++;
+      }
+    }
+    console.log(`[STRIPE] Loaded ${processedEvents.size} processed event ids (pruned ${pruned} stale)`);
+  } catch (e) {
+    console.warn("[STRIPE] Could not load processed events:", e.message);
+  }
+}
+
+function saveProcessedEvents() {
+  try {
+    fs.mkdirSync(path.dirname(PROCESSED_FILE), { recursive: true });
+    const obj = {};
+    for (const [id, ts] of processedEvents) obj[id] = ts;
+    const tmp = PROCESSED_FILE + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(obj, null, 2));
+    fs.renameSync(tmp, PROCESSED_FILE);
+  } catch (e) {
+    console.error("[STRIPE] Failed to persist processed events:", e.message);
+  }
+}
+
+loadProcessedEvents();
+
 async function handleWebhook(event, stripe, activationCodesRef) {
   console.log("[STRIPE] === WEBHOOK RECEIVED ===");
-  console.log("[STRIPE] Event type:", event.type);
+  console.log("[STRIPE] Event type:", event.type, "id:", event.id);
   console.log("[STRIPE] RESEND_API_KEY set:", !!process.env.RESEND_API_KEY);
+
+  // Idempotency guard — Stripe retries on failure, must not double-process.
+  if (event.id && processedEvents.has(event.id)) {
+    console.log("[STRIPE] Event already processed (idempotent skip):", event.id);
+    return { alreadyProcessed: true, eventId: event.id };
+  }
 
   if (event.type !== "checkout.session.completed") {
     console.log("[STRIPE] Unhandled event type:", event.type);
@@ -191,6 +246,10 @@ async function handleWebhook(event, stripe, activationCodesRef) {
   // 2. Custom ID purchases are handled separately (no activation code)
   if (tier === "custom_id") {
     console.log("[STRIPE] Custom ID purchase — handled by custom_ids.js flow");
+    if (event.id) {
+      processedEvents.set(event.id, Date.now());
+      saveProcessedEvents();
+    }
     return { tier, productKey, email };
   }
 
@@ -233,6 +292,12 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     }
   } else {
     console.warn("[STRIPE] No customer email — code saved but not delivered:", code);
+  }
+
+  // Mark event as successfully processed (idempotency guard for Stripe retries).
+  if (event.id) {
+    processedEvents.set(event.id, Date.now());
+    saveProcessedEvents();
   }
 
   return { code, tier, email, productKey };
