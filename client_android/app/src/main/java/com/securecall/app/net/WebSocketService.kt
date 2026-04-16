@@ -37,6 +37,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     // BUG-034: Registration gate — true only after REGISTER is processed by server
     @Volatile var isRegistered: Boolean = false
+    // Fix CLIENT-CRIT-001 (2026-04-16): track REGISTER failures so we don't
+    // burn CPU/battery spinning against a server that permanently rejects us.
+    @Volatile private var registerFailCount: Int = 0
+    private val maxRegisterFailures = 5
+    private var registerTimeoutHandler: android.os.Handler? = null
         private set
 
     // Guard: prevent double-register on rapid reconnect (network flap)
@@ -410,28 +415,57 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         }
         Log.d("WS_SERVICE", "WebSocket connected — registering client")
         isConnected = true
-        isRegistered = false // BUG-034: not registered until server processes REGISTER
+        isRegistered = false
         registerPending = true
         registerClient()
         setupCallSignalingCallbacks()
         statusCallbackOnline?.invoke()
         com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Connected")
-        // Send FCM token to backend after WS connect so push works when app is killed
-        com.securecall.app.fcm.FcmTokenManager.ensureTokenRegistered(this)
-        // BUG-034: Mark as registered after 1.5s delay (server processes REGISTER quickly)
-        // Then flush any queued outgoing calls
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            registerPending = false
-            if (isConnected) {
-                isRegistered = true
-                Log.d("WS_SERVICE", "BUG-034: isRegistered=true — flushing ${pendingCallQueue.size} pending calls")
-                com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Registered — ${pendingCallQueue.size} queued calls")
-                // BUG-040: Pre-fetch ICE/TURN credentials so they're cached before a call
-                IceServerFetcher.prefetch()
-                pendingCallQueue.forEach { it.invoke() }
+        // FCM token send + pending-queue flush + IceServer prefetch now happen in
+        // onRegisterAck() once the server confirms REGISTER with a REGISTERED
+        // message. Previously a hardcoded 1.5s timer could fire even if REGISTER
+        // was rejected — which caused REGISTER_FCM_TOKEN to race ahead of REGISTER
+        // and the "not_registered" server error seen on S10 in the 2026-04-16 logs.
+        scheduleRegisterTimeout()
+    }
+
+    // Fix CLIENT-CRIT-001 / MED-002 (2026-04-16): ack-driven registration.
+    // We schedule a 5s timeout when we send REGISTER. If the server does not
+    // respond with `REGISTERED` in that window, we treat the connection as
+    // broken, clear the pending call queue so invites do not fire against an
+    // un-registered socket, and force the HeartbeatClient to reconnect.
+    private fun scheduleRegisterTimeout() {
+        registerTimeoutHandler?.let { it.removeCallbacksAndMessages(null) }
+        val h = android.os.Handler(android.os.Looper.getMainLooper())
+        registerTimeoutHandler = h
+        h.postDelayed({
+            if (registerPending && !isRegistered) {
+                Log.w("WS_SERVICE", "REGISTER timeout — no REGISTERED ack in 5s, forcing reconnect")
+                registerPending = false
                 pendingCallQueue.clear()
+                try { client?.forceReconnect() } catch (_: Exception) {}
             }
-        }, 1500)
+        }, 5000)
+    }
+
+    /**
+     * Called when the server confirms REGISTER with a {"type":"REGISTERED"} message.
+     * This is the only place that flips `isRegistered = true`.
+     */
+    private fun onRegisterAck(ackedClientId: String) {
+        registerTimeoutHandler?.removeCallbacksAndMessages(null)
+        registerTimeoutHandler = null
+        registerPending = false
+        if (!isConnected) return
+        isRegistered = true
+        registerFailCount = 0
+        Log.d("WS_SERVICE", "REGISTERED received for $ackedClientId — flushing ${pendingCallQueue.size} pending calls")
+        com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Registered — ${pendingCallQueue.size} queued calls")
+        // Send FCM token now that the server knows who we are.
+        com.securecall.app.fcm.FcmTokenManager.ensureTokenRegistered(this)
+        IceServerFetcher.prefetch()
+        pendingCallQueue.forEach { it.invoke() }
+        pendingCallQueue.clear()
     }
 
     private fun setupCallSignalingCallbacks() {
@@ -1156,6 +1190,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 "WEBRTC_OFFER_ACK", "WEBRTC_ANSWER_ACK", "ICE_CANDIDATE_ACK" -> {
                     // Server acknowledgments — no action needed
                 }
+                "REGISTERED" -> {
+                    val acked = obj.optString("clientId", "")
+                    onRegisterAck(acked)
+                }
                 "ICE_CANDIDATE" -> {
                     val candidate = obj.optJSONObject("candidate")
                     if (candidate != null) webRtcManager?.onRemoteIceCandidate(candidate)
@@ -1171,6 +1209,18 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     if (error == "session_not_found" && _currentSessionId == null) {
                         Log.d("WS_SERVICE", "Ignoring stale session_not_found (no active session)")
                         return
+                    }
+                    // Fix CLIENT-CRIT-001 (2026-04-16): treat unauthorized_client as a hard
+                    // failure. Stop retrying after a handful of attempts so a stuck fork
+                    // protection state does not drain the battery with a 4s reconnect loop.
+                    if (error == "unauthorized_client") {
+                        registerPending = false
+                        pendingCallQueue.clear()
+                        registerFailCount++
+                        if (registerFailCount >= maxRegisterFailures) {
+                            Log.e("WS_SERVICE", "REGISTER rejected $registerFailCount× — stopping reconnect loop")
+                            try { client?.close() } catch (_: Exception) {}
+                        }
                     }
                     _onCallError?.invoke(error, message)
                 }

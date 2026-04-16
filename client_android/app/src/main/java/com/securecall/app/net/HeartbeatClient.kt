@@ -218,8 +218,20 @@ class HeartbeatClient(
         if (wasConnected) {
             listener.onDisconnected()
         }
-        // Server-initiated close — reconnect unless we intentionally closed
-        // Do NOT reconnect on clean close from onClosing — only from onFailure
+        // Fix CLIENT-HIGH-001 (2026-04-16): treat close codes in the 4000-4099 range
+        // (application-level auth/policy rejections) as hard failures. The server
+        // currently uses 4003 for "unauthorized client" — retrying with the same
+        // credentials just burns battery and spins CPU. Mark the client closed so
+        // further reconnects are suppressed; the user can re-open the app manually
+        // to retry after they understand the cause (e.g. fork-protection change).
+        if (code in 4000..4099) {
+            Log.e("HB", "[CLOSING] Server rejected connection with code $code ($reason) — stopping reconnect loop")
+            isClosed = true
+            reconnectPending = false
+            return
+        }
+        // Server-initiated close — reconnect unless we intentionally closed.
+        // Do NOT reconnect on clean close (1000) from onClosing — only from onFailure.
         if (!isClosed && code != 1000) {
             scheduleReconnect()
         }

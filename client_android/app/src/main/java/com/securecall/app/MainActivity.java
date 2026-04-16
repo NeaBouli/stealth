@@ -598,6 +598,31 @@ public class MainActivity extends AppCompatActivity {
         clearMissedCallNotifications();
         // F-Droid trial banner
         updateTrialBanner();
+        // Fix CLIENT-CRIT-002 (2026-04-16): ask the server whether our stored
+        // subscription tier is still valid. Covers the case where Google Play
+        // / Stripe revoked a subscription while the app was offline, so the
+        // app did not receive a push. Runs at most once per 6h on resume.
+        maybeVerifySubscription();
+    }
+
+    private void maybeVerifySubscription() {
+        try {
+            com.securecall.app.billing.SubscriptionManager sm =
+                new com.securecall.app.billing.SubscriptionManager(this);
+            if (sm.getCurrentTier() == com.securecall.app.billing.SubscriptionTier.FREE) return;
+            long last = sm.getLastVerifiedAt();
+            long sixHours = 6L * 60L * 60L * 1000L;
+            if (System.currentTimeMillis() - last < sixHours) return;
+            SharedPreferences p = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+            String clientId = p.getString("client_id", null);
+            if (clientId == null || clientId.isEmpty()) return;
+            new Thread(() -> {
+                try { sm.verifyAgainstServer(clientId); }
+                catch (Exception e) { Log.w(TAG, "subscription verify failed: " + e.getMessage()); }
+            }, "subscription-verify").start();
+        } catch (Throwable t) {
+            Log.w(TAG, "maybeVerifySubscription: " + t.getMessage());
+        }
     }
 
     private void updateTrialBanner() {
