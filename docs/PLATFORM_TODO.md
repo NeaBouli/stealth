@@ -7,10 +7,11 @@
 - [x] F-Droid Submission SecureCall: EINGEREICHT
       MR: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/36495 (AKTIV)
       Package: com.securecall.app.fdroid
-      Status: Wartet auf Re-Review nach Reviewer-Feedback (@linsui)
-      Fixes: commit hash, fastlane structure, App Inclusion template
-      MR !36557 geschlossen (war Duplikat von !36495)
-      MR !36115 geschlossen (alter MR, vor !36495)
+      Status: Wartet auf Re-Review nach 2. Reviewer-Feedback-Runde (@linsui)
+      Runde 1 Fixes (fedc66697): commit hash, fastlane structure, App Inclusion template
+      Runde 2 Fixes (5deae6a68): AllowedAPKSigningKeys, Binaries, rustup from debian,
+                                 removed all || true, fixed rewritemeta trailing space
+      MR !36557 geschlossen (Duplikat), MR !36115 geschlossen (alt)
 - [ ] Chameleon v0.1.0-alpha: physisches Geraet Test ausstehend
 - [ ] IFR BuilderRegistry: Chameleon on-chain registrieren
 
