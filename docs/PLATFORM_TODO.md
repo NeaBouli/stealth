@@ -5,9 +5,12 @@
       ALLOWED_SIGNATURES=1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d
       Erst dann ist Fork-Protection aktiv
 - [x] F-Droid Submission SecureCall: EINGEREICHT
-      MR: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/36557
-      Package: com.securecall.app.free
-      Status: Wartet auf F-Droid Review
+      MR: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/36495 (AKTIV)
+      Package: com.securecall.app.fdroid
+      Status: Wartet auf Re-Review nach Reviewer-Feedback (@linsui)
+      Fixes: commit hash, fastlane structure, App Inclusion template
+      MR !36557 geschlossen (war Duplikat von !36495)
+      MR !36115 geschlossen (alter MR, vor !36495)
 - [ ] Chameleon v0.1.0-alpha: physisches Geraet Test ausstehend
 - [ ] IFR BuilderRegistry: Chameleon on-chain registrieren
 
