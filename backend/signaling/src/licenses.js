@@ -87,11 +87,14 @@ function loadLicenses() {
 function saveLicenses() {
   try {
     fs.mkdirSync(path.dirname(LICENSES_FILE), { recursive: true });
-    fs.writeFileSync(LICENSES_FILE, JSON.stringify({
+    // Atomic write to prevent corruption on concurrent saves (Fix CRIT-003).
+    const tmp = LICENSES_FILE + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify({
       pro_lifetime: { sold: LICENSES.pro_lifetime.sold },
       premium_lifetime: { sold: LICENSES.premium_lifetime.sold },
       lastUpdated: new Date().toISOString()
     }, null, 2));
+    fs.renameSync(tmp, LICENSES_FILE);
   } catch (e) {
     console.error("[LICENSES] Failed to save:", e.message);
   }

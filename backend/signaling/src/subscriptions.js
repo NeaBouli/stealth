@@ -43,7 +43,10 @@ function saveSubscriptions() {
     fs.mkdirSync(path.dirname(SUBS_FILE), { recursive: true });
     const obj = {};
     for (const [k, v] of subscriptions) obj[k] = v;
-    fs.writeFileSync(SUBS_FILE, JSON.stringify(obj, null, 2));
+    // Atomic write to prevent corruption on concurrent saves (Fix CRIT-003).
+    const tmp = SUBS_FILE + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(obj, null, 2));
+    fs.renameSync(tmp, SUBS_FILE);
   } catch (e) {
     console.error("[SUBSCRIPTION] Save failed:", e.message);
   }

@@ -32,7 +32,10 @@ function load() {
 function save(codes) {
   try {
     fs.mkdirSync(path.dirname(SOLD_FILE), { recursive: true });
-    fs.writeFileSync(SOLD_FILE, JSON.stringify({ codes }, null, 2), "utf8");
+    // Atomic write to prevent corruption on concurrent saves (Fix CRIT-003).
+    const tmp = SOLD_FILE + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify({ codes }, null, 2), "utf8");
+    fs.renameSync(tmp, SOLD_FILE);
   } catch (e) {
     console.error("[SOLD-CODES] Save failed:", e.message);
   }

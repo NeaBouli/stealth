@@ -15,6 +15,15 @@ const subscriptions = require("./subscriptions");
 const fcm = require("./fcm");
 const customIds = require("./custom_ids");
 
+// Atomic JSON write: writes to .tmp then renames (POSIX rename is atomic).
+// Prevents corruption when multiple handlers write concurrently or process
+// is killed mid-write. (Fix CRIT-003, 2026-04-16.)
+function writeJsonAtomic(targetFile, data) {
+  const tmp = targetFile + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf8");
+  fs.renameSync(tmp, targetFile);
+}
+
 // Initialize Firebase Cloud Messaging
 fcm.initFcm();
 
@@ -116,7 +125,7 @@ function saveFcmTokens() {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     const obj = {};
     for (const [k, v] of fcmTokens) obj[k] = v;
-    fs.writeFileSync(FCM_TOKENS_FILE, JSON.stringify(obj, null, 2), "utf8");
+    writeJsonAtomic(FCM_TOKENS_FILE, obj);
   } catch (e) {
     console.error("[FCM] Failed to persist tokens:", e.message);
   }
@@ -202,7 +211,7 @@ function loadActivationCodes() {
 
 function saveActivationCodes() {
   try {
-    fs.writeFileSync(CODES_FILE, JSON.stringify({ codes: activationCodes }, null, 2), "utf8");
+    writeJsonAtomic(CODES_FILE, { codes: activationCodes });
   } catch (e) {
     console.error("[ACTIVATION] Failed to save activation_codes.json:", e.message);
   }
@@ -257,7 +266,7 @@ function loadWalletMappings() {
 
 function saveWalletMappings() {
   try {
-    fs.writeFileSync(WALLETS_FILE, JSON.stringify({ wallets: walletMappings }, null, 2), "utf8");
+    writeJsonAtomic(WALLETS_FILE, { wallets: walletMappings });
   } catch (_) {}
 }
 
@@ -633,11 +642,12 @@ wss.on("connection", (ws, req) => {
         // (e.g., app reinstall, data clear → new clientId for same phone)
         const oldClientId = phoneNumbers.get(phone);
         if (oldClientId && oldClientId !== msg.clientId) {
-          console.log("[REGISTER] SecureID changed for phone", phone, ":", oldClientId, "->", msg.clientId);
-          // Broadcast SECUREID_CHANGED to all connected clients
+          console.log("[REGISTER] SecureID changed for phone-hash", hashPhone(phone), ":", oldClientId, "->", msg.clientId);
+          // Broadcast SECUREID_CHANGED to all connected clients.
+          // NOTE: raw phone number intentionally omitted — clients match by oldClientId/newClientId only.
+          // (Fix CRIT-002, 2026-04-16: prevent PII leakage to all connected clients.)
           const notification = JSON.stringify({
             type: "SECUREID_CHANGED",
-            phoneNumber: phone,
             oldClientId: oldClientId,
             newClientId: msg.clientId
           });

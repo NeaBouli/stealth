@@ -57,7 +57,10 @@ function loadIds() {
 function saveIds() {
   try {
     fs.mkdirSync(path.dirname(IDS_FILE), { recursive: true });
-    fs.writeFileSync(IDS_FILE, JSON.stringify(customIds, null, 2));
+    // Atomic write to prevent corruption on concurrent saves (Fix CRIT-003).
+    const tmp = IDS_FILE + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(customIds, null, 2));
+    fs.renameSync(tmp, IDS_FILE);
   } catch (e) {
     console.error("[CUSTOM-ID] Save failed:", e.message);
   }
