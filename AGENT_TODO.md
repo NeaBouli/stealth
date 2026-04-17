@@ -39,13 +39,28 @@
   - **0 `not_registered`-Errors** nach v1.0.22-Install (vorher bei jedem Reconnect)
 - S10 Logcat: keine `unauthorized_client`, kein 4003-Loop, kein reconnect-Spin
 
-## Post-Launch Status (Stand 17.04.2026)
-1. ~~**APK v1.0.22-fdroid**~~ ✅ gebaut + in MR !36495 Pipeline
-2. ~~**Play Store AAB**~~ ✅ hochgeladen, Google reviewed, **100% Rollout live**
-3. ~~**stealthx.tech Download**~~ offen — free APK auf Website aktualisieren
-4. **Monitoring-Kadenz starten** — Play Store live, echte User kommen rein
-5. **Beta-Codes deaktivieren** (TODO-047) — Security-Hygiene vor Go-Live
-6. **Fork-Protection reaktivieren** → GitHub Issue [#15](https://github.com/NeaBouli/stealth/issues/15) (release-blocker-v1.0.23). Blocked: wartet auf v1.0.22-Adoption >80%
+## Release-Status (verifiziert 17.04.2026 09:51 EEST)
+
+| Track | Version | Status |
+|-------|---------|--------|
+| Interner Test | v1.0.12 (vC29) | 🟡 Veraltet, aktiv, irrelevant (max 100 Tester) |
+| Closed Alpha | v1.0.22 (vC43) | ✅ Aktiv seit 17.04. 03:54, Tester-Gruppe "SecureCall β-test23" |
+| Production | — | ❌ INAKTIV, Dashboard leer, kein Release jemals dort |
+| F-Droid | v1.0.22 | 🟡 MR !36495, wartet auf @linsui |
+
+**Klarstellung:** Google-Mail 17.04. 02:31 = **Production-Account-Access** (Account-Level), NICHT Release-Approval. Es gibt keine öffentliche Play-Store-Version.
+
+## Nächste Schritte (priorisiert)
+1. **Alpha-Stabilität beobachten** — Railway-Monitoring + Play Console Vitals prüfen (stündlich)
+2. **Production-Promotion-Entscheidung** — Kriterien: mind. 48h Alpha ohne CRITICAL, Pre-Launch-Report sauber, Monitoring GREEN. Dann Staged Rollout 20% → 50% → 100%.
+3. **Volume-Fix** [#16](https://github.com/NeaBouli/stealth/issues/16) auf Hotfix-Branch mergen (Quick-Win, beseitigt YELLOW)
+4. **Beta-Codes deaktivieren** (TODO-047) — MEDIUM-Prio, kein öffentlicher Impact (Production leer), aber Hygiene-Fix VOR Production-Promotion nötig
+5. **stealthx.tech Download** — free APK auf Website aktualisieren
+6. **Interner-Test-Track** — LOW: auf v1.0.22 syncen oder Track deaktivieren (v1.0.12 veraltet)
+7. **Fork-Protection reaktivieren** → [#15](https://github.com/NeaBouli/stealth/issues/15) — blocked: wartet auf v1.0.22-Adoption >80% (erst nach Production-Promotion messbar)
+
+## Offene Frage
+**Production-Promotion-Entscheidung:** Wann und mit welchem Rollout-Prozentsatz? Alpha-Stabilität wie lange beobachten? Empfehlung: mind. 48h Alpha-Laufzeit + sauberer Pre-Launch-Report als Gate.
 
 ## v1.0.23 Hotfix-Pipeline
 

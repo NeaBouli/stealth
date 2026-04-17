@@ -8,16 +8,23 @@
 
 ## 1. AKTUELLER STAND v1.0.22
 
-### Release-Status
+### Release-Status (verifiziert 17.04. 09:51 EEST via Play Console)
+
 | Kanal | Status | Version | Nächster Schritt |
 |-------|--------|---------|-----------------|
 | **GitHub** | ✅ Released | v1.0.22 (Tag `v1.0.22` @ `b974a1e`) | — |
-| **Play Store** | ✅ Live, 100% Rollout, Google reviewed | vC43, `securecall-v1.0.22-free.aab` | Monitoring-Kadenz starten |
+| **Play Store — Interner Test** | 🟡 Aktiv, veraltet | v1.0.12 (vC29), 02.04.2026 | LOW: auf v1.0.22 syncen oder Track deaktivieren |
+| **Play Store — Closed Alpha** | ✅ Aktiv | v1.0.22 (vC43), 17.04.2026 03:54 | Alpha-Stabilität beobachten → Production-Promotion |
+| **Play Store — Production** | ❌ INAKTIV, Dashboard leer | — | Production-Promotion-Entscheidung ausstehend |
 | **F-Droid** | 🟡 MR offen | MR !36495, Pipeline 8/9 grün | Wartet auf @linsui Re-Review |
 | **Sideload** | ✅ APKs bereit | `releases/v1.0.22/` (free, premium, fdroid) | Auf stealthx.tech Download-Seite aktualisieren |
 
+**Klarstellung:** Die Google-Mail vom 17.04. 02:31 bestätigte **Production-Account-Access** (Account-Level-Meilenstein), NICHT ein Release-Approval. Es gibt derzeit KEINE öffentliche Play-Store-Version der App.
+
 ### Rollout-Prozentsatz
-- **Aktuell: 100% Rollout.** AAB hochgeladen und von Google reviewed (Nacht 16./17.04.2026). Alle Play-Store-User erhalten v1.0.22.
+- **Production: 0%.** Der Production-Track ist leer — kein Release jemals dort veröffentlicht.
+- **Closed Alpha:** v1.0.22 verfügbar für eingeladene Tester-Gruppe "SecureCall β-test23".
+- **Interner Test:** v1.0.12 (veraltet, irrelevant, max. 100 Tester).
 - 3 Test-Geräte (S10, S7, Tab S4) laufen seit 16.04. via Sideload.
 
 ### Letzte Monitoring-Checks
@@ -109,17 +116,17 @@
 
 ## 5. OFFENE FRAGEN AN DEVS
 
-1. ~~**Play Console Upload:**~~ ✅ ERLEDIGT — AAB hochgeladen, Google reviewed, 100% Rollout live seit Nacht 16./17.04.2026.
+1. **Production-Promotion-Entscheidung:** Wann und mit welchem Rollout-Prozentsatz soll v1.0.22 vom Closed-Alpha-Track in den Production-Track promoted werden? Wie lange Alpha-Stabilität beobachten bevor Promotion? (Empfehlung: mind. 48h Alpha-Feedback + Pre-Launch-Report auswerten)
 
-2. **Beta-Codes (TODO-047):** Sollen `BETA-PRO0-2026` + `BETA-PREM-2026` vor Go-Live deaktiviert werden? Falls ja: welche Geräte sollen auf FREE zurückgesetzt werden?
+2. **Beta-Codes (TODO-047):** Sollen `BETA-PRO0-2026` + `BETA-PREM-2026` vor Production-Promotion deaktiviert werden? Aktuell nur Alpha-Tester betroffen (kein öffentlicher Impact), aber Hygiene-Fix vor Production sinnvoll. Welche Geräte sollen auf FREE zurückgesetzt werden?
 
 3. **Volume-Fix (Issue #16):** Soll Option A (Dockerfile `chown`) sofort auf den Hotfix-Branch gemergt werden, auch ohne weitere Fixes? Oder warten bis es einen zweiten Grund für v1.0.23 gibt?
 
 4. **F-Droid MR !36495:** @linsui hat nicht reagiert. Soll ein Follow-up-Ping erfolgen? Oder abwarten?
 
-5. **Google Play Service Account (TODO-029):** Ist das für den Launch blockierend? Ohne ihn kann der Server Chargebacks/Refunds nicht erkennen — `verifyAgainstServer()` prüft nur den lokalen Subscription-State.
+5. **Google Play Service Account (TODO-029):** Ist das für die Production-Promotion blockierend? Ohne ihn kann der Server Chargebacks/Refunds nicht erkennen — `verifyAgainstServer()` prüft nur den lokalen Subscription-State.
 
-6. **Monitoring-Intervalle:** Wer führt die Check-Zyklen nach den ersten 24h durch? Claude Code kann `./tools/monitor-rollout.sh` laufen lassen, aber Play Console Vitals erfordern manuellen Login.
+6. **Monitoring-Intervalle:** Wer führt die Check-Zyklen durch? Claude Code kann `./tools/monitor-rollout.sh` laufen lassen, aber Play Console Vitals erfordern manuellen Login. Alpha-Phase: stündlich reicht. Production-Phase: 15min-Kadenz in erster Stunde.
 
 ---
 
@@ -129,18 +136,18 @@
 
 | # | Task | Begründung | Geschätzter Aufwand |
 |---|------|-----------|-------------------|
-| **1** | Monitoring-Kadenz starten (Play Store ist live, 100% Rollout) | Echte User kommen rein — Crash-Rate + Connection-Success ab jetzt messen, Pre-Launch-Report auswerten | 2-3h (15min-Intervalle erste Stunde) |
-| **2** | Beta-Codes deaktivieren (TODO-047) | Security — jeder kann sich gratis Pro/Premium geben solange Codes aktiv sind | 10 min (server.js activation_codes) |
+| **1** | Alpha-Stabilität beobachten + Pre-Launch-Report auswerten | v1.0.22 ist in Closed Alpha — Feedback der Tester-Gruppe sammeln, Play Console auf Crashes/ANRs prüfen, Railway-Logs monitoren | laufend (stündliche Checks) |
+| **2** | Production-Promotion-Entscheidung vorbereiten | Kriterien definieren (mind. 48h Alpha ohne CRITICAL, Pre-Launch-Report sauber, Monitoring GREEN) → dann Promote zu Production mit Staged Rollout 20% → 50% → 100% | Entscheidung nach Alpha-Phase |
 | **3** | Volume-Fix #16 auf `release/v1.0.23-hotfix` mergen | Einziger YELLOW-Alarm im Monitoring, verhindert Daten-Loss bei nächstem Redeploy | 5 min (1 Zeile Dockerfile) |
-| **4** | Pre-Launch-Report aus Play Console auswerten | Google testet auf 20+ Geräteprofilen — Findings kategorisieren + Issues anlegen | 30-60 min |
+| **4** | Beta-Codes deaktivieren (TODO-047) | Hygiene — Codes gewähren Pro/Premium gratis. Kein öffentlicher Impact solange Production leer, aber sollte VOR Promotion erledigt sein | 10 min (server.js activation_codes) |
 | **5** | F-Droid Follow-up Ping auf MR !36495 | Freigabe für F-Droid-Kanal, zweiter wichtiger Distributionskanal | 5 min |
 
 ### Kontext für die Priorisierung
 
-- **Task 1** ist jetzt der dringendste Task — Play Store ist live mit 100% Rollout, echte User kommen rein. Die ersten 24h sind kritisch für die Erkennung von Regressions.
-- **Task 2** ist ein Sicherheits-Hygiene-Task — die Beta-Codes waren für die Testphase gedacht und sollten nicht im Produktions-Modus aktiv sein. Mit dem öffentlichen Release ist das jetzt aktiv ausnutzbar.
-- **Task 3** ist ein Quick-Win der das einzige YELLOW-Signal im Monitoring beseitigt und die Daten-Integrität bei Redeployments sichert.
-- **Task 4** folgt automatisch ~1-2h nach dem Play-Store-Go-Live und liefert Gerätespezifische Crash-/ANR-Daten.
+- **Task 1** ist die Basis für alles weitere — ohne Alpha-Stabilität keine Production-Promotion. Railway-Monitoring (`./tools/monitor-rollout.sh`) + Play Console Vitals regelmäßig prüfen.
+- **Task 2** ist die strategische Entscheidung — Production-Track ist leer, der Weg dorthin erfordert mindestens 48h stabile Alpha + sauberen Pre-Launch-Report.
+- **Task 3** ist ein Quick-Win der das einzige YELLOW-Signal im Monitoring beseitigt und die Daten-Integrität bei Redeployments sichert. Kann unabhängig von der Promotion-Entscheidung gemergt werden.
+- **Task 4** ist ein Hygiene-Task — kein unmittelbares Risiko (nur Alpha-Tester betroffen), aber MUSS vor Production-Promotion erledigt sein.
 - **Task 5** läuft async und blockiert nichts, aber je früher der Ping, desto eher die Antwort.
 
 ---
