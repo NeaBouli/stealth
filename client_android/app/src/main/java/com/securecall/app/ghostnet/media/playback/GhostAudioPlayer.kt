@@ -1,5 +1,6 @@
 package com.securecall.app.ghostnet.media.playback
 
+import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
@@ -34,14 +35,27 @@ class GhostAudioPlayer(
             AudioFormat.ENCODING_PCM_16BIT
         )
 
-        audioTrack = AudioTrack(
-            AudioManager.STREAM_VOICE_CALL,
-            sampleRate,
-            channelConfig,
-            AudioFormat.ENCODING_PCM_16BIT,
-            minBuf * 2,
-            AudioTrack.MODE_STREAM
-        )
+        // Fix Bug #2 (2026-04-18): use AudioTrack.Builder with AudioAttributes
+        // instead of the deprecated stream-type constructor. The deprecated
+        // constructor fixes the routing at creation time on Samsung Android 12+,
+        // causing setSpeakerphoneOn() to be ignored during an active call.
+        // AudioAttributes(USAGE_VOICE_COMMUNICATION) correctly follows the
+        // AudioManager routing decisions at runtime.
+        val attrs = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .build()
+        val format = AudioFormat.Builder()
+            .setSampleRate(sampleRate)
+            .setChannelMask(channelConfig)
+            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+            .build()
+        audioTrack = AudioTrack.Builder()
+            .setAudioAttributes(attrs)
+            .setAudioFormat(format)
+            .setBufferSizeInBytes(minBuf * 2)
+            .setTransferMode(AudioTrack.MODE_STREAM)
+            .build()
 
         isPrepared = true
         Log.d("AUDIO_PLAYER", "prepare(): done, buffer=$minBuf")
