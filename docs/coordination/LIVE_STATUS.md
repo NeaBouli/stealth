@@ -62,3 +62,4 @@ HOLD — Alpha laeuft seit 03:54 EEST, Production leer, Gate-Check ausstehend
 | 17.04. 10:30 | TODO-047 Analyse abgeschlossen — Empfehlung Option B | Dev-Claude-Code |
 | 17.04. 10:35 | #16 FCM Fix auf Branch feature/fcm-volume-permissions | Dev-Claude-Code |
 | 17.04. 10:40 | WalletConnect Issue #17 erstellt | Dev-Claude-Code |
+| 00:51 | Bug#1 FIXED+VERIFIED (server, 119s Call stable), Bug#2 FIXED (client, APK-Build pending). Session pausiert. | Dev-Claude-Code |
