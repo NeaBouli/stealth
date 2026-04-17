@@ -12,13 +12,13 @@
 | Kanal | Status | Version | Nächster Schritt |
 |-------|--------|---------|-----------------|
 | **GitHub** | ✅ Released | v1.0.22 (Tag `v1.0.22` @ `b974a1e`) | — |
-| **Play Store** | 🟡 AAB gebaut, nicht hochgeladen | vC43, `securecall-v1.0.22-free.aab` | Manuell in Play Console hochladen |
+| **Play Store** | ✅ Live, 100% Rollout, Google reviewed | vC43, `securecall-v1.0.22-free.aab` | Monitoring-Kadenz starten |
 | **F-Droid** | 🟡 MR offen | MR !36495, Pipeline 8/9 grün | Wartet auf @linsui Re-Review |
 | **Sideload** | ✅ APKs bereit | `releases/v1.0.22/` (free, premium, fdroid) | Auf stealthx.tech Download-Seite aktualisieren |
 
 ### Rollout-Prozentsatz
-- **Aktuell: 0% öffentlich.** AAB noch nicht in Play Console. Nur die 3 Test-Geräte (S10, S7, Tab S4) laufen v1.0.22 via Sideload.
-- Empfehlung: Staged Rollout 10% → 50% → 100% über 3 Tage nach Upload.
+- **Aktuell: 100% Rollout.** AAB hochgeladen und von Google reviewed (Nacht 16./17.04.2026). Alle Play-Store-User erhalten v1.0.22.
+- 3 Test-Geräte (S10, S7, Tab S4) laufen seit 16.04. via Sideload.
 
 ### Letzte Monitoring-Checks
 
@@ -109,7 +109,7 @@
 
 ## 5. OFFENE FRAGEN AN DEVS
 
-1. **Play Console Upload:** Wann wird die AAB hochgeladen? Soll Staged Rollout (10% → 50% → 100%) oder Immediate Rollout?
+1. ~~**Play Console Upload:**~~ ✅ ERLEDIGT — AAB hochgeladen, Google reviewed, 100% Rollout live seit Nacht 16./17.04.2026.
 
 2. **Beta-Codes (TODO-047):** Sollen `BETA-PRO0-2026` + `BETA-PREM-2026` vor Go-Live deaktiviert werden? Falls ja: welche Geräte sollen auf FREE zurückgesetzt werden?
 
@@ -129,18 +129,18 @@
 
 | # | Task | Begründung | Geschätzter Aufwand |
 |---|------|-----------|-------------------|
-| **1** | AAB in Play Console hochladen + Staged Rollout starten | Release blockiert — alles andere wartet darauf | 15 min (manuell) |
+| **1** | Monitoring-Kadenz starten (Play Store ist live, 100% Rollout) | Echte User kommen rein — Crash-Rate + Connection-Success ab jetzt messen, Pre-Launch-Report auswerten | 2-3h (15min-Intervalle erste Stunde) |
 | **2** | Beta-Codes deaktivieren (TODO-047) | Security — jeder kann sich gratis Pro/Premium geben solange Codes aktiv sind | 10 min (server.js activation_codes) |
 | **3** | Volume-Fix #16 auf `release/v1.0.23-hotfix` mergen | Einziger YELLOW-Alarm im Monitoring, verhindert Daten-Loss bei nächstem Redeploy | 5 min (1 Zeile Dockerfile) |
-| **4** | Monitoring Check-Zyklen nach Rollout-Start | Crash-Rate + Connection-Success messen, Pre-Launch-Report auswerten | 2-3h (15min-Intervalle erste Stunde) |
+| **4** | Pre-Launch-Report aus Play Console auswerten | Google testet auf 20+ Geräteprofilen — Findings kategorisieren + Issues anlegen | 30-60 min |
 | **5** | F-Droid Follow-up Ping auf MR !36495 | Freigabe für F-Droid-Kanal, zweiter wichtiger Distributionskanal | 5 min |
 
 ### Kontext für die Priorisierung
 
-- **Task 1** ist der einzige echte Blocker — ohne Play Console Upload gibt es keinen öffentlichen Release.
-- **Task 2** ist ein Sicherheits-Hygiene-Task — die Beta-Codes waren für die Testphase gedacht und sollten nicht im Produktions-Modus aktiv sein.
+- **Task 1** ist jetzt der dringendste Task — Play Store ist live mit 100% Rollout, echte User kommen rein. Die ersten 24h sind kritisch für die Erkennung von Regressions.
+- **Task 2** ist ein Sicherheits-Hygiene-Task — die Beta-Codes waren für die Testphase gedacht und sollten nicht im Produktions-Modus aktiv sein. Mit dem öffentlichen Release ist das jetzt aktiv ausnutzbar.
 - **Task 3** ist ein Quick-Win der das einzige YELLOW-Signal im Monitoring beseitigt und die Daten-Integrität bei Redeployments sichert.
-- **Task 4** ist erst relevant nachdem Task 1 erledigt ist (kein Traffic = nichts zu monitoren).
+- **Task 4** folgt automatisch ~1-2h nach dem Play-Store-Go-Live und liefert Gerätespezifische Crash-/ANR-Daten.
 - **Task 5** läuft async und blockiert nichts, aber je früher der Ping, desto eher die Antwort.
 
 ---
