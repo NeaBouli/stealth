@@ -31,8 +31,10 @@ HOLD — Alpha laeuft seit 03:54 EEST, Production leer, Gate-Check ausstehend
 - Naechster Schritt: Koordinator-Entscheidung (A/B/C)
 
 ### Issue #16 FCM-Volume-Permission
-- Status: Analyse ausstehend
-- Naechster Schritt: Dockerfile pruefen
+- Status: Fix auf Branch feature/fcm-volume-permissions
+- Fix: mkdir + chown BEFORE USER switch in Dockerfile
+- Wartet auf: lokalen Docker-Test, dann Production Deploy
+- Branch: feature/fcm-volume-permissions (1 Commit)
 
 ## Offene Entscheidungen fuer Koordinator
 - [ ] BETA-Code-Fix-Pfad (A/B/C) nach Analyse
