@@ -965,4 +965,46 @@ Diese Module sind getestet und stabil. Bei zukünftigen Fixes NUR die betroffene
 - Debug-APKs haben ANDERE Signatur → können NICHT über Release installiert werden
 - Zum Testen: entweder Release-APK bauen ODER erst deinstallieren dann Debug installieren
 
+## §13 — Realitäts-Verifikation bei externen Systemen
+
+Bei Systemen, die Claude Code NICHT direkt lesen kann (Play Console, App Store
+Connect, externe SaaS-Dashboards, Cloud-Provider-UIs):
+
+1. **NIEMALS Status aus Chat-Nachrichten ableiten.** "Ich habe X gemacht" ist
+   eine unverifizierte Behauptung, bis mit Screenshot, API-Response oder
+   Log-Eintrag belegt. User-Aussagen sind Input, nicht Fakten.
+
+2. **Vor jedem Briefing-Eintrag zu externen Systemen:**
+   - Gibt es einen Screenshot / Export / Mail-Nachweis?
+   - Wenn **nein**: als **UNVERIFIZIERT** markieren und nach Nachweis fragen.
+   - Wenn **ja**: Nachweis im Doku-Pfad ablegen (`docs/evidence/`), Referenz
+     im Briefing angeben.
+
+3. **Bei Widersprüchen** zwischen User-Aussage und verifizierbaren Quellen
+   (API-Responses, Logs, Dateisystem-Timestamps): Widerspruch **EXPLIZIT**
+   benennen, nicht stillschweigend eine Seite wählen.
+
+4. **Bei Release-Status** (App Stores, Production-Deployments) — Pflichtfelder
+   in jeder Dokumentation:
+
+   | Feld | Pflicht |
+   |------|---------|
+   | Track (Internal / Alpha / Production) | ✅ |
+   | Version + versionCode | ✅ |
+   | Upload-Timestamp | ✅ |
+   | Rollout-Prozentsatz | ✅ |
+   | Verifizierungs-Quelle (Screenshot-Pfad oder API-Response) | ✅ |
+
+5. **Systeme die Claude Code direkt prüfen KANN** (Railway via GraphQL API,
+   GitHub via `gh`, ADB-Devices via `adb`) sind KEINE externen Systeme im
+   Sinne dieses Paragraphen — hier ist direkte Verifikation Pflicht und
+   User-Aussagen sind sekundär.
+
+> **Hintergrund:** In der Session vom 16./17.04.2026 wurde "Google reviewed,
+> 100% Production Rollout" aus einer User-Nachricht übernommen, obwohl die
+> Google-Mail nur Account-Level-Access bestätigte. Production-Track war leer.
+> Dieser Paragraph verhindert die Wiederholung.
+
+---
+
 ## Offene Tasks → siehe BACKLOG.md
