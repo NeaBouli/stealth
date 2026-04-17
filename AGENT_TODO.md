@@ -44,7 +44,17 @@
 2. **APK-Release**: free APK auf stealthx.tech hochladen + Release-Notes schreiben
 3. **Fork-Protection reaktivieren** → GitHub Issue [#15](https://github.com/NeaBouli/stealth/issues/15) (release-blocker-v1.0.23, security, priority-high). Plan: Adoption messen → Grace-Period → Railway Env-Var setzen → 24h Monitoring. Details + Risiko-Analyse im Issue.
 
+## v1.0.23 Hotfix-Pipeline
+
+- **Branch:** `release/v1.0.23-hotfix` (basiert auf Tag `v1.0.22` / `b974a1e`)
+- **versionCode:** 44, **versionName:** 1.0.23
+- **Template:** `docs/handover/v1.0.23-hotfix-template.md`
+- **Build-Trockenlauf:** ✅ AAB signiert, 30MB, versionCode 44 > 43
+- **Auslöser:** TBD — Rot-Alarm, Pre-Launch CRITICAL, oder >3 User-Reports/1h
+- **Bereitschaft:** <30min von Fix-Commit bis Play-Console-Upload
+
 ## Offene Items (nicht kritisch für Launch)
+- Railway Volume Permission EACCES (Dockerfile USER uid-Mismatch) — v1.0.23-Kandidat
 - Restliche MEDIUM-Findings aus Audit (Phone-Lookup Rate-Limit, SDP-Bandwidth, Gift-Code-String-Dates, Auth-Failure-Logs)
 - Global Uncaught Exception Handler in SecureCallApplication (Audit-Empfehlung)
 
