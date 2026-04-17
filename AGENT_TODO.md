@@ -54,7 +54,7 @@
 - **Bereitschaft:** <30min von Fix-Commit bis Play-Console-Upload
 
 ## Offene Items (nicht kritisch für Launch)
-- Railway Volume Permission EACCES (Dockerfile USER uid-Mismatch) — v1.0.23-Kandidat
+- Railway Volume Permission EACCES → [#16](https://github.com/NeaBouli/stealth/issues/16) (severity-medium, release-target-v1.0.23)
 - Restliche MEDIUM-Findings aus Audit (Phone-Lookup Rate-Limit, SDP-Bandwidth, Gift-Code-String-Dates, Auth-Failure-Logs)
 - Global Uncaught Exception Handler in SecureCallApplication (Audit-Empfehlung)
 
