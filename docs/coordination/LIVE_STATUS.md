@@ -59,3 +59,6 @@ HOLD — Alpha laeuft seit 03:54 EEST, Production leer, Gate-Check ausstehend
 | 17.04. 09:30 | Status-Korrektur Production!=Alpha | Koordinator |
 | 17.04. 09:45 | §13 eingefuehrt | Dev-Claude-Code |
 | 17.04. 10:15 | LIVE_STATUS.md angelegt | Dev-Claude-Code |
+| 17.04. 10:30 | TODO-047 Analyse abgeschlossen — Empfehlung Option B | Dev-Claude-Code |
+| 17.04. 10:35 | #16 FCM Fix auf Branch feature/fcm-volume-permissions | Dev-Claude-Code |
+| 17.04. 10:40 | WalletConnect Issue #17 erstellt | Dev-Claude-Code |

@@ -30,6 +30,6 @@ BEVOR eine neue Funktion entwickelt wird:
 4. Feature Branches: feature/NAME — nie direkt auf main
 
 ## Aktueller Status
-- SecureCall: Stufe 3 (Live-Einreichung bei Google Play)
+- SecureCall: Stufe 2 (Closed Alpha — v1.0.22, beta-test23, Production ausstehend)
 - SecureChat: Stufe 1 (In Entwicklung)
 - Chameleon: Stufe 1 (v0.1.0-alpha)
