@@ -23,9 +23,12 @@ HOLD — Alpha laeuft seit 03:54 EEST, Production leer, Gate-Check ausstehend
 ## Laufende Fixes
 
 ### TODO-047 BETA-Codes
-- Status: Analyse laeuft
-- Naechster Schritt: Empfehlung an Koordinator
-- Blocker: keiner
+- Status: ANALYSE ABGESCHLOSSEN
+- Ergebnis: BETA-Codes im Code bereits deaktiviert (auskommentiert)
+- Risiko: activation_codes.json auf Railway Volume UNVERIFIZIERT
+- Empfehlung: Option B (Hard-Disable-Flag) — 5 Zeilen Code, schliesst beide Pfade
+- Analyse: docs/analysis/todo-047-beta-codes-analysis.md
+- Naechster Schritt: Koordinator-Entscheidung (A/B/C)
 
 ### Issue #16 FCM-Volume-Permission
 - Status: Analyse ausstehend
