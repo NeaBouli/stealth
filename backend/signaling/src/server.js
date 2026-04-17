@@ -1507,8 +1507,13 @@ wss.on("connection", (ws, req) => {
     }
     clients.delete(connId);
 
-    // Sessions aufräumen wo dieser Client beteiligt war
-    if (clientId) {
+    // Sessions aufräumen wo dieser Client beteiligt war — BUT only if this
+    // connection is still the active one for this clientId. When a client
+    // reconnects (supersede), the old connection closes AFTER the new one
+    // registered. We must NOT clean up sessions that now belong to the new
+    // connection, otherwise active calls are killed on reconnect.
+    // (Root cause of Bug #1: Call drops on WS reconnect, 2026-04-18.)
+    if (clientId && clientIds.get(clientId) === connId) {
       for (const [sessionId, session] of routingTable) {
         if (session.from === clientId || session.to === clientId) {
           // Peer benachrichtigen
@@ -1522,6 +1527,8 @@ wss.on("connection", (ws, req) => {
           console.log("[ROUTING] Session cleaned up (disconnect):", sessionId);
         }
       }
+    } else if (clientId) {
+      console.log("[ROUTING] Skip session cleanup — client superseded to new connection:", clientId);
     }
   });
 });
