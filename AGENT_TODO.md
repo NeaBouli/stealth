@@ -51,7 +51,7 @@
 **Klarstellung:** Google-Mail 17.04. 02:31 = **Production-Account-Access** (Account-Level), NICHT Release-Approval. Es gibt keine öffentliche Play-Store-Version.
 
 ## Nächste Schritte (priorisiert)
-1. **Alpha-Stabilität beobachten** — Railway-Monitoring + Play Console Vitals prüfen (stündlich)
+1. **Alpha-Evaluation: HOLD** — Railway GREEN (0 reject, 0 5xx, 0 neue Bugs), aber 3 Gates offen: Play-Console-Daten UNVERIFIZIERT (§13), 12h-Gate erst 15:54 EEST, Alpha-Installationszahl unbekannt. Nächster Schritt: User liefert Play-Console-Screenshots → dann Gate-Matrix vervollständigen. Siehe `docs/qa/v1.0.22-alpha-evaluation-2026-04-17.md`
 2. **Production-Promotion-Entscheidung** — Kriterien: mind. 48h Alpha ohne CRITICAL, Pre-Launch-Report sauber, Monitoring GREEN. Dann Staged Rollout 20% → 50% → 100%.
 3. **Volume-Fix** [#16](https://github.com/NeaBouli/stealth/issues/16) auf Hotfix-Branch mergen (Quick-Win, beseitigt YELLOW)
 4. **Beta-Codes deaktivieren** (TODO-047) — MEDIUM-Prio, kein öffentlicher Impact (Production leer), aber Hygiene-Fix VOR Production-Promotion nötig
