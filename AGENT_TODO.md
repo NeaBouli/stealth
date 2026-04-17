@@ -42,7 +42,7 @@
 ## Noch TODO vor Launch
 1. **APK v1.0.22-fdroid** build (läuft im Hintergrund) + F-Droid Update-Request
 2. **APK-Release**: free APK auf stealthx.tech hochladen + Release-Notes schreiben
-3. **Nach ausreichender Adoption (~2 Wochen)** Railway `ALLOWED_SIGNATURES` wieder setzen zur Aktivierung der Fork-Protection
+3. **Fork-Protection reaktivieren** → GitHub Issue [#15](https://github.com/NeaBouli/stealth/issues/15) (release-blocker-v1.0.23, security, priority-high). Plan: Adoption messen → Grace-Period → Railway Env-Var setzen → 24h Monitoring. Details + Risiko-Analyse im Issue.
 
 ## Offene Items (nicht kritisch für Launch)
 - Restliche MEDIUM-Findings aus Audit (Phone-Lookup Rate-Limit, SDP-Bandwidth, Gift-Code-String-Dates, Auth-Failure-Logs)
