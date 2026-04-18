@@ -1294,6 +1294,18 @@ wss.on("connection", (ws, req) => {
         }));
       }
 
+      // TODO-047: Block expired BETA codes — closes both FALLBACK and JSON paths
+      const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
+      if (BLOCKED_CODES.includes(code)) {
+        console.log("[ACTIVATION] Blocked expired BETA code:", code);
+        return ws.send(JSON.stringify({
+          type: "ACTIVATE_CODE_RESULT",
+          success: false,
+          error: "expired",
+          message: "This beta code has expired. Thank you for testing!"
+        }));
+      }
+
       const entry = activationCodes.find(c => c.code === code);
 
       // Check gift codes if not found in activation codes
