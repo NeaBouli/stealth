@@ -18,6 +18,10 @@ COPY src/ ./src/
 RUN addgroup -g 1001 -S securecall && \
     adduser -S securecall -u 1001 -G securecall
 
+# Fix #16: Ensure data directory exists and is writable by non-root user
+# Railway mounts volumes as root — chown BEFORE USER switch
+RUN mkdir -p /app/data && chown -R securecall:securecall /app/data
+
 USER securecall
 
 # Health check
