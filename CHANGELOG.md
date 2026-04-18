@@ -7,6 +7,26 @@ Format orientiert sich an "Keep a Changelog" + sicherheitskritischen Erweiterung
 
 ---
 
+## [1.0.23] — 2026-04-19 — vC44
+
+### Fixed
+- **Speaker toggle**: UI state sync with AudioManager — button reflects actual state
+- **AudioTrack.Builder**: deprecated stream-type constructor replaced with AudioAttributes (USAGE_VOICE_COMMUNICATION) in AudioPlayer, AudioPlaybackThread, GhostAudioPlayer
+- **Zombie-Session**: client disconnect now cleans up sessions — peer gets CALL_END instead of hanging call screen
+- **WS reconnect call-drop (Bug #1)**: session-cleanup guard prevents active calls from being killed on supersede
+
+### Security
+- **BETA-PRO0-2026 + BETA-PREM-2026 disabled**: blocklist before validation (TODO-047)
+- **FCM Volume Permission (#16)**: chown before USER switch in Dockerfile — non-root user can write /app/data
+
+### Verified
+- Call-Tests 5/5 PASS (S10 Premium, S7 Free, Tab S4 Pro)
+- Speaker ON/OFF verified on S10↔S7
+- Tab S4: no earpiece (hardware limitation, speaker only output)
+- Railway health: stable after all deploys
+
+---
+
 ## [1.0.22] — 2026-04-17 — vC43
 
 ### Fixed

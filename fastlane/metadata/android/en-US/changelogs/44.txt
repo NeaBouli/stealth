@@ -1,0 +1,6 @@
+Bug fixes and security improvements:
+- Speaker toggle: button now reflects actual audio state
+- Fixed call drops on reconnect (zombie session cleanup)
+- Disabled expired beta codes
+- FCM volume permission fix for Docker deployments
+- Audio routing: deprecated AudioTrack constructor replaced
