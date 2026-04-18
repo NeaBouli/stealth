@@ -300,6 +300,13 @@ public class CallActivity extends AppCompatActivity {
             AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
             if (audioManager != null) {
                 audioManager.setSpeakerphoneOn(isSpeaker);
+                // Verify the change actually took effect
+                boolean actual = audioManager.isSpeakerphoneOn();
+                Log.d(TAG, "Speaker toggle: requested=" + isSpeaker
+                        + ", actual=" + actual
+                        + ", mode=" + audioManager.getMode());
+                // Sync UI to actual state (not requested) in case system refused
+                isSpeaker = actual;
             }
             fabSpeaker.setBackgroundTintList(
                     ColorStateList.valueOf(

@@ -1,9 +1,10 @@
 package com.securecall.app.ghostnet.media.playback
 
+import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioTrack
 import android.util.Log
+
 
 /**
  * BACKEND-66:
@@ -33,14 +34,23 @@ object AudioPlayer {
             return
         }
 
-        val t = AudioTrack(
-            AudioManager.STREAM_MUSIC,
-            SAMPLE_RATE,
-            AudioFormat.CHANNEL_OUT_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            minBuf,
-            AudioTrack.MODE_STREAM
-        )
+        val t = AudioTrack.Builder()
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build()
+            )
+            .setAudioFormat(
+                AudioFormat.Builder()
+                    .setSampleRate(SAMPLE_RATE)
+                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .build()
+            )
+            .setBufferSizeInBytes(minBuf)
+            .setTransferMode(AudioTrack.MODE_STREAM)
+            .build()
 
         if (t.state != AudioTrack.STATE_INITIALIZED) {
             Log.e(TAG, "AudioTrack not initialized, state=${t.state}")

@@ -1,7 +1,7 @@
 package com.securecall.app.ghostnet.media.audio
 
+import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioTrack
 import android.util.Log
 import java.util.concurrent.LinkedBlockingQueue
@@ -29,14 +29,23 @@ class AudioPlaybackThread : Thread("AudioPlaybackThread") {
         encoding
     )
 
-    private val track = AudioTrack(
-        AudioManager.STREAM_VOICE_CALL,
-        sampleRate,
-        channel,
-        encoding,
-        minBuffer,
-        AudioTrack.MODE_STREAM
-    )
+    private val track = AudioTrack.Builder()
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build()
+        )
+        .setAudioFormat(
+            AudioFormat.Builder()
+                .setSampleRate(sampleRate)
+                .setChannelMask(channel)
+                .setEncoding(encoding)
+                .build()
+        )
+        .setBufferSizeInBytes(minBuffer)
+        .setTransferMode(AudioTrack.MODE_STREAM)
+        .build()
 
     override fun run() {
         Log.d(TAG, "Playback thread STARTED")
