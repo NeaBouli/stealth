@@ -1499,24 +1499,16 @@ wss.on("connection", (ws, req) => {
     // in other users' contacts. The entries are re-added on reconnect via REGISTER.
     // Only removed when: (a) user registers a different phone number, or (b) server restarts.
 
-    // clientId Mapping aufräumen — only if WE are still the active connection for this clientId.
+    // Check if WE are still the active connection for this clientId BEFORE deleting.
     // When a connection is superseded (new connection registered same clientId),
-    // the old close handler must NOT delete the new connection's clientId mapping.
-    if (clientId && clientIds.get(clientId) === connId) {
-      clientIds.delete(clientId);
-    }
-    clients.delete(connId);
-
-    // Sessions aufräumen wo dieser Client beteiligt war — BUT only if this
-    // connection is still the active one for this clientId. When a client
-    // reconnects (supersede), the old connection closes AFTER the new one
-    // registered. We must NOT clean up sessions that now belong to the new
-    // connection, otherwise active calls are killed on reconnect.
+    // the old close handler must NOT clean up sessions or delete the new mapping.
     // (Root cause of Bug #1: Call drops on WS reconnect, 2026-04-18.)
-    if (clientId && clientIds.get(clientId) === connId) {
+    const isActiveConnection = clientId && clientIds.get(clientId) === connId;
+
+    if (isActiveConnection) {
+      // Sessions aufräumen wo dieser Client beteiligt war
       for (const [sessionId, session] of routingTable) {
         if (session.from === clientId || session.to === clientId) {
-          // Peer benachrichtigen
           const peerId = session.from === clientId ? session.to : session.from;
           sendToClient(peerId, {
             type: "CALL_END",
@@ -1527,9 +1519,11 @@ wss.on("connection", (ws, req) => {
           console.log("[ROUTING] Session cleaned up (disconnect):", sessionId);
         }
       }
+      clientIds.delete(clientId);
     } else if (clientId) {
       console.log("[ROUTING] Skip session cleanup — client superseded to new connection:", clientId);
     }
+    clients.delete(connId);
   });
 });
 
