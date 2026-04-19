@@ -7,6 +7,20 @@ Format follows "Keep a Changelog" with security-critical extensions.
 
 ---
 
+## [1.0.24] — 2026-04-19 — vC45
+
+### Fixed
+- **C-01**: Gift codes now persisted to disk (no loss on server restart)
+- **C-02**: CPU WakeLock timeout 10min (was: unlimited)
+- **C-03**: Proximity WakeLock timeout 1h (was: unlimited)
+- **H-04**: Rate limit on BATCH_PHONE_LOOKUP (5/min)
+- **H-05**: Rate limit on ONLINE_STATUS_REQUEST (10/min)
+- **H-08**: Thread-safe reconnect timestamps (CopyOnWriteArrayList)
+- **H-09**: Thread-safe ICE candidates (CopyOnWriteArrayList)
+- **M-06**: Audio mode correctly restored after call
+
+---
+
 ## [1.0.23] — 2026-04-19 — vC44
 
 ### Fixed

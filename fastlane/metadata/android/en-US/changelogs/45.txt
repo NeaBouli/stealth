@@ -1,0 +1,1 @@
+Stability fixes: WakeLock timeouts, rate limits, thread safety, audio mode restore, gift code persistence.
