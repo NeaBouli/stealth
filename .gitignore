@@ -29,8 +29,25 @@ tools/perf_results/
 
 # IDE / tooling
 .claude/
+CLAUDE.md
 .idea/
 *.iml
+
+# Internal working docs (local only)
+AGENT_TODO.md
+BACKLOG.md
+docs/debug/
+docs/coordination/
+docs/analysis/
+docs/planning/
+docs/evidence/
+docs/handover/
+docs/SESSION_CONTEXT.md
+docs/SESSION_STATUS.md
+docs/PLATFORM_TODO.md
+docs/TODO.md
+store_assets/ADMOB_TODO.md
+test-session-*/
 
 # Node.js
 node_modules/
