@@ -3,6 +3,7 @@ package com.securecall.app.net
 import android.util.Log
 import okhttp3.*
 import okio.ByteString
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
 /**
@@ -54,8 +55,8 @@ class HeartbeatClient(
     private var reconnectPending = false // Whether a reconnect is already scheduled
     @Volatile private var callActive = false // Extends staleness threshold during active calls
 
-    // Flap detection: track recent reconnect timestamps
-    private val reconnectTimestamps = mutableListOf<Long>()
+    // Flap detection: track recent reconnect timestamps (thread-safe — accessed from main + OkHttp threads)
+    private val reconnectTimestamps = CopyOnWriteArrayList<Long>()
     private val flapThreshold = 3 // 3 reconnects in flapWindow = flapping
     private val flapWindow = 10_000L // 10 seconds
     @Volatile private var inRecoveryMode = false

@@ -537,10 +537,15 @@ public class CallActivity extends AppCompatActivity {
     private void prepareCallAudio() {
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
         if (am == null) return;
+        // Save original mode BEFORE changing it (BUG-069 fix)
+        if (savedAudioMode < 0) {
+            savedAudioMode = am.getMode();
+            savedStreamVolume = am.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
+        }
         am.setMode(AudioManager.MODE_IN_COMMUNICATION);
         int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
         am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, maxVol, 0);
-        Log.d(TAG, "Audio pre-configured for call (BUG-039)");
+        Log.d(TAG, "Audio pre-configured for call (BUG-039), saved original mode=" + savedAudioMode);
     }
 
     private void restoreCallAudio() {
@@ -561,8 +566,8 @@ public class CallActivity extends AppCompatActivity {
         if (pm.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
             proximityWakeLock = pm.newWakeLock(
                     PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "securecall:proximity");
-            proximityWakeLock.acquire();
-            Log.d(TAG, "Proximity wake lock acquired — screen will turn off at ear");
+            proximityWakeLock.acquire(60 * 60 * 1000L); // 1h max — safety net if endCall() not reached
+            Log.d(TAG, "Proximity wake lock acquired (1h timeout)");
         } else {
             Log.w(TAG, "PROXIMITY_SCREEN_OFF_WAKE_LOCK not supported");
         }

@@ -1240,6 +1240,20 @@ wss.on("connection", (ws, req) => {
     // BATCH_PHONE_LOOKUP — Resolve multiple phone numbers at once
     // ===========================
     if (msg.type === "BATCH_PHONE_LOOKUP") {
+      // Rate limit: 5 per 60 seconds per connection
+      if (!clients.get(connId)._batchLookups) clients.get(connId)._batchLookups = [];
+      const batchLookups = clients.get(connId)._batchLookups;
+      const bNow = Date.now();
+      while (batchLookups.length > 0 && bNow - batchLookups[0] > 60000) batchLookups.shift();
+      if (batchLookups.length >= 5) {
+        return ws.send(JSON.stringify({
+          type: "BATCH_PHONE_LOOKUP_RESULT",
+          results: [],
+          error: "rate_limited"
+        }));
+      }
+      batchLookups.push(bNow);
+
       // Hashed mode: client sends SHA-256 hashes instead of raw phone numbers
       if (Array.isArray(msg.hashes)) {
         const results = msg.hashes.slice(0, 200).map(hash => {
@@ -1271,6 +1285,20 @@ wss.on("connection", (ws, req) => {
     // ONLINE_STATUS_REQUEST — Simple online/offline check for phone numbers
     // ===========================
     if (msg.type === "ONLINE_STATUS_REQUEST") {
+      // Rate limit: 10 per 60 seconds per connection
+      if (!clients.get(connId)._onlineStatusReqs) clients.get(connId)._onlineStatusReqs = [];
+      const osReqs = clients.get(connId)._onlineStatusReqs;
+      const osNow = Date.now();
+      while (osReqs.length > 0 && osNow - osReqs[0] > 60000) osReqs.shift();
+      if (osReqs.length >= 10) {
+        return ws.send(JSON.stringify({
+          type: "ONLINE_STATUS_RESPONSE",
+          statuses: {},
+          error: "rate_limited"
+        }));
+      }
+      osReqs.push(osNow);
+
       const phones = Array.isArray(msg.phoneNumbers) ? msg.phoneNumbers.slice(0, 500) : [];
       const statuses = {};
       for (const phone of phones) {
@@ -1319,6 +1347,7 @@ wss.on("connection", (ws, req) => {
         }
         gift.used = true;
         gift.usedBy = getClientId(connId);
+        saveGiftCodes();
         const myClientId = getClientId(connId);
         console.log("[GIFT] Code redeemed:", code, "-> tier:", gift.tier, "by:", myClientId);
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: true, tier: gift.tier }));
@@ -1628,7 +1657,30 @@ app.post("/admin/broadcast", requireAdmin, (req, res) => {
 });
 
 // --- Gift Link System (admin-only) ---
+const GIFT_CODES_FILE = path.join(__dirname, "..", "data", "gift_codes.json");
 const giftCodes = new Map();
+
+// Load gift codes from disk on startup
+try {
+  if (fs.existsSync(GIFT_CODES_FILE)) {
+    const raw = JSON.parse(fs.readFileSync(GIFT_CODES_FILE, "utf8"));
+    for (const [code, data] of Object.entries(raw)) {
+      giftCodes.set(code, data);
+    }
+    console.log(`[GIFT] Loaded ${giftCodes.size} gift codes from disk`);
+  }
+} catch (e) {
+  console.warn("[GIFT] Could not load gift_codes.json:", e.message);
+}
+
+function saveGiftCodes() {
+  try {
+    const obj = Object.fromEntries(giftCodes);
+    writeJsonAtomic(GIFT_CODES_FILE, obj);
+  } catch (e) {
+    console.error("[GIFT] Failed to save gift_codes.json:", e.message);
+  }
+}
 
 app.post("/admin/gift", requireAdmin, (req, res) => {
   const { tier, note } = req.body;
@@ -1648,6 +1700,7 @@ app.post("/admin/gift", requireAdmin, (req, res) => {
     usedBy: null
   });
 
+  saveGiftCodes();
   console.log(`[GIFT] Created ${code} → ${tier.toUpperCase()} (note: ${note || "none"})`);
   res.json({ code, tier: tier.toUpperCase(), expires, note: note || "" });
 });
@@ -1666,6 +1719,7 @@ app.delete("/admin/gift/:code", requireAdmin, (req, res) => {
     return res.status(404).json({ error: "gift code not found" });
   }
   giftCodes.delete(code);
+  saveGiftCodes();
   res.json({ ok: true, deleted: code });
 });
 
@@ -1762,6 +1816,7 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
     purchaseToken: purchase_token
   });
 
+  saveGiftCodes();
   console.log("[BILLING] Activation code generated:", code, "tier:", tier, "product:", product_id);
 
   res.json({
