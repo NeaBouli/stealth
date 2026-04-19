@@ -1,49 +1,49 @@
-# SecureCall — TURN Server Setup (Metered.ca — Gratis)
+# SecureCall — TURN Server Setup (Metered.ca — Free)
 
-> TURN Server über Metered.ca — 50 GB/Monat kostenlos, kein eigener Server nötig.
+> TURN Server via Metered.ca — 50 GB/month free, no own server needed.
 
-## Was ist ein TURN Server?
+## What is a TURN Server?
 
-TURN (Traversal Using Relays around NAT) ermöglicht WebRTC-Verbindungen wenn
-direkte Peer-to-Peer Verbindungen durch Firewalls oder NAT blockiert werden.
-Ohne TURN können ~10-15% der Nutzer keine Anrufe aufbauen.
+TURN (Traversal Using Relays around NAT) enables WebRTC connections when
+direct peer-to-peer connections are blocked by firewalls or NAT.
+Without TURN, ~10-15% of users cannot establish calls.
 
-## Kosten
+## Costs
 
-| Plan | Preis | Traffic | TURN Servers |
+| Plan | Price | Traffic | TURN Servers |
 |------|-------|---------|-------------|
-| **Free** | $0/mo | 50 GB/mo | Global (5 Regionen) |
+| **Free** | $0/mo | 50 GB/mo | Global (5 regions) |
 | Starter | $29/mo | 500 GB/mo | Global |
 | Growth | $99/mo | 2 TB/mo | Global + Premium |
 
-> 50 GB/Monat reicht für ~5.000-10.000 Minuten Anrufe über TURN-Relay.
-> Die meisten Anrufe nutzen direkte P2P-Verbindung und brauchen kein TURN.
+> 50 GB/month is sufficient for ~5,000-10,000 minutes of calls via TURN relay.
+> Most calls use direct P2P connection and don't need TURN.
 
 ---
 
-## Schritt 1: Metered Account erstellen
+## Step 1: Create Metered Account
 
-1. Öffne https://www.metered.ca/signup
-2. Account erstellen (E-Mail + Passwort)
-3. Free Plan wählen
-4. E-Mail bestätigen
+1. Open https://www.metered.ca/signup
+2. Create account (email + password)
+3. Choose Free Plan
+4. Confirm email
 
-## Schritt 2: TURN Credentials generieren
+## Step 2: Generate TURN Credentials
 
 1. Dashboard → "TURN Server" Tab
-2. "Create Turn Server Credentials" klicken
-3. Metered generiert automatisch:
-   - **API Key** (wird für REST API benötigt)
-   - **TURN URLs** (mehrere Server weltweit)
+2. Click "Create Turn Server Credentials"
+3. Metered automatically generates:
+   - **API Key** (needed for REST API)
+   - **TURN URLs** (multiple servers worldwide)
 
-4. Unter "TURN Server Credentials" findest du:
+4. Under "TURN Server Credentials" you will find:
    - Username
-   - Password (oder Credential)
+   - Password (or Credential)
    - TURN Server URLs
 
-## Schritt 3: TURN URLs notieren
+## Step 3: Note TURN URLs
 
-Metered stellt mehrere Server bereit. Typische URLs:
+Metered provides multiple servers. Typical URLs:
 
 ```
 stun:stun.relay.metered.ca:80
@@ -53,9 +53,9 @@ turn:global.relay.metered.ca:443
 turns:global.relay.metered.ca:443?transport=tcp
 ```
 
-## Schritt 4: Android App integrieren
+## Step 4: Integrate into Android App
 
-### Option A: Statische Credentials (einfach)
+### Option A: Static Credentials (simple)
 
 In `client_android/app/build.gradle`:
 
@@ -74,15 +74,15 @@ release {
 }
 ```
 
-### Option B: Dynamisch über API (empfohlen für Production)
+### Option B: Dynamic via API (recommended for production)
 
-Metered bietet eine REST API für temporäre TURN Credentials:
+Metered offers a REST API for temporary TURN credentials:
 
 ```bash
 curl "https://[APP_NAME].metered.live/api/v1/turn/credentials?apiKey=[API_KEY]"
 ```
 
-Antwort:
+Response:
 ```json
 [
   { "urls": "stun:stun.relay.metered.ca:80" },
@@ -94,46 +94,46 @@ Antwort:
 ]
 ```
 
-Integration im Signaling Server (`backend/signaling/src/server.js`):
+Integration in the signaling server (`backend/signaling/src/server.js`):
 ```javascript
-// Beim Call-Setup TURN Credentials vom Metered API holen
+// Fetch TURN credentials from Metered API during call setup
 const turnResponse = await fetch(
     `https://${METERED_APP}.metered.live/api/v1/turn/credentials?apiKey=${METERED_API_KEY}`
 );
 const iceServers = await turnResponse.json();
-// An beide Clients senden als Teil der Signaling-Nachricht
+// Send to both clients as part of the signaling message
 ```
 
-## Schritt 5: Testen
+## Step 5: Test
 
 ### WebRTC Trickle ICE Test
 
-1. Öffne https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/
-2. Server hinzufügen:
+1. Open https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/
+2. Add server:
    - URI: `turn:global.relay.metered.ca:80`
    - Username: `[METERED_USERNAME]`
    - Credential: `[METERED_CREDENTIAL]`
-3. "Gather candidates" klicken
-4. Prüfe ob `relay` Candidates erscheinen (= TURN funktioniert)
+3. Click "Gather candidates"
+4. Check if `relay` candidates appear (= TURN works)
 
-### In der App testen
+### Test in the App
 
-1. App auf zwei Geräte installieren
-2. Anruf starten
-3. Logcat prüfen: `adb logcat | grep -i "turn\|relay\|ice"`
-4. Prüfe ob "relay" als Connection Type angezeigt wird
+1. Install app on two devices
+2. Start a call
+3. Check Logcat: `adb logcat | grep -i "turn\|relay\|ice"`
+4. Check if "relay" is displayed as Connection Type
 
 ---
 
 ## Monitoring
 
 - **Dashboard:** https://dashboard.metered.ca
-- **Usage:** Dashboard → Usage → Traffic-Verbrauch prüfen
-- **Alerts:** Dashboard → Settings → E-Mail-Benachrichtigung bei 80% Limit
+- **Usage:** Dashboard → Usage → Check traffic consumption
+- **Alerts:** Dashboard → Settings → Email notification at 80% limit
 
-## Selbst-gehostete Alternative
+## Self-Hosted Alternative
 
-Falls du später einen eigenen TURN-Server betreiben möchtest:
-- Siehe `deployment/coturn_config/turnserver.conf`
-- Anleitung: `docs/PRODUCTION_DEPLOYMENT.md` → Schritt 5
-- Kosten: ~€4.35/mo (Hetzner CX22)
+If you later want to run your own TURN server:
+- See `deployment/coturn_config/turnserver.conf`
+- Guide: `docs/PRODUCTION_DEPLOYMENT.md` → Step 5
+- Cost: ~€4.35/mo (Hetzner CX22)

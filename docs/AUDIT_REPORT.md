@@ -1,95 +1,95 @@
 # AUDITUS ROMANA CALIGULA
-## StealthX Platform — Vollstaendiges System-Audit
-**Datum:** 2026-04-16
-**Auditor:** Claude Code (Automatisiert)
+## StealthX Platform — Complete System Audit
+**Date:** 2026-04-16
+**Auditor:** Claude Code (Automated)
 **Scope:** 3 Repos, 2 Websites, 2 Android Apps, 1 Backend
 
 ---
 
 ## Executive Summary
 
-Das StealthX Oekosystem (SecureCall, SecureChat, Chameleon) zeigt eine starke Sicherheitspostur mit konsistenter Dokumentation, korrekter Crypto-Isolation und keinen exponierten Secrets. 40 HTML-Dateien, 3 Android-Manifeste, 1 Backend und alle Shared Docs wurden geprueft. Ein IFR-Dokumentationsfehler und verbleibende ifrunit.tech-Links (Domain down) wurden als einzige aktive Issues identifiziert und sofort behoben.
+The StealthX ecosystem (SecureCall, SecureChat, Chameleon) shows a strong security posture with consistent documentation, correct crypto isolation, and no exposed secrets. 40 HTML files, 3 Android manifests, 1 backend, and all shared docs were reviewed. An IFR documentation error and remaining ifrunit.tech links (domain down) were identified as the only active issues and fixed immediately.
 
-**Gesamtbewertung: 94/100 — PRODUCTION-READY**
-
----
-
-## Bewertung nach Kategorie
-
-| Kategorie | Status | Findings |
-|-----------|--------|----------|
-| Website Kohaerenz | ✅ PASS | 1 IFR-Note gefixt, 2 fehlende meta desc (low) |
-| Dokumentation | ✅ PASS | ECOSYSTEM/RELAY/RELEASE identisch in 3 Repos |
-| Android Code (SecureCall) | ⚠️ WARNING | 551+ Debug-Logs in Production-Code |
-| Android Code (Chameleon) | ✅ PASS | Crypto-Isolation perfekt, TierGate korrekt |
-| Backend Security | ✅ PASS | ALLOWED_SIGNATURES korrekt, Rate Limiting aktiv |
-| Cross-Platform Kohaerenz | ✅ PASS | IFR-Tiers, Crypto-Stack, Produktnamen konsistent |
+**Overall Rating: 94/100 — PRODUCTION-READY**
 
 ---
 
-## Kritische Findings (0)
+## Rating by Category
 
-Keine kritischen Sicherheitsprobleme gefunden.
+| Category | Status | Findings |
+|----------|--------|----------|
+| Website Coherence | ✅ PASS | 1 IFR note fixed, 2 missing meta desc (low) |
+| Documentation | ✅ PASS | ECOSYSTEM/RELAY/RELEASE identical in 3 repos |
+| Android Code (SecureCall) | ⚠️ WARNING | 551+ debug logs in production code |
+| Android Code (Chameleon) | ✅ PASS | Crypto isolation perfect, TierGate correct |
+| Backend Security | ✅ PASS | ALLOWED_SIGNATURES correct, rate limiting active |
+| Cross-Platform Coherence | ✅ PASS | IFR tiers, crypto stack, product names consistent |
 
 ---
 
-## Warnungen (2)
+## Critical Findings (0)
 
-### W-001: Debug-Logging in SecureCall Production Code
-- **Ort:** client_android/app/src/main/java/ (diverse Fragments)
-- **Details:** 551+ Log.d/Log.v/println Aufrufe in Production-Code
-- **Risiko:** Metadata-Leakage ueber Device-Logs, Timing-Fingerprinting
-- **Empfehlung:** Timber mit Debug-Tree-Stripping oder BuildConfig.DEBUG Guard
-- **Status:** OFFEN (erfordert groesseres Refactoring)
+No critical security issues found.
+
+---
+
+## Warnings (2)
+
+### W-001: Debug Logging in SecureCall Production Code
+- **Location:** client_android/app/src/main/java/ (various Fragments)
+- **Details:** 551+ Log.d/Log.v/println calls in production code
+- **Risk:** Metadata leakage via device logs, timing fingerprinting
+- **Recommendation:** Timber with debug tree stripping or BuildConfig.DEBUG guard
+- **Status:** OPEN (requires larger refactoring)
 
 ### W-002: ifrunit.tech Domain Down
-- **Ort:** website/wiki/ifr-unlock.html (3 Links), securechat/wiki/ifr-unlock.html (1 Link)
-- **Details:** Domain ifrunit.tech ist nicht erreichbar (kein DNS, kein HTTP)
-- **Fix:** Links auf github.com/NeaBouli/inferno umgeleitet
-- **Status:** GEFIXT
+- **Location:** website/wiki/ifr-unlock.html (3 links), securechat/wiki/ifr-unlock.html (1 link)
+- **Details:** Domain ifrunit.tech is not reachable (no DNS, no HTTP)
+- **Fix:** Links redirected to github.com/NeaBouli/inferno
+- **Status:** FIXED
 
 ---
 
-## Sofort-Fixes (ausgefuehrt)
+## Immediate Fixes (applied)
 
-| # | Datei | Fix |
-|---|-------|-----|
-| 1 | securechat/wiki/ifr-unlock.html:33 | IFR Cross-Product Note korrigiert (5K → 2K Schwelle) |
+| # | File | Fix |
+|---|------|-----|
+| 1 | securechat/wiki/ifr-unlock.html:33 | IFR cross-product note corrected (5K → 2K threshold) |
 | 2 | securecall/website/wiki/ifr-unlock.html | 3x ifrunit.tech → github.com/NeaBouli/inferno |
 
 ---
 
-## Bestanden (alle Checks)
+## Passed (all checks)
 
 | Check | Status |
 |-------|--------|
-| ECOSYSTEM.md identisch in 3 Repos | ✅ |
-| RELAY_ARCHITECTURE.md komplett (4 Optionen A/B/C/D) | ✅ |
-| RELEASE_PROCESS.md in allen 3 Repos | ✅ |
-| ALLOWED_SIGNATURES Backend-Implementierung | ✅ |
-| Keine hardcodierten Secrets im Backend | ✅ |
-| Rate Limiting aktiv | ✅ |
-| android:allowBackup="false" (alle Apps) | ✅ |
-| android:usesCleartextTraffic="false" (alle Apps) | ✅ |
-| Chameleon Crypto-Isolation (:stealthx-crypto only) | ✅ |
-| Chameleon TierGate-Zentralisierung | ✅ |
-| :domain importiert NICHT :data | ✅ |
-| XChaCha20-Poly1305 als primaere Encryption (kein AES-GCM) | ✅ |
-| IFR-Tiers konsistent ueber alle Repos | ✅ |
-| Produktnamen konsistent (keine Tippfehler) | ✅ |
-| Copyright 2026 auf allen Seiten | ✅ |
-| html lang="en" auf allen 40 Seiten | ✅ |
-| Genau 1 h1 pro Seite | ✅ |
-| sitemap.xml aktuell (36 URLs gesamt) | ✅ |
-| robots.txt korrekt (inkl. AI-Crawler) | ✅ |
-| Keine broken relative Links | ✅ |
+| ECOSYSTEM.md identical in 3 repos | ✅ |
+| RELAY_ARCHITECTURE.md complete (4 options A/B/C/D) | ✅ |
+| RELEASE_PROCESS.md in all 3 repos | ✅ |
+| ALLOWED_SIGNATURES backend implementation | ✅ |
+| No hardcoded secrets in backend | ✅ |
+| Rate limiting active | ✅ |
+| android:allowBackup="false" (all apps) | ✅ |
+| android:usesCleartextTraffic="false" (all apps) | ✅ |
+| Chameleon crypto isolation (:stealthx-crypto only) | ✅ |
+| Chameleon TierGate centralization | ✅ |
+| :domain does not import :data | ✅ |
+| XChaCha20-Poly1305 as primary encryption (no AES-GCM) | ✅ |
+| IFR tiers consistent across all repos | ✅ |
+| Product names consistent (no typos) | ✅ |
+| Copyright 2026 on all pages | ✅ |
+| html lang="en" on all 40 pages | ✅ |
+| Exactly 1 h1 per page | ✅ |
+| sitemap.xml current (36 URLs total) | ✅ |
+| robots.txt correct (incl. AI crawlers) | ✅ |
+| No broken relative links | ✅ |
 
 ---
 
 ## Security Score
 
-| Kategorie | Score |
-|-----------|-------|
+| Category | Score |
+|----------|-------|
 | Architecture | 95/100 |
 | Secret Handling | 98/100 |
 | Crypto Implementation | 98/100 |
@@ -100,15 +100,15 @@ Keine kritischen Sicherheitsprobleme gefunden.
 
 ---
 
-## Manuelle Aktionen erforderlich
+## Manual Actions Required
 
-1. **Railway ENV:** ALLOWED_SIGNATURES setzen (falls noch nicht geschehen)
-2. **Debug-Logging:** SecureCall Android — Timber/BuildConfig.DEBUG Migration planen
-3. **F-Droid MR !36557:** Review abwarten
-4. **ifrunit.tech:** Domain-Status pruefen, ggf. DNS/Hosting fixen
-5. **Trail of Bits:** Audit-Anfrage fuer SecureChat + Chameleon stellen
+1. **Railway ENV:** Set ALLOWED_SIGNATURES (if not already done)
+2. **Debug Logging:** SecureCall Android — Plan Timber/BuildConfig.DEBUG migration
+3. **F-Droid MR !36557:** Await review
+4. **ifrunit.tech:** Check domain status, fix DNS/hosting if needed
+5. **Trail of Bits:** Submit audit request for SecureChat + Chameleon
 
 ---
 
-_Audit durchgefuehrt von Claude Code — automatisiert + manuell verifiziert_
+_Audit performed by Claude Code — automated + manually verified_
 _StealthX Platform — Vendetta Labs, Greece — April 2026_

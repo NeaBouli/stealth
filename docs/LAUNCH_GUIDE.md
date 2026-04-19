@@ -1,146 +1,146 @@
 # SecureCall — Complete Launch Guide (Zero-Cost Strategy)
 
-> **Gratis Cloud Strategie:** GitHub Pages + Railway.app + Metered.ca
+> **Free Cloud Strategy:** GitHub Pages + Railway.app + Metered.ca
 >
-> Einzige Kosten: **25 EUR** (Google Play Developer Account, einmalig)
-> Laufende Kosten: **0 EUR/Monat** (Free Tiers)
+> Only cost: **25 EUR** (Google Play Developer Account, one-time)
+> Ongoing costs: **0 EUR/month** (Free Tiers)
 
 ---
 
-## Kosten-Übersicht
+## Cost Overview
 
-| Posten | Kosten | Typ |
-|--------|--------|-----|
-| Website (GitHub Pages) | 0 EUR | Kostenlos |
-| Signaling Server (Railway.app) | 0 EUR | Free Tier (500h/Monat) |
-| TURN Server (Metered.ca) | 0 EUR | Free Tier (50 GB/Monat) |
-| SSL (automatisch) | 0 EUR | GitHub Pages + Railway |
-| Google Play Developer | 25 EUR | Einmalig |
-| **Gesamt** | **25 EUR** | **Einmalig** |
+| Item | Cost | Type |
+|------|------|------|
+| Website (GitHub Pages) | 0 EUR | Free |
+| Signaling Server (Railway.app) | 0 EUR | Free Tier (500h/month) |
+| TURN Server (Metered.ca) | 0 EUR | Free Tier (50 GB/month) |
+| SSL (automatic) | 0 EUR | GitHub Pages + Railway |
+| Google Play Developer | 25 EUR | One-time |
+| **Total** | **25 EUR** | **One-time** |
 
 ## Timeline
 
-| Woche | Aufgabe |
-|-------|---------|
-| **1** | Website deployen, Railway + Metered einrichten, Keystore, Builds |
+| Week | Task |
+|------|------|
+| **1** | Deploy website, set up Railway + Metered, keystore, builds |
 | **2** | Manual QA, Play Store Account, Internal Testing |
-| **2–3** | Beta Testing (10–20 Tester) |
+| **2–3** | Beta Testing (10–20 testers) |
 | **3** | Production Release, Marketing |
 
 ---
 
-## Schritt 1: Website auf GitHub Pages deployen
+## Step 1: Deploy Website on GitHub Pages
 
-### 1.1 GitHub Pages aktivieren
+### 1.1 Enable GitHub Pages
 
-1. Gehe zu https://github.com/NeaBouli/stealth/settings/pages
-2. **Source:** "GitHub Actions" wählen
-3. Der Workflow `.github/workflows/deploy-pages.yml` ist bereits im Repo
+1. Go to https://github.com/NeaBouli/stealth/settings/pages
+2. **Source:** select "GitHub Actions"
+3. The workflow `.github/workflows/deploy-pages.yml` is already in the repo
 
-> Der Workflow deployed automatisch das `website/` Verzeichnis bei jedem Push zu `main`.
+> The workflow automatically deploys the `website/` directory on every push to `main`.
 
-### 1.2 Verifizieren
+### 1.2 Verify
 
-Nach dem nächsten Push zu `main`:
-1. Warte 1-2 Minuten auf den Build
-2. Prüfe: https://neabouli.github.io/stealth/
-3. Alle Seiten testen: `/`, `/privacy.html`, `/security.html`, `/faq.html`
+After the next push to `main`:
+1. Wait 1-2 minutes for the build
+2. Check: https://neabouli.github.io/stealth/
+3. Test all pages: `/`, `/privacy.html`, `/security.html`, `/faq.html`
 
-### 1.3 Custom Domain (optional, kostet ~12 EUR/Jahr)
+### 1.3 Custom Domain (optional, costs ~12 EUR/year)
 
-Falls du `neabouli.github.io/stealth` kaufen möchtest:
-1. Domain registrieren bei Namecheap (~12 EUR/Jahr) oder Cloudflare (~11 EUR/Jahr)
+If you want to use a custom domain:
+1. Register domain at Namecheap (~12 EUR/year) or Cloudflare (~11 EUR/year)
 2. DNS: CNAME `www` → `neabouli.github.io`
 3. GitHub Pages Settings → Custom Domain → `neabouli.github.io/stealth`
-4. "Enforce HTTPS" aktivieren
-5. `website/CNAME` Datei erstellen mit Inhalt: `neabouli.github.io/stealth`
+4. Enable "Enforce HTTPS"
+5. Create `website/CNAME` file with content: `neabouli.github.io/stealth`
 
-### Checkliste
+### Checklist
 
-- [ ] GitHub Pages aktiviert
-- [ ] Website erreichbar unter https://neabouli.github.io/stealth/
-- [ ] Alle Seiten laden korrekt
-- [ ] HTTPS funktioniert
+- [ ] GitHub Pages enabled
+- [ ] Website reachable at https://neabouli.github.io/stealth/
+- [ ] All pages load correctly
+- [ ] HTTPS works
 
 ---
 
-## Schritt 2: Signaling Server auf Railway.app deployen
+## Step 2: Deploy Signaling Server on Railway.app
 
-### 2.1 Railway Account erstellen
+### 2.1 Create Railway Account
 
-1. Öffne https://railway.com
-2. "Start a New Project" klicken
-3. Mit **GitHub** einloggen (NeaBouli Account)
-4. GitHub-Zugriff autorisieren
+1. Open https://railway.com
+2. Click "Start a New Project"
+3. Log in with **GitHub** (NeaBouli Account)
+4. Authorize GitHub access
 
-### 2.2 Projekt erstellen
+### 2.2 Create Project
 
 1. Dashboard → "New Project"
 2. "Deploy from GitHub repo" → `NeaBouli/stealth`
-3. Railway erkennt `backend/signaling/railway.json` automatisch
+3. Railway automatically detects `backend/signaling/railway.json`
 
-### 2.3 Service konfigurieren
+### 2.3 Configure Service
 
-Falls nicht automatisch erkannt:
+If not automatically detected:
 1. Service Settings → Source → **Root Directory:** `backend/signaling`
 2. **Start Command:** `node src/server.js`
 
-### 2.4 Environment Variables setzen
+### 2.4 Set Environment Variables
 
 Service → Variables:
 
-| Variable | Wert |
-|----------|------|
+| Variable | Value |
+|----------|-------|
 | `NODE_ENV` | `production` |
 | `PORT` | `${{RAILWAY_PORT}}` |
-| `TURN_SECRET` | `[openssl rand -hex 32 ausführen]` |
+| `TURN_SECRET` | `[run openssl rand -hex 32]` |
 | `CORS_ORIGIN` | `https://neabouli.github.io` |
 
-### 2.5 Domain generieren
+### 2.5 Generate Domain
 
 1. Service → Settings → Networking → "Generate Domain"
-2. URL kopieren: `[name]-production.up.railway.app`
-3. Diese URL ist der Signaling Server!
+2. Copy URL: `[name]-production.up.railway.app`
+3. This URL is the Signaling Server!
 
-### 2.6 Verifizieren
+### 2.6 Verify
 
 ```bash
-curl https://[DEINE-URL].up.railway.app/health
+curl https://[YOUR-URL].up.railway.app/health
 # → {"status":"ok"}
 ```
 
-### Checkliste
+### Checklist
 
-- [ ] Railway Account erstellt
-- [ ] Projekt deployed und läuft (grüner Status)
-- [ ] Environment Variables gesetzt
-- [ ] Health Check antwortet
-- [ ] Railway URL notiert für Android App
+- [ ] Railway Account created
+- [ ] Project deployed and running (green status)
+- [ ] Environment Variables set
+- [ ] Health Check responds
+- [ ] Railway URL noted for Android App
 
-> **Detaillierte Anleitung:** [docs/RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md)
+> **Detailed guide:** [docs/RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md)
 
 ---
 
-## Schritt 3: TURN Server über Metered.ca einrichten
+## Step 3: Set Up TURN Server via Metered.ca
 
-### 3.1 Account erstellen
+### 3.1 Create Account
 
-1. Öffne https://www.metered.ca/signup
-2. Account erstellen (E-Mail + Passwort)
-3. Free Plan wählen (50 GB/Monat)
+1. Open https://www.metered.ca/signup
+2. Create account (email + password)
+3. Choose Free Plan (50 GB/month)
 
-### 3.2 TURN Credentials erhalten
+### 3.2 Get TURN Credentials
 
 1. Dashboard → "TURN Server" Tab
-2. Credentials und URLs notieren:
+2. Note credentials and URLs:
    - `stun:stun.relay.metered.ca:80`
    - `turn:global.relay.metered.ca:80`
    - `turns:global.relay.metered.ca:443?transport=tcp`
    - Username + Credential
 
-### 3.3 Android App URLs updaten
+### 3.3 Update Android App URLs
 
-In `client_android/app/build.gradle` die Release-URLs anpassen:
+In `client_android/app/build.gradle` adjust the release URLs:
 
 ```groovy
 release {
@@ -155,19 +155,19 @@ release {
 }
 ```
 
-### Checkliste
+### Checklist
 
-- [ ] Metered.ca Account erstellt
-- [ ] TURN Credentials erhalten
-- [ ] URLs in build.gradle eingetragen
+- [ ] Metered.ca Account created
+- [ ] TURN Credentials obtained
+- [ ] URLs entered in build.gradle
 
-> **Detaillierte Anleitung:** [docs/TURN_SERVER_SETUP.md](TURN_SERVER_SETUP.md)
+> **Detailed guide:** [docs/TURN_SERVER_SETUP.md](TURN_SERVER_SETUP.md)
 
 ---
 
-## Schritt 4: Release Keystore generieren
+## Step 4: Generate Release Keystore
 
-### 4.1 Keystore erstellen
+### 4.1 Create Keystore
 
 ```bash
 keytool -genkey -v \
@@ -177,47 +177,47 @@ keytool -genkey -v \
     -dname "CN=SecureCall, OU=Mobile, O=StealthX, L=Berlin, ST=Berlin, C=DE"
 ```
 
-> Sichere Passwörter wählen! Generieren: `openssl rand -base64 32`
+> Choose secure passwords! Generate: `openssl rand -base64 32`
 
-### 4.2 Keystore sicher verwahren
+### 4.2 Store Keystore Securely
 
-- **NIEMALS** im Git-Repo committen (`.gitignore` blockiert `*.jks` bereits)
-- Backup in Passwort-Manager (1Password, Bitwarden)
-- Backup auf verschlüsseltem USB-Stick
-- SHA-256 Fingerprint notieren: `keytool -list -v -keystore securecall-release-key.jks`
+- **NEVER** commit to the Git repo (`.gitignore` already blocks `*.jks`)
+- Backup in password manager (1Password, Bitwarden)
+- Backup on encrypted USB drive
+- Note SHA-256 fingerprint: `keytool -list -v -keystore securecall-release-key.jks`
 
-### 4.3 Signing-Variablen setzen
+### 4.3 Set Signing Variables
 
 ```bash
-export SECURECALL_STORE_FILE=/pfad/zu/securecall-release-key.jks
+export SECURECALL_STORE_FILE=/path/to/securecall-release-key.jks
 export SECURECALL_STORE_PASSWORD=[STORE_PASSWORD]
 export SECURECALL_KEY_ALIAS=securecall
 export SECURECALL_KEY_PASSWORD=[KEY_PASSWORD]
 ```
 
-### Checkliste
+### Checklist
 
-- [ ] Keystore generiert
-- [ ] 2+ Backups erstellt (verschiedene Orte)
-- [ ] SHA-256 Fingerprint notiert
-- [ ] Signing-Variablen gesetzt
+- [ ] Keystore generated
+- [ ] 2+ backups created (different locations)
+- [ ] SHA-256 fingerprint noted
+- [ ] Signing variables set
 
 ---
 
-## Schritt 5: Release AABs bauen
+## Step 5: Build Release AABs
 
-### 5.1 Voraussetzungen
+### 5.1 Prerequisites
 
 ```bash
 java -version        # JDK 17+
 rustc --version      # Rust 1.70+
-echo $ANDROID_HOME   # Android SDK Pfad
+echo $ANDROID_HOME   # Android SDK path
 
 # Rust Android Targets
 rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
 ```
 
-### 5.2 Bauen
+### 5.2 Build
 
 ```bash
 cd client_android
@@ -225,67 +225,67 @@ cd client_android
 ./gradlew bundleFreeRelease bundleProRelease bundlePremiumRelease
 ```
 
-Oder: `bash tools/build_release_aabs.sh`
+Or: `bash tools/build_release_aabs.sh`
 
-### 5.3 Prüfen
+### 5.3 Verify
 
 ```bash
 ls -lh app/build/outputs/bundle/*/app-*-release.aab
-# Alle AABs < 15 MB
+# All AABs < 15 MB
 ```
 
-### Checkliste
+### Checklist
 
-- [ ] Clean Build erfolgreich
-- [ ] 3 AABs gebaut (FREE, PRO, PREMIUM)
-- [ ] Alle AABs < 15 MB
+- [ ] Clean build successful
+- [ ] 3 AABs built (FREE, PRO, PREMIUM)
+- [ ] All AABs < 15 MB
 
 ---
 
-## Schritt 6: Manual Testing auf echtem Gerät
+## Step 6: Manual Testing on Real Device
 
-### 6.1 APK installieren
+### 6.1 Install APK
 
 ```bash
 ./gradlew assembleFreeRelease
 adb install app/build/outputs/apk/free/release/app-free-release.apk
 ```
 
-### 6.2 Kritische Tests
+### 6.2 Critical Tests
 
 ```
-[ ] App startet ohne Crash (Cold Start < 3s)
-[ ] WebSocket verbindet zum Railway Server
-[ ] Anruf zwischen 2 Geräten funktioniert
-[ ] Audio beidseitig hörbar und klar
-[ ] "Encrypted" Status wird angezeigt
-[ ] FLAG_SECURE blockiert Screenshots (PRO/PREMIUM)
-[ ] RAM < 150 MB (idle), < 300 MB (Anruf)
-[ ] FREE: 15-Min-Limit + 10-Kontakte-Limit
+[ ] App starts without crash (Cold Start < 3s)
+[ ] WebSocket connects to Railway Server
+[ ] Call between 2 devices works
+[ ] Audio audible on both sides and clear
+[ ] "Encrypted" status is displayed
+[ ] FLAG_SECURE blocks screenshots (PRO/PREMIUM)
+[ ] RAM < 150 MB (idle), < 300 MB (call)
+[ ] FREE: 15-min limit + 10-contact limit
 ```
 
-> **Vollständige QA-Checkliste:** [docs/FINAL_QA_CHECKLIST.md](FINAL_QA_CHECKLIST.md)
+> **Full QA checklist:** [docs/FINAL_QA_CHECKLIST.md](FINAL_QA_CHECKLIST.md)
 
-### Checkliste
+### Checklist
 
-- [ ] APK auf Gerät installiert
-- [ ] Alle kritischen Tests bestanden
-- [ ] Kein Crash in Logcat
+- [ ] APK installed on device
+- [ ] All critical tests passed
+- [ ] No crash in Logcat
 
 ---
 
-## Schritt 7: Google Play Developer Account
+## Step 7: Google Play Developer Account
 
-### 7.1 Account erstellen
+### 7.1 Create Account
 
-1. Öffne https://play.google.com/console/signup
-2. Google-Account einloggen
-3. **25 EUR** Registrierungsgebühr bezahlen (einmalig)
-4. Identitätsverifizierung abschließen (kann 2-7 Tage dauern)
+1. Open https://play.google.com/console/signup
+2. Log in with Google Account
+3. Pay **25 EUR** registration fee (one-time)
+4. Complete identity verification (may take 2-7 days)
 
-> **Tipp:** Diesen Schritt früh starten wegen Wartezeit!
+> **Tip:** Start this step early due to wait time!
 
-### 7.2 Account konfigurieren
+### 7.2 Configure Account
 
 ```
 1. Play Console → Settings → Developer account
@@ -294,43 +294,43 @@ adb install app/build/outputs/apk/free/release/app-free-release.apk
 4. Support: https://github.com/NeaBouli/stealth/issues
 ```
 
-### Checkliste
+### Checklist
 
-- [ ] Account erstellt und 25 EUR bezahlt
-- [ ] Identitätsverifizierung abgeschlossen
-- [ ] Website und Privacy Policy URLs eingetragen
+- [ ] Account created and 25 EUR paid
+- [ ] Identity verification completed
+- [ ] Website and Privacy Policy URLs entered
 
 ---
 
-## Schritt 8: Play Console einrichten
+## Step 8: Set Up Play Console
 
-### 8.1 App erstellen
+### 8.1 Create App
 
 ```
 1. Play Console → "Create app"
 2. App name: "SecureCall"
 3. Default language: German (de-DE)
 4. Free or paid: Free
-5. Declarations bestätigen → "Create app"
+5. Confirm declarations → "Create app"
 ```
 
-### 8.2 Store Listing ausfüllen
+### 8.2 Fill In Store Listing
 
-Texte aus `marketing/play_store/de/` und `marketing/play_store/en/`:
+Texts from `marketing/play_store/de/` and `marketing/play_store/en/`:
 
-| Feld | Quelle |
-|------|--------|
+| Field | Source |
+|-------|--------|
 | App name | `title.txt` |
 | Short description | `short_description.txt` |
 | Full description | `full_description.txt` |
-| App icon | `logo.png` (512x512 Version erstellen) |
-| Feature graphic | 1024x500 PNG (muss erstellt werden) |
-| Screenshots | Mind. 2 Phone-Screenshots (1080x1920) |
+| App icon | `logo.png` (create 512x512 version) |
+| Feature graphic | 1024x500 PNG (must be created) |
+| Screenshots | Min. 2 phone screenshots (1080x1920) |
 
 ### 8.3 Content Rating + Data Safety
 
 ```
-Content Rating: PEGI 3 (Communication, keine Gewalt/Sprache)
+Content Rating: PEGI 3 (Communication, no violence/language)
 
 Data Safety:
 - Encryption: Yes, all data in transit
@@ -344,142 +344,142 @@ Data Safety:
 
 ```
 1. Setup → App signing
-2. "Use Google-generated key" (empfohlen)
+2. "Use Google-generated key" (recommended)
 3. Upload Key: keytool -export -keystore securecall-release-key.jks -alias securecall -rfc > upload_cert.pem
-4. upload_cert.pem hochladen
+4. Upload upload_cert.pem
 ```
 
-### Checkliste
+### Checklist
 
-- [ ] App erstellt in Play Console
-- [ ] Store Listing komplett (DE + EN)
-- [ ] App Icon + Screenshots hochgeladen
-- [ ] Content Rating ausgefüllt
-- [ ] Data Safety ausgefüllt
-- [ ] App Signing konfiguriert
+- [ ] App created in Play Console
+- [ ] Store Listing complete (DE + EN)
+- [ ] App Icon + Screenshots uploaded
+- [ ] Content Rating filled in
+- [ ] Data Safety filled in
+- [ ] App Signing configured
 
 ---
 
-## Schritt 9: Internal Testing + Beta
+## Step 9: Internal Testing + Beta
 
 ### 9.1 Internal Testing
 
 ```
 1. Play Console → Testing → Internal testing
-2. "Create new release" → AAB hochladen
-3. Tester-Liste erstellen (eigene E-Mail)
+2. "Create new release" → Upload AAB
+3. Create tester list (own email)
 4. "Start rollout to Internal testing"
-5. Opt-in Link öffnen → App aus Play Store installieren
+5. Open opt-in link → Install app from Play Store
 ```
 
-### 9.2 Closed Beta (2-3 Wochen)
+### 9.2 Closed Beta (2-3 weeks)
 
 ```
 1. Testing → Closed testing → "Create new release"
-2. AAB hochladen
-3. 10-20 Tester einladen
-4. Feedback sammeln über GitHub Issues
-5. Bugs fixen, Update-AAB hochladen
+2. Upload AAB
+3. Invite 10-20 testers
+4. Collect feedback via GitHub Issues
+5. Fix bugs, upload update AAB
 ```
 
-### Exit-Kriterien (Beta → Production)
+### Exit Criteria (Beta → Production)
 
-| Kriterium | Ziel |
-|-----------|------|
-| Crash-free Rate | > 99,5% |
-| Kritische Bugs | 0 |
-| Audio-Qualität | ≥ 4/5 |
-| Tester mit erfolgreichem Anruf | > 80% |
+| Criterion | Target |
+|-----------|--------|
+| Crash-free Rate | > 99.5% |
+| Critical Bugs | 0 |
+| Audio Quality | >= 4/5 |
+| Testers with successful call | > 80% |
 
-### Checkliste
+### Checklist
 
-- [ ] Internal Testing bestanden
-- [ ] 10-20 Beta-Tester aktiv
-- [ ] Feedback eingearbeitet
-- [ ] Exit-Kriterien erfüllt
+- [ ] Internal Testing passed
+- [ ] 10-20 beta testers active
+- [ ] Feedback incorporated
+- [ ] Exit criteria met
 
 ---
 
-## Schritt 10: Production Release
+## Step 10: Production Release
 
 ### 10.1 Pre-Release
 
 ```
-[ ] Version in build.gradle erhöht (versionCode 3, versionName "1.0")
+[ ] Version in build.gradle incremented (versionCode 3, versionName "1.0")
 [ ] Git Tag: git tag -a v1.0 -m "v1.0 Production" && git push origin v1.0
-[ ] Clean Build aller 3 AABs
-[ ] Railway Server stabil (Health Check OK)
+[ ] Clean Build of all 3 AABs
+[ ] Railway Server stable (Health Check OK)
 ```
 
 ### 10.2 Staged Rollout
 
 ```
 1. Play Console → Production → "Create new release"
-2. AAB hochladen → Release Notes eintragen
+2. Upload AAB → Enter release notes
 3. "Start rollout to Production" → 5%
-4. 2 Tage warten → Crash-Rate prüfen
-5. 10% → 25% → 50% → 100% (je 2 Tage)
+4. Wait 2 days → Check crash rate
+5. 10% → 25% → 50% → 100% (2 days each)
 ```
 
-**Rollout stoppen bei:** Crash-Rate > 1% oder kritische Bugs
+**Stop rollout if:** Crash rate > 1% or critical bugs
 
-### Checkliste
+### Checklist
 
-- [ ] Production Release mit 5% Rollout gestartet
-- [ ] Crash-Rate nach 48h geprüft (< 1%)
-- [ ] Rollout schrittweise auf 100% erhöht
-- [ ] App live im Play Store
+- [ ] Production Release started with 5% rollout
+- [ ] Crash rate checked after 48h (< 1%)
+- [ ] Rollout gradually increased to 100%
+- [ ] App live in Play Store
 
 ---
 
-## Schritt 11: Post-Launch
+## Step 11: Post-Launch
 
 ### Monitoring
 
 - **Play Console:** Android Vitals → Crash Rate, ANR Rate
 - **Railway:** Dashboard → Logs, Metrics
-- **Metered.ca:** Dashboard → Usage (50 GB Limit)
+- **Metered.ca:** Dashboard → Usage (50 GB limit)
 
 ### Support
 
 - **GitHub Issues:** https://github.com/NeaBouli/stealth/issues
-- **Play Store Reviews:** Innerhalb 24h antworten
+- **Play Store Reviews:** Respond within 24h
 
 ### Marketing
 
 ```
-Priorität 1 (Launch Day):
-- Reddit: r/privacy, r/Android (verteilt über 3-5 Tage)
-- Twitter/X: Launch-Post
+Priority 1 (Launch Day):
+- Reddit: r/privacy, r/Android (spread over 3-5 days)
+- Twitter/X: Launch post
 
-Priorität 2 (Woche 1-2):
-- Hacker News: "Show HN" Post
+Priority 2 (Week 1-2):
+- Hacker News: "Show HN" post
 - Product Hunt Launch
-- GitHub README mit Badges
+- GitHub README with badges
 
-Priorität 3 (Monat 1):
-- Deutsche Tech-Medien: Heise, Golem, t3n, Kuketz Blog
+Priority 3 (Month 1):
+- German tech media: Heise, Golem, t3n, Kuketz Blog
 - YouTube: Techlore, The Hated One
 ```
 
-### Monat-1-Ziele
+### Month 1 Goals
 
-| Metrik | Ziel |
-|--------|------|
-| Downloads | 1.000+ |
-| Rating | ≥ 4,0 Sterne |
+| Metric | Target |
+|--------|--------|
+| Downloads | 1,000+ |
+| Rating | >= 4.0 stars |
 | GitHub Stars | 500+ |
-| Crash-free Rate | > 99,5% |
+| Crash-free Rate | > 99.5% |
 
 ---
 
-## Schritt 12: GitHub Wiki aktivieren
+## Step 12: Enable GitHub Wiki
 
-1. Repository Settings → Features → **Wikis** aktivieren
-2. Wiki-Seiten aus `docs/WIKI/` kopieren (13 Seiten)
-3. Detaillierte Anleitung: [docs/ENABLE_WIKI.md](ENABLE_WIKI.md)
+1. Repository Settings → Features → Enable **Wikis**
+2. Copy wiki pages from `docs/WIKI/` (13 pages)
+3. Detailed guide: [docs/ENABLE_WIKI.md](ENABLE_WIKI.md)
 
-Schnellste Methode via Git:
+Fastest method via Git:
 ```bash
 git clone https://github.com/NeaBouli/stealth.wiki.git
 cp docs/WIKI/*.md stealth.wiki/
@@ -488,29 +488,29 @@ cd stealth.wiki && git add . && git commit -m "Add documentation" && git push
 
 ---
 
-## Gesamte Launch-Checkliste
+## Complete Launch Checklist
 
-### Infrastruktur (0 EUR)
-- [ ] GitHub Pages aktiviert und Website live
+### Infrastructure (0 EUR)
+- [ ] GitHub Pages enabled and website live
 - [ ] Railway.app Signaling Server deployed
-- [ ] Metered.ca TURN Server eingerichtet
+- [ ] Metered.ca TURN Server set up
 - [ ] Health Check OK
 
 ### App Build
-- [ ] Keystore generiert und sicher verwahrt
-- [ ] Release URLs in build.gradle eingetragen
-- [ ] 3 AABs gebaut und getestet
-- [ ] APK auf echtem Gerät getestet
+- [ ] Keystore generated and stored securely
+- [ ] Release URLs entered in build.gradle
+- [ ] 3 AABs built and tested
+- [ ] APK tested on real device
 
 ### Google Play (25 EUR)
-- [ ] Developer Account erstellt
-- [ ] App angelegt mit Store Listing
-- [ ] Internal Testing bestanden
-- [ ] Beta Testing abgeschlossen
+- [ ] Developer Account created
+- [ ] App created with Store Listing
+- [ ] Internal Testing passed
+- [ ] Beta Testing completed
 - [ ] Production Release live
 
 ### Post-Launch
-- [ ] Monitoring aktiv (Play Console + Railway)
-- [ ] GitHub Wiki mit 13 Dokumentationsseiten
-- [ ] Marketing-Posts veröffentlicht
-- [ ] GitHub Issues als Support-Kanal aktiv
+- [ ] Monitoring active (Play Console + Railway)
+- [ ] GitHub Wiki with 13 documentation pages
+- [ ] Marketing posts published
+- [ ] GitHub Issues active as support channel

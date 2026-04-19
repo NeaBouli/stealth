@@ -1,20 +1,20 @@
 # Backend Production Deployment Guide
 
-## Railway.app Setup (5 Minuten)
+## Railway.app Setup (5 Minutes)
 
-### 1. Account erstellen
-- Gehe zu: https://railway.app
-- Login mit GitHub Account (empfohlen)
-- Keine Kreditkarte noetig fuer GRATIS Tier
+### 1. Create Account
+- Go to: https://railway.app
+- Log in with GitHub account (recommended)
+- No credit card required for FREE tier
 
-### 2. Neues Projekt erstellen
+### 2. Create New Project
 - Click: "New Project"
-- Waehle: "Deploy from GitHub repo"
-- Suche: "NeaBouli/stealth"
+- Select: "Deploy from GitHub repo"
+- Search: "NeaBouli/stealth"
 - Select: backend/signaling Directory
-- Railway erkennt automatisch Node.js
+- Railway automatically detects Node.js
 
-### 3. Environment Variables setzen
+### 3. Set Environment Variables
 
 In Railway Dashboard -> Variables Tab:
 
@@ -23,67 +23,67 @@ NODE_ENV=production
 PORT=8080
 STUN_URL=stun:stun.l.google.com:19302
 TURN_URL=turn:a.relay.metered.ca:443?transport=tcp
-TURN_USER=[SIEHE METERED.CA UNTEN]
-TURN_PASS=[SIEHE METERED.CA UNTEN]
-ADMIN_API_KEY=[GENERIERE RANDOM STRING]
+TURN_USER=[SEE METERED.CA BELOW]
+TURN_PASS=[SEE METERED.CA BELOW]
+ADMIN_API_KEY=[GENERATE RANDOM STRING]
 ```
 
-ADMIN_API_KEY generieren:
+Generate ADMIN_API_KEY:
 ```bash
 openssl rand -base64 32
 ```
 
-### 4. Domain notieren
+### 4. Note the Domain
 
-Nach Deploy zeigt Railway eine URL:
+After deployment, Railway shows a URL:
 ```
-https://[dein-app-name].up.railway.app
+https://[your-app-name].up.railway.app
 ```
 
-Notiere diese URL! Format:
+Note this URL! Format:
 - REST API: `https://[app].up.railway.app`
 - WebSocket: `wss://[app].up.railway.app/signal`
 
-### 5. Deployment testen
+### 5. Test Deployment
 
 ```bash
 # Health Check
-curl https://[dein-app-name].up.railway.app/health
+curl https://[your-app-name].up.railway.app/health
 
-# Sollte zurueckgeben:
+# Should return:
 # {"status":"ok","uptime":123,"timestamp":"2026-02-19..."}
 ```
 
 ---
 
-## Metered.ca TURN Server Setup (3 Minuten)
+## Metered.ca TURN Server Setup (3 Minutes)
 
-### 1. Account erstellen
-- Gehe zu: https://www.metered.ca/stun-turn
-- Sign up (Email + Passwort)
-- GRATIS: 50 GB/Monat
+### 1. Create Account
+- Go to: https://www.metered.ca/stun-turn
+- Sign up (Email + Password)
+- FREE: 50 GB/month
 
-### 2. Credentials holen
+### 2. Get Credentials
 
-Nach Login -> Dashboard:
+After login -> Dashboard:
 ```
 TURN Server: a.relay.metered.ca:443
-Username: [DEIN_USERNAME]
-Credential: [DEIN_PASSWORD]
+Username: [YOUR_USERNAME]
+Credential: [YOUR_PASSWORD]
 ```
 
-### 3. In Railway.app setzen
+### 3. Set in Railway.app
 
-Zurueck zu Railway -> Variables:
+Back to Railway -> Variables:
 ```
 TURN_URL=turn:a.relay.metered.ca:443?transport=tcp
-TURN_USER=[USERNAME von Metered]
-TURN_PASS=[CREDENTIAL von Metered]
+TURN_USER=[USERNAME from Metered]
+TURN_PASS=[CREDENTIAL from Metered]
 ```
 
-Click "Redeploy" nach Aenderungen.
+Click "Redeploy" after changes.
 
-### 4. TURN Server testen
+### 4. Test TURN Server
 
 ```bash
 # Install turnutils (macOS)
@@ -98,11 +98,11 @@ turnutils_uclient -v \
 
 ---
 
-## Android App konfigurieren
+## Configure Android App
 
 ### 1. Update build.gradle
 
-In `client_android/app/build.gradle`, BuildConfig fuer Release:
+In `client_android/app/build.gradle`, BuildConfig for Release:
 ```gradle
 buildTypes {
     release {
@@ -125,14 +125,14 @@ cd client_android
 ## Monitoring & Logs
 
 ### Railway Dashboard
-- Logs in Echtzeit: Railway Dashboard -> Deployments -> Logs
-- Metriken: CPU, RAM, Network Usage
+- Real-time logs: Railway Dashboard -> Deployments -> Logs
+- Metrics: CPU, RAM, Network Usage
 - Restart: Deployments -> ... -> Restart
 
 ### Health Checks
-- Setup UptimeRobot (GRATIS): https://uptimerobot.com
+- Set up UptimeRobot (FREE): https://uptimerobot.com
 - Monitor URL: `https://[app].up.railway.app/health`
-- Alert via Email bei Downtime
+- Email alert on downtime
 
 ### Metrics Endpoint
 ```bash
@@ -142,21 +142,21 @@ curl https://[app].up.railway.app/metrics
 
 ---
 
-## Kosten
+## Costs
 
 **Railway.app FREE Tier:**
-- 500 Stunden/Monat (~20 Tage 24/7)
+- 500 hours/month (~20 days 24/7)
 - 512 MB RAM
 - 1 GB Disk
 - Unlimited Deployments
 
 **Metered.ca FREE Tier:**
-- 50 GB TURN Traffic/Monat
-- ~500-1000 Anrufe/Monat
+- 50 GB TURN traffic/month
+- ~500-1000 calls/month
 
-**TOTAL: 0 EUR/Monat fuer Testing & erste User**
+**TOTAL: EUR 0/month for testing & initial users**
 
-## Upgrade spaeter (bei Erfolg)
+## Upgrade Later (on success)
 
-- Railway.app Hobby Plan: $5/Monat (unlimited Stunden)
-- Metered.ca Pro: $29/Monat (500 GB)
+- Railway.app Hobby Plan: $5/month (unlimited hours)
+- Metered.ca Pro: $29/month (500 GB)

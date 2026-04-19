@@ -1,88 +1,88 @@
-# SecureCall — Railway.app Deployment (Gratis)
+# SecureCall — Railway.app Deployment (Free)
 
-> Deploy des Signaling Servers auf Railway.app — 0 EUR/Monat im Free Tier.
+> Deploy the Signaling Server on Railway.app — 0 EUR/month on the Free Tier.
 
-## Kosten
+## Costs
 
-| Plan | Preis | Limits |
+| Plan | Price | Limits |
 |------|-------|--------|
 | **Trial** | $0 | $5 Credit, 500h Execution, 512 MB RAM |
-| Hobby | $5/Monat | $5 Credit inkl., 8 GB RAM, keine Sleep |
+| Hobby | $5/month | $5 Credit incl., 8 GB RAM, no sleep |
 
-> Der Trial-Plan reicht zum Starten. Upgrade auf Hobby ($5/mo) wenn der Trial aufgebraucht ist.
+> The Trial plan is sufficient to get started. Upgrade to Hobby ($5/mo) when the Trial is used up.
 
 ---
 
-## Schritt 1: Railway Account erstellen
+## Step 1: Create Railway Account
 
-1. Öffne https://railway.com
-2. "Start a New Project" klicken
-3. Mit **GitHub** einloggen (NeaBouli Account)
-4. GitHub-Zugriff autorisieren
+1. Open https://railway.com
+2. Click "Start a New Project"
+3. Log in with **GitHub** (NeaBouli Account)
+4. Authorize GitHub access
 
-## Schritt 2: Neues Projekt erstellen
+## Step 2: Create New Project
 
 1. Dashboard → "New Project"
-2. "Deploy from GitHub repo" wählen
+2. Select "Deploy from GitHub repo"
 3. Repository: `NeaBouli/stealth`
-4. "Add Service" klicken
+4. Click "Add Service"
 
-## Schritt 3: Service konfigurieren
+## Step 3: Configure Service
 
-Railway erkennt automatisch die `railway.json` im `backend/signaling/` Verzeichnis.
+Railway automatically detects the `railway.json` in the `backend/signaling/` directory.
 
-**Falls nicht automatisch erkannt — manuell konfigurieren:**
+**If not automatically detected — configure manually:**
 
 1. Service Settings → Source
 2. **Root Directory:** `backend/signaling`
 3. **Build Command:** `npm ci --production`
 4. **Start Command:** `node src/server.js`
 
-## Schritt 4: Environment Variables setzen
+## Step 4: Set Environment Variables
 
 Service → Variables → "New Variable":
 
-| Variable | Wert | Beschreibung |
-|----------|------|--------------|
-| `NODE_ENV` | `production` | Production-Modus |
-| `PORT` | `${{RAILWAY_PORT}}` | Automatisch von Railway |
-| `TURN_SECRET` | `[generieren]` | `openssl rand -hex 32` lokal ausführen |
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `NODE_ENV` | `production` | Production mode |
+| `PORT` | `${{RAILWAY_PORT}}` | Automatically set by Railway |
+| `TURN_SECRET` | `[generate]` | Run `openssl rand -hex 32` locally |
 | `CORS_ORIGIN` | `https://neabouli.github.io` | GitHub Pages Domain |
 
-> Railway setzt `PORT` automatisch. Die App muss auf `process.env.PORT` hören.
+> Railway sets `PORT` automatically. The app must listen on `process.env.PORT`.
 
-## Schritt 5: Deploy starten
+## Step 5: Start Deploy
 
-1. "Deploy" klicken — Railway baut und startet den Server
-2. Build-Logs beobachten (dauert ~1-2 Minuten)
-3. Nach erfolgreichem Deploy: grüner Status
+1. Click "Deploy" — Railway builds and starts the server
+2. Watch build logs (takes ~1-2 minutes)
+3. After successful deploy: green status
 
-## Schritt 6: Public Domain aktivieren
+## Step 6: Enable Public Domain
 
 1. Service → Settings → Networking
-2. "Generate Domain" klicken
-3. Railway generiert eine URL wie: `securecall-signaling-production.up.railway.app`
-4. Diese URL kopieren — wird für die Android App benötigt
+2. Click "Generate Domain"
+3. Railway generates a URL like: `securecall-signaling-production.up.railway.app`
+4. Copy this URL — it is needed for the Android App
 
 **Custom Domain (optional):**
-1. "Add Custom Domain" → `signal.securecall.app` eingeben
-2. DNS CNAME Record setzen: `signal.securecall.app → [railway-domain].up.railway.app`
+1. "Add Custom Domain" → enter `signal.securecall.app`
+2. Set DNS CNAME Record: `signal.securecall.app → [railway-domain].up.railway.app`
 
-## Schritt 7: Health Check verifizieren
+## Step 7: Verify Health Check
 
 ```bash
-curl https://[DEINE-RAILWAY-URL].up.railway.app/health
-# Erwartete Antwort: {"status":"ok"}
+curl https://[YOUR-RAILWAY-URL].up.railway.app/health
+# Expected response: {"status":"ok"}
 ```
 
-## Schritt 8: Android App URLs updaten
+## Step 8: Update Android App URLs
 
-In `client_android/app/build.gradle` die Release-URL anpassen:
+In `client_android/app/build.gradle` adjust the release URL:
 
 ```groovy
 release {
     buildConfigField "String", "SIGNAL_WS_URL",
-        "\"wss://[DEINE-RAILWAY-URL].up.railway.app/signal\""
+        "\"wss://[YOUR-RAILWAY-URL].up.railway.app/signal\""
 }
 ```
 
@@ -90,40 +90,40 @@ release {
 
 ## Monitoring
 
-- **Dashboard:** https://railway.com/dashboard → Projekt → Service
-- **Logs:** Service → Logs (Echtzeit-Logs)
-- **Metrics:** Service → Metrics (CPU, RAM, Netzwerk)
-- **Alerts:** Settings → Notifications (E-Mail bei Fehler)
+- **Dashboard:** https://railway.com/dashboard → Project → Service
+- **Logs:** Service → Logs (real-time logs)
+- **Metrics:** Service → Metrics (CPU, RAM, network)
+- **Alerts:** Settings → Notifications (email on error)
 
 ## Troubleshooting
 
-### Server startet nicht
+### Server does not start
 ```
-Service → Deployments → Letztes Deployment → Build Logs prüfen
+Service → Deployments → Last Deployment → Check Build Logs
 ```
-Häufige Ursachen:
-- `package.json` fehlt im Root Directory
-- Node.js Version zu alt (≥18 benötigt)
-- Environment Variables fehlen
+Common causes:
+- `package.json` missing in Root Directory
+- Node.js version too old (≥18 required)
+- Environment Variables missing
 
-### WebSocket Verbindung schlägt fehl
-- Prüfe ob CORS_ORIGIN korrekt gesetzt ist
-- Railway unterstützt WebSocket nativ — kein Extra-Setup nötig
-- URL muss `wss://` verwenden (nicht `ws://`)
+### WebSocket connection fails
+- Check if CORS_ORIGIN is set correctly
+- Railway supports WebSocket natively — no extra setup needed
+- URL must use `wss://` (not `ws://`)
 
-### Service schläft ein (Trial Plan)
-- Trial-Plan hat 500h/Monat Execution Time
-- Bei Inaktivität schläft der Service nach ~15 Minuten ein
-- Erster Request nach Sleep dauert ~5-10 Sekunden (Cold Start)
-- Upgrade auf Hobby ($5/mo) für 24/7 Betrieb
+### Service goes to sleep (Trial Plan)
+- Trial plan has 500h/month execution time
+- Service goes to sleep after ~15 minutes of inactivity
+- First request after sleep takes ~5-10 seconds (cold start)
+- Upgrade to Hobby ($5/mo) for 24/7 operation
 
 ---
 
-## Kosten-Vergleich
+## Cost Comparison
 
-| Option | Kosten | Uptime |
-|--------|--------|--------|
-| **Railway Trial** | $0/mo | ~500h, Cold Starts |
-| Railway Hobby | $5/mo | 24/7, kein Sleep |
-| Hetzner VPS | €4.35/mo | 24/7, Self-Managed |
-| DigitalOcean | $6/mo | 24/7, Self-Managed |
+| Option | Cost | Uptime |
+|--------|------|--------|
+| **Railway Trial** | $0/mo | ~500h, cold starts |
+| Railway Hobby | $5/mo | 24/7, no sleep |
+| Hetzner VPS | €4.35/mo | 24/7, self-managed |
+| DigitalOcean | $6/mo | 24/7, self-managed |

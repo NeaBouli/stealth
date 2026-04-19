@@ -1,53 +1,53 @@
 SecureCall Signaling Server
 
-BACKEND-19 – Session Cleanup (automatische Loeschung alter Sitzungen)
+BACKEND-19 – Session Cleanup (automatic deletion of expired sessions)
 
-Dieses Update fuehrt ein serverseitiges Bereinigungsmodul ein, das beendete
-Calls automatisch aus der Session Registry entfernt. Damit bleibt der
-Speicherverbrauch stabil, und es sammeln sich keine alten, nicht mehr
-relevanten Sitzungen an. Das Cleanup laeuft regelmaessig im Hintergrund und
-loescht abgeschlossene oder fehlgeschlagene Anrufe nach 60 Sekunden.
-
--------------------------------------------------------------------------------
-1. Zweck der Session Cleanup Funktion
--------------------------------------------------------------------------------
-
-Ohne Bereinigung koennten sich folgende Probleme ergeben:
-
-- "leere" oder abgebrochene Sessions bleiben ewig gespeichert
-- steigender Speicherverbrauch
-- ungenaue Statistik
-- fehlerhafte Call-Historie fuer spaetere Module
-- inkonsistente Logs
-
-Durch BACKEND-19 wird der Speicher sauber gehalten.
+This update introduces a server-side cleanup module that automatically removes
+completed calls from the Session Registry. This keeps memory usage stable and
+prevents old, no longer relevant sessions from accumulating. The cleanup runs
+periodically in the background and deletes completed or failed calls after
+60 seconds.
 
 -------------------------------------------------------------------------------
-2. Funktionsweise (session_registry.js)
+1. Purpose of the Session Cleanup Function
 -------------------------------------------------------------------------------
 
-Jede Session besitzt:
+Without cleanup, the following problems could arise:
+
+- "empty" or aborted sessions remain stored indefinitely
+- increasing memory usage
+- inaccurate statistics
+- faulty call history for later modules
+- inconsistent logs
+
+BACKEND-19 keeps the memory clean.
+
+-------------------------------------------------------------------------------
+2. How It Works (session_registry.js)
+-------------------------------------------------------------------------------
+
+Each session has:
 - sessionId
 - caller
 - callee
 - state
 - createdAt
 - updatedAt
-- endedAt (nur fuer ENDED/FAILED)
+- endedAt (only for ENDED/FAILED)
 
-Die neue Funktion cleanupSessions():
+The new function cleanupSessions():
 
-- iteriert durch alle Sessions
-- sucht ENDED oder FAILED
-- prueft, ob endedAt aelter als 60000 ms ist
-- entfernt die Session aus der Registry
-- gibt eine Liste geloeschter sessionIds zurueck
+- iterates through all sessions
+- looks for ENDED or FAILED
+- checks whether endedAt is older than 60000 ms
+- removes the session from the registry
+- returns a list of deleted sessionIds
 
 -------------------------------------------------------------------------------
-3. Integration in server.js
+3. Integration into server.js
 -------------------------------------------------------------------------------
 
-Ein neuer Timer fuehrt alle 30 Sekunden ein Session-Cleanup aus:
+A new timer runs a session cleanup every 30 seconds:
 
 setInterval(() => {
   const removed = registry.cleanupSessions();
@@ -56,59 +56,59 @@ setInterval(() => {
   }
 }, 30000);
 
-Broadcast Beispiel:
+Broadcast example:
 
 {
   "type": "SESSION_CLEANUP",
   "removed": ["session-abc", "session-def"]
 }
 
-Dies informiert alle verbundenen Clients ueber geloeschte Sessions.
+This informs all connected clients about deleted sessions.
 
 -------------------------------------------------------------------------------
-4. Vorteile fuer das Gesamtsystem
+4. Benefits for the Overall System
 -------------------------------------------------------------------------------
 
-- Stabiler RAM-Verbrauch
-- Keine veralteten Sessions mehr
-- Genauere Call-Datenbasis
-- Voraussetzung fuer spaetere Call-Historie-APIs
-- Bessere Debug- und Analyse-Moeglichkeiten
-- Kompatibel mit allen CALL_* Events aus BACKEND-18
+- Stable RAM usage
+- No more stale sessions
+- More accurate call database
+- Prerequisite for future call history APIs
+- Better debugging and analysis capabilities
+- Compatible with all CALL_* events from BACKEND-18
 
 -------------------------------------------------------------------------------
 5. Status BACKEND-19
 -------------------------------------------------------------------------------
 
-- session_registry.js erweitert
-- server.js Cleanup-Loop integriert
-- Broadcast-Nachricht SESSION_CLEANUP implementiert
-- Logging konsistent gehalten
-- keine Breaking Changes
+- session_registry.js extended
+- server.js cleanup loop integrated
+- Broadcast message SESSION_CLEANUP implemented
+- Logging kept consistent
+- No breaking changes
 
 -------------------------------------------------------------------------------
-6. Naechster Schritt
+6. Next Step
 -------------------------------------------------------------------------------
 
-BACKEND-20: Call Routing Layer (Mapping von Session → GhostNet Pfad)
+BACKEND-20: Call Routing Layer (Mapping of Session → GhostNet path)
 
 
 ---
 
 # BACKEND-20 — Routing Layer (Sessions + Call States)
 
-Dieses Modul erweitert das Signaling-System um:
-- Session-Tracking
-- Routing-Tabelle
+This module extends the signaling system with:
+- Session tracking
+- Routing table
 - Call Lifecycle (INVITE → RINGING → ACCEPTED → ACTIVE → ENDED)
-- Validierung eingehender Nachrichten
-- einfache Websocket-basierte Steuerung
+- Validation of incoming messages
+- Simple WebSocket-based control
 
-## 1. Routing-Tabelle (In-Memory)
+## 1. Routing Table (In-Memory)
 
-Die Routing-Tabelle befindet sich im Speicher des Signaling-Servers.
+The routing table resides in the signaling server's memory.
 
-Struktur (Beispiel):
+Structure (example):
 
 ```json
 {
@@ -118,13 +118,13 @@ Struktur (Beispiel):
   "state": "ACTIVE",
   "created": 1731931274000
 }
-Möglich Zustände:
-State	Bedeutung
-INVITE	A möchte B anrufen
-RINGING	B wurde benachrichtigt
-ACCEPTED	B hat angenommen, GhostNet wird aufgebaut
-ACTIVE	Call läuft
-ENDED	Gespräch beendet, Session zur Löschung markiert
+Possible states:
+State	Meaning
+INVITE	A wants to call B
+RINGING	B has been notified
+ACCEPTED	B accepted, GhostNet is being established
+ACTIVE	Call is in progress
+ENDED	Call ended, session marked for deletion
 
 2. Call Lifecycle (State Machine)
 objectivec
@@ -137,8 +137,8 @@ ACCEPTED
     ↓ (GhostNet ready)
 ACTIVE
     ↓ (CALL_END)
-ENDED  → Session wird gelöscht
-3. WebSocket-Kommandos (MVP)
+ENDED  → Session is deleted
+3. WebSocket Commands (MVP)
 CALL_INVITE
 json
 Code kopieren
@@ -160,14 +160,14 @@ Code kopieren
   "type": "CALL_END",
   "sessionId": "..."
 }
-Der Server validiert alle Eingaben und passt Routing + State Machine an.
+The server validates all inputs and updates routing + state machine accordingly.
 
-4. REST-Endpunkte (Debug)
-Liste aller aktiven Routen
+4. REST Endpoints (Debug)
+List of all active routes
 bash
 Code kopieren
 GET /routing/list
-Beispielausgabe:
+Example output:
 
 json
 Code kopieren
@@ -181,58 +181,58 @@ Code kopieren
     }
   ]
 }
-5. Tools (für Tests)
+5. Tools (for testing)
 flooding-test.sh
-Testet Last auf /signal.
+Tests load on /signal.
 
 burst.sh
-Schickt schnelle Push-Nachrichten.
+Sends rapid push messages.
 
-routing-test.sh (neu, BACKEND-20)
-Testet:
+routing-test.sh (new, BACKEND-20)
+Tests:
 
 CALL_INVITE
 
 CALL_ACCEPT
 
-Routing-Liste
+Routing list
 
 CALL_END
 
-6. Nächste Schritte (BACKEND-21)
+6. Next Steps (BACKEND-21)
 Heartbeats & WS-Ping
 
-Idle-Timeout für Sessions
+Idle timeout for sessions
 
-Auto-Cleanup abgelaufener Routen
+Auto-cleanup of expired routes
 
-GhostNet-Pre-Handshake vorbereiten
+Prepare GhostNet pre-handshake
 
 
 ---
 
-# BACKEND-21 — Heartbeat, Ping-Pong & Session-Timeout
+# BACKEND-21 — Heartbeat, Ping-Pong & Session Timeout
 
-Dieses Modul erweitert das Signaling-System um:
+This module extends the signaling system with:
 
 - WebSocket Heartbeat (Ping/Pong)
-- automatische Erkennung toter Clients
-- automatisches Aufräumen alter Sessions
-- Aktualisierung von Timestamp-Feldern für Clients & Sessions
+- Automatic detection of dead clients
+- Automatic cleanup of old sessions
+- Updating timestamp fields for clients & sessions
 
 ## 1. Heartbeat (Ping/Pong)
 
-Der Server sendet alle **5 Sekunden** einen Ping an alle WebSocket-Clients.
+The server sends a ping to all WebSocket clients every **5 seconds**.
 
-Jeder Client muss darauf mit **Pong** antworten.
+Each client must respond with a **Pong**.
 
-Wenn ein Client **> 30 Sekunden** nicht mehr reagiert:
-- Verbindung wird geschlossen
-- Client wird aus der Registry gelöscht
+If a client does not respond for **> 30 seconds**:
+- The connection is closed
+- The client is removed from the registry
 
-## 2. Client-Tracking
+## 2. Client Tracking
 
-In `server.js` wird eine Client-Map geführt:
+A client map is maintained in `server.js`:
 
 clients = {
 "<client-id>": {
@@ -244,17 +244,17 @@ lastSeen: <timestamp>
 markdown
 Code kopieren
 
-`lastSeen` wird aktualisiert:
-- bei jeder Nachricht
-- bei jedem Pong
+`lastSeen` is updated:
+- on every message
+- on every pong
 
-## 3. Session-Timeout
+## 3. Session Timeout
 
-Die Routing-Tabelle erhält ein Feld `updated`.
+The routing table receives an `updated` field.
 
-Wenn keine Aktion mehr erfolgt, wird eine Session nach **30 Sekunden** gelöscht.
+If no further action occurs, a session is deleted after **30 seconds**.
 
-Session-Struktur:
+Session structure:
 
 {
 sessionId,
@@ -268,33 +268,32 @@ updated
 makefile
 Code kopieren
 
-Die Cleanup-Logik erfolgt in `heartbeat.js`.
+The cleanup logic resides in `heartbeat.js`.
 
-## 4. Debug-API
+## 4. Debug API
 
-Endpunkt:
+Endpoint:
 
 GET /routing/list
 
 markdown
 Code kopieren
 
-Listet alle aktiven Sessions auf.
+Lists all active sessions.
 
-Sessions verschwinden automatisch, wenn sie ablaufen oder per `CALL_END` beendet werden.
+Sessions disappear automatically when they expire or are ended via `CALL_END`.
 
-## 5. Testskript
+## 5. Test Script
 
-Das Skript `tools/test_routing.sh` kann weiterhin verwendet werden.
-Es testet jetzt zusätzlich:
+The script `tools/test_routing.sh` can still be used.
+It now additionally tests:
 
-- Session-Ablauf nach Timeout
-- WS-Heartbeat (Pings im Log sichtbar)
+- Session expiry after timeout
+- WS heartbeat (pings visible in log)
 
-## 6. Nächste Schritte (BACKEND-22)
+## 6. Next Steps (BACKEND-22)
 
-- Heartbeat-Protokoll im Client implementieren (Android)
-- KeepAlive für GhostNet bereitstellen
-- Multi-Device-Session-Model vorbereiten
-- Load-Balancing für Signaling Nodes
-
+- Implement heartbeat protocol in the client (Android)
+- Provide KeepAlive for GhostNet
+- Prepare multi-device session model
+- Load balancing for signaling nodes

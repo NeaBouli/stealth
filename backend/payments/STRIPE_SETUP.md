@@ -1,61 +1,61 @@
 # Stripe Setup — SecureCall
 
-## Produkte anlegen (Stripe Dashboard)
+## Create Products (Stripe Dashboard)
 
 ### Sandbox: https://dashboard.stripe.com/test/products
 ### Live: https://dashboard.stripe.com/products
 
-| # | Produkt | Preis | Typ | Env Variable |
+| # | Product | Price | Type | Env Variable |
 |---|---------|-------|-----|-------------|
-| 1 | SecureCall Pro | €3.49/Monat | recurring | `STRIPE_PRO_PRICE_ID` |
-| 2 | SecureCall Premium | €4.99/Monat | recurring | `STRIPE_PREMIUM_PRICE_ID` |
-| 3 | SecureCall Premium Lifetime | €49.00 einmalig | one_time | `STRIPE_LIFETIME_PRICE_ID` |
+| 1 | SecureCall Pro | €3.49/month | recurring | `STRIPE_PRO_PRICE_ID` |
+| 2 | SecureCall Premium | €4.99/month | recurring | `STRIPE_PREMIUM_PRICE_ID` |
+| 3 | SecureCall Premium Lifetime | €49.00 one-time | one_time | `STRIPE_LIFETIME_PRICE_ID` |
 
-## Schritt-für-Schritt
+## Step by Step
 
-1. **Stripe Account erstellen** (falls noch nicht vorhanden):
+1. **Create Stripe account** (if not already existing):
    - https://dashboard.stripe.com/register
    - Business: Vendetta Labs, Greece
 
-2. **Produkt 1: SecureCall Pro**
+2. **Product 1: SecureCall Pro**
    - Products → + Add Product
    - Name: `SecureCall Pro`
    - Description: `Pro subscription — unlimited calls, no ads`
    - Pricing: €3.49, Recurring, Monthly
-   - → Notiere die `price_...` ID
+   - → Note the `price_...` ID
 
-3. **Produkt 2: SecureCall Premium**
+3. **Product 2: SecureCall Premium**
    - Products → + Add Product
    - Name: `SecureCall Premium`
    - Description: `Premium subscription — maximum security + VPN`
    - Pricing: €4.99, Recurring, Monthly
-   - → Notiere die `price_...` ID
+   - → Note the `price_...` ID
 
-4. **Produkt 3: SecureCall Premium Lifetime**
+4. **Product 3: SecureCall Premium Lifetime**
    - Products → + Add Product
    - Name: `SecureCall Premium Lifetime`
    - Description: `One-time payment for lifetime Premium access. Generates activation code.`
    - Pricing: €49.00, One time
-   - → Notiere die `price_...` ID
+   - → Note the `price_...` ID
 
-5. **Webhook erstellen**
+5. **Create Webhook**
    - Developers → Webhooks → + Add endpoint
    - URL: `https://protective-healing-production.up.railway.app/stripe/webhook`
    - Events: `checkout.session.completed`
-   - → Notiere das `whsec_...` Signing Secret
+   - → Note the `whsec_...` signing secret
 
-6. **Railway Environment Variables setzen**
+6. **Set Railway Environment Variables**
    ```
-   STRIPE_SECRET_KEY=sk_test_...       (Sandbox) oder sk_live_... (Production)
+   STRIPE_SECRET_KEY=sk_test_...       (Sandbox) or sk_live_... (Production)
    STRIPE_WEBHOOK_SECRET=whsec_...
    STRIPE_PRO_PRICE_ID=price_...
    STRIPE_PREMIUM_PRICE_ID=price_...
    STRIPE_LIFETIME_PRICE_ID=price_...
    ```
 
-7. **Server.js einbinden** (nach Stripe-Konfiguration):
+7. **Integrate into server.js** (after Stripe configuration):
    ```js
-   // Am Ende von server.js, vor app.listen():
+   // At the end of server.js, before app.listen():
    require('../payments/stripe_handler').setupRoutes(app);
    ```
 
@@ -64,7 +64,7 @@
 ### POST /stripe/create-checkout
 ```json
 {
-  "product": "premium_lifetime",  // oder "pro_monthly", "premium_monthly"
+  "product": "premium_lifetime",  // or "pro_monthly", "premium_monthly"
   "email": "user@example.com"     // optional
 }
 ```
@@ -77,61 +77,61 @@ Response:
 ```
 
 ### POST /stripe/webhook
-- Automatisch von Stripe aufgerufen
-- Verifiziert Signatur via `STRIPE_WEBHOOK_SECRET`
-- Generiert Activation Code bei `checkout.session.completed`
+- Called automatically by Stripe
+- Verifies signature via `STRIPE_WEBHOOK_SECRET`
+- Generates activation code on `checkout.session.completed`
 
-## Zahlungsmethoden
-- Kreditkarte (weltweit)
-- SEPA-Lastschrift (EU)
-- Klarna (EU — Rechnung, Ratenzahlung)
+## Payment Methods
+- Credit card (worldwide)
+- SEPA direct debit (EU)
+- Klarna (EU — invoice, installment payments)
 
 ## Email Delivery (Resend + Brevo Fallback)
 
-**Reihenfolge:** Resend (primär) → Brevo (Backup)
+**Order:** Resend (primary) → Brevo (backup)
 
 ### Resend Setup
 1. **Account:** https://resend.com
-2. **Domain verifizieren:** stealthx.tech (DNS TXT)
+2. **Verify domain:** stealthx.tech (DNS TXT)
 3. **API Key** → `RESEND_API_KEY`
-4. **Status:** Account gesperrt (Support Ticket offen)
+4. **Status:** Account suspended (support ticket open)
 
 ### Brevo Setup (Backup)
-1. **Account:** https://brevo.com (kostenlos, 300 Emails/Tag)
+1. **Account:** https://brevo.com (free, 300 emails/day)
 2. **Settings → SMTP & API → API Keys → Generate**
-3. **Domain verifizieren:** stealthx.tech
+3. **Verify domain:** stealthx.tech
 4. **API Key** → `BREVO_API_KEY=xkeysib-...`
 
-### Flow nach Zahlung:
+### Flow After Payment:
 ```
-User zahlt → Stripe Webhook → Code generiert
-  → Resend Email (primär)
-  → falls Resend fehlschlägt → Brevo Email (Backup)
-  → Kunde erhält Code im Posteingang
-  → Redirect zu payment-success.html
+User pays → Stripe webhook → Code generated
+  → Resend email (primary)
+  → if Resend fails → Brevo email (backup)
+  → Customer receives code in inbox
+  → Redirect to payment-success.html
 ```
 
-### Railway Environment Variables (komplett):
+### Railway Environment Variables (complete):
 ```
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-RESEND_API_KEY=re_...          (primär — aktuell gesperrt)
-BREVO_API_KEY=xkeysib-...     (Backup — sofort einsetzbar)
+RESEND_API_KEY=re_...          (primary — currently suspended)
+BREVO_API_KEY=xkeysib-...     (backup — ready to use immediately)
 ```
 
-## Payment Links (Stripe-hosted, kein Backend nötig)
+## Payment Links (Stripe-hosted, no backend needed)
 - Premium Lifetime €49: `https://buy.stripe.com/test_28E3cu3Sf545baKgeL6g800`
 - Pro €3.49/mo: `https://buy.stripe.com/test_00w4gyewTaop1AabYv6g801`
 - Premium €4.99/mo: `https://buy.stripe.com/test_5kQ3cu88vdABgv44w36g802`
 
 ## Status
-- [x] Stripe Produkte + Preise angelegt
-- [x] Payment Links auf Landing Page (Test-Modus)
-- [x] stripe_handler.js mit Routes
-- [x] server.js: setupRoutes() eingebunden
-- [x] payment-success.html erstellt
-- [x] email_handler.js mit Resend
-- [ ] RESEND_API_KEY in Railway setzen (Kaspartizan)
-- [ ] Domain stealthx.tech in Resend verifizieren (Kaspartizan)
-- [ ] Test-Zahlung durchführen + Email-Empfang prüfen
-- [ ] Live-Modus: sk_test → sk_live, Payment Links → Live Links
+- [x] Stripe products + prices created
+- [x] Payment links on landing page (test mode)
+- [x] stripe_handler.js with routes
+- [x] server.js: setupRoutes() integrated
+- [x] payment-success.html created
+- [x] email_handler.js with Resend
+- [ ] Set RESEND_API_KEY in Railway (Kaspartizan)
+- [ ] Verify domain stealthx.tech in Resend (Kaspartizan)
+- [ ] Perform test payment + verify email receipt
+- [ ] Live mode: sk_test → sk_live, payment links → live links

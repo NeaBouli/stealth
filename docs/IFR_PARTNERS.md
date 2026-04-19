@@ -6,63 +6,63 @@
 
 ## ORIGO — Conway's Game of Life MMO
 
-**Typ:** Browser-basiertes MMO auf Conway's Game of Life
-**Status:** In Entwicklung — Launch Q3 2026
-**Entwickler:** Vendetta Labs
+**Type:** Browser-based MMO built on Conway's Game of Life
+**Status:** In development — Launch Q3 2026
+**Developer:** Vendetta Labs
 **Website:** TBA
 
 ### IFR Integration
-- **Game-Haupt-Token (GHIFR):** 1 GHIFR = 1 IFR (1:1 Parität, fester Wechselkurs)
-- **Voucher-System:** Spieler tauschen GHIFR gegen IFR-Voucher auf ifrunit.tech
-- **Fee-Sharing:** 10% der Spielgebühren gehen an den IFR-Rückkauf-Pool
-- **Kein Token-Handel im Spiel:** Nur externer Voucher-Tausch via ifrunit.tech
+- **Game Main Token (GHIFR):** 1 GHIFR = 1 IFR (1:1 parity, fixed exchange rate)
+- **Voucher System:** Players exchange GHIFR for IFR vouchers on ifrunit.tech
+- **Fee Sharing:** 10% of game fees go to the IFR buyback pool
+- **No token trading in-game:** Only external voucher exchange via ifrunit.tech
 
-### Umsatzmodell
-- Einstieg: €1 einmalig (permanente Fraktion, Startmuster)
-- Layer-Aufstieg: €0.50–€2.00 pro Layer
-- Cosmetics: €0.25–€1.00 (Zellfarben, Trails, Muster-Skins)
+### Revenue Model
+- Entry: €1 one-time (permanent faction, starting pattern)
+- Layer ascent: €0.50–€2.00 per layer
+- Cosmetics: €0.25–€1.00 (cell colors, trails, pattern skins)
 
-| Spielerbasis | Monatl. IFR-Rückkauf |
+| Player Base | Monthly IFR Buyback |
 |---|---|
-| 1.000 | ~€370 → ~46.000 IFR |
-| 10.000 | ~€3.700 → ~462.000 IFR |
-| 100.000 | ~€37.000 → ~4.6 Mio. IFR |
+| 1,000 | ~€370 → ~46,000 IFR |
+| 10,000 | ~€3,700 → ~462,000 IFR |
+| 100,000 | ~€37,000 → ~4.6M IFR |
 
-### Spielmechanik
-- **Einstieg:** €1 einmalig → permanente Fraktion, Startmuster platzieren
-- **Conway übernimmt:** Ab Generation 1 kontrolliert niemand irgendetwas
-- **Layer-System:** Layer 0 (Erde) → Layer 1 (Orbit) → Layer 2+ (Universum)
-- **Aufstieg:** Stabile Struktur über 50 Generationen — nicht kaufbar, nicht zeitbasiert
-- **Fossil-Zerfall:** Verstorbene Zellen verblassen über 30 Tage
+### Game Mechanics
+- **Entry:** €1 one-time → permanent faction, place starting pattern
+- **Conway takes over:** From generation 1, nobody controls anything
+- **Layer System:** Layer 0 (Earth) → Layer 1 (Orbit) → Layer 2+ (Universe)
+- **Ascent:** Stable structure over 50 generations — not purchasable, not time-based
+- **Fossil Decay:** Dead cells fade over 30 days
 
-### Rechtliche Einordnung
-- **Kein Glücksspiel:** Conways Regeln sind deterministisch — kein Zufall
-- **Kein Token-Handel im Spiel:** Nur externer Voucher-Tausch via ifrunit.tech
-- **DSGVO-konform:** Hetzner (EU), PostgreSQL, keine US-Datenübertragung
+### Legal Classification
+- **No gambling:** Conway's rules are deterministic — no randomness
+- **No token trading in-game:** Only external voucher exchange via ifrunit.tech
+- **GDPR-compliant:** Hetzner (EU), PostgreSQL, no US data transfer
 
-### Technische Infrastruktur
-- Conway-Engine: Rust (1 CPU-Kern → 1.000x1.000 Grid @ 10 Ticks/s)
-- WebSocket-Server: Node.js (Delta-Updates, kein volles Grid)
-- Redis: Grid-State im RAM
-- PostgreSQL: Nutzerkonten, GHIFR-Guthaben, Voucher-Log
-- Visualisierung: Three.js / WebGL (client-seitig)
-- Hosting: Hetzner CX21 (bis 1.000 User) → CX41 (bis 10.000 User)
+### Technical Infrastructure
+- Conway Engine: Rust (1 CPU core → 1,000x1,000 grid @ 10 ticks/s)
+- WebSocket Server: Node.js (delta updates, no full grid)
+- Redis: Grid state in RAM
+- PostgreSQL: User accounts, GHIFR balances, voucher log
+- Visualization: Three.js / WebGL (client-side)
+- Hosting: Hetzner CX21 (up to 1,000 users) → CX41 (up to 10,000 users)
 
 ---
 
 ## SecureCall — Encrypted Voice Calls
 
-**Typ:** Android App — E2E verschlüsselte Sprachanrufe
-**Status:** Alpha Testing (15/15 Tester) — Production Q2 2026
-**Entwickler:** Vendetta Labs
+**Type:** Android App — E2E encrypted voice calls
+**Status:** Alpha Testing (15/15 testers) — Production Q2 2026
+**Developer:** Vendetta Labs
 **Website:** stealthx.tech
 
 ### IFR Integration
-- **Pro Tier:** Lock >= 1.000 IFR → Lifetime Pro Zugang
-- **Premium Tier:** Lock >= 5.000 IFR → Lifetime Premium Zugang
-- **WalletConnect v2:** Wallet-Verifikation direkt in der App
-- **Multi-Device:** WalletConnect-verifizierte Wallets = unbegrenzte Geraete
+- **Pro Tier:** Lock >= 1,000 IFR → Lifetime Pro access
+- **Premium Tier:** Lock >= 5,000 IFR → Lifetime Premium access
+- **WalletConnect v2:** Wallet verification directly in the app
+- **Multi-Device:** WalletConnect-verified wallets = unlimited devices
 
 ---
 
-*Letzte Aktualisierung: April 2026 — Vendetta Labs*
+*Last updated: April 2026 — Vendetta Labs*

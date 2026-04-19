@@ -1,369 +1,369 @@
 # SecureCall Ecosystem – Security Design Document
 
-## 1. Zweck dieses Dokuments
+## 1. Purpose of This Document
 
-Dieses Dokument beschreibt alle sicherheitsrelevanten Prinzipien,
-Mechanismen, Architekturentscheidungen und Anforderungen des SecureCall Ecosystems.
-Es dient als Master-Referenz für Entwickler, Auditoren und Architekten.
+This document describes all security-relevant principles,
+mechanisms, architectural decisions, and requirements of the SecureCall Ecosystem.
+It serves as the master reference for developers, auditors, and architects.
 
-## 2. Sicherheitsziele (High-Level)
+## 2. Security Goals (High-Level)
 
-1. **Ende-zu-Ende Verschlüsselung**
-   Kein Audio darf jemals unverschlüsselt das Gerät verlassen.
+1. **End-to-End Encryption**
+   No audio may ever leave the device unencrypted.
 
-2. **Minimierung von Metadaten**
-   Das System generiert so wenige Metadaten wie technisch möglich.
-   Keine Logs, kein Tracking, keine Telemetrie.
+2. **Metadata Minimization**
+   The system generates as few metadata as technically possible.
+   No logs, no tracking, no telemetry.
 
-3. **Zero-Retention Prinzip**
-   Kryptografische Schlüssel werden so kurz wie möglich gehalten,
-   niemals persistiert (außer Identity-Key unter sicheren Bedingungen).
+3. **Zero-Retention Principle**
+   Cryptographic keys are kept as briefly as possible,
+   never persisted (except Identity Key under secure conditions).
 
 4. **Defense in Depth**
-   Mehrere Schichten schützen unabhängig voneinander:
+   Multiple layers protect independently:
    - Crypto
    - GhostNet Transport
    - Signaling
    - Security Monitor
-   - OS-Härtung (Premium/OS)
+   - OS Hardening (Premium/OS)
 
 5. **Fail-Safe Default**
-   Bei Unsicherheit → blockieren, niemals schwach weiterlaufen.
+   When in doubt → block, never continue in a weakened state.
 
-6. **Transparenz & Auditierbarkeit**
-   Code soll testbar, reproduzierbar und auditierbar sein.
+6. **Transparency & Auditability**
+   Code shall be testable, reproducible, and auditable.
 
 
-3. Bedrohungsmodell
+3. Threat Model
 
-Das SecureCall Ecosystem berücksichtigt mehrere Angreiferklassen:
+The SecureCall Ecosystem considers multiple attacker classes:
 
-Lokale Angreifer auf dem Endgerät
+Local attackers on the end device
 
-Netzwerknahe Angreifer im Transportpfad
+Network-adjacent attackers in the transport path
 
-Infrastrukturnahe Angreifer auf Server-/Relay-Ebene
+Infrastructure-adjacent attackers at the server/relay level
 
-Funkzellen-/Baseband-Angreifer (IMSI-Catcher etc.)
+Radio cell/baseband attackers (IMSI catchers etc.)
 
-OS-/Firmware-basierte Angriffe (insbesondere für GHOSTOS relevant)
+OS/firmware-based attacks (particularly relevant for GHOSTOS)
 
-3.1 Lokale Angreifer
+3.1 Local Attackers
 
-Ziele:
+Goals:
 
-Zugriff auf Klartext-Audio
+Access to plaintext audio
 
-Zugriff auf Schlüsselmaterial
+Access to key material
 
-Manipulation der App (Hooking, Code Injection)
+Manipulation of the app (hooking, code injection)
 
-Typische Werkzeuge:
+Typical tools:
 
-Malware, Keylogger
+Malware, keyloggers
 
-Rootkits, Magisk-Module
+Rootkits, Magisk modules
 
-Frida, Xposed, Emulatoren
+Frida, Xposed, emulators
 
-Screen-Recording und UI-Capture
+Screen recording and UI capture
 
-Abwehrmechanismen:
+Countermeasures:
 
-Security Monitor & Root-/Hooking-Erkennung
+Security Monitor & root/hooking detection
 
-Verhindern von Screen-Recording
+Prevention of screen recording
 
-minimale Angriffsfläche in der UI
+Minimal attack surface in the UI
 
-kein Debug-Build in Produktion
+No debug build in production
 
-3.2 Netzwerknahe Angreifer
+3.2 Network-Adjacent Attackers
 
-Ziele:
+Goals:
 
-Mitschnitt von Audio
+Interception of audio
 
-Man-in-the-Middle-Angriffe
+Man-in-the-middle attacks
 
-Manipulation oder Replay von Paketen
+Manipulation or replay of packets
 
-Typische Szenarien:
+Typical scenarios:
 
-bösartige WLANs
+Malicious WLANs
 
-kompromittierte Router
+Compromised routers
 
-staatliche/Carrier-basierte Überwachung
+State/carrier-based surveillance
 
-Abwehrmechanismen:
+Countermeasures:
 
-Ende-zu-Ende-Verschlüsselung
+End-to-end encryption
 
-Integritätsschutz der Frames
+Integrity protection of frames
 
-keine Schlüssel oder Klartext im Backend
+No keys or plaintext in the backend
 
-optional Multi-Hop-GhostNet-Routing
+Optional multi-hop GhostNet routing
 
-3.3 Infrastrukturnahe Angreifer
+3.3 Infrastructure-Adjacent Attackers
 
-Ziele:
+Goals:
 
-Kompromittierung von Signaling-Servern und Relays
+Compromise of signaling servers and relays
 
-Massenüberwachung von Metadaten
+Mass surveillance of metadata
 
-Blockieren oder Umleiten von Verbindungen
+Blocking or redirecting connections
 
-Abwehrmechanismen:
+Countermeasures:
 
-minimalistische Signaling-Logik
+Minimalist signaling logic
 
-keine langfristigen Logs
+No long-term logs
 
-Public-Key Directory ohne Klarnamen
+Public key directory without real names
 
-Relays ohne Zugriff auf Schlüssel/Klartext
+Relays without access to keys/plaintext
 
-3.4 Funkzellen- und Baseband-Angreifer
+3.4 Radio Cell and Baseband Attackers
 
-Ziele:
+Goals:
 
-Erkennen, wer mit wem kommuniziert
+Identifying who communicates with whom
 
-Erzwingen unsicherer Funkmodi
+Forcing insecure radio modes
 
-IMSI-/IMEI-Erfassung und Bewegungsprofile
+IMSI/IMEI capture and movement profiles
 
-Abwehrmechanismen (Premium/OS):
+Countermeasures (Premium/OS):
 
-IMSI-Catcher-Detection (Anomalie-Erkennung)
+IMSI catcher detection (anomaly detection)
 
-Warnungen bei auffälligen Cell-IDs
+Warnings on suspicious cell IDs
 
-eingeschränkte Funkprofile (z. B. LTE-only)
+Restricted radio profiles (e.g., LTE-only)
 
-optional komplette Deaktivierung klassischer GSM-Telefonie
+Optional complete deactivation of classic GSM telephony
 
 
-4. Krypto-Design & Schlüsselmanagement
+4. Crypto Design & Key Management
 
-Das SecureCall Ecosystem verwendet moderne, auditierbare Kryptographiemodule.
-Die Core Crypto Engine (Rust) stellt alle Sicherheitsprimitive bereit.
+The SecureCall Ecosystem uses modern, auditable cryptography modules.
+The Core Crypto Engine (Rust) provides all security primitives.
 
-4.1 Identitätsschlüssel (Identity Keys)
+4.1 Identity Keys
 
-Typ: Ed25519 (Signatur) + X25519 (Schlüsselaustausch)
+Type: Ed25519 (signature) + X25519 (key exchange)
 
-Erzeugung: lokal auf dem Gerät
+Generation: locally on the device
 
-Speicherung:
+Storage:
 
-Free/Pro: verschlüsselt im App-Speicher
+Free/Pro: encrypted in app storage
 
-Premium/OS: im Hardware-TPM / Secure Element, falls verfügbar
+Premium/OS: in hardware TPM / Secure Element, if available
 
-Export: verboten
+Export: prohibited
 
-Backup: nicht vorgesehen (Sicherheitsrisiko)
+Backup: not provided (security risk)
 
-4.2 Session-Setup
+4.2 Session Setup
 
-Jeder Call verwendet eine neue Session:
+Each call uses a new session:
 
-Start über X25519 Key Agreement
+Start via X25519 key agreement
 
-Ableitung eines einmaligen Root Keys
+Derivation of a one-time root key
 
-Etablierung eines Double-Ratchet oder Noise_NX / Noise_XX Protokolls
+Establishment of a Double Ratchet or Noise_NX / Noise_XX protocol
 
-automatische Rotation der Schlüssel (Forward Secrecy)
+Automatic key rotation (forward secrecy)
 
-Ein kompromittierter Session-Key darf:
+A compromised session key must not:
 
-keine vorherigen Audioframes entschlüsseln lassen (FS)
+Allow decryption of previous audio frames (FS)
 
-keine zukünftigen Frames gefährden (PCS)
+Compromise future frames (PCS)
 
-4.3 Audioframe-Verschlüsselung
+4.3 Audio Frame Encryption
 
-Für Audioframes wird ein AEAD-Verfahren eingesetzt:
+An AEAD scheme is used for audio frames:
 
 XChaCha20-Poly1305
 
-192-bit Nonce
+192-bit nonce
 
-256-bit Key
+256-bit key
 
-Nonce-Inkrement pro Frame (Overflow niemals erlaubt)
+Nonce increment per frame (overflow never permitted)
 
-garantierter Integritätsschutz
+Guaranteed integrity protection
 
-4.4 Schlüssel-Lebenszyklen
+4.4 Key Lifecycles
 
-Identity Keys → langfristig (1 Identität pro Gerät)
+Identity Keys → long-term (1 identity per device)
 
-Session Keys → nur für einen Call gültig
+Session Keys → valid only for one call
 
-Frame Keys → rotieren kontinuierlich
+Frame Keys → rotate continuously
 
-Keys werden mit zeroize/explicit_bzero aus dem RAM gelöscht
+Keys are deleted from RAM using zeroize/explicit_bzero
 
-4.5 Zero-Retention Prinzip
+4.5 Zero-Retention Principle
 
-Die App speichert niemals:
+The app never stores:
 
-Session Keys
+Session keys
 
-Audioframes
+Audio frames
 
-Metadaten der Verbindung
+Connection metadata
 
-Netzwerkstatistiken (ausgenommen technische Metriken ohne Identität)
+Network statistics (except technical metrics without identity)
 
-Nach Call-Ende:
+After call end:
 
-alle Schlüssel werden überschrieben
+All keys are overwritten
 
-alle Call-Daten werden verworfen
+All call data is discarded
 
-Speicher wird purged
+Memory is purged
 
-4.6 Kryptographische Randbedingungen
+4.6 Cryptographic Constraints
 
-alle Operationen constant-time
+All operations constant-time
 
-kein Fallback auf unsichere Modi
+No fallback to insecure modes
 
-keine Nutzung hardwarebeschleunigter Funktionen, die Side-Channel-Leaks produzieren könnten
+No use of hardware-accelerated functions that could produce side-channel leaks
 
-keine externe Abhängigkeit von Cloud-Diensten
+No external dependency on cloud services
 
 
 5. Security Monitor & Hardening Layer
 
-Der Security Monitor ist eine lokale Sicherheitskomponente, die den Gerätestatus
-und die Laufzeitumgebung überwacht. Ziel ist es, Manipulationen und unsichere
-Zustände zu erkennen und angemessen zu reagieren.
+The Security Monitor is a local security component that monitors the device status
+and the runtime environment. The goal is to detect manipulations and insecure
+states and respond appropriately.
 
-5.1 Root- und Jailbreak-Erkennung
+5.1 Root and Jailbreak Detection
 
-Erkennung von Magisk, SuperSU, KingRoot
+Detection of Magisk, SuperSU, KingRoot
 
-Prüfung auf manipulierte /system-Partitionen
+Check for manipulated /system partitions
 
-Erkennung verdächtiger Binaries (su, busybox in atypischen Pfaden)
+Detection of suspicious binaries (su, busybox in atypical paths)
 
-Prüfung auf Schreibzugriff in geschützten Bereichen
+Check for write access in protected areas
 
 Policy:
 
-Free: Warnung
+Free: warning
 
-Pro: optional Blockade
+Pro: optional block
 
-Premium/OS: Blockade verpflichtend
+Premium/OS: block mandatory
 
-5.2 Hooking- und Debugger-Schutz
+5.2 Hooking and Debugger Protection
 
-Erkennung von Frida-Servern & Frida-Gadgets
+Detection of Frida servers & Frida gadgets
 
-Erkennung von Xposed / LSPosed
+Detection of Xposed / LSPosed
 
-Erkennung von aktiven ptrace/debugging-Sessions
+Detection of active ptrace/debugging sessions
 
-Anti-Breakpoint-Checks (Timing, Debugger-Flags)
+Anti-breakpoint checks (timing, debugger flags)
 
-Schutz vor Code-Injection durch Prüfungen der App-Signatur
+Protection against code injection through app signature verification
 
-Reaktion:
+Response:
 
-Sitzung abbrechen
+Abort session
 
-Warnmeldung
+Warning message
 
-gesperrter Zustand bis Neustart
+Locked state until restart
 
-5.3 Emulator-Erkennung
+5.3 Emulator Detection
 
-Prüfung auf typische Emulator-Properties (ro.product.device, Google API Level Images)
+Check for typical emulator properties (ro.product.device, Google API Level Images)
 
-Erkennung von fehlenden Sensoren
+Detection of missing sensors
 
-CPU-Architektur-Inkonsistenzen
+CPU architecture inconsistencies
 
-ungewöhnliche Netzwerkkonfigurationen (10.0.2.x etc.)
+Unusual network configurations (10.0.2.x etc.)
 
-Reaktion:
+Response:
 
-Free: Warnung
+Free: warning
 
-Pro: optional Block
+Pro: optional block
 
-Premium/OS: Block
+Premium/OS: block
 
 5.4 Screen-Recording Detection
 
-Überwachung „FLAG_SECURE“
+Monitoring "FLAG_SECURE"
 
-Erkennung aktiver Screen-Capture-APIs
+Detection of active screen capture APIs
 
-Erkennung von Hintergrund-Recording-Apps
+Detection of background recording apps
 
-automatische Sperrung des UI bei aktiver Aufnahme
+Automatic UI lock when recording is active
 
-5.5 Baseband- & Funkzellen-Checks (Premium/OS)
+5.5 Baseband & Radio Cell Checks (Premium/OS)
 
-Erkennung von IMSI-Catchern über:
+IMSI catcher detection via:
 
-auffällige LAC/CID-Wechsel
+Suspicious LAC/CID changes
 
-ungewöhnlich starke Signalpegel
+Unusually strong signal levels
 
-unverschlüsselte 2G-Downswitches
+Unencrypted 2G downswitches
 
-fehlende Netz-Authentifizierung
+Missing network authentication
 
-Warnung bei verdächtigen Basisstationen
+Warning on suspicious base stations
 
-Optionale automatische Deaktivierung des GSM-Moduls
+Optional automatic deactivation of GSM module
 
-5.6 Gerätestatus-Monitoring
+5.6 Device Status Monitoring
 
-USB-Debugging aktiviert? → Warnung/Blockade
+USB debugging enabled? → warning/block
 
-Entwickleroptionen aktiv? → Warnung/Blockade
+Developer options active? → warning/block
 
-Screenshot-APIs aktiv? → Blockierung
+Screenshot APIs active? → block
 
-externe Tastaturen/Controller → prüfen (Keylogging-Risiko)
+External keyboards/controllers → check (keylogging risk)
 
-5.7 Policy-basierte Reaktionen
+5.7 Policy-Based Responses
 
-Der Security Monitor meldet einen Zustand, die Policy Engine entscheidet, wie reagiert wird:
+The Security Monitor reports a state, the Policy Engine decides how to respond:
 
-zulassen
+Allow
 
-warnen
+Warn
 
-blockieren
+Block
 
-Call gar nicht starten
+Do not start call at all
 
-App beenden
+Terminate app
 
-Gerät isolieren (Premium/OS)
+Isolate device (Premium/OS)
 
 
 6. GhostNet Transport Layer
 
-Der GhostNet Layer ist der verschlüsselte Transportkanal des SecureCall Ecosystems.
-Er stellt sicher, dass Audioframes das Gerät ausschließlich verschlüsselt verlassen.
+The GhostNet Layer is the encrypted transport channel of the SecureCall Ecosystem.
+It ensures that audio frames leave the device exclusively in encrypted form.
 
-6.1 Architektur
+6.1 Architecture
 
-GhostNet besteht aus drei Unterschichten:
+GhostNet consists of three sublayers:
 
 Transport (WebRTC/QUIC)
 
@@ -373,157 +373,157 @@ Routing (Single-Hop / Multi-Hop)
 
 6.2 Transport (WebRTC / QUIC)
 
-GhostNet nutzt je nach Gerät und Produktlinie:
+GhostNet uses depending on device and product line:
 
-WebRTC mit DTLS für maximale Kompatibilität
+WebRTC with DTLS for maximum compatibility
 
-oder QUIC mit eingebettetem AEAD Layer für Premium/OS
+or QUIC with embedded AEAD layer for Premium/OS
 
-Eigenschaften:
+Properties:
 
-NAT-Traversal via STUN/TURN
+NAT traversal via STUN/TURN
 
 Congestion Control
 
-Paketpriorisierung (Audio > Metadata)
+Packet prioritization (Audio > Metadata)
 
-Reconnect-Mechanismus bei Netzschwankungen
+Reconnect mechanism during network fluctuations
 
 6.3 Audio Engine
 
 Codec: Opus
 
-Bitrate adaptiv (12–32 kbps)
+Bitrate adaptive (12–32 kbps)
 
-geringstmögliche Latenz (20–40 ms)
+Lowest possible latency (20–40 ms)
 
-FEC (Forward Error Correction) aktiviert
+FEC (Forward Error Correction) enabled
 
-Jitter Buffer mit dynamischer Größe
+Jitter buffer with dynamic size
 
 6.4 Single-Hop GhostNet (Free/Pro)
 
-P2P Verbindung oder Relay via TURN
+P2P connection or relay via TURN
 
-Metadaten minimal gehalten
+Metadata kept minimal
 
-kein Zugriff der Relays auf Audio (alles verschlüsselt)
+No relay access to audio (everything encrypted)
 
 6.5 Multi-Hop Routing (Premium/OS)
 
-Premium und OS unterstützen Multi-Hop GhostNet Routing:
+Premium and OS support multi-hop GhostNet routing:
 
-Beispielkette:
+Example chain:
 
 Client A → Relay 1 → Relay 7 → Relay 3 → Client B
 
-Jeder Hop sieht nur:
+Each hop sees only:
 
-IP des vorherigen Relays
+IP of the previous relay
 
-IP des nächsten Relays
+IP of the next relay
 
-KEINE Audioinhalte (E2E verschlüsselt)
+NO audio content (E2E encrypted)
 
-Ziele:
+Goals:
 
-Verschleierung des Ursprungs
+Obfuscation of origin
 
-Erschwerung von Traffic-Korrelation
+Making traffic correlation more difficult
 
-Schutz vor staatlichen Überwachungsmaßnahmen
+Protection against state surveillance measures
 
 6.6 SilentCarrier Mode
 
-Für Free/Pro/Premium verfügbar (OS optional deaktiviert):
+Available for Free/Pro/Premium (OS optionally disabled):
 
-Die App initiiert einen normalen GSM-Anruf
+The app initiates a normal GSM call
 
-Mikrofonzugriff auf GSM wird geblockt
+Microphone access to GSM is blocked
 
-GSM-Call transportiert kein Audio
+GSM call carries no audio
 
-Der echte Audio-Call läuft über GhostNet
+The real audio call runs over GhostNet
 
-Ergebnis: äußerlich wirkt es wie ein normaler Telefonanruf
+Result: externally it appears like a normal phone call
 
-6.7 Transport-Sicherheitsregeln
+6.7 Transport Security Rules
 
-kein Klartext-Audio außerhalb der App
+No plaintext audio outside the app
 
-kein Fallback auf unverschlüsselte Transportmodi
+No fallback to unencrypted transport modes
 
-bei Transportfehlern → Call abbrechen, niemals auf „unsicher“ weiterlaufen
+On transport errors → abort call, never continue in "insecure" mode
 
-Frame-Limits & Nonce-Überwachung implementieren
+Implement frame limits & nonce monitoring
 
 
 7. Signaling, Identity & Key Directory
 
-Das Signaling-System dient ausschließlich dazu,
-zwei Geräte miteinander zu verbinden.
-Es kennt keine Nutzerdaten und speichert keine Verbindungsmetadaten.
+The signaling system serves exclusively to connect
+two devices with each other.
+It knows no user data and stores no connection metadata.
 
-7.1 Identitätsmodell
+7.1 Identity Model
 
-Jedes Gerät besitzt:
+Each device has:
 
 Identity Key Pair (Ed25519/X25519)
 
-erzeugt lokal
+Generated locally
 
-niemals exportiert
+Never exported
 
-niemals auf Backend gespeichert
+Never stored on backend
 
-Optional: Stealth-Identitäten (Premium/OS)
+Optional: Stealth identities (Premium/OS)
 
-mehrere Identitäten pro Gerät
+Multiple identities per device
 
-rotierend
+Rotating
 
-ideal für verdeckte Kommunikation
+Ideal for covert communication
 
-Das Backend kennt nur Public Keys, niemals Klarnamen oder Telefonnummern.
+The backend knows only public keys, never real names or phone numbers.
 
-7.2 Registrierung (pseudonym)
+7.2 Registration (pseudonymous)
 
-Ein Client registriert sich wie folgt:
+A client registers as follows:
 
-sendet Public Key
+Sends public key
 
-erhält eine zufällige, bedeutungslose User-ID
+Receives a random, meaningless user ID
 
-keine IP-Logs (nur ephemeral)
+No IP logs (only ephemeral)
 
-keine Zeitstempelpersistenz
+No timestamp persistence
 
-Die Registrierung dient nur dazu:
+The registration serves only to:
 
-erreichbar zu sein
+Be reachable
 
-den Public Key abrufbar zu machen
+Make the public key retrievable
 
-7.3 Signaling-Fluss
+7.3 Signaling Flow
 
-Der Signaling Server führt folgende Aufgaben aus:
+The signaling server performs the following tasks:
 
-Call-Invite an Ziel senden
+Send call invite to target
 
-Call-Antwort (Accept/Reject)
+Call response (Accept/Reject)
 
-Austausch der ICE-Kandidaten
+Exchange of ICE candidates
 
-Meldung „Call beendet“
+Notification "call ended"
 
-Wichtig:
-Der Server kennt nie die Identität der Teilnehmer außerhalb eines Public Keys.
+Important:
+The server never knows the identity of participants beyond a public key.
 
-7.4 Transportmechanismen
+7.4 Transport Mechanisms
 
-REST für Registrierung / Public Key Lookup
+REST for registration / public key lookup
 
-WebSocket für Events:
+WebSocket for events:
 
 invite
 
@@ -533,51 +533,51 @@ candidate
 
 end-call
 
-Der Server speichert keine State-Daten länger als technisch notwendig.
+The server does not store state data longer than technically necessary.
 
 7.5 Key Directory
 
-Das Key Directory erlaubt:
+The Key Directory allows:
 
-Public Key von User X abrufen
+Retrieve public key of user X
 
-Identität bestehend aus:
+Identity consisting of:
 
 random user_id
 
 public_key
 
-Das Key Directory speichert nicht:
+The Key Directory does not store:
 
-IP-Adressen
+IP addresses
 
-Zeitstempel
+Timestamps
 
-Kommunikationspartner
+Communication partners
 
-Geräteinformationen
+Device information
 
-7.6 Sicherheit des Signaling
+7.6 Signaling Security
 
-Signaling selbst wird nicht vertraut.
+Signaling itself is not trusted.
 
-Daher:
+Therefore:
 
-alle Inhalte werden signiert
+All content is signed
 
-identitätsbasierte Prüfung über Ed25519
+Identity-based verification via Ed25519
 
-Replay-Schutz
+Replay protection
 
-keine sensiblen Inhalte über Signaling senden
+No sensitive content sent via signaling
 
 
-8. Policy Engine & Produktlinien-Profile
+8. Policy Engine & Product Line Profiles
 
-Die Policy Engine ist die zentrale Steuerkomponente des SecureCall Ecosystems.
-Sie definiert, wie das System auf Risiken, Konfigurationen und Netzbedingungen reagiert.
+The Policy Engine is the central control component of the SecureCall Ecosystem.
+It defines how the system responds to risks, configurations, and network conditions.
 
-Jede Produktlinie erhält ein eigenes Policy-Profil:
+Each product line receives its own policy profile:
 
 Free (GhostTalk Basic)
 
@@ -587,25 +587,25 @@ Premium (PhantomLine Elite)
 
 OS (GHOSTOS BlackRoot)
 
-8.1 Policy-Struktur
+8.1 Policy Structure
 
-Eine Policy besteht aus:
+A policy consists of:
 
-Netzanforderungen
+Network requirements
 
-Geräteanforderungen
+Device requirements
 
-Root-/Debugverhalten
+Root/debug behavior
 
-erlaubte Transportmodi
+Permitted transport modes
 
-zulässige UI-Funktionen
+Allowed UI features
 
-Aktivierung von Sicherheitsfeatures
+Activation of security features
 
-Reaktionen bei Risiken
+Responses to risks
 
-Beispiel (vereinfacht):
+Example (simplified):
 
 {
   "require_secure_wlan": true,
@@ -618,390 +618,389 @@ Beispiel (vereinfacht):
 
 8.2 Free Policy – GhostTalk Basic
 
-WLAN empfohlen, aber nicht erzwungen
+WLAN recommended but not enforced
 
-Root-Geräte erlaubt → nur Warnung
+Rooted devices allowed → warning only
 
-keine VPN-Firewall
+No VPN firewall
 
 GhostNet: Single-Hop
 
-SilentCarrier Mode verfügbar
+SilentCarrier Mode available
 
-keine IMSI-Detection
+No IMSI detection
 
-minimale Härtung
+Minimal hardening
 
-darf parallel mit anderen Apps laufen
+May run in parallel with other apps
 
 8.3 Pro Policy – GhostShield Advanced
 
-WLAN sicher → bevorzugt
+Secure WLAN → preferred
 
-Mobile Daten erlaubt
+Mobile data allowed
 
-Root optional blockierbar
+Root optionally blockable
 
-VPN-Firewall aktiv (App-lokales VPN)
+VPN firewall active (app-local VPN)
 
-GhostNet: Single-Hop, optimiert
+GhostNet: Single-Hop, optimized
 
-SilentCarrier Mode aktiv
+SilentCarrier Mode active
 
-stärkere Antimanipulation
+Stronger anti-tampering
 
-Zero-Retention Key Management erzwungen
+Zero-retention key management enforced
 
-Anti-Debug / Anti-Emulator verpflichtend
+Anti-debug / anti-emulator mandatory
 
 8.4 Premium Policy – PhantomLine Elite
 
-WLAN oder „dediziertes Mobilnetzprofil“
+WLAN or "dedicated mobile network profile"
 
-kein Betrieb auf Root-Geräten
+No operation on rooted devices
 
-Device-Owner Modus Pflicht
+Device-Owner mode mandatory
 
-App-Whitelist aktiv
+App whitelist active
 
 GhostNet: Multi-Hop
 
-IMSI-Catcher Detection aktiv
+IMSI catcher detection active
 
-Stealth-UI verfügbar
+Stealth UI available
 
-alle Hintergrundprozesse blockiert
+All background processes blocked
 
-Funkprofile eingeschränkt (LTE-only möglich)
+Radio profiles restricted (LTE-only possible)
 
-SilentCarrier Mode aktiv
+SilentCarrier Mode active
 
 8.5 OS Policy – GHOSTOS BlackRoot
 
-vollständige Kontrolle über das Gerät
+Full control over the device
 
-kein Root möglich (gehärteter Kernel)
+No root possible (hardened kernel)
 
-alle Fremd-Apps blockiert
+All third-party apps blocked
 
-keine Browser/WebView-Komponenten
+No browser/WebView components
 
-Kernel-Level Firewall
+Kernel-level firewall
 
-GhostNet Multi-Hop tief im System integriert
+GhostNet Multi-Hop deeply integrated in system
 
-Mikrofon/Kamera exklusiv für SecureCall
+Microphone/camera exclusive for SecureCall
 
-strikteste Funkprofilkontrolle
+Strictest radio profile control
 
-keine Hintergrundprozesse
+No background processes
 
-RAM-Purging nach jeder Session
+RAM purging after each session
 
-8.6 Policy Engine Auswertung
+8.6 Policy Engine Evaluation
 
-Die Policy Engine gibt Entscheidungen zurück:
+The Policy Engine returns decisions:
 
-ALLOW (Vorgang unkritisch)
+ALLOW (operation uncritical)
 
-WARN (Benutzer muss Risiko bestätigen)
+WARN (user must confirm risk)
 
-BLOCK (Vorgang wird abgebrochen)
+BLOCK (operation is aborted)
 
-HARD_BLOCK (App/OS beendet Vorgang sofort)
+HARD_BLOCK (app/OS terminates operation immediately)
 
-Diese Entscheidungen werden vom Security Monitor umgesetzt
-und gelten global in der App.
+These decisions are enforced by the Security Monitor
+and apply globally in the app.
 
 
 9. OS-Level Security – GHOSTOS BlackRoot
 
-GHOSTOS BlackRoot ist ein gehärtetes Spezialbetriebssystem auf Android-Basis
-für militärische und hochkritische Einsätze.
-Es folgt dem Prinzip „Maximum Security – Minimum Surface“.
+GHOSTOS BlackRoot is a hardened special-purpose operating system based on Android
+for military and high-security deployments.
+It follows the principle "Maximum Security – Minimum Surface".
 
-9.1 Kernprinzipien
+9.1 Core Principles
 
-keine Fremd-Apps
+No third-party apps
 
-kein Browser, kein WebView
+No browser, no WebView
 
-keine Google-Services
+No Google Services
 
-keine Hintergrundprozesse
+No background processes
 
-keine Telemetrie
+No telemetry
 
-Mikrofon & Kamera exklusiv für SecureCall
+Microphone & camera exclusive for SecureCall
 
-RAM-Purging nach jeder Sitzung
+RAM purging after each session
 
-systemweite Firewall
+System-wide firewall
 
-reproduzierbare Builds
+Reproducible builds
 
-keinerlei Debug-Schnittstellen
+No debug interfaces whatsoever
 
-9.2 Kernel-Hardening
+9.2 Kernel Hardening
 
-Der Kernel wird modifiziert und gehärtet:
+The kernel is modified and hardened:
 
-deaktivierte Debug-Funktionen
+Disabled debug functions
 
-gehärtete SELinux-Policies (enforcing)
+Hardened SELinux policies (enforcing)
 
-deaktiviertes ptrace
+Disabled ptrace
 
-restriktive Syscall-Whitelists
+Restrictive syscall whitelists
 
-restriktive seccomp-Konfiguration
+Restrictive seccomp configuration
 
-restriktive cgroups für Ressourcenmanagement
+Restrictive cgroups for resource management
 
-deaktivierter ungenutzter Kernel-Code
+Disabled unused kernel code
 
-9.3 System-Level Einschränkungen
+9.3 System-Level Restrictions
 
-kein Play Store
+No Play Store
 
-kein Package Installer
+No package installer
 
-keine Drittanbieter-Apps
+No third-party apps
 
-keine Hintergrunddienste außer SecureCall
+No background services except SecureCall
 
-keine Synchronisationsdienste
+No synchronization services
 
-kein Filesystem-Zugriff für User-Apps
+No filesystem access for user apps
 
-9.4 Sichere Systempartition
+9.4 Secure System Partition
 
-read-only Systempartition
+Read-only system partition
 
-Verified Boot aktiv
+Verified Boot active
 
-kein Bootloader-Unlock möglich
+No bootloader unlock possible
 
-Recovery nur mit Signatur
+Recovery only with signature
 
-kein ADB, kein Fastboot (außer im Manufacturing Mode)
+No ADB, no Fastboot (except in Manufacturing Mode)
 
-9.5 Netzwerk- und Funkprofilkontrolle
+9.5 Network and Radio Profile Control
 
-systemweite Firewall (iptables/nftables)
+System-wide firewall (iptables/nftables)
 
-erlaubte Verbindungen:
+Allowed connections:
 
 SecureCall Signaling
 
 GhostNet Relays
 
-alle anderen IP-Verbindungen blockiert
+All other IP connections blocked
 
-Funkprofile:
+Radio profiles:
 
-LTE-only möglich
+LTE-only possible
 
-2G/GSM deaktivierbar
+2G/GSM deactivatable
 
-automatische Blockade bei verdächtigen Cell-IDs
+Automatic block on suspicious cell IDs
 
-9.6 Ressourcen-Isolation
+9.6 Resource Isolation
 
-Mikrofon und Kamera exklusiv durch SecureCall-App
+Microphone and camera exclusively through SecureCall app
 
-keinerlei API-Zugriff für andere Prozesse
+No API access for other processes whatsoever
 
-keine Screenshot- oder Screen-Recording-Funktion im OS
+No screenshot or screen recording function in the OS
 
-restriktiver Zugriff auf Sensoren (Accelerometer, Gyro optional deaktiviert)
+Restrictive access to sensors (accelerometer, gyro optionally disabled)
 
-9.7 RAM Purge & Geheimnisverwaltung
+9.7 RAM Purge & Secret Management
 
-Nach jedem Call:
+After each call:
 
-komplette Speicherbäume werden geleert
+Complete memory trees are cleared
 
-Zeroize für kryptografische Strukturen
+Zeroize for cryptographic structures
 
-Beenden aller Dienste
+Termination of all services
 
-Neustart optional erzwingbar (Enterprise Option)
+Restart optionally enforceable (Enterprise Option)
 
 9.8 Device-Owner Mode
 
-SecureCall ist System-App + Device-Owner
+SecureCall is system app + Device-Owner
 
-keine Deinstallation möglich
+No uninstallation possible
 
-keine App-Hinzufügungen möglich
+No app additions possible
 
-Policy durchsetzt systemweite Regeln
+Policy enforces system-wide rules
 
-9.9 Build-Chain & Transparenz
+9.9 Build Chain & Transparency
 
-deterministische Builds
+Deterministic builds
 
-reproducible build scripts
+Reproducible build scripts
 
-Abgleich von Hashes für OTA-Updates
+Hash comparison for OTA updates
 
-signierte Systemimages
+Signed system images
 
-interner Audit-Prozess
+Internal audit process
 
 
-10. Integration, API-Grenzen & Sicherheitsarchitektur
+10. Integration, API Boundaries & Security Architecture
 
-Dieses Kapitel beschreibt die Interaktion der Module und definiert,
-welche Sicherheitsgarantien jede Schicht gibt und wo explizite Grenzen liegen.
+This chapter describes the interaction of modules and defines
+what security guarantees each layer provides and where explicit boundaries lie.
 
-10.1 API-Grenzen & Verantwortlichkeiten
+10.1 API Boundaries & Responsibilities
 
-Jede Komponente hat strikt definierte Zuständigkeiten:
+Each component has strictly defined responsibilities:
 
 Crypto Engine (Rust)
 
-erzeugt & verwaltet Schlüssel
+Generates & manages keys
 
-verschlüsselt & entschlüsselt Audioframes
+Encrypts & decrypts audio frames
 
-führt zeroize durch
+Performs zeroize
 
-hat keinen Netzwerkzugriff
+Has no network access
 
 Android Client
 
-bildet UI, Call-Control, Fehlerhandling
+Provides UI, call control, error handling
 
-setzt Policies um
+Enforces policies
 
-kommuniziert mit Signaling & GhostNet
+Communicates with signaling & GhostNet
 
-speichert keine sensiblen Daten
+Stores no sensitive data
 
 Signaling Backend
 
-kennt nur Public Keys & temporäre Session-Daten
+Knows only public keys & temporary session data
 
-keine Logs, keine Telemetrie
+No logs, no telemetry
 
-dient ausschließlich zur Verbindung, nicht zum Routing
+Serves exclusively for connection, not for routing
 
 GhostNet Relays
 
-leiten ausschließlich verschlüsselte Frames weiter
+Forward exclusively encrypted frames
 
-kennen weder Identität noch Ziel des Nutzers
+Know neither identity nor destination of the user
 
-speichern keine Metadaten
+Store no metadata
 
 GHOSTOS BlackRoot
 
-erzwingt OS-Policies
+Enforces OS policies
 
-verhindert Manipulation
+Prevents manipulation
 
-kontrolliert Funkprofile und Ressourcen
+Controls radio profiles and resources
 
-10.2 Integrationsgrenzen (Security Boundaries)
+10.2 Integration Boundaries (Security Boundaries)
 
 Crypto Engine ↔ Android App
 
-Austausch nur verschlüsselter Payloads
+Exchange only encrypted payloads
 
-App erhält niemals private Schlüssel im Klartext
+App never receives private keys in plaintext
 
-Kommunikation über FFI ist limitiert & geprüft
+Communication via FFI is limited & verified
 
 Android App ↔ Backend
 
-Backend wird nicht vertraut
+Backend is not trusted
 
-Signale werden signiert/verifiziert
+Signals are signed/verified
 
 GhostNet ↔ Backend
 
-Relays können keine Frame-Inhalte einsehen
+Relays cannot view frame content
 
-nur Weiterleitung, kein Zugriff auf Session Keys
+Only forwarding, no access to session keys
 
 OS ↔ SecureCall App
 
-OS schützt App
+OS protects app
 
-App schützt Daten
+App protects data
 
-App kontrolliert Mikrofon/Kamera exklusiv
+App controls microphone/camera exclusively
 
-10.3 Vertrauensmodell
+10.3 Trust Model
 
-Die Vertrauenskette ist wie folgt definiert:
+The trust chain is defined as follows:
 
 Crypto Engine
-höchste Vertrauensebene
+Highest trust level
 
 SecureCall App
-vertraut Crypto, aber nicht dem OS
+Trusts crypto, but not the OS
 
 OS (BlackRoot)
-vertraut App, schützt Hardware & Funk
+Trusts app, protects hardware & radio
 
 GhostNet Relays
-untrusted
+Untrusted
 
 Signaling Backend
-untrusted
+Untrusted
 
-10.4 Minimale Metadaten
+10.4 Minimal Metadata
 
-Das System garantiert:
+The system guarantees:
 
-keine Speicherung von IP-Adressen
+No storage of IP addresses
 
-keine Speicherung von Kommunikationspartnern
+No storage of communication partners
 
-keine Persistenz von Zeitstempeln
+No persistence of timestamps
 
-keine Geräteinformationen
+No device information
 
-keine Analyse durch Relays
+No analysis by relays
 
-10.5 Fehler-Handling & Fail-Safe
+10.5 Error Handling & Fail-Safe
 
-Bei Unsicherheiten gilt:
+When in doubt:
 
-niemals in unsicheren Zustand wechseln
+Never switch to an insecure state
 
-keine Fallbacks auf unverschlüsselte Kanäle
+No fallbacks to unencrypted channels
 
-lieber Call abbrechen als schwach weitermachen
+Rather abort call than continue in a weakened state
 
-Benutzer informieren (außer OS-Policy verlangt Silent Block)
+Inform user (unless OS policy requires silent block)
 
-10.6 Auditierbarkeit
+10.6 Auditability
 
-deterministische Builds
+Deterministic builds
 
-nachvollziehbare Release-Chains
+Traceable release chains
 
-interner Code-Review-Prozess
+Internal code review process
 
-Security-Tests verpflichtend
+Security tests mandatory
 
-Premium/OS: externe Audits erforderlich
+Premium/OS: external audits required
 
-10.7 Zusammenfassung der Sicherheitsarchitektur
+10.7 Security Architecture Summary
 
-Die Architektur stellt sicher:
+The architecture ensures:
 
-Klartext verlässt das Gerät niemals.
+Plaintext never leaves the device.
 
-Keine Komponente vertraut blind einer anderen.
+No component blindly trusts another.
 
-Metadaten werden minimiert bis zur Grenze der technischen Machbarkeit.
+Metadata is minimized to the limit of technical feasibility.
 
-OS-Härtung schützt Hardware, App schützt Kryptografie.
+OS hardening protects hardware, app protects cryptography.
 
-Backend ist austauschbar & untrusted by design.
-
+Backend is replaceable & untrusted by design.

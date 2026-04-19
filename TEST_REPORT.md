@@ -55,14 +55,14 @@
 **Observation:** The green `fabCall` FloatingActionButton is visible and accessible on the dialer screen at bounds `[445,1605][634,1794]`. Tapping it successfully launches `CallActivity`.
 
 **Call Screen Verified:**
-- "Anruf aktiv" (Call active) status shown
+- "Anruf aktiv" ("Call active") status shown
 - Call timer working (00:05 -> 00:35 -> 00:55)
-- "Ende-zu-Ende verschluesselt" encryption indicator shown
+- "Ende-zu-Ende verschluesselt" ("End-to-end encrypted") indicator shown
 - "Secure" badge with lock icon visible
 - Three action buttons visible and accessible:
-  - `fabMute` (Stummschalten) at `[148,1713][337,1902]`
+  - `fabMute` (Mute) at `[148,1713][337,1902]`
   - `fabEndCall` (End Call) at `[418,1686][661,1929]`
-  - `fabSpeaker` (Lautsprecher) at `[742,1713][931,1902]`
+  - `fabSpeaker` (Speaker) at `[742,1713][931,1902]`
 - End call button works correctly (returns to dialer)
 
 **Screenshots:** `dialer_test6.png` (call screen), `dialer_test7.png` (call screen with timer)
@@ -96,7 +96,7 @@ The `fabSpeaker` button is visible in the call screen at `[742,1713][931,1902]`.
 - Three options shown: **Send SMS**, **Share Link**, **Abbrechen** (Cancel)
 - **Send SMS**: Opens Samsung Messages with recipient pre-filled (999999999) and message body: "Join me on SecureCall for encrypted voice calls! Download: https://neabouli.github.io/stealth/"
 - **Share Link**: Opens Android Share Sheet with invite text, showing direct share contacts (Telegram, Gmail, X, Quick Share, etc.)
-- **Abbrechen**: Dismisses dialog, returns to dialer
+- **Abbrechen** (Cancel): Dismisses dialog, returns to dialer
 
 **Screenshots:** `sms_test1.png` (invite dialog), `sms_test3.png` (SMS app with pre-filled message), `sms_test8.png` (share sheet)
 
@@ -112,10 +112,10 @@ The `fabSpeaker` button is visible in the call screen at `[742,1713][931,1902]`.
 ## Navigation & UI Tests
 
 All four bottom navigation tabs verified on S10:
-- **Anrufe** (Calls): Call history tab loads correctly
-- **Kontakte** (Contacts): Contact list with search, system contacts loaded
+- **Anrufe** ("Calls"): Call history tab loads correctly
+- **Kontakte** ("Contacts"): Contact list with search, system contacts loaded
 - **Dialer**: Full dial pad with T9 suggestions, call/invite flow
-- **Einstellungen** (Settings): Settings tab accessible
+- **Einstellungen** ("Settings"): Settings tab accessible
 
 ## Backend Connection
 

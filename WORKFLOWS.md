@@ -1,29 +1,29 @@
 # SecureCall — Developer Workflows
 
 ## Bug Report Triage (User Reports via Wiki)
-User-Reports kommen über das Formular auf stealthx.tech/wiki/bug-report.html
-und landen automatisch als GitHub Issues mit Label `user-report`.
+User reports come through the form at stealthx.tech/wiki/bug-report.html
+and are automatically created as GitHub Issues with the label `user-report`.
 
-**Reports auslesen:**
+**Read reports:**
 ```
 gh issue list --label user-report --state open
 ```
 
-**Einzelnes Issue lesen:**
+**Read a single issue:**
 ```
-gh issue view <nummer>
+gh issue view <number>
 ```
 
-**Issue schließen nach Fix:**
+**Close issue after fix:**
 ```
-gh issue close <nummer> --comment "Fixed in v..."
+gh issue close <number> --comment "Fixed in v..."
 ```
 
 **Endpoint:** https://protective-healing-production.up.railway.app/api/report
-**Formular:** https://stealthx.tech/wiki/bug-report.html
+**Form:** https://stealthx.tech/wiki/bug-report.html
 
 ---
 
 ## Beta Testing
-Tester-Status und Changelog: stealthx.tech/wiki/beta-testing.html
-Ziel: 15 Tester (aktuell: 14)
+Tester status and changelog: stealthx.tech/wiki/beta-testing.html
+Target: 15 testers (current: 14)

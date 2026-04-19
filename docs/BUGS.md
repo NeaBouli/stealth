@@ -33,10 +33,10 @@
 | BUG-031 | Contact not verified after call — no verification prompt | OPEN | Medium | — |
 | BUG-034 | 0s duration calls after WS reconnect — CALL_INVITE sent before REGISTER processed | FIXED | High | 6d05712 |
 | BUG-035 | DNS resolution failure after network switch — rapid 2s retries drain battery | FIXED | Medium | 6d05712 |
-| BUG-036 | Dialer Tastatur — kein ABC Toggle für alphanumerische Custom Call IDs | FIXED | Medium | 8f818eb |
-| BUG-037 | ICE MAXBUNDLE — nur 4 ICE Candidates statt volles Gathering | FIXED | Medium | 21e6ca2 |
-| BUG-038 | Doppeltes audio guard — Call active Zustand inkonsistent | FIXED | Medium | 21e6ca2 |
-| BUG-039 | Audio Latenz — pre-config Verzögerung beim Call-Start | FIXED | Medium | 21e6ca2 |
+| BUG-036 | Dialer keyboard — no ABC toggle for alphanumeric Custom Call IDs | FIXED | Medium | 8f818eb |
+| BUG-037 | ICE MAXBUNDLE — only 4 ICE candidates instead of full gathering | FIXED | Medium | 21e6ca2 |
+| BUG-038 | Double audio guard — call active state inconsistent | FIXED | Medium | 21e6ca2 |
+| BUG-039 | Audio latency — pre-config delay at call start | FIXED | Medium | 21e6ca2 |
 
 ## Fix Details
 
@@ -179,17 +179,17 @@
   - S7→S10 call during active VPN: 21s E2E-encrypted call ✅
   - VPN stop: clean tunnel DOWN ✅
 
-### BUG-036: Dialer Tastatur — kein ABC Toggle (FIXED — 8f818eb)
-- **Fix:** Toggle-Button im Dialer zwischen 123 ↔ ABC Modus hinzugefügt. ABC-Modus zeigt Buchstaben-Suggestions für alphanumerische Custom Call IDs.
+### BUG-036: Dialer Keyboard — no ABC Toggle (FIXED — 8f818eb)
+- **Fix:** Added toggle button in dialer between 123 ↔ ABC mode. ABC mode shows letter suggestions for alphanumeric Custom Call IDs.
 
-### BUG-037: ICE MAXBUNDLE — nur 4 ICE Candidates (FIXED — 21e6ca2)
-- **Symptom:** WebRTC ICE gathering produzierte nur 4 Kandidaten statt vollständiges Gathering.
-- **Fix:** MAXBUNDLE SDP Policy korrigiert, volles ICE Candidate Gathering aktiviert.
+### BUG-037: ICE MAXBUNDLE — only 4 ICE Candidates (FIXED — 21e6ca2)
+- **Symptom:** WebRTC ICE gathering produced only 4 candidates instead of full gathering.
+- **Fix:** Corrected MAXBUNDLE SDP Policy, enabled full ICE candidate gathering.
 
-### BUG-038: Doppeltes audio guard bei Call active (FIXED — 21e6ca2)
-- **Symptom:** Audio guard wurde doppelt aktiviert wenn Call bereits aktiv war, führte zu inkonsistentem Zustand.
-- **Fix:** Guard-Check vor Audio-Initialisierung verhindert doppelte Aktivierung.
+### BUG-038: Double audio guard on call active (FIXED — 21e6ca2)
+- **Symptom:** Audio guard was activated twice when call was already active, leading to inconsistent state.
+- **Fix:** Guard check before audio initialization prevents double activation.
 
-### BUG-039: Audio Latenz — pre-config Verzögerung (FIXED — 21e6ca2)
-- **Symptom:** Spürbare Latenz beim Call-Start bevor Audio-Konfiguration abgeschlossen.
-- **Fix:** Audio-Konfiguration wird vor dem Call-Start vorbereitet statt erst nach Verbindung.
+### BUG-039: Audio Latency — pre-config delay (FIXED — 21e6ca2)
+- **Symptom:** Noticeable latency at call start before audio configuration completed.
+- **Fix:** Audio configuration is prepared before call start instead of after connection.

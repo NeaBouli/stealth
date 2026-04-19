@@ -1,9 +1,9 @@
 # SecureCall Ecosystem – Changelog
 
-Dieses Dokument listet **alle Änderungen**, Features, Fixes und sicherheitsrelevanten Updates
-an der SecureCall/Stealth Plattform auf.
+This document lists **all changes**, features, fixes and security-relevant updates
+to the SecureCall/Stealth platform.
 
-Format orientiert sich an "Keep a Changelog" + sicherheitskritischen Erweiterungen.
+Format follows "Keep a Changelog" with security-critical extensions.
 
 ---
 
@@ -59,85 +59,85 @@ Format orientiert sich an "Keep a Changelog" + sicherheitskritischen Erweiterung
 ## [1.0.17] — 2026-04-12 — vC38
 
 ### Fixed
-- **Play Console Compliance**: `REQUEST_INSTALL_PACKAGES` Permission entfernt — keine sensitive-permission Review/Video-Erklärung mehr nötig
-- In-App Updater öffnet jetzt den Browser mit dem APK-Download-Link statt direkt zu installieren
+- **Play Console Compliance**: `REQUEST_INSTALL_PACKAGES` permission removed — no sensitive-permission review/video explanation needed anymore
+- In-App Updater now opens the browser with the APK download link instead of installing directly
 
 ### Removed
-- `UpdateInstaller.kt` (Signature-Check + FileProvider Install Intent — nicht mehr nötig)
-- `UpdateDownloader.kt` (DownloadManager Wrapper — Browser/System übernimmt)
+- `UpdateInstaller.kt` (signature check + FileProvider install intent — no longer needed)
+- `UpdateDownloader.kt` (DownloadManager wrapper — browser/system handles it)
 
 ### Security
-- Pro/Premium Gradle Flavors hinter `-Pinternal` Flag geschützt — können nicht mehr versehentlich gebaut werden
+- Pro/Premium Gradle Flavors protected behind `-Pinternal` flag — can no longer be built accidentally
 
 ---
 
 ## [1.0.16] — 2026-04-11 — vC37
 
 ### Added
-- **In-App Updater** für Sideload/APK-User:
-  - Automatischer GitHub Releases API Check (1× pro 24h, silent wenn up-to-date)
-  - Update-Dialog mit Version, Changelog, Größe
-  - Download + SHA-256 Signing-Cert Verification + FileProvider Install
-  - Install-Source Routing: Play Store → market://, F-Droid → fdroid.app://, Sideload → in-app flow
-- `UpdateChecker.kt` — OkHttp GitHub API Client mit vC-Regex Parser
-- `UpdateDownloader.kt` — DownloadManager Wrapper
-- `UpdateInstaller.kt` — APK Signature Verification gegen installierte App
-- `UpdateInfo.kt` — Data Class für Release-Metadaten
-- Auto-Check in `MainActivity.onCreate()` (throttled, nur Sideload)
-- Key Log-Events auf `Log.w` promoted für Release-Observability
+- **In-App Updater** for sideload/APK users:
+  - Automatic GitHub Releases API check (once per 24h, silent when up-to-date)
+  - Update dialog with version, changelog, size
+  - Download + SHA-256 signing cert verification + FileProvider install
+  - Install source routing: Play Store → market://, F-Droid → fdroid.app://, Sideload → in-app flow
+- `UpdateChecker.kt` — OkHttp GitHub API client with vC regex parser
+- `UpdateDownloader.kt` — DownloadManager wrapper
+- `UpdateInstaller.kt` — APK signature verification against installed app
+- `UpdateInfo.kt` — Data class for release metadata
+- Auto-check in `MainActivity.onCreate()` (throttled, sideload only)
+- Key log events promoted to `Log.w` for release observability
 
 ---
 
 ## [1.0.15] — 2026-04-10 — vC36
 
 ### Fixed
-- **F-010 CRITICAL**: WalletConnect Production-Crash komplett behoben
-  - ALLE 5 public methods in `WalletConnectManager.kt` mit `catch(Throwable)` gewrapped
-  - `connect()` und `verifyAndUnlock()` waren in vC35 noch ungewrapped
-  - 6 von 6 catch-Blöcke jetzt Throwable (vorher: 4 Exception + 2 NoClassDefFoundError)
-  - Root Cause: android-core:1.26.0 vs sign:2.26.0 Version-Mismatch → ClassNotFoundException + NoSuchMethodError
+- **F-010 CRITICAL**: WalletConnect production crash fully resolved
+  - ALL 5 public methods in `WalletConnectManager.kt` wrapped with `catch(Throwable)`
+  - `connect()` and `verifyAndUnlock()` were still unwrapped in vC35
+  - 6 of 6 catch blocks now Throwable (previously: 4 Exception + 2 NoClassDefFoundError)
+  - Root cause: android-core:1.26.0 vs sign:2.26.0 version mismatch → ClassNotFoundException + NoSuchMethodError
 
 ---
 
 ## [1.0.14] — 2026-04-10 — vC35
 
 ### Fixed
-- **F-010**: `WalletConnectManager.init()` catch-Block von `NoClassDefFoundError` auf `Throwable` erweitert
-  - Crashlytics: 4 Abstürze / 2 Nutzer auf vC34 (ClassNotFoundException: PushClient)
-  - `SecureCallApplication.kt` outer catch ebenfalls → `catch(Throwable)`
+- **F-010**: `WalletConnectManager.init()` catch block extended from `NoClassDefFoundError` to `Throwable`
+  - Crashlytics: 4 crashes / 2 users on vC34 (ClassNotFoundException: PushClient)
+  - `SecureCallApplication.kt` outer catch also → `catch(Throwable)`
 - **F-009**: `CallActivity.onCreate()` → `setShowWhenLocked(true)` + `setTurnScreenOn(true)`
-  - Gap: IncomingCallActivity hatte die Flags, CallActivity nicht → Call-UI verschwand hinter Lock-Screen nach Accept
-  - Fallback für Android < 8.1: `FLAG_SHOW_WHEN_LOCKED | FLAG_TURN_SCREEN_ON | FLAG_DISMISS_KEYGUARD`
+  - Gap: IncomingCallActivity had the flags, CallActivity did not → call UI disappeared behind lock screen after accept
+  - Fallback for Android < 8.1: `FLAG_SHOW_WHEN_LOCKED | FLAG_TURN_SCREEN_ON | FLAG_DISMISS_KEYGUARD`
 
 ---
 
 ## [1.0.13] — 2026-04-09 — vC34
 
 ### Fixed
-- F-Droid Build-Konfiguration: Summary in `en-US/summary.txt` (make-summary-translatable)
+- F-Droid build configuration: Summary in `en-US/summary.txt` (make-summary-translatable)
 - F-Droid `rewritemeta`: curl line wrap + printf trailing space
-- F-Droid `rewritemeta`: exakte Feld-Reihenfolge (ndk nach scandelete)
+- F-Droid `rewritemeta`: exact field order (ndk after scandelete)
 
-### Known Issues (gefunden in Test-Session 2026-04-10)
-- F-001: Phonebook leer trotz 35 Einträgen (UX — nur SecureCall-registrierte gezeigt)
-- F-002: Komplett-Reset nach Uninstall (SharedPreferences-Datenverlust)
-- F-003: SECUREID_CHANGED updated 0 contacts (replaceSecureId matched nicht per phone)
-- F-004: S7 hatte 2 Apps parallel (pro + free) — Test-Setup Issue
-- F-005: Log Stripping in Release verhindert Diagnose
-- F-006: PRO-Feature Toggles geben kein Feedback auf FREE
-- F-007: Save Call History Row hinter BottomNav verdeckt auf S7
-- F-008: Kontakt-Duplikat nach Verify (Phonebook vs internal Name)
-- F-009: Lock-Screen Call-UI nicht sichtbar nach Accept → **gefixt in vC35**
-- F-010: WalletConnectManager.init Crashlytics Production-Crash → **gefixt in vC35/vC36**
-- F-011: Security Warnings: Samsung Diktiergerät (false positive)
-- F-012: DEBUG LoggingLevel in FREE BuildConfig (Inkonsistenz mit ProGuard)
+### Known Issues (found in test session 2026-04-10)
+- F-001: Phonebook empty despite 35 entries (UX — only SecureCall-registered contacts shown)
+- F-002: Complete reset after uninstall (SharedPreferences data loss)
+- F-003: SECUREID_CHANGED updated 0 contacts (replaceSecureId did not match by phone)
+- F-004: S7 had 2 apps installed in parallel (pro + free) — test setup issue
+- F-005: Log stripping in release prevents diagnosis
+- F-006: PRO feature toggles give no feedback on FREE
+- F-007: Save Call History row hidden behind BottomNav on S7
+- F-008: Contact duplicate after verify (phonebook vs internal name)
+- F-009: Lock screen call UI not visible after accept → **fixed in vC35**
+- F-010: WalletConnectManager.init Crashlytics production crash → **fixed in vC35/vC36**
+- F-011: Security warnings: Samsung voice recorder (false positive)
+- F-012: DEBUG LoggingLevel in FREE BuildConfig (inconsistency with ProGuard)
 
 ---
 
 ## [1.0.12] — 2026-04-02 — vC29
 
 ### Fixed
-- 5 Bug-Fixes aus Test-Session 2026-04-01/02
+- 5 bug fixes from test session 2026-04-01/02
 - Call verified S10→S7 audio OK
 
 ---
@@ -145,17 +145,17 @@ Format orientiert sich an "Keep a Changelog" + sicherheitskritischen Erweiterung
 ## [Unreleased]
 
 ### Added
-- Projektstruktur angelegt
-- Architektur-Dokumentation
-- Security-Design Dokument
-- Developer Roadmap
-- Entwicklerhandbuch
-- CI-Linting Workflow
+- Project structure created
+- Architecture documentation
+- Security design document
+- Developer roadmap
+- Developer handbook
+- CI linting workflow
 
 ### Changed
-- README Konflikt bereinigt und zusammengeführt
+- README conflict resolved and merged
 
 ### Security
-- Initiale Sicherheitsrichtlinien definiert
+- Initial security guidelines defined
 
 ---

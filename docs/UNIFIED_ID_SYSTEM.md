@@ -1,34 +1,34 @@
 # StealthX Unified ID System
 
-## Konzept
-Eine ID fuer alle StealthX Produkte.
-Wer deine sx_ID kennt, kann dich auf allen Kanaelen erreichen.
+## Concept
+One ID for all StealthX products.
+Anyone who knows your sx_ID can reach you on all channels.
 
 ## Format
-sx_[9 Zeichen Base58]
-Beispiel: sx_a7Kx9mPq2
+sx_[9 characters Base58]
+Example: sx_a7Kx9mPq2
 
 ## Custom Handle (Pro/Elite)
-@username (3-20 Zeichen)
-Wird statt der sx_ID angezeigt wo immer moeglich.
+@username (3-20 characters)
+Displayed instead of the sx_ID wherever possible.
 
-## Generierung
-- Deterministisch aus Ed25519 Public Key (SHA-256, Base58, 9 Chars)
-- Einmalig pro Geraet — beim ersten Start einer StealthX App
-- Kein Server noetig — rein lokal
-- Gleiche ID in SecureCall und SecureChat
+## Generation
+- Deterministic from Ed25519 Public Key (SHA-256, Base58, 9 chars)
+- One-time per device — on first launch of a StealthX app
+- No server required — purely local
+- Same ID in SecureCall and SecureChat
 
-## Cross-App Verwendung
-| App | Verwendung der ID |
-|-----|-------------------|
-| SecureCall | Anrufe empfangen unter sx_ID |
-| SecureChat | Nachrichten empfangen unter sx_ID |
+## Cross-App Usage
+| App | ID Usage |
+|-----|----------|
+| SecureCall | Receive calls under sx_ID |
+| SecureChat | Receive messages under sx_ID |
 
-## Kontakte
-Ein Kontakt mit sx_ID ist automatisch in beiden Apps erreichbar
-— sofern er die jeweilige App installiert hat.
+## Contacts
+A contact with an sx_ID is automatically reachable in both apps
+— provided they have the respective app installed.
 
-## Datenschutz
-- ID wird lokal in EncryptedSharedPreferences gespeichert
-- Kein zentrales Register
-- Kaspa kann optional als oeffentliches Verzeichnis dienen (Phase 2)
+## Privacy
+- ID is stored locally in EncryptedSharedPreferences
+- No central registry
+- Kaspa can optionally serve as a public directory (Phase 2)

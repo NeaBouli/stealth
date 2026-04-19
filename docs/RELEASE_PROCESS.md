@@ -1,35 +1,35 @@
 # StealthX Platform — Release Process
 
-## Die drei Stufen (PFLICHT für alle StealthX Apps)
+## The Three Stages (MANDATORY for all StealthX Apps)
 
-### Stufe 1 — Internal Alpha (Entwickler-intern)
-- Nur Entwickler und direkte Tester
-- Google Play: Interner Test Track
-- Ziel: Neue Features stabilisieren
-- Voraussetzung für Stufe 2: Alle Unit Tests grün,
-  kein kritischer Bug in LOGBUCH.md
+### Stage 1 — Internal Alpha (Developer-internal)
+- Developers and direct testers only
+- Google Play: Internal Test Track
+- Goal: Stabilize new features
+- Prerequisite for Stage 2: All unit tests green,
+  no critical bug in LOGBUCH.md
 
-### Stufe 2 — Closed Beta (Pre-Live)
-- Geschlossene Testergruppe (max. 100 Tester)
-- Google Play: Geschlossener Test Track (Alpha)
-- Ziel: Realworld-Feedback, letzte Bugs
-- Voraussetzung für Stufe 3: Keine P0/P1 Bugs,
-  mindestens 7 Tage stabil
+### Stage 2 — Closed Beta (Pre-Live)
+- Closed tester group (max. 100 testers)
+- Google Play: Closed Test Track (Alpha)
+- Goal: Real-world feedback, final bugs
+- Prerequisite for Stage 3: No P0/P1 bugs,
+  stable for at least 7 days
 
-### Stufe 3 — Production Release (Live)
-- Öffentlich auf Google Play / F-Droid
-- Voraussetzung: Externer Security Audit abgeschlossen,
-  Release Checklist vollständig
+### Stage 3 — Production Release (Live)
+- Public on Google Play / F-Droid
+- Prerequisite: External security audit completed,
+  release checklist fully done
 
-## KRITISCHE REGEL: Stable Builds sichern
+## CRITICAL RULE: Secure Stable Builds
 
-BEVOR eine neue Funktion entwickelt wird:
-1. Aktuellen stabilen Stand taggen: git tag stable-DATUM
-2. Tag pushen: git push origin stable-DATUM
-3. Niemals stabile Funktionen ohne separaten Branch anfassen
-4. Feature Branches: feature/NAME — nie direkt auf main
+BEFORE developing a new feature:
+1. Tag the current stable state: git tag stable-DATE
+2. Push the tag: git push origin stable-DATE
+3. Never touch stable functionality without a separate branch
+4. Feature branches: feature/NAME — never directly on main
 
-## Aktueller Status
-- SecureCall: Stufe 2 (Closed Alpha — v1.0.22, beta-test23, Production ausstehend)
-- SecureChat: Stufe 1 (In Entwicklung)
-- Chameleon: Stufe 1 (v0.1.0-alpha)
+## Current Status
+- SecureCall: Stage 2 (Closed Alpha — v1.0.22, beta-test23, production pending)
+- SecureChat: Stage 1 (In development)
+- Chameleon: Stage 1 (v0.1.0-alpha)

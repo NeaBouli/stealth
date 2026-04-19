@@ -36,9 +36,9 @@
 ### SECURITY Section
 | Setting | S10 Premium | S7 Pro | Tab S4 Free | Result |
 |---------|------------|--------|-------------|--------|
-| Certificate Pinning | "Aktiviert" | Visible | N/A | ✅ PASS |
-| Device Attestation | "Aktiviert" | Visible | N/A | ✅ PASS |
-| Hardware Keystore | "Aktiviert" | N/A | N/A | ✅ PASS |
+| Certificate Pinning | "Enabled" | Visible | N/A | ✅ PASS |
+| Device Attestation | "Enabled" | Visible | N/A | ✅ PASS |
+| Hardware Keystore | "Enabled" | N/A | N/A | ✅ PASS |
 | Anti-Recording | Visible | Visible | N/A | ✅ PASS |
 | Block Screenshots | Enforced (release) | Toggle | N/A | ✅ PASS |
 | Exclusive Microphone | "Always On" | N/A | N/A | ✅ PASS |
