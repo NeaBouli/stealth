@@ -49,6 +49,18 @@ docs/TODO.md
 store_assets/ADMOB_TODO.md
 test-session-*/
 
+# Release binaries (use GitHub Releases instead)
+releases/**/*.apk
+releases/**/*.aab
+releases/**/*.aar
+
+# Internal memos
+docs/HANDOVER.md
+docs/MIGRATION_SECURITY_MEMO.md
+releases/**/PLAY_STORE_UPLOAD.md
+releases/**/RELEASE_NOTES.md
+releases/FDROID_RELEASE_NOTES.md
+
 # Node.js
 node_modules/
 npm-debug.log*
