@@ -223,8 +223,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         try {
             val pm = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
             cpuWakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "securecall:ws_heartbeat")
-            cpuWakeLock?.acquire()
-            Log.d("WS_SERVICE", "CPU wake lock acquired for heartbeats")
+            cpuWakeLock?.acquire(10 * 60 * 1000L) // 10 min max — prevents indefinite hold if service killed
+            Log.d("WS_SERVICE", "CPU wake lock acquired for heartbeats (10min timeout)")
         } catch (e: Exception) {
             Log.w("WS_SERVICE", "Failed to acquire wake lock: ${e.message}")
         }

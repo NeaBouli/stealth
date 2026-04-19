@@ -5,6 +5,7 @@ import com.securecall.app.BuildConfig
 import org.json.JSONObject
 import org.webrtc.*
 import java.nio.ByteBuffer
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Manages a WebRTC PeerConnection + DataChannel for P2P audio transport.
@@ -51,7 +52,7 @@ class WebRtcManager(
     // Pending queues for messages that arrive before init() completes
     private var pendingOffer: String? = null
     private var pendingAnswer: String? = null
-    private val pendingIceCandidates = mutableListOf<JSONObject>()
+    private val pendingIceCandidates = CopyOnWriteArrayList<JSONObject>()
 
     fun init(dynamicIceServers: List<PeerConnection.IceServer>? = null) {
         factory = PeerConnectionFactory.builder()
