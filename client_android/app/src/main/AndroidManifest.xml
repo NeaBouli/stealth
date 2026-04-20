@@ -124,10 +124,12 @@
             android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity
             android:name=".CallActivity"
-            android:theme="@style/Theme.SecureCall.Call" />
+            android:theme="@style/Theme.SecureCall.Call"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".IncomingCallActivity"
             android:theme="@style/Theme.SecureCall.Call"
+            android:screenOrientation="portrait"
             android:showOnLockScreen="true"
             android:turnScreenOn="true" />
         <activity android:name=".ui.onboarding.OnboardingActivity" />
