@@ -1,0 +1,1 @@
+Call improvements: screen off during calls, rotation locked, ringtone fix, stability improvements.

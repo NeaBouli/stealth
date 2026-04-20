@@ -7,6 +7,20 @@ Format follows "Keep a Changelog" with security-critical extensions.
 
 ---
 
+## [1.0.25] — 2026-04-20 — vC46
+
+### Fixed
+- Proximity sensor: screen turns off when phone held to ear during call
+- Screen rotation locked (nosensor) during calls — no more flipping
+- Ringtone: USAGE_ALARM for correct audio routing on all devices
+- Proximity release with RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY
+- H-06: CALL_BUSY now validates caller is session participant
+- H-07: Async IFR verify guards against closed WebSocket
+- H-11: Infinite retry loop replaced with max 10 retries + isDestroyed()
+- H-12: Safe map iteration in heartbeat cleanup (collect-then-delete)
+
+---
+
 ## [1.0.24] — 2026-04-19 — vC45
 
 ### Fixed
