@@ -125,11 +125,11 @@
         <activity
             android:name=".CallActivity"
             android:theme="@style/Theme.SecureCall.Call"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="nosensor" />
         <activity
             android:name=".IncomingCallActivity"
             android:theme="@style/Theme.SecureCall.Call"
-            android:screenOrientation="portrait"
+            android:screenOrientation="nosensor"
             android:showOnLockScreen="true"
             android:turnScreenOn="true" />
         <activity android:name=".ui.onboarding.OnboardingActivity" />
