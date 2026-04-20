@@ -32,7 +32,8 @@ class HeartbeatManager {
         }
       }
 
-      // --- WS Clients prüfen ---
+      // --- WS Clients prüfen (collect first, delete after) ---
+      const clientsToRemove = [];
       for (const [id, obj] of this.clients.entries()) {
         const ws = obj.ws;
 
@@ -41,7 +42,8 @@ class HeartbeatManager {
           ws.ping();
         } catch (e) {
           console.log("[HB] WS error, removing:", id);
-          this.clients.delete(id);
+          clientsToRemove.push(id);
+          continue;
         }
 
         // Timeout check — extended window if the client is currently in a call.
@@ -51,17 +53,20 @@ class HeartbeatManager {
         if (now - obj.lastSeen > timeoutMs) {
           console.log("[HB] Client timed out:", id, `(after ${Math.round(timeoutMs/1000)}s idle)`);
           try { ws.terminate(); } catch {}
-          this.clients.delete(id);
+          clientsToRemove.push(id);
         }
       }
+      for (const id of clientsToRemove) this.clients.delete(id);
 
-      // --- Routing-Sessions prüfen ---
+      // --- Routing-Sessions prüfen (collect first, delete after) ---
+      const sessionsToRemove = [];
       for (const [sessionId, session] of this.routingTable.entries()) {
         if (now - session.updated > SESSION_TIMEOUT) {
           console.log("[HB] Session expired:", sessionId);
-          this.routingTable.delete(sessionId);
+          sessionsToRemove.push(sessionId);
         }
       }
+      for (const sid of sessionsToRemove) this.routingTable.delete(sid);
 
     }, HEARTBEAT_INTERVAL);
   }
