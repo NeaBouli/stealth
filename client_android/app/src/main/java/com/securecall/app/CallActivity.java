@@ -879,19 +879,17 @@ public class CallActivity extends AppCompatActivity {
             com.securecall.app.ads.AdMobManager.INSTANCE.onCallCompleted(this);
         }
 
-        // Offer to save contact if this was a phone-resolved call to an unsaved clientId
-        // IMPORTANT: Do NOT release proximity sensor before showing dialog — on Samsung devices,
-        // releasing the wake lock triggers a screen state transition that can destroy the Activity.
+        // Release proximity sensor BEFORE dialogs so screen turns on after peer hangup.
+        // FLAG_KEEP_SCREEN_ON prevents Samsung Activity destruction during dialog.
+        releaseProximitySensor();
+
         if (shouldOfferContactSave()) {
-            // Keep screen on while dialog is visible
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             showSaveContactDialog();
         } else if (shouldOfferVerify()) {
-            // BUG-031: Offer to verify unverified contact after call
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             showVerifyDialog();
         } else {
-            releaseProximitySensor();
             finish();
         }
     }
