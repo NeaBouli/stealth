@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean inCall = false;
     private AudioCapturePlaceholder audioCapture;
     private MaterialToolbar toolbar;
+    private int wireRetryCount = 0;
 
     private static final String TAG = "MainActivity";
     private static final int REQUEST_RECORD_AUDIO = 1001;
@@ -720,8 +721,11 @@ public class MainActivity extends AppCompatActivity {
                 tintConnectionButton(0xFF9E9E9E);
             }
         } else {
-            // Service not started yet — retry after a short delay
-            new android.os.Handler(getMainLooper()).postDelayed(this::wireConnectionStatusCallbacks, 1000);
+            // Service not started yet — retry after a short delay (max 10 retries)
+            wireRetryCount++;
+            if (wireRetryCount <= 10 && !isDestroyed()) {
+                new android.os.Handler(getMainLooper()).postDelayed(this::wireConnectionStatusCallbacks, 1000);
+            }
         }
     }
 

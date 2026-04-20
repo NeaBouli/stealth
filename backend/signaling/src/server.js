@@ -408,8 +408,8 @@ app.get("/routing/list", requireAdmin, (req, res) => {
 });
 
 // --- ICE Servers API (BACKEND-02) ---
-// Public endpoint — app clients fetch TURN credentials at call start.
-// Credentials come from server env vars (rotatable without APK rebuild).
+// H-13: TODO — move to WS-only delivery for registered clients.
+// Currently public because IceServerFetcher.kt uses HTTP GET.
 app.get("/ice-servers", (req, res) => {
   res.json({ iceServers: ICE_SERVERS });
 });
@@ -902,7 +902,7 @@ wss.on("connection", (ws, req) => {
     if (msg.type === "CALL_BUSY") {
       const myClientId = getClientId(connId);
       const session = routingTable.get(msg.sessionId);
-      if (session) {
+      if (session && session.to === myClientId) {
         const callerClientId = session.from;
         sendToClient(callerClientId, {
           type: "CALL_BUSY",
@@ -1450,21 +1450,30 @@ wss.on("connection", (ws, req) => {
           console.log("[IFR] Lock verified:", wallet, "->", result.tier, "(", result.lockedAmount, "IFR)");
         }
 
-        ws.send(JSON.stringify({
-          type: "IFR_LOCK_RESULT",
-          success: result.success,
-          tier: result.tier || "",
-          lockedAmount: result.lockedAmount || "0",
-          walletAddress: wallet,
-          error: result.error || ""
-        }));
+        // H-07: Guard against closed WS after async operation
+        try {
+          if (ws.readyState === 1) { // WebSocket.OPEN
+            ws.send(JSON.stringify({
+              type: "IFR_LOCK_RESULT",
+              success: result.success,
+              tier: result.tier || "",
+              lockedAmount: result.lockedAmount || "0",
+              walletAddress: wallet,
+              error: result.error || ""
+            }));
+          }
+        } catch (_) {}
       }).catch(e => {
         console.error("[IFR] Verification error:", e.message);
-        ws.send(JSON.stringify({
-          type: "IFR_LOCK_RESULT",
-          success: false,
-          error: "server_error"
-        }));
+        try {
+          if (ws.readyState === 1) {
+            ws.send(JSON.stringify({
+              type: "IFR_LOCK_RESULT",
+              success: false,
+              error: "server_error"
+            }));
+          }
+        } catch (_) {}
       });
 
       return;
