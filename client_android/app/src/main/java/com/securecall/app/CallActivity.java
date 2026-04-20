@@ -128,6 +128,9 @@ public class CallActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_call);
 
+        // Lock rotation — nosensor ignores accelerometer completely
+        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
+
         TextView connectionState = findViewById(R.id.connectionState);
         TextView callerNameView = findViewById(R.id.callerName);
         Chronometer callTimer = findViewById(R.id.callTimer);
@@ -575,8 +578,10 @@ public class CallActivity extends AppCompatActivity {
 
     private void releaseProximitySensor() {
         if (proximityWakeLock != null && proximityWakeLock.isHeld()) {
-            proximityWakeLock.release();
-            Log.d(TAG, "Proximity wake lock released");
+            // RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY: screen turns on only when device
+            // is moved away from ear, preventing accidental touch events
+            proximityWakeLock.release(PowerManager.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY);
+            Log.d(TAG, "Proximity wake lock released (wait for no proximity)");
         }
     }
 
