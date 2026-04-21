@@ -544,11 +544,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         val phoneNumber = getDevicePhoneNumber()
         // App signature for fork protection — SHA-256 of signing certificate
         val appSignature = getAppSignature()
-        val json = if (phoneNumber != null) {
-            """{"type":"REGISTER","clientId":"$clientId","phoneNumber":"$phoneNumber","appSignature":"$appSignature"}"""
-        } else {
-            """{"type":"REGISTER","clientId":"$clientId","appSignature":"$appSignature"}"""
-        }
+        val json = org.json.JSONObject().apply {
+            put("type", "REGISTER")
+            put("clientId", clientId)
+            if (phoneNumber != null) put("phoneNumber", phoneNumber)
+            put("appSignature", appSignature)
+        }.toString()
         client?.send(json)
         Log.d("WS_SERVICE", "REGISTER sent: $clientId, phone: ${phoneNumber ?: "none"}")
     }

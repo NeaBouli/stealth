@@ -331,6 +331,7 @@ class DialerFragment : Fragment() {
     }
 
     private fun showInviteDialog(number: String) {
+        if (!isAdded) return
         val items = arrayOf(
             getString(R.string.dialer_send_messenger),
             getString(R.string.dialer_share_link),
@@ -370,6 +371,7 @@ class DialerFragment : Fragment() {
     }
 
     private fun sendViaMessenger(number: String) {
+        if (!isAdded) return
         val message = buildInviteMessage()
         // Try messengers in priority order: WhatsApp > Telegram > Signal
         val messengers = listOf(
@@ -399,6 +401,7 @@ class DialerFragment : Fragment() {
     }
 
     private fun sendSmsInvite(number: String) {
+        if (!isAdded) return
         val message = buildInviteMessage()
         try {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
@@ -412,6 +415,7 @@ class DialerFragment : Fragment() {
     }
 
     private fun shareInviteLink() {
+        if (!isAdded) return
         val message = buildInviteMessage()
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
