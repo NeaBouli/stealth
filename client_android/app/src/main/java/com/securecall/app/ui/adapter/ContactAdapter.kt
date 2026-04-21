@@ -11,14 +11,29 @@ import com.securecall.app.R
 import com.securecall.app.data.Contact
 
 class ContactAdapter(
-    private val contacts: List<Contact>,
-    private val registeredPhones: Set<String> = emptySet(),
-    private val onlinePhones: Set<String> = emptySet(),
-    private val onlineClientIds: Set<String> = emptySet(),
-    private val hideOnlineStatus: Boolean = false,
+    private var contacts: List<Contact>,
+    private var registeredPhones: Set<String> = emptySet(),
+    private var onlinePhones: Set<String> = emptySet(),
+    private var onlineClientIds: Set<String> = emptySet(),
+    private var hideOnlineStatus: Boolean = false,
     private val onCallClick: ((Contact) -> Unit)? = null,
     private val onLongClick: ((Contact) -> Unit)? = null
 ) : RecyclerView.Adapter<ContactAdapter.ViewHolder>() {
+
+    fun updateData(
+        newContacts: List<Contact>,
+        newRegistered: Set<String>,
+        newOnline: Set<String>,
+        newOnlineClientIds: Set<String>,
+        newHideOnlineStatus: Boolean
+    ) {
+        contacts = newContacts
+        registeredPhones = newRegistered
+        onlinePhones = newOnline
+        onlineClientIds = newOnlineClientIds
+        hideOnlineStatus = newHideOnlineStatus
+        notifyDataSetChanged()
+    }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val txtAvatar: TextView = view.findViewById(R.id.txtAvatar)

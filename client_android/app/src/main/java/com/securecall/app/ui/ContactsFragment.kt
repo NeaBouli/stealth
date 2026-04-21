@@ -38,6 +38,7 @@ class ContactsFragment : Fragment() {
     private var registeredPhones: Set<String> = emptySet()
     private var onlinePhones: Set<String> = emptySet()
     private var statusRefreshHandler: android.os.Handler? = null
+    private var contactAdapter: ContactAdapter? = null
 
     companion object {
         private const val TAG = "ContactsFragment"
@@ -651,10 +652,16 @@ class ContactsFragment : Fragment() {
         } else {
             recycler.visibility = View.VISIBLE
             emptyState.visibility = View.GONE
-            recycler.adapter = ContactAdapter(contacts, registeredPhones, onlinePhones, cachedOnlineClientIds, isFreeTier(),
-                onCallClick = { contact -> startCall(contact) },
-                onLongClick = { contact -> showContactMenu(contact) }
-            )
+            val existing = contactAdapter
+            if (existing != null && recycler.adapter === existing) {
+                existing.updateData(contacts, registeredPhones, onlinePhones, cachedOnlineClientIds, isFreeTier())
+            } else {
+                contactAdapter = ContactAdapter(contacts, registeredPhones, onlinePhones, cachedOnlineClientIds, isFreeTier(),
+                    onCallClick = { contact -> startCall(contact) },
+                    onLongClick = { contact -> showContactMenu(contact) }
+                )
+                recycler.adapter = contactAdapter
+            }
         }
     }
 
