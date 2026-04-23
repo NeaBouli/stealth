@@ -7,6 +7,20 @@ Format follows "Keep a Changelog" with security-critical extensions.
 
 ---
 
+## [1.0.27] — 2026-04-24 — vC48
+
+### Security
+- PII: phone numbers hashed in server logs
+- Admin key: query parameter removed, header-only
+- User enumeration: /invite endpoint no longer reveals existence
+- Fork protection: warn/enforce mode with ALLOWED_SIGNATURES
+- Graceful shutdown: WS connections closed on SIGTERM
+
+### Fixed
+- ContactRepository: defensive copy on getHiddenPhones()
+
+---
+
 ## [1.0.26] — 2026-04-23 — vC47
 
 ### Fixed
