@@ -84,6 +84,7 @@ public class CallActivity extends AppCompatActivity {
     private ImageView securityStatusIcon;
     private TextView securityStatusText;
     private TextView securityWarningBanner;
+    private Runnable warningBannerHideRunnable;
     private FloatingActionButton fabEndCall;
     private SecureCallMonitor.SecurityStatus lastSecurityStatus;
     private final java.util.Set<SecureCallMonitor.ThreatType> shownThreatTypes = new java.util.HashSet<>();
@@ -474,13 +475,16 @@ public class CallActivity extends AppCompatActivity {
         securityWarningBanner.setVisibility(View.VISIBLE);
         // Tap to dismiss
         securityWarningBanner.setOnClickListener(v -> securityWarningBanner.setVisibility(View.GONE));
-        // Auto-hide after 10 seconds
-        securityWarningBanner.removeCallbacks(null);
-        securityWarningBanner.postDelayed(() -> {
+        // Cancel any pending auto-hide before scheduling a new one
+        if (warningBannerHideRunnable != null) {
+            securityWarningBanner.removeCallbacks(warningBannerHideRunnable);
+        }
+        warningBannerHideRunnable = () -> {
             if (securityWarningBanner != null) {
                 securityWarningBanner.setVisibility(View.GONE);
             }
-        }, 10000);
+        };
+        securityWarningBanner.postDelayed(warningBannerHideRunnable, 10000);
     }
 
     private String getActionableMessage(SecureCallMonitor.Threat threat) {
