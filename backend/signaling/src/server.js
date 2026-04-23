@@ -643,20 +643,30 @@ wss.on("connection", (ws, req) => {
       }
 
       // App signature verification — fork protection
-      // If ALLOWED_SIGNATURES is set, only allow clients with matching certificate fingerprint
+      // ALLOWED_SIGNATURES: comma-separated list of allowed SHA-256 cert hashes
+      // FORK_PROTECTION_MODE: "warn" (log only, default) or "enforce" (reject)
       const allowedSigs = process.env.ALLOWED_SIGNATURES;
       if (allowedSigs && allowedSigs.trim().length > 0) {
         const allowed = allowedSigs.split(",").map(s => s.trim().toLowerCase());
         const clientSig = (msg.appSignature || "").toLowerCase();
+        const forkMode = (process.env.FORK_PROTECTION_MODE || "warn").toLowerCase();
         if (!clientSig || !allowed.includes(clientSig)) {
-          console.log("[REGISTER] Rejected — unauthorized signature:", clientSig, "from", msg.clientId);
-          ws.send(JSON.stringify({
-            type: "ERROR",
-            error: "unauthorized_client",
-            message: "App signature not authorized"
-          }));
-          return ws.close(4003, "Unauthorized client");
+          if (forkMode === "enforce") {
+            console.log("[REGISTER] REJECTED — unauthorized signature:", clientSig, "from", msg.clientId);
+            ws.send(JSON.stringify({
+              type: "ERROR",
+              error: "unauthorized_client",
+              message: "App signature not authorized"
+            }));
+            return ws.close(4003, "Unauthorized client");
+          } else {
+            console.warn("[REGISTER] WARN — unauthorized signature:", clientSig, "from", msg.clientId, "(warn mode — not rejected)");
+          }
         }
+      }
+      // Log signature presence for adoption monitoring
+      if (allowedSigs) {
+        console.log("[REGISTER] appSignature present:", !!msg.appSignature, "from", msg.clientId);
       }
 
       // Prüfen ob clientId bereits vergeben — allow reconnection by superseding old connection.
