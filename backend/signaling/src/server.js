@@ -61,6 +61,20 @@ const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 // Per-IP connection tracking
 const ipConnections = new Map();
 
+// Extract real client IP behind proxy (Railway, nginx, etc.)
+// Only trusts X-Forwarded-For in production (behind known reverse proxy).
+function getClientIp(req) {
+  if (process.env.TRUST_PROXY === "true" || process.env.RAILWAY_ENVIRONMENT) {
+    const xff = req.headers["x-forwarded-for"];
+    if (xff) {
+      // First IP in chain is the original client
+      const clientIp = xff.split(",")[0].trim();
+      if (clientIp) return clientIp;
+    }
+  }
+  return req.socket.remoteAddress;
+}
+
 // --- App Setup ---
 const app = express();
 // Stripe webhook needs raw body for signature verification — must come BEFORE express.json()
@@ -546,7 +560,7 @@ const wss = new WebSocket.Server({
       }
     }
     // Per-IP connection limit
-    const ip = info.req.socket.remoteAddress;
+    const ip = getClientIp(info.req);
     const count = ipConnections.get(ip) || 0;
     if (count >= MAX_CONNS_PER_IP) {
       return done(false, 429, "Too many connections from this IP");
@@ -557,7 +571,7 @@ const wss = new WebSocket.Server({
 
 wss.on("connection", (ws, req) => {
   const connId = uuidv4();
-  const ip = req.socket.remoteAddress;
+  const ip = getClientIp(req);
   console.log("[SIGNAL] connected:", connId, "ip:", ip);
 
   // Track per-IP connections
@@ -599,10 +613,13 @@ wss.on("connection", (ws, req) => {
       return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_json" }));
     }
 
-    if (msg.__proto__ || msg.constructor !== undefined) {
-      delete msg.__proto__;
-      delete msg.constructor;
-      delete msg.prototype;
+    // BUG-074: Unconditionally strip prototype pollution keys from parsed JSON.
+    // Previous guard condition was always-true (msg.constructor !== undefined),
+    // making it not a guard but accidental unconditional cleanup.
+    for (const key of ["__proto__", "constructor", "prototype"]) {
+      if (Object.prototype.hasOwnProperty.call(msg, key)) {
+        delete msg[key];
+      }
     }
 
     // ===========================
@@ -696,18 +713,19 @@ wss.on("connection", (ws, req) => {
         const oldClientId = phoneNumbers.get(phone);
         if (oldClientId && oldClientId !== msg.clientId) {
           console.log("[REGISTER] SecureID changed for phone-hash", hashPhone(phone), ":", oldClientId, "->", msg.clientId);
-          // Broadcast SECUREID_CHANGED to all connected clients.
-          // NOTE: raw phone number intentionally omitted — clients match by oldClientId/newClientId only.
-          // (Fix CRIT-002, 2026-04-16: prevent PII leakage to all connected clients.)
-          const notification = JSON.stringify({
-            type: "SECUREID_CHANGED",
-            oldClientId: oldClientId,
-            newClientId: msg.clientId
-          });
-          for (const [, c] of clients) {
-            if (c.ws.readyState === WebSocket.OPEN && c.clientId && c.clientId !== msg.clientId) {
-              try { c.ws.send(notification); } catch (e) {}
-            }
+          // BUG-072: Removed broadcast-to-all-clients (amplification vector).
+          // Contacts discover changed IDs on next BATCH_PHONE_LOOKUP (≤15s cycle).
+          // Notify ONLY the old client (if still connected) so it knows it was replaced.
+          const oldConnId = clientIds.get(oldClientId);
+          const oldConn = oldConnId ? clients.get(oldConnId) : null;
+          if (oldConn && oldConn.ws.readyState === WebSocket.OPEN) {
+            try {
+              oldConn.ws.send(JSON.stringify({
+                type: "SECUREID_CHANGED",
+                oldClientId: oldClientId,
+                newClientId: msg.clientId
+              }));
+            } catch (e) {}
           }
           // Clean up old clientId's connection mapping if still active
           if (clientIds.has(oldClientId) && clientIds.get(oldClientId) !== connId) {
