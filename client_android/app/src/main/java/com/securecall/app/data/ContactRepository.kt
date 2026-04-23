@@ -101,10 +101,10 @@ object ContactRepository {
             .edit().putStringSet(KEY_HIDDEN, hidden).apply()
     }
 
-    /** Returns set of normalized phone numbers that the user has dismissed. */
+    /** Returns defensive copy of normalized phone numbers that the user has dismissed. */
     fun getHiddenPhones(context: Context): Set<String> {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getStringSet(KEY_HIDDEN, emptySet()) ?: emptySet()
+            .getStringSet(KEY_HIDDEN, emptySet())?.toSet() ?: emptySet()
     }
 
     private fun persist(context: Context, contacts: List<Contact>) {

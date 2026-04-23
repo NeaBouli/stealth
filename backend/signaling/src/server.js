@@ -407,7 +407,8 @@ function requireAdmin(req, res, next) {
   if (!ADMIN_API_KEY) {
     return res.status(403).json({ error: "admin_api_disabled" });
   }
-  const provided = req.headers["x-admin-key"] || req.query.admin_key;
+  // BUG-076: Only accept admin key via header, not query param (prevents log leak)
+  const provided = req.headers["x-admin-key"];
   if (provided !== ADMIN_API_KEY) {
     return res.status(401).json({ error: "unauthorized" });
   }
@@ -750,7 +751,7 @@ wss.on("connection", (ws, req) => {
         phoneNumbers.set(phone, msg.clientId);
         phoneHashes.set(hashPhone(phone), msg.clientId);
         client.phoneNumber = phone;
-        console.log("[REGISTER] Phone:", phone, "->", msg.clientId);
+        console.log("[REGISTER] Phone:", hashPhone(phone), "->", msg.clientId);
       }
 
       console.log("[REGISTER]", msg.clientId, "->", connId);
@@ -795,7 +796,7 @@ wss.on("connection", (ws, req) => {
           // Try phone number lookup
           const phoneLookup = phoneNumbers.get(normalizePhone(targetClientId));
           if (phoneLookup) {
-            console.log("[ROUTING] Phone resolved:", targetClientId, "->", phoneLookup);
+            console.log("[ROUTING] Phone resolved: hash", hashPhone(targetClientId), "->", phoneLookup);
             targetClientId = phoneLookup;
           }
         }
@@ -1518,7 +1519,7 @@ wss.on("connection", (ws, req) => {
           if (cid === myClientId) {
             phoneNumbers.delete(phone);
             phoneHashes.delete(hashPhone(phone));
-            console.log("[DEREGISTER] Removed phone mapping:", phone, "->", myClientId);
+            console.log("[DEREGISTER] Removed phone mapping:", hashPhone(phone), "->", myClientId);
             break;
           }
         }
@@ -1761,10 +1762,11 @@ app.delete("/admin/gift/:code", requireAdmin, (req, res) => {
 });
 
 // --- Invite System ---
+// BUG-077: Don't reveal whether a SecureID exists (user enumeration).
+// Always return the same response regardless of existence.
 app.get("/invite/:secureId", (req, res) => {
-  const secureId = req.params.secureId;
-  const exists = clientIds.has(secureId);
-  res.json({ secureId, exists, online: exists });
+  const secureId = sanitize(req.params.secureId);
+  res.json({ secureId, ok: true });
 });
 
 app.post("/invite/accepted", (req, res) => {
@@ -2097,8 +2099,19 @@ server.listen(PORT, "0.0.0.0", () => {
 // --- Graceful Shutdown ---
 process.on('SIGTERM', () => {
   console.log('[SIGNAL] SIGTERM received, shutting down gracefully');
+  // BUG-080: Close all WebSocket connections before shutting down
+  for (const [connId, client] of clients) {
+    try {
+      client.ws.close(1001, "Server shutting down");
+    } catch (e) {}
+  }
   server.close(() => {
     console.log('[SIGNAL] Server closed');
     process.exit(0);
   });
+  // Force exit after 10s if connections don't close cleanly
+  setTimeout(() => {
+    console.warn('[SIGNAL] Forcing exit after timeout');
+    process.exit(1);
+  }, 10000);
 });
