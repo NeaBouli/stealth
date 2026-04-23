@@ -7,6 +7,19 @@ Format follows "Keep a Changelog" with security-critical extensions.
 
 ---
 
+## [1.0.26] — 2026-04-23 — vC47
+
+### Fixed
+- M-02: JSON safety — JSONObject statt String-Interpolation in REGISTER
+- M-03: isAdded guard in DialerFragment async callbacks
+- M-05: ContactAdapter reuse — no scroll reset on 15s refresh
+- BUG-064: removeCallbacks mit korrekter Runnable-Referenz
+- BUG-070: IP-Erkennung hinter Railway Proxy (X-Forwarded-For)
+- BUG-072: SECUREID_CHANGED nur an betroffenen Client (war: broadcast all)
+- BUG-074: Prototype Pollution Guard korrigiert (hasOwnProperty)
+
+---
+
 ## [1.0.25] — 2026-04-20 — vC46
 
 ### Fixed
