@@ -74,6 +74,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
+        // Battery optimization status + toggle
+        configureBatteryOptimization()
+
         // Upgrade button — hidden for Premium, shows "Upgrade to Premium" for Pro
         findPreference<Preference>("pref_upgrade")?.apply {
             when (effectiveTier) {
@@ -374,6 +377,42 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         findPreference<Preference>("pref_donate_ifr")?.setOnPreferenceClickListener {
             openUrl("https://ifrunit.tech")
+            true
+        }
+    }
+
+    @android.annotation.SuppressLint("BatteryLife")
+    private fun configureBatteryOptimization() {
+        val pref = findPreference<Preference>("pref_battery_optimization") ?: return
+        val ctx = context ?: return
+        val pm = ctx.getSystemService(android.os.PowerManager::class.java) ?: return
+        val isIgnoring = pm.isIgnoringBatteryOptimizations(ctx.packageName)
+
+        if (isIgnoring) {
+            pref.summary = "✅ Unrestricted — connection stays alive"
+        } else {
+            pref.summary = "⚠️ Restricted — may lose connection in background"
+        }
+
+        pref.setOnPreferenceClickListener {
+            if (isIgnoring) {
+                android.widget.Toast.makeText(ctx, "Already unrestricted", android.widget.Toast.LENGTH_SHORT).show()
+            } else {
+                try {
+                    val intent = android.content.Intent(
+                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        android.net.Uri.parse("package:${ctx.packageName}")
+                    )
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    // Fallback: open app details
+                    try {
+                        val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.data = android.net.Uri.parse("package:${ctx.packageName}")
+                        startActivity(intent)
+                    } catch (_: Exception) {}
+                }
+            }
             true
         }
     }
