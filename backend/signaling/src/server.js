@@ -61,6 +61,13 @@ const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 // Per-IP connection tracking
 const ipConnections = new Map();
 
+// Per-clientId rejection tracking — prevent reconnect spam from rejected clients
+// Maps clientId -> { count, firstSeen, lastLogged }
+const rejectionTracker = new Map();
+
+// Per-IP connection attempt tracking (sliding 60s window) — anti-spam
+const ipConnectionAttempts = new Map();
+
 // Extract real client IP behind proxy (Railway, nginx, etc.)
 // Only trusts X-Forwarded-For in production (behind known reverse proxy).
 function getClientIp(req) {
@@ -566,6 +573,21 @@ const wss = new WebSocket.Server({
     if (count >= MAX_CONNS_PER_IP) {
       return done(false, 429, "Too many connections from this IP");
     }
+
+    // Throttle rapid reconnects from rejected clients (anti-spam)
+    // Track connection attempts per IP in a sliding 60s window
+    const now = Date.now();
+    const attempts = ipConnectionAttempts.get(ip) || [];
+    // Purge entries older than 60s
+    const recent = attempts.filter(t => now - t < 60000);
+    recent.push(now);
+    ipConnectionAttempts.set(ip, recent);
+    if (recent.length > 30) {
+      // >30 connections in 60s from same IP = spam, throttle for 60s
+      console.warn("[SIGNAL] Throttled IP:", ip, `(${recent.length} attempts in 60s)`);
+      return done(false, 429, "Too many connection attempts");
+    }
+
     done(true);
   }
 });
@@ -653,7 +675,18 @@ wss.on("connection", (ws, req) => {
         const forkMode = (process.env.FORK_PROTECTION_MODE || "warn").toLowerCase();
         if (!clientSig || !allowed.includes(clientSig)) {
           if (forkMode === "enforce") {
-            console.log("[REGISTER] REJECTED — unauthorized signature:", clientSig, "from", msg.clientId);
+            // Throttle rejection logging — log only first occurrence + every 50th per clientId
+            const tracker = rejectionTracker.get(msg.clientId) || { count: 0, firstSeen: Date.now(), lastLogged: 0 };
+            tracker.count++;
+            if (tracker.count === 1 || tracker.count % 50 === 0) {
+              console.log("[REGISTER] REJECTED — unauthorized signature:", clientSig, "from", msg.clientId, `(attempt #${tracker.count})`);
+              tracker.lastLogged = Date.now();
+            }
+            rejectionTracker.set(msg.clientId, tracker);
+
+            // After 10 rejections, add increasing delay via close code
+            // Client with BUG-061 fix stops at 10 retries for 4000-4099 codes
+            // For clients ignoring close codes: server-side IP throttle handles it
             ws.send(JSON.stringify({
               type: "ERROR",
               error: "unauthorized_client",
@@ -665,7 +698,7 @@ wss.on("connection", (ws, req) => {
           }
         }
       }
-      // Log signature presence for adoption monitoring
+      // Log signature presence for adoption monitoring (only first REGISTER per connection)
       if (allowedSigs) {
         console.log("[REGISTER] appSignature present:", !!msg.appSignature, "from", msg.clientId);
       }
@@ -1870,11 +1903,21 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
 const siweChallenges = new Map(); // nonce → { deviceId, message, createdAt }
 const SIWE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-// Cleanup expired challenges every 60s
+// Cleanup expired challenges + anti-spam trackers every 60s
 setInterval(() => {
   const now = Date.now();
   for (const [nonce, data] of siweChallenges) {
     if (now - data.createdAt > SIWE_TTL_MS) siweChallenges.delete(nonce);
+  }
+  // Purge stale rejection tracker entries (>1h old)
+  for (const [clientId, data] of rejectionTracker) {
+    if (now - data.firstSeen > 3600000) rejectionTracker.delete(clientId);
+  }
+  // Purge stale IP attempt lists (>2min since last attempt)
+  for (const [ip, attempts] of ipConnectionAttempts) {
+    const recent = attempts.filter(t => now - t < 120000);
+    if (recent.length === 0) ipConnectionAttempts.delete(ip);
+    else ipConnectionAttempts.set(ip, recent);
   }
 }, 60000);
 
