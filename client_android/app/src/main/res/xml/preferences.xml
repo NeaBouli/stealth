@@ -141,6 +141,11 @@
             android:summary="@string/pref_background_service_summary"
             android:defaultValue="true"
             android:icon="@drawable/ic_shield" />
+        <Preference
+            android:key="pref_battery_optimization"
+            android:title="Battery Optimization"
+            android:summary="Disable to keep connection alive"
+            android:icon="@drawable/ic_shield" />
         <SwitchPreferenceCompat
             android:key="pref_call_history"
             android:title="@string/pref_call_history"
