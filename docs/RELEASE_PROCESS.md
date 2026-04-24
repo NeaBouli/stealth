@@ -29,7 +29,27 @@ BEFORE developing a new feature:
 3. Never touch stable functionality without a separate branch
 4. Feature branches: feature/NAME — never directly on main
 
+## Asset-Naming Convention (MANDATORY since v1.0.27)
+
+GitHub Release Assets MUST follow this pattern:
+```
+securecall-{flavor}-v{version}-vC{code}-{abi}.apk
+```
+
+Example v1.0.27 (vC48):
+```
+securecall-free-v1.0.27-vC48-arm64-v8a.apk
+securecall-free-v1.0.27-vC48-armeabi-v7a.apk
+securecall-free-v1.0.27-vC48-x86_64.apk
+securecall-fdroid-v1.0.27-vC48-arm64-v8a.apk
+securecall-fdroid-v1.0.27-vC48-armeabi-v7a.apk
+securecall-fdroid-v1.0.27-vC48-x86_64.apk
+```
+
+**WHY:** `UpdateChecker.kt` uses regex `-vC(\d+)\.apk$` to extract the version code.
+Wrong naming = auto-update silently fails (no matching asset found).
+
 ## Current Status
-- SecureCall: Stage 2 (Closed Alpha — v1.0.22, beta-test23, production pending)
+- SecureCall: Stage 2 (Closed Alpha — v1.0.27, vC49 on Play Console, production pending)
 - SecureChat: Stage 1 (In development)
 - Chameleon: Stage 1 (v0.1.0-alpha)
