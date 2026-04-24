@@ -1,0 +1,1 @@
+Fix: Play Store connection issue + battery optimization setting.

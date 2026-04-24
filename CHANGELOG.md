@@ -7,6 +7,16 @@ Format follows "Keep a Changelog" with security-critical extensions.
 
 ---
 
+## [1.0.28] — 2026-04-24 — vC50
+
+### Fixed
+- Play Store signing key added to fork protection (Play Store users could not connect)
+- Battery optimization setting in Calls section (fixes Samsung background kills)
+- Anti-spam throttle for rejected fork-protection clients
+- GitHub release asset naming for auto-update compatibility
+
+---
+
 ## [1.0.27] — 2026-04-24 — vC48
 
 ### Security
