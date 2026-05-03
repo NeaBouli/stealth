@@ -7,11 +7,14 @@
   - Schweregrade: 1 critical, 1 high, 2 moderate, 2 low.
   - Naechster Schritt: GitHub Dependabot Details lesen, betroffene Pakete identifizieren, Fix-Risiko gegen Play/APK/F-Droid-Rollout abwaegen.
 
-## Priority 2
+## Done / Monitoring
 
-- [ ] Website-Lizenz-/Branding-Texte live pruefen:
-  - Lokale Texte wurden angepasst.
-  - Falls Website aus diesem Repo deployed wird, nach Push/Deploy `stealthx.tech` pruefen.
+- [x] Website-Lizenz-/Branding-Texte live pruefen:
+  - Website-Texte wurden angepasst.
+  - GitHub Pages Deploy erfolgreich.
+  - `stealthx.tech` live verifiziert.
+
+## Priority 2
 
 - [ ] README-/Download-Statusdrift pruefen:
   - Play Store Beta, APK, F-Droid und Website-Links sollen auf denselben aktuellen Stand zeigen.
@@ -21,4 +24,3 @@
 - [ ] ICE/TURN Endpoint `/ice-servers` separat sicherheitsauditieren.
 - [ ] Backend-Monolith `backend/signaling/src/server.js` schrittweise modularisieren.
 - [ ] Privacy-Metadaten-Claims gegen FCM/TURN/Signaling Realitaet pruefen.
-

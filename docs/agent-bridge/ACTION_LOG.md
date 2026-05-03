@@ -36,3 +36,17 @@
 - Keine Secrets gelesen oder ausgegeben.
 - Noch kein Commit/Push/Deployment fuer diesen zweiten Schritt.
 
+## 2026-05-03 - Codex: Website-Lizenztexte live veroeffentlicht
+
+- Agent: Codex
+- Aktion:
+  - Commit `6ecf7f9` auf `main` gepusht.
+  - GitHub Pages Workflow `Deploy to GitHub Pages` lief erfolgreich.
+- Live-Verifikation:
+  - `https://stealthx.tech/` liefert neue Texte wie `GPL-3.0 client source`.
+  - `https://stealthx.tech/privacy.html` liefert `GPL Client Source` und den Hinweis, dass offizielle Marke, Backend-Services, Store-Releases und paid Pro/Premium-Lizenzierung von Vendetta Labs betrieben werden.
+- Ergebnis:
+  - Website ist mit GitHub-Repo-Lizenzkommunikation konsistenter.
+  - Play/APK/F-Droid-Rollout bleibt unveraendert.
+- Keine Secrets gelesen oder ausgegeben.
+ - Kein Server-Deployment; GitHub Pages Auto-Deploy durch Workflow.
