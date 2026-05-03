@@ -44,7 +44,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 
 ## How does SecureCall compare to Signal?
 - Signal requires a phone number; SecureCall does not
-- Signal is open source; SecureCall is source-available (auditable)
+- Signal is open source; SecureCall publishes GPL-3.0 client source for auditability while official branding, backend services, store releases, and paid licensing remain operated by Vendetta Labs.
 - Signal does not have built-in VPN; SecureCall has WireGuard VPN
 - Signal does not have emergency data wipe; SecureCall has STEALTH-DELETE
 - Signal does not have token-based lifetime access; SecureCall has IFR Token
