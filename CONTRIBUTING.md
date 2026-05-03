@@ -14,10 +14,10 @@ We welcome the following contributions via [GitHub Issues](https://github.com/Ne
 
 **We do not accept code contributions (Pull Requests).**
 
-This repository is published under a [Source Available License](LICENSE) for transparency and security auditing purposes. The source code may be viewed and reviewed, but:
+This repository publishes GPL-3.0 client source code for transparency, F-Droid/Play review, and independent security auditing. Official SecureCall branding, backend services, store releases, and paid Pro/Premium licensing remain controlled by Vendetta Labs.
 
 - Pull Requests will be **closed without review**.
-- Forks intended for building, distributing, or creating derivative works are **not permitted** under the license.
+- Forks, builds, and derivative works must comply with the GPL-3.0 license and must not use the SecureCall/StealthX name, logo, official backend services, store listings, or paid license infrastructure without written permission.
 - Patches, code suggestions, or implementation changes submitted via issues or other channels will not be incorporated.
 
 ## Why No Code Contributions?

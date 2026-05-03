@@ -36,7 +36,7 @@ No metadata. No compromises. Every call is encrypted end-to-end using military-g
 - **Zero-Knowledge Architecture** -- The server facilitates connections but cannot decrypt calls. No call content, no metadata, no logs.
 - **Anti-Recording Protection** -- Active detection of screen recording, microphone hijacking, and spy apps (Pro/Premium).
 - **Rust Crypto Core** -- All cryptographic operations run in a native Rust library via JNI -- no Java crypto, no OpenSSL.
-- **GPL-3.0 Licensed** -- The complete source code is open source and independently auditable.
+- **GPL-3.0 Licensed Client** -- The client source code is open source and independently auditable. Official SecureCall branding, backend services, store listings, and paid Pro/Premium offerings remain operated by Vendetta Labs.
 
 ## Architecture
 
@@ -91,7 +91,9 @@ Complete documentation is available in the [Wiki](https://github.com/NeaBouli/st
 >
 > You may build, modify, and distribute the client under the terms of the
 > GNU General Public License v3. The SecureCall name and branding are
-> trademarked (see LICENSE for additional terms under Section 7).
+> trademarked (see LICENSE for additional terms under Section 7). Official
+> backend services, store releases, and paid Pro/Premium licensing remain
+> controlled by Vendetta Labs.
 
 See the [LICENSE](LICENSE) for full terms.
 
@@ -121,7 +123,7 @@ For the full privacy policy, see [Privacy Policy](https://neabouli.github.io/ste
 <details>
 <summary><strong>Can I build the app myself?</strong></summary>
 
-Yes. SecureCall is GPL-3.0 licensed. You can build, modify, and redistribute the client code. The official F-Droid build is available without Google services. Note: the SecureCall name and branding are trademarked and require permission for use in derivative works.
+Yes. SecureCall's client code is GPL-3.0 licensed. You can build, modify, and redistribute the client code under the GPL. The official F-Droid build is available without Google services. Note: the SecureCall name, logo, official backend services, store releases, and paid Pro/Premium licensing are controlled by Vendetta Labs and require permission for official or branded use.
 
 </details>
 
@@ -167,7 +169,7 @@ SecureCall ist eine Sprachkommunikations-App, die von Grund auf fuer Privatsphae
 
 **Warum quelloffen?** Verschluesselungssoftware muss transparent sein. Sie sollten nie einer Blackbox Ihre privaten Gespraeche anvertrauen muessen. Der vollstaendige Quellcode ist oeffentlich einsehbar -- fuer unabhaengige Sicherheitspruefungen und Verifikation.
 
-**Wichtig:** Dieser Code steht unter einer Source-Available-Lizenz. Er darf eingesehen und geprueft, aber nicht kompiliert, verteilt oder kommerziell genutzt werden.
+**Wichtig:** Der Client-Code steht unter GPL-3.0 und ist fuer Transparenz, unabhaengige Pruefung und F-Droid/Play-Store-Review offen. Die offiziellen SecureCall-/StealthX-Marken, Backend-Dienste, Store-Releases sowie Pro/Premium-Lizenzen werden von Vendetta Labs betrieben und duerfen nicht ohne Erlaubnis als offizielle oder markenbasierte Angebote genutzt werden.
 
 - [Sicherheitsaudit-Bericht](docs/SECURITY_AUDIT_REPORT.md)
 - [Architektur-Uebersicht](docs/ARCHITECTURE_OVERVIEW.md)

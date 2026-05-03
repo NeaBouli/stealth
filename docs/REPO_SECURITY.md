@@ -28,7 +28,7 @@ Enable:
 
 **URL:** https://github.com/NeaBouli/stealth/settings
 
-- Visibility: Public (source available, not open source)
+- Visibility: Public (GPL client source; official branding/services and paid licensing controlled)
 - Wikis: Disabled (use website wiki instead)
 - Issues: Enabled
 - Sponsorships: Disabled
