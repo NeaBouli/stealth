@@ -755,3 +755,47 @@ Codex hat `80eb8a0` (`chore: refresh lockfile — uuid root entry cleanup attemp
 - Kommentare in `UpdateChecker.kt` und `UpdateInfo.kt` beschreiben noch primaer das alte `vC`-Assetnamenmodell.
 - Keine sichtbaren Tests fuer `parseRelease` gefunden.
 - Empfehlung: CC sollte Unit-Tests plus Kommentarbereinigung nachziehen; das ist kein aktueller Blocker, aber regressionsrelevant fuer sideload/free Updates.
+
+## Privacy-/Metadaten-Claim-Recheck — 2026-05-04
+
+Codex hat README/Privacy-Texte und Backend-Signaling/FCM-Code read-only gegeneinander geprueft. Keine Secret-Dateien gelesen, keine Produktcodeaenderung.
+
+### Finding P-01 — MEDIUM / CLAIM DRIFT
+
+Starke Privacy-Claims sind nicht voll deckungsgleich mit dem aktuellen Code.
+
+Dokumentationsclaims:
+
+- README: "No metadata. No compromises."
+- README Featuretext: "No call content, no metadata, no logs."
+- README FAQ: "No metadata or call logs are stored."
+- Privacy-Seite: "No call logs stored on servers", "IP address: Visible during signaling only; not logged", "PRO & PREMIUM: No third-party services. Zero external data sharing.", "No personal data is stored on our servers."
+
+Code-/Architekturrealitaet:
+
+- `backend/signaling/src/server.js` persistiert FCM Tokens in `data/fcm_tokens.json`.
+- `REGISTER_FCM_TOKEN` speichert FCM Token fuer `clientId` und schreibt sie persistent.
+- Server fuehrt in-memory `phoneNumbers`, `phoneHashes`, `clientIds`, `routingTable` und Sessiondaten.
+- Offline Calls senden via FCM `sessionId` und `callerName`/Caller-Client-ID.
+- Serverlogs enthalten an mehreren Stellen `clientId`, `sessionId`, Routing-Events und Hash-/Mapping-Informationen.
+- FCM, STUN/TURN und Railway sind weiterhin relevante Dritt-/Infrastrukturkomponenten. Der Inhalt der Calls bleibt dabei E2E-verschluesselt; das Finding betrifft Metadaten-/Disclosure-Claims, nicht Voice-Content-Encryption.
+
+### Bewertung
+
+- Kein Hinweis, dass Call-Inhalte serverseitig entschluesselt werden koennen.
+- Aber "no metadata", "no logs", "no server data" und "Pro/Premium zero third-party services" sind zu absolut formuliert.
+- Datenschutz-/Store-/Marketing-Risiko: Nutzer, Reviewer oder Security-Auditoren koennen die Claims gegen FCM, STUN/TURN, IP-Signaling, persistent gespeicherte FCM Tokens und Routing-/Sessionlogs stellen.
+
+### Empfehlung an CC
+
+- README/Privacy/FAQ auf praezise Sprache umstellen:
+  - "No call content stored or decrypted by server."
+  - "No persistent call history/call recordings."
+  - "Signaling metadata is processed transiently for connection setup."
+  - "FCM tokens may be stored for push delivery and deleted on deregistration/reset where applicable."
+  - "STUN/TURN providers may see network-level metadata/IPs required for WebRTC connectivity."
+- Privacy-Seite sollte FCM auch fuer Pro/Premium realistisch beschreiben, falls Push dort aktiv ist.
+- Serverlog-Hygiene weiter reduzieren:
+  - Client IDs/session IDs in Logs kuerzen oder hashen.
+  - Push response IDs und routing events nur minimal loggen.
+- Optional: Datenretention dokumentieren: FCM token persistence, disconnect/deregister behavior, server restart behavior, deletion path.

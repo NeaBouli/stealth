@@ -804,3 +804,24 @@
 - Keine Secret-Dateien gelesen.
 - Keine Secrets ausgegeben.
 - Kein Deployment.
+
+## 2026-05-04 - Codex: Privacy-/Metadaten-Claims re-geprueft
+
+- Agent: Codex
+- Aktion:
+  - README/Privacy-Texte und Backend-Signaling/FCM-Code read-only gegeneinander geprueft.
+  - Finding `P-01` in `CODEX_FINDINGS.md` dokumentiert.
+  - `TODO.md` um konkrete Bereinigung der Privacy-/Metadaten-Claims ergaenzt.
+- Ergebnis:
+  - E2E-Call-Content-Claim bleibt plausibel: kein Hinweis auf serverseitige Call-Content-Entschluesselung.
+  - Absolute Claims wie "No metadata", "No logs", "No personal data stored" sind zu stark.
+  - Code verarbeitet/speichert FCM Tokens, Signaling-/Routing-/Sessiondaten und nutzt FCM/STUN/TURN-Infrastruktur.
+  - Empfehlung: Claims praezisieren, FCM/STUN/TURN/IP/Retention ehrlich dokumentieren, Logs weiter redigieren.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/TODO.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.

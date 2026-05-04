@@ -128,5 +128,9 @@
 
 - [ ] ICE/TURN Endpoint `/ice-servers` hinter Auth (H-01 — nach Client-Update).
 - [ ] Certificate Pinning implementieren oder Claim herabstufen (H-09).
+- [ ] Privacy-/Metadaten-Claims gegen reale FCM/TURN/Signaling-Architektur bereinigen:
+  - README/Privacy/FAQ vermeiden absolute Claims wie "No metadata", "No logs", "No personal data stored".
+  - Klarstellen: keine Call-Inhalte/Recordings/serverseitige Entschluesselung; Signaling-Metadaten werden fuer Verbindung verarbeitet.
+  - FCM Token Persistence, FCM Push-Metadaten, STUN/TURN/IP-Sichtbarkeit und Log-Hygiene ehrlich dokumentieren.
 - [ ] Backend-Monolith `backend/signaling/src/server.js` schrittweise modularisieren.
-- [ ] Privacy-Metadaten-Claims gegen FCM/TURN/Signaling Realitaet pruefen.
+- [x] Privacy-Metadaten-Claims gegen FCM/TURN/Signaling Realitaet pruefen.
