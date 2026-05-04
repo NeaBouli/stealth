@@ -1552,6 +1552,37 @@ wss.on("connection", (ws, req) => {
       return ws.send(JSON.stringify({ type: "DEREGISTER_ACK", ok: true }));
     }
 
+    // ===========================
+    // INVITE_ACCEPTED — notify inviter (H-04: WS-authenticated, no HTTP spoofing)
+    // ===========================
+    if (msg.type === "INVITE_ACCEPTED") {
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        return ws.send(JSON.stringify({type: "ERROR", error: "not_registered"}));
+      }
+      const inviterSecureId = typeof msg.inviterSecureId === "string" ? msg.inviterSecureId.trim() : "";
+      if (!inviterSecureId) {
+        return ws.send(JSON.stringify({type: "ERROR", error: "missing_inviterSecureId"}));
+      }
+      // Send FCM push to inviter
+      const fcmToken = fcmTokens.get(inviterSecureId);
+      if (fcmToken && fcm.isInitialized()) {
+        fcm.sendDataMessage(fcmToken, {
+          type: "INVITE_ACCEPTED",
+          newUserSecureId: myClientId,
+          message: myClientId + " joined SecureCall and added you as a contact!"
+        });
+      }
+      // Also send via WebSocket if online
+      sendToClient(inviterSecureId, {
+        type: "INVITE_ACCEPTED",
+        newUserSecureId: myClientId,
+        message: myClientId + " joined SecureCall!"
+      });
+      console.log("[INVITE] Accepted (WS) from", myClientId, "to", inviterSecureId);
+      return ws.send(JSON.stringify({type: "INVITE_ACCEPTED_ACK", ok: true}));
+    }
+
     // HEARTBEAT — client keepalive, reply so client's onMessage updates lastSeen
     if (msg.type === "HEARTBEAT") {
       return ws.send(JSON.stringify({ type: "HEARTBEAT_ACK" }));
