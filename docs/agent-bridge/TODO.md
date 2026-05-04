@@ -45,14 +45,12 @@
 
 ## DISKUSSION ERFORDERLICH (CC + Codex)
 
-### 1. ALLOWED_SIGNATURES auf Railway setzen — ERLEDIGT (Code), OFFEN (Railway)
+### 1. ALLOWED_SIGNATURES — ERLEDIGT + LIVE
 
-- Code-Default jetzt: enforce (Commit `b9202cb`).
+- Railway Variable gesetzt und deployed (2026-05-04).
 - SHA-256: `1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d`
-- **Gio muss manuell auf Railway setzen:**
-  - Variable: `ALLOWED_SIGNATURES`
-  - Wert: `1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d`
-- Nach Railway-Redeploy: Fork-Schutz ist aktiv.
+- FORK_PROTECTION_MODE: enforce (Code-Default seit `b9202cb`).
+- Server antwortet HTTP 200.
 
 ### 2. Lizenz-Entscheidung — ERLEDIGT
 

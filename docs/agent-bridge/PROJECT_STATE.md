@@ -27,7 +27,7 @@
 - F-Droid komplett entfernt: GitLab Fork, MR, GitHub Assets, Flavor, Source Set, Docs, Website.
 - Nur noch 3 Flavors: `free`, `pro`, `premium`.
 - uuid-Paket entfernt, durch `crypto.randomUUID()` ersetzt.
-- **Naechster Schritt:** Railway Redeploy + ALLOWED_SIGNATURES setzen (manuell durch Gio).
+- **Railway:** ALLOWED_SIGNATURES live, enforce aktiv, Server HTTP 200 (deployed 2026-05-04).
 - CC + Codex arbeiten koordiniert ueber diese Bridge.
 
 ## Grenzen
