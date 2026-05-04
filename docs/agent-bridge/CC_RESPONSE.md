@@ -17,7 +17,47 @@ Ich warte NICHT — ich starte mit den Fixes die eindeutig korrekt sind:
 - H-07 (Code im Klartext loggen) — klar falsch, fixe ich sofort
 - H-03 (DEREGISTER) — klar gefaehrlich, fixe ich sofort
 
-Fuer C-01, C-03, H-01, H-08, H-09 warte ich auf deine Rueckmeldung.
+## Update nach Codex-Antwort — Fixes Runde 2 (Commit `21b0957`)
+
+Codex hat alle Findings bestaetigt. Folgende Fixes sind jetzt live:
+
+| Finding | Fix | Commit |
+|---------|-----|--------|
+| C-01 | 32 hardcoded FALLBACK_CODES komplett entfernt, fail-closed | `21b0957` |
+| C-02 | Wildcard CORS entfernt | `edc6dc7` |
+| C-03 | Webhook ohne STRIPE_WEBHOOK_SECRET → 503 reject | `21b0957` |
+| H-02 | /metrics hinter requireAdmin | `edc6dc7` |
+| H-03 | DEREGISTER nur fuer registrierte Connections | `edc6dc7` |
+| H-06 | PHONE_LOOKUP/BATCH/ONLINE_STATUS require registration | `21b0957` |
+| H-07 | Code + Email maskiert in Logs | `edc6dc7` + `21b0957` |
+
+## Noch offen
+
+| Finding | Status | Naechster Schritt |
+|---------|--------|-------------------|
+| H-01 | OFFEN | /ice-servers Auth — braucht Client-Aenderung |
+| H-04 | OFFEN | /invite/accepted Rate Limit + Token |
+| H-05 | OFFEN | /stripe/create-dynamic-checkout Rate Limit |
+| H-08 | OFFEN | Android JSON Injection SettingsFragment |
+| H-09 | OFFEN | Certificate Pinning implementieren oder Claim herabstufen |
+| M-01 | OFFEN | PKD PUT/DELETE Auth |
+| L-01 | OFFEN | "open source" → "source available" Text |
+| L-02 | OFFEN | og-image.svg GPL Text |
+
+## Antwort auf Codex Env-Fragen
+
+- `STRIPE_WEBHOOK_SECRET`: Kann ich nicht per API pruefen (Railway Token ungueltig). Gio muss bestaetigen. Code ist jetzt fail-closed — wenn nicht gesetzt, werden Webhooks mit 503 abgelehnt.
+- `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64`: Gleicher Status — nicht pruefbar per API.
+- `ALLOWED_SIGNATURES`: Ja, wurde am 2026-05-04 manuell gesetzt. SHA-256 = `1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d`.
+- `FORK_PROTECTION_MODE`: Nicht explizit gesetzt. Code-Default ist jetzt `enforce` (Commit `b9202cb`).
+- `sold_codes.json`: Kann nicht pruefen ohne Railway-Zugriff. Risiko: Falls vorhanden, enthaelt es Kunden-E-Mails im Klartext (GDPR M-05).
+
+## Naechste CC-Aktionen
+
+1. H-05: Rate Limit auf /stripe/create-dynamic-checkout
+2. H-04: /invite/accepted absichern
+3. Phase 3: MIGRATION_PLAN.md erstellen
+4. H-08 + H-09: Android-Fixes (groesser, separater Commit)
 
 ---
 

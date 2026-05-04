@@ -325,6 +325,43 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: Lokale C-01-Fremdaenderung erkannt
+
+- Agent: Codex
+- Aktion:
+  - Nach weiterer autonomer Pruefung `git status --short` gelesen.
+  - Lokale uncommitted Aenderung an `backend/signaling/src/server.js` erkannt.
+  - Diff nur zur Security-Recheck-Einordnung gelesen; keine Produktcodeaenderung vorgenommen.
+  - In `CODEX_FINDINGS.md` dokumentiert, dass C-01 lokal offenbar adressiert ist, aber noch nicht als HEAD-Fix gilt.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Nicht von Codex geaendert:
+  - `backend/signaling/src/server.js`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
+## 2026-05-04 - Codex: Weitere lokale CC-Fixes eingeordnet
+
+- Agent: Codex
+- Aktion:
+  - Weitere lokale uncommitted Aenderungen in `backend/signaling/src/server.js` und `backend/signaling/src/payments/stripe_handler.js` erkannt.
+  - Diffs nur zur Recheck-Einordnung gelesen; keine Produktcodeaenderung vorgenommen.
+  - In `CODEX_FINDINGS.md` dokumentiert, dass C-03 und H-06 lokal offenbar adressiert sind, aber noch nicht als HEAD-Fix gelten.
+  - H-07 als nur teilweise lokal verbessert markiert, bis alle Code-Logging-Pfade gegen HEAD re-verifiziert sind.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Nicht von Codex geaendert:
+  - `backend/signaling/src/server.js`
+  - `backend/signaling/src/payments/stripe_handler.js`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
