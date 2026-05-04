@@ -2,6 +2,29 @@
 
 ## Priority 1
 
+- [ ] F-Droid-/Lizenz-Restdrift nach Entfernung bereinigen:
+  - Codex-Nachpruefung am 2026-05-04 fand noch F-Droid-Reste trotz Bridge-Status "F-Droid komplett entfernt".
+  - Echte F-Droid-Reststellen:
+    - `marketing/play_store/de/store_listing.md`: "F-Droid — bald verfuegbar".
+    - `docs/PLAY_STORE_LISTING.md` und `docs/PLAY_STORE_LISTING_DE.md`: F-Droid weiterhin als kommend genannt.
+    - `website/llms.txt`: F-Droid planned.
+    - `backend/signaling/src/payments/email_handler.js`: F-Droid Download-Link in Aktivierungs-Mail.
+    - `fastlane/metadata/android/en-US/full_description.txt`: "F-Droid Edition".
+    - `fastlane/metadata/android/en-US/changelogs/42.txt`: "Initial F-Droid release".
+    - `tools/debug/start-logcat.sh`: sucht noch `com.securecall.app.fdroid`.
+    - Android-Code-Kommentare/Legacy-Zweige in `MainActivity.java`, `UpdateChecker.kt`, `WindowSecurityHelper.kt`.
+  - Lokale/verwaiste Ordner:
+    - `client_android/app/src/fdroid/` existiert noch als leerer Source-Set-Pfad.
+    - `fdroid/` existiert noch lokal mit leeren Unterordnern `srclibs/` und `tmp/`.
+  - Lizenz-Kollision:
+    - `LICENSE` ist BUSL-1.1.
+    - `README.md`, `CONTRIBUTING.md`, `website/index.html`, `website/terms.html`, `website/wiki/security-design.html`, `website/llms.txt`, `website/assets/og-image.svg` nennen teils weiter GPL-3.0 client source.
+  - Empfehlung:
+    - Kleine Textbereinigung in Docs/Website/Fastlane/Marketing/Email-Template.
+    - Android-Kommentare/Legacy-FDROID-Zweig bereinigen, ohne Verhalten fuer `free/pro/premium` zu aendern.
+    - Leere/verwaiste lokale F-Droid-Ordner nach Freigabe entfernen.
+    - Danach erneut `rg -i "f-droid|fdroid|GPL-3.0|GPL client"` laufen lassen und Build/Smoke-Check fuer `free`, `pro`, `premium` pruefen.
+
 - [ ] Dependabot-/Security-Warnungen weiter abbauen:
   - GitHub meldete beim Push am 2026-05-03: 6 Vulnerabilities.
   - Schweregrade: 1 critical, 1 high, 2 moderate, 2 low.

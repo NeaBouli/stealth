@@ -250,3 +250,27 @@
 - Keine Produktcodeaenderung.
 - Keine Secrets gelesen oder ausgegeben.
 - Kein Deployment.
+
+## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
+
+- Agent: Codex
+- Aktion:
+  - Nach F-Droid-Entfernung lokal read-only auf Restreferenzen, Kollisionen und Inkohärenzen geprueft.
+  - Keine Produktcodeaenderung vorgenommen.
+- Gelesene Bereiche:
+  - Android Build/Source-Struktur unter `client_android/app/`
+  - Website-/Marketing-/Docs-/Fastlane-Texte
+  - Payment-E-Mail-Template
+  - Bridge-Dateien
+- Findings:
+  - F-Droid Product Flavor ist aus `client_android/app/build.gradle` entfernt; nur `free`, `pro`, `premium` sind sichtbar.
+  - Dennoch existieren noch F-Droid-Resttexte in Marketing/Docs/Website/Fastlane/Payment-E-Mail.
+  - Android-Code enthaelt noch F-Droid-Kommentare bzw. Legacy-Branch fuer `FDROID`-Tier.
+  - Lokale/verwaiste Ordner `client_android/app/src/fdroid/` und `fdroid/` existieren noch.
+  - Lizenz-Kollision: `LICENSE` ist BUSL-1.1, aber mehrere Texte nennen noch GPL-3.0 client source.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/PROJECT_STATE.md`
+  - `docs/agent-bridge/TODO.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Secrets gelesen oder ausgegeben.
+- Kein Commit/Push/Deployment.

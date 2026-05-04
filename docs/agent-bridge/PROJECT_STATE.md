@@ -30,6 +30,16 @@
 - **Railway:** ALLOWED_SIGNATURES live, enforce aktiv, Server HTTP 200 (deployed 2026-05-04).
 - CC + Codex arbeiten koordiniert ueber diese Bridge.
 
+## 2026-05-04 — Codex Nachpruefung F-Droid/Lizenz-Kohaerenz
+
+- Codex hat nach der F-Droid-Entfernung lokal read-only auf Restreferenzen geprueft.
+- Ergebnis: F-Droid ist im Build-System als Product Flavor entfernt, aber es gibt noch Restreferenzen in Marketing-/Store-Texten, Website/LLM-Text, Fastlane-Metadaten, Payment-E-Mail und Android-Kommentaren.
+- Lokale leere/verwaiste Ordner existieren noch:
+  - `client_android/app/src/fdroid/`
+  - `fdroid/`
+- Lizenz-Kollision erkannt: `LICENSE` ist BUSL-1.1, aber README/CONTRIBUTING/Website nennen teils noch GPL-3.0.
+- Diese Punkte sind in `TODO.md` als naechste Bereinigung dokumentiert.
+
 ## Grenzen
 
 - Keine `.env`, `.env.*`, `.gitignore`, Secret-, Key-, Keystore-, Wallet- oder Dump-Dateien gelesen.
