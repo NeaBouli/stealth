@@ -30,6 +30,17 @@
 - **Railway:** ALLOWED_SIGNATURES live, enforce aktiv, Server HTTP 200 (deployed 2026-05-04).
 - CC + Codex arbeiten koordiniert ueber diese Bridge.
 
+## 2026-05-05 — v1.0.29 (vC51) Released
+
+- HEAD: `13fa8f0` (main).
+- **Release:** v1.0.29 auf GitHub: https://github.com/NeaBouli/stealth/releases/tag/v1.0.29
+- **Artefakte:** 3 APKs (arm64/armv7/x86_64) + 1 AAB
+- **Security Audit:** 17/17 Findings VERIFIED_FIXED (CC self-audit, Codex-Tokens aufgebraucht)
+- **Master Audit:** STX-CRIT-01 (nicht kritisch), STX-HIGH-01/02 (done), STX-MED-01/02/03/04 (done)
+- **Offen:** STX-HIGH-03 (Backend Modularisierung) — Plan liegt vor, Post-Release
+- **Railway:** Redeploy noetig fuer Backend Security Fixes
+- **Play Console:** AAB bereit zum Upload
+
 ## 2026-05-04 — Security Audit Phase 1 abgeschlossen
 
 - CC + Codex haben vollstaendigen Code-Audit durchgefuehrt (Backend + Android Client).
