@@ -49,7 +49,7 @@
   - Website ist mit GitHub-Repo-Lizenzkommunikation konsistenter.
   - Play/APK/F-Droid-Rollout bleibt unveraendert.
 - Keine Secrets gelesen oder ausgegeben.
- - Kein Server-Deployment; GitHub Pages Auto-Deploy durch Workflow.
+- Kein Server-Deployment; GitHub Pages Auto-Deploy durch Workflow.
 
 ## 2026-05-03 - Codex: Dependabot Alerts ausgelesen
 
@@ -66,7 +66,7 @@
   - `backend/signaling/package-lock.json`
   - `core_crypto/Cargo.lock`
 - Keine Secrets gelesen oder ausgegeben.
- - Noch keine Dependency-Fixes committed.
+- Noch keine Dependency-Fixes committed.
 
 ## 2026-05-03 - Codex: Dependabot High/Critical Fix lokal vorbereitet
 
@@ -86,4 +86,31 @@
 - Bewusst nicht automatisch gefixt:
   - Moderate/low transitive npm-Audit-Treffer, fuer die `npm audit fix --force` Breaking Changes/Downgrades vorschlaegt.
 - Keine Secrets gelesen oder ausgegeben.
- - Noch kein Commit/Push fuer diesen Dependency-Fix.
+- Noch kein Commit/Push fuer diesen Dependency-Fix.
+
+## 2026-05-04 - Codex: Dependabot High/Critical Fix gepusht und verifiziert
+
+- Agent: Codex
+- Aktion:
+  - Commit `da9b1bb` auf `main` gepusht.
+  - GitHub Dependabot Alerts danach read-only per GitHub API erneut abgefragt.
+- Geaenderte Dateien:
+  - `backend/signaling/package-lock.json`
+  - `core_crypto/Cargo.lock`
+  - `docs/agent-bridge/ACTION_LOG.md`
+  - `docs/agent-bridge/TODO.md`
+- Ergebnis laut GitHub API nach Push:
+  - Behoben: `protobufjs < 7.5.5` (critical).
+  - Behoben: `path-to-regexp < 0.1.13` (high).
+  - Behoben: `fast-xml-parser < 5.7.0` (medium).
+  - Behoben: `rand >= 0.7.0, < 0.8.6` (low).
+  - Weiterhin offen: `uuid < 14.0.0` (medium).
+  - Weiterhin offen: `@tootallnate/once < 3.0.1` (low).
+- Checks:
+  - `node --check src/server.js` erfolgreich.
+  - `npm audit --audit-level=high` erfolgreich.
+  - `cargo test --locked` erfolgreich; 34 Tests passed.
+- Hinweis:
+  - Weitere npm-Audit-Fixes nicht erzwungen, weil `npm audit fix --force` Breaking Changes/Downgrades fuer rolloutkritische FCM-/Mail-/Backend-Flows vorschlaegt.
+- Keine Secrets gelesen oder ausgegeben.
+- Kein Server-Deployment.
