@@ -1,7 +1,6 @@
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
-const { v4: uuidv4 } = require("uuid");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
@@ -593,7 +592,7 @@ const wss = new WebSocket.Server({
 });
 
 wss.on("connection", (ws, req) => {
-  const connId = uuidv4();
+  const connId = crypto.randomUUID();
   const ip = getClientIp(req);
   console.log("[SIGNAL] connected:", connId, "ip:", ip);
 
@@ -815,7 +814,7 @@ wss.on("connection", (ws, req) => {
         }));
       }
 
-      const sessionId = uuidv4();
+      const sessionId = crypto.randomUUID();
 
       // Resolve target: try clientId first, then custom ID, then phone number
       let targetClientId = msg.to;
@@ -1184,7 +1183,7 @@ wss.on("connection", (ws, req) => {
 
       console.log("[GHOST] PREPARE received for session:", msg.sessionId);
 
-      const ghostNetId = uuidv4();
+      const ghostNetId = crypto.randomUUID();
       const reply = {
         type: "GHOST_ACK",
         sessionId: msg.sessionId,

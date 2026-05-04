@@ -8,7 +8,7 @@
  *  - Keine Persistenz, alles in Memory
  */
 
-const { v4: uuidv4 } = require("uuid");
+const crypto = require("crypto");
 
 const SESSION_STATES = {
   NEW: "NEW",
@@ -21,7 +21,7 @@ const SESSION_STATES = {
 const sessions = new Map(); // sessionId -> sessionObject
 
 function createSession(from, to) {
-  const sessionId = uuidv4();
+  const sessionId = crypto.randomUUID();
 
   const session = {
     sessionId,
