@@ -110,7 +110,7 @@ SecureCall uses the following third-party services. **All voice data is encrypte
 - The signaling server is **zero-knowledge** -- it facilitates connections but cannot decrypt any call content.
 - TURN relay servers only see encrypted packets -- decryption keys exist only on the two call participants' devices.
 - Firebase is used solely for push notification delivery when the app is in the background. Analytics and Crashlytics are disabled.
-- No user data, call metadata, or communication content is shared with, sold to, or accessible by any third party.
+- No call content or recordings are shared with, sold to, or accessible by any third party. Signaling metadata is processed transiently for connection setup.
 
 For the full privacy policy, see [Privacy Policy](https://neabouli.github.io/stealth/privacy.html).
 
