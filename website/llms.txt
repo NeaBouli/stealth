@@ -69,8 +69,8 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Direct APK: github.com/NeaBouli/stealth/releases
 
 ## Current Version
-- v1.0.13 (versionCode 31) — April 2026
-- Fixes: FCM wakeup, contact name sync, WS reconnect stability, DNS retry
+- v1.0.28 (versionCode 50) — April 2026
+- Latest: security hardening, BUSL-1.1 license, fork protection
 
 ## Company
 - Vendetta Labs — Kalamata 24100, Greece (EU)

@@ -77,7 +77,7 @@
     <string name="onboarding_title_2">Zero-Knowledge Architecture</string>
     <string name="onboarding_desc_2">We never have access to your calls or data. Your privacy is absolute.</string>
     <string name="onboarding_title_3">Military-Grade Security</string>
-    <string name="onboarding_desc_3">Root detection, certificate pinning, hardware keystore, and aggressive key rotation.</string>
+    <string name="onboarding_desc_3">Root detection, TLS transport security, hardware keystore, and aggressive key rotation.</string>
     <string name="onboarding_title_4">Get Started</string>
     <string name="onboarding_desc_4">Start making secure calls now. Your conversations stay yours.</string>
     <string name="onboarding_skip">Skip</string>
