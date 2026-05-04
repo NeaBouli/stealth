@@ -8,22 +8,12 @@ apply plugin: 'kotlin-android'
 //   Internal: ./gradlew -Pinternal assembleProDebug → builds
 def allowInternalFlavors = project.hasProperty('internal')
 
-// Google Services + Crashlytics: applied for all flavors but fully neutralized
-// for fdroid (tasks disabled, deps excluded, generated code stripped).
+// Google Services + Crashlytics
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 
-// Immediately disable google-services JSON processing for fdroid.
-// This prevents the plugin from generating FirebaseInitProvider and
-// injecting Firebase class references into the fdroid variant.
 googleServices {
     missingGoogleServicesStrategy = "ignore"
-}
-project.afterEvaluate {
-    // Remove the google-services-generated resource values for fdroid
-    tasks.matching { it.name ==~ /process.*Fdroid.*GoogleServices/ }.configureEach {
-        enabled = false
-    }
 }
 
 android {
@@ -136,34 +126,6 @@ android {
             buildConfigField "boolean", "BILLING_ENABLED", "false"
         }
 
-        fdroid {
-            dimension "tier"
-            applicationIdSuffix ".fdroid"
-            versionNameSuffix "-fdroid"
-            proguardFiles 'proguard-fdroid.pro'
-
-            buildConfigField "String", "TIER", "\"FREE\""
-            buildConfigField "int", "MAX_CALL_DURATION_MINUTES", "15"
-            buildConfigField "int", "MAX_CONTACTS", "10"
-            buildConfigField "boolean", "DEVICE_ATTESTATION_REQUIRED", "false"
-            buildConfigField "boolean", "ROOT_DETECTION_BLOCKS", "false"
-            buildConfigField "boolean", "CERTIFICATE_PINNING", "false"
-            buildConfigField "boolean", "CALL_RECORDING_ALLOWED", "true"
-            buildConfigField "boolean", "TELEMETRY_ENABLED", "false"
-            buildConfigField "boolean", "THIRD_PARTY_ANALYTICS", "false"
-            buildConfigField "String", "RECONNECT_STRATEGY", "\"basic\""
-            buildConfigField "boolean", "MULTI_DEVICE_SUPPORT", "false"
-            buildConfigField "boolean", "SCREEN_CAPTURE_DETECTION", "false"
-            buildConfigField "boolean", "DEBUGGER_DETECTION", "false"
-            buildConfigField "boolean", "EMULATOR_DETECTION", "false"
-            buildConfigField "boolean", "HARDWARE_KEYSTORE_REQUIRED", "false"
-            // Fix CLIENT-HIGH-002 (2026-04-16): fdroid release must not log at DEBUG
-            // level — F-Droid reviewers flag PII in logcat, and AppLogger.d/i checks this.
-            buildConfigField "String", "LOGGING_LEVEL", "\"WARN\""
-            buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
-            buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
-            buildConfigField "boolean", "BILLING_ENABLED", "false"
-        }
     }
 
     // Suppress pro/premium variants unless -Pinternal is set
@@ -174,7 +136,7 @@ android {
         }
     }
 
-    // F-Droid ABI split — separate APK per architecture
+    // ABI split — separate APK per architecture
     splits {
         abi {
             enable true
@@ -283,7 +245,7 @@ dependencies {
     // QR Code generation (ZXing)
     implementation 'com.google.zxing:core:3.5.2'
 
-    // Firebase (excluded from fdroid flavor — no Google services)
+    // Firebase
     freeImplementation platform('com.google.firebase:firebase-bom:32.7.0')
     freeImplementation 'com.google.firebase:firebase-messaging'
     freeImplementation 'com.google.firebase:firebase-crashlytics-ktx'
@@ -308,25 +270,6 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
 
-// Disable google-services and crashlytics plugin for fdroid flavor
-afterEvaluate {
-    tasks.matching { it.name.contains("Fdroid") && (it.name.contains("GoogleServices") || it.name.contains("Crashlytics")) }.configureEach {
-        enabled = false
-    }
-}
-
-// Exclude all Firebase/GMS dependencies from fdroid configurations
-configurations.matching { it.name.startsWith("fdroid") }.configureEach {
-    exclude group: 'com.google.firebase'
-    exclude group: 'com.google.android.gms'
-    exclude group: 'com.google.android.datatransport'
-}
-
-// Note: WalletConnect android-core has internal type references to
-// FirebaseMessagingService/RemoteMessage in its PushMessagingService class.
-// Solution: WalletConnect is fully excluded from the fdroid flavor.
-// fdroid gets a no-op WalletConnectManager stub (src/fdroid/java/.../wallet/).
-// free/pro/premium share the real impl via src/withWalletConnect/java/.
 
 // PATCH 215 — native build integration skeleton (Opus JNI codec)
 android {

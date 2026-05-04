@@ -17,7 +17,6 @@ import com.securecall.app.BuildConfig
  * on MainActivity start). Dispatches based on the original install source:
  *
  *   - Play Store        → open market:// (Play Store shows "Update" button)
- *   - F-Droid           → open fdroid client on the SecureCall package page
  *   - Sideload (null)   → in-app GitHub check + download + install flow
  *   - Other             → Play Store web URL fallback
  *
@@ -28,12 +27,9 @@ object UpdateManager {
 
     private const val TAG = "UpdateManager"
     private const val PLAY_PACKAGE = "com.android.vending"
-    private const val FDROID_PACKAGE = "org.fdroid.fdroid"
-    private const val FDROID_BASIC_PACKAGE = "org.fdroid.basic"
     private const val PLAY_ID = "com.securecall.app.free"
     private const val PLAY_URL = "https://play.google.com/store/apps/details?id=$PLAY_ID"
     private const val GITHUB_RELEASES_URL = "https://github.com/NeaBouli/stealth/releases/latest"
-    private const val FDROID_PAGE_URL = "https://f-droid.org/packages/com.securecall.app.fdroid/"
 
     private const val PREFS = "update_prefs"
     private const val KEY_LAST_CHECK = "last_check_ms"
@@ -66,7 +62,6 @@ object UpdateManager {
 
         when (source) {
             InstallSource.PLAY_STORE -> openPlayStore(activity)
-            InstallSource.FDROID -> openFDroid(activity)
             InstallSource.SIDELOAD, InstallSource.OTHER_STORE -> runInAppCheck(activity, manual = true)
         }
     }
@@ -77,8 +72,7 @@ object UpdateManager {
      * — stays silent otherwise (no nagging).
      *
      * Skips entirely for Play Store installs (Play Store handles its own
-     * update notifications) and for F-Droid installs (F-Droid client polls
-     * the repo and notifies users natively).
+     * update notifications).
      */
     @JvmStatic
     fun maybeAutoCheck(activity: Activity) {
@@ -123,7 +117,6 @@ object UpdateManager {
             Log.d(TAG, "openUpdate via Activity — source: $source")
             when (source) {
                 InstallSource.PLAY_STORE -> openPlayStore(context)
-                InstallSource.FDROID -> openFDroid(context)
                 InstallSource.SIDELOAD, InstallSource.OTHER_STORE -> runInAppCheck(context, manual = true)
             }
             return
@@ -138,12 +131,8 @@ object UpdateManager {
 
     @JvmStatic
     fun getUpdateUrl(context: Context): String {
-        if (BuildConfig.APPLICATION_ID.endsWith(".fdroid")) {
-            return FDROID_PAGE_URL
-        }
         return when (InstallSource.resolve(context)) {
             InstallSource.PLAY_STORE -> "market://details?id=$PLAY_ID"
-            InstallSource.FDROID -> FDROID_PAGE_URL
             InstallSource.SIDELOAD -> GITHUB_RELEASES_URL
             InstallSource.OTHER_STORE -> PLAY_URL
         }
@@ -262,40 +251,17 @@ object UpdateManager {
         }
     }
 
-    private fun openFDroid(activity: Activity) {
-        // Prefer the F-Droid client directly (so the user lands on the package
-        // page, one tap to update). Fall back to the web URL if F-Droid is not
-        // installed.
-        val fdroidAppId = "com.securecall.app.fdroid"
-        val clientUri = Uri.parse("fdroid.app://details?id=$fdroidAppId")
-        try {
-            activity.startActivity(
-                Intent(Intent.ACTION_VIEW, clientUri)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            )
-            return
-        } catch (t: Throwable) {
-            Log.w(TAG, "F-Droid client not available: ${t.message}")
-        }
-        activity.startActivity(
-            Intent(Intent.ACTION_VIEW, Uri.parse(FDROID_PAGE_URL))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        )
-    }
-
     // ─── Install-source detection ───────────────────────────────
 
     private enum class InstallSource {
-        PLAY_STORE, FDROID, SIDELOAD, OTHER_STORE;
+        PLAY_STORE, SIDELOAD, OTHER_STORE;
 
         companion object {
             fun resolve(context: Context): InstallSource {
-                if (BuildConfig.APPLICATION_ID.endsWith(".fdroid")) return FDROID
                 val installer = getInstallerPackage(context)
                 return when (installer) {
                     null, "", "com.android.shell", "adb" -> SIDELOAD
                     PLAY_PACKAGE -> PLAY_STORE
-                    FDROID_PACKAGE, FDROID_BASIC_PACKAGE -> FDROID
                     else -> OTHER_STORE
                 }
             }

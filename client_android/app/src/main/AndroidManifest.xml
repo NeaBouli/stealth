@@ -34,10 +34,8 @@
         <package android:name="com.whatsapp" />
         <package android:name="org.telegram.messenger" />
         <package android:name="org.thoughtcrime.securesms" />
-        <!-- Update router: detect Play Store / F-Droid client presence -->
+        <!-- Update router: detect Play Store presence -->
         <package android:name="com.android.vending" />
-        <package android:name="org.fdroid.fdroid" />
-        <package android:name="org.fdroid.basic" />
         <intent>
             <action android:name="android.intent.action.SENDTO" />
             <data android:scheme="smsto" />

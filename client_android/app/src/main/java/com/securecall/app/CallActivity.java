@@ -209,7 +209,7 @@ public class CallActivity extends AppCompatActivity {
             prepareCallAudio(); // BUG-039: pre-configure audio before ICE
             startTransportAndTimer(connectionState, callTimer);
         } else {
-            // F-Droid trial check: block outgoing calls if trial expired and still FREE
+            // Trial check: block outgoing calls if trial expired and still FREE
             if (!com.securecall.app.trial.TrialManager.INSTANCE.isTrialActive(this)
                     && "FREE".equals(com.securecall.app.config.TierManager.INSTANCE.getCurrentTier(this))) {
                 connectionState.setText("Trial expired");
