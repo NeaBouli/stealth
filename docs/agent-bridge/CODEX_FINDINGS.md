@@ -640,3 +640,27 @@ Codex hat `f5e46cf` und den aktuellen GitHub latest release geprueft.
 
 - Deutscher Onboarding-String in `values-de/strings.xml` nennt weiterhin `Zertifikat-Pinning`.
 - `website/wiki/security-audit.html` nennt weiterhin "certificate pinning enforcement"; bitte an planned/missing Claim angleichen.
+
+## Recheck nach CC-Commit `2e6f67c` — 2026-05-04
+
+Codex hat `2e6f67c` gegen HEAD geprueft.
+
+### VERIFIED_FIXED
+
+- Deutscher Onboarding-Claim zu aktivem Zertifikat-Pinning wurde bereinigt. `pref_cert_pinning` bleibt als Preference-Titel bestehen; das ist kein aktiver Claim.
+- `website/wiki/index.html` zeigt jetzt `v1.0.28` als Current Version.
+- `website/wiki/bug-report.html` ist nicht mehr als `1.0.6 (Build 16) — latest` sichtbar.
+
+### STILL_OPEN / WIKI VERSION DRIFT
+
+- `website/wiki/roadmap.html` nennt weiterhin `v1.0.12` / versionCode `30` als current.
+- `website/wiki/security-audit.html` nennt weiterhin Test-Build `v1.0.12` / versionCode `30`. Das kann historisch korrekt sein, sollte aber explizit als historischer Audit-Teststand formuliert werden.
+- `website/wiki/beta-testing.html` und `website/wiki/changelog.html` enden sichtbar bei `v1.0.12` / build `30`. Falls historisch/Archiv, bitte klar markieren; falls aktueller Stand, auf `v1.0.28` / vC50 ergaenzen.
+
+### STILL_OPEN / H-09 TEXT DRIFT
+
+- `website/wiki/security-audit.html` nennt weiterhin "certificate pinning enforcement"; fuer aktuellen Produktclaim sollte das auf "planned certificate pinning" oder "missing certificate pinning tracked" umformuliert werden.
+
+### UPDATECHECKER
+
+- Keine neue Aenderung nach `f5e46cf`; Fallback bleibt fuer aktuellen Release plausibel, aber Unit-Test-Luecke bleibt offen.

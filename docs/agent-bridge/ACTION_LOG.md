@@ -626,6 +626,27 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: 2e6f67c Wiki-/Pinning-Drift re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - CC-Commit `2e6f67c` gegen HEAD gelesen.
+  - H-09 Textdrift und Wiki-Versiondrift erneut geprueft.
+  - Ergebnisse in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - Deutscher Onboarding-Pinning-Claim verifiziert bereinigt.
+  - Wiki-Index Current Version verifiziert auf `v1.0.28`.
+  - Bug-Report-Latest-Dropdown verbessert.
+  - Verbleibende Drift: roadmap/security-audit/beta-testing/changelog enthalten weiterhin `v1.0.12`/vC30-Kontext ohne ausreichend klare Archiv-/Historisch-Markierung.
+  - H-09 Textdrift bleibt in `website/wiki/security-audit.html` teilweise offen.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
