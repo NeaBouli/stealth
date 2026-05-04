@@ -214,7 +214,7 @@ async function handleWebhook(event, stripe, activationCodesRef) {
 
   const session = event.data.object;
   const email = session.customer_email || session.customer_details?.email || null;
-  console.log("[STRIPE] Session id:", session.id, "email:", email);
+  console.log("[STRIPE] Session id:", session.id, "email:", email ? email.substring(0, 3) + "***" : "none");
 
   // 1. Resolve tier + productKey — first from metadata (created via API), then from line_items (Payment Links)
   let tier = session.metadata?.tier;
@@ -255,7 +255,7 @@ async function handleWebhook(event, stripe, activationCodesRef) {
 
   // 3. Generate unique activation code
   const code = generateActivationCode(tier);
-  console.log("[STRIPE] Activation code generated:", code);
+  console.log("[STRIPE] Activation code generated:", code.substring(0, 4) + "****", "tier:", tier);
 
   // 4. Record sale + inject into activationCodes array (so ACTIVATE_CODE handler finds it)
   try {

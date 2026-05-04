@@ -127,7 +127,7 @@ async function sendWithBrevo(to, subject, html) {
 // --- Main Send Function (Resend → Brevo fallback) ---
 
 async function sendActivationCode(toEmail, code, tier) {
-  console.log("[EMAIL] sendActivationCode:", toEmail, code, tier);
+  console.log("[EMAIL] sendActivationCode:", toEmail.substring(0, 3) + "***", code.substring(0, 4) + "****", tier);
 
   const tierName = tier === "premium" ? "Premium" : "Pro";
   const subject = `Your SecureCall ${tierName} Activation Code`;
@@ -137,7 +137,7 @@ async function sendActivationCode(toEmail, code, tier) {
   if (process.env.BREVO_API_KEY) {
     try {
       const result = await sendWithBrevo(toEmail, subject, html);
-      console.log("[EMAIL] Sent via Brevo to:", toEmail, "messageId:", result?.messageId || "ok");
+      console.log("[EMAIL] Sent via Brevo to:", toEmail.substring(0, 3) + "***", "messageId:", result?.messageId || "ok");
       return true;
     } catch (err) {
       console.error("[EMAIL] Brevo failed:", err.message, "— trying Resend...");
@@ -150,7 +150,7 @@ async function sendActivationCode(toEmail, code, tier) {
   if (process.env.RESEND_API_KEY) {
     try {
       const result = await sendWithResend(toEmail, subject, html);
-      console.log("[EMAIL] Sent via Resend to:", toEmail, "id:", result?.data?.id || "ok");
+      console.log("[EMAIL] Sent via Resend to:", toEmail.substring(0, 3) + "***", "id:", result?.data?.id || "ok");
       return true;
     } catch (err) {
       console.error("[EMAIL] Resend failed:", err.message);
