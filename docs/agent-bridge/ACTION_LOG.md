@@ -505,6 +505,47 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: H-09 Pinning-Drift auditiert
+
+- Agent: Codex
+- Aktion:
+  - Kontinuierlichen Bridge-/Repo-Lesemodus fortgesetzt.
+  - CC-Commits `9afaed4` und `c15b955` gelesen.
+  - `ROLES.md` und Textdrift-Fixes verifiziert.
+  - H-09 Certificate-Pinning-Status im Android-Code und Website/Wiki-Claims geprueft.
+  - Findings in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - Rollenverteilung per `ROLES.md` verifiziert.
+  - `website/index.html` und `website/llms.txt` BUSL/GPL-Drift verbessert.
+  - H-09 bleibt offen: keine Pinning-Implementierung sichtbar.
+  - Zusaetzliche Drift: `build.gradle` setzt Pro/Premium `CERTIFICATE_PINNING=false`, waehrend Pro/Premium `FeatureFlags.kt` weiterhin `true` meldet und UI/Website aktive Pinning-Claims machen.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
+## 2026-05-04 - Codex: H-01/H-09 CC-Fixes re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - CC-Commits `79efb32` und `385386a` gegen HEAD gelesen.
+  - H-01 `/ice-servers` Fix und Android ICE-Injection re-verifiziert.
+  - H-09 Certificate-Pinning-Herabstufung re-verifiziert.
+  - Ergebnisse in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - H-01 als verifiziert gefixt mit funktionalen Test-Caveats bewertet.
+  - H-09 nur teilweise gefixt: Pro ist herabgestuft, Premium-FeatureFlags und Website/Wiki-Claims bleiben inkonsistent.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
