@@ -118,13 +118,18 @@
 - `281320f` (M-01 PKD Auth): VERIFIED_FIXED; `PUT /key/:id` und `DELETE /key/:id` hinter `requireAdmin`.
 - `0b64d09` (L-01/L-02 Text-Drift): VERIFIED_FIXED fuer FAQ/OG-Image; weitere Lizenz-/Release-Doku-Drift wurde spaeter separat nachverfolgt und teilweise bereinigt.
 
+## Phase 4 — Release v1.0.29 (vC51)
+
+- [x] versionCode 50→51, versionName 1.0.28→1.0.29
+- [ ] assembleFreeRelease + bundleFreeRelease (Build laeuft)
+- [ ] GitHub Release erstellen (v1.0.29, Changelog mit Security Fixes)
+- [ ] Play Console: AAB Upload
+- [ ] Railway: Redeploy mit Backend Security Fixes
+
 ## Priority 2
 
-- [x] README-/Download-Statusdrift pruefen:
-  - Play Store Beta, APK und Website-Links sollen auf denselben aktuellen Stand zeigen.
-  - Recheck 2026-05-04: README/Website/Wiki-Index/GitHub latest release stehen auf `v1.0.28` / `versionCode 50`.
-  - Rest: Play-Console-Status extern; `UpdateChecker`-Tests fuer Assetnamen ohne `vC` fehlen weiter.
-- [ ] Hybrid-Migration ausfuehren (siehe `MIGRATION_PLAN.md`)
+- [x] README-/Download-Statusdrift — DONE
+- [ ] Hybrid-Migration ausfuehren (siehe `MIGRATION_PLAN.md`, Hetzner entschieden)
 
 ## Priority 3
 
