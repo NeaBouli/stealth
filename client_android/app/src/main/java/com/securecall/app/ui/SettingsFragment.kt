@@ -522,7 +522,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
             try {
                 val serverUrl = BuildConfig.SIGNAL_WS_URL
                     .replace("wss://", "https://").replace("ws://", "http://").replace("/signal", "")
-                val json = """{"id":"$id","password":"$password","deviceId":"$deviceId"}"""
+                val json = org.json.JSONObject().apply {
+                    put("id", id)
+                    put("password", password)
+                    put("deviceId", deviceId)
+                }.toString()
                 val mediaType = "application/json".toMediaTypeOrNull()
                 val body = json.toRequestBody(mediaType)
                 val request = okhttp3.Request.Builder()
