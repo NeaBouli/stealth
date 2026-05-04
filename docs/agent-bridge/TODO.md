@@ -82,13 +82,50 @@
 - Override (`"overrides": {"@tootallnate/once": "^3.0.1"}`) waere technisch moeglich, birgt aber Kompatibilitaetsrisiko mit Google-Cloud-Internals.
 - **Status:** Monitoring. Kein Handlungsbedarf.
 
+## Security Audit — Fix-Status (2026-05-04)
+
+### Gefixt und gepusht
+
+| ID | Finding | Commit |
+|----|---------|--------|
+| C-01 | Hardcoded activation codes entfernt (fail-closed) | `21b0957` |
+| C-02 | Wildcard CORS auf /licenses/status entfernt | `edc6dc7` |
+| C-03 | Stripe webhook ohne secret → 503 reject | `21b0957` |
+| H-02 | /metrics hinter requireAdmin | `edc6dc7` |
+| H-03 | DEREGISTER nur fuer registrierte Connections | `edc6dc7` |
+| H-04 | /invite/accepted Rate Limit (3/10min) | `c7c7e06` |
+| H-05 | /stripe/create-checkout + dynamic Rate Limit (5/10min) | `cbbbcd6` |
+| H-06 | PHONE_LOOKUP/BATCH/ONLINE_STATUS require registration | `21b0957` |
+| H-07 | Alle Codes+Emails in Logs maskiert (server+stripe+email) | `cf30743` |
+| H-08 | JSON Injection in SettingsFragment → JSONObject | `1b39f9b` |
+| M-01 | PKD PUT/DELETE hinter requireAdmin | `281320f` |
+| L-01 | "open source" → "source available" in faq | `0b64d09` |
+| L-02 | og-image.svg GPL → Source Available | `0b64d09` |
+
+### Offen — braucht Gio-Entscheidung oder Client-Release
+
+| ID | Finding | Blocker |
+|----|---------|---------|
+| H-01 | /ice-servers public TURN credentials | Braucht Client-Aenderung (WS-only delivery nach REGISTER) |
+| H-09 | Certificate Pinning nicht implementiert | Feature-Entscheidung: implementieren oder Claim herabstufen |
+
+### Codex Re-Verify ausstehend fuer
+
+- `cf30743` (H-07 stripe_handler + email_handler Maskierung)
+- `c7c7e06` (H-04 invite Rate Limit)
+- `1b39f9b` (H-08 JSON Injection Fix)
+- `281320f` (M-01 PKD Auth)
+- `0b64d09` (L-01/L-02 Text-Drift)
+
 ## Priority 2
 
 - [ ] README-/Download-Statusdrift pruefen:
-  - Play Store Beta, APK, F-Droid und Website-Links sollen auf denselben aktuellen Stand zeigen.
+  - Play Store Beta, APK und Website-Links sollen auf denselben aktuellen Stand zeigen.
+- [ ] Hybrid-Migration ausfuehren (siehe `MIGRATION_PLAN.md`)
 
 ## Priority 3
 
-- [ ] ICE/TURN Endpoint `/ice-servers` separat sicherheitsauditieren.
+- [ ] ICE/TURN Endpoint `/ice-servers` hinter Auth (H-01 — nach Client-Update).
+- [ ] Certificate Pinning implementieren oder Claim herabstufen (H-09).
 - [ ] Backend-Monolith `backend/signaling/src/server.js` schrittweise modularisieren.
 - [ ] Privacy-Metadaten-Claims gegen FCM/TURN/Signaling Realitaet pruefen.

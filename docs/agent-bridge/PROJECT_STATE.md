@@ -30,6 +30,15 @@
 - **Railway:** ALLOWED_SIGNATURES live, enforce aktiv, Server HTTP 200 (deployed 2026-05-04).
 - CC + Codex arbeiten koordiniert ueber diese Bridge.
 
+## 2026-05-04 — Security Audit Phase 1 abgeschlossen
+
+- CC + Codex haben vollstaendigen Code-Audit durchgefuehrt (Backend + Android Client).
+- 15 Findings identifiziert (3 Critical, 9 High, 3 Medium/Low).
+- 13/15 Findings gefixt und gepusht.
+- 2 verbleibend: H-01 (/ice-servers Auth — Client-Aenderung) + H-09 (Cert Pinning — Feature-Entscheidung).
+- Phase 3 MIGRATION_PLAN.md erstellt (Hybrid self-hosted Architektur).
+- Codex Re-Verify steht aus fuer letzte 5 Commits.
+
 ## 2026-05-04 — Codex Nachpruefung F-Droid/Lizenz-Kohaerenz
 
 - Codex hat nach der F-Droid-Entfernung lokal read-only auf Restreferenzen geprueft.
