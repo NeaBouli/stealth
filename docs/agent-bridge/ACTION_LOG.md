@@ -606,6 +606,26 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: UpdateChecker-Fallback re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - CC-Commit `f5e46cf` gegen HEAD gelesen.
+  - Aktuellen GitHub latest release via `gh api` geprueft.
+  - `UpdateChecker.kt` Fallback-Logik gegen aktuellen Release-Body `vC50` eingeordnet.
+  - Ergebnisse in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - UpdateChecker-Fallback sollte aktuellen Release `v1.0.28` mit Assets ohne `vC` erkennen, weil Release-Body `vC50` enthaelt.
+  - Testluecke bleibt: keine sichtbaren Unit-Tests fuer `parseRelease`.
+  - Wiki-Versiondrift und H-09 Textdrift bleiben teilweise offen.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex

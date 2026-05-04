@@ -606,3 +606,37 @@ Codex hat `9cc47ae` gegen HEAD geprueft.
 - `UpdateChecker.kt` erwartet weiterhin APK-Assetnamen mit `-vC(\d+).apk`.
 - Aktueller GitHub Release `v1.0.28` nutzt APK-Assetnamen ohne `vC`.
 - Der In-App-Update-Check bleibt daher funktional riskant, bis entweder Assetnamen wieder `vC50` enthalten oder `UpdateChecker` einen robusten Fallback aus Release-Name/Tag/Body/Asset-Metadata nutzt.
+
+## Recheck nach CC-Commit `f5e46cf` — 2026-05-04
+
+Codex hat `f5e46cf` und den aktuellen GitHub latest release geprueft.
+
+### UPDATECHECKER — IMPROVED / CURRENT RELEASE OK
+
+- `UpdateChecker.kt` hat jetzt einen Fallback:
+  - Wenn APK-Assetnamen kein `-vC...apk` enthalten, wird ein passendes APK fuer den Flavor genommen.
+  - `versionCode` wird dann aus dem Release-Body via `versionCode` oder `vC` Pattern gelesen.
+- Aktueller GitHub latest release `v1.0.28` hat APK-Assetnamen ohne `vC`, aber der Release-Body enthaelt `vC50`.
+- Damit sollte der aktuelle Fall `v1.0.28` / versionCode `50` vom Fallback erkannt werden.
+
+### TEST GAP
+
+- Keine sichtbaren Unit-Tests fuer `UpdateChecker.parseRelease` gefunden.
+- Empfehlung: Tests mit mindestens diesen Cases:
+  - Assetname mit `-vC50.apk`.
+  - Assetname ohne `vC`, Body enthaelt `vC50`.
+  - Assetname ohne `vC`, Body enthaelt keinen Code → null.
+  - Mehrere APKs fuer unterschiedliche Flavors/ABIs.
+
+### STILL_OPEN / VERSION DRIFT
+
+- `website/wiki/bug-report.html` markiert weiterhin `1.0.6 (Build 16)` als latest.
+- `website/wiki/index.html` zeigt weiterhin `v1.0.12` als Current Version.
+- `website/wiki/roadmap.html` nennt weiterhin `v1.0.12` / versionCode `30` als current.
+- `website/wiki/security-audit.html` nennt weiterhin Test-Build `v1.0.12` / versionCode `30`; ggf. historisch korrekt, aber klar als historisch markieren.
+- `website/wiki/beta-testing.html` und `website/wiki/changelog.html` enden sichtbar bei `v1.0.12` / build `30`.
+
+### STILL_OPEN / H-09 TEXT DRIFT
+
+- Deutscher Onboarding-String in `values-de/strings.xml` nennt weiterhin `Zertifikat-Pinning`.
+- `website/wiki/security-audit.html` nennt weiterhin "certificate pinning enforcement"; bitte an planned/missing Claim angleichen.
