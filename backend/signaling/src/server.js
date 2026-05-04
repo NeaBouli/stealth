@@ -1319,7 +1319,7 @@ wss.on("connection", (ws, req) => {
     // ===========================
     if (msg.type === "ONLINE_STATUS_REQUEST") {
       if (!getClientId(connId)) {
-        return ws.send(JSON.stringify({type: "ONLINE_STATUS_RESULT", results: [], error: "not_registered"}));
+        return ws.send(JSON.stringify({type: "ONLINE_STATUS_RESPONSE", statuses: [], error: "not_registered"}));
       }
       // Rate limit: 10 per 60 seconds per connection
       if (!clients.get(connId)._onlineStatusReqs) clients.get(connId)._onlineStatusReqs = [];
@@ -1385,12 +1385,12 @@ wss.on("connection", (ws, req) => {
         gift.usedBy = getClientId(connId);
         saveGiftCodes();
         const myClientId = getClientId(connId);
-        console.log("[GIFT] Code redeemed:", code, "-> tier:", gift.tier, "by:", myClientId);
+        console.log("[GIFT] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", gift.tier, "by:", myClientId);
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: true, tier: gift.tier }));
       }
 
       if (!entry) {
-        console.log("[ACTIVATION] Invalid code attempted:", code);
+        console.log("[ACTIVATION] Invalid code attempted:", code.substring(0, 4) + "****");
         return ws.send(JSON.stringify({
           type: "ACTIVATE_CODE_RESULT",
           success: false,
@@ -1403,7 +1403,7 @@ wss.on("connection", (ws, req) => {
 
       // Already activated on this device? Allow re-activation (idempotent)
       if (devices.includes(myClientId)) {
-        console.log("[ACTIVATION] Code re-activated on same device:", code, "by:", myClientId);
+        console.log("[ACTIVATION] Code re-activated:", code.substring(0, 4) + "****", "by:", myClientId);
         return ws.send(JSON.stringify({
           type: "ACTIVATE_CODE_RESULT",
           success: true,
@@ -1416,7 +1416,7 @@ wss.on("connection", (ws, req) => {
 
       // All device slots used? Reject.
       if (devices.length >= entry.maxUses) {
-        console.log("[ACTIVATION] Code exhausted:", code, "devices:", devices.length, "/", entry.maxUses, "attempted:", myClientId);
+        console.log("[ACTIVATION] Code exhausted:", code.substring(0, 4) + "****", "devices:", devices.length, "/", entry.maxUses, "attempted:", myClientId);
         return ws.send(JSON.stringify({
           type: "ACTIVATE_CODE_RESULT",
           success: false,
@@ -1430,7 +1430,7 @@ wss.on("connection", (ws, req) => {
       entry.usedBy = devices;
       entry.currentUses = devices.length;
       const slot = devices.length;
-      console.log("[ACTIVATION] Code redeemed:", code, "-> tier:", entry.tier, "by:", myClientId, "slot:", slot + "/" + entry.maxUses);
+      console.log("[ACTIVATION] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", entry.tier, "by:", myClientId, "slot:", slot + "/" + entry.maxUses);
       saveActivationCodes();
 
       return ws.send(JSON.stringify({
@@ -1750,7 +1750,7 @@ app.post("/admin/gift", requireAdmin, (req, res) => {
   });
 
   saveGiftCodes();
-  console.log(`[GIFT] Created ${code} → ${tier.toUpperCase()} (note: ${note || "none"})`);
+  console.log(`[GIFT] Created ${code.substring(0, 4)}**** → ${tier.toUpperCase()} (note: ${note || "none"})`);
   res.json({ code, tier: tier.toUpperCase(), expires, note: note || "" });
 });
 
@@ -1867,7 +1867,7 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
   });
 
   saveGiftCodes();
-  console.log("[BILLING] Activation code generated:", code, "tier:", tier, "product:", product_id);
+  console.log("[BILLING] Activation code generated:", code.substring(0, 4) + "****", "tier:", tier, "product:", product_id);
 
   res.json({
     code,
