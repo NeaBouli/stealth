@@ -95,9 +95,10 @@
             <h2>Data We Collect</h2>
             <ul>
                 <li><strong>Call content:</strong> End-to-end encrypted &mdash; we cannot access it</li>
-                <li><strong>Call metadata:</strong> No call logs stored on servers</li>
+                <li><strong>Call metadata:</strong> No persistent call history or recordings stored on servers. Signaling metadata (session IDs, connection IDs) is processed transiently for connection setup.</li>
                 <li><strong>Contacts:</strong> Never leave your device</li>
-                <li><strong>IP address:</strong> Visible during signaling only; not logged</li>
+                <li><strong>IP address:</strong> Visible during signaling and STUN/TURN connectivity; not persistently logged by our servers. TURN relay providers may see IPs required for WebRTC.</li>
+                <li><strong>Push tokens:</strong> FCM tokens may be stored for push delivery and cleared on deregistration.</li>
             </ul>
             <h2>Advertising (FREE Version Only)</h2>
             <p>The free version displays ads via Google AdMob. AdMob may collect device identifiers for ad personalization. You can opt out in your device settings. See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>. Pro and Premium versions contain no ads.</p>
@@ -105,7 +106,7 @@
             <p>IFR token verification queries on-chain data only. No personal data is collected or stored during wallet verification.</p>
             <h2>Third-Party Services</h2>
             <p><strong>FREE:</strong> Firebase Crashlytics (anonymous crash reports, opt-out), Google AdMob (ads).</p>
-            <p><strong>PRO &amp; PREMIUM:</strong> No third-party services. Zero external data sharing.</p>
+            <p><strong>PRO &amp; PREMIUM:</strong> No ads. Firebase Cloud Messaging (FCM) is used for push notifications across all tiers. STUN/TURN relay services are used for WebRTC connectivity.</p>
             <h2>Your Rights (GDPR)</h2>
             <p>You have the right to access, rectify, erase, and port your data. Since we collect virtually no personal data, these rights are satisfied by default.</p>
             <h2 id="account-deletion">Account &amp; Data Deletion</h2>
@@ -122,7 +123,7 @@
                 <li>Call history</li>
                 <li>All app data on device</li>
             </ul>
-            <p>No personal data is stored on our servers. Uninstalling the app removes all remaining local data.</p>
+            <p>No call content or call recordings are stored on our servers. FCM push tokens are cleared on deregistration. Uninstalling the app removes all remaining local data.</p>
             <h2>Source Transparency</h2>
             <p>The SecureCall client source code is publicly available for transparency and independent security auditing. Official SecureCall/StealthX branding, backend services, store releases, and paid Pro/Premium licensing remain operated by Vendetta Labs.</p>
             <p>Source code: <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">github.com/NeaBouli/stealth</a></p>

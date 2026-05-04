@@ -21,7 +21,7 @@
 ---
 
 **SecureCall is a voice communication app built from the ground up for privacy.**
-No metadata. No compromises. Every call is encrypted end-to-end using military-grade cryptography.
+No call content ever leaves your device unencrypted. Every call is protected end-to-end using military-grade cryptography.
 
 [Website](https://stealthx.tech) | [Play Store Beta](https://play.google.com/apps/testing/com.securecall.app.free) | [Download APK](https://github.com/NeaBouli/stealth/releases/latest) | [Features](#features) | [Security](#security)
 
@@ -33,7 +33,7 @@ No metadata. No compromises. Every call is encrypted end-to-end using military-g
 
 - **End-to-End Encryption** -- Every voice call is encrypted using XChaCha20-Poly1305 (AEAD). Keys never leave your device.
 - **X25519 Key Exchange** -- Ephemeral Diffie-Hellman key agreement ensures perfect forward secrecy. Each call uses a unique session key.
-- **Zero-Knowledge Architecture** -- The server facilitates connections but cannot decrypt calls. No call content, no metadata, no logs.
+- **Zero-Knowledge Architecture** -- The server facilitates connections but cannot decrypt calls. No call content is stored or accessible server-side. Signaling metadata is processed transiently for connection setup.
 - **Anti-Recording Protection** -- Active detection of screen recording, microphone hijacking, and spy apps (Pro/Premium).
 - **Rust Crypto Core** -- All cryptographic operations run in a native Rust library via JNI -- no Java crypto, no OpenSSL.
 - **BUSL-1.1 Licensed Client** -- The client source code is publicly available and independently auditable. Official SecureCall branding, backend services, store listings, and paid Pro/Premium offerings remain operated by Vendetta Labs.
@@ -133,7 +133,7 @@ The complete source code is publicly available in this repository. We have condu
 <details>
 <summary><strong>What data does the server see?</strong></summary>
 
-The signaling server only facilitates connection establishment. It relays encrypted key exchange messages and signaling data. All voice data is encrypted end-to-end -- the server cannot decrypt any call content. No metadata or call logs are stored.
+The signaling server only facilitates connection establishment. It relays encrypted key exchange messages and signaling data. All voice data is encrypted end-to-end -- the server cannot decrypt any call content. No persistent call history or call recordings are stored. Signaling metadata (connection IDs, session IDs) is processed transiently. FCM tokens may be stored for push delivery and cleared on deregistration. STUN/TURN providers may see network-level IPs required for WebRTC connectivity.
 
 </details>
 
