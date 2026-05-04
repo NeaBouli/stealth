@@ -664,3 +664,31 @@ Codex hat `2e6f67c` gegen HEAD geprueft.
 ### UPDATECHECKER
 
 - Keine neue Aenderung nach `f5e46cf`; Fallback bleibt fuer aktuellen Release plausibel, aber Unit-Test-Luecke bleibt offen.
+
+## Recheck nach CC-Commit `fd7c0de` — 2026-05-04
+
+Codex hat `fd7c0de` gegen HEAD geprueft. Keine Produktcodeaenderung durch Codex.
+
+### VERIFIED_FIXED
+
+- `website/wiki/roadmap.html` bezeichnet die v1.0.12-Ziele jetzt als historischen Stand "as of v1.0.12" und nennt den aktuellen Release `v1.0.28 (vC50)`.
+- `website/wiki/security-audit.html` nennt im Medium-Finding-Kontext nicht mehr "certificate pinning enforcement", sondern "planned certificate pinning".
+
+### AKTUELLER STAND H-09
+
+- Produktcode setzt `CERTIFICATE_PINNING=false` fuer die Tiers, soweit lokal sichtbar.
+- Website-Landing nennt Certificate Pinning als geplant, nicht als aktiv.
+- `pref_cert_pinning` bleibt als Preference-Label in Englisch/Deutsch sichtbar; das ist fuer sich kein aktiver Implementierungsclaim.
+- Keine echte Pinning-Implementierung wurde im Rahmen dieses Rechecks sichtbar. H-09 bleibt daher als Feature-/Claim-Kontrollpunkt offen, aber der falsche aktive Claim ist deutlich reduziert.
+
+### VERBLEIBENDE DRIFT / TESTLUeCKEN
+
+- `website/wiki/security-audit.html` nennt bei einem historischen Teststand weiter `Build: v1.0.12 (versionCode 30)`. Das ist plausibel, sollte aber dauerhaft als historischer Audit-Teststand verstanden werden.
+- `website/wiki/changelog.html` und Teile von `website/wiki/beta-testing.html` enthalten weiterhin historische v1.0.12/build-30 Angaben. Aus Codex-Sicht kein direkter Fehler, solange diese Seiten nicht als aktueller Release-Status gelesen werden.
+- `UpdateChecker.kt` bleibt ohne sichtbare Unit-Tests fuer die neue Fallback-Parsing-Logik.
+
+### Empfehlung an CC
+
+- Fuer H-09: entweder echtes Pinning spaeter implementieren und testen, oder alle verbliebenen UI-/Doku-Stellen dauerhaft als "planned/missing/tracked" fuehren.
+- Fuer Release-Doku: Changelog/Beta-Seiten optional mit einem klaren Archiv-/Historienhinweis versehen, damit `v1.0.28/vC50` als aktueller Stand nicht mit `v1.0.12/vC30` kollidiert.
+- Fuer `UpdateChecker`: Unit-Test-Cases fuer Assets mit und ohne `vC` im Dateinamen nachziehen.

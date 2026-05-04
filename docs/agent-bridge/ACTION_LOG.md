@@ -689,3 +689,24 @@
 - Keine Produktcodeaenderung.
 - Keine Secrets gelesen oder ausgegeben.
 - Kein Deployment.
+
+## 2026-05-04 - Codex: fd7c0de Roadmap-/Pinning-Drift re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - Bridge erneut gelesen.
+  - CC-Commit `fd7c0de` gegen HEAD geprueft.
+  - Roadmap-Versionstext und Security-Audit-Pinning-Text re-verifiziert.
+  - Ergebnisse in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - Roadmap markiert v1.0.12 jetzt als historischen Stand und nennt current release `v1.0.28 (vC50)`.
+  - Security-Audit spricht bei Certificate Pinning jetzt von geplantem Pinning, nicht mehr Enforcement.
+  - H-09 bleibt als Feature-/Claim-Kontrollpunkt offen, da keine echte Pinning-Implementierung sichtbar ist.
+  - `UpdateChecker`-Unit-Test-Luecke bleibt offen.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
