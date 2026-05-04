@@ -289,7 +289,7 @@ android {
     }
 }
 
-// ABI-specific versionCodes for F-Droid split APKs
+// ABI-specific versionCodes for split APKs
 // arm64-v8a: base*1000+1, armeabi-v7a: base*1000+2, x86_64: base*1000+3
 android.applicationVariants.all { variant ->
     variant.outputs.each { output ->
