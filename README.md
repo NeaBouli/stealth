@@ -112,7 +112,25 @@ SecureCall uses the following third-party services. **All voice data is encrypte
 - Firebase is used solely for push notification delivery when the app is in the background. Analytics and Crashlytics are disabled.
 - No call content or recordings are shared with, sold to, or accessible by any third party. Signaling metadata is processed transiently for connection setup.
 
-For the full privacy policy, see [Privacy Policy](https://neabouli.github.io/stealth/privacy.html).
+For the full privacy policy, see [Privacy Policy](https://stealthx.tech/privacy.html).
+
+## Security by Tier
+
+| Feature | Free | Pro | Premium |
+|---------|------|-----|---------|
+| E2E Encryption (XChaCha20-Poly1305) | Yes | Yes | Yes |
+| Root Detection | Warning only | Blocks | Blocks |
+| Certificate Pinning | Planned | Planned | Planned |
+| Screen Capture Detection | No | No | Yes |
+| Debugger Detection | No | No | Yes |
+| Emulator Detection | No | No | Yes |
+| Hardware Keystore Required | No | No | Yes |
+| Call Recording Allowed | Yes | No | No |
+| Aggressive Key Rotation | No | No | Yes |
+| Ads | Yes (AdMob) | No | No |
+| Crash Reports | Yes (opt-out) | No | No |
+
+> **Note:** Core encryption is identical across all tiers. Security differences affect device-level protections and privacy features.
 
 ## FAQ
 
