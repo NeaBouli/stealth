@@ -1544,7 +1544,11 @@ wss.on("connection", (ws, req) => {
     // DEREGISTER — Remove client from all registries (stealth-delete)
     // ===========================
     if (msg.type === "DEREGISTER") {
-      const myClientId = getClientId(connId) || msg.clientId;
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        ws.send(JSON.stringify({type: "ERROR", error: "not_registered", message: "Must be registered to deregister"}));
+        return;
+      }
       if (myClientId) {
         // Remove phone mappings
         for (const [phone, cid] of phoneNumbers) {
@@ -2032,8 +2036,8 @@ app.get("/health", (req, res) => {
   });
 });
 
-// --- Metrics Endpoint ---
-app.get("/metrics", (req, res) => {
+// --- Metrics Endpoint (admin only) ---
+app.get("/metrics", requireAdmin, (req, res) => {
   const used = process.memoryUsage();
   res.json({
     memory: {
@@ -2070,7 +2074,6 @@ try {
 const licenses = require('./licenses');
 
 app.get('/licenses/status', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
   res.json(licenses.getStatus());
 });
 

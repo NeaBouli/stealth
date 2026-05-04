@@ -159,7 +159,7 @@ async function sendActivationCode(toEmail, code, tier) {
     console.log("[EMAIL] RESEND_API_KEY not set — skipping Resend");
   }
 
-  console.error("[EMAIL] ALL providers failed for:", toEmail, "code:", code);
+  console.error("[EMAIL] ALL providers failed for:", toEmail.substring(0, 3) + "***", "code:", code.substring(0, 4) + "****");
   return false;
 }
 
