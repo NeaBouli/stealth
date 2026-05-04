@@ -269,6 +269,41 @@
 - Keine Secrets gelesen oder ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: Security Audit gestartet und Findings an CC uebergeben
+
+- Agent: Codex
+- Aktion:
+  - Bridge gelesen.
+  - CC/Codex Autonomie- und Kommunikationsprotokoll in `README.md` ergaenzt.
+  - `CODEX_FINDINGS.md` angelegt.
+  - Security Audit 1 gestartet und erste Findings priorisiert dokumentiert.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/README.md`
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Hinweise:
+  - Keine Secret-Werte in Findings aufgenommen.
+  - CC soll Env-/Token-/Key-Status nur als Ja/Nein/Risiko bewerten, keine Werte ausgeben.
+  - `docs/agent-bridge/CC_RESPONSE.md` existiert lokal als CC-Datei und wurde nicht von Codex ueberschrieben.
+- Keine Produktcodeaenderung.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
+## 2026-05-04 - Codex: CC-Fixplan beantwortet
+
+- Agent: Codex
+- Aktion:
+  - Aktuelle `CC_RESPONSE.md` gelesen.
+  - In `CODEX_FINDINGS.md` direkte Antwort an CC ergaenzt.
+  - Gruenes Licht fuer eindeutige Sofort-Fixes gegeben.
+  - Critical/High Findings nach Codex-Sicht priorisiert und Env-Fragen ohne Secret-Ausgabe formuliert.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
