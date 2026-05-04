@@ -39,6 +39,9 @@ object UpdateChecker {
      */
     private val VC_PATTERN = Regex("""-vC(\d+)\.apk$""")
 
+    /** Fallback: extract versionCode from release body text "versionCode XX" or "vC XX" */
+    private val BODY_VC_PATTERN = Regex("""(?:versionCode|vC)\s*[:=]?\s*(\d+)""")
+
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
@@ -117,6 +120,27 @@ object UpdateChecker {
                 bestCode = code
                 bestUrl = url
                 bestSize = size
+            }
+        }
+
+        // Fallback: if no vC pattern in asset names, try to get versionCode from release body
+        if (bestCode <= 0 && bestUrl.isEmpty()) {
+            // Find any APK matching our flavor (without vC requirement)
+            for (i in 0 until assets.length()) {
+                val asset = assets.optJSONObject(i) ?: continue
+                val name = asset.optString("name", "")
+                val url = asset.optString("browser_download_url", "")
+                val size = asset.optLong("size", 0L)
+                if (!name.endsWith(".apk", ignoreCase = true)) continue
+                if (!name.contains(BuildConfig.FLAVOR, ignoreCase = true)) continue
+                bestUrl = url
+                bestSize = size
+                break
+            }
+            // Extract versionCode from body text
+            val bodyMatch = BODY_VC_PATTERN.find(body)
+            if (bodyMatch != null) {
+                bestCode = bodyMatch.groupValues[1].toIntOrNull() ?: -1
             }
         }
 
