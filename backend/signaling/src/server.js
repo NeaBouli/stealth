@@ -393,9 +393,9 @@ app.get("/routing/list", requireAdmin, (req, res) => {
 });
 
 // --- ICE Servers API (BACKEND-02) ---
-// H-13: TODO — move to WS-only delivery for registered clients.
-// Currently public because IceServerFetcher.kt uses HTTP GET.
-app.get("/ice-servers", (req, res) => {
+// ICE servers are now delivered via REGISTERED WS message (H-01 fix).
+// HTTP endpoint kept behind admin auth for debugging only.
+app.get("/ice-servers", requireAdmin, (req, res) => {
   res.json({ iceServers: ICE_SERVERS });
 });
 
@@ -753,7 +753,8 @@ wss.on("connection", (ws, req) => {
       console.log("[REGISTER]", msg.clientId, "->", connId);
       return ws.send(JSON.stringify({
         type: "REGISTERED",
-        clientId: msg.clientId
+        clientId: msg.clientId,
+        iceServers: ICE_SERVERS
       }));
     }
 

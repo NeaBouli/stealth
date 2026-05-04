@@ -1194,6 +1194,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 "REGISTERED" -> {
                     val acked = obj.optString("clientId", "")
                     onRegisterAck(acked)
+                    // H-01: inject ICE servers from REGISTERED message (avoids public HTTP endpoint)
+                    val iceServers = obj.optJSONArray("iceServers")
+                    if (iceServers != null && iceServers.length() > 0) {
+                        IceServerFetcher.injectFromRegistered(iceServers)
+                    }
                 }
                 "ICE_CANDIDATE" -> {
                     val candidate = obj.optJSONObject("candidate")

@@ -122,6 +122,20 @@ object IceServerFetcher {
         }.start()
     }
 
+    /**
+     * Inject ICE servers received from the REGISTERED WebSocket message.
+     * This avoids the HTTP GET /ice-servers call entirely (H-01 security fix).
+     */
+    fun injectFromRegistered(iceServersArray: JSONArray) {
+        val servers = parseIceServers(iceServersArray)
+        if (servers.isNotEmpty()) {
+            cachedServers = servers
+            cacheTimestamp = System.currentTimeMillis()
+            Log.d(TAG, "Injected ${servers.size} ICE servers from REGISTERED message")
+            com.securecall.app.debug.SecLogManager.log("ICE", "Injected from WS: ${servers.size} servers")
+        }
+    }
+
     private fun parseIceServers(array: JSONArray): List<PeerConnection.IceServer> {
         val servers = mutableListOf<PeerConnection.IceServer>()
         for (i in 0 until array.length()) {
