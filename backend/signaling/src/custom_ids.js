@@ -225,15 +225,30 @@ function resolve(id) {
 // ─── HTTP Routes ────────────────────────────────────────────
 
 function setupRoutes(app, requireAdmin) {
-  // Check availability (public)
+  // Rate limit: 5 attempts per IP per 15 minutes for activate/transfer/reclaim
+  const customIdLimits = new Map();
+  function customIdRateLimit(req, res, next) {
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    if (!customIdLimits.has(ip)) customIdLimits.set(ip, []);
+    const attempts = customIdLimits.get(ip);
+    while (attempts.length > 0 && now - attempts[0] > 900000) attempts.shift(); // 15min window
+    if (attempts.length >= 5) {
+      return res.status(429).json({ error: "rate_limited", retry_after_seconds: 900 });
+    }
+    attempts.push(now);
+    next();
+  }
+
+  // Check availability (public, no rate limit needed — read-only)
   app.get("/custom-id/check", (req, res) => {
     const id = (req.query.id || "").toLowerCase().trim();
     if (!id) return res.status(400).json({ error: "missing_id" });
     res.json(isAvailable(id));
   });
 
-  // Activate (from app via WS or direct API)
-  app.post("/custom-id/activate", (req, res) => {
+  // Activate (from app via WS or direct API) — rate limited
+  app.post("/custom-id/activate", customIdRateLimit, (req, res) => {
     const { id, deviceId, password } = req.body;
     if (!id || !deviceId || !password) {
       return res.status(400).json({ error: "missing_fields" });
@@ -251,7 +266,7 @@ function setupRoutes(app, requireAdmin) {
     500: "price_1TLU35BtrTFeYCjzXs6Z3QyP"   // 3-4 chars = €5
   };
 
-  app.post("/custom-id/purchase", async (req, res) => {
+  app.post("/custom-id/purchase", customIdRateLimit, async (req, res) => {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) return res.status(503).json({ error: "payments_disabled" });
 
