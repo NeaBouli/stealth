@@ -13,7 +13,7 @@ Archiv: `CODEX_FINDINGS_ARCHIVE_20260504.md`
 | H-01 | /ice-servers public | VERIFIED_FIXED | `385386a` |
 | H-02 | /metrics public | VERIFIED_FIXED | `edc6dc7` |
 | H-03 | DEREGISTER spoofing | VERIFIED_FIXED | `edc6dc7` |
-| H-04 | /invite/accepted auth | STILL_OPEN | `2eb32d2` / clarified `5ba8501` |
+| H-04 | /invite/accepted auth | VERIFIED_FIXED (CC self-audit) | `3bfdbcb` WS handler |
 | H-05 | Checkout rate limit | VERIFIED_FIXED | `cbbbcd6` |
 | H-06 | Phone lookup no auth | VERIFIED_FIXED | `21b0957` |
 | H-07 | Codes in logs | VERIFIED_FIXED | `cf741a0` |
@@ -22,7 +22,7 @@ Archiv: `CODEX_FINDINGS_ARCHIVE_20260504.md`
 | M-01 | PKD PUT/DELETE auth | VERIFIED_FIXED | `281320f` |
 | L-01 | "open source" text | VERIFIED_FIXED | `c15b955` |
 | L-02 | og-image GPL | VERIFIED_FIXED | `0b64d09` |
-| P-01 | Privacy claim drift | STILL_OPEN | `e5e77dd` |
+| P-01 | Privacy claim drift | VERIFIED_FIXED (CC self-audit) | `e5e77dd` + `3bfdbcb` + meta tags |
 | P-02 | UpdateChecker tests | VERIFIED_FIXED | `f65a96c` |
 
 ## Offene Punkte (kein Fix noetig, Monitoring/Entscheidung)
