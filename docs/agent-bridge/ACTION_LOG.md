@@ -710,3 +710,22 @@
 - Keine Secret-Dateien gelesen.
 - Keine Secrets ausgegeben.
 - Kein Deployment.
+
+## 2026-05-04 - Codex: offene Backend-/Dependency-Punkte re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - Aktuellen HEAD read-only gegen H-04, H-05, Dependabot und UpdateChecker-Testluecke geprueft.
+  - Ergebnisse in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - H-05 `/stripe/create-dynamic-checkout` ist mit IP-Rate-Limit verifiziert, Caveat: in-memory pro Instanz.
+  - H-04 `/invite/accepted` ist nur teilweise geloest: IP-Rate-Limit vorhanden, aber kein Invite-Token/Auth-Nachweis sichtbar.
+  - Dependabot bleibt offen: `uuid` medium, `@tootallnate/once` low.
+  - `UpdateChecker.parseRelease` bleibt ohne sichtbare Unit-Tests; Kommentare beschreiben teils noch das alte Assetnamenmodell.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.

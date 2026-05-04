@@ -692,3 +692,36 @@ Codex hat `fd7c0de` gegen HEAD geprueft. Keine Produktcodeaenderung durch Codex.
 - Fuer H-09: entweder echtes Pinning spaeter implementieren und testen, oder alle verbliebenen UI-/Doku-Stellen dauerhaft als "planned/missing/tracked" fuehren.
 - Fuer Release-Doku: Changelog/Beta-Seiten optional mit einem klaren Archiv-/Historienhinweis versehen, damit `v1.0.28/vC50` als aktueller Stand nicht mit `v1.0.12/vC30` kollidiert.
 - Fuer `UpdateChecker`: Unit-Test-Cases fuer Assets mit und ohne `vC` im Dateinamen nachziehen.
+
+## Recheck offener Backend-/Dependency-Punkte — 2026-05-04
+
+Codex hat den aktuellen HEAD nach dem Bridge-Commit `b3d5cb3` read-only gegen offene Punkte geprueft. Keine Produktcodeaenderung durch Codex.
+
+### H-05 — VERIFIED_FIXED MIT CAVEAT
+
+- `/stripe/create-dynamic-checkout` nutzt jetzt `checkoutRateLimit`.
+- Sichtbarer Grenzwert: 5 Checkout-Requests pro IP pro 10 Minuten.
+- Der Endpoint validiert weiterhin den erlaubten `tier` und failt bei fehlendem Stripe Secret mit `503`.
+- Caveat: Limiter ist in-memory und damit pro Prozess/Instanz. Fuer Multi-Instance/Horizontal Scaling waere Redis/zentraler Limiter robuster.
+
+### H-04 — PARTIAL
+
+- `/invite/accepted` nutzt jetzt `inviteRateLimit`.
+- Sichtbarer Grenzwert: 3 Invite-Acceptances pro IP pro 10 Minuten.
+- Weiterhin kein sichtbarer Auth-/Invite-Token-/Signatur-Nachweis fuer `inviterSecureId` und `newUserSecureId`.
+- Bewertung: Abuse-Risiko ist reduziert, aber der Endpoint bleibt fachlich spoofbar. Fuer vollstaendige Schliessung sollte ein serverseitiger Invite-Token oder ein registrierter Client-Kontext nachgewiesen werden.
+
+### M-04 / Dependabot — STILL_OPEN
+
+- GitHub Dependabot meldet weiterhin offen:
+  - `uuid` in `backend/signaling/package-lock.json` — severity `medium`.
+  - `@tootallnate/once` in `backend/signaling/package-lock.json` — severity `low`.
+- Letzter bekannter `npm audit` Stand: transitive moderate/low Vulnerabilities in der Google/Firebase/Svix/Resend-Kette.
+- Empfehlung bleibt: Kein `npm audit fix --force` ohne Testplan, weil der vorgeschlagene Pfad transitive/breaking Downgrades verursachen kann.
+
+### UpdateChecker — TEST GAP BESTAeTIGT
+
+- `UpdateChecker.parseRelease` enthaelt die neue Fallback-Logik fuer Assets ohne `vC` im Namen.
+- Kommentare in `UpdateChecker.kt` und `UpdateInfo.kt` beschreiben noch primaer das alte `vC`-Assetnamenmodell.
+- Keine sichtbaren Tests fuer `parseRelease` gefunden.
+- Empfehlung: CC sollte Unit-Tests plus Kommentarbereinigung nachziehen; das ist kein aktueller Blocker, aber regressionsrelevant fuer sideload/free Updates.
