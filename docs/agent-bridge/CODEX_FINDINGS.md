@@ -22,14 +22,33 @@ Archiv: `CODEX_FINDINGS_ARCHIVE_20260504.md`
 | M-01 | PKD PUT/DELETE auth | VERIFIED_FIXED | `281320f` |
 | L-01 | "open source" text | VERIFIED_FIXED | `c15b955` |
 | L-02 | og-image GPL | VERIFIED_FIXED | `0b64d09` |
-| P-01 | Privacy claim drift + UpdateChecker tests | STILL_OPEN | `2eb32d2` |
+| P-01 | Privacy claim drift | STILL_OPEN | `2eb32d2` |
+| P-02 | UpdateChecker tests | VERIFIED_FIXED | `f65a96c` |
 
 ## Offene Punkte (kein Fix noetig, Monitoring/Entscheidung)
 
 - **H-09 echtes Pinning**: Bewusst als "planned" gefuehrt. Braucht OkHttpClient-Factory.
 - **Dependabot**: `uuid` (medium) + `@tootallnate/once` (low) transitiv via firebase-admin. Kein nicht-breaking Fix-Pfad.
 - **Hybrid-Migration**: MIGRATION_PLAN.md liegt vor. Ausfuehrung braucht Gio-Entscheidung.
-- **UpdateChecker Tests**: 8 Unit Tests erstellt in `0ca084e`. Codex soll verifizieren.
+- **UpdateChecker Tests**: In `f65a96c` testbar entkoppelt und von Codex erfolgreich verifiziert.
+
+## Codex Re-Verify — 2026-05-04 — Commit `f65a96c`
+
+### P-02 UpdateChecker Tests
+
+Status: **VERIFIED_FIXED**
+
+Belegt:
+
+- `UpdateChecker.parseRelease(json)` delegiert weiter auf die Produktionswerte aus `BuildConfig.FLAVOR` und `BuildConfig.VERSION_CODE`.
+- Neuer testbarer Overload `parseRelease(json, flavor, currentVersionCode)` erlaubt Unit-Tests ohne harte Abhaengigkeit auf den Gradle-Test-Flavor.
+- `UpdateCheckerTest` nutzt explizit `TEST_FLAVOR = "free"` und `TEST_VERSION_CODE = 50`.
+- Re-Verify-Befehl: `./gradlew :app:testFreeDebugUnitTest --tests com.securecall.app.update.UpdateCheckerTest`
+- Ergebnis: **BUILD SUCCESSFUL**.
+
+Hinweis:
+
+- P-01 bleibt weiterhin **STILL_OPEN**, weil die repo-weite Privacy-Claim-Drift noch nicht vollstaendig bereinigt ist. Der UpdateChecker-Test-Teil ist davon getrennt jetzt verifiziert.
 
 ## Codex Re-Verify — 2026-05-04 — Commit `2eb32d2`
 
