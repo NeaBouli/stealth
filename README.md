@@ -123,7 +123,7 @@ For the full privacy policy, see [Privacy Policy](https://neabouli.github.io/ste
 <details>
 <summary><strong>Can I build the app myself?</strong></summary>
 
-Yes. SecureCall's client code is GPL-3.0 licensed. You can build, modify, and redistribute the client code under the GPL. The official F-Droid build is available without Google services. Note: the SecureCall name, logo, official backend services, store releases, and paid Pro/Premium licensing are controlled by Vendetta Labs and require permission for official or branded use.
+Yes. SecureCall's client source code is publicly available for transparency and independent security auditing. You can build and run the client locally for personal, non-commercial use. Note: the SecureCall name, logo, official backend services, store releases, and paid Pro/Premium licensing are controlled by Vendetta Labs and require permission for commercial or branded use.
 
 </details>
 
@@ -169,7 +169,7 @@ SecureCall ist eine Sprachkommunikations-App, die von Grund auf fuer Privatsphae
 
 **Warum quelloffen?** Verschluesselungssoftware muss transparent sein. Sie sollten nie einer Blackbox Ihre privaten Gespraeche anvertrauen muessen. Der vollstaendige Quellcode ist oeffentlich einsehbar -- fuer unabhaengige Sicherheitspruefungen und Verifikation.
 
-**Wichtig:** Der Client-Code steht unter GPL-3.0 und ist fuer Transparenz, unabhaengige Pruefung und F-Droid/Play-Store-Review offen. Die offiziellen SecureCall-/StealthX-Marken, Backend-Dienste, Store-Releases sowie Pro/Premium-Lizenzen werden von Vendetta Labs betrieben und duerfen nicht ohne Erlaubnis als offizielle oder markenbasierte Angebote genutzt werden.
+**Wichtig:** Der Client-Quellcode ist oeffentlich einsehbar fuer Transparenz und unabhaengige Pruefung. Die offiziellen SecureCall-/StealthX-Marken, Backend-Dienste, Store-Releases sowie Pro/Premium-Lizenzen werden von Vendetta Labs betrieben und duerfen nicht ohne Erlaubnis kommerziell oder als offizielle Angebote genutzt werden.
 
 - [Sicherheitsaudit-Bericht](docs/SECURITY_AUDIT_REPORT.md)
 - [Architektur-Uebersicht](docs/ARCHITECTURE_OVERVIEW.md)

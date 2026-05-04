@@ -17,7 +17,7 @@
   stable for at least 7 days
 
 ### Stage 3 — Production Release (Live)
-- Public on Google Play / F-Droid
+- Public on Google Play
 - Prerequisite: External security audit completed,
   release checklist fully done
 
@@ -41,9 +41,6 @@ Example v1.0.27 (vC48):
 securecall-free-v1.0.27-vC48-arm64-v8a.apk
 securecall-free-v1.0.27-vC48-armeabi-v7a.apk
 securecall-free-v1.0.27-vC48-x86_64.apk
-securecall-fdroid-v1.0.27-vC48-arm64-v8a.apk
-securecall-fdroid-v1.0.27-vC48-armeabi-v7a.apk
-securecall-fdroid-v1.0.27-vC48-x86_64.apk
 ```
 
 **WHY:** `UpdateChecker.kt` uses regex `-vC(\d+)\.apk$` to extract the version code.

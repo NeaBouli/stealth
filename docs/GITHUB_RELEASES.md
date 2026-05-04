@@ -4,7 +4,6 @@
 
 ### PUBLIC (direct download)
 - `app-free-release.apk` (79 MB) — Free tier with ads
-- `app-fdroid-release.apk` (77 MB) — F-Droid flavor, no ads, no Google services
 
 ### NOT uploaded (Play Store only)
 - `app-pro-release.apk` — upgrade via in-app purchase
@@ -21,7 +20,6 @@ No phone number. No account. Zero metadata.
 
 ## Downloads
 - **Free (with ads):** app-free-release.apk
-- **F-Droid (no ads, no Google):** app-fdroid-release.apk
 - **Pro & Premium:** [Google Play](https://play.google.com/store/apps/details?id=com.securecall.app.free)
 
 ## Features
@@ -47,7 +45,6 @@ No phone number. No account. Zero metadata.
 ```bash
 gh release create v1.0-beta \
   ~/Documents/SecureCall-Release/final/app-free-release.apk \
-  ~/Documents/SecureCall-Release/final/app-fdroid-release.apk \
   --title "SecureCall v1.0 Beta" \
   --notes-file docs/RELEASE_NOTES.md \
   --prerelease
