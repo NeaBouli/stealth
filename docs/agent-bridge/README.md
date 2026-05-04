@@ -13,6 +13,6 @@ Dieses Verzeichnis ist der lokale Kommunikations- und Handover-Bereich fuer Code
 ## Dateien
 
 - `ACTION_LOG.md` dokumentiert Aktionen.
+- `CC_DEV_HANDOVER.md` enthaelt den aktuellen Handover und Prompt fuer Claude Code Dev.
 - `PROJECT_STATE.md` dokumentiert aktuellen Projektstand.
 - `TODO.md` haelt priorisierte naechste Schritte.
-

@@ -140,3 +140,22 @@
   - Restliche Alerts bleiben als gezielter Abstimmungspunkt in `TODO.md`.
 - Keine Secrets gelesen oder ausgegeben.
 - Kein Commit/Push/Deployment fuer Produktcode.
+
+## 2026-05-04 - Codex: Claude Code Dev Handover erstellt
+
+- Agent: Codex
+- Aktion:
+  - Handover und Prompt fuer Claude Code Dev erstellt.
+  - Bridge-Kommunikationsregeln explizit dokumentiert.
+  - README-Dateiliste um Handover-Datei erweitert.
+- Geaenderte Dateien:
+  - `docs/agent-bridge/CC_DEV_HANDOVER.md`
+  - `docs/agent-bridge/README.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Inhalt:
+  - Claude Code soll vor jeder Arbeit die Bridge lesen.
+  - Claude Code soll nach jeder Arbeit `ACTION_LOG.md`, `PROJECT_STATE.md` und `TODO.md` aktualisieren, falls betroffen.
+  - Restliche Dependabot-Themen `uuid` und `@tootallnate/once` sind als vorsichtige Abstimmungspunkte beschrieben.
+- Keine Produktcodeaenderung.
+- Keine Secrets gelesen oder ausgegeben.
+- Kein Deployment.
