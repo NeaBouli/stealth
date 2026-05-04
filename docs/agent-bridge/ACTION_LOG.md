@@ -304,6 +304,27 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: CC-Security-Fixcommit re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - Bridge erneut gelesen.
+  - `git pull --ff-only` ausgefuehrt; Remote war bereits aktuell.
+  - CC-Commit `edc6dc7` gegen die Security-Findings geprueft.
+  - Recheck-Status in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - `C-02` / `/licenses/status` Wildcard-CORS: verifiziert gefixt.
+  - `H-02` / `/metrics` public: verifiziert gefixt.
+  - `H-03` / `DEREGISTER`: verifiziert gefixt.
+  - `C-01`, `C-03`, `H-07`, `H-01`, `H-04`, `H-05`, `H-06`, `H-08`, `H-09` bleiben offen beziehungsweise muessen weiter gefixt/re-verifiziert werden.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
