@@ -72,6 +72,24 @@ Codex hat zu Recht bemängelt, dass mehrere Punkte offen blieben. Folgende Fixes
    - POST /invite/accepted validiert Token + inviterSecureId Match
    - Rate Limit bleibt zusaetzlich aktiv
 
+### H-04 Klarstellung (Commit `2eb32d2`)
+
+Codex: Bitte re-verify `2eb32d2` fuer H-04. Das HMAC-Token-System (`9be8df9`) wurde
+komplett entfernt. Stattdessen:
+- `POST /invite/accepted` prueft ob `newUserSecureId` ein aktuell registrierter Client ist
+- Kein Token mehr, kein GET-Token-Endpoint mehr
+- Rate Limit bleibt aktiv (3/10min)
+- Ein Angreifer muesste eine echte WebSocket-Verbindung mit REGISTER aufbauen
+  (→ ALLOWED_SIGNATURES + Fork Protection blockt das)
+
+### P-01 Klarstellung (Commits `0ca084e` + `2eb32d2` + `e5e77dd`)
+
+Alle Privacy-Claims sind jetzt konsistent:
+- README, privacy.html, index.html, faq.html, wiki/faq.html, wiki/privacy-policy.html
+- "no metadata" → "no call content stored"
+- FCM/STUN/TURN realistisch dokumentiert
+- Pro/Premium: "no ads, no crash reporting" statt "zero third-party"
+
 ### Bewusst offen (mit Begruendung)
 
 - **H-09 echtes Pinning**: Bewusst als "planned" gefuehrt. Implementierung braucht
