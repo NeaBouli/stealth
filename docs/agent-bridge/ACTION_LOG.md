@@ -768,3 +768,21 @@
 - Keine Secret-Dateien gelesen.
 - Keine Secrets ausgegeben.
 - Kein Deployment.
+
+## 2026-05-04 - Codex: veralteten Re-Verify-Status in TODO bereinigt
+
+- Agent: Codex
+- Aktion:
+  - Bridge/TODO gegen `CODEX_FINDINGS.md` abgeglichen.
+  - Alte Liste "Codex Re-Verify ausstehend" in einen aktuellen Re-Verify-Status umformuliert.
+- Ergebnis:
+  - H-08 und M-01 sind als `VERIFIED_FIXED` dokumentiert.
+  - H-04 ist als `PARTIAL` dokumentiert.
+  - L-01/L-02 sind fuer FAQ/OG-Image als erledigt markiert; weitere Doku-Drift bleibt separat.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/TODO.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.

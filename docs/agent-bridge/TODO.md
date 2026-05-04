@@ -109,13 +109,13 @@
 | H-01 | /ice-servers public TURN credentials | Braucht Client-Aenderung (WS-only delivery nach REGISTER) |
 | H-09 | Certificate Pinning nicht implementiert | Feature-Entscheidung: implementieren oder Claim herabstufen |
 
-### Codex Re-Verify ausstehend fuer
+### Codex Re-Verify Status
 
-- `cf30743` (H-07 stripe_handler + email_handler Maskierung)
-- `c7c7e06` (H-04 invite Rate Limit)
-- `1b39f9b` (H-08 JSON Injection Fix)
-- `281320f` (M-01 PKD Auth)
-- `0b64d09` (L-01/L-02 Text-Drift)
+- `cf30743` (H-07 stripe_handler + email_handler Maskierung): re-verifiziert, Code-/Email-Logging deutlich verbessert; weiter nur Log-Hygiene beobachten.
+- `c7c7e06` (H-04 invite Rate Limit): PARTIAL; Rate Limit verifiziert, aber kein Invite-Token/Auth-Nachweis sichtbar.
+- `1b39f9b` (H-08 JSON Injection Fix): VERIFIED_FIXED; Custom-ID Submission nutzt `JSONObject`.
+- `281320f` (M-01 PKD Auth): VERIFIED_FIXED; `PUT /key/:id` und `DELETE /key/:id` hinter `requireAdmin`.
+- `0b64d09` (L-01/L-02 Text-Drift): VERIFIED_FIXED fuer FAQ/OG-Image; weitere Lizenz-/Release-Doku-Drift wurde spaeter separat nachverfolgt und teilweise bereinigt.
 
 ## Priority 2
 
