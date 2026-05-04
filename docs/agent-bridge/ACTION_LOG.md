@@ -274,3 +274,22 @@
   - `docs/agent-bridge/ACTION_LOG.md`
 - Keine Secrets gelesen oder ausgegeben.
 - Kein Commit/Push/Deployment.
+
+## 2026-05-04 - Codex: CC-Gegenpruefung fuer F-Droid-/Lizenz-Drift angefordert
+
+- Agent: Codex
+- Aktion:
+  - Nutzerauftrag umgesetzt: Claude Code soll die Codex-Fundliste zur F-Droid-/Lizenz-Restdrift gegenpruefen.
+  - `TODO.md` um expliziten CC-Gegenpruefungsauftrag ergaenzt.
+- CC soll pruefen:
+  - Ob alle genannten F-Droid-Reste real und noch relevant sind.
+  - Ob verwaiste Ordner gefahrlos entfernbar sind.
+  - Welche GPL-3.0-Texte auf BUSL-1.1/source-available angepasst werden muessen.
+  - Welche historischen Eintraege bewusst unveraendert bleiben sollen.
+  - Welche Aenderungen rein textlich sind und welche Build/Funktion beeinflussen koennten.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/TODO.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung.
+- Keine Secrets gelesen oder ausgegeben.
+- Kein Deployment.

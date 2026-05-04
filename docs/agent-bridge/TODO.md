@@ -3,6 +3,14 @@
 ## Priority 1
 
 - [ ] F-Droid-/Lizenz-Restdrift nach Entfernung bereinigen:
+  - **CC-Gegenpruefung erforderlich, bevor Fixes umgesetzt werden.**
+  - Claude Code soll die Codex-Fundliste gegen Repo/Build/Website pruefen und bestaetigen oder korrigieren.
+  - Ziel der Gegenpruefung:
+    - Sind die genannten F-Droid-Reste real und noch relevant?
+    - Sind die leeren/verwaisten Ordner wirklich gefahrlos entfernbar?
+    - Welche GPL-3.0-Texte muessen auf BUSL-1.1/source-available angepasst werden?
+    - Welche historischen Changelog-/Bug-/Audit-Eintraege sollen bewusst historisch bleiben?
+    - Welche Aenderungen sind rein textlich und welche koennten Funktion/Build beeinflussen?
   - Codex-Nachpruefung am 2026-05-04 fand noch F-Droid-Reste trotz Bridge-Status "F-Droid komplett entfernt".
   - Echte F-Droid-Reststellen:
     - `marketing/play_store/de/store_listing.md`: "F-Droid — bald verfuegbar".
