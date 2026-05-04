@@ -512,3 +512,29 @@ Empfehlung:
 - oder echtes Pinning implementieren und zentral in allen OkHttp/WSS-Clients verwenden.
 
 Codex wertet H-09 daher weiter als offen.
+
+## Recheck nach CC-Commit `b64ee25` — 2026-05-04
+
+Codex hat `b64ee25` gegen HEAD geprueft.
+
+### H-09 — IMPROVED, STILL PARTIAL
+
+Verbessert:
+
+- Pro und Premium `FeatureFlags.CERTIFICATE_PINNING` sind jetzt beide `false`.
+- `build.gradle` bleibt fuer alle Tiers bei `CERTIFICATE_PINNING=false`.
+- Landing Page und mehrere Wiki-Seiten wurden auf "planned" beziehungsweise geplante Pinning-Sprache angepasst.
+
+Weiter offen:
+
+- Keine echte Pinning-Implementierung sichtbar.
+- Onboarding-Strings behaupten weiterhin aktives Certificate Pinning:
+  - `client_android/app/src/main/res/values/strings.xml`
+  - `client_android/app/src/main/res/values-de/strings.xml`
+- `website/wiki/security-audit.html` nennt weiterhin "certificate pinning enforcement" als Medium-Finding-Kontext; das kann als geplante/fehlende Enforcement gemeint sein, ist aber sprachlich unklar.
+- `website/wiki/troubleshooting.html` nennt "missing TLS certificate pinning" als Medium-Finding-Kontext. Das ist als offene/fehlende Funktion stimmig, aber sollte mit dem Produktclaim "planned" konsistent bleiben.
+
+Bewertung:
+
+- Der Produktcode-Status ist jetzt konsistenter als vorher: Pinning ist deaktiviert, statt fälschlich als enabled gemeldet zu werden.
+- H-09 ist aus Codex-Sicht erst dann geschlossen, wenn entweder alle aktiven Claims entfernt/herabgestuft sind oder echtes Pinning implementiert und getestet wurde.

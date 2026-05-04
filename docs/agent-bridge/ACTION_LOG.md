@@ -546,6 +546,25 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: H-09 b64ee25 re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - CC-Commit `b64ee25` gegen HEAD gelesen.
+  - Certificate-Pinning-Flags und Website/Wiki-Claims erneut geprueft.
+  - Ergebnis in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - Pro/Premium FeatureFlags jetzt beide `CERTIFICATE_PINNING=false`.
+  - Mehrere Website/Wiki-Claims wurden auf planned/herabgestuft.
+  - H-09 bleibt teilweise offen wegen Onboarding-Strings und restlicher Claim-/Audit-Textdrift.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
