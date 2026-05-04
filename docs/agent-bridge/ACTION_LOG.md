@@ -786,3 +786,21 @@
 - Keine Secret-Dateien gelesen.
 - Keine Secrets ausgegeben.
 - Kein Deployment.
+
+## 2026-05-04 - Codex: uuid-TODO gegen aktuellen Code synchronisiert
+
+- Agent: Codex
+- Aktion:
+  - Aktuellen Code read-only auf `uuid`-/`crypto.randomUUID()`-Nutzung geprueft.
+  - Veralteten TODO-Text zur direkten `uuid`-Nutzung korrigiert.
+- Ergebnis:
+  - `src/sessions.js` und `src/server.js` nutzen `crypto.randomUUID()`.
+  - `package.json` enthaelt keinen direkten `uuid`-Dependency-Eintrag mehr.
+  - Offenes Risiko liegt weiterhin im Lockfile und in Transitives, nicht mehr in direktem App-Code-Verbrauch.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/TODO.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.

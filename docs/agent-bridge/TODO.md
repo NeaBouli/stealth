@@ -33,10 +33,11 @@
   - Naechster Schritt:
     - Mit Claude Code/Dev abstimmen, bevor funktionsabhaengige Aenderungen umgesetzt werden.
     - `uuid`:
-      - Direkt im Projekt als `uuid@^9.0.1` eingetragen.
-      - Im CommonJS-Code genutzt: `src/sessions.js` und `src/server.js` verwenden `require("uuid")` und `v4`.
+      - App-Code nutzt inzwischen Node `crypto.randomUUID()` in `src/sessions.js` und `src/server.js`.
+      - `package.json` enthaelt keinen direkten `uuid`-Dependency-Eintrag mehr.
+      - `package-lock.json` enthaelt weiterhin `node_modules/uuid` und transitive `uuid`-Ketten.
       - Alert-Ziel `uuid@14` ist ein Major-Upgrade und darf nicht blind angewendet werden.
-      - Moegliche Optionen: Code auf Node `crypto.randomUUID()` umstellen, sauber auf neues `uuid`-API/Major migrieren, oder Upstream-Abhaengigkeiten beobachten/aktualisieren.
+      - Moegliche Optionen: verwaisten Root-Lock-Eintrag gezielt entfernen/refreshen, Upstream-Abhaengigkeiten beobachten/aktualisieren, oder kompatiblen Update-Pfad fuer Google/Firebase/Svix/Resend-Transitives testen.
     - `@tootallnate/once`:
       - Transitiv ueber `firebase-admin -> @google-cloud/storage/google-gax -> retry-request -> teeny-request -> http-proxy-agent`.
       - Kein direkter App-Code-Verbrauch erkannt.
