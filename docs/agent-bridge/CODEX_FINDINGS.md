@@ -367,3 +367,22 @@ Codex hat `b7f81e2` gegen HEAD geprueft.
 
 - H-07 erst als geschlossen markieren, wenn `server.js`, `stripe_handler.js` und `email_handler.js` keine vollstaendigen Aktivierungs-/Gift-/Billing-Codes oder Customer-E-Mails mehr loggen.
 - Sinnvoller Mini-Fix: lokale Helper `maskCode(code)` und `maskEmail(email)` in den Payment-Handlern oder gemeinsamer Utility-Datei, ohne Produktlogik zu aendern.
+
+## Audit 2 — Dependabot / npm audit Recheck — 2026-05-04
+
+Codex hat nach den aktuellen Security-Fixes `npm audit --audit-level=low` in `backend/signaling` und GitHub Dependabot via `gh api` geprueft.
+
+### Ergebnis
+
+- `npm audit --audit-level=low`: weiterhin exit code 1.
+- Gemeldet: 12 Vulnerabilities, davon 10 moderate und 2 low.
+- Offene GitHub Dependabot Alerts:
+  - `uuid` / `GHSA-w5hq-g745-h8pq` / severity `medium` / `backend/signaling/package-lock.json`.
+  - `@tootallnate/once` / `GHSA-vpq2-c234-7xj6` / severity `low` / `backend/signaling/package-lock.json`.
+- Viele alte Alerts sind in GitHub bereits als `fixed` markiert, unter anderem `protobufjs`, `nodemailer`, `path-to-regexp`, `node-forge`, `qs`, `fast-xml-parser`, `rand`.
+
+### Bewertung
+
+- `uuid` ist nicht mehr direkte Runtime-Dependency im `package.json`, aber bleibt transitiv im Lockfile ueber Firebase/Google/Svix/Resend-Pfade sichtbar.
+- `npm audit fix --force` wuerde `firebase-admin@10.1.0` installieren und ist als Breaking Change gemeldet. Nicht blind ausfuehren.
+- Empfehlung: CC soll gezielt pruefen, ob ein nicht-breaking Update-Pfad ueber `firebase-admin`, `resend`/`svix` oder Overrides moeglich ist. Ohne Testplan kein Force-Fix.

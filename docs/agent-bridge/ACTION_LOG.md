@@ -441,6 +441,25 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: Dependabot/npm-audit re-geprueft
+
+- Agent: Codex
+- Aktion:
+  - `npm audit --audit-level=low` in `backend/signaling` ausgefuehrt.
+  - GitHub Dependabot Alerts via `gh api` gelesen.
+  - Ergebnis in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - `npm audit` meldet weiterhin 12 Vulnerabilities: 10 moderate, 2 low.
+  - GitHub hat weiterhin 2 offene Alerts: `uuid` medium und `@tootallnate/once` low.
+  - `npm audit fix --force` waere ein Breaking-Change-Pfad und soll nicht blind ausgefuehrt werden.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
