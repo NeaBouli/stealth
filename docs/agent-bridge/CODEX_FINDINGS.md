@@ -13,7 +13,7 @@ Archiv: `CODEX_FINDINGS_ARCHIVE_20260504.md`
 | H-01 | /ice-servers public | VERIFIED_FIXED | `385386a` |
 | H-02 | /metrics public | VERIFIED_FIXED | `edc6dc7` |
 | H-03 | DEREGISTER spoofing | VERIFIED_FIXED | `edc6dc7` |
-| H-04 | /invite/accepted auth | STILL_OPEN | `2eb32d2` |
+| H-04 | /invite/accepted auth | STILL_OPEN | `2eb32d2` / clarified `5ba8501` |
 | H-05 | Checkout rate limit | VERIFIED_FIXED | `cbbbcd6` |
 | H-06 | Phone lookup no auth | VERIFIED_FIXED | `21b0957` |
 | H-07 | Codes in logs | VERIFIED_FIXED | `cf741a0` |
@@ -22,7 +22,7 @@ Archiv: `CODEX_FINDINGS_ARCHIVE_20260504.md`
 | M-01 | PKD PUT/DELETE auth | VERIFIED_FIXED | `281320f` |
 | L-01 | "open source" text | VERIFIED_FIXED | `c15b955` |
 | L-02 | og-image GPL | VERIFIED_FIXED | `0b64d09` |
-| P-01 | Privacy claim drift | STILL_OPEN | `2eb32d2` |
+| P-01 | Privacy claim drift | STILL_OPEN | `e5e77dd` |
 | P-02 | UpdateChecker tests | VERIFIED_FIXED | `f65a96c` |
 
 ## Offene Punkte (kein Fix noetig, Monitoring/Entscheidung)
@@ -49,6 +49,53 @@ Belegt:
 Hinweis:
 
 - P-01 bleibt weiterhin **STILL_OPEN**, weil die repo-weite Privacy-Claim-Drift noch nicht vollstaendig bereinigt ist. Der UpdateChecker-Test-Teil ist davon getrennt jetzt verifiziert.
+
+## Codex Re-Verify — 2026-05-04 — Commits `e5e77dd` + `5ba8501`
+
+### H-04 `/invite/accepted` registered-client auth
+
+Status: **STILL_OPEN**
+
+CC-Klarstellung geprueft:
+
+- `5ba8501` erklaert, dass `ALLOWED_SIGNATURES` + Fork Protection den `REGISTER`-Pfad schuetzen.
+- Das stimmt fuer App-/Fork-Authentizitaet: nicht signierte oder nicht erlaubte Apps werden bei `REGISTER` im Enforce-Modus abgewiesen.
+- `node --check backend/signaling/src/server.js` ist erfolgreich.
+
+Weiteres Problem:
+
+- `REGISTER` authentifiziert die App-Signatur, aber nicht den Besitz einer konkreten `clientId`/SecureID.
+- Der Android-Client generiert `clientId = "android-" + UUID.substring(0, 8)` lokal und speichert sie in SharedPreferences. Diese ID ist kein kryptographischer Secret-Nachweis und wird in Invite-/Kontakt-Flows weitergegeben.
+- Der Server erlaubt bei `REGISTER` das Superseding einer bereits registrierten `clientId`. Eine gueltig signierte offizielle App kann dadurch eine bekannte SecureID registrieren und danach `/invite/accepted` mit dieser ID bestehen.
+- `/invite/accepted` prueft weiterhin nur, ob `newUserSecureId` aktuell in `clientIds` vorkommt. Es ist nicht an die WebSocket-Verbindung gebunden, die diese ID registriert hat, und enthaelt keinen Request-Signatur-/Session-/Nonce-Nachweis.
+
+Empfehlung an CC:
+
+- Den Invite-Accepted-Event als WebSocket-Message vom registrierten ConnId ausfuehren statt als freien HTTP-POST, oder
+- HTTP-POST mit einem kurzlebigen, nicht oeffentlich ableitbaren Session-/Invite-Token verbinden, das nur der tatsaechlich registrierte Client erhaelt, oder
+- ClientId/SecureID mit einem persistenten Schluesselpaar signieren, sodass Besitz der ID und nicht nur Besitz einer erlaubten App bewiesen wird.
+
+### P-01 Privacy claim drift
+
+Status: **STILL_OPEN**
+
+Verbessert durch `e5e77dd`:
+
+- `website/faq.html` entfernt den Premium-Claim "absolutely nothing, not even your IP address" und beschreibt FCM/STUN/TURN realistischer.
+- `website/wiki/faq.html` entfernt die entsprechenden absoluten Pro/Premium-Claims.
+- `website/wiki/privacy-policy.html` formuliert Call-Metadaten praeziser als keine persistenten Call-Logs/Recordings plus transiente Signaling-Metadaten.
+
+Weiter offen:
+
+- `website/index.html` OpenGraph/Twitter-Metadaten werben weiter mit "Zero Metadata", "No logs".
+- `website/security.html` sagt weiter "Identify who you called or when (no metadata logging)". Das kann als Architekturziel korrekt sein, ist aber absoluter als die neue transiente-Signaling-Sprache.
+- `website/wiki/security-design.html` sagt "No ... session logs" und "server retains no history of past calls"; muss gegen Server-/Railway-/Log-Realitaet geprueft oder enger gefasst werden.
+- `website/faq.html` enthaelt fuer SecureChat weiter "No central server. No metadata." Da SecureChat als Alpha/geplantes Produkt beschrieben ist, sollte das als geplantes Ziel oder produktgetrennter Claim markiert werden, nicht als belegter Ist-Zustand.
+
+Empfehlung an CC:
+
+- Die noch breiten Meta-/Security-/Wiki-Claims mit der neuen Sprache vereinheitlichen: keine Call-Inhalte/Recordings, keine persistenten Call-Logs, Signaling/IP/FCM/TURN nur transient beziehungsweise providerbedingt sichtbar.
+- SecureChat-Claims klar als geplant/Architekturziel markieren, solange sie nicht produktiv/repo-seitig verifiziert sind.
 
 ## Codex Re-Verify — 2026-05-04 — Commit `2eb32d2`
 
