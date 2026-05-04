@@ -409,3 +409,33 @@ Codex hat folgende CC-Commits gegen HEAD geprueft: `cf30743`, `c7c7e06`, `1b39f9
 
 - `docs/agent-bridge/TODO.md` ist lokal modified, aber Codex hat diese Aenderung nicht erstellt und nicht angefasst.
 - Weiterhin offen: H-01 `/ice-servers` public, H-09 Certificate Pinning Claim/Implementierung, Dependabot `uuid`/`@tootallnate/once`.
+
+## Recheck nach CC-Commit `cf741a0` — 2026-05-04
+
+Codex hat `cf741a0` gegen HEAD geprueft.
+
+### VERIFIED_FIXED
+
+- H-07: Der letzte zuvor sichtbare Stripe-No-Email-Logpfad ist jetzt maskiert. Payment-/Activation-Code-Logs zeigen in den geprueften Pfaden nur noch gekuerzte Codes.
+- L-01: README wurde von "open source" auf "publicly available" umgestellt.
+- Syntaxchecks erfolgreich:
+  - `node --check backend/signaling/src/server.js`
+  - `node --check backend/signaling/src/payments/stripe_handler.js`
+  - `node --check backend/signaling/src/payments/email_handler.js`
+
+### REMAINING TEXT DRIFT
+
+- `website/llms.txt` nennt weiterhin "Signal is open source; SecureCall publishes source code under BUSL-1.1 ...". Das kann als Vergleich zu Signal gemeint sein, ist aber sprachlich riskant. Empfehlung: "Signal is open source; SecureCall publishes source code under BUSL-1.1 for auditability ..." nur behalten, wenn die Abgrenzung bewusst ist. Sonst umformulieren zu "Unlike Signal's open-source model, SecureCall publishes source code under BUSL-1.1 for auditability ...".
+- `website/index.html` sagt weiterhin "the client can be audited, built, and redistributed under the GPL"; das kollidiert potenziell mit BUSL bis zum Change Date. Bitte gegen Lizenzentscheidung pruefen.
+
+## Rollenabgrenzung CC/Codex — 2026-05-04
+
+Nutzerwunsch: klare Rollenverteilung bei Aufgabenzuweisung und Ausfuehrung, ohne Durcheinander.
+
+Codex hat `docs/agent-bridge/README.md` aktualisiert:
+
+- CC = Hauptentwickler fuer Produktcode-Fixes, Refactors, Tests, Commits.
+- Codex = unabhaengiger Security-/Quality-Auditor, Priorisierung, Recheck, Drift-/Kollisionswarnungen.
+- Codex aendert standardmaessig keinen Produktcode, solange CC aktiv in denselben Bereichen arbeitet.
+- Fremde lokale Produktcode-Diffs werden von Codex nicht gestaged, committet oder reverted.
+- Ablauf: Finding in `CODEX_FINDINGS.md` → Fixbericht in `CC_RESPONSE.md` → Recheck in `CODEX_FINDINGS.md` → Aktion in `ACTION_LOG.md`.

@@ -22,6 +22,51 @@ Dieses Verzeichnis ist der lokale Kommunikations- und Handover-Bereich fuer Code
 - Nur echte Freigabegrenzen eskalieren: Secrets ausgeben, Deployment, Push/Release ausserhalb der Nutzerfreigabe, destruktive Aktionen oder fachliche Produktentscheidungen.
 - Falls Codex Tokens/Keys/Env-Status fuer den Audit braucht, fragt Codex CC ueber die Bridge. Werte duerfen nicht in die Bridge geschrieben werden.
 
+## Rollenverteilung und Uebergabe
+
+Ziel: Keine parallelen Produktcode-Aenderungen ohne klare Uebergabe.
+
+### Claude Code (CC)
+
+- Primaere Rolle: implementieren, refactoren, Tests schreiben, Fixes committen.
+- CC uebernimmt Produktcode-Dateien, sobald Codex ein Finding als fixreif markiert oder CC selbst einen Fixplan in `CC_RESPONSE.md` ankuendigt.
+- CC dokumentiert nach jedem Fix:
+  - betroffene Finding-ID,
+  - geaenderte Dateien,
+  - Commit-SHA,
+  - Tests/Checks,
+  - offene Risiken.
+- CC soll Codex nicht als Blocker behandeln, wenn ein Fix eindeutig sicher und lokal begrenzt ist. Nach dem Commit fordert CC ueber `CC_RESPONSE.md` Recheck an.
+
+### Codex
+
+- Primaere Rolle: unabhaengig auditieren, priorisieren, Fixes re-verifizieren, Kollisions-/Drift-Risiken markieren.
+- Codex aendert standardmaessig keine Produktcode-Dateien, solange CC aktiv an Fixes arbeitet.
+- Codex darf Bridge-Dateien aktualisieren, Rechecks committen/pushen und klare Empfehlungen geben.
+- Produktcode-Aenderungen durch Codex erfolgen nur, wenn:
+  - der Nutzer Codex explizit als Implementierer beauftragt,
+  - CC die Datei/den Fix explizit an Codex uebergibt,
+  - oder ein sehr kleiner, risikoarmer Bridge-/Dokumentationsfix ohne CC-Konflikt vorliegt.
+- Wenn Codex lokale Produktcode-Diffs sieht, die wahrscheinlich von CC stammen, behandelt Codex sie als fremde Aenderungen: lesen zur Audit-Einordnung ja, nicht stage/commit/revert.
+
+### Gemeinsamer Ablauf
+
+1. Codex dokumentiert Finding oder Recheck in `CODEX_FINDINGS.md`.
+2. CC entscheidet/implementiert und dokumentiert in `CC_RESPONSE.md`.
+3. Codex re-verifiziert gegen HEAD und markiert:
+   - `VERIFIED_FIXED`,
+   - `PARTIAL`,
+   - `STILL_OPEN`,
+   - `REGRESSION_RISK`.
+4. `ACTION_LOG.md` wird von dem Agenten aktualisiert, der die Aktion ausfuehrt.
+5. `PROJECT_STATE.md` und `TODO.md` werden nur aktualisiert, wenn sich Projektstatus oder Prioritaeten wirklich aendern.
+
+### Konfliktregel
+
+- Wenn CC und Codex denselben Produktcodebereich beruehren muessten, hat CC als Hauptentwickler Vorrang.
+- Codex schreibt dann zuerst eine Bridge-Notiz statt Produktcode zu aendern.
+- Bei Architektur-, Deployment-, Store-, Lizenz- oder Security-Perimeter-Entscheidungen wird der Nutzer nur gefragt, wenn keine sichere konservative Annahme moeglich ist.
+
 ## Dateien
 
 - `ACTION_LOG.md` dokumentiert Aktionen.

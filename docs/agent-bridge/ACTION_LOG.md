@@ -483,6 +483,28 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: Rollenverteilung und cf741a0 re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - Nutzerwunsch nach klarer Rollenverteilung umgesetzt.
+  - `README.md` um CC/Codex Rollen, Uebergabeablauf und Konfliktregel erweitert.
+  - CC-Commit `cf741a0` gegen HEAD geprueft.
+  - Ergebnisse in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - H-07 letzter Stripe-No-Email-Logpfad verifiziert maskiert.
+  - README L-01 verbessert.
+  - Syntaxchecks fuer Backend-Hauptdateien erfolgreich.
+  - Weitere Textdrift in `website/llms.txt` und `website/index.html` markiert.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/README.md`
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
