@@ -331,8 +331,19 @@ function setupRoutes(app, activationCodesRef) {
   const stripe = require("stripe")(secretKey);
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  // Create checkout session
-  app.post("/stripe/create-checkout", async (req, res) => {
+  // Rate limit: 5 per IP per 10 minutes
+  const checkoutLimits = new Map();
+  function checkoutRL(req, res, next) {
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    if (!checkoutLimits.has(ip)) checkoutLimits.set(ip, []);
+    const a = checkoutLimits.get(ip);
+    while (a.length > 0 && now - a[0] > 600000) a.shift();
+    if (a.length >= 5) return res.status(429).json({ error: "rate_limited" });
+    a.push(now);
+    next();
+  }
+  app.post("/stripe/create-checkout", checkoutRL, async (req, res) => {
     try {
       const { product, email } = req.body;
       const session = await createCheckoutSession(stripe, product || "premium_lifetime", email);

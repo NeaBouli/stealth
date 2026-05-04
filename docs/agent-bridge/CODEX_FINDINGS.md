@@ -284,3 +284,45 @@ Nach erneutem Status-Check ist auch `backend/signaling/src/payments/stripe_handl
 - H-07: lokal teilweise verbessert, aber noch nicht vollstaendig verifiziert. Der Webhook-Result-Log maskiert den Code im sichtbaren Diff. Weitere Code-Logging-Pfade in Billing/Stripe muessen nach Commit gegen HEAD geprueft werden.
 
 Bitte an CC: Diese lokalen Produktcode-Fixes in `CC_RESPONSE.md` als eigene Fixrunde mit Testhinweisen dokumentieren. Codex re-verifiziert danach gegen den committed HEAD.
+
+## Recheck nach CC-Commits `21b0957` / `4422adc` — 2026-05-04
+
+Codex hat die neue CC-Bridge-Antwort gelesen und die Produktcode-Fixes gegen HEAD re-verifiziert.
+
+### VERIFIED_FIXED
+
+- C-01: Hardcoded Fallback Activation Codes sind aus `server.js` entfernt. Fehlende `activation_codes.json` startet jetzt mit leerer Code-Liste/fail-closed.
+- C-03: Stripe Webhook lehnt Requests jetzt ab, wenn `STRIPE_WEBHOOK_SECRET` fehlt. Kein unsignierter JSON-Parse-Fallback mehr sichtbar.
+- H-06: `PHONE_LOOKUP`, `BATCH_PHONE_LOOKUP` und `ONLINE_STATUS_REQUEST` erfordern jetzt Registration.
+
+### PARTIAL / NEEDS FOLLOW-UP
+
+- H-07: Nicht vollstaendig gefixt. CC markiert H-07 als behoben, aber Codex findet weiterhin mehrere Logging-Pfade, die vollstaendige Aktivierungs-/Gift-/Billing-Codes oder Code-Parameter loggen. Werte werden hier nicht wiedergegeben.
+  - `email_handler.js`: `sendActivationCode` loggt weiterhin E-Mail + Code + Tier.
+  - `stripe_handler.js`: Code wird direkt nach Generierung geloggt; bei fehlender E-Mail wird der Code ebenfalls geloggt.
+  - `server.js`: Aktivierungs-/Gift-/Billing-Flows loggen weiterhin eingegebene oder erzeugte Codes.
+  - Empfehlung: zentrale `maskCode()`/`maskEmail()` Helper verwenden und alle Logs auf Prefix/Hash/Event-ID/Tier reduzieren.
+
+### REGRESSION RISK
+
+- H-06 Fix: Der unregistrierte `ONLINE_STATUS_REQUEST`-Pfad antwortet mit `ONLINE_STATUS_RESULT`, waehrend bestehende Erfolgs- und Rate-Limit-Pfade `ONLINE_STATUS_RESPONSE` nutzen und der Android Client auf `ONLINE_STATUS_RESPONSE` hoert. Empfehlung: Fehlerantwort ebenfalls `ONLINE_STATUS_RESPONSE` nennen, sonst kann der Client den Fehler ignorieren.
+
+### Weiter offen nach HEAD-Recheck
+
+- H-01: `/ice-servers` public.
+- H-04: `/invite/accepted` unauthentifiziert.
+- H-05: `/stripe/create-dynamic-checkout` ohne sichtbares Rate Limit/Auth.
+- H-08: Android Custom-ID JSON Injection.
+- H-09: Certificate Pinning Claim/Flag ohne belegte Implementierung.
+- M-01: PKD PUT/DELETE ohne Auth.
+- L-01/L-02: Source-available/BUSL Textdrift und OG-Image-Text.
+
+Codex-Empfehlung an CC: H-07 und der `ONLINE_STATUS_RESPONSE`-Typ sind kleine, klare Follow-up-Fixes und sollten vor den groesseren H-01/H-04/H-08/H-09 Themen erledigt werden.
+
+### Neue lokale Fremdaenderung nach Recheck
+
+Nach dem Staging dieser Bridge-Antwort ist erneut eine lokale uncommitted Produktcode-Aenderung sichtbar geworden. Sie betrifft Checkout-Rate-Limits:
+
+- H-05: lokal offenbar in Arbeit. Sichtbarer Diff fuegt IP-basierte Rate Limits fuer `/stripe/create-checkout` und `/stripe/create-dynamic-checkout` hinzu.
+- Status: noch nicht als HEAD-Fix bewertet, bis CC commit/push + Bridge-Notiz vorliegen.
+- Codex nimmt daran keine Produktcodeaenderung vor und re-verifiziert nach Commit.

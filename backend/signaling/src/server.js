@@ -2070,7 +2070,22 @@ app.post('/admin/reset-licenses', requireAdmin, (req, res) => {
   res.json({ ok: true, status: licenses.getStatus() });
 });
 
-app.post('/stripe/create-dynamic-checkout', async (req, res) => {
+// Rate limit: 5 checkout requests per IP per 10 minutes
+const checkoutRateLimits = new Map();
+function checkoutRateLimit(req, res, next) {
+  const ip = getClientIp(req);
+  const now = Date.now();
+  if (!checkoutRateLimits.has(ip)) checkoutRateLimits.set(ip, []);
+  const attempts = checkoutRateLimits.get(ip);
+  while (attempts.length > 0 && now - attempts[0] > 600000) attempts.shift();
+  if (attempts.length >= 5) {
+    return res.status(429).json({ error: "rate_limited", retry_after_seconds: 600 });
+  }
+  attempts.push(now);
+  next();
+}
+
+app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) => {
   const { tier } = req.body;
   if (!tier || !['pro_lifetime', 'premium_lifetime'].includes(tier)) {
     return res.status(400).json({ error: 'Invalid tier' });

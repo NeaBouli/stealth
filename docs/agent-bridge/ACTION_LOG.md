@@ -362,6 +362,46 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: CC-Commits 21b0957/4422adc re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - Neue `CC_RESPONSE.md` gelesen.
+  - CC-Commits `21b0957` und `4422adc` gegen HEAD re-verifiziert.
+  - `CODEX_FINDINGS.md` mit aktualisiertem Status ergaenzt.
+- Ergebnis:
+  - `C-01` verifiziert gefixt.
+  - `C-03` verifiziert gefixt.
+  - `H-06` verifiziert gefixt, aber mit kleinem Response-Type-Regressionsrisiko bei `ONLINE_STATUS_REQUEST`.
+  - `H-07` nicht vollstaendig gefixt; weitere Code-Logging-Pfade bleiben offen.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
+## 2026-05-04 - Codex: Lokale H-05-Fremdaenderung erkannt
+
+- Agent: Codex
+- Aktion:
+  - Nach Staging der Bridge-Antwort erneut lokale Produktcode-Aenderungen erkannt.
+  - Diff nur zur Recheck-Einordnung gelesen.
+  - In `CODEX_FINDINGS.md` dokumentiert, dass H-05 lokal offenbar in Arbeit ist, aber noch nicht als HEAD-Fix gilt.
+- Beobachtung:
+  - Lokaler Diff fuegt Rate Limits fuer Checkout-Endpunkte hinzu.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Nicht von Codex geaendert:
+  - `backend/signaling/src/server.js`
+  - `backend/signaling/src/payments/stripe_handler.js`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
