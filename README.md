@@ -9,7 +9,7 @@
 
 *Powered by the StealthX Platform*
 
-[![GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
+[![BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-blue.svg)](LICENSE)
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-34A853.svg)](https://developer.android.com)
 [![Crypto: XChaCha20-Poly1305](https://img.shields.io/badge/Crypto-XChaCha20--Poly1305-7C6CFF.svg)](docs/SECURITY_DESIGN.md)
 [![Security: Audited](https://img.shields.io/badge/Security-Audited-orange.svg)](docs/SECURITY_AUDIT_REPORT.md)
@@ -36,7 +36,7 @@ No metadata. No compromises. Every call is encrypted end-to-end using military-g
 - **Zero-Knowledge Architecture** -- The server facilitates connections but cannot decrypt calls. No call content, no metadata, no logs.
 - **Anti-Recording Protection** -- Active detection of screen recording, microphone hijacking, and spy apps (Pro/Premium).
 - **Rust Crypto Core** -- All cryptographic operations run in a native Rust library via JNI -- no Java crypto, no OpenSSL.
-- **GPL-3.0 Licensed Client** -- The client source code is open source and independently auditable. Official SecureCall branding, backend services, store listings, and paid Pro/Premium offerings remain operated by Vendetta Labs.
+- **BUSL-1.1 Licensed Client** -- The client source code is open source and independently auditable. Official SecureCall branding, backend services, store listings, and paid Pro/Premium offerings remain operated by Vendetta Labs.
 
 ## Architecture
 
@@ -87,13 +87,12 @@ Complete documentation is available in the [Wiki](https://github.com/NeaBouli/st
 
 ## Building from Source
 
-> **This repository is licensed under GPL-3.0.**
+> **This repository is licensed under BUSL-1.1.**
 >
-> You may build, modify, and distribute the client under the terms of the
-> GNU General Public License v3. The SecureCall name and branding are
-> trademarked (see LICENSE for additional terms under Section 7). Official
-> backend services, store releases, and paid Pro/Premium licensing remain
-> controlled by Vendetta Labs.
+> You may build and use the client for personal, non-commercial purposes.
+> Commercial use requires a separate license from Vendetta Labs.
+> The SecureCall name and branding are trademarked.
+> After 2030-05-04 the code becomes GPL-3.0.
 
 See the [LICENSE](LICENSE) for full terms.
 

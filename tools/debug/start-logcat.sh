@@ -32,7 +32,7 @@ echo "[OK] Device connected"
 # 2. Capture app info
 echo "Capturing app info..."
 PKG=""
-for P in com.securecall.app.premium com.securecall.app.free com.securecall.app.fdroid; do
+for P in com.securecall.app.premium com.securecall.app.free; do
     if adb -s "$SERIAL" shell pm list packages 2>/dev/null | grep -q "$P"; then
         PKG="$P"
         break

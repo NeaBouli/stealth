@@ -58,7 +58,6 @@ Erstelle einen einmaligen Geschenkcode für einen Freund. Eingabe in Einstellung
 Upgraden Sie auf Pro oder Premium für ein werbefreies Erlebnis.
 
 📦 AUCH VERFÜGBAR AUF
-• F-Droid — werbefrei, kein Google-Tracking (demnächst)
 • Direkt-APK: github.com/NeaBouli/stealth/releases
 
 💝 ENTWICKLUNG UNTERSTÜTZEN

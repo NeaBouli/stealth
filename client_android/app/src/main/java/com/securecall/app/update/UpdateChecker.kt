@@ -107,7 +107,7 @@ object UpdateChecker {
             val size = asset.optLong("size", 0L)
             if (!name.endsWith(".apk", ignoreCase = true)) continue
 
-            // Pick the APK matching the installed flavor (free → free, fdroid → fdroid).
+            // Pick the APK matching the installed flavor (free → free).
             // Premium/pro never reach here (blocked by isAdbOnlyFlavor() above).
             if (!name.contains(BuildConfig.FLAVOR, ignoreCase = true)) continue
 

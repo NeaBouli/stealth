@@ -61,7 +61,6 @@ Upgrade to Pro or Premium for an ad-free experience.
 App UI adapts to device language settings. English is the default language.
 
 📦 ALSO AVAILABLE ON
-• F-Droid — ad-free, no Google tracking (coming soon)
 • Direct APK: github.com/NeaBouli/stealth/releases
 
 💝 SUPPORT DEVELOPMENT

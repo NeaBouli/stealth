@@ -192,14 +192,13 @@ public class MainActivity extends AppCompatActivity {
         // Handle custom-id deep link: securecall://custom-id?id=xxx&token=xxx
         handleCustomIdDeepLink(getIntent());
 
-        // F-Droid trial: show expired dialog at app start if applicable
+        // Trial: show expired dialog at app start if applicable
         if (com.securecall.app.trial.TrialManager.INSTANCE.shouldShowExpiredDialog(this)) {
             com.securecall.app.trial.TrialManager.INSTANCE.showTrialExpiredDialog(this);
         }
 
         // Throttled background check for new releases — silent if up-to-date.
-        // Only fires for sideload / unknown-store installs; Play Store and
-        // F-Droid clients handle their own update notifications.
+        // Only fires for sideload / unknown-store installs; Play Store handles its own.
         com.securecall.app.update.UpdateManager.maybeAutoCheck(this);
     }
 
@@ -597,7 +596,7 @@ public class MainActivity extends AppCompatActivity {
         checkMissedCallBadge();
         // Always clear launcher badge (notification-based) when user opens the app
         clearMissedCallNotifications();
-        // F-Droid trial banner
+        // Trial banner
         updateTrialBanner();
         // Fix CLIENT-CRIT-002 (2026-04-16): ask the server whether our stored
         // subscription tier is still valid. Covers the case where Google Play

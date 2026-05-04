@@ -12,9 +12,7 @@ Features:
 * Unlock with activation code or IFR token lock
 * No ads, no tracking, no telemetry
 
-F-Droid Edition:
-This build contains no proprietary libraries — no Google Play
-Services, no Firebase, no AdMob, no Crashlytics.
+Free Edition:
 After 30 days, unlock outgoing calls with an activation code
 or by locking IFR tokens via WalletConnect.
 
