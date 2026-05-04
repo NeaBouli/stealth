@@ -402,6 +402,26 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: CC-Commit cbbbcd6 re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - CC-Commit `cbbbcd6` gegen HEAD gelesen.
+  - H-05 Checkout-Rate-Limits re-verifiziert.
+  - Status und Caveats in `CODEX_FINDINGS.md` ergaenzt.
+- Ergebnis:
+  - `H-05` als kurzfristig gefixt bewertet.
+  - Caveat: In-Memory-Rate-Limit ist nicht global/persistent bei mehreren Instanzen oder Restarts.
+  - Caveat: IP-Erkennung ist zwischen `server.js` und `stripe_handler.js` nicht ganz einheitlich.
+  - `H-07` und `ONLINE_STATUS_REQUEST` Response-Type-Regressionsrisiko bleiben offen.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex

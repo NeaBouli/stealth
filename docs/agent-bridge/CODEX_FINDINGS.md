@@ -326,3 +326,20 @@ Nach dem Staging dieser Bridge-Antwort ist erneut eine lokale uncommitted Produk
 - H-05: lokal offenbar in Arbeit. Sichtbarer Diff fuegt IP-basierte Rate Limits fuer `/stripe/create-checkout` und `/stripe/create-dynamic-checkout` hinzu.
 - Status: noch nicht als HEAD-Fix bewertet, bis CC commit/push + Bridge-Notiz vorliegen.
 - Codex nimmt daran keine Produktcodeaenderung vor und re-verifiziert nach Commit.
+
+## Recheck nach CC-Commit `cbbbcd6` — 2026-05-04
+
+Codex hat `cbbbcd6` gegen HEAD geprueft.
+
+### VERIFIED_FIXED
+
+- H-05: Checkout-Endpunkte haben jetzt IP-basierte Rate Limits:
+  - `/stripe/create-checkout`: 5 Requests pro IP / 10 Minuten.
+  - `/stripe/create-dynamic-checkout`: 5 Requests pro IP / 10 Minuten.
+
+### Caveats / Follow-up
+
+- Das Rate Limit ist aktuell pro Node-Prozess im Memory. Bei mehreren Instanzen, Restart oder horizontalem Scaling ist es nicht global persistent. Fuer Railway Single-Instance ist das kurzfristig pragmatisch, fuer eigene Server/Scaling sollte Redis oder ein zentraler Rate-Limiter in den Migration Plan.
+- `stripe_handler.js` verwendet `req.ip || req.connection.remoteAddress`; `server.js` nutzt `getClientIp(req)`. Empfehlung: spaeter vereinheitlichen, damit Proxy-/Forwarded-Header-Verhalten konsistent bleibt.
+- H-07 bleibt weiterhin offen: Aktivierungs-/Gift-/Billing-Code-Logs sind noch nicht vollstaendig maskiert.
+- H-06 Response-Type-Regressionsrisiko bleibt offen: unregistrierter `ONLINE_STATUS_REQUEST` sollte `ONLINE_STATUS_RESPONSE` nutzen.
