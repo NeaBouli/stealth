@@ -749,3 +749,22 @@
 - Keine Secret-Dateien gelesen.
 - Keine Secrets ausgegeben.
 - Kein Deployment.
+
+## 2026-05-04 - Codex: CC-Lockfile-Cleanup `80eb8a0` re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - CC-Commit `80eb8a0` read-only gegen Dependabot und `npm audit` geprueft.
+  - Ergebnis in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - `package-lock.json` enthaelt weiterhin `node_modules/uuid` und `node_modules/@tootallnate/once`.
+  - GitHub Dependabot meldet weiterhin `uuid` medium und `@tootallnate/once` low.
+  - `npm audit --audit-level=low` bleibt rot mit 12 Vulnerabilities.
+  - `80eb8a0` schliesst die Alerts nicht.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.

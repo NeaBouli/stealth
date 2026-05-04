@@ -731,6 +731,24 @@ Codex hat den aktuellen HEAD nach dem Bridge-Commit `b3d5cb3` read-only gegen of
   - Danach `npm audit` erneut bewerten.
   - Transitive Restwarnungen nicht per Force-Fix loesen; stattdessen Upstream-Versionen/kompatible Updates pruefen.
 
+### Recheck nach CC-Commit `80eb8a0` — STILL_OPEN
+
+Codex hat `80eb8a0` (`chore: refresh lockfile — uuid root entry cleanup attempt`) gegen HEAD geprueft.
+
+- `package-lock.json` enthaelt weiterhin:
+  - `node_modules/uuid`,
+  - transitive `uuid`-Anforderungen,
+  - `node_modules/@tootallnate/once`.
+- GitHub Dependabot API meldet weiterhin offen:
+  - `uuid` medium / `GHSA-w5hq-g745-h8pq`,
+  - `@tootallnate/once` low / `GHSA-vpq2-c234-7xj6`.
+- `npm audit --audit-level=low` bleibt unveraendert rot mit 12 Vulnerabilities.
+- Bewertung: `80eb8a0` hat die Alerts nicht geschlossen.
+- Empfehlung an CC:
+  - `uuid`-Root-Lock-Eintrag gezielt entfernen/refreshen, falls er wirklich verwaist ist.
+  - Danach erneut `npm audit --audit-level=low` und Dependabot API pruefen.
+  - Fuer transitive `firebase-admin`/Google-Cloud/Svix/Resend-Ketten keinen Force-Fix verwenden, solange kein kompatibler Update-Pfad und Testplan vorliegt.
+
 ### UpdateChecker — TEST GAP BESTAeTIGT
 
 - `UpdateChecker.parseRelease` enthaelt die neue Fallback-Logik fuer Assets ohne `vC` im Namen.
