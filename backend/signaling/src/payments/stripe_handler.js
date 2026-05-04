@@ -291,7 +291,7 @@ async function handleWebhook(event, stripe, activationCodesRef) {
       console.error("[STRIPE] Email delivery failed:", err.message, err.stack);
     }
   } else {
-    console.warn("[STRIPE] No customer email — code saved but not delivered:", code);
+    console.warn("[STRIPE] No customer email — code saved but not delivered:", code.substring(0, 4) + "****");
   }
 
   // Mark event as successfully processed (idempotency guard for Stripe retries).

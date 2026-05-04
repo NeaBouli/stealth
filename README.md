@@ -36,7 +36,7 @@ No metadata. No compromises. Every call is encrypted end-to-end using military-g
 - **Zero-Knowledge Architecture** -- The server facilitates connections but cannot decrypt calls. No call content, no metadata, no logs.
 - **Anti-Recording Protection** -- Active detection of screen recording, microphone hijacking, and spy apps (Pro/Premium).
 - **Rust Crypto Core** -- All cryptographic operations run in a native Rust library via JNI -- no Java crypto, no OpenSSL.
-- **BUSL-1.1 Licensed Client** -- The client source code is open source and independently auditable. Official SecureCall branding, backend services, store listings, and paid Pro/Premium offerings remain operated by Vendetta Labs.
+- **BUSL-1.1 Licensed Client** -- The client source code is publicly available and independently auditable. Official SecureCall branding, backend services, store listings, and paid Pro/Premium offerings remain operated by Vendetta Labs.
 
 ## Architecture
 
