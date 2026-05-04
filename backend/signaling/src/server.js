@@ -1780,7 +1780,22 @@ app.get("/invite/:secureId", (req, res) => {
   res.json({ secureId, ok: true });
 });
 
-app.post("/invite/accepted", (req, res) => {
+// Rate limit: 3 invite acceptances per IP per 10 minutes (H-04 fix)
+const inviteRateLimits = new Map();
+function inviteRateLimit(req, res, next) {
+  const ip = getClientIp(req);
+  const now = Date.now();
+  if (!inviteRateLimits.has(ip)) inviteRateLimits.set(ip, []);
+  const attempts = inviteRateLimits.get(ip);
+  while (attempts.length > 0 && now - attempts[0] > 600000) attempts.shift();
+  if (attempts.length >= 3) {
+    return res.status(429).json({ error: "rate_limited" });
+  }
+  attempts.push(now);
+  next();
+}
+
+app.post("/invite/accepted", inviteRateLimit, (req, res) => {
   const { inviterSecureId, newUserSecureId } = req.body;
   if (!inviterSecureId || !newUserSecureId) {
     return res.status(400).json({ error: "missing inviterSecureId or newUserSecureId" });
