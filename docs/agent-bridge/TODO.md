@@ -23,7 +23,18 @@
     - `npm audit` meldet weiterhin moderate/low transitive Risiken, hauptsaechlich `uuid`, `firebase-admin`/Google Cloud-Transitives, `resend`/`svix`, `@tootallnate/once`.
     - `npm audit fix --force` wuerde Breaking Changes/Downgrades vorschlagen (`firebase-admin@10.1.0`, `resend@6.1.3`, `uuid@14.0.0`). Nicht automatisch anwenden, weil Backend-/FCM-/Mail-Flows rolloutkritisch sind.
   - Naechster Schritt:
-    - `uuid`/`@tootallnate/once` gezielt ueber Abhaengigkeitsbaum pruefen und erst nach Risikoanalyse aktualisieren oder durch Upstream-Paketupdates beseitigen.
+    - Mit Claude Code/Dev abstimmen, bevor funktionsabhaengige Aenderungen umgesetzt werden.
+    - `uuid`:
+      - Direkt im Projekt als `uuid@^9.0.1` eingetragen.
+      - Im CommonJS-Code genutzt: `src/sessions.js` und `src/server.js` verwenden `require("uuid")` und `v4`.
+      - Alert-Ziel `uuid@14` ist ein Major-Upgrade und darf nicht blind angewendet werden.
+      - Moegliche Optionen: Code auf Node `crypto.randomUUID()` umstellen, sauber auf neues `uuid`-API/Major migrieren, oder Upstream-Abhaengigkeiten beobachten/aktualisieren.
+    - `@tootallnate/once`:
+      - Transitiv ueber `firebase-admin -> @google-cloud/storage/google-gax -> retry-request -> teeny-request -> http-proxy-agent`.
+      - Kein direkter App-Code-Verbrauch erkannt.
+      - Fix vermutlich nur ueber Upstream-Paketupdates oder Dependency-Override moeglich; Override nur nach Test/CC-Abstimmung.
+    - Direkt veraltete Pakete laut `npm outdated`: `express` major 5, `uuid` major 14, `nodemailer` patch 8.0.7.
+    - `express@5` und `uuid@14` sind potenziell verhaltensrelevant und sollen nicht ohne gezielten Testplan geaendert werden.
 
 ## Done / Monitoring
 

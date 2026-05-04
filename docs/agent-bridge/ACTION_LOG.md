@@ -114,3 +114,29 @@
   - Weitere npm-Audit-Fixes nicht erzwungen, weil `npm audit fix --force` Breaking Changes/Downgrades fuer rolloutkritische FCM-/Mail-/Backend-Flows vorschlaegt.
 - Keine Secrets gelesen oder ausgegeben.
 - Kein Server-Deployment.
+
+## 2026-05-04 - Codex: Restliche Dependabot Alerts analysiert
+
+- Agent: Codex
+- Aktion:
+  - Dependency-Tree fuer `uuid` und `@tootallnate/once` im Signaling-Backend analysiert.
+  - Direkte Nutzung von `uuid` im Backend-Code geprueft.
+  - Keine Produktcodeaenderung vorgenommen.
+- Gelesene Dateien/Befehle:
+  - `backend/signaling/package.json`
+  - `backend/signaling/src/sessions.js`
+  - `backend/signaling/src/server.js`
+  - `npm ls uuid @tootallnate/once`
+  - `npm explain uuid`
+  - `npm explain @tootallnate/once`
+  - `npm outdated`
+- Ergebnis:
+  - `uuid` ist direkt als `uuid@^9.0.1` eingebunden und wird in CommonJS-Code mit `require("uuid")`/`v4` genutzt.
+  - Der GitHub-Alert verlangt `uuid@14`, also ein Major-Upgrade mit moeglicher API-/Module-System-Auswirkung.
+  - `@tootallnate/once` kommt transitiv ueber Google/Firebase-Storage-Pfade und wird nicht direkt vom App-Code genutzt.
+  - `npm outdated` nennt ausserdem `express@5` als Major-Upgrade und `nodemailer@8.0.7` als Patch.
+- Entscheidung:
+  - Keine funktionsabhaengigen Aenderungen ohne Abstimmung mit Claude Code/Dev.
+  - Restliche Alerts bleiben als gezielter Abstimmungspunkt in `TODO.md`.
+- Keine Secrets gelesen oder ausgegeben.
+- Kein Commit/Push/Deployment fuer Produktcode.
