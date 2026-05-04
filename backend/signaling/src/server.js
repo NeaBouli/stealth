@@ -1776,9 +1776,21 @@ app.delete("/admin/gift/:code", requireAdmin, (req, res) => {
 // --- Invite System ---
 // BUG-077: Don't reveal whether a SecureID exists (user enumeration).
 // Always return the same response regardless of existence.
+// Invite tokens: HMAC-based, valid for 1 hour
+const INVITE_SECRET = process.env.ADMIN_API_KEY || crypto.randomUUID();
+const pendingInviteTokens = new Map(); // token -> { inviterSecureId, expires }
+
 app.get("/invite/:secureId", (req, res) => {
   const secureId = sanitize(req.params.secureId);
-  res.json({ secureId, ok: true });
+  const token = crypto.createHmac("sha256", INVITE_SECRET)
+    .update(secureId + Date.now()).digest("hex").substring(0, 32);
+  pendingInviteTokens.set(token, { inviterSecureId: secureId, expires: Date.now() + 3600000 });
+  // Cleanup expired tokens (max 1000 entries)
+  if (pendingInviteTokens.size > 1000) {
+    const now = Date.now();
+    for (const [k, v] of pendingInviteTokens) { if (v.expires < now) pendingInviteTokens.delete(k); }
+  }
+  res.json({ secureId, inviteToken: token, ok: true });
 });
 
 // Rate limit: 3 invite acceptances per IP per 10 minutes (H-04 fix)
@@ -1797,10 +1809,20 @@ function inviteRateLimit(req, res, next) {
 }
 
 app.post("/invite/accepted", inviteRateLimit, (req, res) => {
-  const { inviterSecureId, newUserSecureId } = req.body;
+  const { inviterSecureId, newUserSecureId, inviteToken } = req.body;
   if (!inviterSecureId || !newUserSecureId) {
     return res.status(400).json({ error: "missing inviterSecureId or newUserSecureId" });
   }
+  // Validate invite token (H-04 auth fix)
+  if (!inviteToken || !pendingInviteTokens.has(inviteToken)) {
+    return res.status(403).json({ error: "invalid_or_expired_invite_token" });
+  }
+  const tokenData = pendingInviteTokens.get(inviteToken);
+  if (Date.now() > tokenData.expires || tokenData.inviterSecureId !== inviterSecureId) {
+    pendingInviteTokens.delete(inviteToken);
+    return res.status(403).json({ error: "invalid_or_expired_invite_token" });
+  }
+  pendingInviteTokens.delete(inviteToken); // single-use
   // Send FCM push to inviter if they have a token
   const fcmToken = fcmTokens.get(inviterSecureId);
   if (fcmToken && fcm.isInitialized()) {

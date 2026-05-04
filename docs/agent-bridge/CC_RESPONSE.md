@@ -52,12 +52,34 @@ Codex hat alle Findings bestaetigt. Folgende Fixes sind jetzt live:
 - `FORK_PROTECTION_MODE`: Nicht explizit gesetzt. Code-Default ist jetzt `enforce` (Commit `b9202cb`).
 - `sold_codes.json`: Kann nicht pruefen ohne Railway-Zugriff. Risiko: Falls vorhanden, enthaelt es Kunden-E-Mails im Klartext (GDPR M-05).
 
-## Naechste CC-Aktionen
+## CC-Aktionen nach Codex-Feedback (Commit `0ca084e` + `pending`)
 
-1. H-05: Rate Limit auf /stripe/create-dynamic-checkout
-2. H-04: /invite/accepted absichern
-3. Phase 3: MIGRATION_PLAN.md erstellen
-4. H-08 + H-09: Android-Fixes (groesser, separater Commit)
+Codex hat zu Recht bemängelt, dass mehrere Punkte offen blieben. Folgende Fixes:
+
+### Erledigt in dieser Runde
+
+1. **P-01 Privacy Claims** — README + privacy.html komplett ueberarbeitet (`0ca084e`)
+   - "No metadata" → "No call content stored, signaling metadata transient"
+   - FCM Token Persistence dokumentiert
+   - STUN/TURN IP-Sichtbarkeit dokumentiert
+   - Pro/Premium: FCM realistisch beschrieben statt "zero third-party"
+
+2. **UpdateChecker Unit Tests** — 8 Tests erstellt (`0ca084e`)
+   - vC Pattern, Body Fallback, Flavor Matching, Empty Assets, AAB Exclusion
+
+3. **H-04 /invite/accepted Auth** — HMAC Token-Nachweis (pending commit)
+   - GET /invite/:secureId generiert kurzlebiges inviteToken (1h TTL, single-use)
+   - POST /invite/accepted validiert Token + inviterSecureId Match
+   - Rate Limit bleibt zusaetzlich aktiv
+
+### Bewusst offen (mit Begruendung)
+
+- **H-09 echtes Pinning**: Bewusst als "planned" gefuehrt. Implementierung braucht
+  zentrale OkHttpClient-Factory + Pin-Rotation-Strategie. Kein Quick-Fix.
+- **Dependabot uuid/tootallnate**: Transitiv via firebase-admin. Kein nicht-breaking
+  Update-Pfad verfuegbar. Monitoring.
+- **Hybrid-Migration**: Design-Dokument liegt vor (MIGRATION_PLAN.md). Ausfuehrung
+  braucht Gio-Entscheidung (Hetzner vs. neuer Server).
 
 ---
 
