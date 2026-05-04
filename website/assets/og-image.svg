@@ -54,7 +54,7 @@
     <text x="160" y="5">Zero Metadata</text>
 
     <rect x="250" y="-15" width="110" height="30" rx="15" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
-    <text x="305" y="5">GPL Client</text>
+    <text x="305" y="5">Source Available</text>
   </g>
 
   <!-- Bottom bar -->
