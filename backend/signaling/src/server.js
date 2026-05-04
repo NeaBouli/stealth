@@ -437,7 +437,7 @@ app.get("/key/:id", (req, res) => {
   res.json({ keyId: entry.keyId, publicKey: entry.publicKey, created: entry.created });
 });
 
-app.put("/key/:id", (req, res) => {
+app.put("/key/:id", requireAdmin, (req, res) => {
   const { publicKey } = req.body || {};
   if (!publicKey || typeof publicKey !== "string") {
     return res.status(400).json({
@@ -456,7 +456,7 @@ app.put("/key/:id", (req, res) => {
   res.json({ keyId: entry.keyId, publicKey: entry.publicKey, updated: entry.updated });
 });
 
-app.delete("/key/:id", (req, res) => {
+app.delete("/key/:id", requireAdmin, (req, res) => {
   const deleted = pkd.deleteKey(req.params.id);
   if (!deleted) {
     return res.status(404).json({ error: "key_not_found" });
