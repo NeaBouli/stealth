@@ -7,6 +7,9 @@ import org.junit.Test
 
 class UpdateCheckerTest {
 
+    private val TEST_FLAVOR = "free"
+    private val TEST_VERSION_CODE = 50
+
     private fun buildRelease(
         tagName: String = "v1.0.29",
         name: String = "SecureCall v1.0.29",
@@ -30,6 +33,9 @@ class UpdateCheckerTest {
         return root.toString()
     }
 
+    private fun parse(json: String) =
+        UpdateChecker.parseRelease(json, TEST_FLAVOR, TEST_VERSION_CODE)
+
     @Test
     fun `asset with vC pattern is parsed correctly`() {
         val json = buildRelease(
@@ -38,7 +44,7 @@ class UpdateCheckerTest {
                 Triple("securecall-free-v1.0.29-vC99.apk", "https://example.com/free.apk", 80_000_000L)
             )
         )
-        val result = UpdateChecker.parseRelease(json)
+        val result = parse(json)
         assertNotNull(result)
         assertEquals(99, result!!.versionCode)
         assertEquals("https://example.com/free.apk", result.apkUrl)
@@ -52,7 +58,7 @@ class UpdateCheckerTest {
                 Triple("app-free-arm64-v8a-release.apk", "https://example.com/free.apk", 80_000_000L)
             )
         )
-        val result = UpdateChecker.parseRelease(json)
+        val result = parse(json)
         assertNotNull(result)
         assertEquals(51, result!!.versionCode)
         assertEquals("https://example.com/free.apk", result.apkUrl)
@@ -66,7 +72,7 @@ class UpdateCheckerTest {
                 Triple("app-free-release.apk", "https://example.com/free.apk", 70_000_000L)
             )
         )
-        val result = UpdateChecker.parseRelease(json)
+        val result = parse(json)
         assertNotNull(result)
         assertEquals(55, result!!.versionCode)
     }
@@ -79,7 +85,7 @@ class UpdateCheckerTest {
                 Triple("app-free-release.apk", "https://example.com/free.apk", 70_000_000L)
             )
         )
-        val result = UpdateChecker.parseRelease(json)
+        val result = parse(json)
         assertNull(result)
     }
 
@@ -91,8 +97,7 @@ class UpdateCheckerTest {
                 Triple("app-premium-v1.0.29-vC99.apk", "https://example.com/premium.apk", 80_000_000L)
             )
         )
-        // free flavor won't match premium asset
-        val result = UpdateChecker.parseRelease(json)
+        val result = parse(json)
         assertNull(result)
     }
 
@@ -104,7 +109,7 @@ class UpdateCheckerTest {
                 Triple("securecall-free-v1.0.29-vC55.apk", "https://example.com/new.apk", 80_000_000L)
             )
         )
-        val result = UpdateChecker.parseRelease(json)
+        val result = parse(json)
         assertNotNull(result)
         assertEquals(55, result!!.versionCode)
         assertEquals("https://example.com/new.apk", result.apkUrl)
@@ -113,7 +118,7 @@ class UpdateCheckerTest {
     @Test
     fun `empty assets returns null`() {
         val json = buildRelease(assets = emptyList())
-        val result = UpdateChecker.parseRelease(json)
+        val result = parse(json)
         assertNull(result)
     }
 
@@ -125,20 +130,19 @@ class UpdateCheckerTest {
                 Triple("app-free-release.aab", "https://example.com/free.aab", 90_000_000L)
             )
         )
-        val result = UpdateChecker.parseRelease(json)
+        val result = parse(json)
         assertNull(result)
     }
 
     @Test
     fun `current version code is not treated as update`() {
-        // BuildConfig.VERSION_CODE is 50 — vC50 should NOT be an update
         val json = buildRelease(
             body = "vC50",
             assets = listOf(
                 Triple("app-free-release.apk", "https://example.com/free.apk", 70_000_000L)
             )
         )
-        val result = UpdateChecker.parseRelease(json)
+        val result = parse(json)
         assertNull(result)
     }
 }

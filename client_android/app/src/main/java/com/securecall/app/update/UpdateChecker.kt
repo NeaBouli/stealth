@@ -91,7 +91,11 @@ object UpdateChecker {
      * Returns null if no matching asset is found or if the parsed versionCode
      * is not strictly greater than [BuildConfig.VERSION_CODE].
      */
-    internal fun parseRelease(json: String): UpdateInfo? {
+    internal fun parseRelease(json: String): UpdateInfo? =
+        parseRelease(json, BuildConfig.FLAVOR, BuildConfig.VERSION_CODE)
+
+    /** Testable overload with injected flavor and currentVersionCode. */
+    internal fun parseRelease(json: String, flavor: String, currentVersionCode: Int): UpdateInfo? {
         val root = JSONObject(json)
         val releaseUrl = root.optString("html_url", "")
         val releaseName = root.optString("name", root.optString("tag_name", ""))
@@ -112,7 +116,7 @@ object UpdateChecker {
 
             // Pick the APK matching the installed flavor (free → free).
             // Premium/pro never reach here (blocked by isAdbOnlyFlavor() above).
-            if (!name.contains(BuildConfig.FLAVOR, ignoreCase = true)) continue
+            if (!name.contains(flavor, ignoreCase = true)) continue
 
             val match = VC_PATTERN.find(name) ?: continue
             val code = match.groupValues[1].toIntOrNull() ?: continue
@@ -132,7 +136,7 @@ object UpdateChecker {
                 val url = asset.optString("browser_download_url", "")
                 val size = asset.optLong("size", 0L)
                 if (!name.endsWith(".apk", ignoreCase = true)) continue
-                if (!name.contains(BuildConfig.FLAVOR, ignoreCase = true)) continue
+                if (!name.contains(flavor, ignoreCase = true)) continue
                 bestUrl = url
                 bestSize = size
                 break
@@ -145,14 +149,14 @@ object UpdateChecker {
         }
 
         if (bestCode <= 0 || bestUrl.isEmpty()) {
-            Log.w(TAG, "No matching '${BuildConfig.FLAVOR}' APK asset in release")
+            Log.w(TAG, "No matching '$flavor' APK asset in release")
             return null
         }
 
-        if (bestCode <= BuildConfig.VERSION_CODE) {
+        if (bestCode <= currentVersionCode) {
             Log.w(
                 TAG,
-                "Already up-to-date (installed=${BuildConfig.VERSION_CODE}, latest=$bestCode)"
+                "Already up-to-date (installed=$currentVersionCode, latest=$bestCode)"
             )
             return null
         }
