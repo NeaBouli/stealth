@@ -565,6 +565,26 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: Download-/Release-Statusdrift auditiert
+
+- Agent: Codex
+- Aktion:
+  - Priority-2 Download-/Release-Statusdrift geprueft.
+  - Android `build.gradle`, README, Website/Wiki/llms und GitHub latest release via `gh api` gelesen.
+  - `UpdateChecker.kt` gegen aktuelle GitHub-Release-Assets geprueft.
+  - Findings in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - Aktueller Repo-/GitHub-Release-Stand: `v1.0.28`, versionCode `50`.
+  - README/Website/Wiki/llms enthalten weiterhin mehrere alte Versionsangaben (`1.0.6`, `1.0.12`, `1.0.13`, `1.0.22`).
+  - Funktionales Risiko: `UpdateChecker.kt` erwartet `-vC...apk` Assetnamen, aber aktueller GitHub Release nutzt APK-Namen ohne `vC`, wodurch sideload Update-Erkennung fehlschlagen kann.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex

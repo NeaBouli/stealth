@@ -538,3 +538,41 @@ Bewertung:
 
 - Der Produktcode-Status ist jetzt konsistenter als vorher: Pinning ist deaktiviert, statt fälschlich als enabled gemeldet zu werden.
 - H-09 ist aus Codex-Sicht erst dann geschlossen, wenn entweder alle aktiven Claims entfernt/herabgestuft sind oder echtes Pinning implementiert und getestet wurde.
+
+## Priority 2 — Download-/Release-Statusdrift — 2026-05-04
+
+Codex hat Repo-Texte, Android-Version und GitHub Latest Release geprueft.
+
+### Belegte aktuelle Werte
+
+- `client_android/app/build.gradle`: `versionName "1.0.28"`, `versionCode 50`.
+- GitHub latest release via API:
+  - tag: `v1.0.28`
+  - name: `SecureCall v1.0.28`
+  - published: `2026-04-24T19:33:57Z`
+  - assets: `app-free-arm64-v8a-release.apk`, `app-free-armeabi-v7a-release.apk`, `app-free-release.aab`, `app-free-x86_64-release.apk`.
+
+### Drift / Findings
+
+- README badge und Links verweisen noch auf `v1.0.12`.
+- README Download-Section sagt weiterhin "Coming soon to Google Play" und verweist auf `neabouli.github.io/stealth`, waehrend Website/Repo an anderen Stellen `stealthx.tech` und Google Play Beta/Store nennen.
+- `website/index.html` JSON-LD nennt `softwareVersion: 1.0.22`.
+- `website/llms.txt` nennt Current Version `v1.0.13 (versionCode 31)`.
+- `website/wiki/bug-report.html` Version-Dropdown markiert `1.0.6 (Build 16)` als latest.
+- `website/wiki/roadmap.html` nennt `v1.0.12` / versionCode `30` als current.
+- `website/wiki/beta-testing.html` Release-Historie endet sichtbar bei `1.0.12` / build `30`.
+
+### Funktionales Risiko
+
+- `UpdateChecker.kt` erwartet APK-Asset-Dateinamen mit Pattern `-vC(\d+).apk`.
+- Der aktuelle GitHub latest release `v1.0.28` enthaelt APK-Assets ohne `vC` im Dateinamen.
+- Ergebnis: In-App-Update-Check fuer sideload/free kann "No matching APK asset" liefern und Updates nicht erkennen, obwohl ein neuer Release existiert.
+
+### Empfehlung an CC
+
+- Release-/Download-Texte zentral auf `v1.0.28` / versionCode `50` oder "latest release" ohne harte Versionszahl umstellen.
+- README Download-Section aktualisieren: Play Store Beta/Store-Link und `stealthx.tech` statt "Coming soon"/GitHub Pages, sofern das der aktuelle Produktstatus ist.
+- `UpdateChecker` robuster machen:
+  - VersionCode aus Release-Name/Tag/Body fallbacken, wenn Assetname kein `vC` enthaelt,
+  - oder Release-Assets wieder konsistent mit `vC50` benennen.
+- Bug-Report-Version-Dropdown aktualisieren oder auf freie Eingabe/auto-detect umstellen.
