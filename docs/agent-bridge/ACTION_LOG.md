@@ -141,6 +141,97 @@
 - Keine Secrets gelesen oder ausgegeben.
 - Kein Commit/Push/Deployment fuer Produktcode.
 
+## 2026-05-04 - CC: BUSL-1.1 Lizenz + Fork Protection enforce
+
+- Agent: Claude Code
+- Aktionen:
+  1. LICENSE ersetzt: GPL-3.0 → BUSL-1.1 (Commit `10a2ca4`)
+     - Change Date: 2030-05-04
+     - Change License: GPL-3.0-only
+     - Commercial use restricted
+  2. SHA-256 Fingerprint ermittelt via apksigner:
+     - `1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d`
+  3. FORK_PROTECTION_MODE Default geaendert: "warn" → "enforce" (Commit `b9202cb`)
+  4. docs/LIZENZ_VORSCHLAG.md entfernt (war nur Entwurf)
+- Railway-Konfiguration (MUSS MANUELL GESETZT WERDEN):
+  - `ALLOWED_SIGNATURES=1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d`
+  - `FORK_PROTECTION_MODE=enforce` (oder weglassen, ist jetzt Default)
+- Codex-Info:
+  - Lizenz ist jetzt BUSL-1.1, NICHT mehr GPL-3.0.
+  - Fork-Schutz ist enforce by default. Ohne ALLOWED_SIGNATURES env var passiert nichts (Code prueft `if (allowedSigs && allowedSigs.trim().length > 0)`).
+  - Railway Redeploy noetig damit beides live wirkt.
+- Keine Secrets gelesen oder ausgegeben.
+- Kein Server-Deployment (Railway manuell).
+
+## 2026-05-04 - CC: F-Droid komplett entfernt (3 Phasen)
+
+- Agent: Claude Code
+- Aktionen:
+  Phase 1 (Commit `e59f966`):
+  - GitLab MR !37087 geschlossen via API
+  - docs/FDROID_SETUP.md + docs/FDROID_SUBMISSION.md geloescht
+  - F-Droid Button aus website/index.html entfernt
+  - README, RELEASE_PROCESS, GITHUB_RELEASES, privacy.html bereinigt
+  Phase 2 (Commit `58ec3c0`):
+  - GitLab Fork TrueRepublic/securecall-fdroid (81115682) geloescht via API
+  - Alle fdroid APK Assets aus GitHub Releases v1.0.17-v1.0.28 entfernt
+  - fdroid/ Metadata-Ordner aus Repo entfernt
+  Phase 3 (Commits `5c877c2` + `82b67dc`):
+  - fdroid productFlavor aus build.gradle entfernt
+  - fdroid Source Set (11 Dateien + proguard) entfernt
+  - AndroidManifest fdroid-Package-Queries entfernt
+  - UpdateManager: FDROID InstallSource + openFDroid() entfernt
+  - CallActivity: Kommentar korrigiert
+  - BUILD SUCCESSFUL: free, pro, premium (alle 3 OK)
+- Codex-Info:
+  - F-Droid existiert NICHT mehr im Projekt.
+  - Nur noch 3 Flavors: `free` (public), `pro` + `premium` (internal mit -Pinternal).
+  - UpdateManager hat nur noch: PLAY_STORE, SIDELOAD, OTHER_STORE.
+  - BUSL-1.1 Lizenz-Entwurf liegt in `docs/LIZENZ_VORSCHLAG.md` (nicht committet).
+  - ALLOWED_SIGNATURES wird NACH Lizenz-Entscheidung reaktiviert.
+- Keine Secrets gelesen oder ausgegeben.
+- Kein Server-Deployment.
+
+## 2026-05-04 - CC: uuid-Migration + BUSL-1.1 Entwurf
+
+- Agent: Claude Code
+- Aktionen:
+  1. uuid-Migration umgesetzt:
+     - `uuid` Paket aus package.json entfernt.
+     - `require("uuid")` durch `crypto.randomUUID()` ersetzt in server.js + sessions.js.
+     - Lockfile regeneriert via `npm ci`.
+     - Syntax-Check bestanden.
+     - Commit `d13e8f4` auf main gepusht.
+     - GitHub Dependabot: uuid-Alert sollte sich aufloesen (direkte Dep entfernt).
+  2. Lizenz-Entwurf erstellt:
+     - `docs/LIZENZ_VORSCHLAG.md` — BUSL-1.1 angepasst fuer StealthX/SecureCall.
+     - Change Date: 2030-05-04, Change License: GPL-3.0.
+     - NICHT committet — wartet auf Nutzer-Review und Entscheidungen.
+  3. Bridge aktualisiert fuer Codex-Sichtbarkeit.
+- Codex-Info:
+  - `uuid` ist NICHT mehr direkte Dependency. `crypto.randomUUID()` ist die neue API.
+  - Falls Codex am Backend arbeitet: `uuidv4()` existiert nicht mehr, `crypto.randomUUID()` verwenden.
+  - Lizenz-Diskussion laeuft. LICENSE-Datei noch NICHT aendern bis Gio entscheidet.
+- Keine Secrets gelesen oder ausgegeben.
+- Kein Server-Deployment (Railway muss separat redeployed werden fuer uuid-Fix).
+
+## 2026-05-04 - CC: Rollback-Tag + uuid-Analyse + Koordinationsprotokoll
+
+- Agent: Claude Code
+- Aktionen:
+  1. Rollback-Tag `rollback-stable-vC50` auf HEAD `d24fbc7` erstellt und nach origin gepusht.
+  2. uuid-Nutzung im Backend analysiert:
+     - 4 Stellen: server.js (Z.4, 596, 818, 1187) + sessions.js (Z.11)
+     - Nur `uuidv4()` Aufrufe, triviales Drop-in fuer `crypto.randomUUID()`
+     - Node >= 18 ist Engine-Requirement → `crypto.randomUUID()` immer verfuegbar
+  3. Empfehlung: `uuid` Paket entfernen, durch native Node-API ersetzen → Alert geloest, keine Dep mehr.
+  4. `@tootallnate/once`: Monitoring empfohlen, kein Handlungsbedarf (transitiv, low severity).
+  5. Diskussionspunkte in TODO.md dokumentiert: ALLOWED_SIGNATURES + Lizenz-Entscheidung.
+  6. Koordinationsprotokoll: CC liest/updated Bridge ab sofort bei jeder Stealth-Arbeit.
+- Keine Produktcode-Aenderung.
+- Keine Secrets gelesen oder ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: Claude Code Dev Handover erstellt
 
 - Agent: Codex

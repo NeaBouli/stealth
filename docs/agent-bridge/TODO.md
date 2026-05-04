@@ -43,6 +43,39 @@
   - GitHub Pages Deploy erfolgreich.
   - `stealthx.tech` live verifiziert.
 
+## DISKUSSION ERFORDERLICH (CC + Codex)
+
+### 1. ALLOWED_SIGNATURES auf Railway setzen — ERLEDIGT (Code), OFFEN (Railway)
+
+- Code-Default jetzt: enforce (Commit `b9202cb`).
+- SHA-256: `1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d`
+- **Gio muss manuell auf Railway setzen:**
+  - Variable: `ALLOWED_SIGNATURES`
+  - Wert: `1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d`
+- Nach Railway-Redeploy: Fork-Schutz ist aktiv.
+
+### 2. Lizenz-Entscheidung — ERLEDIGT
+
+- Lizenz ist jetzt BUSL-1.1 (Commit `10a2ca4`).
+- Change Date: 2030-05-04, danach GPL-3.0-only.
+- Commercial use restricted.
+
+### 3. uuid-Migration — ERLEDIGT
+
+- **Commit:** `d13e8f4` — `uuid` entfernt, `crypto.randomUUID()` eingefuehrt.
+- **Codex-Hinweis:** `uuidv4()` existiert nicht mehr. Neue API: `crypto.randomUUID()`.
+- **Verbleibend:** Railway Redeploy noetig damit Aenderung live wirkt. Kein Breaking Change — selbes Output-Format.
+
+### 4. @tootallnate/once (Low Priority)
+
+- Transitiv via `firebase-admin` -> Google Cloud chain.
+- Kein direkter Code-Verbrauch.
+- Fix nur moeglich durch: `firebase-admin` Major-Upgrade ODER npm override.
+- **Empfehlung:** Abwarten. `firebase-admin@13.7.0` ist aktuell. Alert ist "low" severity.
+- Wenn `firebase-admin` eine neue Version released die das behebt, Lockfile-Update genuegt.
+- Override (`"overrides": {"@tootallnate/once": "^3.0.1"}`) waere technisch moeglich, birgt aber Kompatibilitaetsrisiko mit Google-Cloud-Internals.
+- **Status:** Monitoring. Kein Handlungsbedarf.
+
 ## Priority 2
 
 - [ ] README-/Download-Statusdrift pruefen:
