@@ -59,7 +59,7 @@
     <string name="onboarding_title_2">Zero-Knowledge Architektur</string>
     <string name="onboarding_desc_2">Wir haben niemals Zugriff auf Ihre Anrufe oder Daten. Ihre Privatsph\u00E4re ist absolut.</string>
     <string name="onboarding_title_3">Milit\u00E4rische Sicherheit</string>
-    <string name="onboarding_desc_3">Root-Erkennung, Zertifikat-Pinning, Hardware-Keystore und aggressive Schl\u00FCsselrotation.</string>
+    <string name="onboarding_desc_3">Root-Erkennung, TLS-Transportsicherheit, Hardware-Keystore und aggressive Schl\u00FCsselrotation.</string>
     <string name="onboarding_title_4">Los geht\u0027s</string>
     <string name="onboarding_desc_4">Starten Sie jetzt sichere Anrufe. Ihre Gespr\u00E4che bleiben Ihre.</string>
     <string name="onboarding_skip">\u00DCberspringen</string>
