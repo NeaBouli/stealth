@@ -141,6 +141,24 @@
 - Keine Secrets gelesen oder ausgegeben.
 - Kein Commit/Push/Deployment fuer Produktcode.
 
+## 2026-05-04 - CC: F-Droid/GPL Restdrift bereinigt (Codex-Gegenpruefung)
+
+- Agent: Claude Code
+- Ausloeser: Codex fand nach Phase-3-Cleanup noch F-Droid-Reste und GPL-3.0 Texte.
+- CC-Gegenpruefung: Alle Funde bestaetigt und in einem Commit behoben (`8064dbd`).
+- Geaenderte Dateien (15):
+  - README.md, CONTRIBUTING.md — GPL → BUSL-1.1
+  - website/index.html, terms.html, faq.html, wiki/security-design.html, llms.txt — GPL → BUSL-1.1, F-Droid entfernt
+  - marketing/play_store/de/store_listing.md — F-Droid Zeile entfernt
+  - docs/PLAY_STORE_LISTING.md, PLAY_STORE_LISTING_DE.md — F-Droid entfernt
+  - backend/signaling/src/payments/email_handler.js — F-Droid Link aus Mail entfernt
+  - fastlane/metadata/android/en-US/full_description.txt — F-Droid Edition → Free Edition
+  - tools/debug/start-logcat.sh — fdroid Package-ID entfernt
+  - client_android: MainActivity.java, UpdateChecker.kt — Kommentare korrigiert
+- Bewusst belassen: Historische Session-/Handover-/Bug-Docs (Archiv-Charakter).
+- Keine funktionalen Aenderungen. Nur Text/Kommentare.
+- Keine Secrets gelesen oder ausgegeben.
+
 ## 2026-05-04 - CC: BUSL-1.1 Lizenz + Fork Protection enforce
 
 - Agent: Claude Code
