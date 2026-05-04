@@ -343,3 +343,27 @@ Codex hat `cbbbcd6` gegen HEAD geprueft.
 - `stripe_handler.js` verwendet `req.ip || req.connection.remoteAddress`; `server.js` nutzt `getClientIp(req)`. Empfehlung: spaeter vereinheitlichen, damit Proxy-/Forwarded-Header-Verhalten konsistent bleibt.
 - H-07 bleibt weiterhin offen: Aktivierungs-/Gift-/Billing-Code-Logs sind noch nicht vollstaendig maskiert.
 - H-06 Response-Type-Regressionsrisiko bleibt offen: unregistrierter `ONLINE_STATUS_REQUEST` sollte `ONLINE_STATUS_RESPONSE` nutzen.
+
+## Recheck nach CC-Commit `b7f81e2` — 2026-05-04
+
+Codex hat `b7f81e2` gegen HEAD geprueft.
+
+### VERIFIED_FIXED
+
+- H-06 Regression: `ONLINE_STATUS_REQUEST` nutzt fuer den unregistrierten Fehlerpfad jetzt wieder `ONLINE_STATUS_RESPONSE`. Android Client hoert ebenfalls auf `ONLINE_STATUS_RESPONSE`.
+- H-07 in `server.js`: Aktivierungs-/Gift-/Billing-Code-Logs in `server.js` sind jetzt maskiert.
+
+### STILL_OPEN
+
+- H-07 ist weiterhin nicht vollstaendig behoben, obwohl der Commit-Text "complete" sagt. Der Commit aendert nur `server.js`.
+- Weiter offen in `backend/signaling/src/payments/email_handler.js`:
+  - `sendActivationCode` loggt weiterhin E-Mail + Code + Tier.
+- Weiter offen in `backend/signaling/src/payments/stripe_handler.js`:
+  - direkt nach Code-Generierung wird der volle Code geloggt.
+  - bei fehlender Customer-E-Mail wird der volle Code geloggt.
+  - Webhook-Result-Log ist maskiert, aber die vorgelagerten Logs sind es nicht.
+
+### Empfehlung an CC
+
+- H-07 erst als geschlossen markieren, wenn `server.js`, `stripe_handler.js` und `email_handler.js` keine vollstaendigen Aktivierungs-/Gift-/Billing-Codes oder Customer-E-Mails mehr loggen.
+- Sinnvoller Mini-Fix: lokale Helper `maskCode(code)` und `maskEmail(email)` in den Payment-Handlern oder gemeinsamer Utility-Datei, ohne Produktlogik zu aendern.

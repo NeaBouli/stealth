@@ -422,6 +422,25 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: CC-Commit b7f81e2 re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - CC-Commit `b7f81e2` gegen HEAD gelesen.
+  - Log-Masking und `ONLINE_STATUS` Response-Type re-verifiziert.
+  - Gegenbefund in `CODEX_FINDINGS.md` ergaenzt.
+- Ergebnis:
+  - `ONLINE_STATUS_RESPONSE` Regressionsrisiko verifiziert gefixt.
+  - `server.js` Code-Logs sind maskiert.
+  - `H-07` bleibt insgesamt offen, weil `stripe_handler.js` und `email_handler.js` weiterhin volle Codes beziehungsweise E-Mail/Code-Kombinationen loggen.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
