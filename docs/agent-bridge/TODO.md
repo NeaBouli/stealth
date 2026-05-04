@@ -120,8 +120,10 @@
 
 ## Priority 2
 
-- [ ] README-/Download-Statusdrift pruefen:
+- [x] README-/Download-Statusdrift pruefen:
   - Play Store Beta, APK und Website-Links sollen auf denselben aktuellen Stand zeigen.
+  - Recheck 2026-05-04: README/Website/Wiki-Index/GitHub latest release stehen auf `v1.0.28` / `versionCode 50`.
+  - Rest: Play-Console-Status extern; `UpdateChecker`-Tests fuer Assetnamen ohne `vC` fehlen weiter.
 - [ ] Hybrid-Migration ausfuehren (siehe `MIGRATION_PLAN.md`)
 
 ## Priority 3

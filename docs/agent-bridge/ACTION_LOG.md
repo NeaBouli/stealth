@@ -825,3 +825,25 @@
 - Keine Secret-Dateien gelesen.
 - Keine Secrets ausgegeben.
 - Kein Deployment.
+
+## 2026-05-04 - Codex: Download-/Version-Statusdrift re-geprueft
+
+- Agent: Codex
+- Aktion:
+  - README, Website, Wiki-Index, Android `build.gradle`, GitHub latest release und oeffentliche HTTP-Erreichbarkeit geprueft.
+  - Ergebnis in `CODEX_FINDINGS.md` dokumentiert.
+  - `TODO.md` fuer README-/Download-Statusdrift aktualisiert.
+- Ergebnis:
+  - Lokaler Android-Stand und Doku zeigen `v1.0.28` / `versionCode 50`.
+  - GitHub latest release ist `v1.0.28`, Release-Body enthaelt `vC50`, APK Assets sind vorhanden.
+  - `stealthx.tech` antwortet HTTP 200.
+  - GitHub `releases/latest` redirectet auf `v1.0.28`.
+  - Resthinweise: Play-Console-Status extern; `UpdateChecker`-Unit-Tests fehlen weiter.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/TODO.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.

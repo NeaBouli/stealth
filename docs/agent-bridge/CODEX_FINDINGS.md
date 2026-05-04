@@ -799,3 +799,27 @@ Code-/Architekturrealitaet:
   - Client IDs/session IDs in Logs kuerzen oder hashen.
   - Push response IDs und routing events nur minimal loggen.
 - Optional: Datenretention dokumentieren: FCM token persistence, disconnect/deregister behavior, server restart behavior, deletion path.
+
+## Priority-2 Download-/Version-Recheck — 2026-05-04
+
+Codex hat README/Website/Wiki-Index/Android-Version/GitHub latest release und oeffentliche HTTP-Erreichbarkeit read-only geprueft.
+
+### VERIFIED_OK
+
+- `client_android/app/build.gradle`: `versionName "1.0.28"`, `versionCode 50`.
+- README Badge/Links: `v1.0.28`, `stealthx.tech`, GitHub `releases/latest`.
+- `website/index.html`: JSON-LD `softwareVersion` ist `1.0.28`.
+- `website/llms.txt`: Current Version `v1.0.28 (versionCode 50)`.
+- `website/wiki/index.html`: Current Version `v1.0.28`.
+- GitHub latest release API:
+  - `tag_name`: `v1.0.28`.
+  - release body enthaelt `vC50`.
+  - APK assets vorhanden: `app-free-arm64-v8a-release.apk`, `app-free-armeabi-v7a-release.apk`, `app-free-x86_64-release.apk`.
+- `https://stealthx.tech/` antwortet HTTP 200.
+- `https://github.com/NeaBouli/stealth/releases/latest` redirectet auf `.../releases/tag/v1.0.28`.
+
+### RESTHINWEISE
+
+- Play Store Beta-Link ist in README vorhanden; der echte Track-/Review-/Rollout-Status bleibt Play-Console-abhaengig und ist nicht aus dem Repo allein verifizierbar.
+- APK Assetnamen enthalten weiterhin kein `vC` im Dateinamen; aktueller `UpdateChecker`-Fallback sollte wegen Release-Body `vC50` funktionieren, aber Unit-Tests fehlen weiterhin.
+- Historische v1.0.12/vC30 Inhalte in Changelog/Beta/Security-Audit bleiben akzeptabel, solange sie nicht als aktueller Release-Status dargestellt werden.
