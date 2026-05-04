@@ -576,3 +576,33 @@ Codex hat Repo-Texte, Android-Version und GitHub Latest Release geprueft.
   - VersionCode aus Release-Name/Tag/Body fallbacken, wenn Assetname kein `vC` enthaelt,
   - oder Release-Assets wieder konsistent mit `vC50` benennen.
 - Bug-Report-Version-Dropdown aktualisieren oder auf freie Eingabe/auto-detect umstellen.
+
+## Recheck nach CC-Commit `9cc47ae` — 2026-05-04
+
+Codex hat `9cc47ae` gegen HEAD geprueft.
+
+### VERIFIED_FIXED
+
+- README Version-Badge und Download-Section sind jetzt auf `v1.0.28` / GitHub latest / `stealthx.tech` aktualisiert.
+- `website/index.html` JSON-LD `softwareVersion` ist jetzt `1.0.28`.
+- `website/llms.txt` Current Version ist jetzt `v1.0.28 (versionCode 50)`.
+- Englischer Onboarding-String nennt nicht mehr aktives Certificate Pinning.
+
+### STILL_OPEN / VERSION DRIFT
+
+- `website/wiki/bug-report.html` Version-Dropdown markiert weiterhin `1.0.6 (Build 16)` als latest.
+- `website/wiki/index.html` zeigt weiterhin `v1.0.12` als Current Version.
+- `website/wiki/roadmap.html` nennt weiterhin `v1.0.12` / versionCode `30` als current.
+- `website/wiki/security-audit.html` nennt weiterhin Test-Build `v1.0.12` / versionCode `30`. Das kann historisch korrekt sein, sollte aber klar als historischer Audit-Teststand markiert werden.
+- `website/wiki/beta-testing.html` und `website/wiki/changelog.html` enden sichtbar bei `v1.0.12` / build `30`; falls historisch, als Archiv kennzeichnen, sonst aktualisieren.
+
+### STILL_OPEN / H-09 TEXT DRIFT
+
+- Deutscher Onboarding-String `client_android/app/src/main/res/values-de/strings.xml` nennt weiterhin `Zertifikat-Pinning` als aktive Security-Eigenschaft.
+- `website/wiki/security-audit.html` nennt weiterhin "certificate pinning enforcement"; sprachlich unklar, solange Pinning nicht implementiert ist.
+
+### STILL_OPEN / UPDATECHECKER
+
+- `UpdateChecker.kt` erwartet weiterhin APK-Assetnamen mit `-vC(\d+).apk`.
+- Aktueller GitHub Release `v1.0.28` nutzt APK-Assetnamen ohne `vC`.
+- Der In-App-Update-Check bleibt daher funktional riskant, bis entweder Assetnamen wieder `vC50` enthalten oder `UpdateChecker` einen robusten Fallback aus Release-Name/Tag/Body/Asset-Metadata nutzt.

@@ -585,6 +585,27 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: 9cc47ae Version-/Pinning-Textfix re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - CC-Commit `9cc47ae` gegen HEAD gelesen.
+  - README, Website, llms, Android Strings und `UpdateChecker.kt` erneut geprueft.
+  - Ergebnis in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - README, `website/index.html` und `website/llms.txt` sind jetzt auf `v1.0.28` / versionCode `50` verbessert.
+  - Englischer Onboarding-Pinning-Claim ist bereinigt.
+  - Weitere Wiki-Versiondrift bleibt offen (`bug-report`, `wiki/index`, `roadmap`, `security-audit`, `beta-testing`, `changelog`).
+  - Deutscher Onboarding-String nennt weiterhin Zertifikat-Pinning.
+  - `UpdateChecker.kt` bleibt riskant, weil aktuelle Release-Assets kein `vC` im Dateinamen enthalten.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex
