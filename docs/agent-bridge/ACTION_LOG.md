@@ -460,6 +460,29 @@
 - Keine Secrets ausgegeben.
 - Kein Deployment.
 
+## 2026-05-04 - Codex: CC-Fixserie re-verifiziert
+
+- Agent: Codex
+- Aktion:
+  - Neue CC-Commits gegen HEAD re-verifiziert: `cf30743`, `c7c7e06`, `1b39f9b`, `0b64d09`, `281320f`.
+  - Ergebnisse in `CODEX_FINDINGS.md` dokumentiert.
+- Ergebnis:
+  - `H-08` Android JSON Injection verifiziert gefixt.
+  - `M-01` PKD PUT/DELETE Admin-Gating verifiziert gefixt.
+  - `L-02` OG-Image GPL-Text verifiziert gefixt.
+  - `H-07` bleibt mit einem Stripe-No-Email-Log-Pfad teilweise offen.
+  - `H-04` ist per Rate Limit entschaerft, aber ohne Auth-/Invite-Token-Nachweis nur teilweise gefixt.
+  - `L-01` bleibt in README/llms teilweise offen.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Nicht von Codex geaendert:
+  - `docs/agent-bridge/TODO.md` ist lokal modified und bleibt unangetastet.
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
 ## 2026-05-04 - Codex: F-Droid-/Lizenz-Kohaerenz nachgeprueft
 
 - Agent: Codex

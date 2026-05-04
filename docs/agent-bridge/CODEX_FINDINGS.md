@@ -386,3 +386,26 @@ Codex hat nach den aktuellen Security-Fixes `npm audit --audit-level=low` in `ba
 - `uuid` ist nicht mehr direkte Runtime-Dependency im `package.json`, aber bleibt transitiv im Lockfile ueber Firebase/Google/Svix/Resend-Pfade sichtbar.
 - `npm audit fix --force` wuerde `firebase-admin@10.1.0` installieren und ist als Breaking Change gemeldet. Nicht blind ausfuehren.
 - Empfehlung: CC soll gezielt pruefen, ob ein nicht-breaking Update-Pfad ueber `firebase-admin`, `resend`/`svix` oder Overrides moeglich ist. Ohne Testplan kein Force-Fix.
+
+## Recheck mehrerer CC-Fixes — 2026-05-04
+
+Codex hat folgende CC-Commits gegen HEAD geprueft: `cf30743`, `c7c7e06`, `1b39f9b`, `0b64d09`, `281320f`.
+
+### VERIFIED_FIXED
+
+- H-08: Android Custom-ID Submission nutzt jetzt `JSONObject` statt String-Template. JSON-Injection-Risiko im geprueften Pfad ist behoben.
+- M-01: PKD `PUT /key/:id` und `DELETE /key/:id` sind jetzt mit `requireAdmin` geschuetzt.
+- L-02: `website/assets/og-image.svg` nennt nicht mehr `GPL Client`; Text ist auf Source Available geaendert.
+
+### PARTIAL / NEEDS FOLLOW-UP
+
+- H-07: deutlich verbessert, aber noch ein offener Log-Pfad sichtbar:
+  - `stripe_handler.js`: Bei fehlender Customer-E-Mail wird weiterhin der vollstaendige Code geloggt. Werte werden nicht wiedergegeben.
+  - `email_handler.js` und die meisten `server.js`-Pfade sind jetzt maskiert.
+- H-04: `/invite/accepted` hat jetzt IP-Rate-Limit `3/10min`, aber keinen Auth-/Invite-Token-Nachweis. Damit ist Spam-Volumen reduziert, die fachliche Authentizitaet des Invite-Accepted-Events aber noch nicht bewiesen.
+- L-01: `website/faq.html` wurde bereinigt, aber `README.md` und `website/llms.txt` nennen SecureCall weiterhin "open source". Empfehlung: auf "source available" / "publicly auditable" umstellen, wenn das mit BUSL-Position stimmig sein soll.
+
+### Hinweise
+
+- `docs/agent-bridge/TODO.md` ist lokal modified, aber Codex hat diese Aenderung nicht erstellt und nicht angefasst.
+- Weiterhin offen: H-01 `/ice-servers` public, H-09 Certificate Pinning Claim/Implementierung, Dependabot `uuid`/`@tootallnate/once`.
