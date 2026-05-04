@@ -666,12 +666,12 @@ wss.on("connection", (ws, req) => {
 
       // App signature verification — fork protection
       // ALLOWED_SIGNATURES: comma-separated list of allowed SHA-256 cert hashes
-      // FORK_PROTECTION_MODE: "warn" (log only, default) or "enforce" (reject)
+      // FORK_PROTECTION_MODE: "enforce" (reject, default) or "warn" (log only)
       const allowedSigs = process.env.ALLOWED_SIGNATURES;
       if (allowedSigs && allowedSigs.trim().length > 0) {
         const allowed = allowedSigs.split(",").map(s => s.trim().toLowerCase());
         const clientSig = (msg.appSignature || "").toLowerCase();
-        const forkMode = (process.env.FORK_PROTECTION_MODE || "warn").toLowerCase();
+        const forkMode = (process.env.FORK_PROTECTION_MODE || "enforce").toLowerCase();
         if (!clientSig || !allowed.includes(clientSig)) {
           if (forkMode === "enforce") {
             // Throttle rejection logging — log only first occurrence + every 50th per clientId
