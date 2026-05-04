@@ -50,3 +50,40 @@
   - Play/APK/F-Droid-Rollout bleibt unveraendert.
 - Keine Secrets gelesen oder ausgegeben.
  - Kein Server-Deployment; GitHub Pages Auto-Deploy durch Workflow.
+
+## 2026-05-03 - Codex: Dependabot Alerts ausgelesen
+
+- Agent: Codex
+- Aktion: GitHub Dependabot Alerts fuer `NeaBouli/stealth` read-only per GitHub API ausgelesen.
+- Offene Alerts:
+  - Critical: `protobufjs < 7.5.5`
+  - High: `path-to-regexp < 0.1.13`
+  - Medium: `uuid < 14.0.0`
+  - Medium: `fast-xml-parser < 5.7.0`
+  - Low: `rand >= 0.7.0, < 0.8.6`
+  - Low: `@tootallnate/once < 3.0.1`
+- Betroffene Manifeste:
+  - `backend/signaling/package-lock.json`
+  - `core_crypto/Cargo.lock`
+- Keine Secrets gelesen oder ausgegeben.
+ - Noch keine Dependency-Fixes committed.
+
+## 2026-05-03 - Codex: Dependabot High/Critical Fix lokal vorbereitet
+
+- Agent: Codex
+- Aktion:
+  - `backend/signaling/package-lock.json` mit `npm update --package-lock-only` aktualisiert.
+  - `core_crypto/Cargo.lock` mit `cargo update -p rand --precise 0.8.6` aktualisiert.
+- Lokal behobene bekannte Alerts:
+  - Critical: `protobufjs < 7.5.5` -> lockfile jetzt `protobufjs 7.5.6`.
+  - High: `path-to-regexp < 0.1.13` -> lockfile jetzt `path-to-regexp 0.1.13`.
+  - Medium: `fast-xml-parser < 5.7.0` -> lockfile jetzt `fast-xml-parser 5.7.2`.
+  - Low: `rand >= 0.7.0, < 0.8.6` -> lockfile jetzt `rand 0.8.6`.
+- Checks:
+  - `node --check src/server.js` erfolgreich.
+  - `npm audit --audit-level=high` erfolgreich; keine high/critical npm-Audit-Treffer mehr.
+  - `cargo test --locked` erfolgreich; 34 Tests passed.
+- Bewusst nicht automatisch gefixt:
+  - Moderate/low transitive npm-Audit-Treffer, fuer die `npm audit fix --force` Breaking Changes/Downgrades vorschlaegt.
+- Keine Secrets gelesen oder ausgegeben.
+ - Noch kein Commit/Push fuer diesen Dependency-Fix.
