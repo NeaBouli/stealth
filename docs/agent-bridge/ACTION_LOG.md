@@ -729,3 +729,23 @@
 - Keine Secret-Dateien gelesen.
 - Keine Secrets ausgegeben.
 - Kein Deployment.
+
+## 2026-05-04 - Codex: Dependabot-Lockfile-Detail geprueft
+
+- Agent: Codex
+- Aktion:
+  - `backend/signaling/package.json` und `backend/signaling/package-lock.json` read-only gegen `uuid`/`@tootallnate/once` geprueft.
+  - `npm audit --audit-level=low` erneut ausgefuehrt.
+  - Ergebnis in `CODEX_FINDINGS.md` ergaenzt.
+- Ergebnis:
+  - Kein direkter `uuid`-Dependency-Eintrag mehr in `package.json`.
+  - Lockfile enthaelt weiterhin `uuid`-Root-/Transitiv-Eintraege.
+  - `npm audit` bleibt rot mit 12 low/moderate Vulnerabilities.
+  - Force-Fix wuerde riskant auf `firebase-admin@10.1.0` gehen.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/CODEX_FINDINGS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung durch Codex.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.

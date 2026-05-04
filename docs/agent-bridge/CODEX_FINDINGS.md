@@ -719,6 +719,18 @@ Codex hat den aktuellen HEAD nach dem Bridge-Commit `b3d5cb3` read-only gegen of
 - Letzter bekannter `npm audit` Stand: transitive moderate/low Vulnerabilities in der Google/Firebase/Svix/Resend-Kette.
 - Empfehlung bleibt: Kein `npm audit fix --force` ohne Testplan, weil der vorgeschlagene Pfad transitive/breaking Downgrades verursachen kann.
 
+### Dependency-Recheck Detail — 2026-05-04
+
+- `backend/signaling/package.json` enthaelt keinen direkten `uuid`-Eintrag mehr.
+- `backend/signaling/package-lock.json` enthaelt aber weiterhin einen Root-Lock-Eintrag fuer `uuid` sowie transitive `uuid`-Vorkommen ueber Google/Firebase/Svix/Resend.
+- `npm audit --audit-level=low` bleibt reproduzierbar rot:
+  - 12 Vulnerabilities: 10 moderate, 2 low.
+  - `npm audit fix --force` wuerde `firebase-admin@10.1.0` installieren und waere breaking/downgrade-riskant.
+- Empfehlung an CC:
+  - Erst `npm install --package-lock-only` oder gezieltes Lockfile-Refresh pruefen, um den verwaisten direkten Root-Lock-Eintrag zu entfernen.
+  - Danach `npm audit` erneut bewerten.
+  - Transitive Restwarnungen nicht per Force-Fix loesen; stattdessen Upstream-Versionen/kompatible Updates pruefen.
+
 ### UpdateChecker — TEST GAP BESTAeTIGT
 
 - `UpdateChecker.parseRelease` enthaelt die neue Fallback-Logik fuer Assets ohne `vC` im Namen.
