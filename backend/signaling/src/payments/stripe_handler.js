@@ -347,11 +347,11 @@ function setupRoutes(app, activationCodesRef) {
   app.post("/stripe/webhook", async (req, res) => {
     let event;
     try {
-      if (webhookSecret) {
-        event = stripe.webhooks.constructEvent(req.body, req.headers["stripe-signature"], webhookSecret);
-      } else {
-        event = JSON.parse(req.body);
+      if (!webhookSecret) {
+        console.error("[STRIPE] STRIPE_WEBHOOK_SECRET not set — rejecting webhook (fail-closed)");
+        return res.status(503).send("Webhook secret not configured");
       }
+      event = stripe.webhooks.constructEvent(req.body, req.headers["stripe-signature"], webhookSecret);
     } catch (err) {
       console.error("[STRIPE] Webhook signature verification failed:", err.message);
       return res.status(400).send("Webhook error");
@@ -360,7 +360,7 @@ function setupRoutes(app, activationCodesRef) {
     try {
       const result = await handleWebhook(event, stripe, activationCodesRef);
       if (result?.code) {
-        console.log("[STRIPE] Activation code generated:", result.code, "sent to:", result.email);
+        console.log("[STRIPE] Activation code generated:", result.code.substring(0, 4) + "****", "tier:", result.tier || "unknown");
       }
       res.json({ received: true });
     } catch (err) {

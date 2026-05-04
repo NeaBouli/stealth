@@ -169,45 +169,9 @@ const phoneHashes = new Map();
 const CODES_FILE = path.join(__dirname, "..", "data", "activation_codes.json");
 let activationCodes = [];
 
-// Hardcoded fallback codes (used if file is missing on deployment platform)
-// NOTE: Beta codes DEACTIVATED for production (TODO-047). Tester codes below.
-const FALLBACK_CODES = [
-  {code: "TEST-PRO1-CODE", tier: "pro", maxUses: 10, currentUses: 0, usedBy: []},
-  {code: "TEST-PREM-CODE", tier: "premium", maxUses: 10, currentUses: 0, usedBy: []},
-  // DEACTIVATED: {code: "BETA-PRO0-2026", tier: "pro", maxUses: 50, currentUses: 0},
-  // DEACTIVATED: {code: "BETA-PREM-2026", tier: "premium", maxUses: 25, currentUses: 0},
-  // 30 Premium Tester Reward Codes (single-use each)
-  {code: "PREM-1A7B-WCHQ-ZW3X", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-MUMC-L1B2-5QYP", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-0CO3-6X3Y-LL29", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-ES4X-LDCT-LZ8U", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-BUXR-XSO7-R4B6", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-Q44J-JDLE-I4YW", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-TBZP-7FAT-GA0Z", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-VU8M-VEVB-35LI", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-X3DY-WO92-56RM", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-5BM8-Q21J-3GNX", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-EO6I-JG95-7S3D", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-D6J0-XXD5-FYBX", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-THXA-T71H-F1RA", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-CVEI-5J47-HET2", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-RJR9-5RZ3-H2X2", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-P5IA-2KL6-DAHD", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-GLQP-OFOF-4ZSS", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-3ME6-KBKG-DDQZ", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-143G-6ETG-FBOV", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-83Z7-OZMZ-ITPJ", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-IL0Y-AINQ-HNDS", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-2J7H-50RL-AGK3", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-2LPK-895J-6F6J", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-G5UM-KVKP-CLZN", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-495K-IL3T-22GE", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-RGTW-O4ZC-9PVB", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-7YDP-G8AF-VA7I", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-XGRK-Y8OE-X20U", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-EDQ0-OP6I-EJS6", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-  {code: "PREM-T0V0-1YQ5-WY07", tier: "premium", maxUses: 2, currentUses: 0, usedBy: []},
-];
+// No hardcoded fallback codes — activation codes are loaded exclusively from
+// data/activation_codes.json and data/sold_codes.json. If files are missing,
+// the system starts with zero codes (fail-closed).
 
 function loadActivationCodes() {
   try {
@@ -216,8 +180,8 @@ function loadActivationCodes() {
     activationCodes = data.codes || [];
     console.log(`[ACTIVATION] Loaded ${activationCodes.length} activation codes from file`);
   } catch (e) {
-    console.warn("[ACTIVATION] Could not load activation_codes.json:", e.message, "— using fallback codes");
-    activationCodes = FALLBACK_CODES.map(c => ({...c}));
+    console.warn("[ACTIVATION] Could not load activation_codes.json:", e.message, "— starting with zero codes (fail-closed)");
+    activationCodes = [];
   }
 
   // Also load codes generated from Stripe purchases (sold_codes.json)
@@ -1257,8 +1221,12 @@ wss.on("connection", (ws, req) => {
     // ===========================
     // PHONE_LOOKUP — Resolve phone number to clientId
     // FIX 8: Rate limited to 10 lookups/minute per client
+    // Security: requires registration (H-06 fix)
     // ===========================
     if (msg.type === "PHONE_LOOKUP") {
+      if (!getClientId(connId)) {
+        return ws.send(JSON.stringify({type: "PHONE_LOOKUP_RESULT", error: "not_registered"}));
+      }
       // Rate limit: 10 per 60 seconds per connection
       if (!clients.get(connId)._phoneLookups) clients.get(connId)._phoneLookups = [];
       const lookups = clients.get(connId)._phoneLookups;
@@ -1299,8 +1267,12 @@ wss.on("connection", (ws, req) => {
 
     // ===========================
     // BATCH_PHONE_LOOKUP — Resolve multiple phone numbers at once
+    // Security: requires registration (H-06 fix)
     // ===========================
     if (msg.type === "BATCH_PHONE_LOOKUP") {
+      if (!getClientId(connId)) {
+        return ws.send(JSON.stringify({type: "BATCH_PHONE_LOOKUP_RESULT", results: [], error: "not_registered"}));
+      }
       // Rate limit: 5 per 60 seconds per connection
       if (!clients.get(connId)._batchLookups) clients.get(connId)._batchLookups = [];
       const batchLookups = clients.get(connId)._batchLookups;
@@ -1346,6 +1318,9 @@ wss.on("connection", (ws, req) => {
     // ONLINE_STATUS_REQUEST — Simple online/offline check for phone numbers
     // ===========================
     if (msg.type === "ONLINE_STATUS_REQUEST") {
+      if (!getClientId(connId)) {
+        return ws.send(JSON.stringify({type: "ONLINE_STATUS_RESULT", results: [], error: "not_registered"}));
+      }
       // Rate limit: 10 per 60 seconds per connection
       if (!clients.get(connId)._onlineStatusReqs) clients.get(connId)._onlineStatusReqs = [];
       const osReqs = clients.get(connId)._onlineStatusReqs;
