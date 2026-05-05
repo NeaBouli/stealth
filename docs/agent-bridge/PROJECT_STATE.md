@@ -38,8 +38,9 @@
 - **Security Audit:** 17/17 Findings VERIFIED_FIXED (CC self-audit, Codex-Tokens aufgebraucht)
 - **Master Audit:** STX-CRIT-01 (nicht kritisch), STX-HIGH-01/02 (done), STX-MED-01/02/03/04 (done)
 - **Offen:** STX-HIGH-03 (Backend Modularisierung) — Plan liegt vor, Post-Release
-- **Railway:** Redeploy noetig fuer Backend Security Fixes
-- **Play Console:** AAB bereit zum Upload
+- **Railway:** Redeployed 2026-05-05 07:09 UTC. Health OK. Fork-Schutz blockt Bot (157.245.103.245).
+- **Play Console:** AAB bereit: `app-free-release.aab` (38 MB) — lokal + GitHub Release
+- **Geraete:** S7 (ce101...) + Tab S4 (ce121...) auf v1.0.29 updated via ADB
 
 ## 2026-05-04 — Security Audit Phase 1 abgeschlossen
 
