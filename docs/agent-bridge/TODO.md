@@ -118,13 +118,27 @@
 - `281320f` (M-01 PKD Auth): VERIFIED_FIXED; `PUT /key/:id` und `DELETE /key/:id` hinter `requireAdmin`.
 - `0b64d09` (L-01/L-02 Text-Drift): VERIFIED_FIXED fuer FAQ/OG-Image; weitere Lizenz-/Release-Doku-Drift wurde spaeter separat nachverfolgt und teilweise bereinigt.
 
-## Phase 4 — Release v1.0.29 (vC51)
+## Phase 4 — Release v1.0.29 (vC51) — DONE
 
 - [x] versionCode 50→51, versionName 1.0.28→1.0.29
-- [ ] assembleFreeRelease + bundleFreeRelease (Build laeuft)
-- [ ] GitHub Release erstellen (v1.0.29, Changelog mit Security Fixes)
-- [ ] Play Console: AAB Upload
-- [ ] Railway: Redeploy mit Backend Security Fixes
+- [x] assembleFreeRelease + bundleFreeRelease
+- [x] GitHub Release erstellt (v1.0.29)
+- [x] Play Console: AAB Upload (v1.0.29)
+- [x] Railway: Redeployed
+
+## Phase 5 — Release v1.0.31 (vC53)
+
+- [x] BUG-FIX: Klingeln bei entsperrtem Screen (Service-Ringtone)
+- [x] BUG-FIX: App bricht weg nach Remote-Hangup (returnToMain)
+- [x] BUG-FIX: FCM-Ringtone-Luecke geschlossen (alle 3 Flavors)
+- [x] BUG-FIX: Aktivierungscodes erneuert + SEED_ACTIVATION_CODES env var
+- [x] BUG-FIX: Battery Optimization Permission + Dialog + WakeLock-Refresh
+- [x] versionCode 51→53, versionName 1.0.29→1.0.31
+- [x] AAB gebaut + Codex-validiert: `~/Desktop/SecureCall-FINAL-UPLOAD.aab`
+- [ ] Play Console: AAB Upload (v1.0.31, vC53)
+- [ ] Railway: Redeploy mit SEED_ACTIVATION_CODES
+- [ ] GitHub Release erstellen (v1.0.31)
+- [ ] Geraete-Langzeittest: 20-30 Min gesperrt, dann eingehender Call
 
 ## Priority 2
 

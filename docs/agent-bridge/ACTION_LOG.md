@@ -1,5 +1,29 @@
 # Stealth Action Log
 
+## 2026-05-08/09 - CC: Session-Abschluss — v1.0.31 (vC53) uploadbereit
+
+- Agent: Claude Code
+- Session-Zusammenfassung:
+  - 4 Commits auf main gepusht:
+    1. `3f85d0b` — fix: incoming call ring, hangup stability, FCM ringtone, activation codes
+    2. `8d08742` — release: bump v1.0.30 (vC52)
+    3. `efe0dbd` — fix: battery optimization permission + dialog + WakeLock refresh
+    4. `69fdfd2` — release: bump v1.0.31 (vC53) ← HEAD
+  - AAB: `~/Desktop/SecureCall-FINAL-UPLOAD.aab` (v1.0.31, vC53→53002)
+  - Play Console: Upload ausstehend (Gio manuell)
+  - Railway: NICHT redeployed (Backend-Aenderung: SEED_ACTIVATION_CODES env var)
+  - GitHub Release: NICHT erstellt
+- Codex-Kooperation:
+  - Q2 (Battery Optimization): CC analysiert → Codex bestaetigt → CC fixt → Codex findet 2 Nachbesserungen → Codex fixt selbst → Codex revalidiert AAB
+  - FCM-Ringtone-Luecke: Codex identifiziert → CC fixt
+  - Instrumentation-Test: Codex repariert (`MainActivityInstrumentedTest.java`), S10 18/18 PASS
+- Offene Punkte:
+  - Play Console AAB Upload (v1.0.31)
+  - Railway Redeploy (SEED_ACTIVATION_CODES)
+  - GitHub Release erstellen
+  - Geraete-Langzeittest: 20-30 Min gesperrt → eingehender Call
+  - Settings-Warnung bei aktiver Battery Optimization (UX-Verbesserung, kein Blocker)
+
 ## 2026-05-08 - Codex: CC-Findings 1+2 final korrigiert und AAB revalidiert
 
 - Agent: Codex
