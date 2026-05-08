@@ -5,10 +5,15 @@ import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
-import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static org.junit.Assert.assertTrue;
 
-import androidx.test.ext.junit.rules.ActivityScenarioRule;
+import android.Manifest;
+import android.content.Context;
+
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.rule.GrantPermissionRule;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -18,34 +23,58 @@ import org.junit.runner.RunWith;
 public class MainActivityInstrumentedTest {
 
     @Rule
-    public ActivityScenarioRule<MainActivity> activityRule =
-            new ActivityScenarioRule<>(MainActivity.class);
+    public GrantPermissionRule permissionRule = GrantPermissionRule.grant(
+            Manifest.permission.READ_PHONE_NUMBERS,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.RECORD_AUDIO
+    );
 
-    @Test
-    public void callButton_isDisplayed() {
-        onView(withId(R.id.btnCall)).check(matches(isDisplayed()));
+    private ActivityScenario<MainActivity> launchMainActivity() {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        boolean prefsReady = context.getSharedPreferences("securecall_prefs", Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean("onboarding_complete", true)
+                .putBoolean("samsung_battery_shown", true)
+                .putLong("battery_opt_last_asked", Long.MAX_VALUE)
+                .putString("confirmed_phone_number", "+490000000000")
+                .commit();
+        assertTrue(prefsReady);
+        return ActivityScenario.launch(MainActivity.class);
     }
 
     @Test
-    public void settingsButton_isDisplayed() {
-        onView(withId(R.id.btnSettings)).check(matches(isDisplayed()));
+    public void bottomNavigation_isDisplayed() {
+        try (ActivityScenario<MainActivity> ignored = launchMainActivity()) {
+            onView(withId(R.id.bottomNav)).check(matches(isDisplayed()));
+        }
     }
 
     @Test
-    public void callButton_initialText() {
-        onView(withId(R.id.btnCall)).check(matches(withText("Start Call")));
+    public void toolbar_isDisplayed() {
+        try (ActivityScenario<MainActivity> ignored = launchMainActivity()) {
+            onView(withId(R.id.topAppBar)).check(matches(isDisplayed()));
+        }
     }
 
     @Test
-    public void callButton_click_changesText() {
-        onView(withId(R.id.btnCall)).perform(click());
-        // After click the button text should change to indicate active call
-        onView(withId(R.id.btnCall)).check(matches(isDisplayed()));
+    public void callsNavigationItem_isDisplayed() {
+        try (ActivityScenario<MainActivity> ignored = launchMainActivity()) {
+            onView(withId(R.id.nav_calls)).check(matches(isDisplayed()));
+        }
     }
 
     @Test
-    public void settingsButton_click_doesNotCrash() {
-        onView(withId(R.id.btnSettings)).perform(click());
-        // No crash = pass
+    public void settingsNavigationItem_isDisplayed() {
+        try (ActivityScenario<MainActivity> ignored = launchMainActivity()) {
+            onView(withId(R.id.nav_settings)).check(matches(isDisplayed()));
+        }
+    }
+
+    @Test
+    public void settingsNavigationItem_click_doesNotCrash() {
+        try (ActivityScenario<MainActivity> ignored = launchMainActivity()) {
+            onView(withId(R.id.nav_settings)).perform(click());
+            onView(withId(R.id.bottomNav)).check(matches(isDisplayed()));
+        }
     }
 }

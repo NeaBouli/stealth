@@ -76,6 +76,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // WebRTC P2P DataChannel transport
     private var webRtcManager: WebRtcManager? = null
 
+    // Incoming call ringtone+vibration (played from service so it works even if activity doesn't launch)
+    private var incomingRingtone: android.media.MediaPlayer? = null
+    private var incomingVibrator: android.os.Vibrator? = null
+
     // Phone lookup callback
     private var _phoneLookupCallback: ((String?) -> Unit)? = null
     // Batch phone lookup callback: returns map of hash/phone → online status (true=online, false=offline but registered)
@@ -107,7 +111,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     fun killAllAudio() {
         Log.d("WS_SERVICE", "killAllAudio() — stopping all audio resources")
         try { stopAudioPlayback() } catch (e: Exception) { Log.e("WS_SERVICE", "Error in stopAudioPlayback", e) }
-        // Dismiss IncomingCallActivity ringtone+vibration if still active
+        // Stop service-managed incoming ringtone+vibration
+        try { stopIncomingRingtone() } catch (e: Exception) { Log.e("WS_SERVICE", "Error stopping incoming ringtone", e) }
+        // Dismiss IncomingCallActivity ringtone+vibration if still active (legacy safety)
         try {
             com.securecall.app.IncomingCallActivity.stopActiveAudio()
         } catch (e: Exception) { Log.e("WS_SERVICE", "Error stopping IncomingCallActivity audio", e) }
@@ -115,6 +121,66 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         try {
             com.securecall.app.CallActivity.stopActiveAudio()
         } catch (e: Exception) { Log.e("WS_SERVICE", "Error stopping CallActivity audio", e) }
+    }
+
+    /** Start ringtone+vibration from the service for incoming calls.
+     *  Ensures ringing even when IncomingCallActivity can't launch (Android 10+ background restriction). */
+    fun startIncomingRingtone() {
+        stopIncomingRingtone() // safety: stop any previous
+        try {
+            val uri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE)
+            incomingRingtone = android.media.MediaPlayer().apply {
+                setAudioAttributes(
+                    android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                setDataSource(this@WebSocketService, uri)
+                isLooping = true
+                prepare()
+                start()
+            }
+            Log.d("WS_SERVICE", "Incoming ringtone started (service)")
+        } catch (e: Exception) {
+            Log.e("WS_SERVICE", "Failed to start incoming ringtone", e)
+        }
+        try {
+            incomingVibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                val vm = getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager
+                vm.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+            }
+            val pattern = longArrayOf(0, 1000, 1000)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                incomingVibrator?.vibrate(android.os.VibrationEffect.createWaveform(pattern, 0))
+            } else {
+                @Suppress("DEPRECATION")
+                incomingVibrator?.vibrate(pattern, 0)
+            }
+            Log.d("WS_SERVICE", "Incoming vibration started (service)")
+        } catch (e: Exception) {
+            Log.e("WS_SERVICE", "Failed to start incoming vibration", e)
+        }
+    }
+
+    /** Stop incoming ringtone+vibration (called when call is answered, declined, or cancelled). */
+    fun stopIncomingRingtone() {
+        val player = incomingRingtone
+        incomingRingtone = null
+        if (player != null) {
+            try { player.stop() } catch (_: Exception) {}
+            try { player.release() } catch (_: Exception) {}
+            Log.d("WS_SERVICE", "Incoming ringtone stopped (service)")
+        }
+        val vib = incomingVibrator
+        incomingVibrator = null
+        if (vib != null) {
+            try { vib.cancel() } catch (_: Exception) {}
+            Log.d("WS_SERVICE", "Incoming vibration stopped (service)")
+        }
     }
 
     fun getLocalClientId(): String? {
@@ -486,6 +552,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
 
+        // Start ringtone+vibration from service (works even if activity doesn't launch on Android 10+)
+        startIncomingRingtone()
+
         // Always launch activity directly (works when app is in foreground or background)
         try {
             startActivity(intent)
@@ -507,6 +576,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setFullScreenIntent(fullScreenPending, true)
+            .setContentIntent(fullScreenPending)
+            .setSilent(true) // Service handles ringtone — prevent double sound
             .setAutoCancel(true)
             .setOngoing(true)
             .build()

@@ -184,6 +184,24 @@ function loadActivationCodes() {
     activationCodes = [];
   }
 
+  // Seed from environment variable (survives Railway redeploys where filesystem is ephemeral)
+  // Format: JSON array of {code, tier, maxUses} objects
+  if (process.env.SEED_ACTIVATION_CODES) {
+    try {
+      const seedCodes = JSON.parse(process.env.SEED_ACTIVATION_CODES);
+      if (Array.isArray(seedCodes) && seedCodes.length > 0) {
+        const existing = new Set(activationCodes.map(c => c.code));
+        const toAdd = seedCodes
+          .filter(c => c.code && c.tier && !existing.has(c.code))
+          .map(c => ({ code: c.code, tier: c.tier, maxUses: c.maxUses || 5, currentUses: 0, usedBy: [] }));
+        activationCodes.push(...toAdd);
+        console.log(`[ACTIVATION] Seeded ${toAdd.length} codes from SEED_ACTIVATION_CODES env var`);
+      }
+    } catch (e) {
+      console.error("[ACTIVATION] Failed to parse SEED_ACTIVATION_CODES:", e.message);
+    }
+  }
+
   // Also load codes generated from Stripe purchases (sold_codes.json)
   try {
     const sold = require("./payments/sold_codes").loadAsActivationCodes();

@@ -2,7 +2,6 @@
   "codes": [
     {"code": "TEST-PRO1-CODE", "tier": "pro", "maxUses": 10, "currentUses": 0},
     {"code": "TEST-PREM-CODE", "tier": "premium", "maxUses": 10, "currentUses": 0},
-    {"code": "BETA-PRO0-2026", "tier": "pro", "maxUses": 50, "currentUses": 0},
-    {"code": "BETA-PREM-2026", "tier": "premium", "maxUses": 25, "currentUses": 0}
+    {"code": "PREM-ES4X-LDCT-LZ8U", "tier": "premium", "maxUses": 5, "currentUses": 0, "usedBy": []}
   ]
 }

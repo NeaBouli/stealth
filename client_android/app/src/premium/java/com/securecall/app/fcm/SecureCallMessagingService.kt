@@ -66,7 +66,10 @@ class SecureCallMessagingService : FirebaseMessagingService() {
         //    duplicate IncomingCallActivity when WS reconnects and gets the same CALL_INVITE
         com.securecall.app.net.WebSocketService.instance?.setFcmPendingSession(sessionId)
 
-        // C) Start IncomingCallActivity DIRECTLY — no WS needed for ringing
+        // C) Start ringtone+vibration from service (works even if activity doesn't launch on Android 10+)
+        com.securecall.app.net.WebSocketService.instance?.startIncomingRingtone()
+
+        // D) Start IncomingCallActivity DIRECTLY — no WS needed for ringing
         val intent = Intent(this, com.securecall.app.IncomingCallActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
@@ -153,6 +156,7 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             .setContentText("Call from $callerName")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setSilent(true) // Service handles ringtone — prevent double sound
             .setAutoCancel(true)
             .setOngoing(true)
             .setContentIntent(pendingIntent)

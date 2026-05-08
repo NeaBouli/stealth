@@ -1,5 +1,47 @@
 # Stealth Action Log
 
+## 2026-05-08 - CC: 3 Bug-Fixes + Call-Test S7 → Tab S4
+
+- Agent: Claude Code
+- Ausloeser: Nutzerauftrag — 3 Bugs fixen + Call-Test
+- Bug-Fixes (alle im Working Tree, nicht committet):
+  1. **BUG 1 — Klingeln bei entsperrtem Screen**:
+     - Ringtone/Vibration von `IncomingCallActivity` nach `WebSocketService.startIncomingRingtone()` verschoben.
+     - Service startet Klingeln BEVOR Activity gestartet wird → funktioniert auch wenn Activity auf Android 10+ nicht launchen kann.
+     - `IncomingCallActivity.stopRingtoneAndVibration()` delegiert jetzt an `WebSocketService.stopIncomingRingtone()`.
+     - Notification: `setSilent(true)` verhindert Doppel-Sound, `setContentIntent()` hinzugefuegt.
+  2. **BUG 2 — App bricht weg nach Remote-Hangup**:
+     - `finish()` durch `returnToMain()` ersetzt in `CallActivity` (7 Stellen).
+     - `returnToMain()` startet `MainActivity` mit `FLAG_ACTIVITY_CLEAR_TOP | FLAG_ACTIVITY_SINGLE_TOP` bevor `finish()` aufgerufen wird.
+     - Ohne diesen Fix: `finish()` auf einer Activity mit `FLAG_ACTIVITY_NEW_TASK` entfernt den gesamten Task aus Recents.
+  3. **BUG 3 — Aktivierungscodes erneuern**:
+     - Alte Beta-Codes `BETA-PRO0-2026` und `BETA-PREM-2026` entfernt aus `activation_codes.json`.
+     - Neuer Code `PREM-ES4X-LDCT-LZ8U` (premium, maxUses=5) hinzugefuegt.
+     - Server: `SEED_ACTIVATION_CODES` env var fuer Railway-Persistenz (Filesystem ist ephemeral).
+- Build + Deploy:
+  - `assembleFreeRelease` BUILD SUCCESSFUL.
+  - APK auf S7 (`ce10160adc00152604`) und Tab S4 (`ce12182c68644439037e`) installiert.
+  - `node --check src/server.js` erfolgreich.
+- Call-Test S7 → Tab S4:
+  - S7 Dialer → `+491752536807` → Call
+  - Tab S4: `IncomingCallActivity` gestartet, Ringtone ueber WebSocketService (BUG 1 ✅)
+  - Tab S4: Accept → `CallActivity` mit "Anruf aktiv", "Ende-zu-Ende verschluesselt"
+  - S7: End Call → beide Geraete zeigen "Save Contact" Dialog
+  - Skip → beide landen auf `MainActivity`, Prozesse stabil (BUG 2 ✅)
+- Geaenderte Produktcode-Dateien (nicht committet):
+  - `client_android/app/src/main/java/com/securecall/app/IncomingCallActivity.kt`
+  - `client_android/app/src/main/java/com/securecall/app/CallActivity.java`
+  - `client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt`
+  - `backend/signaling/data/activation_codes.json`
+  - `backend/signaling/src/server.js`
+- Codex-Empfehlung aufgegriffen:
+  - FCM-only Incoming-Call-Pfad (`SecureCallMessagingService.kt`) fehlte Service-Ringtone.
+  - Fix: `startIncomingRingtone()` im FCM-Pfad hinzugefuegt (alle 3 Flavors: free, pro, premium).
+  - FCM-Notification: `setSilent(true)` hinzugefuegt (verhindert Doppel-Sound).
+- Codex Q1 beantwortet: Sync-Status ist jetzt aktuell.
+- Keine Secrets gelesen oder ausgegeben.
+- Kein Deployment (Railway nicht redeployed).
+
 ## 2026-05-05 - CC (solo): Master Audit Abgleich + STX-MED-04 Fix
 
 - Agent: Claude Code (allein, Codex-Tokens aufgebraucht)
@@ -350,6 +392,98 @@
 - Keine Secret-Dateien gelesen.
 - Keine Secrets ausgegeben.
 - Kein Deployment.
+
+## 2026-05-08 - Codex: Status-Sync-Frage an Claude Code gestellt
+
+- Agent: Codex
+- Aktion:
+  - `QUESTIONS.md` fuer die Stealth-Bridge angelegt.
+  - Status-Sync-Frage an Claude Code eingetragen.
+- Ziel:
+  - Aktuellen HEAD, Remote-/Release-/Deployment-Stand, offene Findings, Re-Verify-Status und naechste Codex-Pruefpunkte klaeren.
+- Geaenderte Bridge-Dateien:
+  - `docs/agent-bridge/QUESTIONS.md`
+  - `docs/agent-bridge/ACTION_LOG.md`
+- Keine Produktcodeaenderung.
+- Keine Secret-Dateien gelesen.
+- Keine Secrets ausgegeben.
+- Kein Deployment.
+
+## 2026-05-08 - Codex: lokaler Testlauf fuer aktuelle Stealth-Diffs
+
+- Agent: Codex
+- Anlass:
+  - Gio bat darum, die Stealth-Bridge zu lesen und den Testlauf zu unterstuetzen.
+  - Aktuelle lokale Produktcode-Diffs betreffen Backend-Aktivierungscode-Seeding sowie Android-Incoming-Call-/Ringtone-/Return-to-Main-Flows.
+- Arbeitsbaum vor Test:
+  - Branch: `main...origin/main`
+  - HEAD: `77123b1`
+  - Lokale Produktcode-Diffs vorhanden in:
+    - `backend/signaling/data/activation_codes.json` (nicht ausgelesen)
+    - `backend/signaling/src/server.js`
+    - `client_android/app/src/main/java/com/securecall/app/CallActivity.java`
+    - `client_android/app/src/main/java/com/securecall/app/IncomingCallActivity.kt`
+    - `client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt`
+- Durchgefuehrte Checks:
+  - `node --check src/server.js` in `backend/signaling`: PASS
+  - `npm audit --audit-level=high` in `backend/signaling`: PASS exit 0; nur bekannte Low-Transitives (`@tootallnate/once` via Firebase/Google chain)
+  - `cargo test --locked` in `core_crypto`: PASS, 34 Tests total
+  - `./gradlew :app:testFreeDebugUnitTest` in `client_android`: PASS, BUILD SUCCESSFUL
+  - `./gradlew :app:assembleFreeDebug` in `client_android`: PASS, BUILD SUCCESSFUL nach Sandbox-Freigabe fuer Gradle File-Lock-Socket
+  - `git diff --check`: PASS
+- Build-Artefakte:
+  - Debug APKs erzeugt/aktualisiert unter `client_android/app/build/outputs/apk/free/debug/`.
+- Grenzen:
+  - `adb` war nicht im Shell-`PATH` (`command not found`); spaeter wurde ADB ueber `/Users/gio/Library/Android/sdk/platform-tools/adb` genutzt, siehe Geraete-Gegencheck unten.
+  - `backend/signaling/data/activation_codes.json` wurde wegen potentiell sensibler Aktivierungscode-Inhalte nicht gelesen.
+  - `cargo test` hat die getrackte Build-Metadatei `core_crypto/target/.rustc_info.json` lokal veraendert; Produktcode wurde dadurch nicht geaendert.
+  - Keine `.env`, Secret-, Key-, Keystore-, Wallet- oder Dump-Dateien gelesen.
+  - Kein Commit, Push oder Deployment.
+- Manuelle Testempfehlung fuer Claude Code/Gio:
+  - Eingehender Anruf bei gesperrtem Bildschirm: Service-Ringtone/Vibration startet auch wenn `IncomingCallActivity` nicht sofort sichtbar wird.
+  - Accept, Decline, Caller-Cancel und 60s Timeout: Ringtone/Vibration stoppt immer.
+  - Nach Call-Ende bleibt App in Recents/MainActivity sichtbar.
+  - Prüfen, ob es einen aktiven FCM-only Incoming-Call-Pfad ausserhalb der lokalen Source gibt; falls ja, muss dort ebenfalls Service-Ringtone gestartet werden.
+
+## 2026-05-08 - Codex: Android-Geraete-Gegencheck gestartet
+
+- Agent: Codex
+- Anlass:
+  - Gio stellte klar, dass die angeschlossenen Android-Geraete fuer Codex erreichbar sind.
+  - Ziel: Tests gegenchecken, mindestens die gegenpruef-wuerdigen Android-Pfade.
+- Verbundene Geraete per ADB:
+  - `RF8N313QMFL` — Samsung SM-G973F / Android 12
+  - `ce10160adc00152604` — Samsung SM-G930F / Android 8.0.0
+  - `ce12182c68644439037e` — Samsung SM-T835 / Android 10
+- Test-Fix durch Codex:
+  - `client_android/app/src/androidTest/java/com/securecall/app/MainActivityInstrumentedTest.java` war veraltet und referenzierte entfernte IDs `btnCall`/`btnSettings`.
+  - Test auf aktuelle `MainActivity`-UI umgestellt: `bottomNav`, `topAppBar`, `nav_calls`, `nav_settings`.
+  - Test-Launch setzt Test-Preferences fuer Onboarding, Samsung-Battery-Hinweis und bestaetigte Telefonnummer, damit System-/Setup-Dialoge nicht die UI-Assertions verdecken.
+  - `GrantPermissionRule` fuer `READ_PHONE_NUMBERS`, `READ_PHONE_STATE` und `RECORD_AUDIO` ergaenzt; Logcat zeigte vorher `GrantPermissionsActivity` ueber `MainActivity`, was Espresso kuenstlich blockierte.
+- Instrumentation-Ergebnisse:
+  - `./gradlew :app:connectedFreeDebugAndroidTest` kompiliert nach Test-Fix.
+  - S10-Lauf war einmal komplett gruen: 18/18 Tests PASS.
+  - Isolierter S10-Re-Lauf nach Permission-Rule-Fix:
+    - Command: `ANDROID_SERIAL=RF8N313QMFL ./gradlew :app:connectedFreeDebugAndroidTest`
+    - Ergebnis: BUILD SUCCESSFUL, 18/18 Tests PASS, 0 failures, 0 errors.
+    - XML: `client_android/app/build/outputs/androidTest-results/connected/debug/flavors/free/TEST-SM-G973F - 12-_app-free.xml`
+    - Logcat: kein `FATAL EXCEPTION`/`AndroidRuntime` fuer SecureCall im erfolgreichen Lauf beobachtet.
+  - Weitere parallele Laeufe auf S10/S7/Tab S4 wurden durch Activity-/Permission-/Setup-Dialoge instabil:
+    - Fehlerbild: `NoActivityResumedException` in `MainActivityInstrumentedTest`.
+    - Kein Produkt-Crash im Call/Ringtone-Code beobachtet; die Fehler liegen im Test-Harness/Device-State.
+  - Paketlage ist uneinheitlich:
+    - S10 meldet `com.securecall.app.premium`
+    - S7 meldet `com.securecall.app.pro`
+    - Tab S4 meldete aktuell kein `securecall`-Paket via `pm list packages`
+  - Mehrgeraete-Paralleltest wirkt auf den Displays unruhig, weil Instrumentation Activities startet/stoppt, Permissions triggert und der Foreground-WebSocket-Service reconnectet.
+- Sicherheits-/Datenhinweis:
+  - Keine App-Daten geloescht.
+  - Kein Uninstall durchgefuehrt.
+  - App- und Testprozesse auf allen drei Geraeten per `am force-stop` gestoppt.
+- Empfehlung:
+  - Naechste Instrumentation nur einzeln pro Zielgeraet ausfuehren.
+  - Vorher einheitliche Flavor/Paket-ID festlegen (`free`, `pro` oder `premium`) und Permissions/Setup-State vorbereiten.
+  - Die aktuellen Incoming-Call-Ringtone-Aenderungen bleiben am besten per gezieltem manuellen Call-Test S7 ↔ Tab/S10 zu verifizieren; die vorhandene Instrumentation deckt diesen Service-Ringtone-Pfad nicht direkt ab.
 
 ## 2026-05-04 - Codex: Weitere lokale CC-Fixes eingeordnet
 

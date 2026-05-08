@@ -899,8 +899,17 @@ public class CallActivity extends AppCompatActivity {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             showVerifyDialog();
         } else {
-            finish();
+            returnToMain();
         }
+    }
+
+    /** Navigate back to MainActivity so the app stays in Recents after call ends.
+     *  Without this, finishing CallActivity in a FLAG_ACTIVITY_NEW_TASK stack removes the task entirely. */
+    private void returnToMain() {
+        android.content.Intent intent = new android.content.Intent(this, MainActivity.class);
+        intent.setFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        finish();
     }
 
     /** BUG-031: Check if we should offer to verify an unverified contact after call. */
@@ -919,7 +928,7 @@ public class CallActivity extends AppCompatActivity {
     }
 
     private void showVerifyDialog() {
-        if (isFinishing() || isDestroyed()) { releaseProximitySensor(); finish(); return; }
+        if (isFinishing() || isDestroyed()) { releaseProximitySensor(); returnToMain(); return; }
         new AlertDialog.Builder(this)
             .setTitle("Verify " + callContactName + "?")
             .setMessage("You just had a call with " + callContactName + ". Verify this contact?")
@@ -938,11 +947,11 @@ public class CallActivity extends AppCompatActivity {
                     }
                 }
                 releaseProximitySensor();
-                finish();
+                returnToMain();
             })
             .setNegativeButton("Skip", (d, w) -> {
                 releaseProximitySensor();
-                finish();
+                returnToMain();
             })
             .setCancelable(false)
             .show();
@@ -976,7 +985,7 @@ public class CallActivity extends AppCompatActivity {
     private void showSaveContactDialog() {
         if (isFinishing() || isDestroyed()) {
             releaseProximitySensor();
-            finish();
+            returnToMain();
             return;
         }
         showingSaveDialog = true;
@@ -1001,12 +1010,12 @@ public class CallActivity extends AppCompatActivity {
                 Toast.makeText(this, "Contact saved", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "Saved contact: " + callContactName + " -> " + callContactId);
                 releaseProximitySensor();
-                finish();
+                returnToMain();
             })
             .setNegativeButton("Skip", (d, w) -> {
                 showingSaveDialog = false;
                 releaseProximitySensor();
-                finish();
+                returnToMain();
             })
             .setCancelable(false)
             .show();
