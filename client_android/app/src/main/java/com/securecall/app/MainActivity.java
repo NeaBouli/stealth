@@ -438,6 +438,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * BUG-027: Request battery optimization exemption.
+     * Shows an explaining dialog BEFORE the system dialog so the user understands why.
      * Re-asks every 7 days if user hasn't granted it yet.
      * Critical for Samsung A-series which aggressively kill background services.
      */
@@ -452,17 +453,48 @@ public class MainActivity extends AppCompatActivity {
                 // Re-ask every 7 days if not granted
                 if (now - lastAsked > 7 * 24 * 60 * 60 * 1000L) {
                     prefs.edit().putLong("battery_opt_last_asked", now).apply();
-                    try {
-                        Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                        intent.setData(android.net.Uri.parse("package:" + getPackageName()));
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        android.util.Log.w("MainActivity", "Battery optimization request failed", e);
-                    }
+                    // Show explaining dialog BEFORE system dialog.
+                    // Avoid stacking Samsung settings on top of the system exemption flow.
+                    new android.app.AlertDialog.Builder(this)
+                        .setTitle("Background Connection Required")
+                        .setMessage("SecureCall needs to stay connected in the background "
+                            + "to receive incoming calls reliably.\n\n"
+                            + "Please allow unrestricted battery usage on the next screen. "
+                            + "Without this, you may miss calls when your phone is locked or idle.")
+                        .setPositiveButton("Allow", (d, w) -> {
+                            launchBatteryExemptionIntent();
+                        })
+                        .setNegativeButton("Later", (d, w) -> {
+                            // Still show Samsung hint even if user skips system dialog
+                            openSamsungBatterySettings();
+                        })
+                        .setCancelable(true)
+                        .show();
+                    return; // Skip Samsung dialog below for this start cycle.
                 }
             }
-            // Samsung-specific: try to open Samsung's own battery settings
+            // Samsung-specific: only reached if battery opt is already granted or re-ask cooldown active
             openSamsungBatterySettings();
+        }
+    }
+
+    /** Launch the system battery optimization exemption intent. */
+    @android.annotation.SuppressLint("BatteryLife")
+    private void launchBatteryExemptionIntent() {
+        try {
+            Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(android.net.Uri.parse("package:" + getPackageName()));
+            startActivity(intent);
+        } catch (Exception e) {
+            android.util.Log.w("MainActivity", "Battery optimization request failed — opening app settings", e);
+            // Fallback: open app details settings
+            try {
+                Intent fallback = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                fallback.setData(android.net.Uri.parse("package:" + getPackageName()));
+                startActivity(fallback);
+            } catch (Exception e2) {
+                android.util.Log.w("MainActivity", "Fallback settings also failed", e2);
+            }
         }
     }
 

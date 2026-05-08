@@ -249,6 +249,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Ensure foreground notification is up — Android 8 ANR if not called within 5s of startForegroundService()
         startForegroundWithNotification()
+        // Refresh WakeLock on every onStartCommand (triggered by AlarmManager every 15 min).
+        // This ensures CPU stays alive even after the 30-min WakeLock expires.
+        acquireCpuWakeLock()
         return START_STICKY
     }
 
@@ -283,14 +286,17 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         super.onDestroy()
     }
 
-    /** BUG-027: Partial wake lock keeps CPU alive for WebSocket heartbeats on aggressive OEMs. */
+    /** BUG-027: Partial wake lock keeps CPU alive for WebSocket heartbeats on aggressive OEMs.
+     *  Called in onCreate() and refreshed in onStartCommand() (AlarmManager triggers every 15 min). */
     private fun acquireCpuWakeLock() {
-        if (cpuWakeLock != null) return
         try {
-            val pm = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-            cpuWakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "securecall:ws_heartbeat")
-            cpuWakeLock?.acquire(10 * 60 * 1000L) // 10 min max — prevents indefinite hold if service killed
-            Log.d("WS_SERVICE", "CPU wake lock acquired for heartbeats (10min timeout)")
+            if (cpuWakeLock == null) {
+                val pm = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+                cpuWakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "securecall:ws_heartbeat")
+                cpuWakeLock?.setReferenceCounted(false)
+            }
+            cpuWakeLock?.acquire(30 * 60 * 1000L) // 30 min max — refreshed by AlarmManager every 15 min
+            Log.d("WS_SERVICE", "CPU wake lock acquired/refreshed for heartbeats (30min timeout)")
         } catch (e: Exception) {
             Log.w("WS_SERVICE", "Failed to acquire wake lock: ${e.message}")
         }
