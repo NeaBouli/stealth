@@ -25,6 +25,35 @@
   - Nach Rechnerneustart zuerst ADB-/Git-Status pruefen.
   - Dann 20-30-Minuten-Lockscreen-Langzeittest mit eingehendem Call starten.
 
+## 2026-05-09 — Rechnerwechsel-Handover / v1.0.32 Play-Tester-Disconnect
+
+- HEAD vor Rechnerwechsel:
+  - `bb9c719` auf `main` / `origin/main`
+- Aktuelle Play-Console-AAB:
+  - `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - package: `com.securecall.app.free`
+  - versionCode: `54002`
+  - versionName: `1.0.32-free`
+  - Manifest enthaelt `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+  - Gio/CC meldeten: v1.0.32/vC54 in Play Console hochgeladen.
+- Produktionsproblem:
+  - Externe Play-Tester disconnected nach Play-Update.
+  - Lokal per Gradle/ADB installierte Geraete konnten connecten.
+  - Hauptursache laut Codex: Backend-Forkschutz gegen `ALLOWED_SIGNATURES` blockt Google-Play-signierte APKs bei `FORK_PROTECTION_MODE=enforce`.
+- Umgesetzte Commits:
+  - `9a7e1f9`: Fork Protection Default `enforce` -> `warn`.
+  - `ed1d176`: Dockerfile kopiert `data/` ins Railway-Image.
+  - `4b3f783`: Release-Bump `v1.0.32` / `vC54`.
+  - `bb9c719`: Bridge/TODO Session State.
+- Noch noetig (OFFEN bei Rechnerwechsel):
+  - Railway CLI auf neuem Rechner einloggen/verknuepfen.
+  - Railway env pruefen: `FORK_PROTECTION_MODE` entfernen oder auf `warn` setzen.
+  - Railway redeploy/restart, damit Fork-Protection-Fix und Dockerfile-Fix live sind.
+  - Logs pruefen und Play-Tester Retest ausloesen.
+- Wichtig:
+  - `ALLOWED_SIGNATURES` mit lokalem Upload-Key kann bleiben, solange `FORK_PROTECTION_MODE=warn` aktiv ist.
+  - Fuer spaeteren sicheren Enforce-Modus muss Google Play App Signing SHA-256 in `ALLOWED_SIGNATURES` aufgenommen werden.
+
 ## 2026-05-09 — UEBERHOLT: Resume-Stand nach Battery-Optimization-Recheck
 
 Hinweis: Dieser Abschnitt ist durch den neueren Abschnitt

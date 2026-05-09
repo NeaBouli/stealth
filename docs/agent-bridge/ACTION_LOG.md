@@ -1,5 +1,69 @@
 # Stealth Action Log
 
+## 2026-05-09 - Codex: Rechnerwechsel-Handover fuer neuen Codex/CC
+
+- Agent: Codex
+- Anlass:
+  - Gio wechselt den Rechner. Neuer Codex und neue Claude-Code-Session muessen ohne Chatverlauf up to date sein.
+- Aktueller Repo-Stand vor Rechnerwechsel:
+  - HEAD: `bb9c719` / `main` / `origin/main`
+  - Letzte Commits:
+    - `9a7e1f9` — Fork Protection Default `enforce` -> `warn`
+    - `ed1d176` — Dockerfile kopiert `data/` ins Railway-Image
+    - `4b3f783` — Version-Bump `v1.0.32` / `vC54`
+    - `bb9c719` — Bridge/TODO Session State
+- Aktuelle Upload-/Play-Console-AAB:
+  - Datei: `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - package: `com.securecall.app.free`
+  - versionCode: `54002`
+  - versionName: `1.0.32-free`
+  - Manifest enthaelt `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+  - Gio/CC meldeten: Play Console Upload fuer v1.0.32/vC54 ist erfolgt.
+- Kritisches Produktionsproblem:
+  - Play-Tester waren nach Update disconnected.
+  - Codex-Hauptbefund: Backend-Forkschutz blockt Play-Store-signierte Apps, weil Google Play App Signing eine andere App-Signatur ausliefert als lokale ADB/Gradle-Installationen.
+  - Backend-Codepfad:
+    - `backend/signaling/src/server.js`
+    - `REGISTER` prueft `msg.appSignature` gegen `ALLOWED_SIGNATURES`.
+    - Bei `FORK_PROTECTION_MODE=enforce`: `ERROR unauthorized_client`, danach Close `4003 Unauthorized client`.
+  - Client-Codepfad:
+    - `client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt`
+    - sendet beim `REGISTER` `appSignature`.
+    - behandelt `4000..4099`/`unauthorized_client` als harte Ablehnung und stoppt Reconnect-Loops.
+- Umgesetzter Code-Fix:
+  - `server.js`: Default fuer `FORK_PROTECTION_MODE` wurde von `enforce` auf `warn` geaendert.
+  - Wichtig: Wenn Railway env var `FORK_PROTECTION_MODE=enforce` gesetzt ist, ueberschreibt sie den Code-Default weiterhin.
+- Railway-Status:
+  - Railway CLI auf diesem Rechner war nicht nutzbar:
+    - `railway whoami` -> `Unauthorized. Please run railway login again.`
+    - `railway logs`/`railway status` konnten deshalb nicht ausgefuehrt werden.
+  - CC-Eintrag sagt: Railway Redeploy ist NOETIG, damit Dockerfile + Fork-Protection-Fix live gehen.
+  - CC-Eintrag sagt ebenfalls: Railway env var `FORK_PROTECTION_MODE` muss entfernt oder auf `warn` gesetzt werden.
+- Noetige naechste Schritte auf neuem Rechner:
+  1. Repo/Branch pruefen: `git status --short --branch` und `git log --oneline -8`.
+  2. Railway CLI einloggen/verknuepfen.
+  3. Railway env pruefen:
+     - `FORK_PROTECTION_MODE` darf nicht `enforce` sein; entfernen oder `warn` setzen.
+     - `ALLOWED_SIGNATURES` kann bleiben, blockt aber bei `warn` nicht.
+  4. Railway redeploy/restart ausfuehren.
+  5. Railway Logs pruefen:
+     - vorher/bei Fehler: `[REGISTER] REJECTED — unauthorized signature: ...`
+     - nach Fix: WARN statt Reject oder erfolgreiche `REGISTERED`.
+  6. Play-Tester App oeffnen lassen und Connect testen.
+  7. Erst danach weiteren AAB/Play-Upload oder Code-Aenderungen vornehmen.
+- Geraetestand auf altem Rechner:
+  - S10/S7/Tab S4 wurden zuletzt lokal auf `com.securecall.app.free vC53002 / v1.0.31-free` gebracht und alte Pro/Premium-Apps entfernt.
+  - Danach wurde v1.0.32/vC54 gebaut/hochgeladen, aber nicht von Codex auf diese drei Geraete re-verifiziert.
+  - Neuer Codex/CC soll nach Rechnerwechsel nicht annehmen, dass lokale Testgeraete schon v1.0.32 haben; bitte neu per ADB pruefen.
+- Testergeraet:
+  - Ein weiteres Samsung-Testgeraet liess sich auf altem Rechner nicht erkennen.
+  - Es tauchte weder in `adb devices -l` noch im macOS USB-Bus auf.
+  - Ursache wahrscheinlich Kabel/Port/USB-Modus/ADB-Handshake, nicht SecureCall.
+- Bridge-Regel:
+  - Bridge bei jedem relevanten Schritt aktualisieren.
+  - Besonders nach Railway env/redeploy, Tester-Retest und Play-Console-Ergebnis.
+- Keine Secrets gelesen oder ausgegeben.
+
 ## 2026-05-09 - CC: Fork Protection + Dockerfile Fix + v1.0.32 Play Console Upload
 
 - Agent: Claude Code
