@@ -137,16 +137,17 @@
 - [x] BUG-FIX: Battery Optimization Permission + Dialog + WakeLock-Refresh
 - [x] BUG-FIX: Fork Protection enforce → warn (Play Store re-signs APKs)
 - [x] BUG-FIX: Dockerfile COPY data/ (activation codes ENOENT auf Railway)
+- [x] BUG-FIX: EACCES Railway Volume — DATA_DIR auto-fallback auf /tmp/stealthx-data (Commit c7e17d3)
+- [x] BUG-FIX: BUG-029 VPN+VPN kein Audio — IceTransportsType.RELAY wenn GhostVpnService.isActive (Commit 30c87fd, Codex+CC)
 - [x] versionCode 51→54, versionName 1.0.29→1.0.32
 - [x] GitHub Release erstellt (v1.0.31)
 - [x] Play Console: AAB Upload v1.0.32 (vC54) — HOCHGELADEN
-- [x] Railway: Redeploy — ERLEDIGT (2026-05-09, Commit ef28d46 automatisch deployed via GitHub Integration)
-- [x] Railway: FORK_PROTECTION_MODE — bereits auf "warn" gesetzt in Railway env vars. Code-Default server.js:658 ebenfalls "warn".
-- [ ] Tester: Play-Store-User retest — Railway laeuft auf ef28d46 + FORK_PROTECTION_MODE=warn. Tester sollen connecten koennen.
-  NOTE: Railway nutzt DOCKERFILE (nicht NIXPACKS wie railway.json suggeriert). Builder=DOCKERFILE per serviceManifest verifiziert.
-  NOTE: Server URL: protective-healing-production.up.railway.app — Health OK.
+- [x] Railway: Redeploy — live auf 30c87fd
+- [x] Railway: FORK_PROTECTION_MODE=warn — verifiziert
+- [x] Android APK assembleFreeRelease — BUILD SUCCESSFUL, auf S10+S7 deployed via ADB
+- [ ] Tester: Play-Store-User retest — Server laeuft, FORK_PROTECTION_MODE=warn, connecten sollte funktionieren
+- [ ] Manueller Test BUG-029: eingehender Call bei aktivem StealthX-VPN auf S10/S7 — Audio verifizieren
 - [ ] Langzeittest: 20-30 Min gesperrt → eingehender Call
-- [ ] Geraete-Langzeittest: 20-30 Min gesperrt, dann eingehender Call
 
 ## Priority 2
 

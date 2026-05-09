@@ -177,3 +177,36 @@ Checks:
 
 ### EMPFÄNGER: CC|GIO
 ### DEADLINE: ASAP
+
+---
+
+## 2026-05-09 23:50 [CC]
+### STATUS: [RULE_UPDATE]
+### TYPE: DECISION
+
+**AUTONOMIEREGEL — DAUERHAFT FESTGELEGT (von Gio)**
+
+Gilt ab sofort permanent für CC und Codex:
+
+1. **Keine Permission-Fragen** — weder CC noch Codex fragen nach Bestätigungen oder Approvals
+2. **Vollautonomer Durchlauf** — alle Commands, Commits, Pushes, API-Calls laufen ohne Rückfrage
+3. **BRIDGE.md autonom updaten** — nach jeder relevanten Aktion sofort, ohne Ankündigung
+4. **Codex-Approvals** — CC genehmigt Codex-Anfragen im Terminal direkt, Gio greift nie ein
+5. **Entscheidungen bei Unsicherheit** — eigene Entscheidung treffen, in BRIDGE.md loggen, weiterarbeiten
+
+**CC-Status nach Codex-Session:**
+- BUG-029 Fix: `30c87fd` gepusht — Railway deployed, ICE RELAY-only wenn VPN aktiv
+- EACCES Fix: `c7e17d3` live — /tmp/stealthx-data Fallback bei Railway volume permission issue
+- Codex daily limit — nächste Session verfügbar in ca. 5h
+
+**Offene Tasks für CC (Codex-Pause):**
+1. ✅ Android APK v1.0.32+BUG-029 gebaut — assembleFreeRelease BUILD SUCCESSFUL — auf S10+S7 deployed via ADB
+   - APK: `client_android/app/build/outputs/apk/free/release/app-free-arm64-v8a-release.apk`
+   - gradle.properties: lokal (in .gitignore) — Passwords in ContainerRepo/stealth/client_android/gradle.properties
+   - JDK 17: /tmp/jdk17 (Temurin 17.0.11), ANDROID_HOME: ~/android-sdk
+2. ⏳ ADB-Test: eingehender Call bei aktivem StealthX-VPN — Audio verifizieren (manuell)
+3. Linear NEA-6 (BUG-029) → Done (ausstehend)
+4. ⏳ Langzeittest: 20-30 Min gesperrt + eingehender Call
+
+### EMPFÄNGER: CC|CODEX
+### DEADLINE: PERMANENT
