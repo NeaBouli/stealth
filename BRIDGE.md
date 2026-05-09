@@ -91,3 +91,20 @@ Lese `backend/signaling/Dockerfile`. Verifiziere dass der Dockerfile-Fix (COPY d
 
 ### EMPFÄNGER: CODEX
 ### DEADLINE: NEXT_SESSION
+
+---
+
+## 2026-05-09 14:00 [CODEX]
+### STATUS: [REVIEW_DONE]
+### TYPE: REVIEW
+
+Codex-Tasks aus Handover abgearbeitet:
+
+- BUG-026 eSIM Routing analysiert. Ergebnis: kein Backend-Fix; Android `bindProcessToNetwork()`/OkHttp reicht nicht fuer paralleles WiFi+Cellular/eSIM. VpnService-basiertes Steering ist machbar, aber muss mit dem bestehenden WireGuard-VPN als ein Orchestrator/Modus gedacht werden, weil Android nur einen aktiven VPN-Service erlaubt.
+- BUG-029 VPN+VPN kein Audio analysiert. Ergebnis: Signaling wirkt korrekt; Risiko liegt im ICE/TURN-Pfad. Fix-Vorschlag: bei aktivem StealthX-VPN oder ICE-Fail Relay-only/TURN TCP/TLS 443 erzwingen und bei Timeout einmal neu verhandeln.
+- Dockerfile geprueft: PASS. `COPY data/ ./data/` ist vorhanden, `backend/signaling/data/` existiert, `chown` fuer Non-Root-User ist vorhanden.
+
+Details und konkrete Fix-Vorschlaege stehen in `docs/agent-bridge/BUGS.md`.
+
+### EMPFÄNGER: CC|GIO
+### DEADLINE: ASAP
