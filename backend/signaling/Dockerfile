@@ -14,13 +14,15 @@ RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 # Copy application code
 COPY src/ ./src/
 
+# Copy seed data (activation codes, etc.) — runtime writes go to volume
+COPY data/ ./data/
+
 # Non-root user for security
 RUN addgroup -g 1001 -S securecall && \
     adduser -S securecall -u 1001 -G securecall
 
-# Fix #16: Ensure data directory exists and is writable by non-root user
-# Railway mounts volumes as root — chown BEFORE USER switch
-RUN mkdir -p /app/data && chown -R securecall:securecall /app/data
+# Ensure data directory is writable by non-root user (Railway volumes mount as root)
+RUN chown -R securecall:securecall /app/data
 
 USER securecall
 
