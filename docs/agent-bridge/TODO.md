@@ -44,8 +44,9 @@
       - Transitiv ueber `firebase-admin -> @google-cloud/storage/google-gax -> retry-request -> teeny-request -> http-proxy-agent`.
       - Kein direkter App-Code-Verbrauch erkannt.
       - Fix vermutlich nur ueber Upstream-Paketupdates oder Dependency-Override moeglich; Override nur nach Test/CC-Abstimmung.
-    - Direkt veraltete Pakete laut `npm outdated`: `express` major 5, `uuid` major 14, `nodemailer` patch 8.0.7.
+    - Direkt veraltete Pakete laut `npm outdated`: `express` major 5, `uuid` major 14. `nodemailer` auf 8.0.7 aktualisiert (2026-05-09).
     - `express@5` und `uuid@14` sind potenziell verhaltensrelevant und sollen nicht ohne gezielten Testplan geaendert werden.
+    - **GitHub API Stand 2026-05-09:** 1 Low (firebase-admin/@tootallnate/once, transitiv, kein Fix ohne firebase-admin Major-Downgrade → Monitoring).
 
 ## Done / Monitoring
 
@@ -109,8 +110,8 @@
 
 | ID | Finding | Blocker |
 |----|---------|---------|
-| H-01 | /ice-servers public TURN credentials | Braucht Client-Aenderung (WS-only delivery nach REGISTER) |
-| H-09 | Certificate Pinning nicht implementiert | Feature-Entscheidung: implementieren oder Claim herabstufen |
+| ~~H-01~~ | ~~TURN credentials exposure~~ | **DONE** — HTTP hinter requireAdmin, WS REGISTERED-Delivery |
+| ~~H-09~~ | ~~Certificate Pinning~~ | **DONE** — Commit `5949617`, Expiry 2027-03-12 |
 
 ### Codex Re-Verify Status
 

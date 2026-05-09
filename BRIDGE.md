@@ -300,3 +300,54 @@ BUG-031 fix implementiert und deployed (Commit `5239f71`):
 
 ### EMPFÄNGER: GIO
 ### DEADLINE: ASAP
+
+---
+
+## 2026-05-09 16:35 [CC]
+### STATUS: [SESSION ABGESICHERT — PAUSE]
+### TYPE: MEMO + HANDOVER
+
+**CC Session abgeschlossen. Alles abgesichert.**
+
+### Vollständige Commit-Liste dieser CC Session
+
+| Commit | Was |
+|--------|-----|
+| `c7e17d3` | EACCES Railway Volume — DATA_DIR auto-fallback /tmp/stealthx-data |
+| `30c87fd` | BUG-029 — WebRtcManager RELAY-only wenn VPN aktiv (Codex) |
+| `f3ec6f6` | Docs: TODO + BRIDGE |
+| `5239f71` | BUG-031 — matchesCallContact() helper (originalPhone fallback) |
+| `64dbc5e` | Docs: BUGS.md + TODO.md + BRIDGE |
+| `5949617` | SECURITY: H-09 Cert Pinning + Metadata Claims cleanup |
+| `c6965e8` | Chore: nodemailer 8.0.4→8.0.7 + BRIDGE |
+| `ce60b67` | Chore: Rust deps patch (zerocopy/libc/typenum) |
+| `5171ea6` | Release: v1.0.32→v1.0.33, vC54→vC55 |
+| `fe8bd63` | Docs: TODO + BRIDGE für v1.0.33 |
+
+### Was abgesichert ist
+
+- `BRIDGE.md` — vollständig aktuell
+- `docs/agent-bridge/TODO.md` — alle erledigten Items auf [x], Security Audit Tabelle aktualisiert
+- `docs/agent-bridge/PROJECT_STATE.md` — neuer Abschnitt mit aktuellem Stand ganz oben
+- `docs/agent-bridge/RESUME_NEXT_SESSION.md` — komplett neu, enthält alles für Neustart
+- `docs/agent-bridge/BUGS.md` — BUG-029 auf FIXED
+
+Linear: NEA-5 Done, NEA-6 Done, NEA-7 Backlog, NEA-8 Done, NEA-9 Done
+
+### Nächster Codex-Task (verfügbar in ~14h, ca. 06:00-07:00)
+
+**BUG-026 VpnService-Architektur-Analyse:**
+- Datei: `client_android/app/src/main/java/com/securecall/app/net/NetworkManager.kt`
+- Frage: Kann ein VpnOrchestrator WireGuard-Modus + eSIM-Steering-Modus in einem Service?
+- Vorarbeit: `docs/agent-bridge/BUGS.md` BUG-026-Abschnitt
+- Output: Architektur-Review in BRIDGE.md (KEIN Code, nur Analyse)
+
+### Offene Gio-Actions
+
+1. Play Console: `~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab` hochladen
+2. BUG-029 Retest: Call bei aktivem VPN → Audio prüfen
+3. Langzeittest: 20-30 Min gesperrt → Call
+4. Hetzner Migration: 5 Entscheidungsfragen in `docs/agent-bridge/MIGRATION_PLAN.md`
+
+### EMPFÄNGER: GIO + CODEX
+### DEADLINE: Gio sofort, Codex ~06:00 Uhr

@@ -1,5 +1,62 @@
 # Stealth Project State
 
+## 2026-05-09 (Abend) — AKTUELLER STAND — CC Autonomous Session
+
+### Git HEAD
+- Branch: `main`
+- HEAD: `fe8bd63` — "docs: update BRIDGE.md and TODO.md for v1.0.33 release"
+- Remote: `origin/main` in sync
+
+### Aktuelle Version
+- **versionCode:** 55
+- **versionName:** 1.0.33
+- **Flavor:** free
+- **AAB fuer Play Console:** `~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab` (36 MB)
+- **GitHub Release:** https://github.com/NeaBouli/stealth/releases/tag/v1.0.33
+
+### Geraetestand (Stand 16:12 Uhr)
+- S7 / ce10160adc00152604 (SM-G930F): v1.0.33-free, vC55001 ✓
+- Tab S4 / ce12182c68644439037e (SM-T835): v1.0.33-free, vC55001 ✓
+- (S9 laut Gio am Rechner — war zum Zeitpunkt der ADB-Checks nicht per ADB verbunden)
+
+### Backend (Railway)
+- **Service:** `protective-healing` im Projekt `disciplined-flexibility`
+- **URL:** `protective-healing-production.up.railway.app`
+- **HEAD live:** `c6965e8` (nodemailer 8.0.7 + BRIDGE update)
+- **FORK_PROTECTION_MODE:** `warn` (Railway env var)
+- **DATA_DIR:** auto-fallback /tmp/stealthx-data wenn /app/data nicht schreibbar
+- **npm audit:** 0 critical, 0 high, 0 moderate, 8 low (alle firebase-admin transitiv — kein Fix ohne Major-Downgrade)
+
+### Sicherheits-Status
+| ID | Finding | Status | Commit |
+|----|---------|--------|--------|
+| H-01 | /ice-servers Auth | DONE | HTTP hinter requireAdmin, WS REGISTERED-Delivery |
+| H-09 | Certificate Pinning | DONE | `5949617` — network_security_config.xml |
+| Privacy Claims | "Zero metadata" | DONE | `5949617` — "Minimal metadata" |
+
+**Cert-Pin-Details:**
+- Domain: `protective-healing-production.up.railway.app`
+- Primary: LE E7 intermediate SPKI `y7xVm0TVJNahMr2sZydE2jQH8SquXV9yLF9seROHHHU=` (gültig bis 2027-03-12)
+- Backup: ISRG Root X1 SPKI `C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=`
+- ⚠️ PIN ROTATION erforderlich vor 2027-03-12
+
+### Offene Tasks (nach Priorität)
+1. **Play Console:** AAB `~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab` hochladen (Gio)
+2. **BUG-029 Retest:** eingehender Call bei aktivem StealthX-VPN auf S7/Tab S4 — Audio prüfen (Gio)
+3. **Langzeittest:** 20-30 Min gesperrt → eingehender Call (Gio)
+4. **BUG-026:** eSIM-Routing via VpnService-Architektur (Codex-Task — verfügbar in ~14h)
+5. **Hybrid-Migration Hetzner:** MIGRATION_PLAN.md — erwartet Gio-Entscheidung zu den 5 Fragen am Ende des Plans
+6. **Backend-Modularisierung:** BACKEND_MODULARIZATION.md — Plan liegt vor, Post-Release, Priority 3
+7. **Play-Tester Retest:** FORK_PROTECTION_MODE=warn seit ef28d46 live
+
+### Codex
+- **Verfügbar ab:** ca. 06:00-07:00 Uhr morgen früh (14h vom jetzigen Zeitpunkt)
+- **Nächster Codex-Task (vorbereitet in BRIDGE.md):** BUG-026 VpnService-Architektur-Analyse
+
+### Rust core_crypto
+- `cargo test --locked`: 6/6 PASS
+- Deps aktuell: zerocopy 0.8.48, libc 0.2.186, typenum 1.20.0
+
 ## 2026-05-09 — Neustart-Resume nach Play-Console-Free-Geraeteangleichung
 
 - Resume-Dateien:
