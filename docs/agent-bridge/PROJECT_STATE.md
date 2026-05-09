@@ -1,5 +1,63 @@
 # Stealth Project State
 
+## 2026-05-09 — Neustart-Resume nach Play-Console-Free-Geraeteangleichung
+
+- Resume-Dateien:
+  - Global: `/Users/gio/.codex/memories/stealth_resume_2026-05-09.md`
+  - Projekt: `docs/agent-bridge/RESUME_NEXT_SESSION.md`
+- Aktuelle Upload-AAB:
+  - `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - package: `com.securecall.app.free`
+  - versionCode: `53002`
+  - versionName: `1.0.31-free`
+  - SHA-256: `6d0ee1b70efea5f7470544d0d5ba184b027025175c407597e3635ea0e3749433`
+  - Manifest enthaelt `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+  - `bundletool validate`: PASS
+- Geraetestand:
+  - S10, S7 und Tab S4 haben nur noch `com.securecall.app.free` installiert.
+  - Alle drei Geraete laufen auf `versionCode=53002`, `versionName=1.0.31-free`.
+  - Alte Test-Flavors entfernt:
+    - S10: `com.securecall.app.premium` deinstalliert.
+    - S7: `com.securecall.app.pro` deinstalliert.
+  - `com.securecall.app.free` ist auf allen drei Geraeten in der DeviceIdle-User-Whitelist.
+  - `WebSocketService` war auf allen drei Geraeten als Foreground-Service verifiziert.
+- Naechster Schritt:
+  - Nach Rechnerneustart zuerst ADB-/Git-Status pruefen.
+  - Dann 20-30-Minuten-Lockscreen-Langzeittest mit eingehendem Call starten.
+
+## 2026-05-09 — UEBERHOLT: Resume-Stand nach Battery-Optimization-Recheck
+
+Hinweis: Dieser Abschnitt ist durch den neueren Abschnitt
+`2026-05-09 — Neustart-Resume nach Play-Console-Free-Geraeteangleichung`
+ersetzt. Fuer Neustart/Fortsetzung gilt der neuere Stand mit
+`com.securecall.app.free`, versionCode `53002`, versionName `1.0.31-free`
+auf allen drei Geraeten.
+
+- Codex-Resume-Dateien:
+  - Global: `/Users/gio/.codex/memories/stealth_resume_2026-05-09.md`
+  - Projekt: `docs/agent-bridge/RESUME_NEXT_SESSION.md`
+- Aktuelle Upload-AAB:
+  - `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - package: `com.securecall.app.free`
+  - versionCode: `52002`
+  - versionName: `1.0.30-free`
+  - SHA-256: `39f09af7475209e3b2ead6ca9bce48c74a51e5f3a8161f0c1abde37aa9699f38`
+  - Manifest enthaelt `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+  - `bundletool validate`: PASS
+- Q2 Battery Optimization:
+  - Manifest-Permission geloest.
+  - Dialog-Stacking im Allow-Pfad geloest.
+  - WakeLock-Refresh geloest: non-reference-counted, 30-Min-Timeout, Refresh in `WebSocketService.onStartCommand()`.
+  - Settings-Warnung bleibt UX-Verbesserung, kein harter Upload-Blocker.
+- Letzte Checks:
+  - `git diff --check`: PASS
+  - `./gradlew :app:testFreeDebugUnitTest`: PASS
+  - `./gradlew :app:bundleFreeRelease`: PASS
+  - `bundletool validate`: PASS
+- Naechster sinnvoller Schritt:
+  - Play Console Upload der aktuellen AAB.
+  - Danach realer 20-30-Minuten-Geraetetest mit gesperrtem Bildschirm und eingehendem Call.
+
 ## 2026-05-03
 
 - Projekt: Stealth / SecureCall / StealthX
