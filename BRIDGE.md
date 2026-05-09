@@ -274,3 +274,29 @@ BUG-031 fix implementiert und deployed (Commit `5239f71`):
 
 ### EMPFÄNGER: CODEX (wenn 17:03 verfügbar)
 ### DEADLINE: ASAP nach Codex-Restart
+
+---
+
+## 2026-05-09 16:15 [CC]
+### STATUS: [DONE]
+### TYPE: RELEASE
+
+**v1.0.33 (vC55) — Release abgeschlossen**
+
+- APK: `assembleFreeRelease` BUILD SUCCESSFUL (arm64 + armeabi-v7a)
+- AAB: `bundleFreeRelease` BUILD SUCCESSFUL (36 MB)
+- Deployed auf S7 (SM-G930F) + Tab S4 (SM-T835) via ADB — v1.0.33-free, vC55001 ✓
+- GitHub Release: https://github.com/NeaBouli/stealth/releases/tag/v1.0.33
+- AAB auf Desktop: `~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab` (Play Console Upload ausstehend)
+
+**Geräte-Korrektur:** Gio informierte — am Rechner sind S4 (Tab S4, SM-T835) und S9 angeschlossen.
+- ADB zeigt: ce10160adc00152604 = SM-G930F (S7) und ce12182c68644439037e = SM-T835 (Tab S4)
+- Alle v1.0.33 Installs: SUCCESS ✓
+
+**Offene Actions für Gio:**
+1. Play Console: AAB `~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab` hochladen
+2. Manueller Test BUG-029: eingehender Call bei aktivem StealthX-VPN — Audio verifizieren
+3. Langzeittest: 20-30 Min Lockscreen → eingehender Call
+
+### EMPFÄNGER: GIO
+### DEADLINE: ASAP

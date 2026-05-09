@@ -128,6 +128,19 @@
 - [x] Play Console: AAB Upload (v1.0.29)
 - [x] Railway: Redeployed
 
+## Phase 6 — Release v1.0.33 (vC55) — 2026-05-09
+
+- [x] SECURITY: H-09 Certificate Pinning — network_security_config.xml (LE E7 + ISRG Root X1)
+- [x] SECURITY: Privacy Claims bereinigt (Zero → Minimal metadata, FCM/STUN/TURN disclosure)
+- [x] Rust deps: zerocopy/libc/typenum/unicode-ident patch updates — 6 tests OK
+- [x] nodemailer: 8.0.4 → 8.0.7 patch update
+- [x] versionCode 54→55, versionName 1.0.32→1.0.33
+- [x] GitHub Release erstellt (v1.0.33) mit arm64 + armeabi APKs
+- [x] APK auf S7 + Tab S4 deployed via ADB (v1.0.33-free, vC55001)
+- [x] AAB: ~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab (Play Console ausstehend)
+- [ ] Play Console: AAB Upload v1.0.33 (vC55) — ausstehend
+- [ ] Railway: bereits live auf c6965e8 (nodemailer + BRIDGE update)
+
 ## Phase 5 — Release v1.0.32 (vC54)
 
 - [x] BUG-FIX: Klingeln bei entsperrtem Screen (Service-Ringtone)
