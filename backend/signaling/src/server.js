@@ -648,12 +648,14 @@ wss.on("connection", (ws, req) => {
 
       // App signature verification — fork protection
       // ALLOWED_SIGNATURES: comma-separated list of allowed SHA-256 cert hashes
-      // FORK_PROTECTION_MODE: "enforce" (reject, default) or "warn" (log only)
+      // FORK_PROTECTION_MODE: "warn" (log only, default) or "enforce" (reject)
+      // Default is "warn" because Google Play re-signs APKs with their own key,
+      // so Play Store users always have a different signature than the upload key.
       const allowedSigs = process.env.ALLOWED_SIGNATURES;
       if (allowedSigs && allowedSigs.trim().length > 0) {
         const allowed = allowedSigs.split(",").map(s => s.trim().toLowerCase());
         const clientSig = (msg.appSignature || "").toLowerCase();
-        const forkMode = (process.env.FORK_PROTECTION_MODE || "enforce").toLowerCase();
+        const forkMode = (process.env.FORK_PROTECTION_MODE || "warn").toLowerCase();
         if (!clientSig || !allowed.includes(clientSig)) {
           if (forkMode === "enforce") {
             // Throttle rejection logging — log only first occurrence + every 50th per clientId
@@ -664,10 +666,6 @@ wss.on("connection", (ws, req) => {
               tracker.lastLogged = Date.now();
             }
             rejectionTracker.set(msg.clientId, tracker);
-
-            // After 10 rejections, add increasing delay via close code
-            // Client with BUG-061 fix stops at 10 retries for 4000-4099 codes
-            // For clients ignoring close codes: server-side IP throttle handles it
             ws.send(JSON.stringify({
               type: "ERROR",
               error: "unauthorized_client",
@@ -675,13 +673,9 @@ wss.on("connection", (ws, req) => {
             }));
             return ws.close(4003, "Unauthorized client");
           } else {
-            console.warn("[REGISTER] WARN — unauthorized signature:", clientSig, "from", msg.clientId, "(warn mode — not rejected)");
+            console.warn("[REGISTER] WARN — unknown signature:", clientSig, "from", msg.clientId, "(warn mode — allowed)");
           }
         }
-      }
-      // Log signature presence for adoption monitoring (only first REGISTER per connection)
-      if (allowedSigs) {
-        console.log("[REGISTER] appSignature present:", !!msg.appSignature, "from", msg.clientId);
       }
 
       // Prüfen ob clientId bereits vergeben — allow reconnection by superseding old connection.
