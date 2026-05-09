@@ -913,14 +913,26 @@ public class CallActivity extends AppCompatActivity {
     }
 
     /** BUG-031: Check if we should offer to verify an unverified contact after call. */
+    /** Returns true if c matches the current call contact by SecureID, phone, or originalPhone. */
+    private boolean matchesCallContact(com.securecall.app.data.Contact c) {
+        if (c.getPhoneOrId().equals(callContactId)) return true;
+        if (c.getSecureId() != null && c.getSecureId().equals(callContactId)) return true;
+        // BUG-031: when callContactId is a SecureID not yet linked to stored phone contact,
+        // fall back to originalPhone to find the match.
+        if (!originalPhone.isEmpty()) {
+            String normOrig = com.securecall.app.data.PhoneUtils.INSTANCE.normalize(originalPhone, this);
+            String normStored = com.securecall.app.data.PhoneUtils.INSTANCE.normalize(c.getPhoneOrId(), this);
+            if (!normOrig.isEmpty() && normOrig.equals(normStored)) return true;
+        }
+        return false;
+    }
+
     private boolean shouldOfferVerify() {
         if (callContactId.isEmpty()) return false;
         java.util.List<com.securecall.app.data.Contact> contacts =
                 com.securecall.app.data.ContactRepository.INSTANCE.getAll(this);
         for (com.securecall.app.data.Contact c : contacts) {
-            if ((c.getPhoneOrId().equals(callContactId) ||
-                 (c.getSecureId() != null && c.getSecureId().equals(callContactId))) &&
-                !c.isVerified()) {
+            if (matchesCallContact(c) && !c.isVerified()) {
                 return true;
             }
         }
@@ -936,8 +948,7 @@ public class CallActivity extends AppCompatActivity {
                 java.util.List<com.securecall.app.data.Contact> contacts =
                         com.securecall.app.data.ContactRepository.INSTANCE.getAll(this);
                 for (com.securecall.app.data.Contact c : contacts) {
-                    if (c.getPhoneOrId().equals(callContactId) ||
-                        (c.getSecureId() != null && c.getSecureId().equals(callContactId))) {
+                    if (matchesCallContact(c)) {
                         com.securecall.app.data.Contact verified = c.copy(
                             c.getId(), c.getName(), c.getPhoneOrId(), c.getCreatedAt(),
                             c.isPhoneContact(), c.getSecureId(), true, c.isBlocked());
