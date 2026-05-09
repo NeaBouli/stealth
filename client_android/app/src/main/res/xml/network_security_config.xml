@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Allow cleartext for local development endpoints -->
+    <!-- Allow cleartext for local development only -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+
+    <!-- Certificate pinning for signaling server (H-09) -->
+    <!-- Primary pin: Let's Encrypt E7 intermediate (valid until 2027-03-12) -->
+    <!-- Backup pin: ISRG Root X1 (Let's Encrypt root, long-lived) -->
+    <!-- Rotate primary pin when LE intermediate changes (well before 2027) -->
+    <domain-config>
+        <domain includeSubdomains="false">protective-healing-production.up.railway.app</domain>
+        <pin-set expiration="2027-03-12">
+            <pin digest="SHA-256">y7xVm0TVJNahMr2sZydE2jQH8SquXV9yLF9seROHHHU=</pin>
+            <pin digest="SHA-256">C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=</pin>
+        </pin-set>
     </domain-config>
 </network-security-config>

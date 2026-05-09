@@ -159,11 +159,11 @@
 
 ## Priority 3
 
-- [ ] ICE/TURN Endpoint `/ice-servers` hinter Auth (H-01 — nach Client-Update).
-- [ ] Certificate Pinning implementieren oder Claim herabstufen (H-09).
-- [ ] Privacy-/Metadaten-Claims gegen reale FCM/TURN/Signaling-Architektur bereinigen:
-  - README/Privacy/FAQ vermeiden absolute Claims wie "No metadata", "No logs", "No personal data stored".
-  - Klarstellen: keine Call-Inhalte/Recordings/serverseitige Entschluesselung; Signaling-Metadaten werden fuer Verbindung verarbeitet.
-  - FCM Token Persistence, FCM Push-Metadaten, STUN/TURN/IP-Sichtbarkeit und Log-Hygiene ehrlich dokumentieren.
+- [x] ICE/TURN Endpoint `/ice-servers` hinter Auth (H-01 — ERLEDIGT): HTTP endpoint hinter requireAdmin, IceServerFetcher.kt nutzt WS REGISTERED-Injection (kein HTTP-Fetch mehr).
+- [x] Certificate Pinning implementieren (H-09 — ERLEDIGT): `network_security_config.xml` — LE E7 intermediate + ISRG Root X1 Backup. README: "Planned" → "Yes". Expiration: 2027-03-12.
+- [x] Privacy-/Metadaten-Claims bereinigt (2026-05-09):
+  - "Zero metadata" → "Minimal metadata" in index.html (meta, twitter, hero, stat, table, pricing), privacy.html (meta/OG).
+  - Feature card explizit: FCM tokens behalten fuer Push, STUN/TURN fuer WebRTC, kein Call-Content gespeichert.
+  - privacy.html hat bereits klare Disclosures fuer FCM/STUN/TURN/signaling-transient (lines 98-109).
 - [ ] Backend-Monolith `backend/signaling/src/server.js` schrittweise modularisieren.
 - [x] Privacy-Metadaten-Claims gegen FCM/TURN/Signaling Realitaet pruefen.

@@ -120,7 +120,7 @@ For the full privacy policy, see [Privacy Policy](https://stealthx.tech/privacy.
 |---------|------|-----|---------|
 | E2E Encryption (XChaCha20-Poly1305) | Yes | Yes | Yes |
 | Root Detection | Warning only | Blocks | Blocks |
-| Certificate Pinning | Planned | Planned | Planned |
+| Certificate Pinning | Yes | Yes | Yes |
 | Screen Capture Detection | No | No | Yes |
 | Debugger Detection | No | No | Yes |
 | Emulator Detection | No | No | Yes |
