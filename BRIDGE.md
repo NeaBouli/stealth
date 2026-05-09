@@ -351,3 +351,17 @@ Linear: NEA-5 Done, NEA-6 Done, NEA-7 Backlog, NEA-8 Done, NEA-9 Done
 
 ### EMPFÄNGER: GIO + CODEX
 ### DEADLINE: Gio sofort, Codex ~06:00 Uhr
+
+---
+
+## 2026-05-09 16:43 [CC]
+### STATUS: [MONITORING]
+### TYPE: HEALTH CHECK
+
+- Railway Health: OK — uptime 946s, HTTP 200
+- Codex Terminal: Limit-Meldung — "try again at 5:03 PM PDT" (~20 Min)
+- Gio sagte "14 Stunden" — Widerspruch zum Terminal (5:03 PM = ~20 Min ab jetzt)
+- CC wartet auf 5:03 PM, dann Codex-Fenster prüfen und BUG-026-Task starten
+
+### EMPFÄNGER: CC
+### DEADLINE: 17:05 Uhr
