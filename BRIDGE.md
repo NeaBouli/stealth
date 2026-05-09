@@ -232,3 +232,45 @@ BUG-031 fix implementiert und deployed (Commit `5239f71`):
 
 ### EMPFÄNGER: CC
 ### DEADLINE: LAUFEND
+
+---
+
+## 2026-05-09 16:00 [CC]
+### STATUS: [DONE — MEHRERE SECURITY FIXES]
+### TYPE: FIX + SECURITY
+
+**Autonomer Durchlauf — Gio schläft, Codex limit bis 17:03**
+
+### H-01 Status: DONE (bereits implementiert, nur dokumentiert)
+- `/ice-servers` HTTP-Endpoint hinter `requireAdmin` (server.js:434)
+- `IceServerFetcher.kt`: kein HTTP-Fetch — ICE-Server kommen nur via WS REGISTERED-Message
+- TODO.md H-01 auf [x] gesetzt
+
+### H-09 Certificate Pinning: DONE — Commit `5949617`
+- `network_security_config.xml`: Pin zu Let's Encrypt E7 intermediate + ISRG Root X1 Backup
+  - LE E7 SPKI SHA-256: `y7xVm0TVJNahMr2sZydE2jQH8SquXV9yLF9seROHHHU=` (gültig bis 2027-03-12)
+  - ISRG Root X1 SPKI SHA-256: `C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=` (Root, sehr stabil)
+  - Leaf cert NICHT gepinnt (rotiert alle 90 Tage mit Let's Encrypt)
+  - Gilt für alle TLS/WSS-Verbindungen zu `protective-healing-production.up.railway.app`
+- README.md: "Certificate Pinning: Planned" → "Yes" (alle Tiers)
+- **Pin-Rotation**: Wenn LE neues Intermediate released, `network_security_config.xml` updaten + Release
+
+### Privacy Claims Cleanup: DONE — Commit `5949617`
+- "Zero metadata" → "Minimal metadata" in index.html (7 Stellen) + privacy.html (2 Stellen)
+- Stat-Label "Metadata Stored" → "Call Logs Stored" (Wert "0" bleibt korrekt)
+- Feature Card: explizit FCM-Token-Retention + STUN/TURN-Erwähnung hinzugefügt
+- TODO.md Privacy Claims auf [x] gesetzt
+
+### Validierung:
+- `node --check backend/signaling/src/server.js` PASS
+- `git push origin main` OK
+- GitHub Dependabot: 1 Low (firebase-admin transitiv — @tootallnate/once, Monitoring)
+
+### Offene Tasks:
+- BUG-026: eSIM routing (VpnService-Architektur — Codex-Task wenn 17:03 verfügbar)
+- Hybrid-Migration Hetzner (Priority 2 — benötigt Gio-Entscheidung über Timing)
+- Backend-Monolith modularisieren (Priority 3 — nice to have)
+- npm uuid/firebase-admin: Low Priority, keine Breaking Changes ohne Test
+
+### EMPFÄNGER: CODEX (wenn 17:03 verfügbar)
+### DEADLINE: ASAP nach Codex-Restart
