@@ -126,18 +126,22 @@
 - [x] Play Console: AAB Upload (v1.0.29)
 - [x] Railway: Redeployed
 
-## Phase 5 — Release v1.0.31 (vC53)
+## Phase 5 — Release v1.0.32 (vC54)
 
 - [x] BUG-FIX: Klingeln bei entsperrtem Screen (Service-Ringtone)
 - [x] BUG-FIX: App bricht weg nach Remote-Hangup (returnToMain)
 - [x] BUG-FIX: FCM-Ringtone-Luecke geschlossen (alle 3 Flavors)
 - [x] BUG-FIX: Aktivierungscodes erneuert + SEED_ACTIVATION_CODES env var
 - [x] BUG-FIX: Battery Optimization Permission + Dialog + WakeLock-Refresh
-- [x] versionCode 51→53, versionName 1.0.29→1.0.31
-- [x] AAB gebaut + Codex-validiert: `~/Desktop/SecureCall-FINAL-UPLOAD.aab`
-- [ ] Play Console: AAB Upload (v1.0.31, vC53)
-- [ ] Railway: Redeploy mit SEED_ACTIVATION_CODES
-- [ ] GitHub Release erstellen (v1.0.31)
+- [x] BUG-FIX: Fork Protection enforce → warn (Play Store re-signs APKs)
+- [x] BUG-FIX: Dockerfile COPY data/ (activation codes ENOENT auf Railway)
+- [x] versionCode 51→54, versionName 1.0.29→1.0.32
+- [x] GitHub Release erstellt (v1.0.31)
+- [x] Play Console: AAB Upload v1.0.32 (vC54) — HOCHGELADEN
+- [ ] Railway: Redeploy noetig (Dockerfile + Fork Protection Fix)
+- [ ] Railway: FORK_PROTECTION_MODE env var entfernen oder auf "warn" setzen
+- [ ] Tester: nach Railway-Redeploy pruefen ob Play-Store-User wieder connecten
+- [ ] Langzeittest: 20-30 Min gesperrt → eingehender Call
 - [ ] Geraete-Langzeittest: 20-30 Min gesperrt, dann eingehender Call
 
 ## Priority 2

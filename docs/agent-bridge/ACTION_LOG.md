@@ -1,5 +1,281 @@
 # Stealth Action Log
 
+## 2026-05-09 - CC: Fork Protection + Dockerfile Fix + v1.0.32 Play Console Upload
+
+- Agent: Claude Code
+- Fixes:
+  1. **Fork Protection Default enforce → warn** (`server.js`): Play Store re-signiert APKs mit Google App Signing Key. Enforce-Modus blockte alle Play-Tester. Default jetzt "warn" (loggen, nicht blocken). Commit `9a7e1f9`.
+  2. **Dockerfile COPY data/** (`Dockerfile`): Nur `src/` wurde kopiert, `data/activation_codes.json` fehlte → ENOENT auf Railway. Fix: `COPY data/ ./data/`. Commit `ed1d176`.
+  3. **Version-Bump v1.0.32 (vC54)**: Play Console brauchte neuen versionCode. Commit `4b3f783`.
+- Play Console: AAB v1.0.32 (vC54→54002) hochgeladen (Gio bestaetigt).
+- Railway: Redeploy NOETIG damit Dockerfile + Fork Protection live gehen.
+- Railway env var: `FORK_PROTECTION_MODE` muss entfernt oder auf `warn` gesetzt werden (ueberschreibt sonst Code-Default).
+- Keine Secrets gelesen oder ausgegeben.
+
+## 2026-05-09 - Codex: Externe Play-Tester disconnected — Signatur-Forkschutz als Hauptursache
+
+- Agent: Codex
+- Anlass:
+  - Gio meldete: Alle Tester, die ueber Play Store/AAB upgedatet haben, koennen nicht connecten.
+  - Nur die drei lokal am Rechner upgedateten Geraete verbinden.
+  - Ein Tester-Samsung sollte angeschlossen werden, wurde aber vom Rechner/ADB nicht erkannt.
+- Testergeraet-Status:
+  - Neues Samsung war weder in `adb devices -l` noch im macOS USB-Bus sichtbar.
+  - Sichtbar waren nur S7 `ce10160adc00152604` und Tab S4 `ce12182c68644439037e`.
+  - Testergeraet konnte deshalb nicht direkt ausgelesen werden.
+- Codebefund:
+  - Android sendet beim `REGISTER` die SHA-256-Signatur des installierten App-Zertifikats:
+    - `client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt`
+    - Feld: `appSignature`
+  - Backend prueft beim `REGISTER` hart gegen `ALLOWED_SIGNATURES`:
+    - `backend/signaling/src/server.js`
+    - Wenn `appSignature` fehlt oder nicht erlaubt ist und `FORK_PROTECTION_MODE=enforce`, sendet der Server:
+      - `ERROR unauthorized_client`
+      - danach Close Code `4003` / `Unauthorized client`
+  - Client behandelt `4000..4099` und `unauthorized_client` als harte Ablehnung und stoppt Reconnect-Loops.
+- Lokaler Referenzbefund:
+  - Lokal installierte Free-Release-App wurde per `./gradlew :app:installFreeRelease` installiert.
+  - Diese lokale Release-App ist mit dem lokalen Upload-/Release-Zertifikat signiert.
+  - AAB/APK-Zertifikat laut `keytool -printcert -jarfile`:
+    - SHA-256: `1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D`
+    - normalisiert: `1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d`
+  - Bridge/TODO dokumentiert Railway:
+    - `ALLOWED_SIGNATURES=1e0a8eb419540de8545f770e78dcdb93ab1ba8a0713da8999222fc88c3fdb21d`
+    - `FORK_PROTECTION_MODE=enforce`
+- Wahrscheinlichste Ursache:
+  - Google Play App Signing signiert ausgelieferte Play-Store-APKs mit dem Google-App-Signing-Zertifikat.
+  - Dieses Zertifikat ist normalerweise NICHT identisch mit dem lokalen Upload-/Release-Zertifikat.
+  - Play-Tester senden daher eine andere `appSignature`.
+  - Backend lehnt diese Tester als `unauthorized_client` ab.
+  - Lokal installierte Geraete connecten, weil deren Signatur exakt der erlaubten lokalen Signatur entspricht.
+- Server-Logs:
+  - Railway CLI ist lokal nicht nutzbar: `railway whoami` meldet `Unauthorized. Please run railway login again.`
+  - `railway logs` konnte deshalb nicht ausgefuehrt werden.
+  - Erwarteter Log-Eintrag bei bestaetigter Ursache:
+    - `[REGISTER] REJECTED — unauthorized signature: <play-signing-sha256> from <clientId>`
+- Empfohlener Sofort-Fix:
+  1. In Google Play Console den **App signing key certificate SHA-256** holen:
+     - Play Console -> App -> Setup -> App integrity -> App signing key certificate -> SHA-256.
+  2. Railway `ALLOWED_SIGNATURES` auf beide Signaturen setzen:
+     - `<lokale-upload-signatur>,<google-play-app-signing-signatur>`
+  3. Railway Service neu starten/redeployen.
+  4. Danach Play-Tester App oeffnen lassen; sie sollten beim `REGISTER` wieder `REGISTERED` erhalten.
+- Emergency-Fallback, falls sofortiger Restore wichtiger ist als Fork-Schutz:
+  - Railway `FORK_PROTECTION_MODE=warn` setzen und Service neu starten.
+  - Danach blockt der Server fremde Signaturen nicht mehr, loggt sie aber.
+  - Das ist nur als temporaere Recovery empfohlen.
+- Kein Code geaendert.
+- Kein Deployment.
+
+## 2026-05-09 - Codex: Alte Pro/Premium-Apps von Testgeraeten entfernt
+
+- Agent: Codex
+- Anlass:
+  - Gio bat, die alten Apps von den Geraeten zu entfernen, nachdem die Play-Console-Free-Version installiert war.
+- Entfernt:
+  - S10 / `RF8N313QMFL`:
+    - `adb uninstall com.securecall.app.premium`
+    - Ergebnis: `Success`
+  - S7 / `ce10160adc00152604`:
+    - `adb uninstall com.securecall.app.pro`
+    - Ergebnis: `Success`
+- Nicht entfernt:
+  - `com.securecall.app.free` blieb auf allen drei Geraeten installiert.
+- Finaler Paketstand laut `pm list packages securecall`:
+  - S10: nur `package:com.securecall.app.free`
+  - S7: nur `package:com.securecall.app.free`
+  - Tab S4: nur `package:com.securecall.app.free`
+- Finaler Versionsstand:
+  - S10:
+    - package: `com.securecall.app.free`
+    - versionCode: `53002`
+    - versionName: `1.0.31-free`
+    - lastUpdateTime: `2026-05-09 01:32:18`
+  - S7:
+    - package: `com.securecall.app.free`
+    - versionCode: `53002`
+    - versionName: `1.0.31-free`
+    - lastUpdateTime: `2026-05-09 01:30:44`
+  - Tab S4:
+    - package: `com.securecall.app.free`
+    - versionCode: `53002`
+    - versionName: `1.0.31-free`
+    - lastUpdateTime: `2026-05-09 01:31:18`
+- Bewertung:
+  - Alle drei Geraete haben jetzt nur noch die Play-Console-nahe Free-Variante fuer den Test.
+  - Pro/Premium-Testvarianten sind von S10/S7 entfernt.
+- Kein Commit/Push/Deployment.
+
+## 2026-05-09 - Codex: Play-Console-Free-Version auf alle drei Geraete installiert
+
+- Agent: Codex
+- Anlass:
+  - Gio wollte explizit die Version testen, die auch in der Google Play Console laeuft.
+- Referenz-Artefakt:
+  - `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - package: `com.securecall.app.free`
+  - versionCode: `53002`
+  - versionName: `1.0.31-free`
+  - Manifest enthaelt `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+- Vorgehen:
+  - `bundletool build-apks` wurde verworfen, weil Bundletool ohne Release-Key lokale APKs mit Debug-Keystore signieren wuerde.
+  - Stattdessen wurde `./gradlew :app:installFreeRelease` verwendet, damit die Free-Release-Variante mit Projekt-Release-Konfiguration auf die Geraete kommt.
+  - Gradle meldete: `Installed on 3 devices. BUILD SUCCESSFUL`.
+- Installierter Zielstand:
+  - S10 / `RF8N313QMFL`:
+    - package: `com.securecall.app.free`
+    - versionCode: `53002`
+    - versionName: `1.0.31-free`
+    - lastUpdateTime: `2026-05-09 01:32:18`
+  - S7 / `ce10160adc00152604`:
+    - package: `com.securecall.app.free`
+    - versionCode: `53002`
+    - versionName: `1.0.31-free`
+    - lastUpdateTime: `2026-05-09 01:30:44`
+  - Tab S4 / `ce12182c68644439037e`:
+    - package: `com.securecall.app.free`
+    - versionCode: `53002`
+    - versionName: `1.0.31-free`
+    - lastUpdateTime: `2026-05-09 01:31:18`
+- Battery-/Service-Setup fuer das Play-Console-Package:
+  - `dumpsys deviceidle whitelist +com.securecall.app.free` auf allen drei Geraeten gesetzt.
+  - `WAKE_LOCK` AppOp fuer `com.securecall.app.free` auf allen drei Geraeten erlaubt.
+  - Free-App auf allen drei Geraeten gestartet.
+- Final verifiziert:
+  - S10:
+    - Whitelist: `user,com.securecall.app.free,10697`
+    - `WebSocketService`: `isForeground=true`, `startRequested=true`, `stopIfKilled=false`
+  - S7:
+    - Whitelist: `user,com.securecall.app.free,10334`
+    - `WebSocketService`: `isForeground=true`, `startRequested=true`, `stopIfKilled=false`
+  - Tab S4:
+    - Whitelist: `user,com.securecall.app.free,10509`
+    - `WebSocketService`: `isForeground=true`, `startRequested=true`, `stopIfKilled=false`
+- Eindeutigkeit fuer Test:
+  - Alte Flavor-Prozesse wurden gestoppt, nicht deinstalliert:
+    - S10: `am force-stop com.securecall.app.premium`
+    - S7: `am force-stop com.securecall.app.pro`
+  - `pidof` fuer Premium/Pro lieferte danach keinen laufenden Prozess.
+- Bewertung:
+  - Alle drei Geraete testen jetzt die Play-Console-nahe Free-Variante `com.securecall.app.free vC53002`.
+  - Pro/Premium bleiben installiert, laufen aber aktuell nicht.
+- Kein Commit/Push/Deployment.
+
+## 2026-05-09 - Codex: Battery-Optimization-Ausnahme auf S10/S7/Tab S4 gesetzt
+
+- Agent: Codex
+- Anlass:
+  - Gio gab explizit frei, direkt an den angeschlossenen Geraeten zu arbeiten und zu testen.
+  - Danach bat Gio, den Fix auch auf S7 und Tab S4 anzuwenden.
+- Geaendert per ADB:
+  - `dumpsys deviceidle whitelist +com.securecall.app.premium` auf S10
+  - `dumpsys deviceidle whitelist +com.securecall.app.pro` auf S7
+  - `dumpsys deviceidle whitelist +com.securecall.app.free` auf Tab S4
+  - `WAKE_LOCK` AppOp explizit auf `allow` fuer alle drei Packages
+  - `START_FOREGROUND` AppOp explizit auf `allow` fuer S10 und Tab S4
+    - S7 meldet `Unknown operation string: START_FOREGROUND`; auf dieser Android-Version ist der AppOp-Name nicht verfuegbar. DeviceIdle-Whitelist wurde trotzdem gesetzt.
+- Verifiziert:
+  - S10 / `RF8N313QMFL`:
+    - Whitelist: `user,com.securecall.app.premium,10686`
+    - Package: `com.securecall.app.premium`
+    - Version: `1.0.31-premium`, versionCode `53001`
+    - Prozess: PID `26521`
+    - `WebSocketService`: `isForeground=true`, `startRequested=true`, `stopIfKilled=false`
+  - S7 / `ce10160adc00152604`:
+    - Whitelist: `user,com.securecall.app.pro,10328`
+    - Package: `com.securecall.app.pro`
+    - Version: `1.0.31-pro`, versionCode `53001`
+    - Prozess: PID `24671`
+    - `WebSocketService`: `isForeground=true`, `startRequested=true`, `stopIfKilled=false`
+  - Tab S4 / `ce12182c68644439037e`:
+    - Whitelist: `user,com.securecall.app.free,10509`
+    - Package: `com.securecall.app.free`
+    - Version: `1.0.31-free`, versionCode `53001`
+    - SecureCall wurde gestartet, weil Prozess/WebSocketService vorher nicht aktiv war.
+    - Prozess: PID `18359`
+    - `WebSocketService`: `isForeground=true`, `startRequested=true`, `stopIfKilled=false`
+    - AppOps: `WAKE_LOCK: allow`, `START_FOREGROUND: allow`
+- Bewertung:
+  - Alle drei Testgeraete sind jetzt fuer den Lockscreen-/Battery-Langzeittest vorbereitet.
+  - Vorheriger S10-Blocker "nicht in DeviceIdle-Whitelist" ist behoben.
+- Kein App-Install/Update.
+- Kein Commit/Push/Deployment.
+
+## 2026-05-09 - Codex: S10 Battery-/Service-Precheck vor Langzeittest
+
+- Agent: Codex
+- Anlass:
+  - Gio bat, die Checks direkt am S10 zu uebernehmen.
+- Geraet:
+  - S10 / `RF8N313QMFL` / `SM_G973F`
+- Installierte App:
+  - package: `com.securecall.app.premium`
+  - versionCode: `53001`
+  - versionName: `1.0.31-premium`
+  - lastUpdateTime: `2026-05-09 00:51:25`
+- Permissions laut `dumpsys package`:
+  - `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`: vorhanden, granted=true
+  - `android.permission.WAKE_LOCK`: vorhanden, granted=true
+  - `android.permission.FOREGROUND_SERVICE`: vorhanden, granted=true
+- Aktiver Runtime-Status:
+  - Prozess laeuft: PID `26521`
+  - `WebSocketService` laeuft als Foreground Service:
+    - `isForeground=true`
+    - `foregroundId=1001`
+    - `startRequested=true`
+    - `stopIfKilled=false`
+  - AppOps:
+    - `WAKE_LOCK: allow ... (running)`
+    - `START_FOREGROUND: allow ... (running)`
+  - Standby-Bucket: `10` / Active
+  - Geraet aktuell nicht in DeviceIdle:
+    - `mDeviceIdleMode=false`
+    - `mLightDeviceIdleMode=false`
+- Kritischer Befund:
+  - `com.securecall.app.premium` taucht nicht in `dumpsys deviceidle whitelist` auf.
+  - Damit ist die App trotz Manifest-Permission und granted Permission nicht als Battery-Optimization-Exemption/DeviceIdle-Whitelist bestaetigt.
+- Bewertung:
+  - S10 ist fuer einen Service-/WakeLock-Check aktiv und erreichbar.
+  - Fuer einen belastbaren 30-Minuten-Lockscreen-Langzeittest sollte Gio auf dem S10 die Battery-Optimization-Ausnahme/Unrestricted Battery Usage fuer SecureCall Premium sichtbar erlauben und danach die Whitelist erneut pruefen lassen.
+- Keine App installiert oder veraendert.
+- Kein Commit/Push/Deployment.
+
+## 2026-05-09 - Codex: Geraete-Installstand gegen aktuelle Desktop-AAB geprueft
+
+- Agent: Codex
+- Anlass:
+  - Gio bezweifelte CCs Aussage, dass alle drei Geraete die neue AAB installiert haben.
+- Aktuelle Desktop-AAB:
+  - Datei: `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - package: `com.securecall.app.free`
+  - versionCode: `53002`
+  - versionName: `1.0.31-free`
+  - SHA-256: `6d0ee1b70efea5f7470544d0d5ba184b027025175c407597e3635ea0e3749433`
+  - Manifest enthaelt `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+  - `bundletool validate`: PASS
+- ADB-Geraetestand:
+  - S10 / `RF8N313QMFL` / `SM_G973F`:
+    - installiertes Package: `com.securecall.app.premium`
+    - versionCode: `53001`
+    - versionName: `1.0.31-premium`
+    - lastUpdateTime: `2026-05-09 00:51:25`
+  - S7 / `ce10160adc00152604` / `SM_G930F`:
+    - installiertes Package: `com.securecall.app.pro`
+    - versionCode: `53001`
+    - versionName: `1.0.31-pro`
+    - lastUpdateTime: `2026-05-09 00:50:24`
+  - Tab S4 / `ce12182c68644439037e` / `SM_T835`:
+    - installiertes Package: `com.securecall.app.free`
+    - versionCode: `53001`
+    - versionName: `1.0.31-free`
+    - lastUpdateTime: `2026-05-09 00:52:12`
+- Bewertung:
+  - CCs Aussage ist in dieser Form falsch: Alle drei Geraete haben nicht die aktuelle Desktop-AAB `53002/1.0.31-free` installiert.
+  - S10 und S7 koennen diese Free-AAB schon wegen anderer Package-IDs (`premium`/`pro`) nicht als Update dieser installierten App erhalten haben.
+  - Alle drei installierten Varianten enthalten aber die Battery-/WakeLock-Permissions laut `dumpsys package`, inklusive `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`.
+- Keine App installiert oder veraendert.
+- Kein Commit/Push/Deployment.
+
 ## 2026-05-08/09 - CC: Session-Abschluss — v1.0.31 (vC53) uploadbereit
 
 - Agent: Claude Code
