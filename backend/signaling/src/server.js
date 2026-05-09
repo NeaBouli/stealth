@@ -7,6 +7,24 @@ const path = require("path");
 
 const { ethers } = require("ethers");
 
+// Resolve writable data dir — Railway volumes mount as root, overriding Dockerfile chown.
+// Falls back to /tmp/stealthx-data when the preferred path is not writable.
+const _DATA_PREFERRED = process.env.DATA_DIR || path.join(__dirname, "..", "data");
+const DATA_DIR = (() => {
+  try {
+    fs.mkdirSync(_DATA_PREFERRED, { recursive: true });
+    const probe = path.join(_DATA_PREFERRED, ".write_test");
+    fs.writeFileSync(probe, "1");
+    fs.unlinkSync(probe);
+    return _DATA_PREFERRED;
+  } catch {
+    const fallback = "/tmp/stealthx-data";
+    console.warn(`[DATA] ${_DATA_PREFERRED} not writable — using ${fallback}`);
+    fs.mkdirSync(fallback, { recursive: true });
+    return fallback;
+  }
+})();
+
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
 const rateLimit = require("./rate_limit");
@@ -128,7 +146,7 @@ const routingTable = new Map();
 // sessionId -> { sessionId, from, to, state, created, updated }
 
 // --- FCM Token Storage (persistent) ---
-const FCM_TOKENS_FILE = path.join(__dirname, "..", "data", "fcm_tokens.json");
+const FCM_TOKENS_FILE = path.join(DATA_DIR, "fcm_tokens.json");
 const fcmTokens = new Map();
 
 function loadFcmTokens() {
@@ -166,7 +184,7 @@ const phoneNumbers = new Map();
 const phoneHashes = new Map();
 
 // --- Activation Codes ---
-const CODES_FILE = path.join(__dirname, "..", "data", "activation_codes.json");
+const CODES_FILE = path.join(DATA_DIR, "activation_codes.json");
 let activationCodes = [];
 
 // No hardcoded fallback codes — activation codes are loaded exclusively from
@@ -259,7 +277,7 @@ for (const url of ETH_RPC_URLS) {
 console.log(`[IFR] Initialized ${ifrTokenContracts.length} Ethereum RPC endpoints for IFR token ${IFR_TOKEN_ADDRESS}`);
 
 // Wallet → clientId mappings (prevent multi-device abuse for manual entry)
-const WALLETS_FILE = path.join(__dirname, "..", "data", "wallets.json");
+const WALLETS_FILE = path.join(DATA_DIR, "wallets.json");
 let walletMappings = [];
 
 function loadWalletMappings() {
@@ -1750,7 +1768,7 @@ app.post("/admin/broadcast", requireAdmin, (req, res) => {
 });
 
 // --- Gift Link System (admin-only) ---
-const GIFT_CODES_FILE = path.join(__dirname, "..", "data", "gift_codes.json");
+const GIFT_CODES_FILE = path.join(DATA_DIR, "gift_codes.json");
 const giftCodes = new Map();
 
 // Load gift codes from disk on startup
