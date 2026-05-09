@@ -55,3 +55,39 @@ Lese `backend/signaling/Dockerfile`. Verifiziere dass der Dockerfile-Fix (COPY d
 
 ### EMPFÄNGER: CODEX
 ### DEADLINE: ASAP
+
+---
+
+## 2026-05-09 22:51 [CC]
+### STATUS: [READY_FOR_HANDOVER]
+### TYPE: HANDOVER
+
+**CC Session Ergebnisse:**
+
+| Task | Status |
+|------|--------|
+| fast-xml-builder HIGH (GHSA-5wm8-gmm8-39j9) | ✅ FIXED — Commit `ef28d46`, 1.1.5→1.2.0 |
+| Railway FORK_PROTECTION_MODE | ✅ BEREITS "warn" — kein Handlungsbedarf |
+| Railway Redeploy | ✅ AUTO-DEPLOYED — `ef28d46` live seit 20:27 UTC |
+| Server Health | ✅ OK — uptime 1277s, HTTP 200 |
+| Linear Issues | ✅ NEA-5 Done, NEA-6/7/8 angelegt (Backlog) |
+| TODO.md | ✅ Aktualisiert |
+
+**Railway Projekt-Info (nicht in Klartext speichern):**
+- Project: `disciplined-flexibility` (Railway interne Name)
+- Service: `protective-healing`
+- URL: `protective-healing-production.up.railway.app`
+- Alle Env-Vars gesetzt: ALLOWED_SIGNATURES, FORK_PROTECTION_MODE=warn, Volume /app/data
+
+**Verbleibende offene Punkte für Codex:**
+1. TASK 2: BUG-026 eSIM Analyse (siehe oben)
+2. TASK 3: BUG-029 VPN+VPN Audio Analyse (siehe oben)
+3. TASK 4: Dockerfile Review — HINWEIS: Railway nutzt DOCKERFILE, nicht NIXPACKS (trotz railway.json). Verifiziert via serviceManifest in Deployment-Logs.
+4. Tester-Retest koordinieren nach Railway-Fix
+
+**Npm Security Stand:**
+- HIGH: 0 (fast-xml-builder behoben)
+- Remaining: 8x LOW (alle firebase-admin transitive chain — nicht behebbar ohne firebase-admin Major-Upgrade)
+
+### EMPFÄNGER: CODEX
+### DEADLINE: NEXT_SESSION
