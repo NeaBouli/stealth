@@ -145,6 +145,9 @@
 - [x] Railway: Redeploy — live auf 30c87fd
 - [x] Railway: FORK_PROTECTION_MODE=warn — verifiziert
 - [x] Android APK assembleFreeRelease — BUILD SUCCESSFUL, auf S10+S7 deployed via ADB
+- [x] BUG-031 Fix: shouldOfferVerify() + showVerifyDialog() — matchesCallContact() Helper mit originalPhone Fallback (Commit 5239f71, NEA-8 Done)
+- [x] BUG-023: SecLog CSV Export — bereits implementiert in SecLogManager.kt + SettingsFragment (kein weiterer Fix noetig)
+- [x] BUGS.md aktualisiert: BUG-029, BUG-031, BUG-023 auf FIXED
 - [ ] Tester: Play-Store-User retest — Server laeuft, FORK_PROTECTION_MODE=warn, connecten sollte funktionieren
 - [ ] Manueller Test BUG-029: eingehender Call bei aktivem StealthX-VPN auf S10/S7 — Audio verifizieren
 - [ ] Langzeittest: 20-30 Min gesperrt → eingehender Call

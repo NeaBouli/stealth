@@ -210,3 +210,25 @@ Gilt ab sofort permanent für CC und Codex:
 
 ### EMPFÄNGER: CC|CODEX
 ### DEADLINE: PERMANENT
+
+---
+
+## 2026-05-10 00:00 [CC]
+### STATUS: [IN_PROGRESS — GIO SCHLÄFT]
+### TYPE: FIX
+
+**Autonomes Durcharbeiten — Gio schläft**
+
+BUG-031 fix implementiert und deployed (Commit `5239f71`):
+- Root Cause: `shouldOfferVerify()` findet keinen Match wenn callContactId=SecureID aber Kontakt nur Telefonnummer gespeichert
+- Fix: `matchesCallContact()` Helper mit normalizedPhone Fallback via `originalPhone`
+- APK auf S10+S7 deployed, NEA-8 → Done in Linear
+
+**Nächste Tasks (CC autonom):**
+- Codex-Timer: ~30 Min verbleibend bis Codex verfügbar
+- Offene Bugs prüfen: BUGS.md scannen nach weiteren OPEN Items
+- Railway Health check
+- Wenn Codex bereit: nächsten Analyse-Task assignen
+
+### EMPFÄNGER: CC
+### DEADLINE: LAUFEND

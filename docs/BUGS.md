@@ -24,13 +24,13 @@
 | BUG-020 | IFR Token section last in Settings | FIXED | Low | df52218 |
 | BUG-021 | Emergency Delete first in Settings | FIXED | Low | df52218 |
 | BUG-022 | eSIM status refreshes on Settings visit | FIXED | Medium | c149200 |
-| BUG-023 | No diagnostic log export — SecLog CSV export (Pro/Premium) | OPEN | Low | — |
+| BUG-023 | No diagnostic log export — SecLog CSV export (Pro/Premium) | FIXED | Low | SecLogManager.kt |
 | BUG-024 | Random disconnects on network change — auto-reconnect via NetworkCallback | FIXED | High | 4174031 |
 | BUG-025 | Phone normalization — full E.164 normalization | FIXED | High | df52218 + 991e5af |
 | BUG-026 | eSIM Call Routing + Preferred Network — OkHttp pool bypasses bindProcessToNetwork() | OPEN | High | — |
-| BUG-029 | No audio after call connected — VPN+VPN blocks TURN UDP relay | OPEN | Critical | — |
+| BUG-029 | No audio after call connected — VPN+VPN blocks TURN UDP relay | FIXED | Critical | 30c87fd |
 | BUG-030 | Audio too quiet — MODE_IN_COMMUNICATION not set, volume not maxed | FIXED | High | — |
-| BUG-031 | Contact not verified after call — no verification prompt | OPEN | Medium | — |
+| BUG-031 | Contact not verified after call — no verification prompt | FIXED | Medium | 5239f71 |
 | BUG-034 | 0s duration calls after WS reconnect — CALL_INVITE sent before REGISTER processed | FIXED | High | 6d05712 |
 | BUG-035 | DNS resolution failure after network switch — rapid 2s retries drain battery | FIXED | Medium | 6d05712 |
 | BUG-036 | Dialer keyboard — no ABC toggle for alphanumeric Custom Call IDs | FIXED | Medium | 8f818eb |
