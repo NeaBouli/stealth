@@ -18,9 +18,11 @@
     - High behoben: `path-to-regexp < 0.1.13`, Manifest `backend/signaling/package-lock.json`, GHSA `GHSA-37ch-88jc-xwx2`.
     - Medium behoben: `fast-xml-parser < 5.7.0`, Manifest `backend/signaling/package-lock.json`, GHSA `GHSA-gh4j-gqv2-49f6`.
     - Low behoben: `rand >= 0.7.0, < 0.8.6`, Manifest `core_crypto/Cargo.lock`, GHSA `GHSA-cq8v-f236-94qc`.
+    - HIGH behoben (2026-05-09): `fast-xml-builder <= 1.1.6`, GHSA `GHSA-5wm8-gmm8-39j9` — Commit `ef28d46`. Updated 1.1.5 → 1.2.0 via `npm audit fix`.
   - Weiterhin offen laut GitHub API:
     - Medium: `uuid < 14.0.0`, Manifest `backend/signaling/package-lock.json`, GHSA `GHSA-w5hq-g745-h8pq`.
     - Low: `@tootallnate/once < 3.0.1`, Manifest `backend/signaling/package-lock.json`, GHSA `GHSA-vpq2-c234-7xj6`.
+    - Low: firebase-admin chain (@google-cloud/firestore, @google-cloud/storage, google-gax, http-proxy-agent, retry-request, teeny-request) — transitiv, nur via firebase-admin Major-Upgrade behebbar.
   - Fix-Stand:
     - `backend/signaling/package-lock.json` aktualisiert.
     - `core_crypto/Cargo.lock` aktualisiert: `rand 0.8.5 -> 0.8.6`.
@@ -138,9 +140,11 @@
 - [x] versionCode 51→54, versionName 1.0.29→1.0.32
 - [x] GitHub Release erstellt (v1.0.31)
 - [x] Play Console: AAB Upload v1.0.32 (vC54) — HOCHGELADEN
-- [ ] Railway: Redeploy noetig (Dockerfile + Fork Protection Fix)
-- [ ] Railway: FORK_PROTECTION_MODE env var entfernen oder auf "warn" setzen
-- [ ] Tester: nach Railway-Redeploy pruefen ob Play-Store-User wieder connecten
+- [x] Railway: Redeploy — ERLEDIGT (2026-05-09, Commit ef28d46 automatisch deployed via GitHub Integration)
+- [x] Railway: FORK_PROTECTION_MODE — bereits auf "warn" gesetzt in Railway env vars. Code-Default server.js:658 ebenfalls "warn".
+- [ ] Tester: Play-Store-User retest — Railway laeuft auf ef28d46 + FORK_PROTECTION_MODE=warn. Tester sollen connecten koennen.
+  NOTE: Railway nutzt DOCKERFILE (nicht NIXPACKS wie railway.json suggeriert). Builder=DOCKERFILE per serviceManifest verifiziert.
+  NOTE: Server URL: protective-healing-production.up.railway.app — Health OK.
 - [ ] Langzeittest: 20-30 Min gesperrt → eingehender Call
 - [ ] Geraete-Langzeittest: 20-30 Min gesperrt, dann eingehender Call
 
