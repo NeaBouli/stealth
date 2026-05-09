@@ -26,7 +26,7 @@ Risiko:
 
 ### BUG-029 - Kein Audio nach Connected bei VPN+VPN
 
-Status: OPEN, kritisch. Wahrscheinlich ICE/TURN-Pfad und aktive App-VPN-Kombination, nicht Signaling-Session-Routing.
+Status: FIXED — Commit `30c87fd` (2026-05-09). Manueller Retest auf S10/S7 ausstehend.
 
 Findings:
 - Backend stellt ICE-Server in `REGISTERED` bereit (`server.js` sendet `iceServers: ICE_SERVERS`). `ICE_SERVERS` enthaelt STUN plus TURN UDP :80, TURN TCP :80, TURN TCP :443 und TURNS TCP :443, sofern `TURN_USER` und `TURN_PASS` gesetzt sind.
