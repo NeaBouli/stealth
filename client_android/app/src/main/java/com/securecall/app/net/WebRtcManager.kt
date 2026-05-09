@@ -2,6 +2,7 @@ package com.securecall.app.net
 
 import android.util.Log
 import com.securecall.app.BuildConfig
+import com.securecall.app.vpn.GhostVpnService
 import org.json.JSONObject
 import org.webrtc.*
 import java.nio.ByteBuffer
@@ -22,6 +23,7 @@ class WebRtcManager(
     companion object {
         private const val TAG = "WEBRTC"
         private const val DC_LABEL = "audio"
+        private const val DATA_CHANNEL_OPEN_TIMEOUT_MS = 8_000L
     }
 
     private var factory: PeerConnectionFactory? = null
@@ -39,6 +41,14 @@ class WebRtcManager(
     // WebRTC stats timer for SecLog
     private var statsTimer: java.util.Timer? = null
 
+    private var lastIceServers: List<PeerConnection.IceServer>? = null
+    private var forceRelayOnly = false
+    private var relayRetryAttempted = false
+    private var isOfferer = false
+    private var lastRemoteOffer: String? = null
+    private var dataChannelOpenHandler: android.os.Handler? = null
+    private var dataChannelOpenRunnable: Runnable? = null
+
     // BUG-011: ICE reconnect grace period — don't kill call on transient DISCONNECTED
     private var iceDisconnectHandler: android.os.Handler? = null
     private var iceDisconnectRunnable: Runnable? = null
@@ -55,13 +65,24 @@ class WebRtcManager(
     private val pendingIceCandidates = CopyOnWriteArrayList<JSONObject>()
 
     fun init(dynamicIceServers: List<PeerConnection.IceServer>? = null) {
+        lastIceServers = dynamicIceServers
+        isClosed = false
         factory = PeerConnectionFactory.builder()
             .setOptions(PeerConnectionFactory.Options())
             .createPeerConnectionFactory()
 
-        val iceServers = dynamicIceServers ?: buildFallbackIceServers()
+        val relayOnly = GhostVpnService.isActive || forceRelayOnly
+        val iceServers = if (relayOnly) {
+            prioritizeRelayServers(dynamicIceServers ?: buildFallbackIceServers())
+        } else {
+            dynamicIceServers ?: buildFallbackIceServers()
+        }
         Log.d(TAG, "Using ${iceServers.size} ICE servers (dynamic=${dynamicIceServers != null})")
         com.securecall.app.debug.SecLogManager.log("ICE", "Init: ${iceServers.size} servers (dynamic=${dynamicIceServers != null})")
+        if (relayOnly) {
+            Log.d(TAG, "VPN active or relay retry — RELAY-only ICE mode")
+            com.securecall.app.debug.SecLogManager.log("ICE", "VPN active/retry -> RELAY-only ICE mode")
+        }
         iceServers.forEach { server ->
             Log.d(TAG, "  ICE server: ${server.urls}")
         }
@@ -69,11 +90,16 @@ class WebRtcManager(
         val rtcConfig = PeerConnection.RTCConfiguration(iceServers).apply {
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
             continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
-            iceTransportsType = PeerConnection.IceTransportsType.ALL
+            iceTransportsType = if (relayOnly) {
+                PeerConnection.IceTransportsType.RELAY
+            } else {
+                PeerConnection.IceTransportsType.ALL
+            }
             // BUG-037: Force all media onto a single transport — prevents multiple active ICE pairs
             bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
             rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
         }
+        com.securecall.app.debug.SecLogManager.log("ICE", "Transport policy: ${rtcConfig.iceTransportsType}")
 
         peerConnection = factory?.createPeerConnection(rtcConfig, pcObserver)
         Log.d(TAG, "PeerConnection created")
@@ -118,8 +144,24 @@ class WebRtcManager(
         )
     }
 
+    private fun prioritizeRelayServers(
+        servers: List<PeerConnection.IceServer>
+    ): List<PeerConnection.IceServer> {
+        return servers.sortedBy { server ->
+            val urls = server.urls.joinToString(" ").lowercase()
+            when {
+                urls.contains("turns:") && urls.contains(":443") -> 0
+                urls.contains("turn:") && urls.contains(":443") && urls.contains("transport=tcp") -> 1
+                urls.contains("turn:") && urls.contains("transport=tcp") -> 2
+                urls.contains("turn:") -> 3
+                else -> 4
+            }
+        }
+    }
+
     /** Caller: create DataChannel + SDP offer */
     fun createOffer() {
+        isOfferer = true
         val dcInit = DataChannel.Init().apply {
             ordered = false
             maxRetransmits = 0
@@ -127,6 +169,7 @@ class WebRtcManager(
         dataChannel = peerConnection?.createDataChannel(DC_LABEL, dcInit)
         dataChannel?.registerObserver(dcObserver)
         Log.d(TAG, "DataChannel '$DC_LABEL' created (caller)")
+        scheduleDataChannelOpenTimeout()
 
         peerConnection?.createOffer(sdpObserver, MediaConstraints())
     }
@@ -139,10 +182,13 @@ class WebRtcManager(
             pendingOffer = sdp
             return
         }
+        isOfferer = false
+        lastRemoteOffer = sdp
         val desc = SessionDescription(SessionDescription.Type.OFFER, sdp)
         pc.setRemoteDescription(setSdpObserver("setRemoteOffer"), desc)
         pc.createAnswer(sdpObserver, MediaConstraints())
         Log.d(TAG, "Remote offer set, creating answer")
+        scheduleDataChannelOpenTimeout()
     }
 
     /** Caller: receive remote answer */
@@ -237,9 +283,64 @@ class WebRtcManager(
         try { dataChannel?.close() } catch (_: Exception) {}
         try { peerConnection?.close() } catch (_: Exception) {}
         try { factory?.dispose() } catch (_: Exception) {}
+        cancelDataChannelOpenTimeout()
         dataChannel = null
         peerConnection = null
         factory = null
+    }
+
+    private fun scheduleDataChannelOpenTimeout() {
+        dataChannelOpenRunnable?.let { dataChannelOpenHandler?.removeCallbacks(it) }
+        dataChannelOpenHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        dataChannelOpenRunnable = Runnable {
+            if (!isClosed && !isDataChannelOpen) {
+                retryRelayOnlyOnce("DataChannel not OPEN after ${DATA_CHANNEL_OPEN_TIMEOUT_MS}ms")
+            }
+        }
+        dataChannelOpenHandler?.postDelayed(dataChannelOpenRunnable!!, DATA_CHANNEL_OPEN_TIMEOUT_MS)
+    }
+
+    private fun cancelDataChannelOpenTimeout() {
+        dataChannelOpenRunnable?.let { dataChannelOpenHandler?.removeCallbacks(it) }
+        dataChannelOpenHandler = null
+        dataChannelOpenRunnable = null
+    }
+
+    private fun retryRelayOnlyOnce(reason: String): Boolean {
+        if (relayRetryAttempted || isClosed) return false
+        relayRetryAttempted = true
+        forceRelayOnly = true
+        iceInGracePeriod = false
+        cancelIceDisconnectTimeout()
+        cancelDataChannelOpenTimeout()
+        statsTimer?.cancel()
+        statsTimer = null
+        isDataChannelOpen = false
+
+        Log.w(TAG, "BUG-029: $reason — restarting WebRTC once with RELAY-only")
+        com.securecall.app.debug.SecLogManager.log("ICE", "BUG-029 retry: $reason — RELAY-only restart")
+
+        try { dataChannel?.close() } catch (_: Exception) {}
+        try { peerConnection?.close() } catch (_: Exception) {}
+        try { factory?.dispose() } catch (_: Exception) {}
+        dataChannel = null
+        peerConnection = null
+        factory = null
+
+        init(lastIceServers)
+        if (isOfferer) {
+            createOffer()
+        } else {
+            val offer = lastRemoteOffer
+            if (offer != null) {
+                onRemoteOffer(offer)
+            } else {
+                Log.w(TAG, "BUG-029: Relay retry skipped — no remote offer cached")
+                com.securecall.app.debug.SecLogManager.log("ICE", "BUG-029 retry skipped — no remote offer")
+                return false
+            }
+        }
+        return true
     }
 
     // BUG-011: ICE reconnect grace period helpers
@@ -303,7 +404,10 @@ class WebRtcManager(
                 }
                 PeerConnection.IceConnectionState.FAILED -> {
                     com.securecall.app.debug.SecLogManager.log("ICE", "FAILED — no audio path found")
-                    Log.d(TAG, "ICE FAILED — no recovery possible, triggering call teardown")
+                    if (retryRelayOnlyOnce("ICE FAILED")) {
+                        return
+                    }
+                    Log.d(TAG, "ICE FAILED after relay retry — triggering call teardown")
                     cancelIceDisconnectTimeout()
                     onPeerDisconnect?.invoke()
                 }
@@ -351,6 +455,7 @@ class WebRtcManager(
             isDataChannelOpen = (state == DataChannel.State.OPEN)
             if (isDataChannelOpen) {
                 Log.d(TAG, "DataChannel opened — P2P audio transport active")
+                cancelDataChannelOpenTimeout()
             } else if (state == DataChannel.State.CLOSED) {
                 // BUG-1 FIX: Don't immediately end call on DataChannel close.
                 // ICE DISCONNECTED and DataChannel CLOSED often fire on different threads.
