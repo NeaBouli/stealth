@@ -1,6 +1,19 @@
 # Backend Modularization Plan — STX-HIGH-03
 
-Status: PLAN — nicht implementiert. Groesseres Refactoring fuer Post-Release.
+Status: PLAN — WARN/FAIL nach Codex-Review (2026-05-10). Direkter Umbau nach aktuellem Plan nicht empfohlen. Plan muss überarbeitet werden — siehe Codex-Findings in BRIDGE.md (Abschnitt "STX-HIGH-03 — BACKEND_MODULARIZATION.md Gegenpruefung").
+
+**Codex-Gesamtbewertung:**
+- PASS: Ziel (thin server.js + Module) ist sinnvoll
+- WARN: Plan braucht korrektes State/Context/Services-Design
+- FAIL: WS-Module ohne zentrale Dispatch-Schicht + state.js-Fehler würden Call-Routing, Aktivierung und Admin-Metrics brechen
+
+**Kritische Korrekturen nötig:**
+1. `state.js` Mapping-Fehler: `clientIds` ist `clientId → connId` (nicht connId→clientId), `routingTable` ist `sessionId → sessionObj` (keine clients-Map)
+2. 10 weitere State-Maps fehlen im Plan (ipConnections, rejectionTracker, walletMappings, giftCodes, siweChallenges, etc.)
+3. `let activationCodes` / `let walletMappings` — Reassign erzeugt stale Referenzen in Submodulen → Store-Pattern nötig
+4. WS-Dispatch braucht zwingend zentrale `ws/index.js` mit binary fast-path + rate-limit + parse vor Handler-Dispatch
+
+**Nächster Schritt vor Implementierung:** Überarbeiteten Plan mit korrektem State-Modell + `ws/index.js` Dispatch + Store-Pattern für Codex/CC-Review vorbereiten.
 
 ## Aktueller Zustand
 
