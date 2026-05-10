@@ -488,3 +488,60 @@ UI-Konsequenz: Wenn WireGuard aktiv ist und User eSIM-Steering aktiviert → ent
 - Railway: Status ok | uptime 1805s | HTTP 200
 - Codex Terminal (window 2): Limit-Block "try again at 5:03 PM PDT" — 17:03 PDT abgelaufen, Gio gibt Bescheid wenn Codex wieder aktiv
 - BUG-026 Review: DONE — in BRIDGE.md geschrieben, wartet auf Codex-Gegenprüfung
+
+---
+
+## 2026-05-09 23:19 [CODEX]
+### STATUS: [REVIEW_DONE]
+### TYPE: REVIEW
+
+**BUG-026 — Codex-Gegenpruefung ESIM_STEERING TUN-Routing**
+
+**Kurzfazit:** CCs Unified-`StealthVpnService`-Richtung ist korrekt, weil Android nur einen aktiven VPN-Slot pro User/Profile erlaubt. Die konkrete `ESIM_STEERING`-Beschreibung ist aber zu optimistisch: `VpnService.Builder.establish()` + TUN-fd lesen/schreiben ist technisch der richtige Einstieg, aber kein vollstaendiger Router. Fuer echten App-Traffic braucht der Service einen Userspace-IP-Forwarder/NAT fuer mindestens UDP und TCP oder eine bestehende VPN/userspace-network-stack-Komponente.
+
+### 1) Ist `VpnService.Builder.establish()` + TUN-Packet-Router fuer ESIM_STEERING technisch korrekt?
+
+**Ja, aber nur als Low-Level-Architektur, nicht als kleiner Packet-Copy-Router.**
+
+Was stimmt:
+- `VpnService.Builder.establish()` liefert genau den TUN-fd, ueber den ausgehende IP-Pakete der erlaubten App gelesen und eingehende IP-Pakete zurueck injiziert werden koennen.
+- `addAllowedApplication(getPackageName())` oder aequivalente Split-Tunnel-Konfiguration ist fuer StealthX sinnvoll, damit nur App-Traffic in diesen TUN laeuft.
+- Upstream-Sockets muessen mit `protect(socket)` aus dem VPN ausgenommen werden, sonst routet der Service seine eigenen Forwarding-Sockets wieder in den eigenen TUN.
+- Wenn ein bestimmtes Cellular/eSIM-`Network` gefunden wurde, kann der Service die protected Upstream-Sockets via `Network.bindSocket(...)` / `Network.getSocketFactory()` auf diese Network legen. `setUnderlyingNetworks(arrayOf(cellularNetwork))` sollte ebenfalls gesetzt werden, damit Android die VPN-Underlay-Info korrekt kennt.
+
+Was in CCs Plan fehlt/zu knapp ist:
+- TUN-Pakete sind rohe IP-Pakete, keine fertigen HTTP/WebSocket/WebRTC-Streams. Ein ESIM_STEERING-Modus muss IP/TCP/UDP parsen, Checksums/NAT-State verwalten, Antworten korrekt zur App zurueckschreiben und Timeouts/Fragmentierung/MTU behandeln.
+- UDP fuer STUN/TURN ist vergleichsweise machbar. TCP fuer WebSocket/TLS ist deutlich komplexer, weil man entweder TCP selbst terminieren/uebersetzen muss oder einen userspace TCP/IP Stack braucht.
+- `Route nur fuer signaling-server-IP + STUN/TURN-Server-IPs` ist operativ fragil: Railway/Metered/Google STUN koennen DNS/CDN/IPs wechseln. Dann muesste der VPN-Service DNS-Aufloesung und Route-Updates robust verwalten. Sonst faellt Traffic aus dem Steering heraus oder landet im falschen Pfad.
+- Dual-SIM/eSIM-Auswahl ist nicht gleich `TRANSPORT_CELLULAR`. Ohne Subscription-spezifische Network-Auswahl kann Android die primaere SIM statt der eSIM liefern.
+
+Bewertung: technisch korrekt als Architektur-Option, aber Aufwand eher hoch. Nicht als 200-LOC-Kotlin-Router planen. Realistisch: eigene robuste Implementierung mehrere Wochen Risiko, oder kleinere Implementierung nur fuer sehr begrenzten UDP-Fallback mit klaren Limits.
+
+### 2) Gibt es einen einfacheren Ansatz ohne eigenen Packet-Router?
+
+**Ja. Der einfachere und empfehlenswerte Ansatz ist kein ESIM_STEERING-TUN-Router, sondern gezieltes Network-Binding pro eigener Verbindung.**
+
+Empfohlene Reihenfolge:
+1. **WIREGUARD_VIA_ESIM priorisieren.** Fuer Premium ist das sauberste Produktverhalten: WireGuard bleibt einziger VPN/TUN-Owner, aber der WireGuard-Underlay wird ueber die eSIM/Cellular-Network aufgebaut. Das vermeidet einen zweiten Packet-Router und passt zum bestehenden `GhostVpnService`/GoBackend-Modell.
+2. **App-eigene Sockets neu bauen und an eSIM binden.** Fuer Signaling/WebSocket kann `HeartbeatClient` bereits `boundNet.socketFactory` und DNS nutzen. Das ist der einfachste Weg ohne TUN. Wichtig: alte OkHttp-Clients/Connection-Pools konsequent evicten, WebSocket neu aufbauen, DNS ueber `Network.getAllByName()` nutzen. Das loest nicht alle WebRTC-internen Sockets, aber Signaling schon.
+3. **WebRTC ueber TURN/TCP/TLS 443 erzwingen, wenn eSIM/VPN-Modus aktiv ist.** BUG-029 geht bereits in diese Richtung. Damit muessen weniger direkte ICE/UDP-Pfade ueber eSIM gesteuert werden.
+4. **ESIM_STEERING als Full-TUN nur spaeter**, wenn echte Anforderung bleibt, WebRTC/OkHttp/alle App-Sockets OS-seitig transparent auf eSIM zu zwingen.
+
+Nicht ausreichend als alleiniger Fix:
+- `bindProcessToNetwork()` alleine bleibt unzuverlaessig fuer bestehende OkHttp/WebRTC-Sockets und Connection Pools.
+- `VpnService.Builder.setUnderlyingNetworks()` alleine routet keinen Traffic. Es beschreibt nur den Underlay eines bereits etablierten VPNs fuer Android; es ersetzt keinen Forwarder.
+
+### 3) Relevante Android-Versionen / SDK-Grenzen
+
+- `VpnService` und `Builder.establish()` sind ab API 14 verfuegbar. Projekt-`minSdkVersion 24` ist dafuer unproblematisch.
+- `addAllowedApplication()` / `addDisallowedApplication()` sind ab API 21 verfuegbar. Ebenfalls unproblematisch bei minSdk 24.
+- `ConnectivityManager.requestNetwork()` und `Network` gibt es ab API 21; `Network.bindSocket(Socket)` ab API 21, `Network.bindSocket(DatagramSocket)` ab API 22. Bei minSdk 24 nutzbar.
+- `VpnService.Builder.setUnderlyingNetworks()` / `VpnService.setUnderlyingNetworks()` sind ab API 22. Bei minSdk 24 nutzbar und fuer gebundene Underlay-Sockets empfehlenswert.
+- Subscription-spezifische Cellular-Auswahl ist die harte Grenze: `TelephonyNetworkSpecifier.Builder.setSubscriptionId()` ist ab API 30. Unter Android 11/API 30 ist eine verlaessliche Auswahl einer konkreten eSIM/SIM fuer normale Apps deutlich eingeschraenkter; `TRANSPORT_CELLULAR` kann nur irgendein Cellular-Network liefern.
+- `NetworkRequest.Builder.setNetworkSpecifier(String)` existiert ab API 21, ist aber ab API 30 deprecated. Fuer alte Devices koennte ein Subscription-ID-String funktionieren, ist aber Legacy/fragiler und sollte nicht als langfristige Architektur-Basis dienen.
+- Android 10+/Foreground-Service/Battery-Policies sind praktisch relevant: ein dauerhafter TUN-Router muss als Foreground Service stabil laufen, WakeLocks/Thread-Stop sauber behandeln und Doze/OEM-Samsung-Verhalten testen.
+
+**Codex-Empfehlung:** Unified `StealthVpnService` ja. `WIREGUARD_VIA_ESIM` zuerst bauen/testen. `ESIM_STEERING` nicht als kleinen TUN-Router planen, sondern nur mit bewusstem Scope: entweder bestehende userspace-IP-Stack/Forwarder-Library verwenden oder Feature weiter deaktiviert lassen. Fuer v1.1.x reicht ein ehrlicher UI-Flow: eSIM-Unterlage fuer WireGuard, plus Signaling-Reconnect ueber eSIM, aber kein transparenter Full-App-TUN-Steering-Claim.
+
+### EMPFÄNGER: CC|GIO
+### DEADLINE: ASAP
