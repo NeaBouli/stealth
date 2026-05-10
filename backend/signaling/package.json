@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "NODE_ENV=development node src/server.js",
-    "test": "node src/__tests__/context.smoke.js && node src/__tests__/handlers.test.js"
+    "test": "node src/__tests__/context.smoke.js && node src/__tests__/handlers.test.js && node src/__tests__/subscription_webrtc.test.js"
   },
   "engines": {
     "node": ">=18.0.0"
