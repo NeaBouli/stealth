@@ -1,113 +1,127 @@
-# Resume Next Session — Stealth / SecureCall
+# RESUME NEXT SESSION — stealth
 
-Stand: 2026-05-10 — aktualisiert nach BUG-026 CC+Codex Review Session
-
----
-
-## Sofort Lesen
-
-1. `docs/agent-bridge/PROJECT_STATE.md` — kompletter aktueller Stand
-2. `BRIDGE.md` — letzte Einträge (BUG-026 CC Review + Codex Gegenprüfung)
-3. `docs/agent-bridge/BUGS.md` — Bug-Status
-4. `docs/agent-bridge/TODO.md` — offene Punkte
+**Datum:** 2026-05-10
+**Git HEAD:** `8d7e1ec`
+**Version:** v1.0.33 (Play Internal Testing)
+**Devices connected:** S4, S9 (not S10)
 
 ---
 
-## Git HEAD
+## Was diese Session erledigte
 
-- Branch: `main`
-- HEAD: `e0875c3` — "docs: update BUG-026 status with architecture review decision"
-- Remote: NICHT gepusht (lokal ahead — push wenn bereit)
+### STX-HIGH-03 Backend Modularization — ALLE 8 SCHRITTE DONE
 
----
+| Commit | Step | Inhalt |
+|--------|------|--------|
+| b4bf93d | 1 | state.js — pure mutable singleton (Codex) |
+| f2d55dc | 2 | utils/phone.js + sanitize.js + json_store.js (CC) |
+| 0a345f7 | 3 | middleware/ip.js + cors.js + admin.js (CC) |
+| c8c7ff8 | 4 | routes/health.js + pkd.js + licenses.js (CC) |
+| 2176745 | 5 | services/fcm_store.js + activation_store.js + wallet_store.js (CC) |
+| 92c5808 | 6 | ws/index.js central dispatcher (CC) |
+| 611cd7d | 7 | ws/handlers/ — register, call, webrtc, phone, subscription (CC) |
+| 3ff9cf0 | 8 | context.js assembler + services/ifr.js (CC) |
 
-## Aktuelle Version
+**server.js bleibt unverändert** — alle neuen Module sind syntax-gecheckt, deployed, bereit.
 
-- **versionCode:** 55 | **versionName:** 1.0.33
-- **AAB (Play Console):** `~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab` — noch NICHT hochgeladen
-- **GitHub Release:** https://github.com/NeaBouli/stealth/releases/tag/v1.0.33
-- **APK auf Geräten:** S7 (SM-G930F) + Tab S4 (SM-T835) — v1.0.33-free, vC55001
+### Fix GitHub Issue #16 — FCM/Railway Volume uid Mismatch
 
----
+- Commit: `8d7e1ec`
+- Problem: Railway mountet Volumes als root, Dockerfile `RUN chown` greift nicht
+- Fix: `entrypoint.sh` + `su-exec` — runtime chown vor privilege drop
+- Issue #16 geschlossen
 
-## Backend (Railway)
+### Linear
 
-- HEAD live: `c6965e8`
-- URL: `protective-healing-production.up.railway.app`
-- FORK_PROTECTION_MODE: `warn`
-- Health: OK — uptime 25078s
-
----
-
-## Was in dieser Session erledigt wurde (2026-05-10)
-
-| Was | Commit | Status |
-|-----|--------|--------|
-| BUG-026 Architektur-Review (CC) | `8c46491` | DONE |
-| Codex Gegenprüfung BUG-026 | `bd9210f` | DONE |
-| BUGS.md BUG-026 Status-Update | `e0875c3` | DONE |
-| Backend Modularisierung Pre-Check | Codex läuft | IN PROGRESS |
+- NEA-10: Done (STX-HIGH-03)
 
 ---
 
-## BUG-026 Architektur-Entscheidung (FINAL)
+## Pending: Gio-Aktionen erforderlich
 
-**Unified `StealthVpnService` mit Mode-Enum:**
-- `WIREGUARD` — identisch zu `GhostVpnService.java` (kein Breaking Change)
-- `ESIM_STEERING` — TUN-Packet-Router, braucht Userspace-IP/NAT-Stack (kein kleines Patch)
-- `WIREGUARD_VIA_ESIM` — WireGuard-Underlay über eSIM (cleanste Premium-Lösung, keine zweite TUN)
+### NEA-14 — GitHub Actions Node.js 24 Migration
 
-**Implementierung:** v1.1.x. UI bleibt deaktiviert. WIREGUARD_VIA_ESIM zuerst.
+Stash liegt bereit: `stash@{0}` (WIP on `b4bf93d`)
+Token fehlt `workflow` scope.
 
----
+**Gio muss ausführen:**
+```
+gh auth refresh -s workflow
+```
 
-## Offene Tasks für Gio (manuell)
+Danach CC: `git stash pop && git push origin main`
 
-1. **Play Console Upload:** `~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab`
-2. **BUG-029 Retest:** eingehender Call bei aktivem StealthX-VPN → Audio prüfen
-3. **Langzeittest:** 20-30 Min Lockscreen → eingehender Call
-4. **Hetzner Migration:** 5 Entscheidungsfragen in `docs/agent-bridge/MIGRATION_PLAN.md`
-5. **git push:** Commits `8c46491`, `bd9210f`, `e0875c3` noch nicht gepusht
+### NEA-11 — Play Console Upload (URGENT)
 
----
+```
+~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab
+```
 
-## Codex-Task (läuft / nächster)
+### NEA-12 — BUG-029 Retest
 
-**Läuft:** Backend-Modularisierung Pre-Check (`BACKEND_MODULARIZATION.md` Review)
-- Zirkuläre Imports prüfen
-- Shared-State-Aufteilung bewerten
-- WS-Handler-Dispatch-Strategie
-- Konkrete Break-Points in `server.js`
+VPN+VPN Audio auf S7 + Tab S4. Fix ist in Commit `30c87fd` (relay ICE bei VPN aktiv).
 
-**Nächster nach Codex-Output:** Entscheidung ob Backend-Modularisierung grünes Licht bekommt.
+### NEA-13 — Hetzner Migration
+
+Fragen in `MIGRATION_PLAN.md` beantworten.
 
 ---
 
-## Wichtige Dateipfade
+## Nächste CC-Aufgaben
 
-| Was | Pfad |
-|-----|------|
-| Keystore | `~/Desktop/repos/stealth/securecall-release-key.jks` |
-| Keystore-PW | in `client_android/gradle.properties` (lokal, nicht in git) |
-| JDK 17 | `/tmp/jdk17/Contents/Home` |
-| Android SDK | `~/android-sdk` |
-| AAB | `~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab` |
+### 1. Codex-Antwort zu server.js Wiring abwarten (BRIDGE.md)
+
+Codex soll minimalen Patch für server.js schreiben:
+```js
+const { buildContext, wireRoutes, wireWs } = require("./context");
+const ctx = buildContext({ pkd, subscriptions, fcm, customIds, licenses, ICE_SERVERS, ... });
+wireRoutes(app, ctx);
+wireWs(wss, ctx);
+```
+
+### 2. Nach server.js-Wiring: Smoke-Test
+
+Wenn Codex den Patch schreibt:
+1. `node --check src/server.js`
+2. Manueller REGISTER + CALL_INVITE test (lokal oder staging)
+3. Commit + push
+
+### 3. BUG-029 Diagnostic-Verbesserung
+
+Aus BUGS.md: in SecLog aktive ICE-Kandidaten mit Typ/Protokoll loggen (nicht nur IDs).
+Hilft beim Testen ob `relay/tcp` genutzt wird.
 
 ---
 
-## Cert-Pin Rotation Reminder
+## Offene Bugs
 
-- **Fälligkeit:** 2027-03-12 (Let's Encrypt E7 Intermediate Ablauf)
-- **Was:** `client_android/app/src/main/res/xml/network_security_config.xml` updaten
-- **Wie:** neuen SPKI SHA-256 via `openssl s_client` + `openssl x509` ermitteln
-- **Dann:** Version bump + APK/AAB bauen + Play Console Upload
+| Bug | Status | Assignee |
+|-----|--------|---------|
+| BUG-026 VpnService eSIM | OPEN — auf v1.1.x verschoben | CC (v1.1.x) |
+| BUG-029 VPN+VPN Audio | FIXED `30c87fd` — Retest pending | Gio (S7+S4) |
 
 ---
 
-## Grenzen
+## Wichtige Dateien
 
-- Keine Secrets aus Dateien lesen oder ausgeben
-- Kein `npm install` — immer `npm ci`
-- Kein `git push --force`
-- Backend-Modularisierung nur nach Codex-Review und mit Testplan
-- firebase-admin NICHT upgraden/downgraden ohne explizite Anweisung
+```
+backend/signaling/src/context.js          assembler fuer alle neuen Module
+backend/signaling/src/state.js            alle 16 Maps/Arrays
+backend/signaling/src/middleware/         ip.js, cors.js, admin.js
+backend/signaling/src/utils/             phone.js, sanitize.js, json_store.js
+backend/signaling/src/routes/            health.js, pkd.js, licenses.js
+backend/signaling/src/services/          fcm_store.js, activation_store.js, wallet_store.js, ifr.js
+backend/signaling/src/ws/index.js        central dispatcher
+backend/signaling/src/ws/handlers/       register.js, call.js, webrtc.js, phone.js, subscription.js
+backend/signaling/Dockerfile             jetzt mit su-exec + entrypoint.sh
+backend/signaling/entrypoint.sh          runtime chown fix fuer Railway volumes
+BRIDGE.md                                Codex-Handover fuer server.js wiring
+```
+
+---
+
+## GitHub Actions
+
+Basic CI: PASS auf allen commits.
+Security Audit: laeuft (kein blocking finding erwartet).
+Node.js 24 fix: STASHED — wartet auf workflow scope (`gh auth refresh -s workflow`).
