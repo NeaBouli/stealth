@@ -1,7 +1,7 @@
 # RESUME NEXT SESSION — stealth
 
 **Datum:** 2026-05-10
-**Git HEAD:** `2ab058e`
+**Git HEAD:** `d33caa2`
 **Version:** v1.0.33 (Play Internal Testing)
 
 ---
@@ -15,28 +15,33 @@
 | `e2c358e` | context.smoke.js — 18 WS-Handler Smoke Test PASS |
 | `2e37d6a` | BRIDGE.md: State Split-Brain Warning für server.js |
 | `9ab447a` | TODO.md: STX-HIGH-03 DONE, uuid vuln FIXED |
-| `2ab058e` | **server.js State Split-Brain FIXED** — buildContext() + wireWs() integriert |
+| `2ab058e` | server.js State Split-Brain FIXED — buildContext() + wireWs() integriert |
+| `39f8a5b` | handlers.test.js — 45 WS Handler Integration Tests PASS |
+| `09588a4` | BRIDGE.md: handler tests log |
+| `a1f385e` | BRIDGE + RESUME: docs update |
+| `f7bd049` | subscription_webrtc.test.js — 58 Integration Tests PASS |
+| `0443cb4` | BRIDGE.md: subscription/webrtc tests log |
+| `d33caa2` | fix: test isolation — saveActivationCodes no-op + fcm_tokens.json gitignored |
 
-**Commit `2ab058e` Details:**
-- process.env.{FCM_TOKENS_FILE,CODES_FILE,WALLETS_FILE} nach DATA_DIR gesetzt
-- state.js + Store-Module + middleware/ip.js + services/ifr.js + context.js importiert
-- 1087-Zeilen wss.on("connection",...) Monolith entfernt
-- Alle inline Map-Deklarationen ersetzt durch Singletons
-- buildContext(externalDeps) + wireWs(wss, ctx) aufgerufen
-- node --check PASS + context.smoke.js PASS (18 WS-Handler)
+### Test Coverage — signaling backend — VOLLSTÄNDIG
 
-### Cross-Repo Crypto Test Coverage (vorherige Session)
+| Handler-Datei | Test-Suite | Assertions |
+|---------------|------------|-----------|
+| register.js | handlers.test.js | ✓ |
+| call.js | handlers.test.js | ✓ |
+| phone.js | handlers.test.js | ✓ |
+| subscription.js | subscription_webrtc.test.js | ✓ (async VERIFY_IFR_LOCK excl.) |
+| webrtc.js | subscription_webrtc.test.js | ✓ |
+| context.js (18 handlers) | context.smoke.js | ✓ |
 
-| Repo | Commits | Inhalt |
-|------|---------|--------|
-| securechat | `9de5242` | BUG-001 fix: SodiumInitializer JVM fallback |
-| securechat | `d8303b4` | 5 Argon2id-Tests |
-| securechat | `c040c9a` | BRIDGE.md update |
-| securechat | `126e334` | 8 DoubleRatchet-Tests |
-| chameleon  | `e025bfa` | 5 Argon2id-Tests + LOGBUCH S-02 DONE |
-| chameleon  | `da22245` | BRIDGE.md update |
-| chameleon  | `28e4aeb` | 8 DoubleRatchet-Tests |
-| chameleon  | `926500a` | LOGBUCH: 24/24 crypto tests |
+**`npm test`: 121/121 PASS** (18 smoke + 45 handlers + 58 subscription/webrtc)
+
+**GitHub Actions (HEAD `0443cb4`):** Basic CI ✓ + Security Audit ✓
+
+**Test-Isolation-Fix (HEAD `d33caa2`):**
+- `activation_codes.json` wurde durch Tests überschrieben (saveActivationCodes schreibt echte Datei)
+- Fix: saveActivationCodes als injizierbares externalDep in buildContext — Tests übergeben no-op
+- `fcm_tokens.json` zu .gitignore hinzugefügt (war untracked runtime artifact)
 
 ---
 
@@ -70,20 +75,25 @@ Fragen in `MIGRATION_PLAN.md` beantworten.
 
 ---
 
-## Nächste CC-Aufgaben
+## Nächste CC-Aufgaben (autonom machbar)
 
 ### 1. Staging / Railway Manual Smoke Test
 
 Nach Railway Redeploy (oder lokal):
 ```bash
-# REGISTER + CALL_INVITE Smoke Test
 wscat -c ws://localhost:8080/signal
 # {"type":"REGISTER","clientId":"alice","appSignature":"xxx"}
 # {"type":"REGISTER","clientId":"bob","appSignature":"xxx"}
 # {"type":"CALL_INVITE","to":"bob"}
 ```
 
-### 2. NEA-14 nach gh auth refresh
+### 2. VERIFY_IFR_LOCK async path testen (optional)
+
+In subscription_webrtc.test.js einen async Test ergänzen, der `ctx.verifyIfrLock`
+über einen Monkey-Patch auf dem ctx-Objekt (vor Handler-Konstruktion) mockt.
+Erfordert Anpassung in context.js: verifyIfrLock als injizierbares externalDep.
+
+### 3. NEA-14 nach gh auth refresh
 
 Nach `gh auth refresh -s workflow`:
 ```bash
@@ -108,7 +118,9 @@ git push origin main
 ```
 backend/signaling/src/server.js               thin bootstrap — buildContext + wireWs
 backend/signaling/src/context.js              assembler + wireWs/wireRoutes
-backend/signaling/src/__tests__/context.smoke.js  18 WS-Handler Test (npm test)
+backend/signaling/src/__tests__/context.smoke.js         18 WS-Handler (npm test)
+backend/signaling/src/__tests__/handlers.test.js         45 assertions (npm test)
+backend/signaling/src/__tests__/subscription_webrtc.test.js  58 assertions (npm test)
 backend/signaling/src/state.js               alle 16 Maps/Arrays (Singletons)
 backend/signaling/src/middleware/             ip.js, cors.js, admin.js
 backend/signaling/src/utils/                 phone.js, sanitize.js, json_store.js
@@ -117,13 +129,13 @@ backend/signaling/src/services/              fcm_store.js, activation_store.js, 
 backend/signaling/src/ws/index.js            central dispatcher
 backend/signaling/src/ws/handlers/           register.js, call.js, webrtc.js, phone.js, subscription.js
 backend/signaling/Dockerfile                 mit su-exec + entrypoint.sh
-BRIDGE.md                                    State Split-Brain RESOLVED + Codex-Log
+BRIDGE.md                                    vollständiger Session-Log CC+Codex
 ```
 
 ---
 
 ## GitHub Actions
 
-Basic CI: PASS.
-Security Audit: PASS.
+Basic CI: PASS (HEAD `0443cb4`).
+Security Audit: PASS (HEAD `0443cb4`).
 Node.js 24 fix: STASHED — wartet auf `gh auth refresh -s workflow` von Gio.

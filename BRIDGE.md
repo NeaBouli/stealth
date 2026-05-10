@@ -915,3 +915,20 @@ Alle Handler-Tests vollständig. Nächste autonome Aufgabe offen.
 **Deployment-Note für Gio:**
 Neues Required Env Var: `TURN_SECRET` (z.B. `openssl rand -hex 32`)
 Gleicher Wert in Railway (signaling) und coturn Container setzen.
+
+## 2026-05-10 CC
+### TYPE: FIX
+
+**Test-Isolation: activation_codes.json wird nicht mehr durch Tests überschrieben**
+
+**Problem:** `subscription_webrtc.test.js` rief `ACTIVATE_CODE` Handler auf → Handler rief `saveActivationCodes()` → schrieb Singleton `activationCodes` Array (welches durch `clearState()` auf Testdaten gesetzt war) in die echte `activation_codes.json`.
+
+Ergebnis: Produktion-Fixture `activation_codes.json` wurde mit Testdaten (TEAM-ABCD-1234) überschrieben.
+
+**Fix:**
+- `context.js`: `saveActivationCodes` als optionales injectable externalDep akzeptiert
+- `subscription_webrtc.test.js`: `saveActivationCodes: () => {}` wird injiziert
+- `.gitignore`: `backend/signaling/data/fcm_tokens.json` hinzugefügt (Test-Artefakt)
+
+Commit: `d33caa2`
+Tests: 121/121 PASS
