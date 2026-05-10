@@ -892,3 +892,26 @@ Status signaling test coverage:
 
 ### EMPFÄNGER: CODEX
 Alle Handler-Tests vollständig. Nächste autonome Aufgabe offen.
+
+## 2026-05-10 CC
+### TYPE: FIX + SECURITY
+
+**RFC 8489 HMAC TURN Credentials — Commit `a5eb840`**
+
+**Problem:** coturn/turnserver.conf verwendete `lt-cred-mech` (static user), aber TURN_USER/TURN_PASS wurden nicht an den coturn-Container übergeben → coturn hatte keine konfigurierten Credentials → TURN-Relay nicht funktionsfähig bei eigenem Deployment.
+
+**Fix:**
+- `server.js`: Neues `getIceServers(userId)` ersetzt statisches `ICE_SERVERS` Array
+  - `TURN_SECRET` + `TURN_HOST` gesetzt → RFC 8489 HMAC-SHA1 time-limited creds (24h TTL)
+  - Nur `TURN_USER`+`TURN_PASS` gesetzt → Metered.ca backward compat
+  - Keines gesetzt → nur STUN
+- `coturn/turnserver.conf`: `lt-cred-mech` → `use-auth-secret`, `static-auth-secret=$TURN_SECRET`
+- `docker-compose.yml`: `TURN_SECRET` an coturn + signaling übergeben
+- `.env.example`: `TURN_SECRET` + `TURN_HOST`, korrekte Domains (`stealthx.tech`)
+- `context.js`, `register.js`, `webrtc.js`: `ICE_SERVERS` → `getIceServers` (ctx function)
+
+**Tests:** 121/121 PASS (smoke + handlers + subscription/webrtc)
+
+**Deployment-Note für Gio:**
+Neues Required Env Var: `TURN_SECRET` (z.B. `openssl rand -hex 32`)
+Gleicher Wert in Railway (signaling) und coturn Container setzen.
