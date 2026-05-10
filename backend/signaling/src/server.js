@@ -45,6 +45,7 @@ const {
   ipConnections, rejectionTracker, ipConnectionAttempts,
   codeUsageCount, giftCodes, siweChallenges,
   inviteRateLimits, checkoutRateLimits,
+  lastBroadcast,
 } = state;
 // Store-backed singletons (load from DATA_DIR-aligned paths set above)
 const { fcmTokens, loadFcmTokens, saveFcmTokens }                 = require("./services/fcm_store");
@@ -53,6 +54,10 @@ const { walletMappings, loadWalletMappings, saveWalletMappings }   = require("./
 const { getClientIp }                                               = require("./middleware/ip");
 const { verifyIfrLock }                                             = require("./services/ifr");
 const { buildContext, wireWs }                                      = require("./context");
+
+// Hoisted so HTTP route handlers (defined below) can call ctx.sendToClient
+// after buildContext() runs at startup — before any request arrives.
+let ctx;
 
 // Atomic JSON write: writes to .tmp then renames (POSIX rename is atomic).
 // Prevents corruption when multiple handlers write concurrently or process
@@ -371,12 +376,6 @@ const TEMPLATE_META = {
   11: { icon: "📢", title: "Official Announcement" }
 };
 
-let lastBroadcast = {
-  template_id: 8, icon: "🟢", title: "All Clear",
-  body: "All systems operational. No active alerts.",
-  timestamp: new Date().toISOString(), active: false
-};
-
 app.get("/status/last-broadcast", (req, res) => {
   res.json(lastBroadcast);
 });
@@ -424,11 +423,11 @@ app.post("/admin/broadcast", requireAdmin, (req, res) => {
   }
 
   const meta = TEMPLATE_META[template_id] || { icon: "📡", title: "Broadcast" };
-  lastBroadcast = {
+  Object.assign(lastBroadcast, {
     template_id, icon: meta.icon, title: meta.title,
     body: "", timestamp: new Date().toISOString(),
     active: template_id !== 8
-  };
+  });
 
   console.log(`[BROADCAST] Emergency template=${template_id} sent to ${wsSent} WS clients, ${fcmTokens.size} FCM targets`);
   res.json({ ok: true, ws_sent: wsSent, fcm_targets: fcmTokens.size });
@@ -547,7 +546,7 @@ app.post("/invite/accepted", inviteRateLimit, (req, res) => {
     console.log("[INVITE] Accepted notification sent to", inviterSecureId, "from", newUserSecureId);
   }
   // Also send via WebSocket if online
-  sendToClient(inviterSecureId, {
+  ctx.sendToClient(inviterSecureId, {
     type: "INVITE_ACCEPTED",
     newUserSecureId,
     message: newUserSecureId + " joined SecureCall!"
@@ -875,7 +874,7 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
 // --- Wire modular WS context (replaces inline wss.on("connection",...) block) ---
 // All Maps/arrays passed here are the same singletons used by HTTP routes above,
 // so HTTP routes and WS handlers share one consistent state — no split-brain.
-const ctx = buildContext({
+ctx = buildContext({
   pkd, subscriptions, fcm, customIds, licenses,
   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
   rateLimit, hb,
