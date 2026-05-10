@@ -279,6 +279,7 @@ async function runIfrLockAsyncTests() {
       rateLimit: mockRateLimit, hb: mockHb,
       giftCodes: new Map(), saveGiftCodes: () => {},
       saveActivationCodes: () => {},
+      saveWalletMappings: () => {},
       verifyIfrLock,
     });
   }

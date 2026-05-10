@@ -103,6 +103,7 @@ function buildContext(externalDeps) {
     CLIENT_ID_REGEX,
     saveActivationCodes: saveActivationCodesOverride,
     verifyIfrLock: verifyIfrLockOverride,
+    saveWalletMappings: saveWalletMappingsOverride,
   } = externalDeps;
 
   // Core state from state.js (Maps/Arrays are shared references)
@@ -127,7 +128,8 @@ function buildContext(externalDeps) {
     loadFcmTokens, saveFcmTokens,
     loadActivationCodes,
     saveActivationCodes: saveActivationCodesOverride || saveActivationCodes,
-    loadWalletMappings, saveWalletMappings,
+    loadWalletMappings,
+    saveWalletMappings: saveWalletMappingsOverride || saveWalletMappings,
     // Utils
     normalizePhone, hashPhone, sanitize,
     // Middleware
