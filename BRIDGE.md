@@ -545,3 +545,190 @@ Nicht ausreichend als alleiniger Fix:
 
 ### EMPFÄNGER: CC|GIO
 ### DEADLINE: ASAP
+
+---
+
+## 2026-05-09 23:45 [CODEX]
+### STATUS: [REVIEW_DONE]
+### TYPE: REVIEW
+
+**STX-HIGH-03 — BACKEND_MODULARIZATION.md Gegenpruefung**
+
+**Gesamtergebnis: WARN**
+
+Der Plan ist in der Zielrichtung sinnvoll (`server.js` als thin entry point, HTTP-Routes und WS-Handler auslagern), aber in der aktuellen Form zu grob und an mehreren Stellen sachlich ungenau. Ein mechanisches Extrahieren nach der vorgeschlagenen Struktur wuerde mit hoher Wahrscheinlichkeit Call-Routing, Aktivierung/Gifts, Admin-Metrics oder WS-Cleanup brechen.
+
+---
+
+### 1) Zirkulaere Import-Risiken zwischen vorgeschlagenen Modulen
+
+**Bewertung: WARN**
+
+Das groesste Risiko entsteht, wenn `state.js` mehr als reinen State exportiert oder Service-Module wie `subscriptions` / `customIds` aufnimmt. Der Plan listet beide in `state.js`; das sollte vermieden werden.
+
+Problematische Abhaengigkeitsketten:
+
+- `server.js -> routes/custom-id/customIds.setupRoutes -> requireAdmin/middleware -> state/helpers -> customIds`
+- `ws/calls.js -> customIds.resolve() -> custom_ids.js routes/setup -> requireAdmin/server helpers`
+- `routes/stripe.js -> activationCodes reference -> state.js -> payments/sold_codes/stripe_handler -> routes`
+
+Konkrete Fundstellen:
+
+- `customIds.resolve()` wird im WS-Call-Routing direkt aus `CALL_INVITE` genutzt: `server.js` Zeilen 814-821.
+- `customIds.setupRoutes(app, requireAdmin)` wird spaeter als Express-Route-Mount genutzt: `server.js` Zeilen 2127-2132.
+- `subscriptions.getSubscription()` wird direkt von HTTP-Routes genutzt: `server.js` Zeilen 506-515 und 527-547.
+- `stripeHandler.setupRoutes(app, activationCodes)` bekommt eine mutable Referenz auf `activationCodes`: `server.js` Zeilen 2118-2124.
+
+Empfehlung:
+
+- `state.js` darf nur Datencontainer und ggf. sehr kleine State-Accessors exportieren.
+- Service-Module (`custom_ids`, `subscriptions`, `fcm`, `licenses`, `pkd`) bleiben Services und werden in `context` injiziert.
+- Zielrichtung: `server.js -> route/ws modules -> context/state/services/helpers`.
+- Keine Rueckimporte von `state.js` oder Modulen in `server.js` erzwingen.
+
+---
+
+### 2) Shared State: Ist `state.js` als zentraler Export korrekt?
+
+**Bewertung: WARN**
+
+Ja, ein zentrales `state.js` ist grundsaetzlich korrekt. Der Plan beschreibt den State aber teilweise falsch und unvollstaendig.
+
+Falsche Angaben im Plan:
+
+- `clientIds` ist nicht `connId -> clientId`, sondern `clientId -> connId`. Fundstelle: `server.js` Zeilen 141-142.
+- `routingTable` ist nicht `clientId -> connId`, sondern `sessionId -> { sessionId, from, to, state, created, updated }`. Fundstelle: `server.js` Zeilen 144-146.
+- `sessions` existiert nicht separat. Die Sessions sind `routingTable`.
+
+State, der im Plan fehlt:
+
+- `ipConnections`: pro-IP Connection Count. Fundstelle: `server.js` Zeilen 78-80.
+- `rejectionTracker`: Fork-Protection-Reconnect-Spam. Fundstelle: `server.js` Zeilen 81-83.
+- `ipConnectionAttempts`: IP Attempt Sliding Window. Fundstelle: `server.js` Zeilen 85-86.
+- `codeUsageCount`: Aktivierungs-Code Runtime-Usage. Fundstelle: `server.js` Zeile 249.
+- `walletMappings`: IFR/SIWE Wallet-Bindings. Fundstelle: `server.js` Zeilen 280-299.
+- `giftCodes`: Gift/Google-Play/Billing Codes. Fundstelle: `server.js` Zeilen 1770-1794.
+- `inviteRateLimits`: Invite-HTTP-Rate-Limit. Fundstelle: `server.js` Zeilen 1845-1858.
+- `siweChallenges`: SIWE Nonces. Fundstelle: `server.js` Zeilen 1966-1968.
+- `checkoutRateLimits`: Stripe Dynamic Checkout Rate-Limit. Fundstelle: `server.js` Zeilen 2160-2173.
+- `lastBroadcast`: Emergency Broadcast Status. Fundstelle: `server.js` Zeilen 1707-1711.
+
+Wichtiges Mutability-Risiko:
+
+- `activationCodes` ist `let activationCodes = []` und wird in `loadActivationCodes()` neu zugewiesen. Fundstellen: `server.js` Zeilen 187-203.
+- `walletMappings` ist ebenfalls `let` und wird in `loadWalletMappings()` neu zugewiesen. Fundstellen: `server.js` Zeilen 280-290.
+- Wenn andere Module eine exportierte Array-Referenz halten, koennen sie nach Reload/Load stale werden.
+
+Empfehlung:
+
+- `state.js` sollte ein Objekt exportieren, dessen Properties mutiert werden, statt lokale `let`-Bindings zu reassignen.
+- Persistenzfunktionen (`saveFcmTokens`, `saveActivationCodes`, `saveWalletMappings`, `saveGiftCodes`) gehoeren nicht in WS-Handler, sondern in kleine Store/Repository-Module.
+- `state.js` sollte keine externen Services wie `subscriptions` oder `customIds` exportieren; diese gehoeren in einen `services`-Context.
+
+---
+
+### 3) WS-Handler-Aufteilung ohne neue zentrale Dispatch-Schicht
+
+**Bewertung: FAIL fuer “ohne Dispatch-Schicht”; PASS fuer kleine zentrale Dispatch-Schicht**
+
+Die WS-Handler teilen heute einen einzigen `ws.on("message")` Handler. Eine Aufteilung in `ws/register.js`, `ws/calls.js`, `ws/webrtc.js`, etc. ohne zentrale Dispatch-Schicht ist nicht sinnvoll, weil alle Message-Typen dieselbe Vorverarbeitung brauchen.
+
+Gemeinsame Vorverarbeitung im aktuellen Code:
+
+- Binary fast-path fuer Audio/Relay vor JSON-Rate-Limit: `server.js` Zeilen 608-623.
+- JSON-Signaling-Rate-Limit: `server.js` Zeilen 625-629.
+- JSON parse + invalid-json Antwort: `server.js` Zeilen 631-636.
+- Prototype-Pollution-Key-Cleanup: `server.js` Zeilen 638-645.
+- Gemeinsamer unknown-message fallback: `server.js` Zeilen 1621-1626.
+
+Daher sollte es eine kleine zentrale Dispatch-Schicht geben:
+
+```js
+// ws/index.js
+function handleMessage(ctx, data, isBinary) {
+  // binary fast-path, rate limit, parse, cleanup
+  const handler = handlers[msg.type]
+  if (!handler) return sendError(...)
+  return handler({ ...ctx, msg })
+}
+```
+
+Die Module sollten nur Handler-Maps exportieren:
+
+- `ws/register.js` -> `{ REGISTER }`
+- `ws/calls.js` -> `{ CALL_INVITE, CALL_ACCEPT, CALL_BUSY, CALL_END }`
+- `ws/webrtc.js` -> `{ WEBRTC_OFFER, WEBRTC_ANSWER, ICE_CANDIDATE }`
+- `ws/lookup.js` -> `{ PHONE_LOOKUP, BATCH_PHONE_LOOKUP, ONLINE_STATUS_REQUEST }`
+- `ws/activation.js` -> `{ ACTIVATE_CODE, VERIFY_IFR_LOCK }`
+- `ws/misc.js` -> `{ REGISTER_FCM_TOKEN, DEREGISTER, INVITE_ACCEPTED, HEARTBEAT }`
+
+Wichtig: Kein Untermodul sollte selbst `ws.on("message")` registrieren. Nur `ws/index.js` / connection setup darf die Socket-Events besitzen.
+
+---
+
+### 4) Was bricht beim Refactor definitiv / hohes Risiko
+
+**Bewertung: WARN bis FAIL, wenn direkt nach Plan umgesetzt**
+
+Konkrete Bruchstellen:
+
+1. **Aktivierung/Gift/Billing-Kopplung**
+   - `ACTIVATE_CODE` greift auf `activationCodes`, `giftCodes`, `saveGiftCodes`, `saveActivationCodes`, `getClientId` zu. Fundstellen: `server.js` Zeilen 1382-1475.
+   - Gift Admin Routes verwalten denselben `giftCodes` State. Fundstellen: `server.js` Zeilen 1770-1835.
+   - Google Play Billing generiert Codes in `giftCodes`. Fundstellen: `server.js` Zeilen 1894-1964.
+   - Wenn `activation.js`, `routes/billing.js` und `routes/admin.js` getrennt werden, brauchen sie ein gemeinsames `giftCodeStore`; sonst brechen Redeem und Persistenz.
+
+2. **Disconnect-Cleanup ist quer ueber Calls/Register/State gekoppelt**
+   - `ws.on("close")` braucht `clients`, `clientIds`, `routingTable`, `sendToClient`, `rateLimit`, `ipConnections`. Fundstellen: `server.js` Zeilen 1629-1679.
+   - Wenn `calls.js` alleine Sessions verwaltet, aber Close-Cleanup in `server.js` bleibt, entstehen doppelte oder fehlende Session-Cleanups.
+
+3. **Admin/Metrics/Broadcast brauchen `wss` plus State**
+   - `/admin/broadcast` nutzt `wss.clients` und `fcmTokens`. Fundstellen: `server.js` Zeilen 1728-1768.
+   - `/metrics` nutzt `wss.clients.size`, `clientIds`, `routingTable`, `fcmTokens`. Fundstellen: `server.js` Zeilen 2100-2115.
+   - `/clients/list` nutzt `clients` und `WebSocket.OPEN`. Fundstellen: `server.js` Zeilen 438-449.
+   - Diese Routen brauchen `wss` im Context oder eine `connectionService`-Abstraktion.
+
+4. **Core Helpers sind keine Middleware**
+   - `sendToClient`, `getClientId`, `getSessionPeer`, `forwardBinaryToPeer` sind zentrale WS/Call-Helpers. Fundstellen: `server.js` Zeilen 345-397.
+   - Wenn sie in `middleware.js` landen, wird die Modulgrenze unscharf. Besser: `ws/helpers.js` oder `services/connections.js`.
+
+5. **FCM Token Persistenz und Supersede-Flow**
+   - REGISTER loescht FCM Token bei superseded clientId und ruft `saveFcmTokens()`. Fundstellen: `server.js` Zeilen 699-717.
+   - REGISTER_FCM_TOKEN speichert Token und persistiert. Fundstellen: `server.js` Zeilen 1201-1224.
+   - DEREGISTER loescht FCM Token. Fundstellen: `server.js` Zeilen 1552-1582.
+   - Invite/Broadcast/Calls lesen dieselben Tokens. Fundstellen: `server.js` Zeilen 864-877, 1597-1605, 1744-1757, 1874-1883.
+   - Das muss ein `fcmTokenStore` werden, nicht verteilt ueber mehrere Module.
+
+6. **Data dir / atomic write / file paths**
+   - `DATA_DIR` und `writeJsonAtomic()` werden fuer FCM, Activation, Wallets, Gifts gebraucht. Fundstellen: `server.js` Zeilen 10-42, 149-176, 187-244, 280-299, 1770-1794.
+   - Wenn Stores einzeln ausgelagert werden, brauchen sie eine gemeinsame Persistenzutility. Sonst drohen unterschiedliche Pfade oder nicht-atomare Writes.
+
+---
+
+### PASS/WARN/FAIL Zusammenfassung
+
+| Bereich | Ergebnis | Begründung |
+|---|---|---|
+| Zielbild Thin `server.js` | PASS | Sinnvoll und noetig; Monolith ist zu gross. |
+| Vorgeschlagene Modulnamen | WARN | Grob okay, aber `state.js`/`middleware.js` Verantwortlichkeiten sind unscharf. |
+| `state.js` Plan | WARN | Grundidee richtig, aber Mapping-Kommentare falsch und State unvollstaendig. |
+| Services in `state.js` | FAIL | `subscriptions`/`customIds` in State erzeugen Import- und Verantwortungsprobleme. |
+| WS-Module ohne zentrale Dispatch-Schicht | FAIL | Gemeinsame Vorverarbeitung macht eine kleine Dispatch-Schicht notwendig. |
+| Direkter Refactor nach Plan | FAIL | Aktivierung/Gifts, FCM, Close-Cleanup und Metrics brechen wahrscheinlich. |
+| Schrittweise Strategie | PASS mit Bedingung | Nur wenn zuerst Context/State/Store-Grenzen sauber definiert und nach jedem Schritt getestet wird. |
+
+---
+
+### Konkrete Empfehlung fuer sichere Umsetzung
+
+1. Nicht mit WS-Handlern starten. Erst `config/data_dir.js`, `utils/json_store.js`, `state.js` und `services/connections.js` extrahieren.
+2. `state.js` nur als mutable singleton object oder Factory-Context verwenden, keine Services importieren.
+3. Danach reine HTTP-Routes ohne WS-Abhaengigkeit auslagern: health, key/pkd, licenses.
+4. Dann Stores auslagern: fcmTokenStore, activationCodeStore, giftCodeStore, walletStore.
+5. Erst danach WS-Dispatcher einfuehren und Message-Typen in Handler-Maps splitten.
+6. Nach jedem Schritt mindestens `node --check`, vorhandene signaling tests und manuelle WS REGISTER/CALL smoke tests ausfuehren.
+
+**Finale Bewertung:** WARN fuer den Plan als Architektur-Notiz. FAIL fuer eine direkte Umsetzung ohne vorherige Korrektur von State-Modell, Store-Grenzen und WS-Dispatch.
+
+### EMPFÄNGER: CC|GIO
+### DEADLINE: ASAP
