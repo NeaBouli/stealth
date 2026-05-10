@@ -10,15 +10,17 @@
  * JSON and to the in-memory array so they work immediately without restart.
  */
 
-const fs = require("fs");
 const path = require("path");
+const { writeJsonAtomic } = require("../utils/json_store");
+const { readFileSync, existsSync } = require("fs");
 
-const SOLD_FILE = path.join(__dirname, "..", "..", "data", "sold_codes.json");
+const SOLD_FILE = process.env.SOLD_CODES_FILE ||
+  path.join(__dirname, "..", "..", "data", "sold_codes.json");
 
 function load() {
   try {
-    if (fs.existsSync(SOLD_FILE)) {
-      const data = JSON.parse(fs.readFileSync(SOLD_FILE, "utf8"));
+    if (existsSync(SOLD_FILE)) {
+      const data = JSON.parse(readFileSync(SOLD_FILE, "utf8"));
       const codes = Array.isArray(data.codes) ? data.codes : [];
       console.log(`[SOLD-CODES] Loaded ${codes.length} sold codes from ${SOLD_FILE}`);
       return codes;
@@ -31,11 +33,7 @@ function load() {
 
 function save(codes) {
   try {
-    fs.mkdirSync(path.dirname(SOLD_FILE), { recursive: true });
-    // Atomic write to prevent corruption on concurrent saves (Fix CRIT-003).
-    const tmp = SOLD_FILE + ".tmp";
-    fs.writeFileSync(tmp, JSON.stringify({ codes }, null, 2), "utf8");
-    fs.renameSync(tmp, SOLD_FILE);
+    writeJsonAtomic(SOLD_FILE, { codes });
   } catch (e) {
     console.error("[SOLD-CODES] Save failed:", e.message);
   }

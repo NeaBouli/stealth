@@ -36,6 +36,7 @@ process.env.IDS_FILE          = path.join(DATA_DIR, "custom_ids.json");
 process.env.PENDING_FILE      = path.join(DATA_DIR, "pending_activations.json");
 process.env.GIFT_CODES_FILE          = path.join(DATA_DIR, "gift_codes.json");
 process.env.STRIPE_PROCESSED_FILE   = path.join(DATA_DIR, "stripe_processed_events.json");
+process.env.SOLD_CODES_FILE         = path.join(DATA_DIR, "sold_codes.json");
 
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
