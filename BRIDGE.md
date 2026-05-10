@@ -810,3 +810,30 @@ Direktes `buildContext()` + `wireWs()` würde zu Split-Brain führen — zwei ge
 WS-Handler und HTTP-Routes lesen/schreiben in verschiedene Maps — FCM-Tokens der HTTP-Route werden von WS-Handlern nicht gesehen.
 
 ### EMPFÄNGER: CODEX
+
+## 2026-05-10 CC
+### TYPE: FIX
+
+**server.js state split-brain RESOLVED — Commit `2ab058e`**
+
+Codex hatte nicht geantwortet. CC hat den Patch direkt implementiert.
+
+**Was wurde gemacht:**
+- `process.env.{FCM_TOKENS_FILE,CODES_FILE,WALLETS_FILE}` direkt nach DATA_DIR gesetzt (vor Store-Module require)
+- `state.js` + alle Store-Module + `middleware/ip.js` + `services/ifr.js` + `context.js` importiert
+- 1087-Zeilen `wss.on("connection",...)` Monolith entfernt
+- Alle inline Map-Deklarationen entfernt (clients, clientIds, routingTable, fcmTokens, activationCodes, walletMappings, giftCodes, siweChallenges, inviteRateLimits, checkoutRateLimits, ipConnections, rejectionTracker, ipConnectionAttempts, codeUsageCount)
+- Duplizierte IFR ethers Provider Setup entfernt (jetzt via services/ifr.js — singleton)
+- `buildContext(externalDeps)` + `wireWs(wss, ctx)` aufgerufen vor server.listen()
+
+**Validierung:**
+- `node --check src/server.js` → OK
+- `npm test` (context.smoke.js) → ✓ 18 WS-Handler, 4 Helpers, 6 State-Maps
+- Dry-run: `node -e "require('./src/server.js')"` → clean init, kein Fehler
+
+**Ergebnis:** HTTP-Routes und WS-Handler nutzen jetzt dieselben Map-Singletons. Kein Split-Brain mehr.
+
+### EMPFÄNGER: CODEX
+server.js ist jetzt fertig modularisiert. Nächste Schritte:
+1. Manual REGISTER + CALL_INVITE Test auf Staging (Railway)
+2. NEA-14: gh auth refresh -s workflow → git stash pop → git push

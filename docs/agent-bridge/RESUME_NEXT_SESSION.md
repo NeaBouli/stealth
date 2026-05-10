@@ -1,51 +1,54 @@
 # RESUME NEXT SESSION — stealth
 
 **Datum:** 2026-05-10
-**Git HEAD:** `8d7e1ec`
+**Git HEAD:** `2ab058e`
 **Version:** v1.0.33 (Play Internal Testing)
-**Devices connected:** S4, S9 (not S10)
 
 ---
 
 ## Was diese Session erledigte
 
-### STX-HIGH-03 Backend Modularization — ALLE 8 SCHRITTE DONE
+### STX-HIGH-03: server.js Modularisierung — VOLLSTÄNDIG ABGESCHLOSSEN
 
-| Commit | Step | Inhalt |
-|--------|------|--------|
-| b4bf93d | 1 | state.js — pure mutable singleton (Codex) |
-| f2d55dc | 2 | utils/phone.js + sanitize.js + json_store.js (CC) |
-| 0a345f7 | 3 | middleware/ip.js + cors.js + admin.js (CC) |
-| c8c7ff8 | 4 | routes/health.js + pkd.js + licenses.js (CC) |
-| 2176745 | 5 | services/fcm_store.js + activation_store.js + wallet_store.js (CC) |
-| 92c5808 | 6 | ws/index.js central dispatcher (CC) |
-| 611cd7d | 7 | ws/handlers/ — register, call, webrtc, phone, subscription (CC) |
-| 3ff9cf0 | 8 | context.js assembler + services/ifr.js (CC) |
+| Commit | Inhalt |
+|--------|--------|
+| `e2c358e` | context.smoke.js — 18 WS-Handler Smoke Test PASS |
+| `2e37d6a` | BRIDGE.md: State Split-Brain Warning für server.js |
+| `9ab447a` | TODO.md: STX-HIGH-03 DONE, uuid vuln FIXED |
+| `2ab058e` | **server.js State Split-Brain FIXED** — buildContext() + wireWs() integriert |
 
-**server.js bleibt unverändert** — alle neuen Module sind syntax-gecheckt, deployed, bereit.
+**Commit `2ab058e` Details:**
+- process.env.{FCM_TOKENS_FILE,CODES_FILE,WALLETS_FILE} nach DATA_DIR gesetzt
+- state.js + Store-Module + middleware/ip.js + services/ifr.js + context.js importiert
+- 1087-Zeilen wss.on("connection",...) Monolith entfernt
+- Alle inline Map-Deklarationen ersetzt durch Singletons
+- buildContext(externalDeps) + wireWs(wss, ctx) aufgerufen
+- node --check PASS + context.smoke.js PASS (18 WS-Handler)
 
-### Fix GitHub Issue #16 — FCM/Railway Volume uid Mismatch
+### Cross-Repo Crypto Test Coverage (vorherige Session)
 
-- Commit: `8d7e1ec`
-- Problem: Railway mountet Volumes als root, Dockerfile `RUN chown` greift nicht
-- Fix: `entrypoint.sh` + `su-exec` — runtime chown vor privilege drop
-- Issue #16 geschlossen
-
-### Linear
-
-- NEA-10: Done (STX-HIGH-03)
+| Repo | Commits | Inhalt |
+|------|---------|--------|
+| securechat | `9de5242` | BUG-001 fix: SodiumInitializer JVM fallback |
+| securechat | `d8303b4` | 5 Argon2id-Tests |
+| securechat | `c040c9a` | BRIDGE.md update |
+| securechat | `126e334` | 8 DoubleRatchet-Tests |
+| chameleon  | `e025bfa` | 5 Argon2id-Tests + LOGBUCH S-02 DONE |
+| chameleon  | `da22245` | BRIDGE.md update |
+| chameleon  | `28e4aeb` | 8 DoubleRatchet-Tests |
+| chameleon  | `926500a` | LOGBUCH: 24/24 crypto tests |
 
 ---
 
 ## Pending: Gio-Aktionen erforderlich
 
-### NEA-14 — GitHub Actions Node.js 24 Migration
+### NEA-14 — GitHub Actions Node.js 24 Migration (BLOCKED)
 
 Stash liegt bereit: `stash@{0}` (WIP on `b4bf93d`)
 Token fehlt `workflow` scope.
 
 **Gio muss ausführen:**
-```
+```bash
 gh auth refresh -s workflow
 ```
 
@@ -69,27 +72,25 @@ Fragen in `MIGRATION_PLAN.md` beantworten.
 
 ## Nächste CC-Aufgaben
 
-### 1. Codex-Antwort zu server.js Wiring abwarten (BRIDGE.md)
+### 1. Staging / Railway Manual Smoke Test
 
-Codex soll minimalen Patch für server.js schreiben:
-```js
-const { buildContext, wireRoutes, wireWs } = require("./context");
-const ctx = buildContext({ pkd, subscriptions, fcm, customIds, licenses, ICE_SERVERS, ... });
-wireRoutes(app, ctx);
-wireWs(wss, ctx);
+Nach Railway Redeploy (oder lokal):
+```bash
+# REGISTER + CALL_INVITE Smoke Test
+wscat -c ws://localhost:8080/signal
+# {"type":"REGISTER","clientId":"alice","appSignature":"xxx"}
+# {"type":"REGISTER","clientId":"bob","appSignature":"xxx"}
+# {"type":"CALL_INVITE","to":"bob"}
 ```
 
-### 2. Nach server.js-Wiring: Smoke-Test
+### 2. NEA-14 nach gh auth refresh
 
-Wenn Codex den Patch schreibt:
-1. `node --check src/server.js`
-2. Manueller REGISTER + CALL_INVITE test (lokal oder staging)
-3. Commit + push
-
-### 3. BUG-029 Diagnostic-Verbesserung
-
-Aus BUGS.md: in SecLog aktive ICE-Kandidaten mit Typ/Protokoll loggen (nicht nur IDs).
-Hilft beim Testen ob `relay/tcp` genutzt wird.
+Nach `gh auth refresh -s workflow`:
+```bash
+cd /Users/gio/Desktop/repos/stealth
+git stash pop   # WIP: workflow Node.js 24 fix
+git push origin main
+```
 
 ---
 
@@ -105,23 +106,24 @@ Hilft beim Testen ob `relay/tcp` genutzt wird.
 ## Wichtige Dateien
 
 ```
-backend/signaling/src/context.js          assembler fuer alle neuen Module
-backend/signaling/src/state.js            alle 16 Maps/Arrays
-backend/signaling/src/middleware/         ip.js, cors.js, admin.js
-backend/signaling/src/utils/             phone.js, sanitize.js, json_store.js
-backend/signaling/src/routes/            health.js, pkd.js, licenses.js
-backend/signaling/src/services/          fcm_store.js, activation_store.js, wallet_store.js, ifr.js
-backend/signaling/src/ws/index.js        central dispatcher
-backend/signaling/src/ws/handlers/       register.js, call.js, webrtc.js, phone.js, subscription.js
-backend/signaling/Dockerfile             jetzt mit su-exec + entrypoint.sh
-backend/signaling/entrypoint.sh          runtime chown fix fuer Railway volumes
-BRIDGE.md                                Codex-Handover fuer server.js wiring
+backend/signaling/src/server.js               thin bootstrap — buildContext + wireWs
+backend/signaling/src/context.js              assembler + wireWs/wireRoutes
+backend/signaling/src/__tests__/context.smoke.js  18 WS-Handler Test (npm test)
+backend/signaling/src/state.js               alle 16 Maps/Arrays (Singletons)
+backend/signaling/src/middleware/             ip.js, cors.js, admin.js
+backend/signaling/src/utils/                 phone.js, sanitize.js, json_store.js
+backend/signaling/src/routes/                health.js, pkd.js, licenses.js
+backend/signaling/src/services/              fcm_store.js, activation_store.js, wallet_store.js, ifr.js
+backend/signaling/src/ws/index.js            central dispatcher
+backend/signaling/src/ws/handlers/           register.js, call.js, webrtc.js, phone.js, subscription.js
+backend/signaling/Dockerfile                 mit su-exec + entrypoint.sh
+BRIDGE.md                                    State Split-Brain RESOLVED + Codex-Log
 ```
 
 ---
 
 ## GitHub Actions
 
-Basic CI: PASS auf allen commits.
-Security Audit: laeuft (kein blocking finding erwartet).
-Node.js 24 fix: STASHED — wartet auf workflow scope (`gh auth refresh -s workflow`).
+Basic CI: PASS.
+Security Audit: PASS.
+Node.js 24 fix: STASHED — wartet auf `gh auth refresh -s workflow` von Gio.
