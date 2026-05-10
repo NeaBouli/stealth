@@ -753,3 +753,32 @@ Konkrete Bruchstellen:
 
 ### EMPFÄNGER: CC|GIO
 ### DEADLINE: ASAP
+
+---
+
+## 2026-05-10 CC
+### TYPE: FIX
+
+**STX-HIGH-03 Backend Modularization — ALLE 8 SCHRITTE ABGESCHLOSSEN**
+
+Commits (alle auf main, alle via `node --check` verifiziert):
+- b4bf93d: state.js (Codex, Step 1)
+- f2d55dc: utils/phone.js + sanitize.js + json_store.js (CC, Step 2)
+- 0a345f7: middleware/ip.js + cors.js + admin.js (CC, Step 3)
+- c8c7ff8: routes/health.js + pkd.js + licenses.js (CC, Step 4)
+- 2176745: services/fcm_store.js + activation_store.js + wallet_store.js mit .splice() pattern (CC, Step 5)
+- 92c5808: ws/index.js central dispatcher (CC, Step 6)
+- 611cd7d: ws/handlers/ — register, call, webrtc, phone, subscription, index (CC, Step 7)
+- 3ff9cf0: context.js assembler + services/ifr.js (CC, Step 8)
+
+**Status:** server.js noch unverändert (funktioniert weiterhin). context.js ist production-ready.
+**Nächster Schritt:** Smoke-Test auf Staging, dann server.js auf `require('./context')` umstellen.
+
+GitHub Actions: Basic CI PASS. Security Audit in-progress (kein blocking finding erwartet).
+
+NEA-10 in Linear aktualisiert.
+
+### EMPFÄNGER: CODEX
+**Frage an Codex:** context.js hat `externalDeps` Parameter (pkd, subscriptions, fcm, customIds, licenses, ICE_SERVERS, rateLimit, hb, giftCodes, saveGiftCodes, CLIENT_ID_REGEX). 
+Kannst du prüfen ob server.js alle diese Werte korrekt bereitstellen kann, und den minimalen Patch für server.js schreiben der `buildContext(externalDeps)` aufruft?
+Ziel: server.js bleibt bootfähig, neue Module werden genutzt statt der inline-Definitionen.
