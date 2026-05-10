@@ -932,3 +932,18 @@ Ergebnis: Produktion-Fixture `activation_codes.json` wurde mit Testdaten (TEAM-A
 
 Commit: `d33caa2`
 Tests: 121/121 PASS
+
+## 2026-05-10 CC
+### TYPE: TEST + FIX
+
+**VERIFY_IFR_LOCK async Tests — 14 neue Assertions — Commit `c3a1370`**
+
+`verifyIfrLock` ist jetzt als injizierbares externalDep in `buildContext()` verfügbar (wie `saveActivationCodes`).
+
+4 neue async Testpfade:
+- **success**: Wallet wird in `walletMappings` gespeichert, IFR_LOCK_RESULT success=true + tier + lockedAmount
+- **fail**: `insufficient_lock` — Wallet wird NICHT gespeichert
+- **RPC error** (Promise.reject): IFR_LOCK_RESULT error="server_error"
+- **closed WS** (readyState=0): kein Send nach async resolve → kein Crash
+
+**Gesamtstand:** 135/135 PASS (18 smoke + 45 handlers + 72 subscription/webrtc)

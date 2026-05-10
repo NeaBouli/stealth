@@ -1,7 +1,7 @@
 # RESUME NEXT SESSION — stealth
 
 **Datum:** 2026-05-10
-**Git HEAD:** `d33caa2`
+**Git HEAD:** `c3a1370`
 **Version:** v1.0.33 (Play Internal Testing)
 
 ---
@@ -22,6 +22,7 @@
 | `f7bd049` | subscription_webrtc.test.js — 58 Integration Tests PASS |
 | `0443cb4` | BRIDGE.md: subscription/webrtc tests log |
 | `d33caa2` | fix: test isolation — saveActivationCodes no-op + fcm_tokens.json gitignored |
+| `c3a1370` | test: 14 async VERIFY_IFR_LOCK tests via injectable verifyIfrLock mock |
 
 ### Test Coverage — signaling backend — VOLLSTÄNDIG
 
@@ -34,9 +35,10 @@
 | webrtc.js | subscription_webrtc.test.js | ✓ |
 | context.js (18 handlers) | context.smoke.js | ✓ |
 
-**`npm test`: 121/121 PASS** (18 smoke + 45 handlers + 58 subscription/webrtc)
+**`npm test`: 135/135 PASS** (18 smoke + 45 handlers + 72 subscription/webrtc)
 
 **GitHub Actions (HEAD `0443cb4`):** Basic CI ✓ + Security Audit ✓
+**Local tests (HEAD `c3a1370`):** 135/135 PASS
 
 **Test-Isolation-Fix (HEAD `d33caa2`):**
 - `activation_codes.json` wurde durch Tests überschrieben (saveActivationCodes schreibt echte Datei)
@@ -87,11 +89,10 @@ wscat -c ws://localhost:8080/signal
 # {"type":"CALL_INVITE","to":"bob"}
 ```
 
-### 2. VERIFY_IFR_LOCK async path testen (optional)
+### 2. VERIFY_IFR_LOCK async path ✅ DONE
 
-In subscription_webrtc.test.js einen async Test ergänzen, der `ctx.verifyIfrLock`
-über einen Monkey-Patch auf dem ctx-Objekt (vor Handler-Konstruktion) mockt.
-Erfordert Anpassung in context.js: verifyIfrLock als injizierbares externalDep.
+14 async Tests via injizierbarem `verifyIfrLock` Mock — Commit `c3a1370`
+- success, fail, RPC error, closed WS — alle 4 Pfade getestet
 
 ### 3. NEA-14 nach gh auth refresh
 
