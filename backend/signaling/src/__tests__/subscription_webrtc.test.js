@@ -67,6 +67,7 @@ function buildCtx() {
   const mockHb = { start: () => {}, updateClient: () => {}, stop: () => {} };
   const giftCodes = new Map();
   const saveGiftCodes = () => {};
+  const saveActivationCodes = () => {}; // no-op: prevent writing activation_codes.json during tests
 
   const getIceServers = () => [{ urls: "stun:stun.l.google.com:19302" }];
   const ADMIN_API_KEY = "test-admin-key";
@@ -87,6 +88,7 @@ function buildCtx() {
     hb: mockHb,
     giftCodes,
     saveGiftCodes,
+    saveActivationCodes,
   });
 }
 

@@ -84,6 +84,7 @@ backend/codes/tester_codes_2026.json
 backend/signaling/data/custom_ids.json
 backend/signaling/data/sold_codes.json
 backend/signaling/data/subscriptions.json
+backend/signaling/data/fcm_tokens.json
 
 # Google Play Service Account key (NEVER commit)
 sxslot-*.json

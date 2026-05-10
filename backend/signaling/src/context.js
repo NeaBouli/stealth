@@ -93,6 +93,7 @@ function buildHelpers(ctx) {
  * Build the full injectable context.
  * externalDeps must include: pkd, subscriptions, fcm, customIds, licenses,
  *   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, rateLimit, hb, giftCodes, saveGiftCodes
+ * Optional override: saveActivationCodes (for test isolation)
  */
 function buildContext(externalDeps) {
   const {
@@ -100,6 +101,7 @@ function buildContext(externalDeps) {
     getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS,
     rateLimit, hb, giftCodes, saveGiftCodes,
     CLIENT_ID_REGEX,
+    saveActivationCodes: saveActivationCodesOverride,
   } = externalDeps;
 
   // Core state from state.js (Maps/Arrays are shared references)
@@ -122,7 +124,8 @@ function buildContext(externalDeps) {
     giftCodes, saveGiftCodes,
     // Store ops
     loadFcmTokens, saveFcmTokens,
-    loadActivationCodes, saveActivationCodes,
+    loadActivationCodes,
+    saveActivationCodes: saveActivationCodesOverride || saveActivationCodes,
     loadWalletMappings, saveWalletMappings,
     // Utils
     normalizePhone, hashPhone, sanitize,
