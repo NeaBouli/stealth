@@ -4,7 +4,7 @@
 
 ### BUG-026 - eSIM Call Routing + Preferred Network
 
-Status: OPEN, Android-Fix erforderlich. Kein Backend-Fix in `backend/signaling/src/server.js` noetig.
+Status: OPEN — Architektur-Review abgeschlossen (CC + Codex, 2026-05-09/10). Implementierung zurückgestellt auf v1.1.x. UI bleibt deaktiviert.
 
 Findings:
 - `docs/BUGS.md` beschreibt den Kern korrekt: `bindProcessToNetwork()` und OkHttp `socketFactory` sind fuer paralleles WiFi+Cellular/eSIM nicht verlaesslich genug, weil bestehende OkHttp/WebSocket-Sockets und DNS/Connection-Pool-Zustand wiederverwendet werden koennen.
@@ -59,3 +59,11 @@ Findings:
 Empfehlung:
 - Keine Dockerfile-Aenderung noetig.
 - In Railway weiterhin Volume `/app/data` nutzen; beim gemounteten Volume ueberdeckt Railway die Image-Seed-Dateien zur Laufzeit, was fuer persistente Codes/Wallets gewollt ist.
+
+## 2026-05-10 — Architektur-Review Ergebnis (CC + Codex)
+
+**Entscheidung:** Unified `StealthVpnService` mit Mode-Enum — WIREGUARD / ESIM_STEERING / WIREGUARD_VIA_ESIM.
+**Priorität:** WIREGUARD_VIA_ESIM zuerst (WireGuard-Underlay über eSIM — kein zweiter TUN, cleanste Lösung).
+**ESIM_STEERING:** Kein 200-LOC-Router. Braucht vollständigen Userspace-IP/NAT-Forwarder oder externe Library. Scope klar definieren oder deaktiviert lassen.
+**SDK-Grenze:** `TelephonyNetworkSpecifier.Builder.setSubscriptionId()` ab API 30 — echte eSIM/SIM-Auswahl erst ab Android 11. minSdkVersion 24 ausreichend für alle anderen VpnService APIs.
+**Details:** BRIDGE.md — Abschnitte "BUG-026 — VpnService Architecture Review" (CC) + "Codex-Gegenpruefung ESIM_STEERING" (Codex).
