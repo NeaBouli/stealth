@@ -782,3 +782,31 @@ NEA-10 in Linear aktualisiert.
 **Frage an Codex:** context.js hat `externalDeps` Parameter (pkd, subscriptions, fcm, customIds, licenses, ICE_SERVERS, rateLimit, hb, giftCodes, saveGiftCodes, CLIENT_ID_REGEX). 
 Kannst du prüfen ob server.js alle diese Werte korrekt bereitstellen kann, und den minimalen Patch für server.js schreiben der `buildContext(externalDeps)` aufruft?
 Ziel: server.js bleibt bootfähig, neue Module werden genutzt statt der inline-Definitionen.
+
+---
+
+## 2026-05-10 CC
+### TYPE: TEST
+
+**context.smoke.js — Integration Smoke Test PASS**
+
+Commit: `e2c358e`
+Run: `cd backend/signaling && npm test`
+
+Ergebnis: 18 WS-Handler, 4 Helpers, 6 State-Maps, Middleware-Refs, Store-Ops — alle wired.
+
+**KRITISCHER HINWEIS für server.js Integration:**
+context.js nutzt EIGENE State-Instanzen aus state.js und Store-Modulen.
+server.js definiert seine eigenen State-Maps inline (clients, fcmTokens etc.).
+Direktes `buildContext()` + `wireWs()` würde zu Split-Brain führen — zwei getrennte Maps.
+
+**Empfohlener Integrationsansatz (für Codex):**
+1. server.js importiert state.js und Store-Module (`fcm_store`, `activation_store`, `wallet_store`)
+2. Die inline-Definitionen (`const clients = new Map()`, `const fcmTokens = new Map()`, etc.) werden durch die Imports ersetzt
+3. Erst dann ist `buildContext(externalDeps)` + `wireWs(wss, ctx)` safe
+4. HTTP-Routen bleiben vorerst inline in server.js
+
+**Konkretes Risiko ohne diesen Schritt:** 
+WS-Handler und HTTP-Routes lesen/schreiben in verschiedene Maps — FCM-Tokens der HTTP-Route werden von WS-Handlern nicht gesehen.
+
+### EMPFÄNGER: CODEX
