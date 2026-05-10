@@ -1,0 +1,1 @@
+Improved call stability when VPN is active. Fixed contact verification dialog not detecting contacts. Security update: certificate pinning enabled. Internal stability improvements.

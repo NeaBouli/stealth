@@ -947,3 +947,22 @@ Tests: 121/121 PASS
 - **closed WS** (readyState=0): kein Send nach async resolve → kein Crash
 
 **Gesamtstand:** 135/135 PASS (18 smoke + 45 handlers + 72 subscription/webrtc)
+
+## 2026-05-10 [CC]
+### TYPE: MEMO
+
+vC56 (v1.0.33) ADB deployment status:
+- S7 (SM_G930F / ce10160adc00152604): com.securecall.app.free uninstalled ✅ (no reinstall per plan)
+- Tab S4 (SM_T835 / ce12182c68644439037e): free uninstalled → com.securecall.app.free arm64 vC56 installed ✅
+- RF8N313QMFL: UNAUTHORIZED — USB debugging not approved on device. Needs user to tap "Allow" on device screen.
+  → Once authorized: install pro (A7) or premium (S10) arm64 APK
+  APK paths ready:
+    pro:     client_android/app/build/outputs/apk/pro/release/app-pro-arm64-v8a-release.apk
+    premium: client_android/app/build/outputs/apk/premium/release/app-premium-arm64-v8a-release.apk
+
+### TYPE: TODO
+- [ ] Authorize RF8N313QMFL → install pro (if A7) or premium (if S10)
+- [ ] If S10 and A7 are separate devices: connect second device, repeat install
+- [ ] Commit fastlane changelog 56.txt
+- [ ] NEA-12: BUG-029 VPN+VPN audio retest on S7 + Tab S4
+- [ ] NEA-13: Hetzner migration questions in MIGRATION_PLAN.md
