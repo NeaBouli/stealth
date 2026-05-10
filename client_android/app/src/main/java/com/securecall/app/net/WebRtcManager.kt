@@ -235,6 +235,14 @@ class WebRtcManager(
                     val pc = peerConnection ?: return
                     try {
                         pc.getStats { report ->
+                            // Build candidate lookup: id -> "type/protocol" for diagnostic logging
+                            val candidateInfo = report.statsMap.values
+                                .filter { it.type == "local-candidate" || it.type == "remote-candidate" }
+                                .associate { c ->
+                                    val cType = c.members["candidateType"] ?: "?"
+                                    val proto = c.members["protocol"] ?: "?"
+                                    c.id to "$cType/$proto"
+                                }
                             report.statsMap.values.forEach { stats ->
                                 when (stats.type) {
                                     "candidate-pair" -> {
@@ -243,12 +251,14 @@ class WebRtcManager(
                                         // but only the nominated pair is actively used for media transport.
                                         val nominated = stats.members["nominated"]
                                         if (nominated == "true" || nominated == true) {
-                                            val local = stats.members["localCandidateId"] ?: ""
-                                            val remote = stats.members["remoteCandidateId"] ?: ""
+                                            val localId = stats.members["localCandidateId"] ?: ""
+                                            val remoteId = stats.members["remoteCandidateId"] ?: ""
+                                            val localDesc = candidateInfo[localId] ?: localId
+                                            val remoteDesc = candidateInfo[remoteId] ?: remoteId
                                             val bytesSent = stats.members["bytesSent"] ?: "0"
                                             val bytesRecv = stats.members["bytesReceived"] ?: "0"
                                             com.securecall.app.debug.SecLogManager.log("STATS",
-                                                "Active pair: local=$local remote=$remote (tx=$bytesSent rx=$bytesRecv)")
+                                                "Active pair: local=$localDesc remote=$remoteDesc (tx=$bytesSent rx=$bytesRecv)")
                                         }
                                     }
                                     "inbound-rtp" -> {
