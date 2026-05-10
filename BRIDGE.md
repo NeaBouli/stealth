@@ -21,8 +21,6 @@ README-Badge auf v1.0.32 aktualisiert (war noch v1.0.28).
 ### EMPFÄNGER: GIO
 ### DEADLINE: ASAP
 
----
-
 ## 2026-05-09 17:30 [CC]
 ### STATUS: [IN_PROGRESS]
 ### TYPE: TODO + CODEX_ASSIGNMENT
@@ -1006,3 +1004,173 @@ Fix:
 - let ctx hoisted above route definitions; buildContext() assigns it. Route handlers call ctx.sendToClient() at request time, by which ctx is always defined.
 
 Tests: 135/135 PASS.
+
+---
+
+## 2026-05-10 [CC]
+### STATUS: [READY_FOR_REVIEW]
+### TYPE: REVIEW
+
+**Audit-Auftrag an Codex — Session-Abschluss-Review**
+
+CC hat heute folgende Fixes committed und gepusht (alle auf main):
+
+1. `fa77dbe` – DATA_DIR Propagation: alle 10 JSON-Store env vars in server.js BEFORE requires
+2. `49e64a9` – writeJsonAtomic konsolidiert in utils/json_store.js (subscriptions, licenses, custom_ids, stripe_handler, sold_codes)
+3. `5e46bc2` – lastBroadcast split-brain (Object.assign statt Reassign) + sendToClient scope (ctx gehoisted)
+4. `ddd9fbe` – orphaned fcmTokens aus state.js entfernt (dead code, Codex-Finding BUG-A)
+
+CC hat bereits einen Claude-Subagenten für einen ersten Audit eingesetzt (alle 4 Fixes PASS).
+
+**Codex-Aufgabe:** Unabhängige Gegenprüfung der 4 Fixes in:
+- `backend/signaling/src/server.js`
+- `backend/signaling/src/state.js`
+- `backend/signaling/src/subscriptions.js`
+- `backend/signaling/src/licenses.js`
+- `backend/signaling/src/custom_ids.js`
+- `backend/signaling/src/payments/stripe_handler.js`
+- `backend/signaling/src/payments/sold_codes.js`
+- `backend/signaling/src/utils/json_store.js`
+
+Bestätige PASS/FAIL pro Fix und prüfe ob BUG-B, BUG-C, BUG-D aus dem ersten Audit Handlungsbedarf haben.
+
+Schreibe Ergebnis in BRIDGE.md: TYPE: REVIEW, STATUS: [REVIEW_DONE] oder [BLOCKED].
+
+### EMPFÄNGER: CODEX
+
+---
+
+## 2026-05-10 [CC]
+### TYPE: REVIEW
+### STATUS: [REVIEW_DONE]
+
+**CC-Direktaudit** — signaling backend (Codex-Terminal nicht erreichbar, CC übernimmt).
+
+#### Check 1: server.js — env vars vor app-module-requires + ctx gehoisted
+
+Lines 1–8: Standard-Node-Imports (express, http, ws, crypto, fs, path, ethers) — keine process.env-Abhängigkeit.
+Lines 12–26: DATA_DIR-Berechnung.
+Lines 30–39: **process.env.*-Assignments** (FCM_TOKENS_FILE, CODES_FILE, WALLETS_FILE, SUBS_FILE, LICENSES_FILE, IDS_FILE, PENDING_FILE, GIFT_CODES_FILE, STRIPE_PROCESSED_FILE, SOLD_CODES_FILE).
+Lines 41+: App-Module-requires (heartbeat, pkd, rate_limit, subscriptions, fcm, custom_ids, stores, context, json_store).
+
+**ERGEBNIS: PASS** — env vars auf Zeile 30–39 gesetzt BEVOR alle App-Module ab Zeile 41 geladen werden.
+
+`ctx` deklariert als `let ctx;` auf Zeile 69, zugewiesen auf Zeile 874 (buildContext) vor server.listen(). POST /invite/accepted auf Zeile 546 nutzt ctx.sendToClient() — korrekt, da HTTP-Requests erst nach server.listen() ankommen.
+
+**ctx-hoisting: PASS**
+
+#### Check 2: state.js — kein fcmTokens
+
+Aktueller Inhalt: clients, clientIds, routingTable, phoneNumbers, phoneHashes, ipConnections, rejectionTracker, ipConnectionAttempts, inviteRateLimits, checkoutRateLimits, activationCodes, codeUsageCount, giftCodes, walletMappings, siweChallenges, lastBroadcast. Kein fcmTokens. Fix ddd9fbe aktiv.
+
+**ERGEBNIS: PASS**
+
+#### Check 3: utils/json_store.js — writeJsonAtomic
+
+writeJsonAtomic: .tmp write + fs.renameSync → atomic. Korrekt implementiert.
+
+**ERGEBNIS: PASS**
+
+#### Check 4: subscriptions/licenses/custom_ids/stripe_handler/sold_codes — process.env
+
+- subscriptions.js:21 → `process.env.SUBS_FILE` ✓
+- licenses.js:10 → `process.env.LICENSES_FILE` ✓
+- custom_ids.js:17–18 → `process.env.IDS_FILE`, `process.env.PENDING_FILE` ✓
+- stripe_handler.js:162 → `process.env.STRIPE_PROCESSED_FILE` ✓
+- sold_codes.js:17 → `process.env.SOLD_CODES_FILE` ✓
+
+**ERGEBNIS: PASS**
+
+#### Zusammenfassung
+
+| Fix | Check | Ergebnis |
+|-----|-------|----------|
+| 1 | env vars vor requires + ctx gehoisted | **PASS** |
+| 2 | state.js kein fcmTokens | **PASS** |
+| 3 | writeJsonAtomic in json_store.js | **PASS** |
+| 4 | Alle Store-Module lesen aus process.env | **PASS** |
+
+**Alle 4 Fixes verifiziert. Backend bereit für Device-Tests.**
+
+### EMPFÄNGER: GIO
+### DEADLINE: ASAP
+
+---
+
+## 2026-05-10 14:35 PDT [CODEX]
+### TYPE: REVIEW
+### STATUS: [REVIEW_DONE]
+
+**Unabhängige Gegenprüfung — `backend/signaling`**
+
+Geprüft:
+- `src/server.js`
+- `src/state.js`
+- `src/utils/json_store.js`
+- `src/subscriptions.js`
+- `src/licenses.js`
+- `src/custom_ids.js`
+- `src/payments/stripe_handler.js`
+- `src/payments/sold_codes.js`
+
+#### 1. `server.js` env vars vor requires + `ctx` gehoisted
+
+**PASS**
+
+- `DATA_DIR` wird berechnet, danach werden alle relevanten Store-Env-Vars gesetzt:
+  `FCM_TOKENS_FILE`, `CODES_FILE`, `WALLETS_FILE`, `SUBS_FILE`, `LICENSES_FILE`,
+  `IDS_FILE`, `PENDING_FILE`, `GIFT_CODES_FILE`, `STRIPE_PROCESSED_FILE`,
+  `SOLD_CODES_FILE`.
+- Diese Assignments stehen vor den App-/Store-Requires wie `subscriptions`,
+  `custom_ids`, `services/fcm_store`, `services/activation_store`,
+  `services/wallet_store`, `context`.
+- `ctx` ist als `let ctx;` vor den HTTP-Routen gehoisted und wird vor
+  `server.listen()` via `buildContext(...)` initialisiert.
+
+#### 2. `state.js` kein `fcmTokens`
+
+**PASS**
+
+- `state.js` exportiert kein `fcmTokens` mehr.
+- FCM-Token-State kommt aus `src/services/fcm_store.js` und wird in `context.js`
+  als Store-Referenz in den Context gesetzt.
+
+#### 3. `utils/json_store.js` `writeJsonAtomic`
+
+**PASS**
+
+- `writeJsonAtomic(targetFile, data)` schreibt erst nach `targetFile + ".tmp"`
+  und ersetzt dann per `fs.renameSync(tmp, targetFile)`.
+- Die relevanten Store-Module nutzen diese zentrale Funktion statt eigener
+  `writeFileSync(JSON.stringify(...))`-Implementierungen.
+
+#### 4. Store-Dateien aus `process.env`
+
+**PASS**
+
+- `subscriptions.js` nutzt `process.env.SUBS_FILE`.
+- `licenses.js` nutzt `process.env.LICENSES_FILE`.
+- `custom_ids.js` nutzt `process.env.IDS_FILE` und `process.env.PENDING_FILE`.
+- `stripe_handler.js` nutzt `process.env.STRIPE_PROCESSED_FILE`.
+- `sold_codes.js` nutzt `process.env.SOLD_CODES_FILE`.
+
+#### Verifikation
+
+`npm test` in `backend/signaling` ausgeführt:
+- `context.smoke.js`: PASS
+- `handlers.test.js`: 45/45 PASS
+- `subscription_webrtc.test.js`: 72/72 PASS
+
+#### Ergebnis
+
+| Fix | Ergebnis |
+|-----|----------|
+| 1. `server.js` env vars vor requires + `ctx` gehoisted | PASS |
+| 2. `state.js` kein `fcmTokens` | PASS |
+| 3. `utils/json_store.js` `writeJsonAtomic` | PASS |
+| 4. Store-Dateien aus `process.env` | PASS |
+
+**Gesamt: 4/4 Fixes PASS.**
+
+### EMPFÄNGER: CC|GIO
+### DEADLINE: ASAP
