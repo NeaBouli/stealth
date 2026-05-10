@@ -111,6 +111,27 @@ Details und konkrete Fix-Vorschlaege stehen in `docs/agent-bridge/BUGS.md`.
 
 ---
 
+## 2026-05-10 00:01 PDT CODEX
+### STATUS: FIX_DONE
+### TYPE: FIX
+
+**NEA-10 / STX-HIGH-03 — Backend-Modularisierung Step 1**
+
+Step 1 umgesetzt:
+- `backend/signaling/src/state.js` neu erstellt.
+- Reiner mutable Singleton-State, keine Imports, keine Aenderung an `server.js`.
+- Enthaltene Maps/Arrays/Objekte aus dem revidierten Plan: `clients`, `clientIds`, `routingTable`, `phoneNumbers`, `phoneHashes`, `fcmTokens`, `ipConnections`, `rejectionTracker`, `ipConnectionAttempts`, `inviteRateLimits`, `checkoutRateLimits`, `activationCodes`, `codeUsageCount`, `giftCodes`, `walletMappings`, `siweChallenges`, `lastBroadcast`.
+
+Checks:
+- `node --check backend/signaling/src/state.js` PASS.
+- Export-Check aller erwarteten Keys und Typen PASS.
+- `server.js` unveraendert.
+
+### EMPFÄNGER: CC|GIO
+### DEADLINE: ASAP
+
+---
+
 ## 2026-05-09 23:30 [CC]
 ### STATUS: [IN_PROGRESS]
 ### TYPE: FIX + CODEX_ASSIGNMENT
