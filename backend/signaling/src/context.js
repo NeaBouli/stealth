@@ -93,7 +93,7 @@ function buildHelpers(ctx) {
  * Build the full injectable context.
  * externalDeps must include: pkd, subscriptions, fcm, customIds, licenses,
  *   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, rateLimit, hb, giftCodes, saveGiftCodes
- * Optional override: saveActivationCodes (for test isolation)
+ * Optional overrides: saveActivationCodes, verifyIfrLock (for test isolation)
  */
 function buildContext(externalDeps) {
   const {
@@ -102,6 +102,7 @@ function buildContext(externalDeps) {
     rateLimit, hb, giftCodes, saveGiftCodes,
     CLIENT_ID_REGEX,
     saveActivationCodes: saveActivationCodesOverride,
+    verifyIfrLock: verifyIfrLockOverride,
   } = externalDeps;
 
   // Core state from state.js (Maps/Arrays are shared references)
@@ -132,7 +133,7 @@ function buildContext(externalDeps) {
     // Middleware
     getClientIp, requireAdmin, corsMiddleware,
     // Business logic
-    verifyIfrLock,
+    verifyIfrLock: verifyIfrLockOverride || verifyIfrLock,
     // External services
     pkd, subscriptions, fcm, customIds, licenses,
     getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS,
