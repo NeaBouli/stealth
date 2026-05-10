@@ -25,18 +25,23 @@ const DATA_DIR = (() => {
   }
 })();
 
+// Align ALL store module file paths to the resolved writable data directory.
+// Must be set BEFORE requiring any module whose top-level code reads these env vars.
+process.env.FCM_TOKENS_FILE   = path.join(DATA_DIR, "fcm_tokens.json");
+process.env.CODES_FILE        = path.join(DATA_DIR, "activation_codes.json");
+process.env.WALLETS_FILE      = path.join(DATA_DIR, "wallets.json");
+process.env.SUBS_FILE         = path.join(DATA_DIR, "subscriptions.json");
+process.env.LICENSES_FILE     = path.join(DATA_DIR, "licenses.json");
+process.env.IDS_FILE          = path.join(DATA_DIR, "custom_ids.json");
+process.env.PENDING_FILE      = path.join(DATA_DIR, "pending_activations.json");
+process.env.GIFT_CODES_FILE   = path.join(DATA_DIR, "gift_codes.json");
+
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
 const rateLimit = require("./rate_limit");
 const subscriptions = require("./subscriptions");
 const fcm = require("./fcm");
 const customIds = require("./custom_ids");
-
-// Align store module file paths to the resolved writable data directory.
-// Must be set BEFORE requiring store modules (top-level const in each module reads env var).
-process.env.FCM_TOKENS_FILE = path.join(DATA_DIR, "fcm_tokens.json");
-process.env.CODES_FILE      = path.join(DATA_DIR, "activation_codes.json");
-process.env.WALLETS_FILE    = path.join(DATA_DIR, "wallets.json");
 
 // Shared singleton state — same Map/Array instances used by HTTP routes and WS handlers
 const state = require("./state");
@@ -424,7 +429,7 @@ app.post("/admin/broadcast", requireAdmin, (req, res) => {
 });
 
 // --- Gift Link System (admin-only) ---
-const GIFT_CODES_FILE = path.join(DATA_DIR, "gift_codes.json");
+const GIFT_CODES_FILE = process.env.GIFT_CODES_FILE || path.join(DATA_DIR, "gift_codes.json");
 
 // Load gift codes from disk on startup
 try {

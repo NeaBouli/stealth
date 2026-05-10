@@ -14,8 +14,8 @@ const path = require("path");
 const crypto = require("crypto");
 const { writeJsonAtomic } = require("./utils/json_store");
 
-const IDS_FILE = path.join(__dirname, "..", "data", "custom_ids.json");
-const PENDING_FILE = path.join(__dirname, "..", "data", "pending_activations.json");
+const IDS_FILE     = process.env.IDS_FILE     || path.join(__dirname, "..", "data", "custom_ids.json");
+const PENDING_FILE = process.env.PENDING_FILE || path.join(__dirname, "..", "data", "pending_activations.json");
 const PENDING_TTL_MS = 60 * 60 * 1000; // 1 hour — Stripe redirect happens immediately
 const ID_REGEX = /^[a-z0-9][a-z0-9-]{0,28}[a-z0-9]$|^[a-z0-9]$/;
 

@@ -7,7 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const { writeJsonAtomic } = require("./utils/json_store");
 
-const LICENSES_FILE = path.join(__dirname, "..", "data", "licenses.json");
+const LICENSES_FILE = process.env.LICENSES_FILE || path.join(__dirname, "..", "data", "licenses.json");
 
 const LICENSES = {
   pro_lifetime: {

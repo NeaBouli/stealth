@@ -18,7 +18,7 @@ const fs = require("fs");
 const path = require("path");
 const { writeJsonAtomic } = require("./utils/json_store");
 
-const SUBS_FILE = path.join(__dirname, "..", "data", "subscriptions.json");
+const SUBS_FILE = process.env.SUBS_FILE || path.join(__dirname, "..", "data", "subscriptions.json");
 
 // Persistent store: clientId -> subscription entry
 const subscriptions = new Map();
