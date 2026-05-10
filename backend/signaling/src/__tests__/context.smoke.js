@@ -46,7 +46,7 @@ const ctx = buildContext({
   fcm: mockFcm,
   customIds: mockCustomIds,
   licenses: mockLicenses,
-  ICE_SERVERS: [{ urls: "stun:stun.l.google.com:19302" }],
+  getIceServers: () => [{ urls: "stun:stun.l.google.com:19302" }],
   ADMIN_API_KEY: "smoke-test-admin-key",
   ALLOWED_ORIGINS: ["https://stealthx.tech"],
   rateLimit: mockRateLimit,

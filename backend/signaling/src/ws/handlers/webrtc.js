@@ -3,7 +3,7 @@
 const crypto = require("crypto");
 
 module.exports = function webrtcHandlers(ctx) {
-  const { routingTable, getClientId, getSessionPeer, sendToClient, ICE_SERVERS } = ctx;
+  const { routingTable, getClientId, getSessionPeer, sendToClient, getIceServers } = ctx;
 
   return {
     WEBRTC_OFFER(ws, connId, msg) {
@@ -64,7 +64,7 @@ module.exports = function webrtcHandlers(ctx) {
         type: "GHOST_ACK",
         sessionId: msg.sessionId,
         ghostNetId,
-        iceServers: ICE_SERVERS,
+        iceServers: getIceServers(myClientId),
         relayHints: [
           { host: "relay1.securecall.local", port: 443 },
           { host: "relay2.securecall.local", port: 8443 }

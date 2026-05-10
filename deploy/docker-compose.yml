@@ -15,9 +15,10 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://signal.securecall.app,https://neabouli.github.io/stealth}
       - MAX_CONNS_PER_IP=${MAX_CONNS_PER_IP:-10}
       - STUN_URL=${STUN_URL:-stun:stun.l.google.com:19302}
-      - TURN_URL=${TURN_URL:-turn:turn.securecall.app:3478}
-      - TURN_USER=${TURN_USER}
-      - TURN_PASS=${TURN_PASS}
+      - TURN_HOST=${TURN_HOST:-turn.stealthx.tech}
+      - TURN_SECRET=${TURN_SECRET}
+      - TURN_USER=${TURN_USER:-}
+      - TURN_PASS=${TURN_PASS:-}
       - FIREBASE_SERVICE_ACCOUNT_KEY=${FIREBASE_SERVICE_ACCOUNT_KEY:-}
     networks:
       - securecall-net
@@ -67,6 +68,8 @@ services:
     image: coturn/coturn:latest
     container_name: securecall-turn
     restart: unless-stopped
+    environment:
+      - TURN_SECRET=${TURN_SECRET}
     ports:
       - "3478:3478"        # TURN/STUN TCP
       - "3478:3478/udp"    # TURN/STUN UDP

@@ -92,12 +92,12 @@ function buildHelpers(ctx) {
 /**
  * Build the full injectable context.
  * externalDeps must include: pkd, subscriptions, fcm, customIds, licenses,
- *   ICE_SERVERS, ADMIN_API_KEY, ALLOWED_ORIGINS, rateLimit, hb, giftCodes, saveGiftCodes
+ *   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, rateLimit, hb, giftCodes, saveGiftCodes
  */
 function buildContext(externalDeps) {
   const {
     pkd, subscriptions, fcm, customIds, licenses,
-    ICE_SERVERS, ADMIN_API_KEY, ALLOWED_ORIGINS,
+    getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS,
     rateLimit, hb, giftCodes, saveGiftCodes,
     CLIENT_ID_REGEX,
   } = externalDeps;
@@ -132,7 +132,7 @@ function buildContext(externalDeps) {
     verifyIfrLock,
     // External services
     pkd, subscriptions, fcm, customIds, licenses,
-    ICE_SERVERS, ADMIN_API_KEY, ALLOWED_ORIGINS,
+    getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS,
     CLIENT_ID_REGEX,
     // Infra
     rateLimit, hb,

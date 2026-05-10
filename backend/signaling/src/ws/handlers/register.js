@@ -7,7 +7,7 @@ module.exports = function registerHandlers(ctx) {
   const {
     clients, clientIds, phoneNumbers, phoneHashes, fcmTokens,
     rejectionTracker, getClientId, normalizePhone, hashPhone,
-    saveFcmTokens, ICE_SERVERS, CLIENT_ID_REGEX,
+    saveFcmTokens, getIceServers, CLIENT_ID_REGEX,
   } = ctx;
 
   return {
@@ -123,7 +123,7 @@ module.exports = function registerHandlers(ctx) {
       return ws.send(JSON.stringify({
         type: "REGISTERED",
         clientId: msg.clientId,
-        iceServers: ICE_SERVERS
+        iceServers: getIceServers(msg.clientId)
       }));
     },
 

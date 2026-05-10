@@ -84,7 +84,7 @@ function buildCtx() {
   const giftCodes = new Map();
   const saveGiftCodes = () => {};
 
-  const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
+  const getIceServers = () => [{ urls: "stun:stun.l.google.com:19302" }];
   const ADMIN_API_KEY = "test-admin-key";
   const ALLOWED_ORIGINS = ["https://stealthx.tech"];
   const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
@@ -95,7 +95,7 @@ function buildCtx() {
     fcm: mockFcm,
     customIds: mockCustomIds,
     licenses: mockLicenses,
-    ICE_SERVERS,
+    getIceServers,
     ADMIN_API_KEY,
     ALLOWED_ORIGINS,
     CLIENT_ID_REGEX,

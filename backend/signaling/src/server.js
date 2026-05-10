@@ -67,29 +67,40 @@ function writeJsonAtomic(targetFile, data) {
 fcm.initFcm();
 
 // --- STUN/TURN Configuration (BACKEND-02) ---
-// SECURITY: TURN credentials should be set via environment variables
-if (process.env.NODE_ENV === "production" && (!process.env.TURN_USER || !process.env.TURN_PASS)) {
-  console.warn("[WARN] TURN_USER and TURN_PASS not set — TURN relay disabled. Set via Railway Dashboard.");
+const TURN_SECRET = process.env.TURN_SECRET || null;
+const TURN_HOST   = process.env.TURN_HOST   || null;
+const TURN_TTL    = 86400; // 24h
+
+if (process.env.NODE_ENV === "production" && !TURN_SECRET && (!process.env.TURN_USER || !process.env.TURN_PASS)) {
+  console.warn("[WARN] No TURN credentials configured — relay disabled. Set TURN_SECRET (own coturn) or TURN_USER+TURN_PASS (Metered.ca).");
 }
 
-const ICE_SERVERS = [
-  { urls: "stun:stun.relay.metered.ca:80" },
-  { urls: process.env.STUN_URL || "stun:stun.l.google.com:19302" },
-  ...(process.env.TURN_USER && process.env.TURN_PASS ? [
-    // UDP TURN (standard, fastest)
-    { urls: "turn:a.relay.metered.ca:80?transport=udp",
-      username: process.env.TURN_USER, credential: process.env.TURN_PASS },
-    // TCP TURN (works through most firewalls)
-    { urls: "turn:a.relay.metered.ca:80?transport=tcp",
-      username: process.env.TURN_USER, credential: process.env.TURN_PASS },
-    // TCP TURN on port 443 (works through VPNs + strict firewalls)
-    { urls: "turn:a.relay.metered.ca:443?transport=tcp",
-      username: process.env.TURN_USER, credential: process.env.TURN_PASS },
-    // TLS TURN on port 443 (maximum VPN compatibility)
-    { urls: "turns:a.relay.metered.ca:443?transport=tcp",
-      username: process.env.TURN_USER, credential: process.env.TURN_PASS }
-  ] : [])
-];
+// RFC 8489 REST API: time-limited HMAC-SHA1 credentials for own coturn (use-auth-secret mode).
+// Falls back to static credentials for Metered.ca backward compatibility.
+function getIceServers(userId) {
+  const base = [{ urls: process.env.STUN_URL || "stun:stun.l.google.com:19302" }];
+  if (TURN_SECRET && TURN_HOST) {
+    const timestamp = Math.floor(Date.now() / 1000) + TURN_TTL;
+    const username  = `${timestamp}:${userId || "anon"}`;
+    const credential = require("crypto").createHmac("sha1", TURN_SECRET).update(username).digest("base64");
+    return [...base,
+      { urls: `turn:${TURN_HOST}:3478?transport=udp`,  username, credential },
+      { urls: `turn:${TURN_HOST}:3478?transport=tcp`,  username, credential },
+      { urls: `turns:${TURN_HOST}:5349?transport=tcp`, username, credential },
+    ];
+  }
+  if (process.env.TURN_USER && process.env.TURN_PASS) {
+    const username   = process.env.TURN_USER;
+    const credential = process.env.TURN_PASS;
+    return [...base,
+      { urls: "turn:a.relay.metered.ca:80?transport=udp",  username, credential },
+      { urls: "turn:a.relay.metered.ca:80?transport=tcp",  username, credential },
+      { urls: "turn:a.relay.metered.ca:443?transport=tcp", username, credential },
+      { urls: "turns:a.relay.metered.ca:443?transport=tcp", username, credential },
+    ];
+  }
+  return base;
+}
 
 // --- Security Configuration ---
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || null;
@@ -175,7 +186,7 @@ app.get("/routing/list", requireAdmin, (req, res) => {
 // ICE servers are now delivered via REGISTERED WS message (H-01 fix).
 // HTTP endpoint kept behind admin auth for debugging only.
 app.get("/ice-servers", requireAdmin, (req, res) => {
-  res.json({ iceServers: ICE_SERVERS });
+  res.json({ iceServers: getIceServers("admin") });
 });
 
 // --- Clients Debug API (admin-only) ---
@@ -866,7 +877,7 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
 // so HTTP routes and WS handlers share one consistent state — no split-brain.
 const ctx = buildContext({
   pkd, subscriptions, fcm, customIds, licenses,
-  ICE_SERVERS, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
+  getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
   rateLimit, hb,
   giftCodes, saveGiftCodes,
 });
