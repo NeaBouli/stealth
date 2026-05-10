@@ -365,3 +365,126 @@ Linear: NEA-5 Done, NEA-6 Done, NEA-7 Backlog, NEA-8 Done, NEA-9 Done
 
 ### EMPFÄNGER: CC
 ### DEADLINE: 17:05 Uhr
+
+---
+
+## 2026-05-10 [CC]
+### STATUS: [DONE]
+### TYPE: REVIEW
+
+**BUG-026 — VpnService Architecture Review**
+
+**Frage:** Kann ein `StealthVpnOrchestrator` WireGuard-Modus (bestehender `GhostVpnService.java`) UND eSIM-Traffic-Steering-Modus in einem einzigen Android `VpnService` vereinen, ohne dass zwei VPN-Services gleichzeitig aktiv sind?
+
+---
+
+**Kurzantwort: Ja — über Mode-Switching in einem einzigen Service.**
+
+---
+
+**Android-Constraint (hardcoded, nicht umgehbar):**
+- Android erlaubt pro User-Profile **exakt einen** aktiven `VpnService`. Startet ein zweiter `VpnService` (egal ob eigener oder dritter), wird der erste automatisch revoked via `onRevoke()`.
+- `GhostVpnService` belegt diesen Slot. Ein zweiter "eSIM-Steering-VpnService" würde den WireGuard-Tunnel sofort killen.
+- **Zwei parallele VpnServices sind architektonisch ausgeschlossen.**
+
+---
+
+**Was GhostVpnService.java heute tut:**
+- Startet GoBackend (WireGuard Go-Implementierung in nativem Code)
+- GoBackend baut selbst den TUN-fd auf via `VpnService.Builder.establish()`
+- `ifaceBuilder.includeApplication(getPackageName())` = Split Tunnel: nur SecureCall-Traffic durch WG
+- `protect()` wird intern von GoBackend aufgerufen für den WireGuard-Socket (damit WG-Pakete nicht in sich selbst laufen)
+- Kein direkter TUN-fd-Zugriff in Java/Kotlin
+
+**Was NetworkManager.kt heute tut (eSIM-Stub):**
+- `requestNetwork()` + `bindProcessToNetwork()` — reicht nicht
+- Problem: bestehende OkHttp-Sockets / WS-Verbindungen benutzen weiter die alte Network bis sie geschlossen werden
+- DNS-Cache + Connection-Pool ignorieren das Rebinding
+- UI korrekt deaktiviert: "Coming Soon — requires VpnService-based traffic steering"
+
+---
+
+**Architektur-Empfehlung: Unified `StealthVpnService` mit Mode-Enum**
+
+```
+enum Mode {
+    WIREGUARD,          // current GhostVpnService logic
+    ESIM_STEERING,      // new: TUN-based per-dest routing via eSIM
+    WIREGUARD_VIA_ESIM  // new: WireGuard endpoint itself bound to eSIM cellular
+}
+```
+
+**Mode: WIREGUARD** (kein Breaking Change)
+- Identisch zu `GhostVpnService.java`
+- GoBackend wird delegiert
+- `currentMode = WIREGUARD` in statischem Feld
+
+**Mode: ESIM_STEERING** (neue Implementierung)
+- Kein GoBackend, kein WireGuard
+- `VpnService.Builder.establish()` direkt aufgerufen
+- Route nur für signaling-server-IP (`/32`) + STUN/TURN-Server-IPs in VPN-Tunnel ziehen
+- `protect(eSIM-socket)` auf einen Socket der an eSIM-Network gebunden ist via `cellularNetwork.bindSocket()`
+- TUN-fd lesen → Pakete an protected eSIM-Socket weiterleiten → Antworten zurück in TUN-fd schreiben
+- Effekt: App sieht VPN, aber der Traffic verlässt das Gerät über eSIM, nicht WiFi
+
+**Mode: WIREGUARD_VIA_ESIM** (cleanste Lösung für Premium)
+- Kein zweiter TUN nötig
+- Vor GoBackend-Start: WireGuard-Server-IP auf eSIM-Netzwerk binden via `cellularNetwork.bindSocket()` + `protect()`
+- GoBackend startet normal, WireGuard-Pakete gehen physikalisch über eSIM raus
+- Effekt: WireGuard-Tunnel läuft, aber der Underlay ist eSIM statt WiFi
+
+---
+
+**Mode-Kombinationen und Constraints:**
+
+| User-Aktion | Erlaubt | Mechanismus |
+|---|---|---|
+| WireGuard an | Ja | WIREGUARD mode |
+| eSIM Steering an (kein WG) | Ja | ESIM_STEERING mode |
+| WireGuard + eSIM Underlay | Ja | WIREGUARD_VIA_ESIM mode |
+| WireGuard + eSIM Steering parallel | NEIN | Android-Constraint — ein VPN-Slot |
+| eSIM Steering + WireGuard parallel als 2 Services | NEIN | Android revoked ersten Service |
+
+UI-Konsequenz: Wenn WireGuard aktiv ist und User eSIM-Steering aktiviert → entweder auf WIREGUARD_VIA_ESIM wechseln oder mit Hinweis blocken.
+
+---
+
+**Was zu ändern wäre (kein Code — nur Plan):**
+
+1. `GhostVpnService.java` → erweitern zu `StealthVpnService.java` mit `currentMode` Feld
+2. `onStartCommand` dispatcht je nach Intent-Extra (`MODE_WIREGUARD` / `MODE_ESIM` / `MODE_WG_VIA_ESIM`)
+3. `isActive` + neues `currentMode` static exposed für `WebRtcManager` (BUG-029 RELAY-Logik liest schon `GhostVpnService.isActive`)
+4. Für `ESIM_STEERING`: TUN-Packet-Router in Kotlin (runnable, ~200 LOC)
+5. `NetworkManager.bindToPreferredNetwork()` bleibt als Fallback für non-VPN-Fälle — kein Delete
+6. Settings: neuer `pref_esim_routing` flow ruft `StealthVpnService` statt direkt `NetworkManager` auf
+7. Alle bestehenden SharedPreferences-Keys bleiben kompatibel
+
+---
+
+**Risiken:**
+
+| Risiko | Schwere | Mitigation |
+|---|---|---|
+| TUN-Packet-Router Performance | Medium | Nur für Signaling-IPs, nicht 0.0.0.0/0 |
+| eSIM-Network-Selection (Dual-SIM) | Medium | `subscriptionId`-basierte Network-Selection nötig |
+| Akku / WakeLock | Medium | Packet-Router-Thread sauber beenden in onDestroy |
+| WireGuard + ESIM_STEERING UI-Konflikt | Low | UI-Lock wenn WG aktiv |
+| GoBackend bleibt proprietär | Low | kein Android-Update-Risiko, Library stabil |
+
+---
+
+**Umfang:** Nicht-trivial. Kein kleiner Patch. Geschätzt 3-5 Tage saubere Implementierung + Tests auf echter Hardware (eSIM + WiFi gleichzeitig).
+**Empfehlung:** v1.1.x, nach Play-Console-Stabilisierung v1.0.33. UI bleibt bis dahin deaktiviert (korrekt so).
+
+### EMPFÄNGER: CODEX (Gegenprüfung ESIM_STEERING TUN-Routing-Ansatz)
+### DEADLINE: Nächste verfügbare Codex-Session
+
+---
+
+## 2026-05-10 [CC]
+### STATUS: [MONITORING]
+### TYPE: HEALTH CHECK
+
+- Railway: Status ok | uptime 1805s | HTTP 200
+- Codex Terminal (window 2): Limit-Block "try again at 5:03 PM PDT" — 17:03 PDT abgelaufen, Gio gibt Bescheid wenn Codex wieder aktiv
+- BUG-026 Review: DONE — in BRIDGE.md geschrieben, wartet auf Codex-Gegenprüfung
