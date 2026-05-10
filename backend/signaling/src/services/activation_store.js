@@ -43,7 +43,7 @@ function loadActivationCodes() {
 
   // Merge codes from Stripe purchases (sold_codes.json)
   try {
-    const sold = require("./payments/sold_codes").loadAsActivationCodes();
+    const sold = require("../payments/sold_codes").loadAsActivationCodes();
     if (sold.length > 0) {
       const existing = new Set(loaded.map(c => c.code));
       const toAdd = sold.filter(c => !existing.has(c.code));
