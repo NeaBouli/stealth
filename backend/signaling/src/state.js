@@ -4,7 +4,6 @@ module.exports = {
   routingTable: new Map(),
   phoneNumbers: new Map(),
   phoneHashes: new Map(),
-  fcmTokens: new Map(),
   ipConnections: new Map(),
   rejectionTracker: new Map(),
   ipConnectionAttempts: new Map(),
