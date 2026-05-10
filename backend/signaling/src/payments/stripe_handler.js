@@ -158,7 +158,9 @@ function resolveTierFromPriceId(priceId) {
 // safety margin.
 const fs = require("fs");
 const path = require("path");
-const PROCESSED_FILE = path.join(__dirname, "..", "..", "data", "stripe_processed_events.json");
+const { writeJsonAtomic } = require("../utils/json_store");
+const PROCESSED_FILE = process.env.STRIPE_PROCESSED_FILE ||
+  path.join(__dirname, "..", "..", "data", "stripe_processed_events.json");
 const PROCESSED_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 const processedEvents = new Map(); // eventId -> processedAtMs
 
@@ -183,12 +185,9 @@ function loadProcessedEvents() {
 
 function saveProcessedEvents() {
   try {
-    fs.mkdirSync(path.dirname(PROCESSED_FILE), { recursive: true });
     const obj = {};
     for (const [id, ts] of processedEvents) obj[id] = ts;
-    const tmp = PROCESSED_FILE + ".tmp";
-    fs.writeFileSync(tmp, JSON.stringify(obj, null, 2));
-    fs.renameSync(tmp, PROCESSED_FILE);
+    writeJsonAtomic(PROCESSED_FILE, obj);
   } catch (e) {
     console.error("[STRIPE] Failed to persist processed events:", e.message);
   }
