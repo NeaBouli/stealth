@@ -966,3 +966,43 @@ vC56 (v1.0.33) ADB deployment status:
 - [ ] Commit fastlane changelog 56.txt
 - [ ] NEA-12: BUG-029 VPN+VPN audio retest on S7 + Tab S4
 - [ ] NEA-13: Hetzner migration questions in MIGRATION_PLAN.md
+
+## 2026-05-10 [CC]
+### TYPE: DECISION
+### NEA-13: Hetzner Migration — finalisierte Entscheidungen
+
+1. **Server:** Bestehender Hetzner 135.181.254.229 — eigener Docker Container, vollständig isoliert.
+   Cloudflare Proxy PFLICHT (Orange Cloud) für `api.stealthx.tech` — StealthX-Origin-IP nie sichtbar.
+
+2. **Reverse Proxy:** Hetzner läuft bereits mit Traefik (ekklesia.gr nutzt es).
+   StealthX hängt sich in das bestehende `traefik-public` Docker-Netzwerk via Labels.
+   Kein nginx, keine eigene SSL-Konfiguration — Traefik + Let's Encrypt automatisch.
+
+3. **Railway:** Bleibt als Cold-Standby, wird irgendwann gelöscht. Kein harter Cutover.
+
+4. **TURN:** Eigener coturn auf Hetzner. Läuft NICHT durch Traefik (UDP). Eigener Systemd-Service.
+   TURN-IP ist per ICE-Protokoll ohnehin für Clients sichtbar — kein Cloudflare möglich/nötig.
+
+5. **Email:** Postfix installieren, erst aktivieren wenn Railway entfernt wird.
+   Aktuell: Brevo (primary, BREVO_API_KEY) + Resend (fallback, RESEND_API_KEY).
+
+6. **Zeitrahmen:** VOR Production Release.
+
+MIGRATION_PLAN.md aktualisiert mit Docker Compose (Traefik-Integration) und finalem Architektur-Bild.
+
+---
+
+## 2026-05-10 [CC]
+### TYPE: FIX
+
+**server.js: lastBroadcast split-brain + sendToClient scope bug** — Commit `5e46bc2`
+
+Root cause:
+1. `let lastBroadcast = {...}` in server.js redeclared its own object separate from state.js singleton. ctx.lastBroadcast (used by WS handlers) and HTTP /status/last-broadcast showed different data after POST /admin/broadcast.
+2. `sendToClient()` call on line 550 (POST /invite/accepted) referenced a function that only exists in ctx. At runtime this threw ReferenceError — invite notifications were silently broken.
+
+Fix:
+- lastBroadcast imported from state.js destructuring; mutations use Object.assign().
+- let ctx hoisted above route definitions; buildContext() assigns it. Route handlers call ctx.sendToClient() at request time, by which ctx is always defined.
+
+Tests: 135/135 PASS.

@@ -92,47 +92,64 @@ pkey=/etc/letsencrypt/live/turn.stealthx.tech/privkey.pem
 ### 2. Signaling Backend — Prioritaet 2
 
 **Aktuell:** Railway (ephemeral FS, Auto-Deploy via GitHub)
-**Ziel:** Docker Container auf eigenem VPS
+**Ziel:** Docker Container auf Hetzner 135.181.254.229 — integriert in bestehendes Traefik-Setup
+
+**WICHTIG:** Hetzner laeuft bereits mit Traefik als zentralem Reverse Proxy (ekklesia.gr).
+Selbes Modell fuer StealthX — kein nginx, kein separater Reverse Proxy noetig.
+Traefik erkennt Container automatisch ueber Docker Labels + `traefik-public` Netzwerk.
 
 **Anforderungen:**
 - Node.js 20+
 - Persistentes Volume fuer `data/` (activation_codes.json, sold_codes.json, fcm_tokens.json)
-- WebSocket-faehiger Reverse Proxy (Traefik/nginx)
-- SSL via Let's Encrypt
-- Auto-Restart (systemd oder Docker restart policy)
-- Health-Check: `GET /health`
+- Traefik Labels fuer Routing (kein eigener Port-Expose)
+- SSL via Let's Encrypt (laeuft ueber Traefik ACME — automatisch)
+- Cloudflare DNS `api.stealthx.tech` auf Hetzner-IP → Orange Cloud (Proxy ON) — versteckt Origin-IP
 
-**Docker Compose Entwurf:**
+**Docker Compose (StealthX):**
 ```yaml
 services:
   signaling:
-    image: node:20-slim
+    build:
+      context: ../../backend/signaling
+    container_name: stealthx-signaling
     working_dir: /app
     volumes:
-      - ./backend/signaling:/app
       - signaling-data:/app/data
-    environment:
-      - ADMIN_API_KEY
-      - STRIPE_SECRET_KEY
-      - STRIPE_WEBHOOK_SECRET
-      - ALLOWED_SIGNATURES
-      - TURN_USER
-      - TURN_PASS
-    ports:
-      - "8080:8080"
+    env_file:
+      - /opt/stealthx/.env.production
     command: node src/server.js
     restart: unless-stopped
+    networks:
+      - stealthx
+      - traefik-public       # bestehendes Traefik-Netzwerk auf Server
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.stealthx.rule=Host(`api.stealthx.tech`)
+      - traefik.http.routers.stealthx.entrypoints=websecure
+      - traefik.http.routers.stealthx.tls.certresolver=letsencrypt
+      - traefik.http.services.stealthx.loadbalancer.server.port=8080
+      # WebSocket-Support (fuer signaling)
+      - traefik.http.middlewares.stealthx-ws.headers.customrequestheaders.Connection=Upgrade
+      - traefik.http.middlewares.stealthx-ws.headers.customrequestheaders.Upgrade=websocket
+
 volumes:
   signaling-data:
+
+networks:
+  stealthx:
+    name: net_stealthx
+    driver: bridge
+  traefik-public:
+    external: true           # bestehendes Netzwerk auf Server
 ```
 
 **Migration:**
-1. Server vorbereiten (Docker, Traefik, DNS)
-2. `data/` von Railway sichern (manuell kopieren)
-3. Env vars uebertragen
-4. Deploy + Smoke-Test
-5. DNS `api.stealthx.tech` oder Railway-URL auf neuen Server zeigen
-6. Railway als Cold-Standby behalten
+1. `data/` von Railway exportieren (manuell via Railway CLI)
+2. `/opt/stealthx/.env.production` auf Server anlegen (env vars kopieren)
+3. `docker compose up -d` im StealthX-Verzeichnis
+4. Cloudflare: `api.stealthx.tech` → Hetzner-IP, Orange Cloud ON
+5. Smoke-Test: `curl https://api.stealthx.tech/health`
+6. Railway auf Cold-Standby belassen
 
 ### 3. Email SMTP — Prioritaet 3
 
@@ -212,10 +229,39 @@ Bereits vorhanden unter `135.181.254.229` (ekklesia.gr laeuft dort).
 
 ---
 
-## Entscheidungen fuer Gio
+## Entscheidungen — FINALISIERT 2026-05-10 [GIO]
 
-1. Soll die Migration auf den bestehenden Hetzner (135.181.254.229) oder einen neuen Server?
-2. Railway komplett kuendigen oder als Failover behalten?
-3. coturn auf eigenem Server oder bei einem guenstigen TURN-Provider (z.B. Twilio)?
-4. Email: eigener Postfix oder Mailcow?
-5. Zeitrahmen: sofort starten oder nach Production Release?
+1. **Server:** Bestehender Hetzner 135.181.254.229 — eigener Docker Container, vollständig isoliert und unabhängig von anderen Projekten (ekklesia.gr etc.). Cloudflare Proxy PFLICHT — StealthX-IP darf nicht sichtbar sein. Eigene Abteilung auf dem Server, keine Querverbindungen.
+
+2. **Railway:** Als Backup behalten, irgendwann löschen. Muss beim Entfernen KEINE Probleme für die App verursachen. Kein harter Cutover geplant.
+
+3. **TURN:** Eigener coturn auf dem Hetzner-Server. Kein externer TURN-Provider.
+
+4. **Email:** Postfix — installieren, aber erst aktivieren wenn Railway entfernt wird. Brevo (primary) + Resend (fallback) laufen bis dahin weiter. Wenn Postfix ausreicht: nur Postfix, kein Drittanbieter. Ziel: vollständig eigene Infrastruktur.
+
+5. **Zeitrahmen:** VOR Production Release — vollständig funktionsfähiges Produkt, nicht Kosten-getrieben. Kein experimentieren während des Live-Betriebs.
+
+---
+
+## IP-Isolation — KRITISCH
+
+Da StealthX auf demselben Server wie ekklesia.gr (135.181.254.229) laufen wird:
+- **Cloudflare Proxy ist PFLICHT** für `api.stealthx.tech` und `turn.stealthx.tech`
+- Origin-IP darf nie direkt erreichbar sein (Privacy-App)
+- Cloudflare Orange-Cloud muss für alle StealthX-Subdomains aktiviert sein
+- Firewall: Port 8080 (Signaling) und 3478/5349 (coturn) nur via Cloudflare oder VPN erreichbar
+
+**TURN-Problem mit Cloudflare:** Cloudflare kann kein UDP/TCP TURN proxyen.
+Lösung: coturn läuft auf eigener Subdomain `turn.stealthx.tech` mit separater IP (Hetzner Floating IP) ODER coturn bleibt auf Hetzner-IP ohne Cloudflare (TURN-Server-IP ist per STUN-Protokoll ohnehin sichtbar für Clients).
+
+---
+
+## Naechste Schritte (geordnet)
+
+1. [ ] Cloudflare Proxy für StealthX-Subdomains aktivieren
+2. [ ] Docker Container Setup auf Hetzner (isoliert von ekklesia.gr)
+3. [ ] coturn Setup + DNS `turn.stealthx.tech`
+4. [ ] Postfix installieren (inaktiv — bereit für Aktivierung)
+5. [ ] data/ von Railway sichern und in persistentes Volume übertragen
+6. [ ] Smoke-Test aller Endpoints
+7. [ ] Railway als Cold-Standby konfigurieren
