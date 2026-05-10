@@ -20,9 +20,9 @@
     - Low behoben: `rand >= 0.7.0, < 0.8.6`, Manifest `core_crypto/Cargo.lock`, GHSA `GHSA-cq8v-f236-94qc`.
     - HIGH behoben (2026-05-09): `fast-xml-builder <= 1.1.6`, GHSA `GHSA-5wm8-gmm8-39j9` — Commit `ef28d46`. Updated 1.1.5 → 1.2.0 via `npm audit fix`.
   - Weiterhin offen laut GitHub API:
-    - Medium: `uuid < 14.0.0`, Manifest `backend/signaling/package-lock.json`, GHSA `GHSA-w5hq-g745-h8pq`.
-    - Low: `@tootallnate/once < 3.0.1`, Manifest `backend/signaling/package-lock.json`, GHSA `GHSA-vpq2-c234-7xj6`.
-    - Low: firebase-admin chain (@google-cloud/firestore, @google-cloud/storage, google-gax, http-proxy-agent, retry-request, teeny-request) — transitiv, nur via firebase-admin Major-Upgrade behebbar.
+    - ~~Medium: `uuid < 14.0.0`~~ — FIXED (nicht mehr in npm audit sichtbar, 2026-05-10).
+    - Low: `@tootallnate/once < 3.0.1`, GHSA `GHSA-vpq2-c234-7xj6` — transitiv via firebase-admin, nur via firebase-admin Major Upgrade behebbar.
+    - Low: firebase-admin chain (@google-cloud/firestore, @google-cloud/storage, google-gax, http-proxy-agent, retry-request, teeny-request) — transitiv, nur via firebase-admin Major-Upgrade behebbar. AKZEPTIERT.
   - Fix-Stand:
     - `backend/signaling/package-lock.json` aktualisiert.
     - `core_crypto/Cargo.lock` aktualisiert: `rand 0.8.5 -> 0.8.6`.
@@ -179,5 +179,10 @@
   - "Zero metadata" → "Minimal metadata" in index.html (meta, twitter, hero, stat, table, pricing), privacy.html (meta/OG).
   - Feature card explizit: FCM tokens behalten fuer Push, STUN/TURN fuer WebRTC, kein Call-Content gespeichert.
   - privacy.html hat bereits klare Disclosures fuer FCM/STUN/TURN/signaling-transient (lines 98-109).
-- [ ] Backend-Monolith `backend/signaling/src/server.js` schrittweise modularisieren.
+- [x] Backend-Monolith `backend/signaling/src/server.js` schrittweise modularisieren.
+  - STX-HIGH-03: alle 8 Schritte abgeschlossen (2026-05-10). Commits: b4bf93d–3ff9cf0.
+  - Module: state.js, utils/, middleware/, routes/, services/, ws/handlers/, context.js
+  - context.smoke.js Smoke-Test PASS: 18 WS-Handler, 4 Helpers, 6 State-Maps (commit e2c358e).
+  - CAVEAT: server.js noch unverändert — WS wireWs() Integration wartet auf State-Split-Brain-Fix.
+  - Nächster Schritt: server.js importiert state.js + Store-Module, dann wireWs(wss, ctx) ersetzen.
 - [x] Privacy-Metadaten-Claims gegen FCM/TURN/Signaling Realitaet pruefen.
