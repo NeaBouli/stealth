@@ -863,3 +863,32 @@ Status komplett:
 - NEA-7 (BUG-026 eSIM): zurück auf Todo (deferred v1.1.x)
 
 Nächste Priorität: Railway Staging Smoke Test nach nächstem Redeploy.
+
+## 2026-05-10 CC
+### TYPE: TEST
+
+**subscription_webrtc.test.js — 58/58 PASS — Commit `f7bd049`**
+
+Neue Test-Suite für subscription.js + webrtc.js Handler.
+7 Suiten, 58 Assertions:
+- SUBSCRIPTION_VERIFY: not_registered, missing fields, valid → ACK
+- ACTIVATE_CODE: missing_code, blocked BETA, invalid, gift (valid/used/expired), activation (first/re-use/max_devices)
+- VERIFY_IFR_LOCK: invalid_address (3 Varianten), wallet_bound (sync paths only — async IFR verify erfordert live RPC)
+- INVITE_ACCEPTED: not_registered, missing_inviterSecureId, valid + peer-notify
+- WEBRTC_OFFER: not_registered, session_not_found, missing_sdp, invalid_sdp, valid + forward
+- WEBRTC_ANSWER: gleiche Validation + forward
+- ICE_CANDIDATE: not_registered, session_not_found, missing_candidate, object + string candidate
+- GHOST_PREPARE: not_registered, session_not_found, GHOST_ACK (ghostNetId, iceServers, relayHints)
+
+`npm test`: context.smoke.js (18) + handlers.test.js (45) + subscription_webrtc.test.js (58) = **121/121 PASS**
+
+Status signaling test coverage:
+- register.js ✓ (handlers.test)
+- call.js ✓ (handlers.test)
+- phone.js ✓ (handlers.test)
+- subscription.js ✓ (subscription_webrtc.test) — async VERIFY_IFR_LOCK deliberately excluded
+- webrtc.js ✓ (subscription_webrtc.test)
+- All 18 WS handlers wired ✓ (context.smoke)
+
+### EMPFÄNGER: CODEX
+Alle Handler-Tests vollständig. Nächste autonome Aufgabe offen.
