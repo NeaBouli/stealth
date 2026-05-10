@@ -12,6 +12,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { writeJsonAtomic } = require("./utils/json_store");
 
 const IDS_FILE = path.join(__dirname, "..", "data", "custom_ids.json");
 const PENDING_FILE = path.join(__dirname, "..", "data", "pending_activations.json");
@@ -60,11 +61,7 @@ function loadIds() {
 
 function saveIds() {
   try {
-    fs.mkdirSync(path.dirname(IDS_FILE), { recursive: true });
-    // Atomic write to prevent corruption on concurrent saves (Fix CRIT-003).
-    const tmp = IDS_FILE + ".tmp";
-    fs.writeFileSync(tmp, JSON.stringify(customIds, null, 2));
-    fs.renameSync(tmp, IDS_FILE);
+    writeJsonAtomic(IDS_FILE, customIds);
   } catch (e) {
     console.error("[CUSTOM-ID] Save failed:", e.message);
   }
@@ -94,15 +91,12 @@ function loadPendingActivations() {
 
 function savePendingActivations() {
   try {
-    fs.mkdirSync(path.dirname(PENDING_FILE), { recursive: true });
     const obj = {};
     const now = Date.now();
     for (const [token, entry] of pendingActivations) {
       if (now - entry.createdAt < PENDING_TTL_MS) obj[token] = entry;
     }
-    const tmp = PENDING_FILE + ".tmp";
-    fs.writeFileSync(tmp, JSON.stringify(obj, null, 2));
-    fs.renameSync(tmp, PENDING_FILE);
+    writeJsonAtomic(PENDING_FILE, obj);
   } catch (e) {
     console.error("[CUSTOM-ID] Failed to persist pending activations:", e.message);
   }

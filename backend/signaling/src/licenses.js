@@ -5,6 +5,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { writeJsonAtomic } = require("./utils/json_store");
 
 const LICENSES_FILE = path.join(__dirname, "..", "data", "licenses.json");
 
@@ -86,15 +87,11 @@ function loadLicenses() {
 
 function saveLicenses() {
   try {
-    fs.mkdirSync(path.dirname(LICENSES_FILE), { recursive: true });
-    // Atomic write to prevent corruption on concurrent saves (Fix CRIT-003).
-    const tmp = LICENSES_FILE + ".tmp";
-    fs.writeFileSync(tmp, JSON.stringify({
+    writeJsonAtomic(LICENSES_FILE, {
       pro_lifetime: { sold: LICENSES.pro_lifetime.sold },
       premium_lifetime: { sold: LICENSES.premium_lifetime.sold },
       lastUpdated: new Date().toISOString()
-    }, null, 2));
-    fs.renameSync(tmp, LICENSES_FILE);
+    });
   } catch (e) {
     console.error("[LICENSES] Failed to save:", e.message);
   }

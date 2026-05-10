@@ -16,6 +16,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { writeJsonAtomic } = require("./utils/json_store");
 
 const SUBS_FILE = path.join(__dirname, "..", "data", "subscriptions.json");
 
@@ -40,13 +41,9 @@ function loadSubscriptions() {
 
 function saveSubscriptions() {
   try {
-    fs.mkdirSync(path.dirname(SUBS_FILE), { recursive: true });
     const obj = {};
     for (const [k, v] of subscriptions) obj[k] = v;
-    // Atomic write to prevent corruption on concurrent saves (Fix CRIT-003).
-    const tmp = SUBS_FILE + ".tmp";
-    fs.writeFileSync(tmp, JSON.stringify(obj, null, 2));
-    fs.renameSync(tmp, SUBS_FILE);
+    writeJsonAtomic(SUBS_FILE, obj);
   } catch (e) {
     console.error("[SUBSCRIPTION] Save failed:", e.message);
   }
