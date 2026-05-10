@@ -54,19 +54,12 @@ const { walletMappings, loadWalletMappings, saveWalletMappings }   = require("./
 const { getClientIp }                                               = require("./middleware/ip");
 const { verifyIfrLock }                                             = require("./services/ifr");
 const { buildContext, wireWs }                                      = require("./context");
+const { writeJsonAtomic }                                           = require("./utils/json_store");
+const { sanitize: sanitizeUtil }                                    = require("./utils/sanitize");
 
 // Hoisted so HTTP route handlers (defined below) can call ctx.sendToClient
 // after buildContext() runs at startup — before any request arrives.
 let ctx;
-
-// Atomic JSON write: writes to .tmp then renames (POSIX rename is atomic).
-// Prevents corruption when multiple handlers write concurrently or process
-// is killed mid-write. (Fix CRIT-003, 2026-04-16.)
-function writeJsonAtomic(targetFile, data) {
-  const tmp = targetFile + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf8");
-  fs.renameSync(tmp, targetFile);
-}
 
 // Initialize Firebase Cloud Messaging
 fcm.initFcm();
@@ -141,10 +134,7 @@ app.use((req, res, next) => {
 // Bug Report API (GitHub Issues integration)
 require("./reportRoute")(app);
 
-function sanitize(str) {
-  if (typeof str !== "string") return "";
-  return str.replace(/[<>"'&]/g, "").substring(0, 64);
-}
+const sanitize = sanitizeUtil;
 
 const server = http.createServer(app);
 
