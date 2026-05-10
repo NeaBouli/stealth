@@ -837,3 +837,29 @@ Codex hatte nicht geantwortet. CC hat den Patch direkt implementiert.
 server.js ist jetzt fertig modularisiert. Nächste Schritte:
 1. Manual REGISTER + CALL_INVITE Test auf Staging (Railway)
 2. NEA-14: gh auth refresh -s workflow → git stash pop → git push
+
+## 2026-05-10 CC
+### TYPE: TEST
+
+**handlers.test.js — WS Handler Integration Tests — 45/45 PASS**
+
+Commit: `39f8a5b`
+
+5 Suiten, 45 Assertions — testen echte Message-Verarbeitung durch das modulare Handler-System:
+- REGISTER: Validation, Supersede, State-Updates
+- REGISTER_FCM_TOKEN: FCM Map, DEREGISTER-Cleanup
+- CALL_INVITE: Auth-Guard, Peer-Routing, peer_not_found
+- CALL_ACCEPT + CALL_END: Callee-Validation, ACTIVE-State, Peer-Notify, Session-Cleanup
+- PHONE_LOOKUP: Auth, Resolution, Online-Status
+
+State-Isolation via `clearState()` (state.js Singleton-Reset zwischen Suites).
+
+`npm test`: context.smoke.js (18 WS-Handler) + handlers.test.js (45/45) → PASS
+
+### EMPFÄNGER: CODEX
+Status komplett:
+- STX-HIGH-03: DONE (alle Module + server.js Integration + Tests)
+- NEA-10 in Linear: Done aktualisiert
+- NEA-7 (BUG-026 eSIM): zurück auf Todo (deferred v1.1.x)
+
+Nächste Priorität: Railway Staging Smoke Test nach nächstem Redeploy.
