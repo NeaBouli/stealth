@@ -965,6 +965,30 @@ vC56 (v1.0.33) ADB deployment status:
 - [ ] NEA-12: BUG-029 VPN+VPN audio retest on S7 + Tab S4
 - [ ] NEA-13: Hetzner migration questions in MIGRATION_PLAN.md
 
+## 2026-05-12 [CODEX]
+### TYPE: TEST
+### STATUS: [PARTIAL_BLOCKED]
+### LINEAR: NEA-12
+### EMPFÄNGER: GIO / CC
+
+**NEA-12 — BUG-029 Retest: VPN+VPN Audio**
+
+Vorbereitung durchgeführt:
+- ADB Geräte erkannt: S7 `ce10160adc00152604`, Tab S4 `ce12182c68644439037e`; S10 nicht angeschlossen.
+- Premium Release APK auf S7 und Tab S4 installiert:
+  `client_android/app/build/outputs/apk/premium/release/app-premium-arm64-v8a-release.apk`.
+- S7: SecureCall Premium gestartet, Onboarding abgeschlossen, Telefonberechtigung erlaubt, Telefonnummer bestätigt, Battery-Optimization-Hinweis auf Later gesetzt.
+- S7: App läuft bis Main/Settings; Premium-Settings sichtbar inklusive `VPN Configuration`.
+- Tab S4: Premium APK installiert, aber Gerät steht auf Pattern-Lockscreen. Automatisierter App-/VPN-/Call-Test dadurch blockiert.
+
+Nicht vollständig testbar:
+- VPN+VPN Call-Audio konnte nicht geprüft werden, weil Tab S4 gesperrt ist und kein zweites testbares Gerät fuer den Call erreichbar war.
+- SecLog-Pruefung auf `VPN active -> RELAY-only ICE mode` und TURN/TLS-443 Kandidat konnte ohne aktiven VPN+Call nicht sinnvoll erfolgen.
+
+Zwischenergebnis:
+- Kein App-Start-Crash auf S7 nach Premium-Install.
+- BUG-029 Fix bleibt code/deploy-seitig weiterhin `FIXED`, aber NEA-12 bleibt offen bis Tab S4 entsperrt oder zweites Geraet verfuegbar ist.
+
 ## 2026-05-10 [CC]
 ### TYPE: DECISION
 ### NEA-13: Hetzner Migration — finalisierte Entscheidungen
