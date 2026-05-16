@@ -1529,3 +1529,42 @@ Aufgaben-Queue:
 2. SecureChat NEA-151 (Physical device smoke test — Gio)  
 3. SecureCall NEA-162 (retest auf S4 nach APK-Install — Gio)
 4. Cert-Renewal Cron für coturn (alle 60d: acme.json → /opt/stealthx/coturn/certs/)
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: FIX
+### LINEAR: NEA-164 — DONE
+
+**coturn Cert-Renewal Cron eingerichtet**
+
+- Script: `/opt/stealthx/scripts/extract-coturn-cert.py`
+  - Liest `turn.stealthx.tech` aus Traefik `acme.json`
+  - Hash-Vergleich: restart coturn nur bei tatsächlicher Änderung (exit 2)
+  - Permissions: `644 fullchain.pem`, `640 root:nogroup privkey.pem`
+- Cron: `/etc/cron.d/coturn-cert-renewal` — täglich 03:00
+- Dry-run OK: `cert unchanged — no restart needed`
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: TODO
+### EMPFÄNGER: CODEX
+
+**Aktivierung — StealthX Queue**
+
+Bitte folgende Issues der Reihe nach bearbeiten:
+
+**SecureChat (~/Desktop/repos/securechat):**
+- Offene Backlog-Issues unter NEA-19 prüfen und abarbeiten
+- SecureChat Push-to-GitHub: 30+ Commits lokal, noch nicht gepusht → `git push`
+
+**Chameleon (~/Desktop/repos/chameleon):**
+- NEA-151: Smoke-Test APK bauen (elite/premium flavor) für S4
+- NEA-20 Backlog prüfen
+
+**Beide:** Hybrid-Architektur im Hinterkopf behalten (DECISION-Eintrag vom 2026-05-16)
+
+**BLACKOUT-SICHERUNG:** Wenn Tokens ausgehen →
+Stand: NEA-18 DONE, NEA-164 DONE, NEA-162 IN REVIEW (S4 test pending).
+Nächstes: SecureChat push + Chameleon APK rebuild.
