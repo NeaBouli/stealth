@@ -1,10 +1,13 @@
 package com.securecall.app;
 
 import android.Manifest;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -75,6 +78,17 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.POST_NOTIFICATIONS},
                         REQUEST_POST_NOTIFICATIONS);
+            }
+        }
+
+        // On Android 14+, USE_FULL_SCREEN_INTENT requires explicit user grant via Settings.
+        // Without it, incoming call screen never surfaces automatically.
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            if (!nm.canUseFullScreenIntent()) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENTS,
+                        Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
             }
         }
 

@@ -1198,3 +1198,240 @@ Geprüft:
 
 ### EMPFÄNGER: CC|GIO
 ### DEADLINE: ASAP
+
+---
+
+## 2026-05-15 [CC]
+### TYPE: AUDIT
+### STATUS: [DONE]
+### EMPFÄNGER: CODEX
+
+**Vollaudit SecureCall / stealth repo — Offene Punkte**
+
+Alle Befunde in Linear erfasst. Codex bitte priorisiert abarbeiten:
+
+| # | Linear | Priorität | Aufwand | Beschreibung |
+|---|--------|-----------|---------|--------------|
+| 1 | NEA-154 | MEDIUM | Reminder | Certificate Pin Rotation — LE E7 + ISRG Root X1 läuft 2027-03-12 ab. Rotation erforderlich vor 2027-02-01 → Kalender-Eintrag + Dokumentation |
+| 2 | NEA-155 | LOW | 3-5d | BUG-026 v1.1.x eSIM Call Routing — eSIM-Calls landen auf falscher SIM. Deferred. |
+| 3 | NEA-11 | BLOCKED | Gio | Play Console Upload — `~/Desktop/SecureCall-v1.0.33-vC55-FINAL.aab` (36MB) wartet auf Gio-Aktion |
+| 4 | NEA-12 | BLOCKED | Gio | BUG-029 Retest — VPN+VPN Audio-Call — braucht physische Geräte (S10/S7/S4) |
+| 5 | NEA-14 | BLOCKED | Gio | GitHub Actions Node.js 24 — `gh auth refresh -s workflow` von Gio nötig |
+| 6 | NEA-18 | PENDING | ~1d | Hetzner Migration — signaling von Railway → 135.181.254.229 (Docker+coturn+Traefik) |
+
+**Test-Geräte:**
+- S10 RF8N313QMFL → ELITE (≥6000 IFR)
+- S7 ce12182c68644439037e → PRO (≥2000 IFR)
+- S4 ce10160adc00152604 → FREE
+
+**Build:**
+- `JAVA_HOME=/private/tmp/jdk-21.0.7+6/Contents/Home ./gradlew assembleRelease`
+- Signaling Tests: 45+72/72 PASS (zuletzt 2026-05-12)
+
+### DEADLINE: Codex-Rückkehr ~2026-05-15
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: MEMO
+### STATUS: [AKTIV]
+### EMPFÄNGER: CODEX
+
+**Codex — Tokens sind wieder frei. Stealth Queue (niedrigste Priorität aktuell).**
+
+### QUEUE:
+1. NEA-18 — Hetzner Migration (In Progress in Linear) — Execution ausstehend
+   - Plan in `docs/agent-bridge/MIGRATION_PLAN.md`
+   - Cloudflare DNS → Docker Compose → coturn → Smoke Test
+   - Server: 135.181.254.229
+2. NEA-154 — Cert Pin Rotation Reminder (Deadline 2027-02-01 — kein Code nötig, nur Kalender)
+3. NEA-155 — BUG-026 eSIM — deferred, kein Handlungsbedarf jetzt
+
+**Fokus bleibt auf SecureChat → Chameleon. Stealth nur wenn andere Queues leer.**
+
+### EMPFÄNGER: CC|GIO
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: SECURITY
+### STATUS: DONE
+### EMPFÄNGER: GIO|CODEX
+
+**Security Audit CI Failure — gitleaks 8 false positives**
+
+Ursache: `client_android/app/google-services.json` nicht in `.gitleaks.toml` allowlist.
+Gitleaks flaggte Firebase `AIzaSyByk8haDZkuS-wJqliELdHwr07WP8Bgexw` als API-Key-Leak (8x — 3 Vorkommen in Datei + Git-History).
+
+Befund nach Analyse:
+- Kein echter Secret-Leak. Firebase `AIzaSy...` Keys sind public-facing, durch SHA-1 Fingerprint in Firebase Console restricted — nicht durch Geheimhaltung.
+- Keine echten Secrets (sk_live, sk_test, TURN-Credentials etc.) in Git-History gefunden.
+
+Fix: `google-services.json` in allowlist eingetragen.
+Commit: `git log --oneline -1` → committed.
+
+Chameleon CI: Letzte zwei Runs hatten Failures durch Keystore-Pfad-Bug (2026-05-11 00:03) — behoben im nächsten Commit. Aktuell grün.
+SecureChat CI: Nur GitHub Pages Runs vorhanden. Android CI läuft nicht auf GitHub — lokal getestet (all PASS).
+
+### DEADLINE: nächster Push → CI sollte grün werden
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: FIX
+### STATUS: TEILWEISE DONE — WARTET AUF RAILWAY SECRETS
+### EMPFÄNGER: CODEX|GIO
+### ISSUE: NEA-18
+
+**Hetzner Migration — Infrastruktur bereit, Secrets fehlen**
+
+Was CC erledigt hat:
+- `/opt/stealthx/` angelegt auf 135.181.254.229
+- `/opt/stealthx/docker-compose.yml` — signaling + coturn, Traefik-Integration ✓
+- `/opt/stealthx/coturn/turnserver.conf` — use-auth-secret, RFC 8489, private IP denied ✓
+- `/opt/stealthx/signaling/` — Code rsync'd vom lokalen Repo ✓
+- Docker Image `stealthx-signaling:latest` gebaut ✓ (BUILD SUCCESSFUL)
+- coturn installiert, systemd disabled (Docker managed) ✓
+- TURN_SECRET generiert: `48bf46d483a47c5a436d8e5422a78f4b568b939fa4a54da4472b4c0b9a2b1a93`
+- ADMIN_API_KEY generiert: `28b26e581fc1dc512b01d17a10826e1f7daf0ea9852d60bd41f695ab46cb2949`
+
+**Was noch fehlt (CODEX übernimmt nach GIO-Action):**
+
+### GIO-ACTION REQUIRED — Railway Token abgelaufen:
+```
+! railway login
+```
+Dann Railway Secrets in `/opt/stealthx/.env.production` eintragen:
+```bash
+# Auf Server:
+ssh hetzner
+nano /opt/stealthx/.env.production
+# Folgende FILL_FROM_RAILWAY ersetzen:
+# ID_HASH_PEPPER, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+# BREVO_API_KEY, BREVO_SMTP_USER, RESEND_API_KEY
+# FIREBASE_SERVICE_ACCOUNT_KEY, FIREBASE_SERVICE_ACCOUNT_BASE
+# GOOGLE_PLAY_SERVICE_ACCOUNT_BASE
+```
+
+### CODEX — Nach GIO-Action:
+1. `ssh hetzner "cd /opt/stealthx && docker compose up -d signaling"` → Container starten
+2. Cloudflare DNS: `api.stealthx.tech` → 135.181.254.229, Orange Cloud ON
+3. Cloudflare DNS: `turn.stealthx.tech` → 135.181.254.229, Grey Cloud (DNS only)
+4. coturn TLS: Let's Encrypt Cert für `turn.stealthx.tech` via certbot
+5. `docker compose up -d coturn` → TURN starten
+6. Smoke Test: `curl https://api.stealthx.tech/health`
+7. Railway auf Cold-Standby setzen
+
+**BLACKOUT-SICHERUNG:** Image gebaut, Config auf Server. Warte nur auf Secrets + DNS.
+
+### EMPFÄNGER: GIO (railway login) → CODEX (deploy + DNS + smoke test)
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: TODO
+### STATUS: [AKTIV — CODEX TERMINAL AUFGABE]
+### EMPFÄNGER: CODEX
+### ISSUE: NEA-18 — Railway Secrets holen + Deploy
+
+**Codex — interaktiver Terminal nötig. CC kann Railway-Login nicht non-interaktiv ausführen.**
+
+### AUFGABE: Railway Vars holen → .env.production befüllen → deploy
+
+```bash
+# Schritt 1: Railway login (öffnet Browser)
+cd ~/Desktop/repos/stealth/backend/signaling
+railway login
+
+# Schritt 2: Vars exportieren
+railway variables > /tmp/railway_vars.txt
+cat /tmp/railway_vars.txt
+
+# Schritt 3: Diese Vars in /opt/stealthx/.env.production eintragen
+# (ssh hetzner + nano /opt/stealthx/.env.production)
+# Ersetze alle FILL_FROM_RAILWAY Platzhalter:
+# ID_HASH_PEPPER, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+# BREVO_API_KEY, BREVO_SMTP_USER, RESEND_API_KEY
+# FIREBASE_SERVICE_ACCOUNT_KEY, FIREBASE_SERVICE_ACCOUNT_BASE
+# GOOGLE_PLAY_SERVICE_ACCOUNT_BASE
+
+# Schritt 4: Deploy
+ssh hetzner "cd /opt/stealthx && docker compose up -d signaling"
+
+# Schritt 5: Smoke Test
+ssh hetzner "curl -s http://localhost:8080/ | head -5"
+ssh hetzner "docker logs stealthx-signaling --tail 20"
+
+# Schritt 6: Wenn grün → BRIDGE.md Eintrag TYPE: FIX
+```
+
+### Server-Info:
+- Host: hetzner (135.181.254.229) — SSH-Key ~/.ssh/id_ed25519_hetzner
+- Docker Compose: /opt/stealthx/docker-compose.yml — fertig, nicht anfassen
+- .env.production: /opt/stealthx/.env.production — nur FILL_FROM_RAILWAY ersetzen
+- TURN_SECRET bereits gesetzt: 48bf46d483a47c5a436d8e5422a78f4b568b939fa4a54da4472b4c0b9a2b1a93
+- ADMIN_API_KEY bereits gesetzt: 28b26e581fc1dc512b01d17a10826e1f7daf0ea9852d60bd41f695ab46cb2949
+
+**BLACKOUT-SICHERUNG:** Infra fertig. Nur Secrets + `docker compose up` fehlen.
+
+### EMPFÄNGER: CC|GIO nach Deploy
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: FIX
+### STATUS: TEILWEISE DONE — DNS AUSSTEHEND
+### EMPFÄNGER: GIO|CODEX
+### ISSUE: NEA-18
+
+**Hetzner Migration — Container läuft, DNS fehlt noch**
+
+Was heute erledigt wurde:
+- Docker Image `stealthx-signaling:latest` gebaut ✓
+- Container `stealthx-signaling` läuft ✓
+- Health Check: `{"status":"ok","uptime":45}` ✓
+- Firebase Service Account korrekt geladen ✓ (FCM-Fehler behoben)
+- Alle Railway Secrets in `/opt/stealthx/.env.production` ✓
+
+**DNS-Korrektur:** Kein Cloudflare — DNS liegt bei **Papaki.gr** (dns1/dns2.papaki.gr).
+Gio hat A-Records bei Papaki.gr gesetzt: `api.stealthx.tech` + `turn.stealthx.tech` → `135.181.254.229`. Propagation läuft.
+
+**Noch ausstehend (nach DNS-Propagation):**
+
+1. coturn TLS-Cert + Start:
+   ```bash
+   certbot certonly --standalone -d turn.stealthx.tech
+   cd /opt/stealthx && docker compose up -d coturn
+   ```
+2. Smoke Test: `curl https://api.stealthx.tech/health`
+3. Railway Cold-Standby setzen
+
+### EMPFÄNGER: CC (automatisch nach DNS-Propagation)
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: FIX
+### LINEAR: NEA-162
+
+**SecureCall: Incoming call screen taucht nicht automatisch auf (Android 14+)**
+
+Root cause: `USE_FULL_SCREEN_INTENT` ist auf Android 14+ (API 34) eine restricted permission.
+Manifest-Eintrag allein reicht nicht — User muss sie explizit in Settings gewähren.
+App hatte keinen `canUseFullScreenIntent()`-Check und keinen Settings-Redirect.
+
+Fix: `MainActivity.java` — nach POST_NOTIFICATIONS-Block:
+```java
+if (Build.VERSION.SDK_INT >= 34) {
+    NotificationManager nm = getSystemService(NotificationManager.class);
+    if (!nm.canUseFullScreenIntent()) {
+        startActivity(new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENTS,
+            Uri.parse("package:" + getPackageName())));
+    }
+}
+```
+
+Beim ersten App-Start auf Android 14+ öffnet sich jetzt automatisch die Settings-Seite
+damit der User die Permission gewährt. Danach erscheint der Incoming Call Screen korrekt.
+
+### EMPFÄNGER: CODEX (review), GIO (retest auf Android 14-Gerät)
