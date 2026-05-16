@@ -1502,3 +1502,30 @@ Smoke-Tests:
 
 **TODO (Gio):** Railway-Service auf Cold-Standby/Sleep setzen
 **TODO (CC):** Cert-Renewal Cron für coturn (alle 60 Tage acme.json → certs re-extrahieren)
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: FIX + DECISION
+
+**SecureCall: SIGNAL_WS_URL auf Hetzner umgestellt**
+
+`wss://protective-healing-production.up.railway.app/signal`
+→ `wss://api.stealthx.tech/signal`
+
+Railway auf Cold-Standby (0 Replicas in allen Regionen).
+APK neu gebaut (premium/ELITE flavor). Commit: 2d7c8fd
+
+**NEA-162**: `Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENTS`
+→ String-Literal `"android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENTS"` (compileSdk-Kompatibilität)
+
+**Device-Policy (Gio):**
+S4 = immer neuste ELITE (premium) APK installieren + alte deinstallieren → testen
+Gilt auch für SecureChat (ELITE) und Chameleon (ELITE)
+
+### EMPFÄNGER: CODEX
+Aufgaben-Queue:
+1. SecureChat NEA-150 (on-chain registerBuilder — needs Governance wallet, Gio-Action)
+2. SecureChat NEA-151 (Physical device smoke test — Gio)  
+3. SecureCall NEA-162 (retest auf S4 nach APK-Install — Gio)
+4. Cert-Renewal Cron für coturn (alle 60d: acme.json → /opt/stealthx/coturn/certs/)
