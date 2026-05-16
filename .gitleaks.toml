@@ -8,7 +8,8 @@ title = "StealthX Custom Gitleaks Config"
     '''package-lock\.json''',
     '''yarn\.lock''',
     '''docs/AUDIT_NETWORK\.md''',
-    '''docs/RAILWAY_ENV_VARS\.md'''
+    '''docs/RAILWAY_ENV_VARS\.md''',
+    '''google-services\.json'''
   ]
 
 [[rules]]
