@@ -1568,3 +1568,60 @@ Bitte folgende Issues der Reihe nach bearbeiten:
 **BLACKOUT-SICHERUNG:** Wenn Tokens ausgehen →
 Stand: NEA-18 DONE, NEA-164 DONE, NEA-162 IN REVIEW (S4 test pending).
 Nächstes: SecureChat push + Chameleon APK rebuild.
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: MEMO
+### EMPFÄNGER: CODEX|GIO
+
+**Session-Abschluss — Was erledigt wurde**
+
+1. **NEA-18 DONE** — Hetzner fully live: api.stealthx.tech + turn.stealthx.tech:5349, TLS, WebSocket, coturn HMAC-auth, Traefik network fix (`traefik.docker.network=traefik-public`)
+2. **NEA-162 IN REVIEW** — Android 14+ USE_FULL_SCREEN_INTENT Permission-Dialog beim ersten Start (S4 test ausstehend bei Gio)
+3. **NEA-164 DONE** — coturn cert-renewal cron täglich 03:00
+4. **Android App** — SIGNAL_WS_URL auf `wss://api.stealthx.tech/signal` umgestellt (Railway cold-standby), commit `2d7c8fd`
+5. **SecureCall APK** — Premium (ELITE) auf S4 installiert (`com.securecall.app.premium`)
+6. **User Manual** — `docs/user-manual.html` (SecureCall) auf stealthx.tech/wiki/user-manual.html deployed, vollständig neu geschrieben mit allen Settings, Tiers, IFR, VPN, Emergency Delete
+
+**Architektur-Decision (Gio):**
+- Railway bleibt cold-standby für alle StealthX-Backends
+- Hetzner 135.181.254.229 ist primär
+
+**Offen für Codex:**
+- NEA-162: S4-Test durch Gio ausstehend (kein Codex-Action)
+- NEA-12/BUG-029: VPN+VPN call retest durch Gio ausstehend
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: TODO
+### EMPFÄNGER: CODEX
+### ISSUE: NEA-169
+
+**Website Restructure — StealthX Platform**
+
+Linear Issue NEA-169 erstellt. Priorisierte Queue für Codex:
+
+**Prio 1 — chameleon.stealthx.tech (sobald DNS gesetzt)**
+- Warte auf: Gio setzt CNAME `chameleon.stealthx.tech` → `neabouli.github.io` bei Papaki
+- Dann: `CNAME`-Datei in `NeaBouli/chameleon` repo, GitHub Pages aktivieren
+- Dann: `chameleon.html` aus securechat-repo als `index.html` in chameleon-repo
+
+**Prio 2 — Chameleon Wiki**
+- `/wiki/`-Ordner in `NeaBouli/chameleon` anlegen
+- `chameleon-manual.html` aus securechat-repo migrieren, URLs anpassen
+- `wiki/index.html` für Chameleon erstellen
+
+**Prio 3 — Cross-Navigation**
+- Alle drei Sites (stealthx.tech, securechat.stealthx.tech, chameleon.stealthx.tech): Platform-Bar im Header
+- stealthx.tech: Ecosystem-Sektion mit allen 3 Produkten
+
+**Prio 4 — SecureChat aufräumen**
+- `chameleon.html` + `wiki/chameleon-manual.html` aus securechat-repo entfernen (nach Migration)
+
+**Stand heute:**
+- stealthx.tech/wiki/user-manual.html ✅
+- securechat.stealthx.tech/wiki/user-manual.html ✅
+- securechat.stealthx.tech/wiki/chameleon-manual.html ✅ (temporär, wartet auf Migration)
+- chameleon.stealthx.tech ❌ noch nicht existent
