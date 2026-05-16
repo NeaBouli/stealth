@@ -1481,3 +1481,24 @@ curl https://api.stealthx.tech/health
 - Railway Cold-Standby setzen
 
 ### EMPFÄNGER: CC (coturn sobald turn DNS live)
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: FIX
+### LINEAR: NEA-18 — ABGESCHLOSSEN
+
+**coturn TLS live — Hetzner Migration vollständig**
+
+Fixes:
+1. **Traefik File-Provider** (`/srv/traefik/dynamic/stealthx.yml`): Router für `turn.stealthx.tech` → Traefik stellt LE-Cert automatisch via httpChallenge aus
+2. **Cert-Extraktion**: acme.json → `/opt/stealthx/coturn/certs/` via Python-Script
+3. **Permissions**: `privkey.pem` → `640 root:nogroup` (coturn läuft als nobody/65534)
+
+Smoke-Tests:
+- `https://api.stealthx.tech/health` → `{"status":"ok"}` ✓
+- `turn.stealthx.tech:3478` → hört auf 135.181.254.229 ✓
+- `turn.stealthx.tech:5349` → TLS 1.3, Let's Encrypt, CN=turn.stealthx.tech ✓
+
+**TODO (Gio):** Railway-Service auf Cold-Standby/Sleep setzen
+**TODO (CC):** Cert-Renewal Cron für coturn (alle 60 Tage acme.json → certs re-extrahieren)
