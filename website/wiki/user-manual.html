@@ -134,112 +134,245 @@
             <div class="breadcrumbs">
                 <a href="../">Home</a>
                 <span class="sep">&#9656;</span>
-                <a href="./" class="active">Wiki</a>
+                <a href="./">Wiki</a>
                 <span class="sep">&#9656;</span>
                 <span class="current">User Manual</span>
             </div>
 
             <div class="classified-banner">
                 <span>Classification: Restricted</span>
-                <span class="doc-id">SC-MANUAL</span>
+                <span class="doc-id">SC-MANUAL-v1</span>
                 <span class="division">StealthX // SecureCall</span>
             </div>
 
             <div class="wiki-page-header">
                 <div class="wiki-classification">Classification: Restricted &middot; SC-MANUAL</div>
                 <h1 class="wiki-page-title">User Manual</h1>
-                <p class="wiki-page-subtitle">Complete guide to using SecureCall.</p>
+                <p class="wiki-page-subtitle">Complete reference for setup, settings, and every feature of SecureCall.</p>
             </div>
-            <p class="wiki-meta">SecureCall user manual &mdash; installation, contacts, calls, settings, security, and troubleshooting &middot; Last updated April 1, 2026</p>
+            <p class="wiki-meta">Version 1.0.33 &middot; SecureCall &mdash; StealthX Platform &middot; Last updated May 2026</p>
 
-            <!-- GETTING STARTED -->
-            <div class="section-break">Getting Started</div>
+            <!-- ════ OVERVIEW ════ -->
+            <div class="section-break">Overview</div>
 
-            <h2>Installation &amp; Setup</h2>
-            <p>Get SecureCall running on your device in under two minutes.</p>
+            <h2>What Is SecureCall?</h2>
+            <p>SecureCall is an end-to-end encrypted voice call app. Every call is encrypted in transit using military-grade cryptography. The server never stores calls, never logs metadata, and never has access to your voice data. Your identity is a randomly generated ID &mdash; no phone number required.</p>
+            <p>When you make a call, SecureCall establishes a direct encrypted audio channel using WebRTC with hardware-backed key exchange. Once connected, audio travels peer-to-peer. If a direct path is not possible, a TURN relay forwards the packets &mdash; but audio remains end-to-end encrypted and the relay cannot read it.</p>
 
+            <h2>Tier Overview</h2>
+            <p>Your effective tier is the highest of: your installed build flavor, an active activation code, or your IFR token lock.</p>
+            <table>
+                <thead><tr><th>Feature</th><th>Free</th><th>Pro</th><th>Premium</th></tr></thead>
+                <tbody>
+                <tr><td>Call duration</td><td>15 min per call</td><td>Unlimited</td><td>Unlimited</td></tr>
+                <tr><td>Saved contacts</td><td>10 max</td><td>Unlimited</td><td>Unlimited</td></tr>
+                <tr><td>Ads</td><td>Yes</td><td>No</td><td>No</td></tr>
+                <tr><td>Anti-recording protection</td><td>Locked off</td><td>Toggleable</td><td>Forced on</td></tr>
+                <tr><td>Multi-device support</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+                <tr><td>WireGuard VPN</td><td>No</td><td>No</td><td>Yes</td></tr>
+                <tr><td>Custom Call ID</td><td>No</td><td>No</td><td>Yes</td></tr>
+                <tr><td>Screen capture detection</td><td>No</td><td>No</td><td>Yes</td></tr>
+                <tr><td>Diagnostic logs (SecLog)</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+                </tbody>
+            </table>
+
+            <!-- ════ FIRST TIME SETUP ════ -->
+            <div class="section-break">First-Time Setup</div>
+
+            <h2>Step 1 &mdash; Onboarding</h2>
+            <p>On first launch you will see a four-page introduction explaining the app's security model. Swipe through or tap <strong>Next</strong> to proceed. Tap <strong>Skip</strong> to go directly to the app.</p>
+
+            <h2>Step 2 &mdash; Phone Number (Optional)</h2>
+            <p>After onboarding, a dialog asks you to confirm your phone number. Your SIM number is suggested automatically. This lets other SecureCall users find you by their regular phone number. Tap <strong>Skip</strong> to register without a phone number &mdash; your SecureCall ID works regardless.</p>
+
+            <h2>Step 3 &mdash; Notification Permission</h2>
+            <p>On Android 13 and above, SecureCall requests notification permission. <strong>Grant it.</strong> Without this, incoming call notifications will not appear and you will miss calls while the app is in the background.</p>
+
+            <h2>Step 4 &mdash; Battery Optimization</h2>
+            <p>SecureCall asks you to disable battery optimization for the app. Tap <strong>Allow</strong> on the system dialog. Without this, Android may kill the background connection and you will miss incoming calls. On Samsung devices, additional guidance appears for One UI's aggressive battery management &mdash; follow the on-screen steps.</p>
+
+            <!-- ════ NAVIGATION ════ -->
+            <div class="section-break">Navigation</div>
+
+            <h2>Main Tabs</h2>
             <ul>
-                <li><strong>Install from Play Store Beta</strong> &mdash; join the beta program on Google Play, or download the APK directly from <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>.</li>
-                <li><strong>Complete onboarding</strong> &mdash; swipe through the 4 onboarding screens to learn the basics.</li>
-                <li><strong>Enter your phone number</strong> &mdash; when prompted, enter your phone number to create your SecureCall ID.</li>
-                <li><strong>Grant permissions</strong> &mdash; allow <strong>Microphone</strong> (required for calls) and <strong>Notifications</strong> (required for incoming call alerts).</li>
+                <li><strong>Calls</strong> &mdash; Your recent call history. Tap an entry to call back. Long-press for options: save as contact, block, or delete.</li>
+                <li><strong>Contacts</strong> &mdash; Your saved SecureCall contacts. Tap to call. Use the search bar to filter by name.</li>
+                <li><strong>Dialer</strong> &mdash; Enter a SecureCall ID or phone number manually. Your own SecureCall ID is shown here. Use the invite buttons to share your ID via SMS, messenger, or a share link.</li>
+                <li><strong>Settings</strong> &mdash; All configuration options.</li>
             </ul>
 
-            <!-- CONTACTS -->
-            <div class="section-break">Contacts</div>
+            <h2>Connection Status</h2>
+            <p>The toolbar shows your real-time server connection status via a color-coded icon:</p>
+            <table>
+                <thead><tr><th>Color</th><th>Meaning</th></tr></thead>
+                <tbody>
+                <tr><td>Green</td><td>Connected &mdash; ready to send and receive calls</td></tr>
+                <tr><td>Yellow</td><td>Reconnecting &mdash; attempting to restore the connection</td></tr>
+                <tr><td>Red</td><td>Disconnected &mdash; no server connection</td></tr>
+                </tbody>
+            </table>
+            <p>Tap the connection icon in the toolbar to manually disconnect or reconnect.</p>
 
-            <h2>Managing Contacts</h2>
-            <p>SecureCall uses its own contact list &mdash; separate from your phone contacts &mdash; to protect your privacy.</p>
+            <!-- ════ SETTINGS ════ -->
+            <div class="section-break">Settings Reference</div>
 
+            <h2>Account</h2>
             <ul>
-                <li><strong>Add contact manually</strong> &mdash; go to the Contacts tab, search by phone number, and add the contact.</li>
-                <li><strong>Add via Invite Link</strong> &mdash; share your personal invite link: <code>stealthx.tech/invite/YOUR-ID</code>. Recipients tap the link to add you automatically.</li>
-                <li><strong>Add via QR Code</strong> &mdash; go to Contacts &rarr; Invite &rarr; Show QR Code. The other person scans it with their SecureCall app.</li>
-                <li><strong>Verify contact</strong> &mdash; long-press a contact &rarr; &ldquo;Verify Contact&rdquo;. Verified contacts display a &#10003; badge confirming their identity.</li>
-                <li><strong>Block contact</strong> &mdash; long-press a contact &rarr; &ldquo;Block Contact&rdquo;. Blocked contacts cannot call you.</li>
-                <li><strong>Delete contact</strong> &mdash; long-press a contact &rarr; &ldquo;Delete Contact&rdquo;. This removes the contact from your list permanently.</li>
+                <li><strong>Current Plan</strong> &mdash; Displays your active tier (Free, Pro, or Premium). Read-only.</li>
+                <li><strong>Upgrade to Pro / Upgrade to Premium</strong> &mdash; Opens the in-app purchase screen. Shown only on the relevant tier.</li>
+                <li><strong>Activation Code</strong> &mdash; Enter a redeemable code and tap <strong>Activate</strong>. On success the app restarts and applies the new tier. Errors: <em>Invalid code</em>, <em>Code exhausted</em>, <em>Max devices reached</em>, <em>Connection timeout</em>.</li>
+                <li><strong>Your SecureCall ID</strong> &mdash; Tap to copy. Share with anyone you want to call or receive calls from. If a Custom Call ID is active, it is shown here instead.</li>
+                <li><strong>Phone Number</strong> &mdash; Your registered phone number. Other users can call you by number. Change it here to re-register automatically.</li>
             </ul>
 
-            <!-- MAKING CALLS -->
-            <div class="section-break">Making Calls</div>
-
-            <h2>Voice Calls</h2>
-            <p>All calls are encrypted end-to-end. No one &mdash; not even SecureCall &mdash; can listen to your conversations.</p>
-
+            <h3>Custom Call ID <em>(Premium only)</em></h3>
             <ul>
-                <li><strong>Outgoing call</strong> &mdash; open the Dialer tab, enter the phone number or select a contact, and tap the Call button.</li>
-                <li><strong>Incoming call</strong> &mdash; when a call arrives, tap <strong>Accept</strong> to answer or <strong>Decline</strong> to reject.</li>
-                <li><strong>During a call</strong> &mdash; use the on-screen buttons: <strong>Mute</strong> (toggle microphone), <strong>Speaker</strong> (toggle loudspeaker), and <strong>End Call</strong> (hang up).</li>
-                <li><strong>No audio?</strong> &mdash; check your volume level, disable any active VPN, and try switching from Mobile Data to WiFi (or vice versa).</li>
+                <li><strong>Current ID</strong> &mdash; Shows your active custom ID or &ldquo;Not set&rdquo;.</li>
+                <li><strong>Custom ID input</strong> &mdash; 3&ndash;30 characters, lowercase only.</li>
+                <li><strong>Password</strong> &mdash; Minimum 8 characters. Required to transfer the ID to another device. <em>Cannot be recovered &mdash; store it safely.</em></li>
+                <li><strong>Activate</strong> &mdash; Registers this ID on the current device. A confirmation dialog appears before activation.</li>
+                <li><strong>Transfer</strong> &mdash; Moves an existing custom ID from another device using the password.</li>
+                <li><strong>Buy Custom ID</strong> &mdash; Opens the pricing page at stealthx.tech.</li>
             </ul>
 
-            <!-- SETTINGS -->
-            <div class="section-break">Settings</div>
-
-            <h2>App Settings</h2>
-            <p>Configure SecureCall to match your security needs and preferences.</p>
-
+            <h2>Security</h2>
+            <p>All three items are read-only indicators &mdash; their state is determined by your tier.</p>
             <ul>
-                <li><strong>Account</strong> &mdash; view your current tier (Free / Pro / Premium) and upgrade using an activation code.</li>
-                <li><strong>Security</strong> &mdash; TLS security and device attestation status (read-only).</li>
-                <li><strong>Anti-Recording</strong> &mdash; screenshot blocking, exclusive microphone access, and recording detection. Protects against screen recording and spy apps.</li>
-                <li><strong>Calls</strong> &mdash; background service toggle (keeps app alive for incoming calls) and call history on/off.</li>
-                <li><strong>Appearance</strong> &mdash; switch between Dark, Light, or System theme mode.</li>
-                <li><strong>Network</strong> &mdash; view active network information and set your preferred network type.</li>
-                <li><strong>VPN</strong> &mdash; configure WireGuard VPN for encrypted network tunneling (Premium tier only).</li>
-                <li><strong>Diagnostics</strong> &mdash; enable SecLog diagnostic logging, export logs as CSV, or clear all logs (Pro and Premium tiers).</li>
-                <li><strong>Emergency Delete</strong> &mdash; tap the Emergency Delete button 5 times rapidly to wipe all SecureCall data from your device instantly.</li>
+                <li><strong>Certificate Pinning</strong> &mdash; Whether TLS certificate pinning is active.</li>
+                <li><strong>Device Attestation</strong> &mdash; Whether hardware integrity verification is required.</li>
+                <li><strong>Hardware Keystore</strong> &mdash; Whether encryption keys must be hardware-backed.</li>
             </ul>
 
-            <!-- SECURITY -->
-            <div class="section-break">Security</div>
+            <h2>Anti-Recording Protection</h2>
+            <p>Controls protections against call recording and screen capture during calls.</p>
+            <table>
+                <thead><tr><th>Setting</th><th>Free</th><th>Pro</th><th>Premium</th></tr></thead>
+                <tbody>
+                <tr><td>Block Screenshots</td><td>Locked off</td><td>On by default, toggleable</td><td>Forced on</td></tr>
+                <tr><td>Exclusive Microphone Access</td><td>Locked off</td><td>On by default, toggleable</td><td>Forced on</td></tr>
+                <tr><td>Detect Screen Recording</td><td>Locked off</td><td>On by default, toggleable</td><td>Forced on</td></tr>
+                </tbody>
+            </table>
+            <p>A <em>Security Level</em> summary shows below the toggles: &ldquo;Basic &mdash; warnings only&rdquo; (Free), &ldquo;High &mdash; critical threats blocked&rdquo; (Pro), or &ldquo;Maximum &mdash; all protections enforced&rdquo; (Premium).</p>
 
-            <h2>Security Features</h2>
-            <p>SecureCall is built with a zero-trust security model. Every layer is designed to protect your privacy.</p>
-
+            <h2>Privacy &amp; Call Settings</h2>
             <ul>
-                <li><strong>End-to-end encryption</strong> &mdash; all calls are encrypted with <strong>XChaCha20-Poly1305</strong>, a military-grade authenticated cipher.</li>
-                <li><strong>X25519 key exchange</strong> &mdash; new encryption keys are generated for every single call. Previous calls cannot be decrypted even if a key is compromised.</li>
-                <li><strong>Verified badge</strong> &mdash; confirms the identity of your contact. Verify contacts in person by comparing fingerprints.</li>
-                <li><strong>Emergency Delete</strong> &mdash; destroys all SecureCall data (keys, contacts, call history, settings) in under one second.</li>
-                <li><strong>Anti-Recording</strong> &mdash; detects screen recording apps, spy software, and unauthorized microphone access in real time.</li>
+                <li><strong>Background Connection</strong> &mdash; Keep the WebSocket service running so you receive incoming calls even when the app is minimized. Recommended: <em>On</em>. Disabling means you only receive calls while the app is open on screen.</li>
+                <li><strong>Battery Optimization Status</strong> &mdash; Shows whether battery optimization is disabled. If it shows &ldquo;Restricted&rdquo;, tap to open the system dialog and grant unrestricted usage. SecureCall re-asks every 7 days if not granted.</li>
+                <li><strong>Save Call History</strong> &mdash; Store recent calls locally on the device. Off if you prefer no local call log.</li>
             </ul>
 
-            <!-- TROUBLESHOOTING -->
+            <h2>Appearance</h2>
+            <ul>
+                <li><strong>Dark Mode</strong> &mdash; Three options: <em>System Default</em>, <em>Light</em>, or <em>Dark</em>. The selection applies immediately.</li>
+            </ul>
+
+            <h2>Network &amp; eSIM <em>(Pro and Premium)</em></h2>
+            <ul>
+                <li><strong>Setup eSIM</strong> &mdash; Opens Android's eSIM management settings. Disabled if your device has no eSIM hardware.</li>
+                <li><strong>Route Through eSIM</strong> &mdash; Bind SecureCall traffic to the eSIM. Currently shown as disabled (coming soon).</li>
+                <li><strong>Active Network</strong> &mdash; Read-only display of your current connection and binding status.</li>
+                <li><strong>Preferred Network</strong> &mdash; Choose Default, WiFi, or Mobile. SecureCall prefers this type when it is available.</li>
+            </ul>
+
+            <h2>VPN &mdash; WireGuard <em>(Premium only)</em></h2>
+            <p>Built-in WireGuard VPN that encrypts all device traffic. Configure with details from your VPN provider.</p>
+            <ul>
+                <li><strong>Enable VPN</strong> &mdash; Starts or stops the VPN tunnel. On first enable, Android requests VPN permission &mdash; tap Allow.</li>
+                <li><strong>VPN Status</strong> &mdash; Shows: <em>Connected: [server]</em>, <em>Enabled &mdash; waiting for config</em>, <em>Enabled &mdash; no configuration</em>, or <em>Disabled</em>.</li>
+                <li><strong>WireGuard Configuration</strong> &mdash; Enter: Server endpoint (IP or hostname), Port (default 51820), Server public key (base64), Client private key (base64), DNS (default 1.1.1.1), Client address (e.g. 10.99.0.2/31).</li>
+                <li><strong>Kill Switch</strong> &mdash; When on, all internet traffic is blocked if the VPN drops. Prevents any data leaving the device unencrypted during a VPN failure. Off by default.</li>
+            </ul>
+
+            <h2>IFR Token Unlock</h2>
+            <p>Lock IFR tokens on Ethereum to activate Pro or Premium permanently &mdash; no subscription required.</p>
+            <table>
+                <thead><tr><th>IFR Locked</th><th>Tier Unlocked</th><th>Expiry</th></tr></thead>
+                <tbody>
+                <tr><td>1,000 IFR</td><td>Pro</td><td>Manual: 30 days &mdash; WalletConnect: never</td></tr>
+                <tr><td>5,000 IFR</td><td>Premium</td><td>Manual: 30 days &mdash; WalletConnect: never</td></tr>
+                </tbody>
+            </table>
+            <ul>
+                <li><strong>Status display</strong> &mdash; Shows wallet address, locked amount, tier, and whether the result is live or from cache.</li>
+                <li><strong>Wallet Address</strong> &mdash; Enter your Ethereum address (0x format, 42 characters) for manual verification.</li>
+                <li><strong>Verify Lock</strong> &mdash; Runs manual verification. The backend queries Ethereum and returns your locked amount. Expires after 30 days; re-checks every 24 hours.</li>
+                <li><strong>Connect Wallet (WalletConnect / SIWE)</strong> &mdash; Opens a wallet selector showing MetaMask, Trust Wallet, Rainbow, and Coinbase Wallet. Installed wallets show a green checkmark. Tap one to start the Sign-In With Ethereum flow: the app fetches a challenge &rarr; your wallet signs it &rarr; the signature is verified server-side &rarr; if IFR balance is sufficient, your tier is permanently unlocked with no expiry.</li>
+                <li><strong>Disconnect WalletConnect</strong> &mdash; Shown when a wallet is connected. Disconnects and reverts to your base tier.</li>
+                <li><strong>Learn about IFR Token</strong> &mdash; Opens ifrunit.tech.</li>
+            </ul>
+
+            <h2>Diagnostics <em>(Pro and Premium)</em></h2>
+            <ul>
+                <li><strong>Enable Diagnostic Logs</strong> &mdash; Collect detailed logs of WebSocket events, FCM, calls, and network changes. Off by default &mdash; enable only when troubleshooting.</li>
+                <li><strong>Export Logs as CSV</strong> &mdash; Export all collected entries as a CSV file via the system share sheet. Shows entry count.</li>
+                <li><strong>Clear Logs</strong> &mdash; Delete all locally stored diagnostic entries.</li>
+            </ul>
+
+            <h2>About &amp; Support</h2>
+            <table>
+                <thead><tr><th>Item</th><th>Description</th></tr></thead>
+                <tbody>
+                <tr><td>Check for Updates</td><td>Check the current update channel or open it</td></tr>
+                <tr><td>GitHub</td><td>Source code at github.com/NeaBouli/stealth</td></tr>
+                <tr><td>Documentation</td><td>Full documentation wiki</td></tr>
+                <tr><td>Report a Bug</td><td>Bug report form</td></tr>
+                <tr><td>Privacy Policy</td><td>Data handling policy</td></tr>
+                <tr><td>Terms of Service</td><td>Usage terms incl. activation codes and IFR</td></tr>
+                <tr><td>Version / Build</td><td>App version and build number</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Support Development</strong> &mdash; ETH, BTC, and SOL donation addresses are shown here. Tap any to copy. The IFR Token link opens ifrunit.tech.</p>
+
+            <!-- ════ EMERGENCY DELETE ════ -->
+            <div class="section-break">Emergency Delete</div>
+
+            <h2>Instant Wipe</h2>
+            <p>Tap the Emergency Delete area <strong>five times within five seconds</strong> to trigger an immediate, irreversible wipe. <em>There is no confirmation dialog.</em></p>
+            <ul>
+                <li>Tap 3 &mdash; single vibration</li>
+                <li>Tap 4 &mdash; double vibration</li>
+                <li>Tap 5 &mdash; 150ms vibration and instant wipe</li>
+            </ul>
+            <p>The wipe deletes all contacts, call history, encryption keys, settings, and wallet data. The app closes. <strong>This action cannot be undone.</strong></p>
+
+            <!-- ════ PERMISSIONS ════ -->
+            <div class="section-break">Permissions</div>
+
+            <h2>Permissions Reference</h2>
+            <table>
+                <thead><tr><th>Permission</th><th>Purpose</th></tr></thead>
+                <tbody>
+                <tr><td>Microphone</td><td>Capture audio during calls</td></tr>
+                <tr><td>Notifications</td><td>Incoming call alerts</td></tr>
+                <tr><td>Contacts (read)</td><td>Resolve contact names in call history</td></tr>
+                <tr><td>Phone state / numbers</td><td>Suggest your SIM number at onboarding</td></tr>
+                <tr><td>Battery optimization exempt</td><td>Keep background connection alive</td></tr>
+                <tr><td>VPN service</td><td>WireGuard VPN tunnel (Premium only)</td></tr>
+                <tr><td>Boot completed</td><td>Auto-restart connection after reboot</td></tr>
+                <tr><td>Full screen intent</td><td>Show incoming call screen over the lock screen (Android 14+)</td></tr>
+                </tbody>
+            </table>
+
+            <!-- ════ TROUBLESHOOTING ════ -->
             <div class="section-break">Troubleshooting</div>
 
             <h2>Common Issues</h2>
-            <p>Quick fixes for the most common problems. For detailed troubleshooting, see the <a href="troubleshooting.html">Troubleshooting Guide</a>.</p>
-
             <ul>
-                <li><strong>No audio during call</strong> &mdash; raise the media volume on your device, disable any active VPN, and try switching between WiFi and Mobile Data.</li>
-                <li><strong>Call disconnected</strong> &mdash; check your WiFi or Mobile Data connection. If the connection dropped, tap the <strong>Reconnect</strong> button to re-establish the call.</li>
-                <li><strong>Contact not found</strong> &mdash; verify the SecureCall ID format is correct. The contact must have SecureCall installed and registered.</li>
-                <li><strong>Ads during call</strong> &mdash; upgrade to Pro tier to remove ads completely. On the Free tier, ads are paused automatically during active calls.</li>
+                <li><strong>Missing incoming calls</strong> &mdash; Open Settings &rarr; Privacy &amp; Call Settings &rarr; Battery Optimization Status. If Restricted, tap and grant unrestricted usage. Ensure Background Connection is on.</li>
+                <li><strong>Poor call quality</strong> &mdash; Check your network. Try switching between WiFi and mobile data. If behind a restrictive firewall, the STUN/TURN relay is used as fallback.</li>
+                <li><strong>Connection stays red</strong> &mdash; Your device cannot reach the SecureCall server. Check internet access. If the WireGuard VPN is active, verify the tunnel is up and the server endpoint is reachable.</li>
+                <li><strong>Tier still shows Free after activation code</strong> &mdash; Activation codes restart the app automatically. Wait for the restart. If tier still shows Free, check the code for typos.</li>
+                <li><strong>IFR verification shows insufficient balance</strong> &mdash; Ensure your IFR tokens are <em>locked</em> in the IFR contract, not just held in your wallet. Visit <a href="https://ifrunit.tech" target="_blank" rel="noopener">ifrunit.tech</a> to lock tokens.</li>
+                <li><strong>No audio during call</strong> &mdash; Raise media volume. Disable any active VPN. Try switching network type (WiFi &harr; Mobile).</li>
+                <li><strong>Calls dropped</strong> &mdash; Check network stability. The app reconnects automatically; or tap the connection icon in the toolbar to force reconnect.</li>
             </ul>
 
+            <p>For extended troubleshooting, see the <a href="troubleshooting.html">Troubleshooting Guide</a>.</p>
+
             <div class="wiki-doc-footer">
-                <span class="end-mark">Document End // Classification: Restricted</span>
+                <span class="end-mark">Document End // Classification: Restricted // SC-MANUAL-v1</span>
             </div>
         </main>
     </div>
