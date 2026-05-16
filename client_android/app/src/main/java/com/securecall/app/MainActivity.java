@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -86,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
         if (android.os.Build.VERSION.SDK_INT >= 34) {
             NotificationManager nm = getSystemService(NotificationManager.class);
             if (!nm.canUseFullScreenIntent()) {
-                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENTS,
+                Intent intent = new Intent("android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENTS",
                         Uri.parse("package:" + getPackageName()));
                 startActivity(intent);
             }
