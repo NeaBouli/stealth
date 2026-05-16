@@ -1455,3 +1455,29 @@ Umsetzung analog zu SecureCall:
 - Traefik-public als gemeinsamer Eintrittspunkt
 
 ### EMPFÄNGER: CC+CODEX (bei SecureChat/Chameleon Backend-Tasks berücksichtigen)
+
+---
+
+## 2026-05-16 [CC]
+### TYPE: FIX
+### LINEAR: NEA-18 (Teil 2 — Signaling online)
+
+**Signaling Server https://api.stealthx.tech — LIVE**
+
+Fixes die nötig waren:
+1. **Dockerfile HEALTHCHECK**: `localhost` → `127.0.0.1` (Alpine löst localhost als [::1] auf, Node hört nur IPv4)
+2. **WS-Middleware entfernen**: `traefik.http.middlewares.stealthx-ws` mit `customrequestheaders Connection/Upgrade` brach normale HTTP-Requests — Node.js interpretierte sie als WebSocket-Handshake
+3. **traefik.docker.network=traefik-public**: Traefik ohne `network`-Setting im Provider greift auf erstes Container-Netz (`net_stealthx`, nicht erreichbar) zu statt `traefik-public`
+
+Finaler Smoke-Test vom Hetzner-Server:
+```
+curl https://api.stealthx.tech/health
+→ {"status":"ok","uptime":14}
+```
+
+**Noch ausstehend:**
+- `turn.stealthx.tech` DNS propagiert noch (Papaki-Sync läuft)
+- Nach DNS: `certbot certonly --standalone -d turn.stealthx.tech` + `docker compose up -d coturn`
+- Railway Cold-Standby setzen
+
+### EMPFÄNGER: CC (coturn sobald turn DNS live)
