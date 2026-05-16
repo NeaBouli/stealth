@@ -1435,3 +1435,23 @@ Beim ersten App-Start auf Android 14+ öffnet sich jetzt automatisch die Setting
 damit der User die Permission gewährt. Danach erscheint der Incoming Call Screen korrekt.
 
 ### EMPFÄNGER: CODEX (review), GIO (retest auf Android 14-Gerät)
+
+---
+
+## 2026-05-16 [GIO]
+### TYPE: DECISION
+
+**Hybrid-Server-Architektur für alle StealthX-Apps**
+
+SecureCall läuft bereits hybrid: Railway (primary) + Hetzner (Hetzner primary nach DNS-Switch).
+Dieselbe Hybrid-Architektur soll auch für SecureChat und Chameleon gelten,
+sofern dort ein Backend-Server benötigt wird (Signaling, Relay, API).
+
+Umsetzung analog zu SecureCall:
+- Railway als Fallback / Cold-Standby
+- Hetzner als Primary (eigener coturn, eigener Signaling-Stack)
+- Traefik-central auf 135.181.254.229 als Reverse-Proxy
+- Docker-Netzwerk-Isolation pro Projekt (net_securechat, net_chameleon)
+- Traefik-public als gemeinsamer Eintrittspunkt
+
+### EMPFÄNGER: CC+CODEX (bei SecureChat/Chameleon Backend-Tasks berücksichtigen)
