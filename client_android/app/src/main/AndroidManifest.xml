@@ -147,6 +147,11 @@
             </intent-filter>
         </service>
 
+        <!-- NEA-180: Doze-safe keep-alive alarm receiver -->
+        <receiver android:name=".net.KeepAliveReceiver"
+            android:exported="false"
+            android:enabled="true" />
+
         <!-- BUG-027: Auto-start service after device reboot -->
         <receiver android:name=".net.BootReceiver"
             android:exported="true"

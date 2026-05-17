@@ -23,6 +23,8 @@ class BootReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.e("BootReceiver", "Failed to start service after boot", e)
             }
+            // NEA-180: Start Doze-safe keep-alive alarm chain after boot
+            KeepAliveReceiver.scheduleNext(context)
         }
     }
 }

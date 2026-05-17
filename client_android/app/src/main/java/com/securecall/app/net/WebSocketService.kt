@@ -310,8 +310,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         }
     }
 
-    /** BUG-027: Schedule AlarmManager to restart the service if Samsung kills it. */
+    /** NEA-180: Schedule Doze-safe keep-alive via KeepAliveReceiver (setExactAndAllowWhileIdle).
+     *  Also keeps the legacy setInexactRepeating as a belt-and-suspenders fallback. */
     private fun scheduleServiceRestart() {
+        // Primary: Doze-safe exact alarm chain (NEA-180)
+        KeepAliveReceiver.scheduleNext(this)
+
+        // Legacy fallback: inexact repeating (fires in normal mode, may be stretched in deep Doze)
         try {
             val intent = Intent(this, WebSocketService::class.java)
             val pi = android.app.PendingIntent.getService(
@@ -319,16 +324,15 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
             val am = getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
-            // Repeat every 15 minutes — if service is alive, onStartCommand just returns START_STICKY
             am.setInexactRepeating(
                 android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP,
                 android.os.SystemClock.elapsedRealtime() + 15 * 60 * 1000,
                 15 * 60 * 1000,
                 pi
             )
-            Log.d("WS_SERVICE", "Service restart alarm scheduled (every 15 min)")
+            Log.d("WS_SERVICE", "Keep-alive alarms scheduled (exact + inexact fallback)")
         } catch (e: Exception) {
-            Log.w("WS_SERVICE", "Failed to schedule service restart: ${e.message}")
+            Log.w("WS_SERVICE", "Failed to schedule inexact fallback alarm: ${e.message}")
         }
     }
 
