@@ -38,6 +38,12 @@ class WebRtcManager(
     var isClosed = false
         private set
 
+    // BUG-031: exposed so WebSocketService can check before honouring peer CALL_END
+    fun isInIceGracePeriod(): Boolean = iceInGracePeriod
+
+    // BUG-031: called when ICE recovers — lets WebSocketService cancel its CALL_END grace
+    var onIceRecovered: (() -> Unit)? = null
+
     // WebRTC stats timer for SecLog
     private var statsTimer: java.util.Timer? = null
 
@@ -411,6 +417,8 @@ class WebRtcManager(
                     // BUG-011: Cancel any pending disconnect timeout — ICE recovered
                     cancelIceDisconnectTimeout()
                     startStatsLogging()
+                    // BUG-031: notify WebSocketService so it can cancel any peer CALL_END grace
+                    onIceRecovered?.invoke()
                 }
                 PeerConnection.IceConnectionState.FAILED -> {
                     com.securecall.app.debug.SecLogManager.log("ICE", "FAILED — no audio path found")

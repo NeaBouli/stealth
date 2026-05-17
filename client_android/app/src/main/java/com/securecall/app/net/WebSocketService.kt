@@ -983,15 +983,17 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         startWebRtc(sessionId, isOfferer = false)
     }
 
-    fun sendCallEnd(sessionId: String) {
+    @JvmOverloads
+    fun sendCallEnd(sessionId: String, reason: String = "user_hangup") {
         val json = """
             {
               "type": "CALL_END",
-              "sessionId": "$sessionId"
+              "sessionId": "$sessionId",
+              "reason": "$reason"
             }
         """.trimIndent()
         client?.send(json)
-        Log.d("WS_SERVICE", "CALL_END sent for session $sessionId")
+        Log.d("WS_SERVICE", "CALL_END sent for session $sessionId, reason=$reason")
     }
 
     // BACKEND-23: GHOST_PREPARE senden
@@ -1023,6 +1025,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 _onCallEnded?.invoke(sessionId)
             }
         )
+        // BUG-031: if ICE recovers while a CALL_END grace is pending, cancel it
+        mgr.onIceRecovered = { cancelCallEndGrace() }
         webRtcManager = mgr
         // Fetch TURN credentials from backend (removes hardcoded secrets from APK)
         val dynamicIce = IceServerFetcher.fetch()
@@ -1330,14 +1334,19 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 val reason = obj.optString("reason", "")
                 Log.d("WS_SERVICE", "CALL_END received, sessionId=$sessionId, reason=$reason")
 
-                // BUG-011: If the server says "peer_disconnected" but WebRTC ICE is still
-                // alive or in grace period, delay the call end by 15s to allow reconnection.
-                // The server fires CALL_END when the peer's WebSocket dies (e.g. WiFi toggle),
-                // but the P2P audio path may still recover via ICE restart.
                 val rtc = webRtcManager
-                if (reason == "peer_disconnected" && rtc != null && !rtc.isClosed) {
-                    Log.d("WS_SERVICE", "BUG-011: peer_disconnected but WebRTC active — delaying CALL_END 15s")
-                    com.securecall.app.debug.SecLogManager.log("CALL", "Delaying CALL_END (peer_disconnected) — waiting 15s for peer reconnect")
+                // BUG-011: server "peer_disconnected" → delay 15s for ICE recovery.
+                // BUG-031: peer sent CALL_END without "user_hangup" reason AND our ICE is
+                //   in grace period → the disconnect was a network event, not an intentional
+                //   hangup.  Delay so our 10s ICE grace has time to expire cleanly.
+                //   Old APKs send CALL_END with reason="" on network drop; new APKs tag
+                //   intentional hangups with reason="user_hangup" which skips this path.
+                val isNetworkDisconnect = reason == "peer_disconnected" ||
+                    (reason != "user_hangup" && rtc?.isInIceGracePeriod() == true)
+                if (isNetworkDisconnect && rtc != null && !rtc.isClosed) {
+                    val logReason = if (reason == "peer_disconnected") "peer_disconnected" else "ICE grace active (BUG-031)"
+                    Log.d("WS_SERVICE", "BUG-031/011: $logReason — delaying CALL_END 15s")
+                    com.securecall.app.debug.SecLogManager.log("CALL", "Delaying CALL_END ($logReason) — waiting 15s for peer reconnect")
                     cancelCallEndGrace()
                     callEndGraceHandler = android.os.Handler(android.os.Looper.getMainLooper())
                     callEndGraceRunnable = Runnable {
@@ -1349,6 +1358,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     return
                 }
 
+                com.securecall.app.debug.SecLogManager.log("CALL", "CALL_END immediate — reason=$reason")
                 executeCallEnd(sessionId)
             }
         } catch (_: Exception) {}
