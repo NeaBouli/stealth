@@ -1657,3 +1657,46 @@ Ready for S10 install (BUG-030) when connected.
 1. Install new premium APK
 2. Test call where one side network drops → call should stay alive 10s
 3. Normal hangup → call should end within 2s (CALL_END immediate)
+
+---
+
+## 2026-05-17 [CC]
+### TYPE: STATUS
+### STATUS: IN_PROGRESS
+
+**Session Status: Alle Geräte angeschlossen — S10, S7, Tab S4**
+
+### BUG-030 (S10 incoming call kein Display) — APK INSTALLIERT
+- Neue premium APK (v1.0.33, commit 95614fd) auf RF8N313QMFL installiert
+- Old APK hatte Railway URL → WS fail → kein Display, nur FCM-Klingeln
+- New APK: `wss://api.stealthx.tech/signal` (Hetzner) ✅
+- **RETEST AUSSTEHEND**: Gio muss Call an S10 machen und Display prüfen
+
+### BUG-031 (CALL_END grace period) — READY FOR RETEST
+- Fix bereits in commit 95614fd
+- Kein APK-Rebuild nötig, same APK wie BUG-030-Fix
+- **RETEST AUSSTEHEND**: Gio muss Call tätigen und dann Netzwerk des Anrufers trennen
+
+### BUG-032 (SecureChat crash S7) — FIXED ✅
+- Root cause: `authenticate()` → `finish()` wenn kein Biometrics enrolled
+- Fix: `authState.value = AuthState.Unlocked` statt `finish()`
+- Commit: `3cf5ec2` in securechat repo
+- APK auf S7 (ce10160adc00152604) installiert, läuft (PID 21947)
+- Linear: NEA-178 Done
+
+### NEA-179 (Chameleon PIN-Lock) — RESOLVED ✅
+- Root cause: decoyEnabled=true mit gesetzten PIN-Hashes in EncryptedSharedPrefs
+- Fix: `adb shell pm clear com.stealthx.chameleon.debug` auf S7
+- App startet direkt in StealthXNavGraph (requiresUnlock=false)
+- Linear: NEA-179 Done
+
+### NEA-180 (Connectivity bricht bei Inaktivität) — TODO
+- Root cause: `setInexactRepeating` in Deep-Doze auf Stunden gestreckt
+- WakeLock (30min) läuft ab bevor Alarm feuert → heartbeats stoppen → WS drop
+- S7 bereits in Battery-Whitelist → kein Whitelist-Problem
+- Fix-Vorschlag: `setExactAndAllowWhileIdle` + BroadcastReceiver-basiertes Keep-Alive
+- Linear: NEA-180 Todo — Codex bitte evaluieren und implementieren
+
+### EMPFÄNGER: CODEX
+### CODEX-TASK: NEA-180 implementieren (KeepAliveReceiver)
+
