@@ -1625,3 +1625,35 @@ Linear Issue NEA-169 erstellt. Priorisierte Queue für Codex:
 - securechat.stealthx.tech/wiki/user-manual.html ✅
 - securechat.stealthx.tech/wiki/chameleon-manual.html ✅ (temporär, wartet auf Migration)
 - chameleon.stealthx.tech ❌ noch nicht existent
+
+---
+
+## 2026-05-17 06:20 [CC]
+### TYPE: FIX
+
+**BUG-031: DataChannel grace period bypassed by peer-sent CALL_END — FIXED**
+
+Root cause confirmed via SecLog analysis:
+- DataChannel closes → 10s ICE grace starts (logged)
+- ICE goes DISCONNECTED → grace reset (logged)
+- 13ms later: "Call ended" (not logged to SecLog = not ICE FAILED, not WS message)
+
+The "call-bye"/CALL_END from the peer (older APK without grace period) arrives via 
+signaling server in 13-344ms. Our `handleIncomingCallEnd()` only applied the 15s 
+BUG-011 delay for `reason=="peer_disconnected"` (server-detected). Peer-sent CALL_END 
+with empty reason caused immediate `executeCallEnd()`, bypassing our ICE grace period.
+
+Fix (commit 95614fd):
+- `WebRtcManager`: `isInIceGracePeriod()` + `onIceRecovered` callback
+- `WebSocketService.handleIncomingCallEnd()`: also delay when ICE is in grace AND 
+  reason != "user_hangup"
+- `WebSocketService.startWebRtc()`: wire `onIceRecovered → cancelCallEndGrace()`
+- `sendCallEnd()`: new reason param ("user_hangup" default) for forward compatibility
+
+APK rebuilt: `app-premium-arm64-v8a-release.apk` (2026-05-17 06:16)
+Ready for S10 install (BUG-030) when connected.
+
+**TEST**: Nach S10 Anschluss:
+1. Install new premium APK
+2. Test call where one side network drops → call should stay alive 10s
+3. Normal hangup → call should end within 2s (CALL_END immediate)
