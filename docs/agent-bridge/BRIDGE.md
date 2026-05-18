@@ -68,6 +68,20 @@ GitHub Release: `v1.0.34-stable` — AAB auf Desktop + GitHub
 APKs: S7 + Tab S4 installiert ✅
 
 **Offene Findings nach Codex-Audit (noch nicht gefixt):**
-- NEA-196: sx_ ID Derivation (wartet auf Codex Entscheidung)
-- UpdateChecker.kt: OkHttp ohne Pinner (Codex bitte prüfen)
+- ~~NEA-196: sx_ ID Derivation~~ — **FIXED** in securechat (5cf09c9) + chameleon (f427d1e) 2026-05-18, Option B
+- UpdateChecker.kt: OkHttp ohne Pinner (Codex bitte prüfen — hits api.github.com, NOT stealthx.tech → kein Fix nötig)
 - Firebase google-services.json: API Key restriction (Gio-Action: Firebase Console)
+
+---
+
+## 2026-05-18 [CC]
+### TYPE: FIX
+### STATUS: DONE
+
+**NEA-196 — IMPLEMENTED in securechat + chameleon**
+
+Option B (backward-compat) deployed:
+- New installs: Ed25519 keypair generated first → sx_ID = sx_ + deriveShortId(edPublicHex)
+- Existing installs: KEY_RAW_ID present → return early unchanged
+- securechat commit: 5cf09c9 | chameleon commit: f427d1e
+- Both pushed to NeaBouli/{securechat,chameleon} main
