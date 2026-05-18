@@ -343,18 +343,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     fun sendBinary(data: ByteArray): Boolean {
-        val key = sessionKey
-        val toSend = if (key != null && com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
-            com.securecall.crypto.CoreCrypto.encrypt(key, data) ?: data
-        } else {
-            data
-        }
+        // Fail closed: never send plaintext. If crypto unavailable or encryption fails, drop the frame.
+        val key = sessionKey ?: return false
+        if (!com.securecall.crypto.CoreCrypto.isNativeAvailable()) return false
+        val encrypted = com.securecall.crypto.CoreCrypto.encrypt(key, data) ?: return false
         // Send via P2P DataChannel only — no WS relay fallback.
         // During call setup, audio frames before DataChannel opens would
         // flood the signaling WebSocket and trigger server rate limits.
         val rtc = webRtcManager
         if (rtc != null && rtc.isDataChannelOpen) {
-            return rtc.send(toSend)
+            return rtc.send(encrypted)
         }
         return false
     }
