@@ -14,10 +14,10 @@ We welcome the following contributions via [GitHub Issues](https://github.com/Ne
 
 **We do not accept code contributions (Pull Requests).**
 
-This repository publishes source code under BUSL-1.1 for transparency and independent security auditing. Official SecureCall branding, backend services, store releases, and paid Pro/Premium licensing remain controlled by Vendetta Labs. Commercial use requires a separate license.
+This repository publishes source code for transparency and independent security auditing. Official SecureCall branding, backend services, store releases, paid Pro/Premium offerings, and all use rights remain controlled by Vendetta Labs.
 
 - Pull Requests will be **closed without review**.
-- Forks, builds, and derivative works must comply with the BUSL-1.1 license and must not use the SecureCall/StealthX name, logo, official backend services, store listings, or paid license infrastructure without written permission.
+- Forks, builds, derivative works, redistribution, rebranding, hosting, and use of the SecureCall/StealthX name, logo, official backend services, store listings, or paid license infrastructure require prior written permission.
 - Patches, code suggestions, or implementation changes submitted via issues or other channels will not be incorporated.
 
 ## Why No Code Contributions?

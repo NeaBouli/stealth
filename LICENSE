@@ -1,16 +1,19 @@
-Business Source License 1.1
+StealthX Source-Available License
 
 Licensor: Vendetta Labs, Greece
 Licensed Work: SecureCall / StealthX
-Change Date: 2030-05-04
-Change License: GPL-3.0-only
 
-Use Limitation: You may not use the Licensed Work for commercial purposes
-without a separate commercial license from the Licensor.
+The source code is made available for transparency, security review, and
+independent audit only.
 
-Personal non-commercial use is permitted.
+You may read and inspect the Licensed Work.
 
-After the Change Date, the Licensed Work will be made available under
-the Change License.
+You may not copy, modify, build, run, distribute, publish, sublicense,
+rebrand, sell, rent, host, operate as a service, or otherwise use the
+Licensed Work without prior written permission from the Licensor.
+
+Access to official StealthX services, servers, APIs, app stores, paid tiers,
+subscriptions, license keys, IFR unlocks, branding, trademarks, and production
+infrastructure is not granted by this license.
 
 For commercial licensing: contact@stealthx.tech

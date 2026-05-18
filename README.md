@@ -9,7 +9,7 @@
 
 *Powered by the StealthX Platform*
 
-[![BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-blue.svg)](LICENSE)
+[![Source Available](https://img.shields.io/badge/License-Source--Available-blue.svg)](LICENSE)
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-34A853.svg)](https://developer.android.com)
 [![Crypto: XChaCha20-Poly1305](https://img.shields.io/badge/Crypto-XChaCha20--Poly1305-7C6CFF.svg)](docs/SECURITY_DESIGN.md)
 [![Security: Audited](https://img.shields.io/badge/Security-Audited-orange.svg)](docs/SECURITY_AUDIT_REPORT.md)
@@ -36,7 +36,7 @@ No call content ever leaves your device unencrypted. Every call is protected end
 - **Zero-Knowledge Architecture** -- The server facilitates connections but cannot decrypt calls. No call content is stored or accessible server-side. Signaling metadata is processed transiently for connection setup.
 - **Anti-Recording Protection** -- Active detection of screen recording, microphone hijacking, and spy apps (Pro/Premium).
 - **Rust Crypto Core** -- All cryptographic operations run in a native Rust library via JNI -- no Java crypto, no OpenSSL.
-- **BUSL-1.1 Licensed Client** -- The client source code is publicly available and independently auditable. Official SecureCall branding, backend services, store listings, and paid Pro/Premium offerings remain operated by Vendetta Labs.
+- **Source-available client** -- The client source code is publicly visible for transparency and independent audit. Copying, building, running, distributing, rebranding, or using the software requires prior written permission from Vendetta Labs.
 
 ## Architecture
 
@@ -84,12 +84,12 @@ Complete documentation is available in the [Wiki](https://github.com/NeaBouli/st
 
 ## Building from Source
 
-> **This repository is licensed under BUSL-1.1.**
+> **This repository is source-available, not open source.**
 >
-> You may build and use the client for personal, non-commercial purposes.
-> Commercial use requires a separate license from Vendetta Labs.
-> The SecureCall name and branding are trademarked.
-> After 2030-05-04 the code becomes GPL-3.0.
+> You may read and inspect the source code for transparency and security review.
+> You may not copy, modify, build, run, distribute, rebrand, host, or use the
+> software or official StealthX services without prior written permission from
+> Vendetta Labs. The SecureCall name and branding are trademarked.
 
 See the [LICENSE](LICENSE) for full terms.
 
@@ -137,7 +137,7 @@ For the full privacy policy, see [Privacy Policy](https://stealthx.tech/privacy.
 <details>
 <summary><strong>Can I build the app myself?</strong></summary>
 
-Yes. SecureCall's client source code is publicly available for transparency and independent security auditing. You can build and run the client locally for personal, non-commercial use. Note: the SecureCall name, logo, official backend services, store releases, and paid Pro/Premium licensing are controlled by Vendetta Labs and require permission for commercial or branded use.
+SecureCall's client source code is publicly available for transparency and independent security auditing. You may read and inspect the code, but you may not copy, modify, build, run, distribute, rebrand, host, or use SecureCall or official StealthX services without prior written permission from Vendetta Labs.
 
 </details>
 
