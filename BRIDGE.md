@@ -4,6 +4,39 @@
 ---
 
 ## 2026-05-18 [CC]
+### TYPE: MEMO
+### STATUS: DONE
+
+**Release Build — Alle 3 Apps gebaut + installiert auf S7 + Tab S4**
+
+| App | versionCode | versionName | APK | Commit |
+|-----|------------|-------------|-----|--------|
+| SecureCall Premium | 57 | 1.0.34 | arm64 19MB | `eb53f9e` |
+| SecureChat | 2 | 0.1.1-alpha | 13MB | `5a0713a` |
+| Chameleon | 2 | 0.1.1-alpha | 11MB | `e4b231c` |
+
+**Install-Status (S7 + Tab S4):** SecureCall ✅ | SecureChat ✅ (fresh install, alter Key) | Chameleon Release ✅
+Chameleon läuft jetzt als `com.stealthx.chameleon` (release) neben `com.stealthx.chameleon.debug`.
+
+**Enthaltene Fixes:**
+- NEA-194: IFR ABI `lockedAmount` → `lockedBalance`
+- NEA-195: WebSocketService fail-closed (kein plaintext downgrade)
+- NEA-197: sx_ ID Regex `^sx_[1-9A-HJ-NP-Za-km-z]{9}$`
+- NEA-198: Settings Coming-Soon-Labels + Chameleon Decoy Tier-Fix (ELITE→PRO)
+- Help-Links: User Manual + Getting Started in SecureChat + Chameleon Settings
+- Branch Protection: securechat + chameleon main ✅
+- Dependabot Alert #4 (@tootallnate/once): dismissed tolerable_risk ✅
+
+**Offen (Codex-Pending → NEA-196):**
+- sx_ ID Derivation aus Ed25519 pubkey — Migration-Entscheidung A/B/C ausstehend
+
+**Offen (HIGH — nächste Session):**
+- SecureCall OkHttp Clients ohne Certificate Pinning (SubscriptionManager, GhostNet, MainActivity)
+- SecureCall IFR Threshold-Text: noch 1000/5000 statt 2000/6000 in strings.xml + UI
+
+---
+
+## 2026-05-18 [CC]
 ### TYPE: FIX
 ### STATUS: DONE
 
@@ -2042,3 +2075,151 @@ Keine offenen PRs auf stealth oder securechat. Alle Commits direkt auf main (Byp
 | NEA-12 BUG-029 | In Progress | Relay-Logik via Instrumented Test verifiziert | → Done (CC-Teil) |
 | NEA-150 BuilderRegistry | In Progress | 27/27 Tests grün, on-chain Gio | bleibt In Progress |
 | NEA-19 SecureChat | In Progress | IFRLockVerifier fix + on-device Test | kommentiert |
+## 2026-05-18 [CODEX]
+### TYPE: REVIEW
+
+**[CRITICAL] FINDING: SecureCall can send plaintext when native crypto is unavailable or encryption returns null**
+File: `client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt:348`
+Description: `sendBinary()` falls back to `data` when `CoreCrypto.encrypt()` returns null, and outgoing call setup logs that calls continue unencrypted when native crypto is unavailable. This violates the platform requirement for XChaCha20-Poly1305 everywhere and creates an algorithm-downgrade/plaintext path.
+Fix: Fail closed. If native crypto is unavailable, no session key exists, or encryption returns null/empty, abort the send/call with a user-visible secure-call error. Reuse `SessionCipherEngine` fail-closed behavior.
+Linear: NEW
+
+**[HIGH] FINDING: SecureCall IFR UI still advertises obsolete 1,000/5,000 IFR thresholds**
+File: `client_android/app/src/withWalletConnect/java/com/securecall/app/wallet/WalletConnectManager.kt:243`
+Description: WalletConnect insufficient-balance copy says "Need 1,000 IFR for Pro / 5,000 for Premium"; string resources and upgrade layout also show 1,000/5,000. Required platform thresholds are PRO=2,000 and ELITE/Premium=6,000.
+Fix: Replace all SecureCall user-visible IFR threshold copy with 2,000 IFR for Pro and 6,000 IFR for Premium/Elite. Update `client_android/app/src/main/res/values/strings.xml` and `client_android/app/src/free/res/layout/activity_upgrade.xml`.
+Linear: NEW
+
+**[HIGH] FINDING: Chameleon IFR verifier calls obsolete lockedAmount contract method**
+File: `/Users/gio/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/verifier/IFRLockVerifier.kt:51`
+Description: Chameleon encodes `lockedAmount(address)` and throws `All RPC endpoints failed for lockedAmount(...)`. The required IFR contract method is `lockedBalance(address)`, and SecureChat/backend already use `lockedBalance`. This will break on-chain tier verification.
+Fix: Change verifier function name and error text to `lockedBalance`; update `IFRConstants.IFRLOCK_ABI` line 61 and tests to assert the live method name.
+Linear: NEW
+
+**[HIGH] FINDING: SecureChat/Chameleon sx_ IDs are not derived from Ed25519 public keys**
+File: `/Users/gio/Desktop/repos/securechat/data/src/main/java/com/stealthx/data/identity/StealthXIdentity.kt:76`
+Description: SecureChat and Chameleon `getOrCreateWithSeed()` paths create a random seed and derive the `sx_` ID from that seed. The required platform rule is deterministic derivation from Ed25519 public key. Both repos do produce `sx_` + 9 Base58 chars, but the source material is wrong.
+Fix: Generate/load the Ed25519 identity key before ID creation, derive from Ed25519 public key bytes, and add tests for `sx_` + 9 Base58 chars and total length 12.
+Linear: NEW
+
+**[HIGH] FINDING: SecureChat sx_ validation only checks prefix**
+File: `/Users/gio/Desktop/repos/securechat/domain/src/main/java/com/stealthx/domain/keyexchange/KeyExchangeManager.kt:71`
+Description: Incoming bundle validation only checks `startsWith("sx_")`. It does not enforce total length 12 or Base58 charset, so malformed IDs can pass validation.
+Fix: Add a shared validator for `^sx_[1-9A-HJ-NP-Za-km-z]{9}$` and use it in key exchange, QR parsing, and contact import.
+Linear: NEW
+
+**[HIGH] FINDING: Chameleon Settings tier promises diverge from enforcement**
+File: `/Users/gio/Desktop/repos/chameleon/presentation/src/main/java/com/stealthx/presentation/screen/SettingsScreen.kt:140`
+Description: Settings lists "Decoy Profile" under Pro while both row lock and nav require Elite. Settings also claims Free "Manual Geofencing (3 rules max)" while the geofencing route and engine require Elite.
+Fix: Move Decoy Profile to Elite or lower all gates to Pro. Add a real Free manual-geofencing path with a 3-rule cap, or change Settings copy to Elite-only.
+Linear: NEW
+
+**[HIGH] FINDING: Several SecureCall api.stealthx.tech OkHttp clients bypass certificate pinning**
+File: `client_android/app/src/main/java/com/securecall/app/billing/SubscriptionManager.kt:30`
+Description: `SubscriptionManager`, `MainActivity` custom-id/invite calls, `SettingsFragment` custom-id activation, and `GhostNetWebSocketClient` construct raw `OkHttpClient` instances while deriving URLs from `BuildConfig.SIGNAL_WS_URL` / `api.stealthx.tech`. Only `HeartbeatClient` applies `NetworkManager.buildCertificatePinner()` behind `BuildConfig.CERTIFICATE_PINNING`.
+Fix: Centralize SecureCall HTTP/WebSocket client construction and apply `NetworkManager.buildCertificatePinner()` whenever `BuildConfig.CERTIFICATE_PINNING` is true. Keep free builds intentionally unpinned.
+Linear: NEW
+
+**[MEDIUM] FINDING: SecureChat IFR ABI constant still references lockedAmount**
+File: `/Users/gio/Desktop/repos/securechat/stealthx-ifr/src/main/java/com/stealthx/ifr/IFRConstants.kt:61`
+Description: The live verifier calls `lockedBalance`, but the `IFRLOCK_ABI` constant still declares `lockedAmount`. This is stale and contradicts the required backend/contract field name.
+Fix: Update `IFRLOCK_ABI` to `lockedBalance`, or remove the unused ABI string to prevent future callers from reintroducing the wrong method.
+Linear: NEW
+
+**[MEDIUM] FINDING: SecureChat Settings lists Phase 2/3 features as ordinary gated rows**
+File: `/Users/gio/Desktop/repos/securechat/presentation/src/main/java/com/stealthx/presentation/screens/SettingsScreen.kt:90`
+Description: Group Messaging, Encrypted File Transfer, Kaspa Identity Anchor, Chameleon Integration, Onion Routing, Decoy Chat Profiles, Advanced Threat Detection, and Emergency Broadcast are displayed as tier-gated feature rows. Several are not implemented or are explicit Phase 2/3 stubs.
+Fix: Label unavailable items as "Coming soon" or route only to locked/roadmap UI until implementations exist and are gated at service/domain level.
+Linear: NEW
+
+**[MEDIUM] FINDING: GitHub release state could not be verified from Codex sandbox**
+File: `origin https://github.com/NeaBouli/stealth.git`
+Description: `gh pr list`, `gh issue list`, `gh run list`, and branch protection API calls failed with `error connecting to api.github.com`. Local git state: stealth has modified pro/premium `FcmTokenManager.kt`; securechat and chameleon are clean on `main...origin/main`.
+Fix: Re-run GitHub checks from an environment with network access before Play internal testing. Verify open PRs, release-blocker/critical issues, CI on main, branch protection, and Dependabot advisories. Do not auto-merge the known `@tootallnate/once`/`firebase-admin` downgrade path.
+Linear: NEW
+
+**[LOW] FINDING: Gradle build verification blocked by sandbox filesystem permissions**
+File: `client_android/gradlew`
+Description: SecureCall, SecureChat, and Chameleon Gradle commands failed before configuration because the sandbox cannot create Gradle wrapper `.zip.lck` files under `/Users/gio/.gradle`.
+Fix: Re-run build verification outside this sandbox or with `GRADLE_USER_HOME` pointed to a writable cache with the required Gradle distributions available.
+Linear: NEW
+
+### LINEAR ISSUES TO CREATE
+- [CRITICAL] SecureCall plaintext crypto downgrade path — Fail closed when native crypto/encryption is unavailable.
+- [HIGH] SecureCall stale IFR thresholds — Replace 1,000/5,000 copy with 2,000/6,000 everywhere.
+- [HIGH] Chameleon IFR verifier uses `lockedAmount` — Switch live RPC call and ABI to `lockedBalance`.
+- [HIGH] SecureChat/Chameleon sx_ ID derivation mismatch — Derive ID from stored Ed25519 public key.
+- [HIGH] SecureChat sx_ validation incomplete — Enforce exact 12-char Base58 ID format.
+- [HIGH] Chameleon tier promise mismatch — Align Decoy and Manual Geofencing UI with code gates.
+- [HIGH] SecureCall unpinned OkHttp clients — Apply certificate pinner to all api.stealthx.tech clients in pro/premium.
+- [MEDIUM] SecureChat feature rows overpromise Phase 2/3 functionality — Mark unavailable features coming soon.
+- [MEDIUM] GitHub state not verified — Re-run PR/issues/CI/protection checks with network access.
+- [LOW] Gradle build verification blocked by sandbox filesystem permissions
+
+## 2026-05-18 [CODEX]
+### TYPE: REVIEW
+
+**[CRITICAL] FINDING: SecureCall can send plaintext when native crypto is unavailable or encryption returns null**
+File: `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt:348`
+Description: `sendBinary()` falls back to raw `data` when there is no session key, native crypto is unavailable, or `CoreCrypto.encrypt()` returns null. Outgoing setup also logs that calls continue unencrypted when native crypto is unavailable. This violates the platform requirement for XChaCha20-Poly1305 everywhere.
+Fix: Fail closed. Abort send/call with a visible secure-call error if native crypto/session key/encryption output is unavailable. Reuse `SessionCipherEngine` fail-closed behavior.
+Linear: NEW
+
+**[HIGH] FINDING: SecureCall IFR UI still advertises obsolete 1,000/5,000 IFR thresholds**
+File: `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/res/values/strings.xml:199`
+Description: SecureCall strings, upgrade layout, and WalletConnect insufficient-balance copy still say Pro=1,000 IFR and Premium=5,000 IFR. Required platform thresholds are Pro=2,000 and Elite/Premium=6,000.
+Fix: Replace all user-visible SecureCall IFR threshold copy with 2,000 IFR for Pro and 6,000 IFR for Premium/Elite, including `strings.xml`, `activity_upgrade.xml`, and `WalletConnectManager.kt`.
+Linear: NEW
+
+**[HIGH] FINDING: Several SecureCall api.stealthx.tech OkHttp clients bypass certificate pinning**
+File: `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/billing/SubscriptionManager.kt:30`
+Description: `SubscriptionManager`, `MainActivity`, `SettingsFragment`, and `GhostNetWebSocketClient` construct raw OkHttp clients for platform endpoints derived from `BuildConfig.SIGNAL_WS_URL`. Only `HeartbeatClient` applies `NetworkManager.buildCertificatePinner()`.
+Fix: Centralize SecureCall HTTP/WebSocket client creation and apply `NetworkManager.buildCertificatePinner()` whenever `BuildConfig.CERTIFICATE_PINNING` is true. Keep Free intentionally unpinned.
+Linear: NEW
+
+**[HIGH] FINDING: Chameleon IFR verifier calls obsolete lockedAmount contract method**
+File: `/Users/gio/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/verifier/IFRLockVerifier.kt:51`
+Description: Chameleon encodes `lockedAmount(address)` and throws `All RPC endpoints failed for lockedAmount(...)`. The required contract method is `lockedBalance(address)`, already used by SecureChat and backend.
+Fix: Change Chameleon verifier function name and error text to `lockedBalance`; update ABI/tests to prevent regression.
+Linear: NEW
+
+**[HIGH] FINDING: SecureChat/Chameleon sx_ IDs are not derived from Ed25519 public keys**
+File: `/Users/gio/Desktop/repos/securechat/data/src/main/java/com/stealthx/data/identity/StealthXIdentity.kt:76`
+Description: SecureChat and Chameleon create a random `identity_seed` and derive the `sx_` ID from that seed. Required rule is deterministic derivation from the Ed25519 public key.
+Fix: Generate/load Ed25519 identity keys before ID creation, derive `sx_` from Ed25519 public key bytes, and add exact format tests.
+Linear: NEW
+
+**[HIGH] FINDING: SecureChat accepts malformed sx_ IDs**
+File: `/Users/gio/Desktop/repos/securechat/domain/src/main/java/com/stealthx/domain/keyexchange/KeyExchangeManager.kt:71`
+Description: Incoming bundles only require `startsWith("sx_")`; contact import accepts any `sx_` length >= 10. This violates exact 12-character Base58 platform format.
+Fix: Add shared validator `^sx_[1-9A-HJ-NP-Za-km-z]{9}$` and use it in key exchange, QR parsing, and contact import.
+Linear: NEW
+
+**[HIGH] FINDING: Chameleon Settings tier promises diverge from enforcement**
+File: `/Users/gio/Desktop/repos/chameleon/presentation/src/main/java/com/stealthx/presentation/screen/SettingsScreen.kt:140`
+Description: Settings lists Decoy Profile under Pro but the row and route require Elite. It also presents Manual Geofencing and Private Zone as Free while navigation gates Geofencing to Elite and Private Zone to Pro.
+Fix: Align UI copy and gates: either implement Free capped paths and Pro Decoy/Geofencing, or move/copy features to the tier actually enforced.
+Linear: NEW
+
+**[MEDIUM] FINDING: Firebase google-services API key is committed without visible restriction proof**
+File: `/Users/gio/Desktop/repos/stealth/client_android/app/google-services.json:18`
+Description: A Firebase API key is committed in `google-services.json` and repeated for all flavors. Firebase mobile API keys are often publishable, but release should prove API/package/SHA restrictions.
+Fix: Verify Google Cloud/Firebase restrictions for application IDs and signing cert fingerprints, or rotate and commit only restricted config.
+Linear: NEW
+
+**[MEDIUM] FINDING: SecureChat and Chameleon main branches are unprotected**
+File: `https://github.com/NeaBouli/securechat`
+Description: GitHub API reports branch protection 404 for SecureChat and Chameleon `main`. Stealth is protected.
+Fix: Enable branch protection with PR review and required status checks on both repos before release coordination.
+Linear: NEW
+
+### LINEAR ISSUES TO CREATE
+- [CRITICAL] SecureCall plaintext crypto downgrade path — fail closed when encryption is unavailable.
+- [HIGH] SecureCall stale IFR thresholds — replace 1,000/5,000 copy with 2,000/6,000.
+- [HIGH] SecureCall unpinned OkHttp clients — apply certificate pinner to all platform clients in Pro/Premium.
+- [HIGH] Chameleon lockedAmount verifier — switch live call to `lockedBalance`.
+- [HIGH] SecureChat/Chameleon sx_ derivation mismatch — derive from Ed25519 public key.
+- [HIGH] SecureChat sx_ validation incomplete — enforce exact 12-char Base58 format.
+- [HIGH] Chameleon feature gate mismatch — align Settings promises with route/domain gates.
+- [MEDIUM] Firebase API key restriction proof — verify/rotate restricted config.
+- [MEDIUM] Missing branch protection — protect SecureChat and Chameleon main.
