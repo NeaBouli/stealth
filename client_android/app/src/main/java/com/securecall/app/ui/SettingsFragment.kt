@@ -532,7 +532,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 val request = okhttp3.Request.Builder()
                     .url("$serverUrl/custom-id/activate")
                     .post(body).build()
-                val response = okhttp3.OkHttpClient().newCall(request).execute()
+                val response = com.securecall.app.net.NetworkManager.buildPinnedClient().newCall(request).execute()
                 val respBody = response.body?.string() ?: ""
 
                 activity?.runOnUiThread {

@@ -65,9 +65,12 @@ public class GhostNetWebSocketClient {
     private boolean isConnectingOrOpen = false;
 
     private GhostNetWebSocketClient() {
-        client = new OkHttpClient.Builder()
-                .readTimeout(0, TimeUnit.MILLISECONDS)
-                .build();
+        OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                .readTimeout(0, TimeUnit.MILLISECONDS);
+        if (com.securecall.app.BuildConfig.CERTIFICATE_PINNING) {
+            builder.certificatePinner(com.securecall.app.net.NetworkManager.INSTANCE.buildCertificatePinner());
+        }
+        client = builder.build();
         Log.d(TAG, "GhostNetWebSocketClient(): instance created");
     }
 

@@ -27,10 +27,9 @@ class SubscriptionManager(context: Context) {
         private const val KEY_PRODUCT_ID = "product_id"
         private const val KEY_LAST_VERIFIED_AT = "last_verified_at"
 
-        private val verifyHttpClient: OkHttpClient = OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.SECONDS)
-            .build()
+        private val verifyHttpClient: OkHttpClient by lazy {
+            com.securecall.app.net.NetworkManager.buildPinnedClient(connectTimeoutSec = 10, readTimeoutSec = 10)
+        }
     }
 
     private val prefs: SharedPreferences =

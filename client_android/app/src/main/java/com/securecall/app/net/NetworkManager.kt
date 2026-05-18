@@ -157,4 +157,14 @@ object NetworkManager {
         .add("api.stealthx.tech", "sha256/kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ=")
         .add("api.stealthx.tech", "sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=")
         .build()
+
+    @JvmOverloads
+    fun buildPinnedClient(
+        connectTimeoutSec: Long = 10,
+        readTimeoutSec: Long = 10
+    ): okhttp3.OkHttpClient = okhttp3.OkHttpClient.Builder()
+        .connectTimeout(connectTimeoutSec, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(readTimeoutSec, java.util.concurrent.TimeUnit.SECONDS)
+        .apply { if (com.securecall.app.BuildConfig.CERTIFICATE_PINNING) certificatePinner(buildCertificatePinner()) }
+        .build()
 }

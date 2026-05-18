@@ -6,7 +6,7 @@ import android.util.Log
 /**
  * Manages IFR token verification for tier unlocking.
  * Users hold IFR tokens on their Ethereum wallet.
- * 1,000 IFR = Pro, 5,000 IFR = Premium.
+ * 2,000 IFR = Pro, 6,000 IFR = Premium.
  *
  * Manual wallet entry: expires after 30 days. One wallet per device.
  * WalletConnect: no expiration, unlimited devices (coming soon).

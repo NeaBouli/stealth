@@ -295,7 +295,7 @@ public class MainActivity extends AppCompatActivity {
                 okhttp3.Request request = new okhttp3.Request.Builder()
                         .url(serverUrl + "/invite/accepted")
                         .post(body).build();
-                new okhttp3.OkHttpClient().newCall(request).execute();
+                com.securecall.app.net.NetworkManager.INSTANCE.buildPinnedClient().newCall(request).execute();
                 Log.d(TAG, "Invite accepted notification sent");
             } catch (Exception e) {
                 Log.w(TAG, "Failed to notify invite accepted: " + e.getMessage());
@@ -336,7 +336,7 @@ public class MainActivity extends AppCompatActivity {
                 okhttp3.Request request = new okhttp3.Request.Builder()
                         .url(serverUrl + "/custom-id/activate-token")
                         .post(body).build();
-                okhttp3.Response response = new okhttp3.OkHttpClient().newCall(request).execute();
+                okhttp3.Response response = com.securecall.app.net.NetworkManager.INSTANCE.buildPinnedClient().newCall(request).execute();
                 String respBody = response.body() != null ? response.body().string() : "";
 
                 runOnUiThread(() -> {
