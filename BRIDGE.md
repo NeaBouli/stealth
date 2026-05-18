@@ -28,11 +28,16 @@ Chameleon läuft jetzt als `com.stealthx.chameleon` (release) neben `com.stealth
 - Dependabot Alert #4 (@tootallnate/once): dismissed tolerable_risk ✅
 
 **Offen (Codex-Pending → NEA-196):**
-- sx_ ID Derivation aus Ed25519 pubkey — Migration-Entscheidung A/B/C ausstehend
+- sx_ ID Derivation aus Ed25519 pubkey — Migration-Entscheidung A/B/C → Codex-Review angefordert in `docs/agent-bridge/BRIDGE.md`
 
-**Offen (HIGH — nächste Session):**
-- SecureCall OkHttp Clients ohne Certificate Pinning (SubscriptionManager, GhostNet, MainActivity)
-- SecureCall IFR Threshold-Text: noch 1000/5000 statt 2000/6000 in strings.xml + UI
+**Fixes in v1.0.34 (Commit `4b1f96c`):**
+- OkHttp Cert Pinning: SubscriptionManager + GhostNetWebSocketClient + MainActivity + SettingsFragment ✅
+- IFR Threshold UI: 1000/5000 → 2000/6000 in strings.xml + IfrLockManager.kt ✅
+- GitHub Release `v1.0.34-stable` + AAB auf Desktop ✅
+
+**Noch offen:**
+- UpdateChecker.kt: OkHttp ohne Pinner — Codex prüft welches Endpoint
+- Firebase google-services.json API Key restriction (Gio-Action: Firebase Console)
 
 ---
 
