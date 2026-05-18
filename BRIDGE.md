@@ -3,6 +3,90 @@
 
 ---
 
+## 2026-05-18 [CC]
+### TYPE: FIX
+### STATUS: DONE
+
+**NEA-183 — Certificate Pinning implementiert (pro + premium)**
+
+Drei Bugs behoben + Implementierung vollständig. `CERTIFICATE_PINNING = false` → `true` in allen
+Pro/Premium Stellen.
+
+**Geänderte Dateien:**
+
+1. `client_android/app/src/main/java/com/securecall/app/net/NetworkManager.kt`
+   - `buildCertificatePinner()` hinzugefügt — gibt `CertificatePinner` mit 3 Pins zurück:
+     - Leaf:  `sha256/1e85xNSEj+dcImOJS0iNkfMZOrZdvJJzzPCqT1/CZDc=` (Let's Encrypt aktuelle Cert)
+     - R12:   `sha256/kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ=` (Intermediate — Fallback bei Leaf-Rotation)
+     - Root:  `sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=` (ISRG Root X1 — langlebig)
+
+2. `client_android/app/src/main/java/com/securecall/app/net/HeartbeatClient.kt`
+   - `buildClient()`: `if (BuildConfig.CERTIFICATE_PINNING) builder.certificatePinner(NetworkManager.buildCertificatePinner())`
+
+3. `client_android/app/src/pro/java/com/securecall/app/config/FeatureFlags.kt`
+   - `CERTIFICATE_PINNING = false` → `true`
+
+4. `client_android/app/src/premium/java/com/securecall/app/config/FeatureFlags.kt`
+   - `CERTIFICATE_PINNING = false` → `true`
+
+5. `client_android/app/build.gradle`
+   - pro flavor: `"false"` → `"true"`
+   - premium flavor: `"false"` → `"true"`
+
+**Build-Verifikation:** `compilePremiumReleaseSources -Pinternal` + `compileProReleaseSources -Pinternal` → SUCCESSFUL
+
+**On-Device:** Nicht testbar — debug APK kann nicht über installiertes Release-APK installiert werden
+(Signaturkonflikt). Pinning greift beim nächsten Release-Build.
+
+**Pin-Strategie:** 3-Pin-Kette (Leaf + Intermediate + Root) — bei Let's Encrypt Renewal bleibt
+R12 + Root gültig → kein App-Update erforderlich. App-Update erst wenn Let's Encrypt R12 abgelöst wird.
+
+---
+
+## 2026-05-18 [CC]
+### TYPE: MEMO
+### STATUS: DONE
+
+**Aufgabe 1 — Chameleon AccessibilityService auf Tab S4 aktiviert**
+
+`adb shell settings put secure enabled_accessibility_services` mit korrektem Service-Namen:
+`com.stealthx.chameleon.debug/com.stealthx.core.accessibility.ChameleonAccessibilityService`
+
+Bestätigung via `dumpsys accessibility`:
+- enabled services[2] = Chameleon Privacy Layer ✅
+- Logcat: `CryptoService bound successfully` ✅
+- Keystore: `chameleon_overlay_key_wrap` UPDATE+FINISH ✅
+
+---
+
+## 2026-05-18 [CC]
+### TYPE: MEMO
+### STATUS: DONE
+
+**Aufgabe 2 — Battery Optimization Langzeittest (5 Minuten DOZE)**
+
+Geräte: S7 (ce10160adc00152604) + Tab S4 (ce12182c68644439037e)
+App: com.securecall.app.premium (PID 29584 / 22839)
+
+Screens gesperrt 02:40:34 → 02:47:20 (~7 min getestet).
+
+**S7 Findings:**
+- `AlarmManager AppSync scheduleAlarms: com.securecall.app.premium startService` → KeepAlive-Alarm feuerte 12:42:14 ✅
+- `AlarmManagerEXT AppSync com.securecall.app.premium: 900(900)` → 15-min AppSync-Zyklus aktiv ✅
+- Prozess am Leben nach Test ✅
+
+**Tab S4 Findings:**
+- `PARTIAL_WAKE_LOCK 'securecall:ws_heartbeat'` feuerte alle ~30-60s während DOZE_SUSPEND ✅ (NEA-180 KeepAliveReceiver)
+- `SamsungAlarmManager Sending: com.securecall.app.premium` 12:43:09 ✅
+- Notification noch aktiv in AOD ✅
+- Prozess am Leben nach Test ✅
+
+**Ergebnis: Beide Geräte halten WS-Verbindung durch Doze. NEA-180 bestätigt effektiv.**
+
+### EMPFÄNGER: GIO / CODEX
+
+---
+
 ## 2026-05-09 15:00 [CC]
 ### STATUS: [DONE]
 ### TYPE: MEMO

@@ -18,7 +18,7 @@ object FeatureFlags {
     // --- Security ---
     const val DEVICE_ATTESTATION_REQUIRED = true
     const val ROOT_DETECTION_BLOCKS = true        // hard block
-    const val CERTIFICATE_PINNING = false // TODO: not yet implemented — enable after CertificatePinner is added
+    const val CERTIFICATE_PINNING = true
     const val SCREEN_CAPTURE_DETECTION = true     // block
     const val DEBUGGER_DETECTION = true           // terminate app
     const val EMULATOR_DETECTION = true           // hard block

@@ -6,6 +6,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.util.Log
+import okhttp3.CertificatePinner
 
 /**
  * Manages network interface selection for StealthX traffic.
@@ -139,4 +140,21 @@ object NetworkManager {
     fun isBound(): Boolean = boundNetwork != null
 
     fun getBoundNetwork(): android.net.Network? = boundNetwork
+
+    /**
+     * Returns a CertificatePinner for api.stealthx.tech.
+     *
+     * Pins:
+     *   - Leaf cert      (current Let's Encrypt cert)
+     *   - R12 CA         (Let's Encrypt intermediate — backup for leaf rotation)
+     *   - ISRG Root X1   (long-lived root — backup for intermediate rotation)
+     *
+     * When Let's Encrypt renews the leaf, R12 and root pins keep the app working.
+     * App update required only when Let's Encrypt retires R12.
+     */
+    fun buildCertificatePinner(): CertificatePinner = CertificatePinner.Builder()
+        .add("api.stealthx.tech", "sha256/1e85xNSEj+dcImOJS0iNkfMZOrZdvJJzzPCqT1/CZDc=")
+        .add("api.stealthx.tech", "sha256/kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ=")
+        .add("api.stealthx.tech", "sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=")
+        .build()
 }

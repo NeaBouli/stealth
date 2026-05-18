@@ -84,7 +84,7 @@ android {
             buildConfigField "int", "MAX_CONTACTS", "0"
             buildConfigField "boolean", "DEVICE_ATTESTATION_REQUIRED", "true"
             buildConfigField "boolean", "ROOT_DETECTION_BLOCKS", "true"
-            buildConfigField "boolean", "CERTIFICATE_PINNING", "false" // TODO: implement actual CertificatePinner before enabling
+            buildConfigField "boolean", "CERTIFICATE_PINNING", "true"
             buildConfigField "boolean", "CALL_RECORDING_ALLOWED", "false"
             buildConfigField "boolean", "TELEMETRY_ENABLED", "false"
             buildConfigField "boolean", "THIRD_PARTY_ANALYTICS", "false"
@@ -110,7 +110,7 @@ android {
             buildConfigField "int", "MAX_CONTACTS", "0"
             buildConfigField "boolean", "DEVICE_ATTESTATION_REQUIRED", "true"
             buildConfigField "boolean", "ROOT_DETECTION_BLOCKS", "true"
-            buildConfigField "boolean", "CERTIFICATE_PINNING", "false" // TODO: implement actual CertificatePinner before enabling
+            buildConfigField "boolean", "CERTIFICATE_PINNING", "true"
             buildConfigField "boolean", "CALL_RECORDING_ALLOWED", "false"
             buildConfigField "boolean", "TELEMETRY_ENABLED", "false"
             buildConfigField "boolean", "THIRD_PARTY_ANALYTICS", "false"

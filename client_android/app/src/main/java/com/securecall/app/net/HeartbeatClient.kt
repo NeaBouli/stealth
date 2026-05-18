@@ -67,6 +67,9 @@ class HeartbeatClient(
         val builder = OkHttpClient.Builder()
             .readTimeout(0, TimeUnit.MILLISECONDS)
             .pingInterval(30, TimeUnit.SECONDS) // BUG-3: 15s too short for mobile networks (latency spikes up to 20-30s)
+        if (com.securecall.app.BuildConfig.CERTIFICATE_PINNING) {
+            builder.certificatePinner(NetworkManager.buildCertificatePinner())
+        }
         // Use bound network's socket factory if process is bound to a specific network
         val boundNet = NetworkManager.getBoundNetwork()
         if (boundNet != null) {
