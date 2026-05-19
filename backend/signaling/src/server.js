@@ -337,8 +337,8 @@ const wss = new WebSocket.Server({
     const recent = attempts.filter(t => now - t < 60000);
     recent.push(now);
     ipConnectionAttempts.set(ip, recent);
-    if (recent.length > 30) {
-      // >30 connections in 60s from same IP = spam, throttle for 60s
+    if (recent.length > 90) {
+      // >90 connections in 60s from same IP = spam (allows up to 3 devices @ 30 each)
       console.warn("[SIGNAL] Throttled IP:", ip, `(${recent.length} attempts in 60s)`);
       return done(false, 429, "Too many connection attempts");
     }

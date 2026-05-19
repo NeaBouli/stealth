@@ -252,15 +252,21 @@ class HeartbeatClient(
         listener.onError(t)
         // Always reconnect on failure unless intentionally closed
         if (!isClosed) {
-            // BUG-035: DNS resolution failures after network change — use longer delay
-            // OkHttp DNS cache is stale after WiFi↔Mobile switch, so fast retries just burn battery.
             val errorMsg = t.message ?: ""
-            if (errorMsg.contains("Unable to resolve host", ignoreCase = true)
+            when {
+                // 429 Too Many Requests — server-side rate limit hit, back off for 5 minutes
+                response?.code == 429 || errorMsg.contains("429", ignoreCase = true) -> {
+                    Log.w("HB", "429 rate-limit from server — backing off 5 minutes")
+                    reconnectDelay = 300_000L
+                }
+                // BUG-035: DNS resolution failures after network change
+                errorMsg.contains("Unable to resolve host", ignoreCase = true)
                 || errorMsg.contains("No address associated", ignoreCase = true)
                 || errorMsg.contains("UnknownHostException", ignoreCase = true)
-                || t is java.net.UnknownHostException) {
-                Log.w("HB", "BUG-035: DNS failure detected — using 30s reconnect delay")
-                reconnectDelay = 30_000L
+                || t is java.net.UnknownHostException -> {
+                    Log.w("HB", "BUG-035: DNS failure detected — using 30s reconnect delay")
+                    reconnectDelay = 30_000L
+                }
             }
             scheduleReconnect()
         }
