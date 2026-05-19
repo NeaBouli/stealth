@@ -1,5 +1,137 @@
 # Codex Findings — Aktuelle Session
 
+## Full Pre-Release Audit — StealthX Platform — 2026-05-18
+
+Scope: `/Users/gio/Desktop/repos/stealth`, `/Users/gio/Desktop/repos/securechat`, `/Users/gio/Desktop/repos/chameleon`.
+
+### Release Blockers
+
+| Severity | Finding | Primary file |
+|---|---|---|
+| CRITICAL | SecureCall can send plaintext when native crypto is unavailable or encryption returns null | `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt:348` |
+| HIGH | SecureCall IFR UI still advertises obsolete 1,000/5,000 thresholds | `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/res/values/strings.xml:199` |
+| HIGH | Chameleon live IFR verifier calls obsolete `lockedAmount` instead of `lockedBalance` | `/Users/gio/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/verifier/IFRLockVerifier.kt:51` |
+| HIGH | SecureChat/Chameleon `sx_` IDs are derived from random seed, not Ed25519 public key | `/Users/gio/Desktop/repos/securechat/data/src/main/java/com/stealthx/data/identity/StealthXIdentity.kt:76` |
+| HIGH | SecureChat accepts malformed `sx_` IDs | `/Users/gio/Desktop/repos/securechat/domain/src/main/java/com/stealthx/domain/keyexchange/KeyExchangeManager.kt:71` |
+| HIGH | Several SecureCall `api.stealthx.tech` clients bypass certificate pinning | `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/billing/SubscriptionManager.kt:30` |
+| HIGH | Chameleon Settings tier promises diverge from actual gates | `/Users/gio/Desktop/repos/chameleon/presentation/src/main/java/com/stealthx/presentation/screen/SettingsScreen.kt:140` |
+
+### Task 1 — IFR Tier Consistency
+
+- Required thresholds are 2,000/6,000 IFR. Backend is aligned: `/Users/gio/Desktop/repos/stealth/backend/signaling/src/services/ifr.js:9` and `:10` use `2000` and `6000`, contract address `/Users/gio/Desktop/repos/stealth/backend/signaling/src/services/ifr.js:7` is correct, and backend calls `lockedBalance` at `:39`.
+- SecureChat app constants are numerically aligned: `/Users/gio/Desktop/repos/securechat/stealthx-ifr/src/main/java/com/stealthx/ifr/IFRConstants.kt:29` and `:30`; chainId is mainnet at `:25`; contract address is correct at `:20`.
+- Chameleon app constants are numerically aligned: `/Users/gio/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/IFRConstants.kt:29` and `:30`; chainId is mainnet at `:25`; contract address is correct at `:20`.
+- Discrepancies: SecureCall UI still says 1,000/5,000 in `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/res/values/strings.xml:199`, `:201`, `:204`, `/Users/gio/Desktop/repos/stealth/client_android/app/src/free/res/layout/activity_upgrade.xml:220`, and `/Users/gio/Desktop/repos/stealth/client_android/app/src/withWalletConnect/java/com/securecall/app/wallet/WalletConnectManager.kt:243`.
+- Discrepancies: SecureChat and Chameleon ABI strings still declare `lockedAmount` at `/Users/gio/Desktop/repos/securechat/stealthx-ifr/src/main/java/com/stealthx/ifr/IFRConstants.kt:61` and `/Users/gio/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/IFRConstants.kt:61`.
+- Discrepancy: Chameleon live verifier also calls `lockedAmount` at `/Users/gio/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/verifier/IFRLockVerifier.kt:51`.
+- TierStatusCard threshold copy uses `requiredTier.minLockAmount / 1_000_000_000L` through shared `IfrTier` values, so the lock amount display is aligned where that component is used.
+
+### Task 2 — sx_ ID Coherence
+
+- Required format is `sx_` + 9 Base58 chars, total length 12, derived from Ed25519 public key.
+- SecureChat and Chameleon display/document the expected format, but generation is not compliant: SecureChat `getOrCreateWithSeed()` stores a random `identity_seed` and passes it as `publicKeyHex` at `/Users/gio/Desktop/repos/securechat/data/src/main/java/com/stealthx/data/identity/StealthXIdentity.kt:76`; Chameleon does the same at `/Users/gio/Desktop/repos/chameleon/data/src/main/java/com/stealthx/data/identity/StealthXIdentity.kt:42`.
+- Both derive 9 Base58-like characters from SHA-256 bytes, but source material is wrong, so cross-product deterministic identity from Ed25519 pubkey is not guaranteed.
+- SecureChat validation is incomplete: `/Users/gio/Desktop/repos/securechat/domain/src/main/java/com/stealthx/domain/keyexchange/KeyExchangeManager.kt:71` checks only prefix; `/Users/gio/Desktop/repos/securechat/data/src/main/java/com/stealthx/data/repository/ContactRepository.kt:78` accepts length >= 10 instead of exactly 12 Base58 chars.
+- No `stx_` prefix generator found in production app code. Duplicated identity logic exists between SecureChat and Chameleon; there is no single shared identity source of truth.
+
+### Task 3 — Encryption Algorithm Consistency
+
+- SecureChat and Chameleon core crypto use XChaCha20-Poly1305 via lazysodium: `/Users/gio/Desktop/repos/securechat/stealthx-crypto/src/main/java/com/stealthx/crypto/ChameleonCrypto.kt:55`, `:68`, `:102`; same copied module in Chameleon.
+- SecureChat and Chameleon use X25519 for key exchange at `/Users/gio/Desktop/repos/securechat/stealthx-crypto/src/main/java/com/stealthx/crypto/ChameleonCrypto.kt:189` and `:202`; same copied module in Chameleon.
+- Double Ratchet exists in both at `/Users/gio/Desktop/repos/securechat/stealthx-crypto/src/main/java/com/stealthx/crypto/DoubleRatchet.kt:124` and `:157`; same copied module in Chameleon.
+- Chameleon overlay encryption delegates to `ChameleonCrypto.encrypt/decrypt` in `/Users/gio/Desktop/repos/chameleon/domain/src/main/java/com/stealthx/domain/engine/XChaCha20EncryptionEngine.kt:20`, `:29`, `:34`, `:42`.
+- Critical downgrade: SecureCall `sendBinary()` falls back to plaintext when no session key/native crypto/encryption output exists at `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt:347`-`:350`, and outgoing setup logs unencrypted call continuation at `:961`.
+
+### Task 4 — Certificate Pinning
+
+- Required pins are present in SecureCall `NetworkManager.buildCertificatePinner()` for `api.stealthx.tech`: `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/net/NetworkManager.kt:155`-`:158`.
+- SecureCall `HeartbeatClient` applies the pinner behind `BuildConfig.CERTIFICATE_PINNING`: `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/net/HeartbeatClient.kt:66`-`:71`.
+- Free builds deliberately skip pinning because `CERTIFICATE_PINNING=false`; Pro/Premium set it true in `/Users/gio/Desktop/repos/stealth/client_android/app/build.gradle:86` and `:116`.
+- Bypass sites: `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/billing/SubscriptionManager.kt:30`, `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/MainActivity.java:298`, `:339`, `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/ui/SettingsFragment.kt:535`, and `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/ghostnet/transport/ws/GhostNetWebSocketClient.java:68` create raw OkHttp clients for the same platform domain path without applying pins.
+- SecureChat and Chameleon production code did not show OkHttp construction for `api.stealthx.tech`; no trust-all hostname verifier or permissive X509TrustManager was found.
+
+### Task 5 — Product vs Code Alignment
+
+| Product | Feature | Claimed tier | Actual gate / implementation |
+|---|---|---:|---|
+| SecureChat | Free 10 contacts | Free | Enforced by `ContactRepository.FREE_CONTACT_LIMIT = 10`; OK. |
+| SecureChat | Group Messaging | Pro | UI row only; feature module is placeholder; not labelled coming soon. |
+| SecureChat | Encrypted File Transfer | Pro | UI row only; no implementation found; not labelled coming soon. |
+| SecureChat | Kaspa Identity Anchor | Pro | UI row/docs; roadmap/phase material, not implemented as functional flow. |
+| SecureChat | Chameleon Integration | Pro | UI row only; no functional integration gate found. |
+| SecureChat | Onion Routing 3-hop | Elite | `OnionRelayTransport` is explicit TODO Phase 3; UI does not mark coming soon. |
+| SecureChat | Decoy Chat Profiles | Elite | UI row only; no implementation found in SecureChat. |
+| SecureChat | Advanced Threat Detection | Elite | UI row only; no implementation found. |
+| SecureChat | Emergency Broadcast | Elite | Broadcast screen/manager exists, but broader relay path still alpha; gate is UI-level. |
+| Chameleon | Overlay Encryption | Free | Implemented via overlay/core engine. |
+| Chameleon | Manual Geofencing 3 rules | Free | Settings says unlocked free, but navigation wraps geofencing in `requiredTier = IfrTier.ELITE`; mismatch. |
+| Chameleon | Private Zone 100MB | Free | Settings says unlocked free, but route wraps Private Zone in `requiredTier = IfrTier.PRO`; mismatch unless free cap path is added. |
+| Chameleon | Unlimited Automation Rules | Pro | UI locked to Pro, but no complete enforcement/implementation path found. |
+| Chameleon | Private Zone Unlimited | Pro | Route requires Pro; no explicit 100MB-vs-unlimited cap split found. |
+| Chameleon | Decoy Profile | Pro | Listed under Pro but row and route require Elite; mismatch. |
+| Chameleon | Automatic Geofencing | Pro | Listed Pro but route requires Elite; mismatch. |
+| Chameleon | Multi-Decoy / Threat Detection / Zero Telemetry | Elite | UI rows only or policy posture; not fully implemented as feature controls. |
+
+### Task 6 — Naming Collisions
+
+- `FeatureFlags` exists only in SecureCall flavors and is cleanly package-scoped.
+- `NetworkManager` production file found only in SecureCall.
+- `IfrTier`, `StealthXIdentity`, crypto modules, `SettingsScreen`, `IFRUnlockScreen`, and `DashboardScreen` are duplicated between SecureChat and Chameleon under identical `com.stealthx.*` package/module namespaces. This is safe only while apps are independent builds, but it is not a shared source of truth.
+- SecureCall uses `com.securecall.*` package/namespace and is separated from the `com.stealthx.*` apps.
+
+### Task 7 — GitHub Repository State
+
+| Repo | Local state | Recent CI | PR/issues | Branch protection |
+|---|---|---|---|---|
+| stealth | `main...origin/main`; modified `BRIDGE.md` plus pro/premium `FcmTokenManager.kt` already present before this audit | latest `Basic CI` and `Security Audit` green on `main` at 2026-05-18 09:52 UTC | no open PRs or critical/release-blocker issues returned by `gh` | protected; PR review required, linear history, no force-push |
+| securechat | `main...origin/main [ahead 1]` | only Pages runs shown green on `main`; no app CI run visible in last 5 | no open PRs or critical/release-blocker issues returned by `gh` | not protected (GitHub API 404) |
+| chameleon | `main...origin/main [ahead 1]` | Chameleon CI and Pages green on `main` | no open PRs or critical/release-blocker issues returned by `gh` | not protected (GitHub API 404) |
+
+Dependabot: no open Dependabot PRs were returned by `gh pr list`. Known unsafe `@tootallnate/once`/`firebase-admin` downgrade path should remain DISMISS/not merge if it reappears.
+
+### Task 8 — Security Red Flags
+
+- CRITICAL: SecureCall plaintext downgrade path, see Task 3.
+- HIGH: SecureCall certificate-pinning bypasses, see Task 4.
+- MEDIUM: Firebase `google-services.json` with API key is committed at `/Users/gio/Desktop/repos/stealth/client_android/app/google-services.json:18` (and repeated at `:37`, `:56`). Firebase API keys are often not secrets by themselves, but release should confirm restrictions by package name/SHA-1 and enabled APIs.
+- MEDIUM: SecureCall Pro/Premium FCM service logs push payload metadata in `/Users/gio/Desktop/repos/stealth/client_android/app/src/premium/java/com/securecall/app/fcm/SecureCallMessagingService.kt:29` and equivalent Pro file. ProGuard may strip `Log.d`, but verify release rules for these flavor source sets.
+- LOW: debug-only `SetTierReceiver` is exported in SecureChat/Chameleon debug manifests; acceptable if never packaged in release.
+- No `hostnameVerifier { _, _ -> true }`, permissive `X509TrustManager`, `MODE_WORLD`, production `android:debuggable="true"`, or production trust-all pattern found.
+- Exported production components reviewed: launch activities and SecureCall boot receiver are exported intentionally; services/providers are mostly `exported=false` or permission-bound.
+
+### Task 9 — Build Consistency
+
+| App | versionCode / versionName | minSdk | targetSdk | ABI | Signing | Notes |
+|---|---|---:|---:|---|---|---|
+| SecureCall | `56` / `1.0.33` | 24 | 35 | splits `arm64-v8a`, `armeabi-v7a`, `x86_64` | release config via env/property/default path | `variantFilter` blocks Pro/Premium unless `-Pinternal`; OK. |
+| SecureChat | `1` / `0.1.0-alpha` | 26 | 35 | no explicit ABI split/filter in app module | local.properties-driven release config | App CI not visible in GitHub recent runs; version plan needs release-owner confirmation. |
+| Chameleon | `1` / `0.1.0-alpha` | 26 | 35 | NDK filters `armeabi-v7a`, `arm64-v8a`, `x86_64` | local.properties-driven release config | No branch protection; app CI green. |
+
+Gradle note: `./gradlew tasks --no-daemon` succeeded for SecureCall, SecureChat, and Chameleon using `GRADLE_USER_HOME=/Users/gio/Desktop/repos/.gradle-codex`. This verifies wrapper/configuration task discovery, not full assemble/test.
+
+### Task 10 — Coherence Summary
+
+RELEASE BLOCKERS:
+
+- SecureCall must fail closed instead of sending plaintext when crypto is unavailable.
+- SecureCall must apply certificate pinning to every `api.stealthx.tech` OkHttp/WebSocket client in Pro/Premium.
+- SecureCall IFR copy must be updated from 1,000/5,000 to 2,000/6,000.
+- Chameleon verifier must call `lockedBalance`, not `lockedAmount`.
+- SecureChat/Chameleon `sx_` identity generation must derive from stored Ed25519 public key and validation must enforce exactly `^sx_[1-9A-HJ-NP-Za-km-z]{9}$`.
+- UI claims for unimplemented or mismatched features must be corrected or labelled coming soon before Play internal testing.
+
+SHOULD FIX:
+
+- Remove/update stale `lockedAmount` ABI strings in both SecureChat and Chameleon.
+- Add branch protection to SecureChat and Chameleon.
+- Restrict or rotate Firebase API key if not already restricted.
+- Replace sensitive `Log.d` calls in non-free flavor source sets or prove ProGuard stripping in release artifacts.
+
+DEFERRED:
+
+- Features already explicitly marked Phase 2/3/TODO, such as SecureChat Tor/Kaspa relay and 3-hop onion transport, are acceptable for alpha only if UI labels them as planned/coming soon.
+- Debug-only tier override receivers are acceptable if release variant excludes them.
+
 Datum: 2026-05-04 (fortlaufend)
 Archiv: `CODEX_FINDINGS_ARCHIVE_20260504.md`
 

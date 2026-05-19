@@ -62,7 +62,7 @@ object FcmTokenManager {
 
     private fun sendTokenToBackend(token: String) {
         val ws = WebSocketService.instance
-        if (ws != null) {
+        if (ws != null && ws.isRegistered) {
             val json = """
                 {
                   "type": "REGISTER_FCM_TOKEN",
@@ -72,7 +72,7 @@ object FcmTokenManager {
             ws.sendMessage(json)
             Log.d(TAG, "REGISTER_FCM_TOKEN sent to backend")
         } else {
-            Log.w(TAG, "WebSocketService not available, token will be sent on next connect")
+            Log.w(TAG, "Not yet registered — FCM token will be sent after REGISTERED ack")
         }
     }
 }
