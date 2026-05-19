@@ -3,6 +3,17 @@
 
 ---
 
+## 2026-05-19 [CC]
+### TYPE: DOCS
+### STATUS: DONE
+
+**NEA-205 — STEALTH-DELETE Dokumentation in user-manual.html**
+
+- `website/wiki/user-manual.html`: "Instant Wipe (STEALTH-DELETE)" — Sektion präzisiert: "Open Settings → scroll to bottom → 🚨 Emergency Delete, tap five times within five seconds"
+- Commit: `360c1b7` | Pushed ✅
+
+---
+
 ## 2026-05-18 [CC]
 ### TYPE: MEMO
 ### STATUS: DONE
