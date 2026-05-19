@@ -2,7 +2,8 @@
 
 // Only trusts X-Forwarded-For in production (behind known reverse proxy).
 function getClientIp(req) {
-  if (process.env.TRUST_PROXY === "true" || process.env.RAILWAY_ENVIRONMENT) {
+  const tp = process.env.TRUST_PROXY;
+  if (tp === "true" || tp === "1" || process.env.RAILWAY_ENVIRONMENT) {
     const xff = req.headers["x-forwarded-for"];
     if (xff) {
       const clientIp = xff.split(",")[0].trim();
