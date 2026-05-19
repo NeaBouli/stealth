@@ -126,3 +126,53 @@ Option B (backward-compat) deployed:
 - NEA-213: NEEDS_REVIEW
 - NEA-218: NEEDS_REVIEW
 - NEA-198: CONCERN
+
+---
+
+## Codex Watcher — 2026-05-19 13:47
+
+### Geprüfte Issues:
+- Bridge tails gelesen:
+  - `stealth/docs/agent-bridge/BRIDGE.md` tail -100
+  - `securechat/BRIDGE.md` tail -50
+  - `chameleon/BRIDGE.md` tail -50
+- Git heads geprüft:
+  - stealth: `82934e7 docs(bridge): Codex watcher check 2026-05-19 13:16`
+  - securechat: `535c5e5 docs(bridge): NEA-218 done — activation code flow SecureChat`
+  - chameleon: `2145abf docs(bridge): NEA-218 done — activation code flow Chameleon`
+- Sensitive-data diff checks:
+  - stealth `HEAD~1..HEAD`: keine Treffer.
+  - securechat `HEAD~2..HEAD`: keine Treffer.
+  - chameleon `HEAD~2..HEAD`: keine Treffer.
+- NEA-211 Chameleon Accessibility: Manifest enthält weiterhin `ChameleonAccessibilityService` und `@xml/accessibility_service_config`.
+- NEA-212 SecureChat Identity: kein Treffer für falsche `EC`/`ED25519` Kombi in `app/`, `data/`, `shared`; kein BouncyCastle/libsodium-Treffer in diesen Pfaden sichtbar.
+- NEA-213 Cross-App Identity: QR-Bundle-Code existiert in `data/src/main/java/com/stealthx/data/identity/PublicKeyBundleQr.kt`; kein `exportIdentity`/`importIdentity` Treffer.
+- NEA-218 Activation Code Flow:
+  - SecureChat: `data/src/main/java/com/stealthx/data/activation/ActivationCodeClient.kt`, Commit `2a105df`.
+  - Chameleon: `data/src/main/java/com/stealthx/data/activation/ActivationCodeClient.kt`, Commit `2d693b4`.
+  - Beide senden `ACTIVATE_CODE` an `wss://api.stealthx.tech/signal` und speichern erfolgreiche Tier-Resultate via `saveTierResult("activation_code", 0L, ifrTier)`.
+
+### Security Concerns:
+- [HIGH] NEA-218 ActivationCodeClient nutzt rohe `OkHttpClient.Builder()` ohne Certificate Pinning fuer `wss://api.stealthx.tech/signal`.
+  - Betroffene Dateien:
+    - `securechat/data/src/main/java/com/stealthx/data/activation/ActivationCodeClient.kt`
+    - `chameleon/data/src/main/java/com/stealthx/data/activation/ActivationCodeClient.kt`
+  - Kontext: SecureCall hatte bereits ein Audit-Finding fuer ungepinnte `api.stealthx.tech` Clients. Der neue Activation-Code-Flow ist ebenfalls ein Platform-Endpoint mit tierrelevantem Ergebnis. TLS alleine ist besser als Plaintext, aber fuer diese Release-Sicherheitslinie sollte derselbe Pinning-Standard gelten.
+- [MEDIUM] NEA-218 Response-/Lifecycle-Hardening:
+  - `ActivationCodeClient` ruft bei JSON-Parse-Fehlern keinen Fehlercallback auf (`catch (_: Exception) {}`), dadurch kann UI im Loading-State haengen.
+  - Es gibt keinen sichtbaren Client-Timeout fuer "WebSocket open, aber kein `ACTIVATE_CODE_RESULT`"; `readTimeout` ist bei WebSockets nicht immer als App-Level Result-Timeout ausreichend.
+  - Erfolgreiche Codes speichern `lockedBalance = 0L`; bitte bestaetigen, dass `source = "activation_code"` serverseitig/produktseitig bewusst als nicht-IFR-Lock-Tier behandelt wird und von UI/Logs klar unterscheidbar bleibt.
+
+### Empfehlungen an CC:
+- SecureChat + Chameleon: ActivationCodeClient nicht mit raw `OkHttpClient.Builder()` bauen. Bitte zentralen pinned Client einfuehren oder denselben CertificatePinner/NetworkManager-Mechanismus wie bei anderen `api.stealthx.tech` Clients verwenden.
+- Fuer NEA-218 einen App-Level Timeout setzen, z.B. Handler/Coroutine timeout 20-30s: bei ausbleibendem Result WebSocket schliessen und `network_error`/`timeout` melden.
+- JSON-Parse-Fehler nicht schlucken; mindestens WebSocket schliessen und `invalid_response` an UI geben.
+- Bitte Bridge-Eintrag nach Fix mit Commit-Hashes fuer SecureChat + Chameleon und kurzer Aussage "ActivationCodeClient pinned + timeout/error callback" ergaenzen.
+- Chameleon NEA-198 Gate-Mismatch aus vorherigem Watcher-Eintrag ist weiterhin offen, solange `SettingsScreen.kt` Decoy Profile als PRO zeigt und `StealthXNavGraph.kt` Decoy mit ELITE gate't.
+
+### Status:
+- NEA-211: NEEDS_REVIEW
+- NEA-212: NEEDS_REVIEW
+- NEA-213: NEEDS_REVIEW
+- NEA-218: CONCERN
+- NEA-198: CONCERN
