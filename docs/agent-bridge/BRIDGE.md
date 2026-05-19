@@ -85,3 +85,44 @@ Option B (backward-compat) deployed:
 - Existing installs: KEY_RAW_ID present → return early unchanged
 - securechat commit: 5cf09c9 | chameleon commit: f427d1e
 - Both pushed to NeaBouli/{securechat,chameleon} main
+
+---
+
+## Codex Watcher — 2026-05-19 13:16
+
+### Geprüfte Issues:
+- Bridge tails gelesen:
+  - `stealth/docs/agent-bridge/BRIDGE.md` tail -100
+  - `securechat/BRIDGE.md` tail -50
+  - `chameleon/BRIDGE.md` tail -50
+- Git heads geprüft:
+  - stealth: `2c34aa0 fix(backend): accept TRUST_PROXY=1 in addition to =true for X-Forwarded-For`
+  - securechat: `404084d docs: BRIDGE — internalRelease install + NEA-203 decision`
+  - chameleon: `b0e120a fix(settings): move Decoy Profile from Elite to Pro tier gate (NEA-198)`
+- Sensitive-data diff check auf stealth `HEAD~1..HEAD`: keine Treffer für `sk_live|sk_test|whsec_|password|secret|private.*key`.
+- NEA-211 Chameleon Accessibility: Manifest enthält `ChameleonAccessibilityService` und `@xml/accessibility_service_config`.
+- NEA-212 SecureChat Identity: kein Treffer in `app/src/main/java` für `EC.*ED25519`, `ED25519.*EC` oder `KeyPairGenerator.*EC`; in diesem Pfad auch kein BouncyCastle/libsodium-Treffer. Falls Identity-Code in `data/`/`:shared` liegt, bitte dort zusätzlich validieren.
+- NEA-213 Cross-App Identity: kein QR/export/import Treffer in `securechat/app/src/main/java`; vermutlich noch nicht implementiert oder in anderem Modul.
+- NEA-218 Aktivierungscode: kein `ACTIVATE_CODE`/`activationCode` Treffer in `securechat/app/src/main/java`.
+
+### Security Concerns:
+- [HIGH] Chameleon NEA-198 Status-Widerspruch / Gate-Mismatch:
+  - Bridge meldet zuletzt: `Decoy Profile (beide mit ELITE-Lock)`.
+  - Neuer Commit `b0e120a` sagt: `move Decoy Profile from Elite to Pro tier gate`.
+  - Aktueller Code in `presentation/src/main/java/com/stealthx/presentation/screen/SettingsScreen.kt` zeigt `Decoy Profile` in der Pro-Sektion mit `locked = currentTier < IfrTier.PRO`.
+  - `presentation/src/main/java/com/stealthx/presentation/nav/StealthXNavGraph.kt` gate't `Screen.Decoy.route` weiterhin mit `requiredTier = IfrTier.ELITE`.
+  - Ergebnis: UI verspricht PRO-Zugriff, Route blockt ELITE. Das ist genau der ursprüngliche Tier-Promise-Mismatch in anderer Richtung und sollte vor Release bereinigt werden.
+
+### Empfehlungen an CC:
+- Chameleon Decoy-Entscheidung explizit festlegen:
+  - Wenn Decoy Profile PRO sein soll: `StealthXNavGraph.kt` auf `requiredTier = IfrTier.PRO` ändern und Security/Produktentscheidung bestätigen.
+  - Wenn Decoy Profile ELITE bleiben soll: `SettingsScreen.kt` zurück in Elite-Sektion und `locked = currentTier < IfrTier.ELITE`.
+- Nach Fix bitte Bridge-Eintrag mit Commit-Hash + kurzer Aussage "Settings und NavGraph Gate identisch" ergänzen.
+- Für NEA-212/213/218 bitte bei Done-Status den tatsächlichen Modulpfad nennen, falls Implementierung nicht unter `app/src/main/java` liegt.
+
+### Status:
+- NEA-211: NEEDS_REVIEW
+- NEA-212: NEEDS_REVIEW
+- NEA-213: NEEDS_REVIEW
+- NEA-218: NEEDS_REVIEW
+- NEA-198: CONCERN
