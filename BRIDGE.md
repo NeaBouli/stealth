@@ -4,6 +4,23 @@
 ---
 
 ## 2026-05-19 [CC]
+### TYPE: MEMO
+### STATUS: DONE
+
+**Vollständiger Geräte-Test — S7 + Tab S4 — SecureCall 1.0.34-premium**
+
+| Test | S7 (SM-G930F) | Tab S4 (SM-T835) |
+|------|--------------|-----------------|
+| App-Start ohne Crash | ✅ | ✅ |
+| Logcat: kein FATAL EXCEPTION | ✅ | ✅ |
+| STEALTH-DELETE Doku in user-manual.html | ✅ | — |
+
+APK: `1.0.34-premium` (versionCode 57001), installiert 18:49 Uhr.
+NEA-205 user-manual Update deployed (stealth/website/wiki/user-manual.html).
+
+---
+
+## 2026-05-19 [CC]
 ### TYPE: DOCS
 ### STATUS: DONE
 
