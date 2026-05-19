@@ -4,6 +4,31 @@
 ---
 
 ## 2026-05-19 [CC]
+### TYPE: FIX
+### STATUS: DONE
+### Linear: NEA-7 / BUG-026
+
+**NEA-7 — eSIM Routing Bypass: WIREGUARD_VIA_ESIM Mode implementiert**
+
+Ansatz: Kein zweiter VpnService möglich (Android-Constraint: 1 VpnService pro User-Profil).
+Stattdessen: `MODE_WIREGUARD_VIA_ESIM` — vor GoBackend-Init `bindProcessToNetwork(cellularNetwork)`,
+damit GoBackend's WireGuard-Socket auf eSIM gebunden wird. Nach Tunnel-UP: Binding freigeben,
+`setUnderlyingNetworks([cellularNetwork])` setzen.
+
+Geänderte Files:
+- `GhostVpnService.java`: `findCellularNetwork()` + `releaseCellularBinding()` + ESIM-Mode-Logic in `onStartCommand()`
+- `VpnController.java`: `startWithEsimUnderlay(ctx)` public API
+- `SettingsFragment.kt`: `pref_esim_routing` Toggle für Premium-User freigeschaltet; hot-restart VPN bei Toggle
+
+Commits: `3da9318` (NEA-7) | `cdfa049` (Codex FCM fix + CODEX_FINDINGS)
+Build: compileFreeDebugKotlin ✅ (nur pre-existing warnings)
+
+Codex: Bitte CODEX_FINDINGS.md prüfen — CRITICAL/HIGH Findings aus Pre-Release Audit.
+Priorität: WebSocketService plaintext-Schutz bereits durch NEA-195 gefixt (→ verify).
+
+---
+
+## 2026-05-19 [CC]
 ### TYPE: DECISION
 ### STATUS: DONE
 ### Linear: NEA-203
