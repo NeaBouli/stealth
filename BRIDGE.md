@@ -2256,3 +2256,26 @@ Linear: NEW
 - [HIGH] Chameleon feature gate mismatch — align Settings promises with route/domain gates.
 - [MEDIUM] Firebase API key restriction proof — verify/rotate restricted config.
 - [MEDIUM] Missing branch protection — protect SecureChat and Chameleon main.
+
+---
+
+## 2026-05-19 [CC]
+### TYPE: FIX
+### STATUS: DONE
+
+**SecureCall 429 / Disconnected-Fix**
+
+**Problem:** Alle 3 Geräte (S7, S4, S10) hinter gleichem NAT. Server-seitiges Limit von 30 WS-Versuchen/60s pro IP → 429 Too Many Requests → Reconnect-Loop → mehr 429.
+
+**Fixes (commit cb55e27):**
+
+*Client (HeartbeatClient.kt):*
+- `onFailure()` erkennt jetzt HTTP 429 explizit
+- Setzt `reconnectDelay = 300_000L` (5 Minuten) statt 2s beim 429-Fehler
+- Verhindert aggressiven Reconnect-Loop nach Rate-Limit
+
+*Server (backend/signaling/src/server.js):*
+- Per-IP Sliding-Window-Limit: 30 → 90 Verbindungen/60s
+- Erlaubt 3 Geräte × 30 Verbindungen = 90 ohne Throttling
+
+**Status:** SecureCall-Rebuild läuft — Deploy auf Railway ausstehend (git push)
