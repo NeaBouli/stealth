@@ -696,12 +696,43 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<SwitchPreferenceCompat>("pref_esim_routing")?.apply {
-            // eSIM traffic steering requires VpnService — not yet implemented
-            isEnabled = false
-            isChecked = false
-            summary = when {
-                !hasEsim -> "eSIM not available on this device"
-                else -> "Coming Soon \u2014 requires VpnService-based traffic steering"
+            when {
+                !hasEsim -> {
+                    isEnabled = false
+                    isChecked = false
+                    summary = "eSIM not available on this device"
+                }
+                !isProOrPremium -> {
+                    isEnabled = false
+                    isChecked = false
+                    summary = getString(R.string.pref_premium_feature)
+                }
+                effectiveTier != "PREMIUM" -> {
+                    isEnabled = false
+                    isChecked = false
+                    summary = "Premium feature — WireGuard over eSIM"
+                }
+                else -> {
+                    val esimEnabled = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+                        .getBoolean("esim_wireguard_mode", false)
+                    isEnabled = true
+                    isChecked = esimEnabled
+                    summary = if (esimEnabled) "WireGuard tunnel uses eSIM as physical underlay" else "Route WireGuard VPN through eSIM instead of WiFi"
+                    setOnPreferenceChangeListener { _, newValue ->
+                        val enabled = newValue as Boolean
+                        ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+                            .edit().putBoolean("esim_wireguard_mode", enabled).apply()
+                        summary = if (enabled) "WireGuard tunnel uses eSIM as physical underlay" else "Route WireGuard VPN through eSIM instead of WiFi"
+                        if (com.securecall.app.vpn.GhostVpnService.isActive) {
+                            com.securecall.app.vpn.VpnController.stop(ctx)
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                if (enabled) com.securecall.app.vpn.VpnController.startWithEsimUnderlay(ctx)
+                                else com.securecall.app.vpn.VpnController.start(ctx)
+                            }, 1500)
+                        }
+                        true
+                    }
+                }
             }
         }
 

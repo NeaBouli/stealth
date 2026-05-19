@@ -27,10 +27,20 @@ public class VpnController {
         return true; // Already has permission
     }
 
-    /** Start the VPN service. Must have permission first. */
+    /** Start the VPN service in standard WireGuard mode. Must have permission first. */
     public static void start(Context ctx) {
-        Log.d(TAG, "Starting GhostVPN service");
+        startWithMode(ctx, GhostVpnService.MODE_WIREGUARD);
+    }
+
+    /** Start the VPN service with eSIM underlay (WireGuard tunnel over cellular). */
+    public static void startWithEsimUnderlay(Context ctx) {
+        startWithMode(ctx, GhostVpnService.MODE_WIREGUARD_VIA_ESIM);
+    }
+
+    private static void startWithMode(Context ctx, String mode) {
+        Log.d(TAG, "Starting GhostVPN service, mode=" + mode);
         Intent i = new Intent(ctx, GhostVpnService.class);
+        i.putExtra(GhostVpnService.EXTRA_MODE, mode);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             ctx.startForegroundService(i);
         } else {
