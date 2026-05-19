@@ -240,7 +240,7 @@ object WalletConnectManager {
                                     .putLong("ifr_wallet_verified_at", System.currentTimeMillis())
                                     .apply()
                                 dialog.dismiss()
-                                callback(true, "Wallet verified & connected ($amount IFR held).\nNeed 1,000 IFR for Pro / 5,000 for Premium.\nTier activates automatically when you hold enough IFR.")
+                                callback(true, "Wallet verified & connected ($amount IFR held).\nNeed 2,000 IFR for Pro / 6,000 for Premium.\nTier activates automatically when you hold enough IFR.")
                             } else {
                                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
                                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).text = "Verify"

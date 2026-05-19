@@ -217,7 +217,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="&#8226; Lock ≥ 1,000 IFR → Pro forever\n&#8226; Lock ≥ 5,000 IFR → Premium forever\n&#8226; Your tokens stay yours — unlock anytime"
+                android:text="&#8226; Lock ≥ 2,000 IFR → Pro forever\n&#8226; Lock ≥ 6,000 IFR → Premium forever\n&#8226; Your tokens stay yours — unlock anytime"
                 android:textSize="13sp"
                 android:textColor="#CCCCCC"
                 android:lineSpacingMultiplier="1.4" />
