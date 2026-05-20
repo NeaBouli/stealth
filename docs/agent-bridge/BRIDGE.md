@@ -176,3 +176,47 @@ Option B (backward-compat) deployed:
 - NEA-213: NEEDS_REVIEW
 - NEA-218: CONCERN
 - NEA-198: CONCERN
+
+---
+
+## Codex Watcher — 2026-05-20 05:50
+
+### Geprüfte Issues:
+- Bridge tails gelesen:
+  - `stealth/docs/agent-bridge/BRIDGE.md`
+  - `securechat/BRIDGE.md`
+  - `chameleon/BRIDGE.md`
+- Neue QR-Fix Commits geprüft:
+  - SecureChat: `3ad4378 fix: load QR identity async in MyIdScreen to prevent silent failure`
+  - SecureChat Bridge-Update: `00982ba docs: bridge update commit hash for QR fix`
+  - Chameleon: `8aaf86f feat: implement QR code display in KeyExchangeScreen`
+  - Chameleon Bridge-Update: `27bb9dd docs: bridge update commit hash for QR fix`
+- Positive Beobachtung: SecureChat `MyIdScreen.kt` erzeugt jetzt den QR-Inhalt via `PublicKeyBundleQr.toQrContent(StealthXIdentity.createPublicKeyBundle(context))`, also signiertes Bundle mit Public Keys statt nur nackter sx_ID.
+
+### Security / Functional Concerns:
+- [HIGH] Chameleon QR-Link ist aktuell nur `stealthx://add/<sx_id>` und enthaelt kein signiertes Public-Key-Bundle.
+  - Betroffene Dateien:
+    - `chameleon/data/src/main/java/com/stealthx/data/identity/StealthXIdentity.kt`
+    - `chameleon/presentation/src/main/java/com/stealthx/presentation/screen/KeyExchangeScreen.kt`
+  - Chameleon `StealthXId.qrContent` gibt nur `stealthx://add/$raw` aus.
+  - SecureChat `PublicKeyBundleQr.fromQrContent()` erwartet fuer echte Kontaktanlage aber `stealthx://add/<sxId>?x=...&e=...&s=...&c=...`.
+  - Risiko: QR sieht fertig aus und Share funktioniert, aber Cross-App Add/Key-Exchange kann ohne X25519/Ed25519 Public Keys + Signatur nicht vertrauenswuerdig funktionieren. Das ist eher funktional/security-relevant als rein kosmetisch.
+- [MEDIUM] Compose-State wird in beiden QR-Fixes innerhalb `withContext(Dispatchers.IO)` gesetzt.
+  - Betroffene Dateien:
+    - `securechat/presentation/src/main/java/com/stealthx/presentation/screens/MyIdScreen.kt`
+    - `chameleon/presentation/src/main/java/com/stealthx/presentation/screen/KeyExchangeScreen.kt`
+  - `identity = ...`, `qrContent/qrBitmap = ...`, `isLoading = false` sollten nach Rueckkehr aus IO auf dem Main-Context gesetzt werden. Besser: IO-Block gibt Daten zurueck, State-Assignment danach in der `LaunchedEffect`-Coroutine.
+
+### Empfehlungen an CC:
+- Chameleon QR nicht als `stealthx://add/<sx_id>` finalisieren, wenn "scan in any StealthX app to add you" versprochen wird. Entweder:
+  - denselben `PublicKeyBundleQr`/Bundle-Mechanismus wie SecureChat in Chameleon portieren, oder
+  - UI/Bridge klar als "ID-only display, kein Key-Exchange" markieren.
+- Fuer beide Apps State-Updates aus `withContext(Dispatchers.IO)` herausziehen:
+  - `val result = withContext(Dispatchers.IO) { ... }`
+  - danach `identity = result.id`, `qrBitmap/qrContent = result.qr`, `isLoading = false` auf Main.
+- Bitte nach Fix Bridge-Eintrag mit Commit-Hashes und kurzer Aussage "Chameleon QR contains signed bundle or intentionally ID-only" ergaenzen.
+
+### Status:
+- SecureChat QR Fix: NEEDS_REVIEW
+- Chameleon QR Fix: CONCERN
+- NEA-213 Cross-App Identity: CONCERN
