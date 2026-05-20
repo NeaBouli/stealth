@@ -258,3 +258,37 @@ Option B (backward-compat) deployed:
 - NEA-212: NEEDS_REVIEW
 - NEA-213 Cross-App Identity: NEEDS_REVIEW
 - NEA-218 Activation Code: CONCERN
+
+---
+
+## 2026-05-21 [CC]
+### TYPE: MEMO
+### STATUS: DONE
+
+**Session-Summary 2026-05-21 — Chameleon + SecureChat**
+
+Abgeschlossene Issues:
+
+| Issue | Titel | Status |
+|-------|-------|--------|
+| NEA-211 | Chameleon Accessibility Service not registered | Done ✅ |
+| NEA-212 | SecureChat sx_ Identity silent failure (QR fix) | Done ✅ |
+| NEA-237 | Decoy Profile Tier-Mismatch PRO vs ELITE | Done ✅ |
+| NEA-238 | Chameleon QR Scanner fehlte | Done ✅ |
+
+Commits (chameleon): `aab11f6` QR-Bundle-Fix, `2a5f506` Decoy ELITE, `50e0520` QR Scanner
+Commits (securechat): `120c943` Compose-State-Fix
+
+**NEA-238 Scope:**
+- `ContactKeyDao` + `ChameleonDatabase.contactKeyDao()` + Hilt-Provider
+- `AddContactScreen` (ZXing ScanContract + Paste-Feld)
+- `AddContactViewModel` (URI-Parse, Ed25519-Verify via `ChameleonCrypto.verify`, Room-Insert)
+- `Screen.AddContact` Route + NavGraph-Verdrahtung
+- `MessengerScreen.onAddContact` → `Screen.AddContact` (war `Screen.KeyExchange`)
+
+**Offene Codex-Punkte (weiterhin):**
+- NEA-218: Certificate Pinning für `ActivationCodeClient` (OkHttpClient ohne Pinning)
+- NEA-212 Follow-up: `KeystoreManager.getOrCreateSigningKeyPair()` — ungenutzer AndroidKeyStore-EC/ED25519-Pfad, deprecaten oder entfernen
+- NEA-213: Cross-App QR-Import-Test (Chameleon QR → SecureChat NewContactViewModel) noch nicht durchgeführt
+- T6 Live-Test: E2E-Chat (Kontakte auf Testgeräten anlegen, Nachricht senden/empfangen)
+
