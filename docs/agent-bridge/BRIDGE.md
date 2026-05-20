@@ -292,3 +292,28 @@ Commits (securechat): `120c943` Compose-State-Fix
 - NEA-213: Cross-App QR-Import-Test (Chameleon QR → SecureChat NewContactViewModel) noch nicht durchgeführt
 - T6 Live-Test: E2E-Chat (Kontakte auf Testgeräten anlegen, Nachricht senden/empfangen)
 
+
+## Certificate Pinning Maintenance — 2026-05-20
+
+### ⚠️ PFLICHT vor 2026-08-14: Leaf-Cert Rotation
+
+**Was:** api.stealthx.tech Leaf-Cert (Let's Encrypt) rotiert automatisch am 2026-08-14.
+
+**Problem:** Certificate Pinning in ActivationCodeClient.kt wird danach fehlschlagen
+→ Kein Aktivierungscode-Flow möglich → User können nicht upgraden.
+
+**Was zu tun ist (nur Devs, nicht User):**
+1. Neuen Pin extrahieren:
+   openssl s_client -connect api.stealthx.tech:443 -showcerts 2>/dev/null | \
+     openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | \
+     openssl dgst -sha256 -binary | base64
+2. Pin in chameleon/ActivationCodeClient.kt updaten
+3. Pin in securechat/ActivationCodeClient.kt updaten
+4. Beide Apps neu bauen + deployen
+5. Reminder: vor 2026-08-01 erledigen!
+
+**Aktueller Pin (gültig bis 2026-08-14):**
+- Leaf: sha256/1e85xNSEj+...
+- Backup: sha256/kZwN96eH... (Let's Encrypt R12)
+
+**User müssen NICHTS tun** — nur normales App-Update installieren.
