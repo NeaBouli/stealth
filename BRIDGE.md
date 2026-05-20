@@ -3,6 +3,24 @@
 
 ---
 
+## 2026-05-20 [CC]
+### TYPE: MEMO
+### STATUS: INFO
+
+**Session-Summary: NEA-218 + QR-Fix — StealthX Android Apps**
+
+NEA-218 (Activation Code Flow) wurde in letzter Session abgeschlossen:
+- SecureChat: `SettingsViewModel.activateCode()` + `ActivationCodeClient` (OkHttp WS) + `ActivationCodeDialog` in SettingsScreen
+- Chameleon: separates `ActivationViewModel` (wegen NavGraph-Scope-Konflikt mit SettingsViewModel) + gleiche ActivationCodeClient/Dialog-Pattern
+
+QR-Code Bug (2026-05-20):
+- SecureChat `MyIdScreen`: silent Main-Thread-Exception in `remember{}` gefixt → `LaunchedEffect + Dispatchers.IO`
+- Chameleon `KeyExchangeScreen`: QR war Literal-Placeholder `[QR Code]` → ZXing QRCodeWriter implementiert
+
+Installiert auf: S7 (ce10160adc00152604) ✅ Tab S4 (ce12182c68644439037e) ✅ S10 (RF8N313QMFL) ✅ (alle neuesten APKs)
+
+---
+
 ## 2026-05-19 [CC]
 ### TYPE: FIX
 ### STATUS: DONE
