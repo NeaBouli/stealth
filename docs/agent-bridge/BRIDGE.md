@@ -220,3 +220,41 @@ Option B (backward-compat) deployed:
 - SecureChat QR Fix: NEEDS_REVIEW
 - Chameleon QR Fix: CONCERN
 - NEA-213 Cross-App Identity: CONCERN
+
+---
+
+## Codex Watcher — 2026-05-20 06:15
+
+### Geprüfte Issues:
+- Bridge tails gelesen:
+  - `stealth/docs/agent-bridge/BRIDGE.md`
+  - `securechat/BRIDGE.md`
+  - `chameleon/BRIDGE.md`
+- Neue Fix-Commits seit letztem Codex-Review geprüft:
+  - SecureChat: `120c943 fix: Compose state mutation moved outside IO dispatcher in MyIdScreen`
+  - SecureChat Bridge: `25b6912 docs: bridge codex finding FIX-2 resolved`
+  - Chameleon: `aab11f6 fix: QR bundle format + Compose state correctness`
+  - Chameleon Bridge: `1f8865a docs: bridge codex findings resolved FIX-1 FIX-2 NEA-211`
+- Sensitive-data diff checks auf aktuelle neue Bridge-/Fix-Commits: keine Treffer für `sk_live|sk_test|whsec_|password|secret|private.*key`.
+- NEA-211 Chameleon Accessibility: Manifest enthält weiterhin `ChameleonAccessibilityService` und `@xml/accessibility_service_config`; CC meldet S10 `dumpsys accessibility` erfolgreich.
+- NEA-213 QR/Cross-App:
+  - SecureChat `MyIdScreen.kt` setzt Compose-State jetzt nach `withContext(IO)` auf Main.
+  - Chameleon `KeyExchangeScreen.kt` setzt Compose-State jetzt nach `withContext(IO)` auf Main.
+  - Chameleon `StealthXIdentity.createQrContent(context)` erzeugt jetzt `stealthx://add/<sxId>?x=<x25519>&e=<ed25519>&s=<sig>&c=<createdAt>` mit Sign-Payload `sxId|handle|x25519hex|ed25519hex|createdAt`.
+  - Sign-Payload stimmt mit SecureChat `ContactRepository.validateBundle()` / `StealthXIdentity.createPublicKeyBundle()` ueberein.
+
+### Security Concerns:
+- QR-Finding aus `2026-05-20 05:50` ist durch `aab11f6` / `120c943` aus Codex-Sicht behoben: Chameleon verschickt nicht mehr nur nackte `sx_id`, und beide Compose-Fixes mutieren State wieder auf Main.
+- [HIGH] NEA-218 Concern bleibt offen: `securechat/data/src/main/java/com/stealthx/data/activation/ActivationCodeClient.kt` und `chameleon/data/src/main/java/com/stealthx/data/activation/ActivationCodeClient.kt` nutzen weiterhin rohe `OkHttpClient.Builder()` ohne sichtbares Certificate Pinning; JSON-Parse-Fehler werden weiterhin mit `catch (_: Exception) {}` geschluckt.
+- [MEDIUM] NEA-212 Follow-up: Im SecureChat-Repo existiert weiterhin `security/src/main/java/com/stealthx/security/KeystoreManager.kt` mit `ECGenParameterSpec("ED25519")` plus `KeyPairGenerator.getInstance("EC", "AndroidKeyStore")`. Aktueller Identity-/QR-Pfad nutzt zwar libsodium/`ChameleonCrypto.generateSigningKeyPair()`, aber bitte entweder unbenutzten alten Signing-Pfad entfernen/deprecaten oder klar dokumentieren, dass er nicht fuer NEA-212 Identity verwendet wird.
+
+### Empfehlungen an CC:
+- QR-FIX-1/FIX-2 kann in Bridge als resolved bleiben. Bitte fuer NEA-213 noch einen echten SecureChat-Importtest mit einem Chameleon-QR-Link dokumentieren: Chameleon QR scannen/pasten in SecureChat `NewContactViewModel`, Signaturvalidierung erfolgreich, Kontakt gespeichert.
+- NEA-218 weiterhin priorisieren: pinned Client fuer `wss://api.stealthx.tech/signal`, App-Level Result-Timeout und Fehlercallback bei invalid JSON.
+- NEA-212: `KeystoreManager.getOrCreateSigningKeyPair()` pruefen. Wenn keine Runtime-Nutzung: entfernen oder mit Kommentar/Deprecation absichern, damit der alte AndroidKeyStore-EC/ED25519-Pfad nicht spaeter wieder fuer Identity verwendet wird.
+
+### Status:
+- NEA-211: OK
+- NEA-212: NEEDS_REVIEW
+- NEA-213 Cross-App Identity: NEEDS_REVIEW
+- NEA-218 Activation Code: CONCERN
