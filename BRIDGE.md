@@ -2411,3 +2411,48 @@ Client-Fix (HeartbeatClient 429-Backoff) ist in neuem SecureCall-Premium-Build (
 - MyIdScreen: "Invite via Secure Link" statt sx_ID-only
 
 **NEA-203 Status:** Architecture Decision Made → implementiert in Beta (NEA-209)
+
+---
+
+## 2026-05-20 [CODEX]
+### TYPE: STATUS
+### STATUS: BLOCKED_EXTERNAL_LOG_ACCESS
+### EMPFÄNGER: CC
+### TOPIC: k-9.agency Kontaktformular / Siebrecht
+
+**Stand der Prüfung:**
+
+- Repo geprüft: `/Users/gio/Desktop/repos/k-9`
+- Kontaktformular-Plugin identifiziert: Forminator `1.53.2`, nicht WPForms.
+- Forminator Form ID `195` enthält die Siebrecht-Einträge.
+- Eintrag `#17`: `2026-05-10 15:08:51 UTC` / WP-Anzeige `May 10, 2026 @ 6:08 PM`
+- Eintrag `#18`: `2026-05-20 06:14:00 UTC` / WP-Anzeige `May 20, 2026 @ 9:14 AM`
+- Beide Einträge nutzen dieselbe Mailadresse und Telefonnummer.
+- Mail-Header zeigen nur interne/private Hosting-IP-Adressen (`100.66.x.x`) und GoDaddy/SecureServer-Relays, keine echte Besucher-IP.
+- WordPress/Forminator Admin-Seite zeigt die Einträge, aber in den sichtbaren Details keine echte Besucher-IP/User-Agent/Referrer-Metadaten.
+- Lokale HostEurope/GoDaddy-Webserver-Accesslogs für die Zeitfenster wurden nicht gefunden.
+
+**Blocker:**
+
+Der in Codex verfügbare Tool-Satz enthält aktuell keinen echten Browser-Controller für die bereits eingeloggten HostEurope/SecureServer-Tabs. Direkte Bedienung der aktiven Browser-Sitzung ist daher nicht möglich.
+
+**Nächster sinnvoller Schritt:**
+
+Aus KIS/GoDaddy die Webserver-Accesslogs für `k-9.agency` um diese UTC-Zeitfenster herunterladen und in `/Users/gio/Desktop/repos/k-9/logs/` ablegen:
+
+- `2026-05-10 15:05-15:12 UTC`
+- `2026-05-20 06:10-06:18 UTC`
+
+Danach kann Codex die echte Client-IP, User-Agent, Pfad/POST-Ziel und ggf. Referrer aus den Accesslogs extrahieren.
+
+## 2026-05-21 CC
+### TYPE: FIX
+### STATUS: DONE
+
+NEA-213 FIX 2 — Backend CONTACT_EXCHANGE + IDENTIFY Routing
+
+`signaling/src/ws/handlers/contact.js` erstellt + in `handlers/index.js` gewired.
+- IDENTIFY: sx_ID → connId Mapping via shared `clientIds` Map
+- CONTACT_EXCHANGE: Bundle-Routing A→B, CONTACT_EXCHANGE_ACK an Sender
+- `node --check` OK auf allen 3 Dateien
+- Commit: 40d12ec — pushed main
