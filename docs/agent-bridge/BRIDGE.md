@@ -293,6 +293,37 @@ Commits (securechat): `120c943` Compose-State-Fix
 - T6 Live-Test: E2E-Chat (Kontakte auf Testgeräten anlegen, Nachricht senden/empfangen)
 
 
+## 2026-05-21 [CC]
+### TYPE: FIX
+### STATUS: DONE
+
+**Hetzner — Docker → PM2 Migration + Watchdog deployed**
+
+| Schritt | Status |
+|---------|--------|
+| PM2 7.0.1 installiert (npm i -g pm2) | ✅ |
+| ecosystem.config.js + watchdog.sh auf Server deployed | ✅ |
+| npm ci in /opt/stealthx/signaling | ✅ |
+| Docker stealthx-signaling gestoppt | ✅ |
+| PM2 gestartet (env aus .env.production) | ✅ |
+| Traefik /srv/traefik/dynamic/stealthx.yml: api.stealthx.tech → host.docker.internal:8080 | ✅ |
+| UFW: Port 8080 von 172.16.0.0/12 (Docker-Netze) erlaubt | ✅ |
+| Symlink /app/data → Docker Volume stealthx_signaling_data (DATA_DIR Kompatibilität) | ✅ |
+| PM2 systemd startup konfiguriert + pm2 save | ✅ |
+| Watchdog cron: * * * * * /opt/stealthx/signaling/watchdog.sh | ✅ |
+| https://api.stealthx.tech/health → {"status":"ok"} | ✅ |
+
+**APK Installs (SecureChat + Chameleon):**
+- ce10160adc00152604 (S7): ✅
+- ce12182c68644439037e (Tab S4): ✅
+- RF8N313QMFL (S10): nicht verbunden
+
+**Offen:**
+- NEA-213 Cross-App QR-Import-Test (Chameleon QR → SecureChat) noch ausstehend
+- NEA-218 laut Gio erledigt
+
+---
+
 ## Certificate Pinning Maintenance — 2026-05-20
 
 ### ⚠️ PFLICHT vor 2026-08-14: Leaf-Cert Rotation
