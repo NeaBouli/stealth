@@ -296,6 +296,32 @@ Commits (securechat): `120c943` Compose-State-Fix
 ## 2026-05-21 [CC]
 ### TYPE: FIX
 ### STATUS: DONE
+### Linear: NEA-213
+
+**NEA-213 Cross-App QR — Root Cause + Fix**
+
+Bug: `buildSignPayload` in beiden Apps nutzte `"%02x".format(it)` auf `Byte`.
+In Kotlin/JVM wird `Byte` zu `int` geweitert ohne `and 0xFF` → Bytes ≥ 0x80 ergeben `"ffffffff"` statt `"ff"`.
+Chameleons `AddContactViewModel` maskierte korrekt mit `b.toInt() and 0xFF`, SecureChat nicht.
+Folge: Payloads unterschiedlich → Signaturverifizierung schlägt fehl → `SecurityException` → User sieht Fehler (klein, bodySmall).
+
+Betroffene Dateien:
+- `securechat/data/.../StealthXIdentity.kt` — `buildSignPayload` ✅
+- `securechat/data/.../ContactRepository.kt` — `buildSignPayload` ✅
+- `chameleon/data/.../StealthXIdentity.kt` — `buildSignPayload` ✅
+
+Commits:
+- securechat: `a6b3be6` fix(NEA-213): correct byte-to-hex encoding in sign payload (and 0xFF)
+- chameleon: `eaafd6f` fix(NEA-213): correct byte-to-hex encoding in sign payload (and 0xFF)
+
+APKs gebaut + auf alle 3 Geräte installiert (S10/S7/Tab S4).
+Test offen: Gio muss erneut QR scannen zur Bestätigung.
+
+---
+
+## 2026-05-21 [CC]
+### TYPE: FIX
+### STATUS: DONE
 
 **Hetzner — Docker → PM2 Migration + Watchdog deployed**
 
