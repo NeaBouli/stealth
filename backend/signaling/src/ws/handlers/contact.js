@@ -103,5 +103,59 @@ module.exports = function contactHandlers(ctx) {
         delivered
       }));
     },
+
+    /**
+     * MESSAGE — route an encrypted ratchet message payload from A to B.
+     * Payload is an opaque stealthx://msg?... URI — server never inspects content.
+     */
+    MESSAGE(ws, connId, msg) {
+      const fromSxId = getClientId(connId);
+      if (!fromSxId) {
+        return ws.send(JSON.stringify({ type: "ERROR", error: "not_identified" }));
+      }
+
+      const to = (typeof msg.to === "string" ? msg.to : "").trim();
+      if (!SX_ID_REGEX.test(to)) {
+        return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_recipient" }));
+      }
+
+      const payload = (typeof msg.payload === "string" ? msg.payload : "").trim();
+      if (!payload.startsWith("stealthx://msg") || payload.length > 8192) {
+        return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_payload" }));
+      }
+
+      const delivered = sendToClient(to, {
+        type: "MESSAGE",
+        from: fromSxId,
+        payload
+      });
+
+      console.log("[MESSAGE]", fromSxId, "->", to, delivered ? "✓ delivered" : "offline");
+
+      ws.send(JSON.stringify({ type: "MESSAGE_ACK", to, delivered }));
+    },
+
+    /**
+     * READ_RECEIPT — notify sender that their messages have been read.
+     * Server routes opaque receipt; client updates delivery status to READ.
+     */
+    READ_RECEIPT(ws, connId, msg) {
+      const fromSxId = getClientId(connId);
+      if (!fromSxId) {
+        return ws.send(JSON.stringify({ type: "ERROR", error: "not_identified" }));
+      }
+
+      const to = (typeof msg.to === "string" ? msg.to : "").trim();
+      if (!SX_ID_REGEX.test(to)) {
+        return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_recipient" }));
+      }
+
+      sendToClient(to, {
+        type: "READ_RECEIPT",
+        from: fromSxId
+      });
+
+      console.log("[READ_RECEIPT]", fromSxId, "->", to);
+    },
   };
 };
