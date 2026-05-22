@@ -2456,3 +2456,32 @@ NEA-213 FIX 2 — Backend CONTACT_EXCHANGE + IDENTIFY Routing
 - CONTACT_EXCHANGE: Bundle-Routing A→B, CONTACT_EXCHANGE_ACK an Sender
 - `node --check` OK auf allen 3 Dateien
 - Commit: 40d12ec — pushed main
+
+---
+
+## 2026-05-22 [CC]
+### TYPE: CHORE
+### STATUS: DONE
+### EMPFÄNGER: CODEX|GIO
+
+**CodeRabbit AI Code Review — aktiviert auf NeaBouli/stealth**
+
+GitHub App `coderabbitai` installiert auf NeaBouli-Organisation (Gio autorisiert).
+`.coderabbit.yaml` committed + gepusht (commit `3a3edb2`).
+
+Konfiguration:
+- Sprache: Deutsch
+- Profil: assertive
+- Auto-Review auf jedem PR gegen `main`
+- Pfad-spezifische Instruktionen:
+  - `**/*.rs` — kein unwrap() in Prod, Result/Option vollständig, kein unsafe ohne Begründung, Nonce-Einzigartigkeit, Tokio async korrekt
+  - `client_android/**/*.kt` — WebSocket/WebRTC kein Plaintext-Pfad, Permissions, fail-closed Crypto
+  - `backend/**/*.js` — kein eval(), IDENTIFY vor Message-Routing, kein Logging sensitiver Daten, Rate-Limiting
+  - `core_crypto/**` — höchste Priorität: Nonce, Key-Derivation, Memory-Wipe nach Key-Verwendung
+  - `**/*WebSocket*.kt` — fail-closed Pflicht, kein encrypt-or-send-anyway Pattern
+
+Ab nächstem PR: automatischer Review + Inline-Kommentare.
+
+⚠️ Offene Punkte (unverändert):
+- k-9.agency Accesslogs von HostEurope bestellen (Zeitfenster: 2026-05-10 15:05-15:12 UTC + 2026-05-20 06:10-06:18 UTC) → dann Siebrecht-Investigation abschließbar
+- Cert-Rotation vor 2026-08-14: ActivationCodeClient.kt Pin erneuern
