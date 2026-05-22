@@ -3,6 +3,35 @@
 
 ---
 
+## 2026-05-22 [CC]
+### TYPE: FEAT
+### STATUS: DONE — LIVE (Railway)
+### Commit: 7cbae1c
+
+**Signal Server — MESSAGE + READ_RECEIPT Relay Handler**
+
+`backend/signaling/src/ws/handlers/contact.js` erweitert:
+
+**MESSAGE handler:**
+- Validiert `fromSxId` (IDENTIFY erforderlich), `to` (SX_ID_REGEX), `payload` (`stealthx://msg` Prefix, max 8192 Bytes)
+- Routet opakes Ratchet-Payload A→B via `sendToClient()`
+- Sendet `MESSAGE_ACK { to, delivered }` zurück an Sender
+- Server inspiziert Inhalt nie (E2E-Prinzip gewahrt)
+
+**READ_RECEIPT handler:**
+- Validiert `fromSxId` + `to`
+- Routet Lesebestätigung vom Lesenden zurück an ursprünglichen Sender
+- Kein ACK nötig (fire-and-forget Richtung)
+
+Push: `NeaBouli/stealth main` → Railway auto-deployed ✅
+
+**Client-seitige Gegenstelle (securechat `92b7b7c`):**
+- `ContactExchangeManager.sendReadReceipt(toSxId)` → sendet READ_RECEIPT via WS wenn Chat geöffnet
+- `ContactExchangeManager.handleReadReceipt(json)` → markiert eigene OUTGOING-Nachrichten als READ
+- `ChatViewModel.init` → `markRead()` + `sendReadReceipt()` kombiniert
+
+---
+
 ## 2026-05-20 [CC]
 ### TYPE: MEMO
 ### STATUS: INFO
