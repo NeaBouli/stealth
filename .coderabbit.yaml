@@ -1,0 +1,72 @@
+language: "de-DE"
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+
+  path_filters:
+    - "!**/BRIDGE.md"
+    - "!**/*.md"
+    - "!**/build/**"
+    - "!**/.gradle/**"
+    - "!**/target/**"
+    - "!**/node_modules/**"
+    - "!**/local.properties"
+
+  path_instructions:
+    - path: "**/*.rs"
+      instructions: |
+        Sicherheitskritisches Rust-Modul (SecureCall Crypto-Core).
+        Prüfe auf:
+        - Kein unwrap() oder expect() ohne aussagekräftige Nachricht in Produktionscode
+        - Result/Option vollständig behandelt — kein silent panic
+        - Speichersicherheit: kein unsafe ohne Kommentar + Begründung
+        - Kryptographie: Nonce-Einzigartigkeit, kein Klartext-Fallback bei Crypto-Fehler
+        - Tokio async: kein blocking call im async context, kein Deadlock durch Mutex in async
+        - Keine hardcodierten Keys oder Secrets
+
+    - path: "client_android/**/*.kt"
+      instructions: |
+        Android SecureCall Client — VoIP + E2E-Verschlüsselung.
+        Prüfe auf:
+        - Kein Klartext-Fallback wenn Crypto nicht verfügbar (fail closed, nicht fail open)
+        - WebSocket/WebRTC: kein unverschlüsselter Datenpfad
+        - Android API-Kompatibilität: minSdk beachten
+        - Permissions: RECORD_AUDIO, CAMERA korrekt zur Laufzeit abgefragt
+        - Hilt DI: kein zirkulärer Inject
+        - Coroutines: kein State-Mutation aus IO-Dispatcher in Compose
+
+    - path: "backend/**/*.js"
+      instructions: |
+        Node.js Signaling-Backend (Railway-deployed).
+        Prüfe auf:
+        - Kein direktes eval(), kein unsanitiertes User-Input in Queries oder Responses
+        - WebSocket-Handler: IDENTIFY vor jeder Message-Routing-Operation geprüft
+        - Kein Logging von sensitiven Daten (sx_ID Payload, Keys, Tokens)
+        - Rate-Limiting vorhanden bei Auth-relevanten Endpunkten
+        - Fehlerbehandlung: kein unhandled Promise rejection, kein process.exit() ohne Cleanup
+
+    - path: "core_crypto/**"
+      instructions: |
+        Crypto-Kern — höchste Priorität.
+        Prüfe: Nonce-Generierung (kryptographisch sicher, nie wiederverwendet),
+        Key-Derivation korrekt, kein Klartext-Leak in Fehlerpfaden,
+        Memory-Wiping nach Key-Verwendung.
+
+    - path: "**/*WebSocket*.kt"
+      instructions: |
+        Kritischer Pfad: Prüfe dass kein Plaintext gesendet wird wenn Verschlüsselung fehlschlägt.
+        fail-closed ist Pflicht — kein encrypt-or-send-anyway Pattern.
+
+chat:
+  auto_reply: true
