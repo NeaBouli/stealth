@@ -12,6 +12,9 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "overrides": {
+    "ws": "^8.21.0"
+  },
   "dependencies": {
     "@getbrevo/brevo": "^5.0.3",
     "ethers": "^6.16.0",
@@ -20,6 +23,6 @@
     "nodemailer": "^8.0.7",
     "resend": "^6.10.0",
     "stripe": "^22.0.0",
-    "ws": "^8.16.0"
+    "ws": "^8.21.0"
   }
 }
