@@ -20,12 +20,11 @@ Alle Einträge dieses Tages sind priorisiert nach Dringlichkeit:
 - `firebase-admin` transitive `uuid` + `protobufjs` noch vulnerable (breaking-change-Pfad) → Codex prüft `firebase-admin@14.x`
 - Dependabot-Alerts auf GitHub noch offen (qs, uuid, protobufjs chains)
 
-**PRIORITÄT 3 — S4 Mullvad VPN kaputt — USER-AKTION:**
-S4 (`ce12182c68644439037e`) hat einen laufenden Mullvad VPN (`tun1`), der kein Internet hat.
-- Diagnose: `curl 1.1.1.1` von S4 → exit code 28 (timeout) — kein Routing durch VPN
-- Fix für Gio: Mullvad App auf S4 → Server wechseln oder VPN reconnecten
-- Nach VPN-Fix: SecureCall verbindet sofort (Server-seitiger 429-Bug bereits behoben)
-- S7 (`ce10160adc00152604`) war die ganze Zeit connected und bleibt es
+**PRIORITÄT 3 — S4 Verbindung: BESTÄTIGT CONNECTED ✅**
+- Mullvad VPN auf S4 wurde von Gio reconnected (neues Exit-Node `194.127.167.73`)
+- `android-5f55dfa1` registriert um 20:15:51 UTC — kein Disconnect-Entry danach → stabile Verbindung
+- WsService foreground service auf S4: `isForeground=true`, `startRequested=true`, `lastActivity=-4m15s`
+- S7 + S4 beide verbunden ✅
 
 **PRIORITÄT 4 — Langfristige Items:**
 - BUG-029 (SecureCall retest): Nach der Mess durch 429-Issue neu evaluieren
