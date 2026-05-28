@@ -3,6 +3,69 @@
 
 ---
 
+## 2026-05-28 [CC]
+### TYPE: SECURITY
+### STATUS: DONE
+### Commit: a07da64
+
+**ws Vulnerability Patch — GHSA-58qx-3vcg-4xpx (Uninitialized Memory Disclosure)**
+
+`backend/signaling` — `ws@8.20.0` lag im verwundbaren Bereich (8.0.0–8.20.0).
+
+Fix:
+- Direktes dep: `ws@^8.21.0` in `package.json`
+- `ethers@6` pinnte transitive `ws@8.17.1` (ebenfalls verwundbar) — gelöst via `overrides: { "ws": "^8.21.0" }` in package.json
+- Result: nur eine ws-Instanz im lockfile bei `8.21.0`
+- 117 Tests grün nach Upgrade
+
+Verbleibende moderate findings:
+- `uuid` via `firebase-admin` transitive chain — Fix würde firebase-admin 13.7.0→10.3.0 downgraden (breaking) — SKIP
+- `protobufjs <=7.5.7` via firebase transitive — nicht direkt upgradebar ohne firebase-Downgrade — SKIP
+- `qs / express 4.22.1` — qs-DoS-Fix nicht in 4.x verfügbar, kein Express 5 Upgrade ohne API-Audit
+
+Codex: Bitte `firebase-admin@14.x` (wenn verfügbar) auf uuid/protobuf-Fix prüfen.
+
+---
+
+## 2026-05-28 [CC]
+### TYPE: BUG
+### STATUS: INVESTIGATION — Kein Server-seitiger Trigger gefunden
+### Incident: "securecall bei allen anwendern disconnected"
+
+**Incident-Analyse: Massentrennung nach Dialer-APK-Push (2026-05-25)**
+
+Zeitlinie:
+- CC pushed `fix: ABC-mode input field layout` → neues APK auf Geräte deployed
+- Kurz danach: Gio meldet "securecall bei allen anwendern disconnected"
+
+Root-Cause-Investigation:
+1. CI Workflows: kein Auto-Deploy des Servers — nur lint + security audit → **kein Server-Restart durch CI**
+2. `watchdog.sh`: nur PM2-Status + HTTP `/health` — kein git-pull, kein restart-trigger → **kein watchdog-bedingter Restart**
+3. `server.js`, `heartbeat.js`, `contact.js`, `context.js`: keine offensichtliche Crash-Quelle
+4. APK-Change: rein UI-seitig (DialerFragment ABC-mode gravity + padding) → **null Einfluss auf WebSocket-Schicht**
+
+Wahrscheinlichste Ursache: **Zufällige Koinzidenz** — Hetzner-Netzwerk-Interruption, PM2-Restart durch Memory-Druck, oder TLS-Session-Timeout (ACTIVE_CALL_TIMEOUT=180s). Der APK-Push hatte keine serverseitige Komponente.
+
+ws-Vulnerability (GHSA-58qx-3vcg-4xpx) könnte bei gezielter Ausnutzung Disconnects verursachen — daher sofort gepatcht (a07da64).
+
+Empfehlung an Codex: PM2 Logs vom 2026-05-25 auf Hetzner prüfen (`pm2 logs --lines 500`).
+
+---
+
+## 2026-05-28 [CC]
+### TYPE: FIX
+### STATUS: DONE
+
+**SecureCall DialerFragment — ABC-mode Eingabefeld abgeschnitten**
+
+Problem: Bei Umschaltung auf Buchstaben-Eingabe zeigte das EditText-Feld nur `"er call id or num..."` — Hint-Text war abgeschnitten weil `gravity=CENTER` + `textSize=28f` + `paddingStart=48dp` zu Overflow führten.
+
+Fix:
+- Alpha-mode: `gravity=START|CENTER_VERTICAL`, `textSize=18f`, `paddingStart=16dp, paddingEnd=48dp`
+- Phone-mode restore: `gravity=CENTER`, `textSize=28f`, `paddingStart=48dp, paddingEnd=48dp`
+
+---
+
 ## 2026-05-22 [CC]
 ### TYPE: FEAT
 ### STATUS: DONE — LIVE (Railway)
