@@ -4,6 +4,91 @@
 ---
 
 ## 2026-05-28 [CC]
+### TYPE: MEMO
+### STATUS: FÜR CODEX — Session-Summary, Audit-Queue, offene Punkte
+
+**CODEX LESE-ANWEISUNG (2026-05-28)**
+
+Alle Einträge dieses Tages sind priorisiert nach Dringlichkeit:
+
+**PRIORITÄT 1 — Sofort-Deploy erforderlich:**
+- `dd89bf0`: TRUST_PROXY-Fix → Hetzner braucht `git pull && pm2 reload ecosystem.config.js --update-env`
+  Bis dahin kann S4 (und alle User die nach dem 10. verbinden) NICHT connected bleiben.
+
+**PRIORITÄT 2 — Security-Audit:**
+- `a07da64`: ws@8.21.0 (GHSA-58qx-3vcg-4xpx) ✅ gepatcht
+- `firebase-admin` transitive `uuid` + `protobufjs` noch vulnerable (breaking-change-Pfad) → Codex prüft `firebase-admin@14.x`
+- Dependabot-Alerts auf GitHub noch offen (qs, uuid, protobufjs chains)
+
+**PRIORITÄT 3 — Verifikation nach Deploy:**
+- S4 (`ce12182c68644439037e`) muss nach pm2-Reload verbinden
+- S7 (`ce10160adc00152604`) war die ganze Zeit connected (vor dem Limit)
+- SecureCall ABC-mode Dialer-Fix (commit in stealth android) — S7 + S4 brauchen ggf. APK-Reinstall
+
+**PRIORITÄT 4 — Langfristige Items:**
+- BUG-029 (SecureCall retest): Nach der Mess durch 429-Issue neu evaluieren
+- `MAX_CONNS_PER_IP=10`: Mit echten IPs jetzt korrekt. Bei CGNAT-Usern (Mobilfunk-Kunden hinter ISP-NAT) könnte 10 noch zu niedrig sein. Empfehlung: Auf 5 pro realer IP reduzieren (3 Devices × 1.5x Headroom) — spart Speicher, verhindert Missbrauch.
+- Admin-Endpoint `/admin/stats` für `ipConnections` Map hinzufügen (Auth via ADMIN_API_KEY)
+
+---
+
+## 2026-05-28 [CC]
+### TYPE: BUG
+### STATUS: FIX PUSHED — Hetzner-Deploy ausstehend
+### Commit: dd89bf0
+### EMPFÄNGER: CODEX — bitte nach Deploy verifizieren
+
+**ROOT CAUSE GEFUNDEN: Massentrennung = 429-Loop durch fehlende TRUST_PROXY**
+
+**Symptom:** S4 (Tab S4, `ce12182c68644439037e`) zeigt "disconnected" in SecureCall.
+S7 ist verbunden. Logcat zeigt durchgängig:
+```
+E WS_SERVICE: java.net.ProtocolException: Expected HTTP 101 response but was '429 Too Many Requests'
+W HB      : [FAILURE] WebSocket failure: Expected HTTP 101 response but was '429 Too Many Requests'
+```
+Retry-Intervall: ~5 Minuten (Heartbeat-Backoff). Betrifft alle User die nach dem 10. verbunden waren.
+
+**Root Cause:**
+`ecosystem.config.js` auf Hetzner hatte kein `TRUST_PROXY=true`.
+`getClientIp()` in `src/middleware/ip.js` liest `X-Forwarded-For` nur wenn
+`TRUST_PROXY=true` ODER `RAILWAY_ENVIRONMENT` gesetzt. Da der Server auf Hetzner
+(nicht Railway) läuft, war keines von beidem gesetzt.
+
+Folge: `req.socket.remoteAddress` = `127.0.0.1` (nginx loopback) für ALLE Verbindungen.
+`ipConnections.get('127.0.0.1')` zählte alle User zusammen.
+`MAX_CONNS_PER_IP = 10` → nach 10 verbundenen Clients erhalten ALLE weiteren Verbindungsversuche
+HTTP 429 beim WebSocket-Upgrade → `disconnected` State in der App.
+
+**Der Massentrennnungs-Trigger:** Server-Neustart (Ursache unbekannt, evtl. PM2 memory-restart
+bei `max_memory_restart: 512M`). Alle User versuchten gleichzeitig neu zu verbinden.
+Die ersten 10 kamen rein, der Rest fiel in die 429-Loop.
+
+**Fix:** `TRUST_PROXY=true` in `ecosystem.config.js`:
+```js
+env: {
+  NODE_ENV: "production",
+  TRUST_PROXY: "true",   // ← neu
+}
+```
+Commit `dd89bf0` gepusht.
+
+**Deploy-Anweisung für Gio (auf Hetzner):**
+```bash
+cd /opt/stealthx/signaling
+git pull
+pm2 reload ecosystem.config.js --update-env
+```
+`pm2 reload` = graceful restart — setzt `ipConnections` auf 0, TRUST_PROXY aktiv.
+Danach sollte S4 (und alle anderen blockierten User) sofort verbinden.
+
+**Codex-Aufgabe:**
+1. Nach Deploy verifizieren: `pm2 logs signaling --lines 20` — sollte KEINE 429 mehr zeigen
+2. Prüfen ob `MAX_CONNS_PER_IP=10` mit realen IPs noch sinnvoll ist (bei CGNAT evtl. erhöhen auf 3-5 pro realer IP)
+3. Empfehlung: `ipConnections`-Counter als `/admin/stats` Endpoint exposen für besseres Monitoring
+
+---
+
+## 2026-05-28 [CC]
 ### TYPE: SECURITY
 ### STATUS: DONE
 ### Commit: a07da64
@@ -29,26 +114,12 @@ Codex: Bitte `firebase-admin@14.x` (wenn verfügbar) auf uuid/protobuf-Fix prüf
 
 ## 2026-05-28 [CC]
 ### TYPE: BUG
-### STATUS: INVESTIGATION — Kein Server-seitiger Trigger gefunden
+### STATUS: CLOSED — Root Cause gefunden, Fix in `dd89bf0`, Deploy ausstehend
 ### Incident: "securecall bei allen anwendern disconnected"
 
-**Incident-Analyse: Massentrennung nach Dialer-APK-Push (2026-05-25)**
-
-Zeitlinie:
-- CC pushed `fix: ABC-mode input field layout` → neues APK auf Geräte deployed
-- Kurz danach: Gio meldet "securecall bei allen anwendern disconnected"
-
-Root-Cause-Investigation:
-1. CI Workflows: kein Auto-Deploy des Servers — nur lint + security audit → **kein Server-Restart durch CI**
-2. `watchdog.sh`: nur PM2-Status + HTTP `/health` — kein git-pull, kein restart-trigger → **kein watchdog-bedingter Restart**
-3. `server.js`, `heartbeat.js`, `contact.js`, `context.js`: keine offensichtliche Crash-Quelle
-4. APK-Change: rein UI-seitig (DialerFragment ABC-mode gravity + padding) → **null Einfluss auf WebSocket-Schicht**
-
-Wahrscheinlichste Ursache: **Zufällige Koinzidenz** — Hetzner-Netzwerk-Interruption, PM2-Restart durch Memory-Druck, oder TLS-Session-Timeout (ACTIVE_CALL_TIMEOUT=180s). Der APK-Push hatte keine serverseitige Komponente.
-
-ws-Vulnerability (GHSA-58qx-3vcg-4xpx) könnte bei gezielter Ausnutzung Disconnects verursachen — daher sofort gepatcht (a07da64).
-
-Empfehlung an Codex: PM2 Logs vom 2026-05-25 auf Hetzner prüfen (`pm2 logs --lines 500`).
+→ Vollständige Analyse und Fix-Details: erster Eintrag dieses Tages (dd89bf0)
+→ Kurz: `TRUST_PROXY=true` fehlte → alle IPs = 127.0.0.1 → MAX_CONNS_PER_IP=10 erschöpft
+→ APK-Push war irrelevant — reiner UI-Change ohne Server-Einfluss
 
 ---
 
