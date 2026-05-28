@@ -11,19 +11,21 @@
 
 Alle Einträge dieses Tages sind priorisiert nach Dringlichkeit:
 
-**PRIORITÄT 1 — Sofort-Deploy erforderlich:**
-- `dd89bf0`: TRUST_PROXY-Fix → Hetzner braucht `git pull && pm2 reload ecosystem.config.js --update-env`
-  Bis dahin kann S4 (und alle User die nach dem 10. verbinden) NICHT connected bleiben.
+**PRIORITÄT 1 — Deploy: ERLEDIGT ✅**
+- `dd89bf0`: TRUST_PROXY-Fix → SCP + `pm2 reload ecosystem.config.js --update-env` ausgeführt (2026-05-28 23:05 UTC)
+- Server läuft mit echten IPs (185.254.75.44, 85.74.194.9 in Logs) — 429-Bug behoben
 
 **PRIORITÄT 2 — Security-Audit:**
 - `a07da64`: ws@8.21.0 (GHSA-58qx-3vcg-4xpx) ✅ gepatcht
 - `firebase-admin` transitive `uuid` + `protobufjs` noch vulnerable (breaking-change-Pfad) → Codex prüft `firebase-admin@14.x`
 - Dependabot-Alerts auf GitHub noch offen (qs, uuid, protobufjs chains)
 
-**PRIORITÄT 3 — Verifikation nach Deploy:**
-- S4 (`ce12182c68644439037e`) muss nach pm2-Reload verbinden
-- S7 (`ce10160adc00152604`) war die ganze Zeit connected (vor dem Limit)
-- SecureCall ABC-mode Dialer-Fix (commit in stealth android) — S7 + S4 brauchen ggf. APK-Reinstall
+**PRIORITÄT 3 — S4 Mullvad VPN kaputt — USER-AKTION:**
+S4 (`ce12182c68644439037e`) hat einen laufenden Mullvad VPN (`tun1`), der kein Internet hat.
+- Diagnose: `curl 1.1.1.1` von S4 → exit code 28 (timeout) — kein Routing durch VPN
+- Fix für Gio: Mullvad App auf S4 → Server wechseln oder VPN reconnecten
+- Nach VPN-Fix: SecureCall verbindet sofort (Server-seitiger 429-Bug bereits behoben)
+- S7 (`ce10160adc00152604`) war die ganze Zeit connected und bleibt es
 
 **PRIORITÄT 4 — Langfristige Items:**
 - BUG-029 (SecureCall retest): Nach der Mess durch 429-Issue neu evaluieren
