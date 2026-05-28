@@ -126,16 +126,22 @@ class DialerFragment : Fragment() {
         val btnToggle = view.findViewById<Button>(R.id.btnToggleAlpha)
         btnToggle.setOnClickListener {
             isAlphaMode = !isAlphaMode
+            val density = resources.displayMetrics.density
+            val dp16 = (16 * density).toInt()
+            val dp48 = (48 * density).toInt()
             if (isAlphaMode) {
                 phoneDisplay.inputType = android.text.InputType.TYPE_CLASS_TEXT or
                     android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
                     android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
                 phoneDisplay.showSoftInputOnFocus = true
                 phoneDisplay.hint = "Enter Call ID or number"
+                // Reduce start padding + left-align so the hint isn't clipped at 28sp+48dp padding
+                phoneDisplay.gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+                phoneDisplay.textSize = 18f
+                phoneDisplay.setPaddingRelative(dp16, phoneDisplay.paddingTop, dp48, phoneDisplay.paddingBottom)
                 dialPad.visibility = View.GONE
                 btnToggle.text = "123"
                 btnToggle.setTextColor(resources.getColor(R.color.call_active_green, null))
-                // Show keyboard
                 phoneDisplay.requestFocus()
                 val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
                 imm.showSoftInput(phoneDisplay, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
@@ -143,10 +149,12 @@ class DialerFragment : Fragment() {
                 phoneDisplay.inputType = android.text.InputType.TYPE_CLASS_PHONE
                 phoneDisplay.showSoftInputOnFocus = false
                 phoneDisplay.hint = getString(R.string.dialer_enter_number)
+                phoneDisplay.gravity = android.view.Gravity.CENTER
+                phoneDisplay.textSize = 28f
+                phoneDisplay.setPaddingRelative(dp48, phoneDisplay.paddingTop, dp48, phoneDisplay.paddingBottom)
                 dialPad.visibility = View.VISIBLE
                 btnToggle.text = "ABC"
                 btnToggle.setTextColor(resources.getColor(android.R.color.holo_orange_light, null))
-                // Hide keyboard
                 val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
                 imm.hideSoftInputFromWindow(phoneDisplay.windowToken, 0)
             }
