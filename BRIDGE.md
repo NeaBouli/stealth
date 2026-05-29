@@ -5,7 +5,255 @@
 
 ## 2026-05-28 [CC]
 ### TYPE: MEMO
-### STATUS: FÜR CODEX — Session-Summary, Audit-Queue, offene Punkte
+### STATUS: VOLLSTÄNDIGER SESSION-BERICHT FÜR CODEX — bitte vollständig lesen vor nächstem Task
+
+---
+
+# SESSION-BERICHT 2026-05-28 (CC → CODEX)
+
+## ÜBERBLICK
+
+Diese Session hatte drei parallele Arbeitsstränge:
+1. **Chameleon** — Messenger NavGraph, TierGate CI-Fix, Linear→GitHub Migration
+2. **stealth/signaling** — Massentrennung-Incident, Security-Patching (ws), TRUST_PROXY-Bug
+3. **SecureCall Android** — DialerFragment ABC-mode Fix
+
+Alle drei Stränge sind abgeschlossen. Unten vollständige Dokumentation pro Thema.
+
+---
+
+## 1. CHAMELEON MESSENGER — VOLLSTÄNDIG IMPLEMENTIERT
+
+### Commit: `d63d200` (vorherige Session, diese Session: NavGraph-Fix + NPE-Fix)
+
+**Was gebaut wurde:**
+- E2E-verschlüsselter Messenger mit Double-Ratchet (X25519 + XChaCha20-Poly1305 + HKDF-SHA256)
+- 3 Transports wählbar pro Nachricht: Bluetooth RFCOMM, WiFi Direct TCP:8742, Server Relay WSS
+- `ServerRelayTransport` nutzt dasselbe MESSAGE-JSON-Protokoll wie SecureChat → cross-app kompatibel
+- Lokaler Speicher re-encrypted via HKDF aus `identityKey + dhPublicKey + contactId`
+
+**NavGraph-Fix (diese Session):**
+- `MessengerScreen` ohne `FeatureScaffold`-Wrapper
+- `ConversationScreen` mit `navArgument("contactId", NavType.StringType)`
+
+**NPE-Fix (diese Session, von Codex entdeckt):**
+- `ConversationViewModel.init` griff auf `_uiState` zu bevor es initialisiert war
+- Fix: Property-Reihenfolge korrigiert — `messages → _uiState → uiState → init{}`
+- `contactName` wird async aus `ContactKeyDao.getById()` geladen, fällt auf `contactId` zurück
+
+**Dependencies ergänzt in `messenger/build.gradle.kts`:**
+`:stealthx-crypto`, `compose.icons.extended`, `compose.hilt.navigation`, `room.runtime`, `room.ktx`, `okhttp`
+
+**Build: ✅ | Installiert auf S7 + S4**
+
+---
+
+## 2. TIERGATE CI-FAILURE — BEHOBEN
+
+### Commit: im chameleon repo (TierGateTest.kt)
+### CI-Run: 26416151120
+
+**Problem:**
+`TierGateTest → sync returns last known value` schlug in CI fehl.
+`TierGateImpl(repo)` nutzt intern `Dispatchers.IO` für das init-Coroutine.
+In CI lief die Coroutine durch bevor `assertEquals(IfrTier.FREE)` ausgeführt wurde → Race Condition.
+
+**Fix:**
+```kotlin
+val gate = TierGateImpl(repo, initScope = backgroundScope)
+assertEquals(IfrTier.FREE, gate.getTierSync()) // init nicht dispatched
+gate.getTier()                                  // expliziter Load
+assertEquals(IfrTier.PRO, gate.getTierSync())
+```
+`backgroundScope` nutzt den virtuellen Scheduler von `runTest` — deterministisch.
+
+**9/9 Tests grün.**
+
+---
+
+## 3. LINEAR → GITHUB ISSUES MIGRATION
+
+**Grund:** Linear Free Plan erschöpft.
+**Ziel:** `NeaBouli/stealth` GitHub Issues
+
+15 Issues migriert mit Labels (priority:high/medium/low, bug, enhancement, security):
+
+| # | Titel | Prio |
+|---|-------|------|
+| BUG-029 | SecureCall VPN+VPN Audio retest | High |
+| NEA-195 | WebSocketService plaintext protection | High |
+| NEA-209 | BIP39 Mnemonic Import (cross-app sx_ID) | Medium |
+| NEA-218 | Activation Code Flow | Medium |
+| NEA-259 | Inferno Bootstrap Deadline 05.06.2026 | Critical |
+| ... | + 10 weitere | Low-Medium |
+
+**Codex-Aufgabe:** GitHub Issues als primäres Tracking-System verwenden, kein Linear mehr.
+
+---
+
+## 4. SECURECALL DIALER ABC-MODE FIX
+
+### File: `app/src/main/java/com/securecall/app/ui/DialerFragment.kt`
+
+**Problem:** Buchstaben-Eingabe-Modus zeigte nur `"er call id or num..."` — Hint-Text war
+abgeschnitten weil `gravity=CENTER` + `textSize=28f` + `paddingStart=48dp` zu Overflow führten.
+
+**Fix:**
+```kotlin
+// Alpha-mode:
+phoneDisplay.gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+phoneDisplay.textSize = 18f
+phoneDisplay.setPaddingRelative(dp16, top, dp48, bottom)
+
+// Phone-mode restore:
+phoneDisplay.gravity = android.view.Gravity.CENTER
+phoneDisplay.textSize = 28f
+phoneDisplay.setPaddingRelative(dp48, top, dp48, bottom)
+```
+Build: `compileFreeDebugKotlin ✅`
+
+---
+
+## 5. MASSENTRENNUNG INCIDENT — ROOT CAUSE + FIX
+
+### Commits: `dd89bf0` (ecosystem.config.js), `a07da64` (ws upgrade)
+
+### Zeitlinie des Incidents:
+- ~2026-05-25: CC pushed Dialer-APK → kurz danach Gio: "securecall bei allen anwendern disconnected"
+- APK-Push war rein UI-seitig → hatte **null Einfluss** auf den Server
+- Echter Trigger: Server-Neustart (PM2 memory-restart bei `max_memory_restart: 512M` wahrscheinlich)
+- Nach Neustart versuchten alle User gleichzeitig zu reconnecten → ersten 10 kamen rein → alle weiteren 429
+
+### Root Cause: TRUST_PROXY nicht gesetzt
+
+`getClientIp()` in `src/middleware/ip.js`:
+```javascript
+function getClientIp(req) {
+  const tp = process.env.TRUST_PROXY;
+  if (tp === "true" || tp === "1" || process.env.RAILWAY_ENVIRONMENT) {
+    const xff = req.headers["x-forwarded-for"];
+    if (xff) return xff.split(",")[0].trim();
+  }
+  return req.socket.remoteAddress;  // ← 127.0.0.1 (nginx loopback) wenn kein TRUST_PROXY
+}
+```
+
+Server läuft auf Hetzner (kein Railway). `TRUST_PROXY` war nicht in `ecosystem.config.js`.
+→ `req.socket.remoteAddress` = `127.0.0.1` für ALLE WebSocket-Verbindungen (nginx-Proxy)
+→ `ipConnections.get('127.0.0.1')` zählte alle User zusammen
+→ `MAX_CONNS_PER_IP = 10` → nach 10 Verbindungen HTTP 429 für alle weiteren
+
+### Fix: `TRUST_PROXY: "true"` in ecosystem.config.js
+```javascript
+env: {
+  NODE_ENV: "production",
+  TRUST_PROXY: "true",  // ← neu
+}
+```
+
+**Deploy-Methode:** Da `/opt/stealthx/signaling` KEIN Git-Repo ist (wurde per SCP deployed),
+musste `ecosystem.config.js` via `scp` übertragen werden:
+```bash
+scp ecosystem.config.js hetzner:/opt/stealthx/signaling/ecosystem.config.js
+ssh hetzner "cd /opt/stealthx/signaling && pm2 reload ecosystem.config.js --update-env"
+```
+
+**Verifiziert:** `pm2 env 0 | grep TRUST_PROXY` → `TRUST_PROXY: true` ✅
+Server-Logs nach Deploy zeigen echte IPs (185.254.75.44, 85.74.194.9, 194.127.167.73) statt 127.0.0.1 ✅
+
+---
+
+## 6. WS SECURITY PATCH — GHSA-58qx-3vcg-4xpx
+
+### Commit: `a07da64`
+
+**Vulnerability:** `ws 8.0.0–8.20.0` — Uninitialized Memory Disclosure
+**Installed:** `8.20.0` (direkt), `8.17.1` (ethers transitive) — beide verwundbar
+
+**Fix:**
+1. Direktes dep: `ws@^8.21.0` in `package.json`
+2. npm `overrides`: `{ "ws": "^8.21.0" }` — erzwingt auch ethers transitive ws auf 8.21.0
+3. Ergebnis: nur eine ws-Instanz in lockfile bei 8.21.0
+
+```json
+"overrides": { "ws": "^8.21.0" },
+"dependencies": { "ws": "^8.21.0", ... }
+```
+
+**Verbleibende moderate findings (nicht fixbar ohne breaking changes):**
+
+| Package | CVE | Warum Skip |
+|---------|-----|-----------|
+| `uuid < 11.1.1` | GHSA-w5hq-g745-h8pq | Fix = firebase-admin 13→10 (breaking) |
+| `protobufjs ≤ 7.5.7` | GHSA-jggg-4jg4-v7c6 | Transitive via firebase, nicht direkt |
+| `qs 6.11.1–6.15.1` | GHSA-q8mj-m7cp-5q26 | Fix nur via express@5 (breaking) |
+
+**Codex-Aufgabe:** `firebase-admin@14.x` prüfen — löst evtl. uuid + protobufjs ohne breaking change.
+
+**117/117 Tests grün nach Upgrade.**
+
+---
+
+## 7. S4 VERBINDUNGS-DIAGNOSE
+
+### Gerät: Tab S4 SM-T835, serial `ce12182c68644439037e`
+
+**Symptom nach TRUST_PROXY-Deploy:** S4 hatte TCP-Timeout statt 429.
+
+**Diagnose:**
+- S4 nutzt **Mullvad VPN** (`tun1`, IPv6-Präfix `fc00:bbbb:bbbb:bb01` = Mullvad)
+- Mullvad Exit-Node hatte nach Server-Reload kein Routing zu Hetzner:443
+- `curl https://api.stealthx.tech/health` von S4 → exit code 28 (TCP timeout)
+- `curl https://1.1.1.1` von S4 → exit code 28 (kein Internet durch VPN)
+- VPN-Tunnel war UP aber Exit-Node broken
+
+**Fix:** Gio hat Mullvad auf S4 manuell reconnected (neues Exit-Node: `194.127.167.73`)
+
+**Verifikation:**
+- `curl https://api.stealthx.tech/health` von S4 → `200` ✅
+- Server-Log: `android-5f55dfa1` connected `20:15:51 UTC`, kein Disconnect danach ✅
+- `dumpsys activity services`: `isForeground=true startRequested=true` ✅
+
+**S7 + S4 beide verbunden und stabil.**
+
+---
+
+## INFRASTRUKTUR-HINWEIS FÜR CODEX
+
+**Wichtig:** `/opt/stealthx/signaling` auf Hetzner ist KEIN Git-Repo.
+Deployment erfolgt per SCP, nicht per `git pull`. Bei Code-Änderungen am Signaling-Server:
+
+```bash
+# Lokale Änderungen bauen/testen, dann:
+scp -r backend/signaling/src/ hetzner:/opt/stealthx/signaling/
+scp backend/signaling/package*.json hetzner:/opt/stealthx/signaling/
+ssh hetzner "cd /opt/stealthx/signaling && npm ci && pm2 reload ecosystem.config.js --update-env"
+```
+
+SSH-Config: `~/.ssh/config` Alias `hetzner` → `135.181.254.229` (root, `id_ed25519_hetzner`)
+
+**Aktueller PM2-Status nach Session:**
+- Uptime: ~14min nach Reload
+- PID: 1506405
+- Restarts: 6 (historisch, nicht kritisch)
+- Memory: 66.5MB (weit unter 512MB limit)
+
+---
+
+## OFFENE PUNKTE FÜR CODEX (priorisiert)
+
+| Prio | Item | Details |
+|------|------|---------|
+| P1 | `firebase-admin@14.x` prüfen | Löst evtl. uuid + protobufjs ohne breaking change |
+| P1 | PM2 memory-restart untersuchen | `max_restarts: 6` deutet auf wiederholte Restarts — Ursache? OOM? |
+| P2 | Admin-Endpoint `/admin/connected` | `ipConnections` Map exposen für Monitoring (auth via ADMIN_API_KEY) |
+| P2 | `MAX_CONNS_PER_IP` Wert evaluieren | Mit echten IPs: 10 OK für WiFi-User, bei CGNAT-Mobile evtl. erhöhen auf 15 |
+| P3 | Signaling-Server Git-Deploy | `/opt/stealthx/signaling` als Git-Repo einrichten → `git pull` statt SCP |
+| P3 | BUG-029 SecureCall retest | Jetzt wo Server stabil: VPN+VPN Audio-Test wiederholen |
+| P3 | Leaf-Cert api.stealthx.tech | Expires 2026-08-14 — CertificatePinner in SecureChat + Chameleon erneuern |
+| P4 | Stripe Integration | Warte auf MCP OAuth-Login (Gio) — dann Pro/Elite Produkte + Purchase Flow |
+
+---
 
 **CODEX LESE-ANWEISUNG (2026-05-28)**
 
