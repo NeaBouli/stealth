@@ -3,6 +3,114 @@
 
 ---
 
+## 2026-05-29 [CC]
+### TYPE: TODO
+### STATUS: WARTET AUF CODEX-REVIEW — erst nach Gegenprüfung starten
+### GitHub Issue: NEA-STRIPE-01 (noch zu erstellen)
+### EMPFÄNGER: CODEX
+
+**NEA-STRIPE-01: Stripe Integration — Chameleon Aktivierungscodes**
+
+**Kontext:**
+Stripe-Keys sind lokal in `.env.local` vorhanden (Live-Keys). Diese dürfen NIEMALS in BRIDGE,
+Chat oder Commits geschrieben werden. Integration erfolgt ausschließlich über Stripe MCP OAuth.
+
+**Scope:**
+
+1. **Produkte & Preise (Stripe Dashboard)**
+   - Free: kein Stripe-Produkt
+   - Pro: €2,90/Monat (annual) / €3,49/Monat
+   - Premium: €3,99/Monat (annual) / €4,99/Monat
+   - Suite (Lifetime): einmalig — SecureCall Premium + SecureChat Elite + Chameleon Elite
+   - Für jede Variante: `price_id` in Config speichern
+
+2. **Aktivierungscode-Flow (Chameleon Settings)**
+   - User kauft → Stripe Checkout Session → Webhook `checkout.session.completed`
+   - Webhook generiert Aktivierungscode (Format: `GIFT-XXXX-XXXX`) → in `activation_codes.json`
+   - User gibt Code in Chameleon Settings ein → `ACTIVATE_CODE` WS-Handler bereits implementiert
+   - Backend: `stripe_handler.js` in `backend/signaling/src/payments/` bereits vorhanden — erweitern
+
+3. **Stripe Webhook**
+   - Endpunkt: `POST /stripe/webhook` — bereits vorhanden in `server.js`
+   - Signatur-Verifikation: `stripe.webhooks.constructEvent()` bereits implementiert
+   - Fehlender Part: Code-Generierung + Persistenz nach `checkout.session.completed`
+
+4. **Website-Preisseite**
+   - CTA-Buttons auf stealthx.tech → Stripe Checkout Links
+   - Abhängig von NEA-WEB-01 (Web Remaster)
+
+**Sicherheits-Constraint (von Gio bestätigt 2026-05-28):**
+- Keys NIEMALS in BRIDGE, Chat, Commit oder Logs schreiben
+- Ausschließlich Stripe MCP OAuth für alle Stripe-Operationen
+- `sk_live_*`, `pk_live_*`, `whsec_*` bleiben in `.env.local` auf Gios Rechner
+
+**Startet nach:** Codex-Review der Session-2026-05-28 + Gio-Freigabe
+
+---
+
+## 2026-05-29 [CC]
+### TYPE: TODO
+### STATUS: WARTET AUF CODEX-REVIEW + GIO-SIGN-OFF
+### GitHub Issue: [#29](https://github.com/NeaBouli/stealth/issues/29)
+### EMPFÄNGER: CODEX
+
+**NEA-WEB-01: Vollständiges Web-Remastering — stealthx.tech**
+
+**Design-Paket ist fertig** — alle Assets in `securecall/` im Repo, sofort im Browser lauffähig:
+
+```
+securecall/
+  StealthX Platform.html    ← Haupt-Prototype (React SPA, interaktiv)
+  StealthX Design-Konzept.html  ← Design-Spec (PDF-Stil)
+  SecureCall.html           ← Produkt-Subpage
+  SecureChat.html           ← Produkt-Subpage
+  Chameleon.html            ← Produkt-Subpage
+  app.jsx                   ← Root: i18n, Theme, OKLCH-Vars
+  brand.jsx                 ← SVG-Logo, Produktmarken (CallMark/ChatMark/ChamMark)
+  i18n.jsx                  ← Vollständige DE/EN-Texte
+  product.css               ← Geteilte Produktseiten-Styles
+  sections1.jsx             ← Nav, Hero, Platform
+  sections2.jsx             ← Trust, Compare, Pricing, BrandSystem, CTA, Footer
+  tweaks-panel.jsx          ← Tweaks-Panel (Theme, Accent, Sprache, Dichte)
+  assets/                   ← 4 Logo-Varianten (mono/blue/light/logo)
+```
+
+**Design-System:**
+- Typografie: Schibsted Grotesk (Display) / Hanken Grotesk (Body) / JetBrains Mono
+- Farbe: OKLCH-Akzentsystem, 4 Paletten (indigo/azur/teal/graphit), Light+Dark
+- Produktfarben: Call = blue-indigo, Chat = teal, Chameleon = purple
+- Responsive: Prototype desktop-first — mobile Breakpoints müssen ergänzt werden
+
+**Homepage-Sections:**
+Nav → Hero (Crypto-Demo-Card, Trust-Badges) → Platform (3 Produkte) →
+Trust (Stats + Krypto-Spezifikationen) → Compare (vs Signal/Telegram) →
+Pricing (Free/Pro/Premium + Suite Lifetime) → BrandSystem → CTA + Footer
+
+**Preise laut Design:**
+| Tier | Monatlich | Jährlich |
+|------|-----------|---------|
+| Free | €0 | — |
+| Pro | €3,49/mo | €2,90/mo |
+| Premium | €4,99/mo | €3,99/mo |
+| Suite (Lifetime) | einmalig | — |
+
+**Aktuelle Website:** `stealth/website/index.html` — static HTML, funktioniert aber veraltet.
+Alle bestehenden URLs müssen erhalten bleiben: `/faq`, `/privacy`, `/impressum`, `/invite`, `/audit`, `/payment-success`
+
+**Implementierungs-Optionen (Codex entscheidet mit Gio):**
+- Option A: Direkt static HTML aus React-Prototype ableiten (kein Build-Step)
+- Option B: Minimal Next.js / Astro (besser für i18n, SEO, ISR)
+
+**Abhängigkeit:** NEA-STRIPE-01 — Pricing-CTAs brauchen funktionierende Stripe Checkout-Links
+
+**Codex-Aufgabe:**
+1. `securecall/StealthX Platform.html` im Browser öffnen und reviewen
+2. Implementierungs-Option (A vs B) mit Gio abstimmen
+3. Mobile-Breakpoint-Strategie planen
+4. Erst nach Gio-Sign-off mit Implementierung beginnen
+
+---
+
 ## 2026-05-28 [CC]
 ### TYPE: MEMO
 ### STATUS: VOLLSTÄNDIGER SESSION-BERICHT FÜR CODEX — bitte vollständig lesen vor nächstem Task
