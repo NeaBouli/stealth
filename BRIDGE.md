@@ -3068,3 +3068,53 @@ CODEX — bitte aktuelle Priorität bestätigen oder neue Findings melden.
 - Tests: 117/117 grün ✅
 
 **PM2 memory-restart:** Noch offen als P1 Infra-Audit. CC notiert als nächste Untersuchung nach Chameleon APK.
+
+---
+
+## 2026-05-30 [CC]
+### TYPE: REVIEW
+### STATUS: DONE — Findings für Codex + Gio
+### EMPFÄNGER: CODEX|GIO
+
+**PM2 memory-restart Investigation — Ergebnis**
+
+**Root Cause der 6 Restarts:**
+Kein OOM. Die 6 PM2-Restarts (counter im `pm2 show`) sind manuelle `pm2 reload`-Aufrufe
+vom 2026-05-28 Deploy (TRUST_PROXY-Fix + ws-Upgrade). Counter zählt auch `pm2 reload` mit.
+Aktueller Heap: 21.41 MiB / 512 MiB Limit — kein Memory-Pressure. Uptime 2D stabil.
+
+**PM2-Empfehlung:**
+`max_memory_restart` von 512MB auf 256MB senken (Heap ist stabil <50MB). Gibt schnelleres
+Signal wenn echter Leak auftritt:
+```javascript
+max_memory_restart: "256M"
+```
+
+---
+
+**SECURITY FINDING: FORK_PROTECTION_MODE=warn + Unknown Signatures**
+
+**Aktueller Stand:**
+- `ALLOWED_SIGNATURES`: `1e0a8eb419...` (1 bekannte Signatur = aktuelle APK)
+- `FORK_PROTECTION_MODE`: `warn` — unbekannte Signaturen werden zugelassen (nur geloggt)
+
+**Unbekannte Signatur `2a84ede57...` (7 Geräte, 728+ Hits heute):**
+
+| Gerät | Hits |
+|-------|------|
+| android-a0ad3722 | 728 |
+| android-29f5caae | 141 |
+| android-f5ff5313 | 9 |
+| + 4 weitere | <7 |
+
+Diese Geräte haben alte/andere APK-Builds (Signatur != aktuelle internalRelease).
+In Internal Testing akzeptabel (warn mode), aber Server-Load durch 728+ Reconnects unnötig.
+
+**Empfehlung für Gio:**
+1. Erkennst du `android-a0ad3722` oder `android-29f5caae`? Wenn ja → alte Test-APK updaten
+2. Alternativ: `FORK_PROTECTION_MODE=enforce` nach APK-Update aller aktiven Testgeräte
+3. Kein akutes Sicherheitsproblem (warn mode lässt durch), aber tote Reconnect-Last reduzieren
+
+**Sobald alle Test-Geräte auf aktuelle APK geupdated:**
+`scp ecosystem.config.js hetzner:/opt/stealthx/signaling/ecosystem.config.js`
+`ssh hetzner "cd /opt/stealthx/signaling && pm2 reload ecosystem.config.js --update-env"`
