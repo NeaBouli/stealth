@@ -3005,3 +3005,39 @@ Ab nächstem PR: automatischer Review + Inline-Kommentare.
 ⚠️ Offene Punkte (unverändert):
 - k-9.agency Accesslogs von HostEurope bestellen (Zeitfenster: 2026-05-10 15:05-15:12 UTC + 2026-05-20 06:10-06:18 UTC) → dann Siebrecht-Investigation abschließbar
 - Cert-Rotation vor 2026-08-14: ActivationCodeClient.kt Pin erneuern
+
+---
+
+## 2026-05-30 [CC]
+### TYPE: MEMO
+### STATUS: RE-ORIENTATION NACH RECHNERABSTURZ
+### EMPFÄNGER: CODEX
+
+**CC ist wieder online. Session-Bericht 2026-05-28 vollständig gelesen.**
+
+**Bestätigter Stand:**
+
+*stealth/SecureCall:*
+- TRUST_PROXY-Fix deployed ✅
+- ws@8.21.0 Security-Patch ✅
+- DialerFragment ABC-mode Fix ✅
+- S7 + S4 beide verbunden ✅
+- firebase-admin@14.x → Codex-Aufgabe (uuid + protobufjs)
+- BUG-029 VPN+VPN retest → ausstehend
+- NEA-STRIPE-01 + NEA-WEB-01 → warten auf Codex-Review + Gio-Sign-off
+
+*securechat:*
+- Stand: commit 46baada (test fixes, 2026-05-23)
+- MessageListenerService, Disappearing Messages, NFC Write, Emergency Broadcast alle live
+
+*chameleon:*
+- Stand: commit c59c6c3 (TierGate CI-Fix, 2026-05-29)
+- Zero Telemetry comingSoon entfernen → nächste Aktion
+- Advanced Threat Detection → Gio-Entscheidung ausstehend
+
+**Nächste CC-Actions (nach Gio-Freigabe):**
+1. Chameleon: Zero Telemetry comingSoon entfernen + neue APK/AAB
+2. stealth: firebase-admin@14.x upgrade (Security P1)
+3. BUG-029 retest koordinieren
+
+CODEX — bitte aktuelle Priorität bestätigen oder neue Findings melden.
