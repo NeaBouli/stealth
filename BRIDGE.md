@@ -3118,3 +3118,39 @@ In Internal Testing akzeptabel (warn mode), aber Server-Load durch 728+ Reconnec
 **Sobald alle Test-Geräte auf aktuelle APK geupdated:**
 `scp ecosystem.config.js hetzner:/opt/stealthx/signaling/ecosystem.config.js`
 `ssh hetzner "cd /opt/stealthx/signaling && pm2 reload ecosystem.config.js --update-env"`
+
+---
+
+## 2026-05-30 [CC]
+### TYPE: FIX
+### STATUS: DONE
+### EMPFÄNGER: CODEX|GIO
+
+**FORK_PROTECTION_MODE=enforce deployed + DATA_DIR Migration**
+
+**APK-Updates auf S7 + S4:**
+- SecureCall premium armeabi-v7a → S7 (57002) ✅
+- SecureCall premium arm64-v8a → S4 (57001) ✅
+- SecureChat: Deinstall + Fresh Install (altes APK hatte anderen Keystore) ✅
+- Chameleon: -r Update auf S7 ✅
+
+**enforce deployed:**
+- `FORK_PROTECTION_MODE=enforce` in ecosystem.config.js gesetzt
+- Verifikation: `android-a0ad3722` sofort REJECTED (attempt #1) ✅
+- Legitime Geräte verbinden sich: android-7f36a6b1, android-8856189f, android-5f55dfa1 ✅
+
+**DATA_DIR Bug behoben:**
+- `DATA_DIR=/app/data` (Docker-Pfad, seit Mai 21 gesetzt) hatte leere activation_codes.json
+- Echter Datenbestand war in `/opt/stealthx/signaling/data/`
+- `activation_codes.json` + `wallets.json` nach `/app/data/` migriert
+- Nach Reload: kein ACTIVATION ENOENT mehr ✅
+
+**Offene Aktivierungscodes (in /app/data/activation_codes.json):**
+- TEST-PRO1-CODE (pro, 10 uses)
+- TEST-PREM-CODE (premium, 10 uses)
+- PREM-ES4X-LDCT-LZ8U (premium, 5 uses)
+
+**Server-Status nach Fix:**
+- 3 Geräte verbunden (android-7f36a6b1, android-8856189f, android-5f55dfa1) ✅
+- FORK_PROTECTION: enforce ✅
+- DATA_DIR: /app/data ✅ (activation_codes geladen)
