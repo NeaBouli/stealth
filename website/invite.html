@@ -79,18 +79,52 @@
 
     <script>
     (function() {
+        var params = new URLSearchParams(window.location.search);
+        var app = params.get('app') || 'securecall';
+
+        // --- NEA-217: SecureChat / Chameleon invite via ?app=&link= ---
+        var encodedLink = params.get('link');
+        if (encodedLink && (app === 'securechat' || app === 'chameleon')) {
+            var deepLink = decodeURIComponent(encodedLink); // stealthx://add/<sxId>?x=...
+            var sxId = deepLink.replace('stealthx://add/', '').split('?')[0];
+
+            var appName = app === 'chameleon' ? 'Chameleon' : 'SecureChat';
+            var appId   = app === 'chameleon' ? 'com.stealthx.chameleon' : 'com.stealthx.securechat';
+            var downloadUrl = 'https://stealthx.tech/download';
+
+            document.getElementById('title').textContent = 'You\'re invited to ' + appName;
+            document.getElementById('subtitle').textContent = 'Tap below to add this contact in ' + appName + '. If you don\'t have the app yet, download it first.';
+            document.getElementById('secureId').textContent = sxId || deepLink.substring(0, 40) + '…';
+            document.querySelector('.id-label').textContent = 'Contact ID';
+            document.title = appName + ' Invitation';
+
+            document.getElementById('openAppLink').textContent = 'Open in ' + appName;
+            document.getElementById('openAppLink').style.background = app === 'chameleon' ? '#b39ddb' : '#00E676';
+            document.getElementById('openAppLink').style.color = '#000';
+            document.getElementById('downloadLink').textContent = 'Download ' + appName;
+            document.getElementById('downloadLink').href = downloadUrl;
+            document.getElementById('playLink').textContent = 'Google Play';
+            document.getElementById('playLink').href = 'https://play.google.com/store/apps/details?id=' + appId;
+
+            document.getElementById('openAppLink').href = deepLink;
+            document.getElementById('openAppLink').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location = deepLink;
+                setTimeout(function() { window.location = downloadUrl; }, 2000);
+            });
+            return;
+        }
+
+        // --- Legacy: SecureCall invite via /invite/<sxId>?name= ---
         var path = window.location.pathname;
         var parts = path.split('/').filter(Boolean);
         var secureId = parts.length >= 2 && parts[0] === 'invite' ? parts[1] : null;
-        // Fallback: read from hash (set by 404.html SPA router)
         if (!secureId && window.location.hash) {
             secureId = window.location.hash.substring(1);
         }
 
         if (secureId) {
             document.getElementById('secureId').textContent = secureId;
-            // Read optional name from URL params
-            var params = new URLSearchParams(window.location.search);
             var senderName = params.get('name');
             if (senderName) {
                 document.getElementById('title').textContent = senderName + ' invited you!';
@@ -99,9 +133,7 @@
             } else {
                 document.title = 'SecureCall Invitation from ' + secureId;
             }
-            // Store for deferred deep link
             try { localStorage.setItem('pendingInviteSecureId', secureId); } catch(e) {}
-            // Set deep link for "Open in SecureCall" button (custom scheme + fallback)
             var nameParam = senderName ? '&name=' + encodeURIComponent(senderName) : '';
             var customSchemeLink = 'securecall://add-contact?id=' + secureId + nameParam;
             var httpsLink = 'https://stealthx.tech/invite/' + secureId + (senderName ? '?name=' + encodeURIComponent(senderName) : '');
@@ -109,10 +141,8 @@
             document.getElementById('openAppLink').addEventListener('click', function(e) {
                 e.preventDefault();
                 window.location = customSchemeLink;
-                // Fallback: if app not installed, redirect to download after 2s
                 setTimeout(function() { window.location = httpsLink; }, 2000);
             });
-            // Add referrer param to Play Store link
             var playLink = document.getElementById('playLink');
             playLink.href += '&referrer=' + encodeURIComponent('invite_' + secureId);
         } else {
