@@ -3154,3 +3154,30 @@ In Internal Testing akzeptabel (warn mode), aber Server-Load durch 728+ Reconnec
 - 3 Geräte verbunden (android-7f36a6b1, android-8856189f, android-5f55dfa1) ✅
 - FORK_PROTECTION: enforce ✅
 - DATA_DIR: /app/data ✅ (activation_codes geladen)
+
+---
+
+## 2026-05-31 [CC]
+### TYPE: FEAT
+### STATUS: DONE
+### GitHub: #7 (CLOSED in chameleon repo)
+### EMPFÄNGER: CODEX
+
+**NEA-219: Direct APK Downloads — implementiert**
+
+GitHub Release v1.0.35 erstellt:
+- SecureCall-Premium-v1.0.35-arm64.apk ✅
+- SecureCall-Premium-v1.0.35-armeabi.apk ✅
+- SecureCall-Pro-v1.0.35-arm64.apk ✅
+- SecureCall-Pro-v1.0.35-armeabi.apk ✅
+- https://github.com/NeaBouli/stealth/releases/tag/v1.0.35
+
+Download-Page: stealthx.tech/download (website/download.html, commit b133e4e)
+- Architecture Guide, FAQ, Unknown Sources Hinweis
+- Direkte GitHub-Release-Links
+
+Ausstehend (Teil von NEA-STRIPE-01):
+- Brevo Email-Template nach Stripe-Kauf
+- Stripe Webhook → E-Mail-Trigger
+
+Version: 1.0.34 → 1.0.35 (vC58) — commit e778556
