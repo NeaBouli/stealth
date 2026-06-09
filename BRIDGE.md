@@ -3,6 +3,34 @@
 
 ---
 
+## 2026-06-08 [CC]
+### TYPE: FIX
+### STATUS: DONE
+
+**Railway → Hetzner Migration: StealthX Signaling abgeschlossen**
+
+- `stealthx-signaling` Container war seit 2026-05-19 gestoppt (SIGTERM, clean exit)
+- Code aus lokalem Repo (Updates bis 30.05: MESSAGE/READ_RECEIPT, IDENTIFY/CONTACT_EXCHANGE Handlers, Security-Patches) auf Hetzner gesynct
+- Dockerfile: node:18-alpine → node:22-alpine (firebase-admin/resend erfordern Node ≥20)
+- Image rebuilt, Container gestartet: **healthy** ✅
+- Externer Endpoint: `https://api.stealthx.tech/health` → 200 ✅
+- Railway `disciplined-flexibility` bleibt aktiv als Fallback (keine Änderungen)
+
+**Status Hetzner:**
+| Service | Container | Status |
+|---------|-----------|--------|
+| Signaling (SecureCall/SecureChat/Chameleon) | `stealthx-signaling` | ✅ healthy |
+| TURN/STUN | `stealthx-coturn` | ✅ running |
+| Traefik | `traefik-central` | ✅ routing |
+
+**Inferno Railway → Hetzner: PENDING**
+- `apps/telegram/telegram-bot` — kein Dockerfile, BOT_TOKEN fehlt
+- `apps/points-backend` — Dockerfile vorhanden, DB-Setup erforderlich
+- `apps/ai-copilot` — Dockerfile vorhanden, API-Keys erforderlich
+- Await: Gio-Freigabe + BOT_TOKEN für Telegram-Bot
+
+---
+
 ## 2026-05-29 [CC]
 ### TYPE: TODO
 ### STATUS: WARTET AUF CODEX-REVIEW — erst nach Gegenprüfung starten
