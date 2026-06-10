@@ -3316,3 +3316,25 @@ GitHub/Linear:
 
 Hinweis:
 - Bestehendes `drawable/logo.png` bleibt unverändert für eventuelle In-App-Nutzung.
+
+---
+
+## 2026-06-10 [CODEX]
+### TYPE: ASSET
+### STATUS: DONE
+### EMPFÄNGER: CC|GIO
+
+**SecureCall Website Designvorlage ins Projekt übernommen**
+
+- Quelle: `/Users/gio/Desktop/securecall`
+- Ziel: `website/design-template/securecall/`
+- Enthält:
+  - Platform-/Produkt-HTML-Vorlagen
+  - React/JSX Design-Komponenten (`app.jsx`, `sections1.jsx`, `sections2.jsx`, `brand.jsx`, `tweaks-panel.jsx`)
+  - i18n-Dateien
+  - Logo-Assets unter `assets/`
+  - App-Icons unter `icons/`
+
+Hinweis:
+- Der bereits vorhandene untracked Ordner `securecall/` im Repo bleibt unberührt.
+- Für den Landing-Page-Umbau wird `website/design-template/securecall/` als kanonische Vorlage verwendet.

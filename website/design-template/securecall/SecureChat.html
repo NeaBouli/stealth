@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SecureChat — StealthX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="product.css" />
+</head>
+<body style="--pa: oklch(0.66 0.10 194)">
+
+<header class="pnav">
+  <div class="wrap">
+    <div class="pnav-left">
+      <a href="StealthX Platform.html"><img src="assets/stealthx-mono.png" alt="StealthX" /></a>
+      <a class="pnav-back" href="StealthX Platform.html"><span data-i18n="back">← Zur Plattform</span></a>
+    </div>
+    <div class="pnav-right">
+      <div class="lang-switch">
+        <button class="lang-btn on" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+      <a class="btn btn-solid" href="#cta" data-i18n="navcta">Vormerken</a>
+    </div>
+  </div>
+</header>
+
+<section class="phero">
+  <div class="wrap">
+    <div>
+      <span class="badge" data-i18n="status">In Entwicklung · Q3 2026</span>
+      <h1 data-i18n="h1">Nachrichten ohne Server. Ohne Spuren.</h1>
+      <p class="sub" data-i18n="sub">Dezentrale, Ende-zu-Ende-verschlüsselte Nachrichten — versiegelt auf deinem Gerät, ganz ohne zentrale Infrastruktur und ohne Metadaten.</p>
+      <div class="phero-actions">
+        <a class="btn btn-solid btn-lg" href="#cta" data-i18n="cta1">Frühzugang vormerken</a>
+        <a class="btn btn-line btn-lg" href="https://github.com/NeaBouli/stealth" data-i18n="cta2">Quellcode prüfen</a>
+      </div>
+    </div>
+    <div class="phero-art">
+      <div class="ring">
+        <svg width="120" height="120" viewBox="0 0 100 100" fill="none">
+          <rect x="22" y="26" width="56" height="40" rx="11" fill="var(--pa)" opacity="0.9"/>
+          <path d="M38 66 L38 80 L54 66 Z" fill="var(--pa)" opacity="0.9"/>
+          <circle cx="40" cy="46" r="3.5" fill="#fff"/><circle cx="50" cy="46" r="3.5" fill="#fff"/><circle cx="60" cy="46" r="3.5" fill="#fff"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="psec alt">
+  <div class="wrap">
+    <div class="phead">
+      <span class="kick" data-i18n="fkick">Funktionen</span>
+      <h2 data-i18n="fh">Privatsphäre auf Protokollebene</h2>
+    </div>
+    <div class="fgrid">
+      <div class="fcard">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="11" rx="3" stroke="currentColor" stroke-width="2"/><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" stroke-width="2"/></svg></div>
+        <h3 data-i18n="f1h">Double-Ratchet</h3>
+        <p data-i18n="f1p">Für jede Nachricht ein neuer Schlüssel. Selbst ein kompromittierter Schlüssel gefährdet nicht den Verlauf.</p>
+      </div>
+      <div class="fcard">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="5" cy="6" r="2.2" stroke="currentColor" stroke-width="1.8"/><circle cx="19" cy="6" r="2.2" stroke="currentColor" stroke-width="1.8"/><circle cx="5" cy="18" r="2.2" stroke="currentColor" stroke-width="1.8"/><circle cx="19" cy="18" r="2.2" stroke="currentColor" stroke-width="1.8"/><path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3" stroke="currentColor" stroke-width="1.6"/></svg></div>
+        <h3 data-i18n="f2h">Dezentral</h3>
+        <p data-i18n="f2p">Keine zentralen Server, die ausfallen, beschlagnahmt oder durchsucht werden können.</p>
+      </div>
+      <div class="fcard">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6 .8-4.5 4.2 1.2 6L12 16l-5.9 3 1.2-6L3 8.8 9 8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <h3 data-i18n="f3h">Kaspa-Identität</h3>
+        <p data-i18n="f3p">Deine Identität ist on-chain verankert — dezentral, fälschungssicher, ohne Telefonnummer.</p>
+      </div>
+      <div class="fcard">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" transform="rotate(45 12 12)"/></svg></div>
+        <h3 data-i18n="f4h">Zero-Metadata</h3>
+        <p data-i18n="f4p">Kein Absender, kein Empfänger, kein Zeitstempel wird gespeichert — nichts, das ausgewertet werden könnte.</p>
+      </div>
+      <div class="fcard">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
+        <h3 data-i18n="f5h">Auf dem Gerät versiegelt</h3>
+        <p data-i18n="f5p">Nachrichten verlassen dein Gerät nur verschlüsselt und werden lokal sicher gespeichert.</p>
+      </div>
+      <div class="fcard">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M13 3L4 14h7l-1 7 9-11h-7l1-7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
+        <h3 data-i18n="f6h">Selbstzerstörend</h3>
+        <p data-i18n="f6p">Optional verfallen Nachrichten automatisch — auf beiden Geräten, ohne Rückstand.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="psec">
+  <div class="wrap">
+    <div class="phead">
+      <span class="kick" data-i18n="hkick">Status</span>
+      <h2 data-i18n="hh">Wo SecureChat gerade steht</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">✓</div><h3 data-i18n="s1h">Krypto-Kern</h3><p data-i18n="s1p">Double-Ratchet und Schlüsselverwaltung sind implementiert und getestet.</p></div>
+      <div class="step"><div class="n">◐</div><h3 data-i18n="s2h">Transport</h3><p data-i18n="s2p">Dezentrales Routing und Kaspa-Identität befinden sich im Aufbau.</p></div>
+      <div class="step"><div class="n">○</div><h3 data-i18n="s3h">Beta</h3><p data-i18n="s3p">Geschlossener Frühzugang ist für Q3 2026 geplant.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="psec alt">
+  <div class="wrap">
+    <div class="phead">
+      <span class="kick" data-i18n="tkick">Überprüfbar</span>
+      <h2 data-i18n="th">Die Technik dahinter</h2>
+    </div>
+    <div class="spec-strip">
+      <div class="item"><div class="k" data-i18n="sp1k">Verschlüsselung</div><div class="v">Double Ratchet</div><div class="d" data-i18n="sp1d">Forward Secrecy</div></div>
+      <div class="item"><div class="k" data-i18n="sp2k">Identität</div><div class="v">Kaspa BlockDAG</div><div class="d" data-i18n="sp2d">On-chain</div></div>
+      <div class="item"><div class="k" data-i18n="sp3k">Architektur</div><div class="v" data-i18n="sp3v">Serverlos</div><div class="d" data-i18n="sp3d">Peer-to-peer</div></div>
+      <div class="item"><div class="k" data-i18n="sp4k">Metadaten</div><div class="v">0</div><div class="d" data-i18n="sp4d">Nichts gespeichert</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="psec">
+  <div class="wrap">
+    <div class="phead">
+      <span class="kick" data-i18n="ckick">Die Plattform</span>
+      <h2 data-i18n="ch">Teil von StealthX</h2>
+    </div>
+    <div class="cross">
+      <a href="SecureCall.html"><span style="font-size:22px;color:var(--text-faint)">○</span><div><div class="cn">SecureCall</div><div class="cd" data-i18n="crA">Verschlüsselte Anrufe</div></div></a>
+      <a class="self" href="SecureChat.html"><span style="font-size:22px">●</span><div><div class="cn">SecureChat</div><div class="cd" data-i18n="crB">Verschlüsselte Nachrichten</div></div></a>
+      <a href="Chameleon.html"><span style="font-size:22px;color:var(--text-faint)">○</span><div><div class="cn">Chameleon</div><div class="cd" data-i18n="crC">Privacy-OS</div></div></a>
+    </div>
+  </div>
+</section>
+
+<section class="pcta" id="cta">
+  <div class="wrap">
+    <h2 data-i18n="ctah">Sei dabei, wenn SecureChat startet.</h2>
+    <p data-i18n="ctap">Merke dich für den geschlossenen Frühzugang vor und gehöre zu den Ersten.</p>
+    <div class="pcta-actions">
+      <a class="btn btn-solid btn-lg" href="https://stealthx.tech/" data-i18n="ctab1">Frühzugang vormerken</a>
+      <a class="btn btn-line btn-lg" href="https://github.com/NeaBouli/stealth" data-i18n="ctab2">Entwicklung verfolgen</a>
+    </div>
+    <div class="fine" data-i18n="ctafine">Geplant für Q3 2026 · Android zuerst</div>
+  </div>
+</section>
+
+<footer class="pfoot">
+  <div class="wrap">
+    <a href="StealthX Platform.html"><img src="assets/stealthx-mono.png" alt="StealthX" /></a>
+    <span class="fl" data-i18n="foot">© 2026 StealthX · Vendetta Labs — Quelloffen zur Prüfung</span>
+  </div>
+</footer>
+
+<script>
+window.PAGE_STRINGS = {
+  de: {
+    back: "← Zur Plattform", navcta: "Vormerken", status: "In Entwicklung · Q3 2026",
+    h1: "Nachrichten ohne Server. Ohne Spuren.",
+    sub: "Dezentrale, Ende-zu-Ende-verschlüsselte Nachrichten — versiegelt auf deinem Gerät, ganz ohne zentrale Infrastruktur und ohne Metadaten.",
+    cta1: "Frühzugang vormerken", cta2: "Quellcode prüfen",
+    fkick: "Funktionen", fh: "Privatsphäre auf Protokollebene",
+    f1h: "Double-Ratchet", f1p: "Für jede Nachricht ein neuer Schlüssel. Selbst ein kompromittierter Schlüssel gefährdet nicht den Verlauf.",
+    f2h: "Dezentral", f2p: "Keine zentralen Server, die ausfallen, beschlagnahmt oder durchsucht werden können.",
+    f3h: "Kaspa-Identität", f3p: "Deine Identität ist on-chain verankert — dezentral, fälschungssicher, ohne Telefonnummer.",
+    f4h: "Zero-Metadata", f4p: "Kein Absender, kein Empfänger, kein Zeitstempel wird gespeichert — nichts, das ausgewertet werden könnte.",
+    f5h: "Auf dem Gerät versiegelt", f5p: "Nachrichten verlassen dein Gerät nur verschlüsselt und werden lokal sicher gespeichert.",
+    f6h: "Selbstzerstörend", f6p: "Optional verfallen Nachrichten automatisch — auf beiden Geräten, ohne Rückstand.",
+    hkick: "Status", hh: "Wo SecureChat gerade steht",
+    s1h: "Krypto-Kern", s1p: "Double-Ratchet und Schlüsselverwaltung sind implementiert und getestet.",
+    s2h: "Transport", s2p: "Dezentrales Routing und Kaspa-Identität befinden sich im Aufbau.",
+    s3h: "Beta", s3p: "Geschlossener Frühzugang ist für Q3 2026 geplant.",
+    tkick: "Überprüfbar", th: "Die Technik dahinter",
+    sp1k: "Verschlüsselung", sp1d: "Forward Secrecy", sp2k: "Identität", sp2d: "On-chain",
+    sp3k: "Architektur", sp3v: "Serverlos", sp3d: "Peer-to-peer", sp4k: "Metadaten", sp4d: "Nichts gespeichert",
+    ckick: "Die Plattform", ch: "Teil von StealthX",
+    crA: "Verschlüsselte Anrufe", crB: "Verschlüsselte Nachrichten", crC: "Privacy-OS",
+    ctah: "Sei dabei, wenn SecureChat startet.",
+    ctap: "Merke dich für den geschlossenen Frühzugang vor und gehöre zu den Ersten.",
+    ctab1: "Frühzugang vormerken", ctab2: "Entwicklung verfolgen", ctafine: "Geplant für Q3 2026 · Android zuerst",
+    foot: "© 2026 StealthX · Vendetta Labs — Quelloffen zur Prüfung",
+  },
+  en: {
+    back: "← Back to platform", navcta: "Get notified", status: "In development · Q3 2026",
+    h1: "Messages with no server. No traces.",
+    sub: "Decentralized, end-to-end encrypted messages — sealed on your device, with no central infrastructure and no metadata.",
+    cta1: "Get early access", cta2: "Inspect the source",
+    fkick: "Features", fh: "Privacy at the protocol level",
+    f1h: "Double Ratchet", f1p: "A fresh key for every message. Even a compromised key never exposes your history.",
+    f2h: "Decentralized", f2p: "No central servers that can go down, be seized or be searched.",
+    f3h: "Kaspa identity", f3p: "Your identity is anchored on-chain — decentralized, tamper-proof, no phone number.",
+    f4h: "Zero metadata", f4p: "No sender, no recipient, no timestamp is stored — nothing that could be analyzed.",
+    f5h: "Sealed on device", f5p: "Messages only ever leave your device encrypted and are stored securely on it.",
+    f6h: "Self-destructing", f6p: "Optionally, messages expire automatically — on both devices, leaving nothing behind.",
+    hkick: "Status", hh: "Where SecureChat stands today",
+    s1h: "Crypto core", s1p: "Double Ratchet and key management are implemented and tested.",
+    s2h: "Transport", s2p: "Decentralized routing and Kaspa identity are being built.",
+    s3h: "Beta", s3p: "Closed early access is planned for Q3 2026.",
+    tkick: "Verifiable", th: "The technology behind it",
+    sp1k: "Encryption", sp1d: "Forward secrecy", sp2k: "Identity", sp2d: "On-chain",
+    sp3k: "Architecture", sp3v: "Serverless", sp3d: "Peer-to-peer", sp4k: "Metadata", sp4d: "Nothing stored",
+    ckick: "The platform", ch: "Part of StealthX",
+    crA: "Encrypted calls", crB: "Encrypted messages", crC: "Privacy OS",
+    ctah: "Be there when SecureChat launches.",
+    ctap: "Sign up for closed early access and be among the first.",
+    ctab1: "Get early access", ctab2: "Follow development", ctafine: "Planned for Q3 2026 · Android first",
+    foot: "© 2026 StealthX · Vendetta Labs — Source-available for audit",
+  }
+};
+</script>
+<script src="product-i18n.js"></script>
+</body>
+</html>

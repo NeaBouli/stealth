@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StealthX — App-Icons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: oklch(0.985 0.003 262); color: oklch(0.215 0.015 262);
+    font-family: "Hanken Grotesk", system-ui, sans-serif; -webkit-font-smoothing: antialiased; line-height: 1.6; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 64px 28px 90px; }
+  .kick { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: .14em;
+    text-transform: uppercase; color: oklch(0.62 0.14 272); font-weight: 600; }
+  h1 { font-family: "Schibsted Grotesk", sans-serif; font-weight: 700; font-size: clamp(30px,4vw,44px);
+    letter-spacing: -0.03em; margin: 12px 0 10px; }
+  .lead { font-size: 17px; color: oklch(0.43 0.013 262); max-width: 56ch; margin: 0 0 44px; }
+
+  .icon-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-bottom: 26px; }
+  .icon-card { background: #fff; border: 1px solid oklch(0 0 0 / 0.085); border-radius: 18px;
+    padding: 34px 24px 26px; text-align: center; }
+  .icon-card img.big { width: 148px; height: 148px; border-radius: 33px; margin: 0 auto 18px;
+    box-shadow: 0 22px 44px -18px rgba(20,30,60,.35); }
+  .icon-card h2 { font-family: "Schibsted Grotesk", sans-serif; font-weight: 700; font-size: 19px;
+    letter-spacing: -0.01em; margin: 0 0 2px; }
+  .icon-card .tag { font-size: 13px; color: oklch(0.56 0.011 262); }
+  .icon-card .file { font-family: "JetBrains Mono", monospace; font-size: 11px; color: oklch(0.56 0.011 262);
+    margin-top: 12px; background: oklch(0.968 0.005 262); border-radius: 8px; padding: 5px 10px; display: inline-block; }
+
+  .strip { border-radius: 18px; border: 1px solid oklch(0 0 0 / 0.085); overflow: hidden; margin-bottom: 26px; }
+  .strip-row { display: flex; align-items: center; gap: 34px; padding: 26px 30px; }
+  .strip-row.light { background: #fff; }
+  .strip-row.dark { background: oklch(0.17 0.012 262); border-top: 1px solid oklch(0 0 0 / 0.2); }
+  .strip-label { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; width: 110px; flex: none; color: oklch(0.56 0.011 262); }
+  .sizes { display: flex; align-items: flex-end; gap: 26px; flex-wrap: wrap; }
+  .sz { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .sz span { font-size: 11px; font-family: "JetBrains Mono", monospace; color: oklch(0.56 0.011 262); }
+  .sz img { border-radius: 22.5%; box-shadow: 0 8px 18px -8px rgba(0,0,0,.35); }
+
+  .note { font-size: 14px; color: oklch(0.43 0.013 262); background: #fff;
+    border: 1px solid oklch(0 0 0 / 0.085); border-radius: 14px; padding: 18px 22px; }
+  .note strong { color: oklch(0.215 0.015 262); }
+  @media (max-width: 760px) { .icon-grid { grid-template-columns: 1fr; } .strip-row { flex-direction: column; align-items: flex-start; gap: 18px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="kick">StealthX · Markensystem</span>
+  <h1>App-Icons für die Plattform</h1>
+  <p class="lead">Die drei Produkt-Glyphen als Launcher-Icons — 1024 × 1024 px, mit Plattform-Farbverlauf, weicher Lichtkante und klarer weißer Glyphe. Gleiche Geometrie, drei Farbtöne: eine Familie.</p>
+
+  <div class="icon-grid">
+    <div class="icon-card">
+      <img class="big" src="icons/SecureCall-Icon.png" alt="SecureCall Icon" />
+      <h2>SecureCall</h2>
+      <div class="tag">Verschlüsselte Anrufe</div>
+      <div class="file">SecureCall-Icon.png</div>
+    </div>
+    <div class="icon-card">
+      <img class="big" src="icons/SecureChat-Icon.png" alt="SecureChat Icon" />
+      <h2>SecureChat</h2>
+      <div class="tag">Verschlüsselte Nachrichten</div>
+      <div class="file">SecureChat-Icon.png</div>
+    </div>
+    <div class="icon-card">
+      <img class="big" src="icons/Chameleon-Icon.png" alt="Chameleon Icon" />
+      <h2>Chameleon</h2>
+      <div class="tag">Privacy-OS</div>
+      <div class="file">Chameleon-Icon.png</div>
+    </div>
+  </div>
+
+  <div class="strip">
+    <div class="strip-row light">
+      <span class="strip-label">Homescreen hell</span>
+      <div class="sizes">
+        <div class="sz"><img src="icons/SecureCall-Icon.png" width="72" height="72" alt="" /><span>72</span></div>
+        <div class="sz"><img src="icons/SecureChat-Icon.png" width="72" height="72" alt="" /><span>72</span></div>
+        <div class="sz"><img src="icons/Chameleon-Icon.png" width="72" height="72" alt="" /><span>72</span></div>
+        <div class="sz"><img src="icons/SecureCall-Icon.png" width="48" height="48" alt="" /><span>48</span></div>
+        <div class="sz"><img src="icons/SecureChat-Icon.png" width="48" height="48" alt="" /><span>48</span></div>
+        <div class="sz"><img src="icons/Chameleon-Icon.png" width="48" height="48" alt="" /><span>48</span></div>
+      </div>
+    </div>
+    <div class="strip-row dark">
+      <span class="strip-label" style="color:oklch(0.65 0.01 262)">Homescreen dunkel</span>
+      <div class="sizes">
+        <div class="sz"><img src="icons/SecureCall-Icon.png" width="72" height="72" alt="" /><span style="color:oklch(0.65 0.01 262)">72</span></div>
+        <div class="sz"><img src="icons/SecureChat-Icon.png" width="72" height="72" alt="" /><span style="color:oklch(0.65 0.01 262)">72</span></div>
+        <div class="sz"><img src="icons/Chameleon-Icon.png" width="72" height="72" alt="" /><span style="color:oklch(0.65 0.01 262)">72</span></div>
+        <div class="sz"><img src="icons/SecureCall-Icon.png" width="48" height="48" alt="" /><span style="color:oklch(0.65 0.01 262)">48</span></div>
+        <div class="sz"><img src="icons/SecureChat-Icon.png" width="48" height="48" alt="" /><span style="color:oklch(0.65 0.01 262)">48</span></div>
+        <div class="sz"><img src="icons/Chameleon-Icon.png" width="48" height="48" alt="" /><span style="color:oklch(0.65 0.01 262)">48</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note"><strong>Hinweis für Android:</strong> Die PNGs sind 1024 × 1024 mit eingebauter Rundung (22,5 %). Für adaptive Icons (API 26+) liefere ich auf Wunsch zusätzlich Vorder-/Hintergrund-Ebenen getrennt — der Launcher maskiert die Form dann selbst.</div>
+</div>
+</body>
+</html>

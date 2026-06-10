@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StealthX — Design-Konzept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --bg: #f4f5f7;
+    --paper: #ffffff;
+    --ink: #1b1d24;
+    --dim: #5a5f6e;
+    --faint: #888d9c;
+    --line: rgba(0,0,0,.10);
+    --line-soft: rgba(0,0,0,.06);
+    --accent: oklch(0.62 0.14 272);
+    --call: oklch(0.66 0.13 254);
+    --chat: oklch(0.66 0.10 194);
+    --cham: oklch(0.64 0.13 312);
+    --display: "Schibsted Grotesk", system-ui, sans-serif;
+    --text: "Hanken Grotesk", system-ui, sans-serif;
+    --mono: "JetBrains Mono", monospace;
+  }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--text);
+    -webkit-font-smoothing: antialiased; line-height: 1.6; }
+  ::selection { background: color-mix(in oklch, var(--accent) 30%, transparent); }
+
+  .page { width: 210mm; min-height: 297mm; margin: 22px auto; background: var(--paper);
+    padding: 26mm 24mm; box-shadow: 0 18px 50px -24px rgba(0,0,0,.4); position: relative; }
+  .page + .page { margin-top: 0; }
+
+  /* running head */
+  .rh { display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--faint); padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 30px; }
+  .rh img { height: 26px; }
+  .pgnum { position: absolute; bottom: 16mm; right: 24mm; font-family: var(--mono); font-size: 10px; color: var(--faint); }
+
+  h1.cover-title { font-family: var(--display); font-weight: 800; font-size: 58px; line-height: 1.0;
+    letter-spacing: -0.035em; margin: 0 0 10px; }
+  .kick { font-family: var(--mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; }
+  h2 { font-family: var(--display); font-weight: 700; font-size: 27px; letter-spacing: -0.025em;
+    margin: 6px 0 16px; }
+  h3 { font-family: var(--display); font-weight: 600; font-size: 16px; letter-spacing: -0.01em; margin: 0 0 6px; }
+  p { margin: 0 0 14px; color: var(--dim); font-size: 14px; max-width: 62ch; }
+  p strong { color: var(--ink); font-weight: 600; }
+  .lead { font-size: 17px; color: var(--ink); max-width: 60ch; }
+  .num { font-family: var(--mono); color: var(--accent); font-size: 13px; margin-right: 8px; }
+
+  .sec { margin-bottom: 34px; }
+  .sec:last-child { margin-bottom: 0; }
+
+  /* cover */
+  .cover { display: flex; flex-direction: column; }
+  .cover-logo { height: 96px; width: auto; margin-bottom: 40px; }
+  .cover-meta { margin-top: auto; display: grid; grid-template-columns: repeat(2,1fr); gap: 18px 30px;
+    border-top: 1px solid var(--line); padding-top: 22px; }
+  .cover-meta .k { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .cover-meta .v { font-size: 14px; color: var(--ink); font-weight: 500; }
+  .cover-tag { font-size: 19px; color: var(--dim); max-width: 46ch; margin-bottom: 30px; }
+
+  /* generic cards / grids */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .card { border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: var(--paper); }
+  .card.soft { background: #fafbfc; }
+  .card p { font-size: 13px; margin: 0; }
+  .card .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+
+  .badwrap { display: flex; gap: 12px; flex-wrap: wrap; }
+  .pill { font-size: 12px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line);
+    color: var(--dim); display: inline-flex; align-items: center; gap: 7px; }
+  .pill.bad { color: #b4453a; border-color: #e7c4bf; background: #fbf2f0; }
+  .pill.good { color: #2f7a52; border-color: #c2e0cf; background: #f0f8f3; }
+
+  /* before/after */
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .ba > div { padding: 18px; }
+  .ba .before { background: #fbf2f0; border-right: 1px solid var(--line); }
+  .ba .after { background: #f0f8f3; }
+  .ba h4 { margin: 0 0 10px; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+  .ba .before h4 { color: #b4453a; } .ba .after h4 { color: #2f7a52; }
+  .ba ul { margin: 0; padding-left: 16px; } .ba li { font-size: 13px; color: var(--dim); margin-bottom: 6px; }
+
+  /* logo lab */
+  .logo-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .logo-cell { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .logo-stage { height: 120px; display: grid; place-items: center; }
+  .logo-stage img { height: 64px; }
+  .logo-stage.light { background: #f4f5f7; } .logo-stage.dark { background: #16181d; }
+  .logo-cap { padding: 10px 14px; border-top: 1px solid var(--line); font-size: 12px; color: var(--dim); }
+  .logo-cap b { color: var(--ink); font-family: var(--display); }
+
+  /* colors */
+  .swatch-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .sw { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .sw .chip { height: 76px; } .sw .meta { padding: 10px 12px; }
+  .sw .name { font-family: var(--display); font-weight: 600; font-size: 14px; }
+  .sw .val { font-family: var(--mono); font-size: 10.5px; color: var(--faint); }
+  .neutral-row { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 12px; }
+  .neutral-row span { flex: 1; height: 48px; display: flex; align-items: flex-end; padding: 5px; font-family: var(--mono); font-size: 8.5px; }
+
+  /* type */
+  .type-spec { border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 12px; }
+  .type-spec .label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .scale { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; margin-top: 4px; }
+  .scale span { line-height: 1; }
+
+  /* components preview */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-family: var(--text); font-weight: 600; font-size: 13px; padding: 9px 16px; border-radius: 10px; border: 1px solid transparent; }
+  .btn.solid { background: var(--accent); color: #fff; }
+  .btn.line { border-color: var(--line); color: var(--ink); }
+  .btn.ghost { background: #eef0f4; color: var(--ink); }
+
+  table.spec { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.spec td { padding: 9px 4px; border-bottom: 1px solid var(--line-soft); color: var(--dim); }
+  table.spec td:first-child { color: var(--ink); font-weight: 500; width: 38%; }
+  table.spec td:last-child { font-family: var(--mono); font-size: 11.5px; text-align: right; }
+
+  .arch { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 6px; }
+  .arch .prod { border: 1px solid var(--line); border-radius: 12px; padding: 16px; border-top: 3px solid var(--pa); }
+  .arch .prod .nm { font-family: var(--display); font-weight: 700; font-size: 16px; }
+  .arch .prod .tg { font-size: 12px; color: var(--pa); font-weight: 600; margin-bottom: 8px; }
+  .arch .prod p { font-size: 12px; }
+  .arch .prod .st { font-family: var(--mono); font-size: 9.5px; color: var(--faint); margin-top: 8px; text-transform: uppercase; letter-spacing: .08em; }
+
+  .principle { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
+  .principle:last-child { border-bottom: none; }
+  .principle .pn { font-family: var(--display); font-weight: 800; font-size: 22px; color: color-mix(in oklch, var(--accent) 45%, var(--faint)); min-width: 38px; }
+  .principle .pb h3 { margin-bottom: 3px; }
+  .principle .pb p { margin: 0; font-size: 13px; }
+
+  .quote { font-family: var(--display); font-weight: 600; font-size: 22px; line-height: 1.3;
+    letter-spacing: -0.02em; color: var(--ink); border-left: 3px solid var(--accent); padding-left: 18px; margin: 4px 0 0; max-width: 50ch; }
+
+  @media print {
+    body { background: #fff; }
+    .page { box-shadow: none; margin: 0; width: auto; min-height: auto; page-break-after: always; padding: 18mm; }
+    .page:last-child { page-break-after: auto; }
+  }
+  @media (max-width: 800px) {
+    .page { width: auto; padding: 24px 18px; margin: 12px; }
+    .grid2, .grid3, .logo-row, .swatch-row, .arch, .ba, .cover-meta { grid-template-columns: 1fr; }
+    h1.cover-title { font-size: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="page cover">
+  <div class="rh"><span>Design-Konzept</span><span>Vendetta Labs · 2026</span></div>
+  <img class="cover-logo" src="assets/stealthx-mono.png" alt="StealthX" />
+  <span class="kick">Marken- & Produktdesign</span>
+  <h1 class="cover-title">StealthX<br/>Design-Konzept</h1>
+  <p class="cover-tag">Eine ruhige, überprüfbare Plattform für private Kommunikation — drei Produkte, ein Sicherheitskern, ein Markensystem.</p>
+  <div class="cover-meta">
+    <div><div class="k">Plattform</div><div class="v">StealthX</div></div>
+    <div><div class="k">Produkte</div><div class="v">SecureCall · SecureChat · Chameleon</div></div>
+    <div><div class="k">Richtung</div><div class="v">Ruhig · vertrauenswürdig · premium</div></div>
+    <div><div class="k">Zielgruppe</div><div class="v">Journalist:innen & Aktivist:innen</div></div>
+    <div><div class="k">Sprachen</div><div class="v">Deutsch · Englisch</div></div>
+    <div><div class="k">Stand</div><div class="v">Mai 2026 · v1</div></div>
+  </div>
+  <div class="pgnum">01</div>
+</section>
+
+<!-- 1 — AUSGANGSLAGE -->
+<section class="page">
+  <div class="rh"><span><span class="num">01</span>Ausgangslage</span><span>StealthX Design-Konzept</span></div>
+  <div class="sec">
+    <span class="kick">Warum ein Redesign</span>
+    <h2>Vom Tactical-Look zum Vertrauensanker</h2>
+    <p class="lead">Der bisherige Auftritt setzte auf eine „military / classified / operator"-Ästhetik. Für ein Sicherheitsprodukt, das von Journalist:innen und Aktivist:innen genutzt wird, arbeitet dieser Look gegen das eigentliche Ziel: <strong>Vertrauen</strong>.</p>
+  </div>
+
+  <div class="sec ba">
+    <div class="before">
+      <h4>Vorher — Probleme</h4>
+      <ul>
+        <li>„Clearance level", „Tactical briefing", „Operators" — Cosplay statt Seriosität</li>
+        <li>Drei grelle Neonfarben (Blau, Orange, Grün) → kein Plattform-Branding</li>
+        <li>Sehr textlastig, Emojis als Icons, Keyword-Stuffing</li>
+        <li>Rotes Gaming-Logo, das mit dem Inhalt konkurriert</li>
+        <li>Kein einheitliches System über die drei Produkte</li>
+      </ul>
+    </div>
+    <div class="after">
+      <h4>Nachher — Lösung</h4>
+      <ul>
+        <li>Ruhige, klare Sprache: „Nicht vertrauen. Überprüfen."</li>
+        <li>Eine Plattform-Farbe + drei dezente, harmonische Produkt-Töne</li>
+        <li>Großzügiger Weißraum, Haarlinien, ruhige Hierarchie</li>
+        <li>Logo an die Seitenfarben angepasst (Schwarz-Silber / Indigo)</li>
+        <li>Ein gemeinsames Marken- und Komponenten-System</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Strategische Leitidee</h3>
+    <p class="quote">Sicherheit muss man nicht behaupten — man muss sie zeigen. Jede Behauptung ist im Quellcode überprüfbar.</p>
+  </div>
+  <div class="pgnum">02</div>
+</section>
+
+<!-- 2 — PRINZIPIEN + ARCHITEKTUR -->
+<section class="page">
+  <div class="rh"><span><span class="num">02</span>Prinzipien & Architektur</span><span>StealthX Design-Konzept</span></div>
+
+  <div class="sec">
+    <span class="kick">Design-Prinzipien</span>
+    <h2>Vier Leitlinien</h2>
+    <div class="principle">
+      <div class="pn">01</div>
+      <div class="pb"><h3>Ruhe schafft Vertrauen</h3><p>Weißraum, gedämpfte Farben und klare Typografie signalisieren ein erwachsenes, verlässliches Produkt — kein Hacker-Werkzeug.</p></div>
+    </div>
+    <div class="principle">
+      <div class="pn">02</div>
+      <div class="pb"><h3>Beweis statt Behauptung</h3><p>Technische Fakten (Verschlüsselung, Tests, Quellcode) werden sichtbar gemacht — in Mono-Schrift als überprüfbarer Beleg.</p></div>
+    </div>
+    <div class="principle">
+      <div class="pn">03</div>
+      <div class="pb"><h3>Ein System, drei Produkte</h3><p>SecureCall, SecureChat und Chameleon teilen sich Kern, Farben und Formensprache. Variation entsteht nur über den Farbton.</p></div>
+    </div>
+    <div class="principle">
+      <div class="pn">04</div>
+      <div class="pb"><h3>Zugänglich & mehrsprachig</h3><p>Klare Sprache auf Deutsch und Englisch, hohe Kontraste, große Klickflächen, Light- und Dark-Mode.</p></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <span class="kick">Produktarchitektur</span>
+    <h2>Eine Firma · drei Produkte · ein Paket</h2>
+    <div class="arch">
+      <div class="prod" style="--pa: var(--call)">
+        <div class="nm">SecureCall</div><div class="tg">Verschlüsselte Anrufe</div>
+        <p>Ende-zu-Ende-verschlüsselte Sprachanrufe ohne Telefonnummer und ohne Spuren.</p>
+        <div class="st">Verfügbar · Android</div>
+      </div>
+      <div class="prod" style="--pa: var(--chat)">
+        <div class="nm">SecureChat</div><div class="tg">Verschlüsselte Nachrichten</div>
+        <p>Dezentrale Nachrichten ohne Server und ohne Metadaten, versiegelt auf dem Gerät.</p>
+        <div class="st">In Entwicklung · Q3 2026</div>
+      </div>
+      <div class="prod" style="--pa: var(--cham)">
+        <div class="nm">Chameleon</div><div class="tg">Privacy-OS</div>
+        <p>Kontextbewusste Verschlüsselung, die jede App automatisch unsichtbar macht.</p>
+        <div class="st">Standalone · Pre-Alpha</div>
+      </div>
+    </div>
+    <p style="margin-top:14px"><strong>StealthX Suite:</strong> alle drei Produkte als Bundle, lebenslang gegen Einmalzahlung — als verbindendes Angebot, das die Plattform-Idee greifbar macht.</p>
+  </div>
+  <div class="pgnum">03</div>
+</section>
+
+<!-- 3 — LOGO -->
+<section class="page">
+  <div class="rh"><span><span class="num">03</span>Logo-System</span><span>StealthX Design-Konzept</span></div>
+  <div class="sec">
+    <span class="kick">Dachmarke</span>
+    <h2>Das StealthX-Emblem, an die Seite angepasst</h2>
+    <p>Das originale „X STEALTH"-Emblem bleibt als Dachmarke erhalten — aber statt glänzendem Rot wird es auf das Farbsystem der Plattform umgefärbt. So wirkt es premium statt gaming, ohne die Wiedererkennung zu verlieren.</p>
+  </div>
+
+  <div class="sec">
+    <h3>Varianten</h3>
+    <div class="logo-row">
+      <div class="logo-cell">
+        <div class="logo-stage light"><img src="assets/stealthx-mono.png" alt="mono" /></div>
+        <div class="logo-cap"><b>Schwarz-Silber</b> · Standard, helle Flächen</div>
+      </div>
+      <div class="logo-cell">
+        <div class="logo-stage light"><img src="assets/stealthx-blue.png" alt="blau" /></div>
+        <div class="logo-cap"><b>Indigo</b> · im Plattform-Akzent</div>
+      </div>
+      <div class="logo-cell">
+        <div class="logo-stage dark"><img src="assets/stealthx-light.png" alt="silber" /></div>
+        <div class="logo-cap"><b>Silber</b> · automatisch im Dark-Mode</div>
+      </div>
+    </div>
+    <div class="logo-row" style="margin-top:14px">
+      <div class="logo-cell">
+        <div class="logo-stage light">
+          <svg width="150" height="98" viewBox="0 0 360 234" fill="none" style="color:#1b1d24">
+            <polygon points="250,28 110,148 97,132.8 237,12.8" fill="currentColor" opacity="0.74"/>
+            <polygon points="250,28 263,43.2 123,163.2 110,148" fill="currentColor"/>
+            <polygon points="123,12.8 263,132.8 250,148 110,28" fill="currentColor" opacity="0.74"/>
+            <polygon points="110,28 250,148 237,163.2 97,43.2" fill="currentColor"/>
+            <text x="180" y="214" text-anchor="middle" fill="currentColor" style="font-family:'Schibsted Grotesk',sans-serif;font-weight:800;font-size:47px;letter-spacing:7px">STEALTH</text>
+          </svg>
+        </div>
+        <div class="logo-cap"><b>Vektor</b> · facettiert, gestochen scharf</div>
+      </div>
+      <div class="logo-cell">
+        <div class="logo-stage dark">
+          <svg width="150" height="98" viewBox="0 0 360 234" fill="none" style="color:#ffffff">
+            <polygon points="250,28 110,148 97,132.8 237,12.8" fill="currentColor" opacity="0.74"/>
+            <polygon points="250,28 263,43.2 123,163.2 110,148" fill="currentColor"/>
+            <polygon points="123,12.8 263,132.8 250,148 110,28" fill="currentColor" opacity="0.74"/>
+            <polygon points="110,28 250,148 237,163.2 97,43.2" fill="currentColor"/>
+            <text x="180" y="214" text-anchor="middle" fill="currentColor" style="font-family:'Schibsted Grotesk',sans-serif;font-weight:800;font-size:47px;letter-spacing:7px">STEALTH</text>
+          </svg>
+        </div>
+        <div class="logo-cap"><b>Vektor</b> · Dark-Mode, theme-adaptiv</div>
+      </div>
+      <div class="logo-cell">
+        <div class="logo-stage" style="background:color-mix(in oklch, var(--accent) 14%, #fff)">
+          <svg width="150" height="98" viewBox="0 0 360 234" fill="none" style="color:var(--accent)">
+            <polygon points="250,28 110,148 97,132.8 237,12.8" fill="currentColor" opacity="0.74"/>
+            <polygon points="250,28 263,43.2 123,163.2 110,148" fill="currentColor"/>
+            <polygon points="123,12.8 263,132.8 250,148 110,28" fill="currentColor" opacity="0.74"/>
+            <polygon points="110,28 250,148 237,163.2 97,43.2" fill="currentColor"/>
+            <text x="180" y="214" text-anchor="middle" fill="currentColor" style="font-family:'Schibsted Grotesk',sans-serif;font-weight:800;font-size:47px;letter-spacing:7px">STEALTH</text>
+          </svg>
+        </div>
+        <div class="logo-cap"><b>Vektor</b> · im Akzent einsetzbar</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec grid2">
+    <div class="card soft">
+      <div class="tag">Einsatzregeln</div>
+      <p>Auf hellen Flächen die Schwarz-Silber-Variante; auf dunklen Flächen automatisch die Silber-Variante. Indigo als ausdrucksstarke Alternative im Marketing.</p>
+    </div>
+    <div class="card soft">
+      <div class="tag">Schutzraum & Empfehlung</div>
+      <p>Mindestabstand = Höhe des „X". Das umgefärbte Raster ist v1; empfohlen ist mittelfristig eine geschärfte <strong>Vektor-Wortmarke</strong> für „STEALTH".</p>
+    </div>
+  </div>
+  <div class="pgnum">04</div>
+</section>
+
+<!-- 4 — FARBE -->
+<section class="page">
+  <div class="rh"><span><span class="num">04</span>Farbsystem</span><span>StealthX Design-Konzept</span></div>
+  <div class="sec">
+    <span class="kick">Farbe</span>
+    <h2>Eine Plattform-Farbe, drei Produkt-Töne</h2>
+    <p>Alle Akzente liegen auf <strong>derselben Helligkeit und Sättigung</strong> (definiert in OKLCH) — nur der Farbton wandert. Das hält die Familie ruhig und kohärent, statt grell und beliebig.</p>
+  </div>
+
+  <div class="sec">
+    <h3>Akzentpalette</h3>
+    <div class="swatch-row">
+      <div class="sw"><div class="chip" style="background:var(--accent)"></div><div class="meta"><div class="name">Plattform</div><div class="val">oklch(.62 .14 272)</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--call)"></div><div class="meta"><div class="name">SecureCall</div><div class="val">oklch(.66 .13 254)</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--chat)"></div><div class="meta"><div class="name">SecureChat</div><div class="val">oklch(.66 .10 194)</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--cham)"></div><div class="meta"><div class="name">Chameleon</div><div class="val">oklch(.64 .13 312)</div></div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Neutrale (Light-Mode)</h3>
+    <div class="neutral-row">
+      <span style="background:#ffffff;color:#888">#FFF</span>
+      <span style="background:#f4f5f7;color:#888">Surface</span>
+      <span style="background:#e7e9ee;color:#777">Line</span>
+      <span style="background:#888d9c;color:#fff">Faint</span>
+      <span style="background:#5a5f6e;color:#fff">Dim</span>
+      <span style="background:#1b1d24;color:#fff">Ink</span>
+    </div>
+    <p style="margin-top:14px"><strong>Tweakbar:</strong> Plattform-Akzent zwischen Indigo, Azur, Teal und Graphit umstellbar; Light- und Dark-Mode integriert. Graphit lässt das Logo-Rot/Indigo als einzigen Farbakzent wirken.</p>
+  </div>
+  <div class="pgnum">05</div>
+</section>
+
+<!-- 5 — TYPO -->
+<section class="page">
+  <div class="rh"><span><span class="num">05</span>Typografie</span><span>StealthX Design-Konzept</span></div>
+  <div class="sec">
+    <span class="kick">Schrift</span>
+    <h2>Drei Stimmen, klar getrennt</h2>
+  </div>
+
+  <div class="type-spec">
+    <div class="label">Display · Überschriften</div>
+    <div style="font-family:var(--display);font-weight:700;font-size:40px;letter-spacing:-0.03em;line-height:1.05">Schibsted Grotesk</div>
+    <div class="scale">
+      <span style="font-family:var(--display);font-weight:700;font-size:32px">Aa</span>
+      <span style="font-family:var(--display);font-weight:700;font-size:24px">Privatsphäre</span>
+      <span style="font-family:var(--display);font-weight:800;font-size:18px;color:var(--dim)">800 / 700 / 600</span>
+    </div>
+  </div>
+
+  <div class="type-spec">
+    <div class="label">Text · Fließtext & UI</div>
+    <div style="font-family:var(--text);font-size:22px">Hanken Grotesk — klar und ruhig im Fließtext.</div>
+    <p style="margin:10px 0 0;font-size:13px">Gut lesbar in langen Absätzen, neutrale Anmutung, Gewichte 400–700.</p>
+  </div>
+
+  <div class="type-spec">
+    <div class="label">Mono · Technische Belege</div>
+    <div style="font-family:var(--mono);font-size:18px">JetBrains Mono · XChaCha20-Poly1305</div>
+    <p style="margin:10px 0 0;font-size:13px">Ausschließlich für überprüfbare Fakten: Algorithmen, Testzahlen, Labels. Signalisiert „technisch belegbar".</p>
+  </div>
+  <div class="pgnum">06</div>
+</section>
+
+<!-- 6 — KOMPONENTEN + SPRACHE -->
+<section class="page">
+  <div class="rh"><span><span class="num">06</span>Komponenten & Sprache</span><span>StealthX Design-Konzept</span></div>
+  <div class="sec">
+    <span class="kick">UI-Bausteine</span>
+    <h2>Komponenten</h2>
+    <div class="grid2">
+      <div class="card">
+        <div class="tag">Buttons</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+          <span class="btn solid">Primär</span><span class="btn line">Linie</span><span class="btn ghost">Sekundär</span>
+        </div>
+        <p style="margin-top:12px">Radius 10–13px, Hover hebt um 1px, ruhige Übergänge.</p>
+      </div>
+      <div class="card">
+        <div class="tag">Produktkarte</div>
+        <div style="border:1px solid var(--line);border-top:3px solid var(--call);border-radius:10px;padding:12px">
+          <div style="font-family:var(--display);font-weight:700;font-size:15px">SecureCall</div>
+          <div style="font-size:11px;color:var(--call);font-weight:600">Verschlüsselte Anrufe</div>
+        </div>
+        <p style="margin-top:12px">Akzentleiste oben kennzeichnet das Produkt.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Spezifikations-Tabelle</h3>
+    <table class="spec">
+      <tr><td>Verschlüsselung</td><td>XChaCha20-Poly1305</td></tr>
+      <tr><td>Schlüsseltausch</td><td>X25519 ECDH</td></tr>
+      <tr><td>Forward Secrecy</td><td>Double Ratchet</td></tr>
+      <tr><td>Identität</td><td>Kaspa BlockDAG</td></tr>
+    </table>
+  </div>
+
+  <div class="sec">
+    <span class="kick">Tonfall</span>
+    <h2>Sprache: ruhig, präzise, zweisprachig</h2>
+    <div class="badwrap">
+      <span class="pill good">✓ „Nicht vertrauen. Überprüfen."</span>
+      <span class="pill good">✓ „Keine Telefonnummer, keine Spuren."</span>
+      <span class="pill bad">✕ „Choose your clearance level"</span>
+      <span class="pill bad">✕ „Tactical briefing"</span>
+    </div>
+    <p style="margin-top:16px">Vollständig auf <strong>Deutsch und Englisch</strong> umschaltbar (Auswahl wird gespeichert). Kurze, konkrete Aussagen statt Marketing-Slang; technische Begriffe bleiben unübersetzt, weil sie Belege sind.</p>
+  </div>
+  <div class="pgnum">07</div>
+</section>
+
+<!-- 7 — LIEFERUMFANG -->
+<section class="page">
+  <div class="rh"><span><span class="num">07</span>Lieferumfang & nächste Schritte</span><span>StealthX Design-Konzept</span></div>
+  <div class="sec">
+    <span class="kick">Was geliefert wurde</span>
+    <h2>Umfang dieses Konzepts</h2>
+    <div class="grid2">
+      <div class="card soft"><div class="tag">Interaktiv</div><p>Vollständige, klickbare Hi-Fi-Landingpage der Plattform mit Light/Dark, DE/EN, Akzent- und Logo-Tweaks.</p></div>
+      <div class="card soft"><div class="tag">Markensystem</div><p>Umgefärbtes Dachlogo (3 Varianten), Produktmarken, Farb-, Typo- und Komponentensystem.</p></div>
+      <div class="card soft"><div class="tag">Inhalt</div><p>Neu getextete, ruhige Copy auf Deutsch und Englisch für alle Sektionen.</p></div>
+      <div class="card soft"><div class="tag">Dokumentation</div><p>Dieses Design-Konzept als druckfähiges Dokument.</p></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <span class="kick">Empfehlung</span>
+    <h2>Nächste Schritte</h2>
+    <div class="principle"><div class="pn">A</div><div class="pb"><h3>Wortmarke vektorisieren</h3><p>„STEALTH"-Schriftband als saubere Vektor-Lettering nachbauen, damit das Logo in jeder Größe gestochen scharf ist.</p></div></div>
+    <div class="principle"><div class="pn">B</div><div class="pb"><h3>Produkt-Unterseiten</h3><p>Eigene Seiten für SecureCall, SecureChat und Chameleon im selben System — mit Screenshots und Feature-Tiefe.</p></div></div>
+    <div class="principle"><div class="pn">C</div><div class="pb"><h3>App-UI angleichen</h3><p>Farb- und Typo-System in die Android-App übertragen, damit Marketing und Produkt übereinstimmen.</p></div></div>
+  </div>
+
+  <div class="sec" style="margin-top:30px;border-top:1px solid var(--line);padding-top:20px">
+    <img src="assets/stealthx-mono.png" alt="StealthX" style="height:34px" />
+    <p style="margin-top:12px;font-size:12px;color:var(--faint)">© 2026 StealthX · Vendetta Labs — Griechenland · Quelloffen zur Prüfung</p>
+  </div>
+  <div class="pgnum">08</div>
+</section>
+
+</body>
+</html>
