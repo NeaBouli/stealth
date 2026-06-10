@@ -6,10 +6,36 @@
  * Sender: noreply@stealthx.tech (domain must be verified in both dashboards).
  */
 
+// --- Direct APK links ---
+
+const DOWNLOAD_PAGE_URL = process.env.SECURECALL_DOWNLOAD_PAGE_URL || "https://stealthx.tech/download.html";
+const APK_DOWNLOADS = {
+  pro: {
+    primary: process.env.SECURECALL_PRO_APK_URL ||
+      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-pro-arm64-v8a-release.apk",
+    armeabi: process.env.SECURECALL_PRO_APK_ARMEABI_URL ||
+      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-pro-armeabi-v7a-release.apk"
+  },
+  premium: {
+    primary: process.env.SECURECALL_PREMIUM_APK_URL ||
+      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-premium-arm64-v8a-release.apk",
+    armeabi: process.env.SECURECALL_PREMIUM_APK_ARMEABI_URL ||
+      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-premium-armeabi-v7a-release.apk"
+  }
+};
+
+function resolveDownloadLinks(tier) {
+  return APK_DOWNLOADS[tier] || APK_DOWNLOADS.pro;
+}
+
 // --- Email HTML Template ---
 
-function generateEmailHTML(code, tier) {
+function generateEmailHTML(code, tier, options = {}) {
   const tierName = tier === "premium" ? "Premium" : "Pro";
+  const links = {
+    ...resolveDownloadLinks(tier),
+    ...options.downloadLinks
+  };
   return `
 <div style="background:#0a0a12;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;padding:40px 20px;max-width:640px;margin:0 auto;">
   <div style="text-align:center;margin-bottom:32px;">
@@ -41,16 +67,22 @@ function generateEmailHTML(code, tier) {
 
   <div style="background:#11131a;border:1px solid #1f2330;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;">
     <h3 style="color:#FFD700;font-size:13px;text-transform:uppercase;letter-spacing:2px;margin:0 0 16px 0;">Don't have the app yet?</h3>
+    <p style="color:#aaa;margin:0 0 16px 0;font-size:14px;line-height:1.6;">Install the ${tierName} APK directly after purchase, or use Google Play for the public Free build.</p>
     <div style="margin:0;">
-      <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free"
+      <a href="${links.primary}"
          style="display:inline-block;background:#ff4444;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;margin:6px;font-size:14px;">
+        Download ${tierName} APK
+      </a>
+      <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free"
+         style="display:inline-block;background:rgba(255,255,255,0.08);color:#ccc;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;margin:6px;font-size:14px;border:1px solid rgba(255,255,255,0.12);">
         Google Play Store
       </a>
-      <a href="https://github.com/NeaBouli/stealth/releases/latest"
+      <a href="${DOWNLOAD_PAGE_URL}"
          style="display:inline-block;background:rgba(255,255,255,0.08);color:#ccc;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;margin:6px;font-size:14px;border:1px solid rgba(255,255,255,0.12);">
-        Direct APK Download
+        Other APK Builds
       </a>
     </div>
+    <p style="color:#666;margin:14px 0 0 0;font-size:12px;line-height:1.6;">Use ARM64 for most current Android phones. Older 32-bit phones can use the alternate APK from the download page.</p>
   </div>
 
   <div style="background:rgba(255,152,0,0.08);border:1px solid rgba(255,152,0,0.25);border-radius:12px;padding:20px;margin-bottom:24px;">
@@ -126,12 +158,12 @@ async function sendWithBrevo(to, subject, html) {
 
 // --- Main Send Function (Resend → Brevo fallback) ---
 
-async function sendActivationCode(toEmail, code, tier) {
+async function sendActivationCode(toEmail, code, tier, options = {}) {
   console.log("[EMAIL] sendActivationCode:", toEmail.substring(0, 3) + "***", code.substring(0, 4) + "****", tier);
 
   const tierName = tier === "premium" ? "Premium" : "Pro";
   const subject = `Your SecureCall ${tierName} Activation Code`;
-  const html = generateEmailHTML(code, tier);
+  const html = generateEmailHTML(code, tier, options);
 
   // 1. Try Brevo (primary)
   if (process.env.BREVO_API_KEY) {
@@ -163,4 +195,4 @@ async function sendActivationCode(toEmail, code, tier) {
   return false;
 }
 
-module.exports = { sendActivationCode, generateEmailHTML };
+module.exports = { sendActivationCode, generateEmailHTML, resolveDownloadLinks };

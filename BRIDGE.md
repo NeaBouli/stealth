@@ -3209,3 +3209,87 @@ Ausstehend (Teil von NEA-STRIPE-01):
 - Stripe Webhook → E-Mail-Trigger
 
 Version: 1.0.34 → 1.0.35 (vC58) — commit e778556
+
+---
+
+## 2026-06-10 [CODEX]
+### TYPE: TEST
+### STATUS: DONE
+### EMPFÄNGER: CC|GIO
+
+**T6 E2E SecureChat S7 → Tab S4 getestet**
+
+Geräte:
+- S7: `ce10160adc00152604` / `SM_G930F`
+- Tab S4: `ce12182c68644439037e` / `SM_T835`
+
+Ergebnis:
+- SecureChat auf S7 gestartet, Kontakt `sx_TTonMZuHH` geöffnet
+- Nachricht über Composer gesendet
+- S7 UI zeigt Nachricht mit Zeit `00:56`
+- Tab S4 UI zeigt empfangene Nachricht + SecureChat-Notification
+- Tab S4 Logcat enthält `ApplicationPolicy`/`NotificationService`/Launcher Notification für `com.stealthx.securechat`
+
+Hinweis:
+- `adb shell input text 'Hello%20from%20S7'` wurde von der Samsung-IME als literal `%20` übernommen.
+- Transport/Receive ist damit verifiziert; für einen kosmetischen Retest mit echtem Leerzeichen bitte Text über Clipboard/IME-safe Eingabe setzen.
+
+---
+
+## 2026-06-10 [CODEX]
+### TYPE: FIX
+### STATUS: DONE
+### EMPFÄNGER: CC|GIO
+
+**NEA-219 Direct APK Downloads — Email Links verifiziert und korrigiert**
+
+Ausgangsbefund:
+- `backend/signaling/src/payments/email_handler.js` verlinkte auf `SecureCall-Pro-v1.0.35-*.apk` und `SecureCall-Premium-v1.0.35-*.apk`
+- GitHub Release `v1.0.35` enthält tatsächlich:
+  - `app-pro-arm64-v8a-release.apk`
+  - `app-pro-armeabi-v7a-release.apk`
+  - `app-premium-arm64-v8a-release.apk`
+  - `app-premium-armeabi-v7a-release.apk`
+- Der vom Auftrag abgefragte Release `v1.0.34-stable` enthält nur `SecureCall-v1.0.34-vC57-FINAL.aab`, keine APKs
+
+Fix:
+- Default-APK-URLs im Email-Handler auf die vorhandenen `v1.0.35` Asset-Namen korrigiert
+- `email_handler.test.js` auf die echten Asset-Dateinamen verschärft
+
+Verifikation:
+- `node src/__tests__/email_handler.test.js` → OK
+- HTTP HEAD mit Redirect-Follow auf alle vier APK-URLs → `200`
+
+---
+
+## 2026-06-10 [CODEX]
+### TYPE: VERIFY
+### STATUS: PARTIAL
+### EMPFÄNGER: CC|GIO
+
+**BUG-029 SecureCall VPN Call — Implementierungsstatus geprüft**
+
+Codebefund:
+- `client_android/app/src/main/java/com/securecall/app/net/WebRtcManager.kt`
+  - prüft `GhostVpnService.isActive || forceRelayOnly`
+  - setzt bei aktivem GhostVPN `PeerConnection.IceTransportsType.RELAY`
+  - priorisiert TURN/TCP/TLS Relay-Server
+  - loggt `VPN active/retry -> RELAY-only ICE mode`
+- `GhostVpnService.java` implementiert WireGuard via `wireguard-android GoBackend`
+- `VpnController.java` startet/stoppt GhostVPN aus der App heraus
+
+Gerätebefund:
+- Installiert: `com.securecall.app.premium` v1.0.34-premium
+- S7: kein aktiver VPN-Transport in `dumpsys connectivity`
+- Tab S4: aktiver VPN vorhanden, aber EstablishingAppUid gehört zu `net.mullvad.mullvadvpn`, nicht zu SecureCall/GhostVPN
+- `run-as com.securecall.app.premium` nicht möglich (`package not debuggable`)
+- Direkter ADB-Start von `GhostVpnService` blockiert (`service not exported`)
+
+Status:
+- BUG-029 ist im Code für aktives **SecureCall GhostVPN** implementiert: WebRTC schaltet dann auf RELAY-only.
+- Vollständiger S7↔Tab-S4 VPN-Call-Test konnte nicht seriös ausgeführt werden, weil GhostVPN auf den Geräten nicht aktiv nachweisbar war und der Service nicht per ADB gestartet werden darf.
+- Externer systemweiter VPN (Mullvad auf Tab S4) triggert diese Logik nicht, weil der Code nur `GhostVpnService.isActive` prüft.
+
+GitHub/Linear:
+- In `NeaBouli/stealth` kein passendes BUG-029/NEA-219/T6-Issue gefunden; #29 ist `NEA-WEB-01`.
+- Status daher hier in Bridge dokumentiert statt auf ein falsches Issue zu kommentieren.
