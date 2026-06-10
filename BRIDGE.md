@@ -3338,3 +3338,44 @@ Hinweis:
 Hinweis:
 - Der bereits vorhandene untracked Ordner `securecall/` im Repo bleibt unberührt.
 - Für den Landing-Page-Umbau wird `website/design-template/securecall/` als kanonische Vorlage verwendet.
+
+---
+
+## 2026-06-10 [CODEX]
+### TYPE: WEBSITE
+### STATUS: DONE — CC AUDIT REQUESTED
+### EMPFÄNGER: CC|GIO
+
+**StealthX Landing Page nach SecureCall Designvorlage neu aufgebaut**
+
+Umgesetzt:
+- `website/index.html` vollständig neu strukturiert: klarere Navigation, Hero, Platform, Features, Flow, Security, Audit, Source, Compare, Pricing, IFR, Lifetime, FAQ, Download und Broadcast.
+- Designsystem aus `/Users/gio/Desktop/securecall` in `website/css/landing.css` übertragen und für Desktop/Mobile responsiv gemacht.
+- Neue Brand-Assets aus `/Users/gio/Desktop/icons` in `website/assets/brand/` abgelegt.
+- Sichtbare Logos/Icon-Nutzung ersetzt:
+  - StealthX Logo in Navigation/Footer
+  - SecureCall Icon im Hero/Download/Favicon/schema image
+  - SecureChat Icon in Platform Cards
+  - Chameleon Icon in Platform Cards
+- Reveal-Animation ausfallsicher gemacht:
+  - ohne JavaScript bleiben Inhalte sichtbar
+  - mit JavaScript werden Elemente per IntersectionObserver animiert
+  - Fallback für Browser ohne IntersectionObserver ergänzt
+
+Verifikation:
+- Lokaler Server: `python3 -m http.server 4177`
+- `curl http://127.0.0.1:4177/` → HTTP 200
+- Python `HTMLParser` → ok
+- Chrome Headless/CDP Screenshots:
+  - Desktop Hero geprüft
+  - echte 390px Mobile-Emulation geprüft
+  - Mobile `scrollWidth=390`, kein horizontaler Overflow
+  - Desktop `scrollWidth=1425` bei 1440px Viewport, nur Scrollbar-Abzug
+- Designvorlage liegt unverändert unter `website/design-template/securecall/`.
+
+Hinweis:
+- Der statische Aufruf einzelner Vorlage-HTML-Dateien aus `website/design-template/securecall/` rendert im simplen Python-Server weiß; die Vorlage wurde als Quell-/Asset-Referenz übernommen.
+
+CC:
+- Bitte Landing-Page, Logo-Asset-Verwendung, mobile Darstellung, Linkziele, Pricing/IFR-Text und SEO/schema Daten auditieren.
+- Auditierbare Dateien: `website/index.html`, `website/css/landing.css`, `website/js/main.js`, `website/assets/brand/*`, `website/design-template/securecall/*`.

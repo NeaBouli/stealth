@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
+    <script>document.documentElement.classList.add('js');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="vBadiBTYP3Q2OCrj26suBvZDIzKMmO0_WBcjDiBvyqU">
@@ -41,7 +42,7 @@
     <meta property="og:url" content="https://stealthx.tech/">
     <meta property="og:title" content="SecureCall — End-to-End Encrypted Calls">
     <meta property="og:description" content="End-to-end encrypted calling app for Android. No phone number required. No call recordings. WireGuard VPN built-in. For journalists, activists and privacy-conscious users.">
-    <meta property="og:image" content="https://stealthx.tech/assets/og-image.svg">
+    <meta property="og:image" content="https://stealthx.tech/assets/brand/securecall-icon.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="SecureCall">
@@ -53,16 +54,17 @@
     <meta name="twitter:creator" content="@secureslot">
     <meta name="twitter:title" content="SecureCall — Encrypted Calls. Minimal Metadata.">
     <meta name="twitter:description" content="End-to-end encrypted calling app. No phone number required. No call recordings. WireGuard VPN. For journalists and activists.">
-    <meta name="twitter:image" content="https://stealthx.tech/assets/og-image.svg">
+    <meta name="twitter:image" content="https://stealthx.tech/assets/brand/securecall-icon.png">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="logo.png">
+    <link rel="stylesheet" href="css/landing.css">
+    <link rel="icon" href="assets/brand/securecall-icon.png" type="image/png">
+    <link rel="shortcut icon" href="assets/brand/securecall-icon.png">
     <link rel="dns-prefetch" href="https://github.com">
 
     <!-- Schema.org: SoftwareApplication -->
@@ -99,7 +101,7 @@
         "WalletConnect v2 support",
         "Anti-recording protection"
       ],
-      "image": "https://stealthx.tech/logo.png",
+      "image": "https://stealthx.tech/assets/brand/securecall-icon.png",
       "softwareVersion": "1.0.28",
       "datePublished": "2026-03-01",
       "dateModified": "2026-05-04",
@@ -123,7 +125,7 @@
       "@type": "Organization",
       "name": "Vendetta Labs",
       "url": "https://stealthx.tech/",
-      "logo": "https://stealthx.tech/logo.png",
+      "logo": "https://stealthx.tech/assets/brand/stealthx-logo.png",
       "sameAs": [
         "https://github.com/NeaBouli",
         "https://x.com/secureslot"
@@ -218,7 +220,7 @@
       "@context": "https://schema.org",
       "@type": "Product",
       "name": "SecureCall",
-      "image": "https://stealthx.tech/logo.png",
+      "image": "https://stealthx.tech/assets/brand/securecall-icon.png",
       "description": "End-to-end encrypted calling app with WireGuard VPN, STEALTH-DELETE and Emergency Broadcast System",
       "brand": { "@type": "Brand", "name": "Vendetta Labs" },
       "offers": {
@@ -266,1141 +268,317 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2L60E8E7R"></script>
     <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-V2L60E8E7R");</script>
 </head>
-<body>
-    <!-- ─── Navigation ──────────────────────────────────────── -->
-    <nav class="navbar" id="navbar">
-        <div class="container nav-inner">
-            <a href="./" class="nav-logo">
-                <img src="logo.png" alt="SecureCall" class="nav-logo-img">
-                SecureCall
+<body class="landing-redesign">
+    <nav class="sx-nav" id="navbar">
+        <div class="container sx-nav-inner">
+            <a href="./" class="sx-logo" aria-label="StealthX home">
+                <img src="assets/brand/stealthx-logo.png" alt="StealthX">
             </a>
-            <div class="nav-links" id="navLinks">
-                <a href="./#features">Features</a>
-                <a href="./#security">Security</a>
-                <a href="./#audit">Audit</a>
-                <a href="./#compare">Compare</a>
-                <a href="./#pricing">Pricing</a>
-                <a href="./#lifetime" style="color:#FFD700">Lifetime</a>
-                <a href="wiki/" style="color:var(--accent-light)">Wiki</a>
+            <div class="sx-nav-links" id="navLinks">
+                <a href="#platform">Platform</a>
+                <a href="#features">Features</a>
+                <a href="#security">Security</a>
+                <a href="#audit">Audit</a>
+                <a href="#compare">Compare</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#lifetime">Lifetime</a>
+                <a href="#broadcast">Broadcast</a>
+                <a href="wiki/">Wiki</a>
                 <a href="faq.html">FAQ</a>
                 <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
-                <a href="./#platform">Platform</a>
-                <a href="https://securechat.stealthx.tech/" target="_blank" rel="noopener" style="color:#00ff88;font-weight:700;">SecureChat</a>
-                <a href="https://chameleon.stealthx.tech/" target="_blank" rel="noopener" style="color:#ff6b35;font-weight:700;">Chameleon</a>
-                <a href="./#download" class="btn btn-primary btn-sm nav-cta">Download</a>
             </div>
-            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
+            <div class="sx-nav-actions">
+                <a href="https://securechat.stealthx.tech/" target="_blank" rel="noopener" class="btn line">SecureChat</a>
+                <a href="#download" class="btn primary">Download</a>
+                <button class="sx-nav-toggle" id="navToggle" aria-label="Toggle menu" type="button"><span></span><span></span><span></span></button>
+            </div>
         </div>
     </nav>
 
-    <!-- ─── Hero ────────────────────────────────────────────── -->
-    <section class="hero" id="hero">
-        <div class="container">
-            <div class="hero-inner">
-                <div class="hero-content">
-                    <div class="hero-badge" style="border-color:rgba(211,47,47,0.3);background:rgba(211,47,47,0.08)">
-                        <span class="dot" style="background:#D32F2F;box-shadow:0 0 6px #D32F2F"></span>
-                        COMMS SECURE &middot; FIELD READY
-                    </div>
-                    <h1>Classified<br>Voice <span class="text-gradient">Communications</span>.</h1>
-                    <p class="hero-subtitle">
-                        Field-grade end-to-end encrypted voice calls. Minimal metadata. Zero trust required.
-                        Built with Rust cryptography for operators who demand absolute privacy.
-                    </p>
+    <main>
+        <section class="sx-hero" id="hero">
+            <div class="container sx-hero-grid">
+                <div class="hero-copy">
+                    <h1>StealthX secure communication without the noise.</h1>
+                    <p>SecureCall, SecureChat and Chameleon share one privacy-first security core: encrypted calls, private messaging, context-aware protection and zero-trust defaults for people who cannot afford messy tools.</p>
                     <div class="hero-actions">
-                        <a href="#download" class="btn btn-primary btn-lg">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Download for Android
-                        </a>
-                        <a href="https://github.com/NeaBouli/stealth" class="btn btn-outline btn-lg" target="_blank" rel="noopener">
-                            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-                            View Source
-                        </a>
+                        <a href="#download" class="btn primary">Download SecureCall</a>
+                        <a href="#platform" class="btn line">Explore the platform</a>
+                        <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener" class="btn line">Audit on GitHub</a>
                     </div>
-                    <div class="hero-stats">
-                        <div class="hero-stat">
-                            <span class="hero-stat-value">XChaCha20</span>
-                            <span class="hero-stat-label">Encryption</span>
-                        </div>
-                        <div class="hero-stat">
-                            <span class="hero-stat-value">0</span>
-                            <span class="hero-stat-label">Call Logs Stored</span>
-                        </div>
-                        <div class="hero-stat">
-                            <span class="hero-stat-value">Rust</span>
-                            <span class="hero-stat-label">Crypto Engine</span>
-                        </div>
+                    <div class="hero-proof">
+                        <span>No phone number required</span>
+                        <span>No call content stored</span>
+                        <span>WireGuard VPN</span>
+                        <span>Source available</span>
                     </div>
                 </div>
-                <div class="hero-visual">
-                    <div class="hero-phone">
-                        <div class="hero-phone-content">
-                            <svg class="hero-phone-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
-                            <div class="hero-phone-text">CHANNEL SECURE</div>
-                            <div class="hero-phone-enc">XChaCha20-Poly1305</div>
-                            <div class="hero-phone-bar"><div class="hero-phone-bar-fill"></div></div>
-                            <div class="hero-phone-enc" style="margin-top:16px;opacity:0.4">ACTIVE</div>
+                <div class="hero-panel" aria-label="SecureCall live encrypted channel preview">
+                    <div class="voice-card">
+                        <div class="voice-head">
+                            <div style="display:flex;align-items:center;gap:14px">
+                                <img class="app-mark" src="assets/brand/securecall-icon.png" alt="SecureCall icon">
+                                <div>
+                                    <strong>SecureCall</strong>
+                                    <div class="mono" style="color:var(--sx-faint);font-size:12px">channel: XChaCha20</div>
+                                </div>
+                            </div>
+                            <span class="status-pill"><span class="dot"></span> ACTIVE</span>
+                        </div>
+                        <div class="voice-bars" aria-hidden="true">
+                            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                        </div>
+                        <div class="status-grid">
+                            <div class="status-row"><span>Transport</span><strong>WebRTC + DTLS-SRTP</strong></div>
+                            <div class="status-row"><span>Identity</span><strong>SecureID only</strong></div>
+                            <div class="status-row"><span>Call logs stored</span><strong>0</strong></div>
                         </div>
                     </div>
-                    <div class="hero-glow"></div>
+                    <div class="hero-mini">
+                        <div class="mini-card"><strong>STEALTH DELETE</strong><span>5 taps wipe local keys and history.</span></div>
+                        <div class="mini-card"><strong>GhostVPN</strong><span>Premium WireGuard tunnel for SecureCall traffic.</span></div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ─── Hero Highlights ──────────────────────────────────── -->
-    <section style="padding:32px 0 0;background:transparent">
-        <div class="container">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;max-width:900px;margin:0 auto">
-                <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.15);border-radius:10px">
-                    <span style="font-size:20px">&#128272;</span>
-                    <span style="color:#ccc;font-size:13px;font-weight:500">No phone number required</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.15);border-radius:10px">
-                    <span style="font-size:20px">&#128165;</span>
-                    <span style="color:#ccc;font-size:13px;font-weight:500">STEALTH-DELETE</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.15);border-radius:10px">
-                    <span style="font-size:20px">&#128737;&#65039;</span>
-                    <span style="color:#ccc;font-size:13px;font-weight:500">Built-in WireGuard VPN</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.15);border-radius:10px">
-                    <span style="font-size:20px">&#128680;</span>
-                    <span style="color:#ccc;font-size:13px;font-weight:500">Emergency Broadcast</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.15);border-radius:10px">
-                    <span style="font-size:20px">&#128273;</span>
-                    <span style="color:#ccc;font-size:13px;font-weight:500">Lifetime via IFR Token</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.15);border-radius:10px">
-                    <span style="font-size:20px">&#128230;</span>
-                    <span style="color:#ccc;font-size:13px;font-weight:500">Source available &mdash; audit only</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);border-radius:10px">
-                    <span style="font-size:20px"><span id="hero-dot-server" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;vertical-align:middle;margin-right:4px"></span>&#9889;</span>
-                    <span style="color:#ccc;font-size:13px;font-weight:500"><span id="hero-server-status">Server Online</span><span id="hero-clients" style="color:rgba(255,255,255,0.4);font-size:11px;display:block;margin-top:1px">&mdash;</span></span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:10px">
-                    <span style="font-size:20px">&#128147;</span>
-                    <span style="color:#ccc;font-size:13px;font-weight:500">Live Heartbeat<span id="hero-heartbeat" style="color:rgba(255,255,255,0.4);font-size:11px;display:block;margin-top:1px">&mdash;</span></span>
-                </div>
+        <section class="live-strip" aria-label="Live service status">
+            <div class="container live-grid">
+                <div class="live-item"><span id="hero-dot-server"></span><div><b id="hero-server-status">Server Online</b><span id="hero-clients">Checking uptime...</span></div></div>
+                <div class="live-item"><span class="status-pill"><span class="dot"></span></span><div><b>Live heartbeat</b><span id="hero-heartbeat">Waiting for signal...</span></div></div>
+                <div class="live-item"><img src="assets/brand/stealthx-mono.png" alt="StealthX" style="width:38px;height:auto"><div><b>Vendetta Labs</b><span>Greece, EU privacy jurisdiction</span></div></div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ─── Features ────────────────────────────────────────── -->
-    <section class="features" id="features">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-label">CAPABILITIES</span>
-                <h2>Tactical security,<br>not empty promises.</h2>
-                <p>Every architectural decision puts your privacy first. No compromises.</p>
-            </div>
-            <div class="features-grid">
-                <div class="feature-card reveal">
-                    <div class="feature-icon green">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    </div>
-                    <h3>End-to-End Encryption</h3>
-                    <p>XChaCha20-Poly1305 AEAD encryption with X25519 key exchange. Every call gets a unique session key. We can never listen in.</p>
+        <section class="section" id="platform">
+            <div class="container">
+                <div class="section-head">
+                    <span class="section-label">Platform</span>
+                    <h2>Three products. One security core.</h2>
+                    <p class="lead">The template reorganizes StealthX into a simple system: calls, messages and device-level privacy tools that share one brand, one crypto direction and one user experience.</p>
                 </div>
-                <div class="feature-card reveal reveal-delay-1">
-                    <div class="feature-icon red-accent">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
-                    <h3>Minimal Metadata</h3>
-                    <p>No call logs, no contact uploads, no call content stored server-side. Signaling metadata is processed transiently. FCM tokens are retained for push delivery and discarded on deregister. STUN/TURN is used for WebRTC connectivity.</p>
+                <div class="product-grid">
+                    <article class="product-card reveal" style="--accent:var(--sx-blue)">
+                        <div class="product-top"><img class="app-mark" src="assets/brand/securecall-icon.png" alt="SecureCall icon"><span class="tag">Live - Google Play</span></div>
+                        <h3>SecureCall</h3>
+                        <p>Encrypted voice calls with minimal metadata, WireGuard VPN, STEALTH-DELETE and emergency broadcast alerts.</p>
+                        <ul><li>E2E XChaCha20-Poly1305</li><li>WireGuard VPN built in</li><li>IFR lifetime unlock</li></ul>
+                        <a class="btn primary block" href="#features">Learn more</a>
+                    </article>
+                    <article class="product-card reveal" style="--accent:var(--sx-teal)">
+                        <div class="product-top"><img class="app-mark" src="assets/brand/securechat-icon.png" alt="SecureChat icon"><span class="tag">In development</span></div>
+                        <h3>SecureChat</h3>
+                        <p>Decentralized encrypted messaging with Double Ratchet forward secrecy and planned Kaspa-backed relay infrastructure.</p>
+                        <ul><li>Server relay compatibility</li><li>Text, files and groups roadmap</li><li>SecureChat Elite in Suite</li></ul>
+                        <a class="btn line block" href="https://securechat.stealthx.tech/" target="_blank" rel="noopener">Open SecureChat</a>
+                    </article>
+                    <article class="product-card reveal" style="--accent:var(--sx-violet)">
+                        <div class="product-top"><img class="app-mark" src="assets/brand/chameleon-icon.png" alt="Chameleon icon"><span class="tag">Standalone</span></div>
+                        <h3>Chameleon</h3>
+                        <p>Privacy OS for context-aware encryption, overlay protection, rule automation and encrypted private zones.</p>
+                        <ul><li>Overlay encryption for any app</li><li>Automation rules</li><li>Decoy profile protection</li></ul>
+                        <a class="btn line block" href="https://chameleon.stealthx.tech/" target="_blank" rel="noopener">Open Chameleon</a>
+                    </article>
                 </div>
-                <div class="feature-card reveal reveal-delay-2">
-                    <div class="feature-icon blue">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                    </div>
-                    <h3>Source-Available Client</h3>
-                    <p>The client source code is on GitHub for transparency and security review. You may inspect the code, but copying, building, running, distributing, rebranding, hosting, or using SecureCall requires prior written permission from Vendetta Labs.</p>
-                </div>
-                <div class="feature-card reveal">
-                    <div class="feature-icon yellow">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                    </div>
-                    <h3>Rust Crypto Engine</h3>
-                    <p>The cryptography core is written in Rust for memory safety. No buffer overflows, no use-after-free. Independently auditable.</p>
-                </div>
-                <div class="feature-card reveal reveal-delay-1">
-                    <div class="feature-icon red">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
-                    </div>
-                    <h3>Crystal-Clear Audio</h3>
-                    <p>Opus codec at 48kHz delivers natural voice quality even on poor connections. Adaptive bitrate for WiFi and cellular.</p>
-                </div>
-                <div class="feature-card reveal reveal-delay-2">
-                    <div class="feature-icon green">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-                    </div>
-                    <h3>Perfect Forward Secrecy</h3>
-                    <p>Double Ratchet protocol ensures that compromising one key doesn't expose past or future calls. Every session is independent.</p>
-                </div>
-                <div class="feature-card reveal">
-                    <div class="feature-icon red">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                    </div>
-                    <h3>Emergency Delete</h3>
-                    <p>5-tap instant wipe destroys all contacts, keys, and call history. The app resets to factory state in under a second.</p>
-                </div>
-                <div class="feature-card reveal reveal-delay-1">
-                    <div class="feature-icon blue">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </div>
-                    <h3>QR Code &amp; Deep Link Invite</h3>
-                    <p>Share your SecureCall ID via QR code or deep link. One tap to add a contact &mdash; no manual ID entry required.</p>
-                </div>
-                <div class="feature-card reveal reveal-delay-2">
-                    <div class="feature-icon yellow">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </div>
-                    <h3>Diagnostic Logs (Pro/Premium)</h3>
-                    <p>Enable SecLog to capture connection, call, and network events. Export as CSV for troubleshooting. Your data stays on your device.</p>
-                </div>
-                <div class="feature-card reveal">
-                    <div class="feature-icon green">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-                    </div>
-                    <h3>WireGuard VPN (Premium)</h3>
-                    <p>Built-in WireGuard tunnel routes all SecureCall traffic through your VPN. Kill switch included. Real GoBackend &mdash; not a wrapper.</p>
-                </div>
-                <div class="feature-card reveal reveal-delay-1">
-                    <div class="feature-icon red-accent">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                    </div>
-                    <h3>Anti-Recording Protection</h3>
-                    <p>FLAG_SECURE blocks screenshots. Exclusive microphone prevents spy apps. Screen recording detection alerts you in real time.</p>
-                </div>
-                <div class="feature-card reveal reveal-delay-2">
-                    <div class="feature-icon red-accent">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/><path d="M9 6h6"/></svg>
-                    </div>
-                    <h3>eSIM Call Routing <span style="font-size:10px;background:#555;color:#fff;padding:2px 6px;border-radius:4px;vertical-align:middle;margin-left:6px">COMING SOON</span></h3>
-                    <p style="color:#888">Route encrypted calls through a dedicated eSIM for maximum network separation. Requires VpnService-based traffic steering (in development).</p>
-                </div>
-                <div class="feature-card reveal reveal-delay-2">
-                    <div class="feature-icon blue">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                    </div>
-                    <h3>Auto-Reconnect</h3>
-                    <p>Seamless reconnection on WiFi/Mobile/eSIM network switches. ConnectivityManager detects changes instantly &mdash; no manual restart needed.</p>
-                </div>
-                <div class="feature-card reveal">
-                    <div class="feature-icon yellow">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    </div>
-                    <h3>FCM Push Notifications</h3>
-                    <p>Receive calls even when the app is closed. Firebase Cloud Messaging wakes your device for incoming encrypted calls.</p>
-                </div>
-                <div class="feature-card reveal reveal-delay-1">
-                    <div class="feature-icon green">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    </div>
-                    <h3>IFR Token &amp; WalletConnect</h3>
-                    <p>Lock IFR tokens on-chain for lifetime Premium access. WalletConnect v2 lets you verify directly from MetaMask or any Web3 wallet.</p>
+                <div class="suite-band reveal">
+                    <div class="suite-icons"><img src="assets/brand/securecall-icon.png" alt=""><img src="assets/brand/securechat-icon.png" alt=""><img src="assets/brand/chameleon-icon.png" alt=""></div>
+                    <div><h3>StealthX Suite - everything, forever</h3><p>SecureCall Premium + SecureChat Elite + Chameleon Elite. One-time purchase or IFR lock, no subscription stack.</p></div>
+                    <a class="btn teal" href="#pricing">See suite</a>
                 </div>
             </div>
+        </section>
 
-            <!-- Coming Soon -->
-            <div style="margin-top:64px;padding:32px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.15);border-radius:16px">
-                <h3 style="color:#4ade80;margin-bottom:16px">Coming Soon</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                    <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
-                        <p style="color:#aaa;font-size:13px;margin:0"><strong style="color:#4ade80">v1.7</strong> &mdash; Matrix Contact Exchange</p>
-                        <p style="color:#666;font-size:12px;margin:4px 0 0">Share SecureCall ID via Element, FluffyChat, or any Matrix client</p>
-                    </div>
-                    <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
-                        <p style="color:#aaa;font-size:13px;margin:0"><strong style="color:#4ade80">v2.0</strong> &mdash; Matrix Federation</p>
-                        <p style="color:#666;font-size:12px;margin:4px 0 0">Reachable from 28M+ Matrix users at @sc_xxx:stealthx.tech</p>
-                    </div>
-                    <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
-                        <p style="color:#aaa;font-size:13px;margin:0"><strong style="color:#4ade80">v2.2</strong> &mdash; Group Calls (MSC3401)</p>
-                        <p style="color:#666;font-size:12px;margin:4px 0 0">Encrypted multi-party calls via Matrix rooms</p>
-                    </div>
-                    <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
-                        <p style="color:#aaa;font-size:13px;margin:0"><strong style="color:#4ade80">v2.3</strong> &mdash; iOS Client + Biometric Lock</p>
-                        <p style="color:#666;font-size:12px;margin:4px 0 0">Native Swift app with shared Rust crypto engine</p>
-                    </div>
+        <section class="section alt" id="features">
+            <div class="container">
+                <div class="section-head">
+                    <span class="section-label">Capabilities</span>
+                    <h2>Tactical security, not empty promises.</h2>
+                    <p class="lead">Every architectural decision keeps the tool usable while reducing data exposure. Nothing from the old feature set was removed; it is grouped so users can scan it.</p>
                 </div>
-                <p style="margin-top:16px"><a href="wiki/matrix-integration.html" style="color:#4ade80;font-size:13px">Matrix architecture document &rarr;</a> &nbsp; <a href="wiki/roadmap.html" style="color:#4ade80;font-size:13px">Full roadmap &rarr;</a></p>
+                <div class="feature-grid">
+                    <article class="feature-card reveal"><div class="feature-icon">🔒</div><h3>End-to-End Encryption</h3><p>XChaCha20-Poly1305 AEAD encryption with X25519 key exchange. Every call gets a unique session key.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">🛡</div><h3>Minimal Metadata</h3><p>No call logs, no contact uploads and no call content stored server-side. FCM tokens exist only for push delivery.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">⌘</div><h3>Source-Available Client</h3><p>The client source is available for review. Official services and distribution still require Vendetta Labs permission.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">🧱</div><h3>Rust Crypto Engine</h3><p>Memory-safe crypto code, independently inspectable and designed to avoid buffer-overflow classes of bugs.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">🎧</div><h3>Crystal-Clear Audio</h3><p>Opus at 48kHz with adaptive bitrate for WiFi and cellular conditions.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">🔑</div><h3>Perfect Forward Secrecy</h3><p>Double Ratchet session behavior limits blast radius if any single key is compromised.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">⌫</div><h3>Emergency Delete</h3><p>Five taps wipe contacts, keys and call history, returning the app to factory state.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">▦</div><h3>QR Code & Deep Link Invite</h3><p>Share SecureCall identity with QR or deep link. One tap adds a contact without manual ID entry.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">◉</div><h3>Diagnostic Logs</h3><p>Pro/Premium SecLog captures connection, call and network events locally for CSV troubleshooting.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">✓</div><h3>WireGuard VPN</h3><p>Premium tunnel routes SecureCall traffic through WireGuard with a kill switch and real GoBackend.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">▣</div><h3>Anti-Recording Protection</h3><p>FLAG_SECURE blocks screenshots. Microphone and recording detection warn or stop the call by tier.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">SIM</div><h3>eSIM Call Routing</h3><p>Coming soon: encrypted calls over a dedicated eSIM underlay for stronger network separation.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">↻</div><h3>Auto-Reconnect</h3><p>Network switches are detected through ConnectivityManager so calls recover without manual restart.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">🔔</div><h3>FCM Push Notifications</h3><p>Incoming encrypted calls can wake the device even when the app is closed.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">IFR</div><h3>IFR Token & WalletConnect</h3><p>Lock IFR tokens on-chain for lifetime Pro or Premium access and verify through WalletConnect v2.</p></article>
+                </div>
+                <div class="notice-grid">
+                    <div class="notice"><strong>v1.7 - Matrix Contact Exchange</strong><p>Share SecureCall ID through Element, FluffyChat or any Matrix client.</p></div>
+                    <div class="notice"><strong>v2.0 - Matrix Federation</strong><p>Reachable from Matrix users as @sc_xxx:stealthx.tech.</p></div>
+                    <div class="notice"><strong>v2.2 - Group Calls</strong><p>Encrypted multi-party calls through Matrix rooms.</p></div>
+                    <div class="notice"><strong>v2.3 - iOS Client + Biometric Lock</strong><p>Native Swift client with the shared Rust crypto engine.</p></div>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ─── How It Works ────────────────────────────────────── -->
-    <section class="how-it-works">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-label">PROTOCOL</span>
-                <h2>Secure in seconds.</h2>
-                <p>No accounts, no phone numbers, no personal data required.</p>
-            </div>
-            <div class="steps">
-                <div class="step reveal">
-                    <div class="step-number">1</div>
-                    <h3>Deploy</h3>
-                    <p>Download from Google Play or sideload the APK. No registration required.</p>
-                </div>
-                <div class="step reveal reveal-delay-1">
-                    <div class="step-number">2</div>
-                    <h3>Generate Keys</h3>
-                    <p>Your device creates a unique X25519 key pair locally. Keys never leave your phone.</p>
-                </div>
-                <div class="step reveal reveal-delay-2">
-                    <div class="step-number">3</div>
-                    <h3>Share ID</h3>
-                    <p>Exchange your anonymous SecureCall ID with your contact via any channel.</p>
-                </div>
-                <div class="step reveal reveal-delay-3">
-                    <div class="step-number">4</div>
-                    <h3>Establish Channel</h3>
-                    <p>End-to-end encrypted channel established. No one intercepts &mdash; not even us.</p>
+        <section class="section" id="flow">
+            <div class="container">
+                <div class="section-head"><span class="section-label">Protocol</span><h2>Secure in seconds.</h2><p class="lead">No accounts, no phone numbers, no personal data required.</p></div>
+                <div class="steps">
+                    <div class="step reveal"><div class="step-num">1</div><h3>Deploy</h3><p>Download from Google Play or sideload the APK. No registration required.</p></div>
+                    <div class="step reveal"><div class="step-num">2</div><h3>Generate keys</h3><p>Your device creates a unique X25519 key pair locally. Keys never leave your phone.</p></div>
+                    <div class="step reveal"><div class="step-num">3</div><h3>Share ID</h3><p>Exchange your anonymous SecureCall ID with your contact through any channel.</p></div>
+                    <div class="step reveal"><div class="step-num">4</div><h3>Establish channel</h3><p>An encrypted call channel is established. No one intercepts it, not even us.</p></div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ─── Security Specs ──────────────────────────────────── -->
-    <section class="security-specs" id="security">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-label">CLASSIFIED</span>
-                <h2>Cryptographic specifications.</h2>
-                <p>We don't ask for trust. We provide proof. Every claim is auditable.</p>
+        <section class="section alt" id="security">
+            <div class="container">
+                <div class="section-head"><span class="section-label">Security</span><h2>Cryptographic specifications.</h2><p class="lead">The claims are concrete enough to audit.</p></div>
+                <div class="spec-grid">
+                    <div class="spec"><small>Encryption</small><strong>XChaCha20-Poly1305</strong><span>256-bit AEAD cipher with 192-bit nonce.</span></div>
+                    <div class="spec"><small>Key exchange</small><strong>X25519 ECDH</strong><span>Curve25519 elliptic curve Diffie-Hellman.</span></div>
+                    <div class="spec"><small>Forward secrecy</small><strong>Double Ratchet</strong><span>Per-session key derivation and zero key reuse.</span></div>
+                    <div class="spec"><small>Audio codec</small><strong>Opus at 48kHz</strong><span>Adaptive bitrate from 6 to 510 kbps.</span></div>
+                    <div class="spec"><small>Transport</small><strong>WebRTC + DTLS-SRTP</strong><span>Peer-to-peer encrypted transport.</span></div>
+                    <div class="spec"><small>Crypto engine</small><strong>Rust memory safety</strong><span>Designed to avoid buffer overflows and use-after-free.</span></div>
+                </div>
+                <p style="margin-top:26px"><a href="wiki/security-design.html" class="btn line">Read full security architecture</a></p>
             </div>
-            <div class="specs-grid">
-                <div class="spec-card reveal">
-                    <div class="spec-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    </div>
-                    <div class="spec-content">
-                        <div class="spec-label">Encryption</div>
-                        <div class="spec-value">XChaCha20-Poly1305</div>
-                        <div class="spec-desc">256-bit AEAD cipher with 192-bit nonce</div>
-                    </div>
-                </div>
-                <div class="spec-card reveal reveal-delay-1">
-                    <div class="spec-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>
-                    </div>
-                    <div class="spec-content">
-                        <div class="spec-label">Key Exchange</div>
-                        <div class="spec-value">X25519 ECDH</div>
-                        <div class="spec-desc">Elliptic Curve Diffie-Hellman on Curve25519</div>
-                    </div>
-                </div>
-                <div class="spec-card reveal">
-                    <div class="spec-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-                    </div>
-                    <div class="spec-content">
-                        <div class="spec-label">Forward Secrecy</div>
-                        <div class="spec-value">Double Ratchet</div>
-                        <div class="spec-desc">Per-session key derivation, zero key reuse</div>
-                    </div>
-                </div>
-                <div class="spec-card reveal reveal-delay-1">
-                    <div class="spec-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/></svg>
-                    </div>
-                    <div class="spec-content">
-                        <div class="spec-label">Audio Codec</div>
-                        <div class="spec-value">Opus @ 48kHz</div>
-                        <div class="spec-desc">Adaptive bitrate 6-510 kbps</div>
-                    </div>
-                </div>
-                <div class="spec-card reveal">
-                    <div class="spec-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    </div>
-                    <div class="spec-content">
-                        <div class="spec-label">Transport</div>
-                        <div class="spec-value">WebRTC + DTLS-SRTP</div>
-                        <div class="spec-desc">Peer-to-peer with encrypted transport</div>
-                    </div>
-                </div>
-                <div class="spec-card reveal reveal-delay-1">
-                    <div class="spec-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                    </div>
-                    <div class="spec-content">
-                        <div class="spec-label">Crypto Engine</div>
-                        <div class="spec-value">Rust (memory-safe)</div>
-                        <div class="spec-desc">Zero buffer overflows, zero use-after-free</div>
-                    </div>
-                </div>
-            </div>
-            <div style="text-align:center;margin-top:48px">
-                <a href="wiki/security-design.html" class="btn btn-outline">Read Full Security Architecture &rarr;</a>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ─── Security & Testing ─────────────────────────────── -->
-    <section class="security-specs" id="audit" style="border-top:1px solid rgba(255,255,255,0.05)">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-label" style="color:#4ade80">VERIFIED</span>
-                <h2>Tested. Audited. <span class="text-gradient">Proven.</span></h2>
-                <p>Every claim is backed by real tests on real devices. No marketing fluff.</p>
+        <section class="section" id="audit">
+            <div class="container">
+                <div class="section-head"><span class="section-label">Verified</span><h2>Tested. Audited. Proven.</h2><p class="lead">Real tests on real devices, organized so the evidence is readable.</p></div>
+                <div class="audit-stats">
+                    <div class="audit-stat"><b>44/44</b><span>Regression tests passed</span></div>
+                    <div class="audit-stat"><b>0</b><span>Crashes and ANRs</span></div>
+                    <div class="audit-stat"><b>38</b><span>Devices tested</span></div>
+                    <div class="audit-stat"><b>841ms</b><span>Average app start</span></div>
+                    <div class="audit-stat"><b>E2E</b><span>XChaCha20 verified</span></div>
+                </div>
+                <p style="font-size:12px;color:var(--sx-faint)">Last tested: April 2, 2026. Device pool included Samsung S10, S7, Tab S4, S21+, X Cover 7, A16, A17, Xiaomi Redmi 15C, Huawei P30, Motorola Edge 60 Fusion and 28 additional tester devices.</p>
+                <div class="audit-grid">
+                    <div class="card" style="padding:24px"><h3>Quality Audit - v1.0.22</h3><ul class="plain-list"><li>Incoming call accept, hold and end</li><li>Outgoing call through dialer</li><li>FCM push wakes killed app</li><li>Online status dots refresh in under 15s</li><li>Dynamic TURN credentials</li><li>IFR wallet verification</li><li>Tier gating across 33 settings</li><li>Contact deduplication</li><li>Screenshot blocking</li><li>Network audit: TLS, VPN compatibility, no cleartext</li></ul></div>
+                    <div class="card" style="padding:24px"><h3>Security architecture</h3><ul class="plain-list"><li>Zero-knowledge server cannot decrypt calls</li><li>E2E encryption: XChaCha20-Poly1305 + X25519</li><li>STEALTH-DELETE emergency wipe</li><li>Anti-recording and mic hijack detection</li><li>Proximity sensor wake lock during calls</li><li>Certificate pinning planned for Premium</li></ul></div>
+                </div>
+                <p style="margin-top:26px"><a href="wiki/security-audit.html" class="btn line">Full audit report</a></p>
             </div>
+        </section>
 
-            <!-- Audit banners -->
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:48px">
-                <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:20px;text-align:center">
-                    <div style="font-size:2rem;font-weight:800;color:#4ade80">44/44</div>
-                    <div style="font-size:13px;color:#aaa;margin-top:4px">Regression Tests Passed</div>
-                </div>
-                <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:20px;text-align:center">
-                    <div style="font-size:2rem;font-weight:800;color:#4ade80">0</div>
-                    <div style="font-size:13px;color:#aaa;margin-top:4px">Crashes &amp; ANRs</div>
-                </div>
-                <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:20px;text-align:center">
-                    <div style="font-size:2rem;font-weight:800;color:#4ade80">38</div>
-                    <div style="font-size:13px;color:#aaa;margin-top:4px">Devices Tested</div>
-                </div>
-                <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:20px;text-align:center">
-                    <div style="font-size:2rem;font-weight:800;color:#4ade80">841ms</div>
-                    <div style="font-size:13px;color:#aaa;margin-top:4px">Avg App Start Time</div>
-                </div>
-                <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:20px;text-align:center">
-                    <div style="font-size:2rem;font-weight:800;color:#4ade80">E2E</div>
-                    <div style="font-size:13px;color:#aaa;margin-top:4px">XChaCha20-Poly1305 Verified</div>
-                </div>
+        <section class="section alt" id="source">
+            <div class="container oss-grid">
+                <div><span class="section-label">Source Intelligence</span><h2>Don't trust. Verify.</h2><p>SecureCall's source code is publicly available on GitHub. Security researchers, journalists and privacy advocates can inspect the code that handles voice data.</p><p>Transparency is part of the product. If we cannot show how it works, you should not trust it.</p><a class="btn line" href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">View on GitHub</a></div>
+                <pre class="code-card"><span class="comment">// core_crypto/src/lib.rs</span>
+<span class="keyword">pub fn</span> <span class="type">encrypt_voice_frame</span>(
+    frame: &[<span class="type">u8</span>],
+    key: &<span class="type">SessionKey</span>,
+    nonce: &<span class="type">XNonce</span>,
+) -&gt; <span class="type">Result</span>&lt;<span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;&gt; {
+    <span class="keyword">let</span> cipher = <span class="type">XChaCha20Poly1305</span>::new(key);
+    cipher.encrypt(nonce, frame)
+        .map_err(|_| <span class="type">CryptoError</span>::<span class="string">EncryptionFailed</span>)
+}</pre>
             </div>
-            <p style="text-align:center;color:#555;font-size:11px;margin-top:-40px;margin-bottom:40px">Last tested: April 2, 2026 &mdash; 38 devices including Samsung S10, S7, Tab S4, S21+, X Cover 7, A16, A17, Xiaomi Redmi 15C, Huawei P30, Motorola Edge 60 Fusion and 28 additional tester devices</p>
+        </section>
 
-            <!-- Test matrix + Security highlights side by side -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
-                <!-- Test Matrix -->
-                <div>
-                    <h3 style="margin-bottom:16px;font-size:1.1rem;color:#fff">Quality Audit &mdash; v1.0.22</h3>
-                    <table style="width:100%;font-size:13px">
-                        <tbody>
-                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Incoming Call (accept, hold, end)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Outgoing Call via Dialer</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">FCM Push (wakes killed app)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Online Status Dots (&lt;15s refresh)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Dynamic TURN Credentials (no hardcoded secrets)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">IFR Wallet Verification (on-chain)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Tier Gating (33 settings across 3 tiers)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Contact Deduplication</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">Screenshot Blocking (FLAG_SECURE)</td><td style="color:#4ade80;text-align:right;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">&#10003; PASS</td></tr>
-                            <tr><td style="padding:6px 0">Network Audit (TLS, VPN compat, no cleartext)</td><td style="color:#4ade80;text-align:right;padding:6px 0">&#10003; PASS</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+        <section class="section" id="compare">
+            <div class="container">
+                <div class="section-head"><span class="section-label">Benchmark</span><h2>Why SecureCall?</h2><p class="lead">Encrypted calling with no phone number, no account and command-level local wipe.</p></div>
+                <div class="table-card"><table class="cmp-table"><thead><tr><th>Feature</th><th class="own">SecureCall</th><th>Signal</th><th>Wire</th><th>Wickr</th></tr></thead><tbody>
+                    <tr><td>No phone number required</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
+                    <tr><td>No account registration</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
+                    <tr><td>End-to-end encrypted calls</td><td class="own yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                    <tr><td>Built-in WireGuard VPN</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
+                    <tr><td>STEALTH-DELETE instant wipe</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
+                    <tr><td>Emergency Broadcast System</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
+                    <tr><td>No call content or logs stored</td><td class="own yes">✓</td><td class="warn">!</td><td class="warn">!</td><td class="warn">!</td></tr>
+                    <tr><td>IFR token lifetime access</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
+                    <tr><td>WalletConnect v2</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
+                    <tr><td>Source available for audit</td><td class="own yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">×</td></tr>
+                    <tr><td>Free tier available</td><td class="own yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">×</td></tr>
+                    <tr><td>Direct APK download</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
+                    <tr><td>EU/GDPR compliant</td><td class="own yes">✓</td><td class="warn">!</td><td class="no">×</td><td class="no">×</td></tr>
+                    <tr><td>Gift activation codes</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
+                </tbody></table></div>
+                <p style="font-size:12px;color:var(--sx-faint)">Comparison based on publicly documented features as of April 2026. SecureCall's client source is available for audit; official branding, backend services, store releases, paid licensing and use rights remain operated by Vendetta Labs.</p>
+            </div>
+        </section>
 
-                <!-- Security Highlights -->
-                <div>
-                    <h3 style="margin-bottom:16px;font-size:1.1rem;color:#fff">Security Architecture</h3>
-                    <ul style="list-style:none;padding:0;margin:0;font-size:13px">
-                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);color:#ccc">
-                            <strong style="color:#4ade80">Zero-Knowledge</strong> &mdash; Server cannot decrypt calls
-                        </li>
-                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);color:#ccc">
-                            <strong style="color:#4ade80">E2E Encryption</strong> &mdash; XChaCha20-Poly1305 + X25519
-                        </li>
-                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);color:#ccc">
-                            <strong style="color:#4ade80">STEALTH-DELETE</strong> &mdash; Emergency data wipe (5-tap)
-                        </li>
-                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);color:#ccc">
-                            <strong style="color:#FF9800">Anti-Recording</strong> &mdash; Screen + mic hijack detection
-                        </li>
-                        <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);color:#ccc">
-                            <strong style="color:#FF9800">Proximity Sensor</strong> &mdash; Wake lock during calls
-                        </li>
-                        <li style="padding:8px 0;color:#ccc">
-                            <strong style="color:#D32F2F">Certificate Pinning</strong> &mdash; planned (Premium)
-                        </li>
-                    </ul>
+        <section class="section alt" id="pricing">
+            <div class="container">
+                <div class="section-head"><span class="section-label">Access levels</span><h2>Choose your clearance level.</h2><p class="lead">Every tier includes end-to-end encryption. Upgrade for advanced protection or use IFR for lifetime access.</p></div>
+                <div class="pricing-grid">
+                    <article class="price-card reveal"><h3>Free</h3><div class="price"><span class="amount">€0</span><span class="period">forever</span></div><ul><li class="included">E2E encrypted calls</li><li class="included">15 min call limit, 10 contacts</li><li class="included">Basic security warnings</li><li class="included">Dark/Light mode</li><li class="included">Ad-supported banner</li><li class="excluded">Call history and online status</li><li class="excluded">Anti-recording protection</li><li class="excluded">GhostNet IP masking</li></ul><a href="#download" class="btn line block">Get started</a></article>
+                    <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">GhostNet IP masking</li><li class="included">OR lock at least 2,000 IFR for lifetime Pro</li></ul><a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn primary block">Buy on Google Play</a></article>
+                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">Zero telemetry</li><li class="included">WireGuard VPN integration</li><li class="included">OR lock at least 6,000 IFR for lifetime Premium</li></ul><a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn primary block">Buy on Google Play</a></article>
                 </div>
+                <div class="ifr-box reveal"><span class="section-label">Inferno integration</span><h3>IFR Lifetime Unlock</h3><p>Lock IFR tokens. Unlock forever. Your tokens stay yours. Bootstrap ends June 5, 2026; trading is expected August 2026; liquidity reserve unlock is September 1, 2026.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>Pro - lock 2,000 IFR</h3><ul class="plain-list"><li>Online/offline status</li><li>Anti-recording detection</li><li>Enhanced security</li><li>Unlimited calls and contacts</li></ul></div><div class="card" style="padding:18px"><h3>Premium - lock 6,000 IFR</h3><ul class="plain-list"><li>Everything in Pro</li><li>Advanced threat detection</li><li>GhostNet IP masking</li><li>Zero telemetry</li></ul></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a> <a class="btn line" href="https://ifrunit.tech" target="_blank" rel="noopener">Powered by Inferno ($IFR)</a></p></div>
             </div>
+        </section>
 
-            <div style="text-align:center;margin-top:40px">
-                <a href="wiki/security-audit.html" class="btn btn-outline" style="border-color:#4ade80;color:#4ade80">Full Audit Report &rarr;</a>
+        <section class="section" id="lifetime">
+            <div class="container">
+                <div class="section-head"><span class="section-label">Limited time</span><h2>Forever licenses. No subscription.</h2><p class="lead">One-time purchase, lifetime access, only 100 licenses per tier. Price increases with each sale.</p></div>
+                <div class="pricing-grid">
+                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-gold)">Limited: 100</span><h3>Pro Lifetime</h3><div class="price"><span class="amount" id="proPrice">€15</span><span class="period">one-time</span></div><div class="price-meter"><div class="price-meter-head"><span>Licenses remaining</span><strong id="proRemaining">100 / 100</strong></div><div class="meter"><span id="proBar" style="width:0%"></span></div><p style="font-size:12px">Next buyer pays: <span id="proNextPrice">€15.35</span>. Price rises to €50 at sellout.</p></div><ul><li class="included">Everything in Pro</li><li class="included">Pay once</li><li class="included">Lifetime updates</li><li class="included">Early adopter pricing</li></ul><a id="btnProLifetime" class="btn disabled block">Coming soon</a></article>
+                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-red);color:#fff">Limited: 100</span><h3>Premium Lifetime</h3><div class="price"><span class="amount" id="premiumPrice">€25</span><span class="period">one-time</span></div><div class="price-meter"><div class="price-meter-head"><span>Licenses remaining</span><strong id="premiumRemaining">100 / 100</strong></div><div class="meter"><span id="premiumBar" style="width:0%"></span></div><p style="font-size:12px">Next buyer pays: <span id="premiumNextPrice">€25.75</span>. Price rises to €100 at sellout.</p></div><ul><li class="included">Everything in Premium</li><li class="included">Pay once</li><li class="included">Lifetime updates</li><li class="included">Early adopter pricing</li></ul><a id="btnPremiumLifetime" class="btn disabled block">Coming soon</a></article>
+                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-green)">Gift option</span><h3>Activation Code</h3><div class="price"><span class="amount">€49</span><span class="period">one-time</span></div><p>Premium forever. Buy a code, use it yourself or gift it to someone else. Enter it in Settings for instant upgrade.</p><ul><li class="included">Permanent Premium</li><li class="included">No subscription</li><li class="included">Lifetime updates</li><li class="included">Code delivery after purchase</li></ul><a class="btn teal block" href="https://buy.stripe.com/4gMdR8fEl6RF3ii1nO7N602" target="_blank" rel="noopener">Buy activation code</a></article>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ─── Open Source ─────────────────────────────────────── -->
-    <section class="open-source">
-        <div class="container">
-            <div class="oss-content">
-                <div class="oss-text">
-                    <span class="section-label">SOURCE INTELLIGENCE</span>
-                    <h2>Don't trust.<br><span class="text-gradient">Verify.</span></h2>
-                    <p>
-                        SecureCall's source code is publicly available on GitHub.
-                        Audit our cryptography implementation, verify our privacy claims,
-                        and inspect every line of code that handles your voice data.
-                    </p>
-                    <p>
-                        We believe that true security requires transparency.
-                        If we can't show you how it works, you shouldn't trust it.
-                    </p>
-                    <a href="https://github.com/NeaBouli/stealth" class="btn btn-outline" target="_blank" rel="noopener">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-                        View on GitHub
-                    </a>
+        <section class="section alt" id="faq">
+            <div class="container">
+                <div class="section-head"><span class="section-label">Intel</span><h2>Tactical briefing.</h2><p class="lead">The most important questions, without burying users in a wall of copy.</p></div>
+                <div class="faq-list">
+                    <div class="faq-item"><button class="faq-question">Can you listen to my calls?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="faq-answer"><div class="faq-answer-inner">No. Calls are encrypted end-to-end using XChaCha20-Poly1305. Encryption keys are generated on your device and never sent to our servers.</div></div></div>
+                    <div class="faq-item"><button class="faq-question">Why is the source code public?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="faq-answer"><div class="faq-answer-inner">Transparency builds trust. Security researchers, journalists and privacy advocates can verify that the implementation matches the claims.</div></div></div>
+                    <div class="faq-item"><button class="faq-question">What data do you collect?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="faq-answer"><div class="faq-answer-inner">Free tier uses anonymous crash reports and ads. Pro and Premium have no ads and no crash reporting. All tiers use FCM for push and STUN/TURN for WebRTC. No call content is stored server-side. See <a href="privacy.html">Privacy Policy</a>.</div></div></div>
+                    <div class="faq-item"><button class="faq-question">What is anti-recording protection?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="faq-answer"><div class="faq-answer-inner">Pro and Premium include protection against screen recording, microphone hijacking and spy apps. Premium can terminate the call automatically.</div></div></div>
+                    <div class="faq-item"><button class="faq-question">What is SecureChat?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="faq-answer"><div class="faq-answer-inner">SecureChat is the messaging product of the StealthX Platform. It uses the same crypto direction for text, files and groups, with decentralized relay infrastructure on the roadmap. <a href="https://securechat.stealthx.tech/">Learn more</a>.</div></div></div>
+                    <div class="faq-item"><button class="faq-question">How does SecureChat differ from Signal or SimpleX?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="faq-answer"><div class="faq-answer-inner">Signal requires a phone number and centralized servers. SimpleX is decentralized but has no on-chain identity layer. SecureChat aims to combine relay decentralization with verifiable identity anchoring.</div></div></div>
+                    <div class="faq-item"><button class="faq-question">When will SecureChat be available?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="faq-answer"><div class="faq-answer-inner">SecureChat is in Phase 1 core messaging pre-alpha. Public alpha is planned for Q3 2026 after external security review. Follow progress on the SecureChat site or GitHub.</div></div></div>
                 </div>
-                <div class="oss-code">
-                    <span class="comment">// core_crypto/src/lib.rs</span><br>
-                    <span class="keyword">pub fn</span> <span class="type">encrypt_voice_frame</span>(<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;frame: &amp;[<span class="type">u8</span>],<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;key: &amp;<span class="type">SessionKey</span>,<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;nonce: &amp;<span class="type">XNonce</span>,<br>
-                    ) -&gt; <span class="type">Result</span>&lt;<span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;&gt; {<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span> cipher = <span class="type">XChaCha20Poly1305</span>::new(key);<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;cipher.encrypt(nonce, frame)<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.map_err(|_| <span class="type">CryptoError</span>::<span class="string">EncryptionFailed</span>)<br>
-                    }
-                </div>
+                <p style="text-align:center;margin-top:28px"><a href="wiki/faq.html" class="btn line">View all FAQ</a></p>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ─── Comparison Table ──────────────────────────────────── -->
-    <section id="compare" style="padding:80px 0;background:#0a0a12">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-label" style="color:#FF4444">BENCHMARK</span>
-                <h2>Why SecureCall?</h2>
-                <p>The only encrypted calling app that requires no phone number, no account &mdash; and destroys itself on command.</p>
+        <section class="cta" id="download">
+            <div class="container">
+                <h2>Ready to secure your comms?</h2>
+                <p>Deploy SecureCall and establish the first encrypted channel in under 60 seconds.</p>
+                <div class="cta-buttons">
+                    <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="store-badge"><span>▶</span><span><small>GET IT ON</small><strong>Google Play</strong></span></a>
+                    <a href="download.html" class="store-badge"><span>↓</span><span><small>DIRECT DOWNLOAD</small><strong>APK builds</strong></span></a>
+                    <a href="https://github.com/NeaBouli/stealth/releases" target="_blank" rel="noopener" class="store-badge"><span>⌘</span><span><small>VERIFY</small><strong>GitHub releases</strong></span></a>
+                </div>
+                <p style="font-size:13px;color:var(--sx-faint);margin-top:18px">Requires Android 7.0+ · approximately 80 MB · no account required · upgrade anytime with activation code or in-app purchase.</p>
             </div>
-            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:32px">
-                <table style="width:100%;min-width:640px;border-collapse:collapse;font-size:14px">
-                    <thead>
-                        <tr style="border-bottom:2px solid #222">
-                            <th style="text-align:left;padding:12px 16px;color:#888;font-weight:500">Feature</th>
-                            <th style="text-align:center;padding:12px 16px;color:#FF4444;font-weight:700;background:rgba(255,68,68,0.06);border-radius:8px 8px 0 0">SecureCall</th>
-                            <th style="text-align:center;padding:12px 16px;color:#888;font-weight:500">Signal</th>
-                            <th style="text-align:center;padding:12px 16px;color:#888;font-weight:500">Wire</th>
-                            <th style="text-align:center;padding:12px 16px;color:#888;font-weight:500">Wickr</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">No phone number required</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">No account registration</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">End-to-end encrypted calls</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#00E676;font-size:18px">&#10003;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">Built-in WireGuard VPN</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">STEALTH-DELETE (instant wipe)</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">Emergency Broadcast System</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">No call content or logs stored</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF9800;font-size:14px">&#9888;&#65039;</td>
-                            <td style="text-align:center;padding:10px;color:#FF9800;font-size:14px">&#9888;&#65039;</td>
-                            <td style="text-align:center;padding:10px;color:#FF9800;font-size:14px">&#9888;&#65039;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">IFR Token lifetime access</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">WalletConnect v2</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">Source available for audit</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">Free tier available</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">Direct APK download</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #1a1a2e">
-                            <td style="padding:10px 16px;color:#ccc">EU/GDPR compliant</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF9800;font-size:14px">&#9888;&#65039;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                        <tr>
-                            <td style="padding:10px 16px;color:#ccc">Gift activation codes</td>
-                            <td style="text-align:center;padding:10px;background:rgba(255,68,68,0.04);border-radius:0 0 8px 8px;color:#00E676;font-size:18px">&#10003;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                            <td style="text-align:center;padding:10px;color:#FF4444;font-size:18px">&#10007;</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <p style="text-align:center;color:#555;font-size:12px;margin-top:16px">Comparison based on publicly documented features as of April 2026. SecureCall's client source is available for audit; official branding, backend services, store releases, paid licensing, and use rights remain operated by Vendetta Labs.</p>
-        </div>
-    </section>
+        </section>
 
-    <!-- ─── Pricing ─────────────────────────────────────────── -->
-    <section class="pricing" id="pricing">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-label">ACCESS LEVELS</span>
-                <h2>Choose your clearance level.</h2>
-                <p>Every tier includes end-to-end encryption. Upgrade for advanced protection.</p>
+        <section class="section" id="broadcast">
+            <div class="container">
+                <div class="section-head"><span class="section-label">Privacy-preserving alerts</span><h2>Emergency Broadcast System</h2><p class="lead">Reach every user instantly without knowing who they are.</p></div>
+                <div class="broadcast-grid">
+                    <div class="broadcast-card"><h3>How it works</h3><ul class="plain-list"><li>Dev team sends a single numeric ID</li><li>No message text, user data or location transmitted</li><li>Templates are stored locally on device</li><li>One-byte ping reaches users simultaneously</li><li>Works when the app is closed through push notification</li></ul></div>
+                    <div class="broadcast-card"><h3>10 alert templates</h3><div class="alert-list"><div class="alert-row">🔴 Critical - stop using app</div><div class="alert-row">🟠 Security alert - switch comms</div><div class="alert-row">🟡 Update required</div><div class="alert-row">🔵 Maintenance pause</div><div class="alert-row">⚫ Stealth protocol - go dark</div><div class="alert-row">📻 Emergency - turn on radio/TV</div><div class="alert-row">⚠ Network warning</div><div class="alert-row">🟢 All clear</div><div class="alert-row">↻ Update available</div><div class="alert-row">📢 Official announcement</div></div></div>
+                </div>
+                <div class="card" style="padding:22px;margin-top:20px;text-align:center"><p style="margin:0"><strong style="color:var(--sx-text)">Your privacy is preserved at every step.</strong><br>We do not know who you are or where you are. We send a ping. Your phone does the rest.</p></div>
             </div>
-            <div class="pricing-grid">
-                <div class="pricing-card reveal">
-                    <div class="pricing-tier">Free</div>
-                    <div class="pricing-price">
-                        <span class="amount">&euro;0</span>
-                        <span class="period">forever</span>
-                    </div>
-                    <div class="pricing-divider"></div>
-                    <ul class="pricing-features">
-                        <li class="included">E2E encrypted calls</li>
-                        <li class="included">15 min call limit, 10 contacts</li>
-                        <li class="included">Basic security warnings</li>
-                        <li class="included">Dark/Light mode</li>
-                        <li class="included">Ad-supported (banner)</li>
-                        <li class="excluded">Call history &amp; online status</li>
-                        <li class="excluded">Anti-recording protection</li>
-                        <li class="excluded">GhostNet IP masking</li>
-                    </ul>
-                    <a href="#download" class="btn btn-outline btn-block">Get Started</a>
-                </div>
-                <div class="pricing-card featured reveal reveal-delay-1">
-                    <div class="pricing-badge">Most Popular</div>
-                    <div class="pricing-tier">Pro</div>
-                    <div class="pricing-price">
-                        <span class="amount">€3.49</span>
-                        <span class="period">/month</span>
-                    </div>
-                    <div class="pricing-divider"></div>
-                    <ul class="pricing-features">
-                        <li class="included">Everything in Free</li>
-                        <li class="included">Online/offline contact status</li>
-                        <li class="included">Anti-recording detection</li>
-                        <li class="included">Enhanced security monitoring</li>
-                        <li class="included">Priority connection</li>
-                        <li class="included">Unlimited contacts &amp; calls</li>
-                        <li class="excluded">GhostNet IP masking</li>
-                        <li class="included" style="color:#FF9800;font-size:12px">OR: Verified IFR Lock &ge; 2,000 IFR &mdash; lifetime</li>
-                    </ul>
-                    <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn btn-primary btn-block">Buy on Google Play &rarr;</a>
-                    <!-- STRIPE-BTN-PRO DISABLED
-                    <a href="https://buy.stripe.com/eVq7sK2Rz1xlaKKc2s7N600" target="_blank" rel="noopener" class="btn btn-outline btn-block" style="margin-top:8px">Buy Direct &rarr;</a>
-                    <p style="text-align:center;color:#888;font-size:11px;margin-top:6px">Pay with Card, Klarna or SEPA</p>
-                    STRIPE-BTN-PRO -->
-                </div>
-                <div class="pricing-card reveal reveal-delay-2">
-                    <div class="pricing-tier">Premium</div>
-                    <div class="pricing-price">
-                        <span class="amount">€4.99</span>
-                        <span class="period">/month</span>
-                    </div>
-                    <div class="pricing-divider"></div>
-                    <ul class="pricing-features">
-                        <li class="included">Everything in Pro</li>
-                        <li class="included">Advanced threat detection</li>
-                        <li class="included">Exclusive audio focus protection</li>
-                        <li class="included">Threat auto-termination</li>
-                        <li class="included">GhostNet IP masking</li>
-                        <li class="included">Zero telemetry</li>
-                        <li class="included">WireGuard VPN integration</li>
-                        <li class="included" style="color:var(--metallic,#8a8a9a);font-size:12px">Future: eSIM support</li>
-                        <li class="included" style="color:#FF4444;font-size:12px">OR: Verified IFR Lock &ge; 6,000 IFR &mdash; lifetime</li>
-                    </ul>
-                    <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn btn-primary btn-block">Buy on Google Play &rarr;</a>
-                    <!-- STRIPE-BTN-PREMIUM DISABLED
-                    <a href="https://buy.stripe.com/fZuaEW3VD7VJ7yy8Qg7N601" target="_blank" rel="noopener" class="btn btn-outline btn-block" style="margin-top:8px">Buy Direct &rarr;</a>
-                    <p style="text-align:center;color:#888;font-size:11px;margin-top:6px">Pay with Card, Klarna or SEPA</p>
-                    STRIPE-BTN-PREMIUM -->
-                </div>
-            </div>
-            <p style="text-align:center;color:#888;font-size:12px;margin-top:16px">IFR Bootstrap ends June 5, 2026 &mdash; trading expected August 2026 | <a href="https://ifrunit.tech" target="_blank" rel="noopener" style="color:#FF9800">ifrunit.tech</a></p>
+        </section>
+    </main>
 
-            <!-- IFR Token Unlock -->
-            <div style="margin-top:48px;padding:32px;border:1px solid rgba(255,68,68,0.3);border-radius:16px;background:rgba(255,68,68,0.04);max-width:800px;margin-left:auto;margin-right:auto">
-                <div style="text-align:center;margin-bottom:24px">
-                    <span class="section-label" style="color:#FF4444">INFERNO INTEGRATION</span>
-                    <h3 style="margin:12px 0 8px;font-size:1.5rem">IFR Lifetime Unlock</h3>
-                    <p style="color:#aaa;margin:0">Lock $IFR tokens. Unlock forever. Your tokens stay yours.</p>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">
-                    <div style="padding:16px;border-radius:8px;background:rgba(255,255,255,0.03)">
-                        <div style="font-weight:700;color:#FF9800;margin-bottom:8px">PRO &mdash; Lock 2,000 IFR</div>
-                        <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:#ccc">
-                            <li>+ Online/offline status</li>
-                            <li>+ Anti-recording detection</li>
-                            <li>+ Enhanced security</li>
-                            <li>+ Unlimited calls &amp; contacts</li>
-                        </ul>
-                    </div>
-                    <div style="padding:16px;border-radius:8px;background:rgba(255,255,255,0.03)">
-                        <div style="font-weight:700;color:#FF4444;margin-bottom:8px">PREMIUM &mdash; Lock 6,000 IFR</div>
-                        <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:#ccc">
-                            <li>+ Everything in Pro</li>
-                            <li>+ Advanced threat detection</li>
-                            <li>+ GhostNet IP masking</li>
-                            <li>+ Zero telemetry</li>
-                        </ul>
-                    </div>
-                </div>
-                <div style="text-align:center">
-                    <a href="wiki/ifr-unlock.html" class="btn btn-outline" style="border-color:#FF4444;color:#FF4444;margin-right:12px">Learn More &rarr;</a>
-                    <a href="https://ifrunit.tech" class="btn btn-outline" target="_blank" rel="noopener" style="border-color:#FF9800;color:#FF9800">Powered by Inferno ($IFR)</a>
-                </div>
-                <div style="text-align:center;margin-top:24px;padding:16px;border-radius:8px;background:rgba(255,152,0,0.08);border:1px solid rgba(255,152,0,0.2)">
-                    <p style="color:#FF9800;font-weight:700;margin:0 0 8px">&#9203; IFR Token &mdash; Bootstrap Phase Active</p>
-                    <p style="color:#ccc;font-size:13px;margin:0;line-height:1.8">
-                        Bootstrap Event ends: <strong>June 5, 2026</strong><br>
-                        Expected trading start: <strong>August 2026</strong><br>
-                        Liquidity Reserve unlock: <strong>September 1, 2026</strong>
-                    </p>
-                    <p style="color:#888;font-size:12px;margin:8px 0 0">
-                        During Bootstrap: <a href="https://ifrunit.tech" target="_blank" rel="noopener" style="color:#FF9800">participate at ifrunit.tech</a>
-                        &middot; After LP launch: lock IFR directly in SecureCall Settings
-                    </p>
-                </div>
-                <div style="text-align:center;margin-top:16px">
-                    <a href="https://github.com/NeaBouli/stealth/releases" class="btn btn-primary btn-lg" target="_blank" rel="noopener" style="background:#D32F2F;border-color:#D32F2F">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Download StealthX FREE
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ─── Lifetime Offer ────────────────────────────────────── -->
-    <section class="lifetime-offer" id="lifetime">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-label" style="color:#FF4444">Limited Time</span>
-                <h2>Forever Licenses &mdash; <span class="text-gradient">No Subscription</span></h2>
-                <p>One-time purchase. Lifetime access. Only 100 licenses per tier. Price increases with every sale.</p>
-            </div>
-            <div class="pricing-grid" style="max-width:1200px;margin:0 auto">
-                <div class="pricing-card featured reveal" style="border-color:#FFD700">
-                    <div class="pricing-badge" style="background:#FFD700;color:#000">Limited: 100 Licenses</div>
-                    <div class="pricing-tier" style="color:#FFD700">Pro Lifetime</div>
-                    <div class="pricing-price">
-                        <span class="amount" id="proPrice" style="color:#FFD700">€15</span>
-                        <span class="period">one-time</span>
-                    </div>
-                    <div class="pricing-divider"></div>
-                    <div style="margin-bottom:16px">
-                        <div style="display:flex;justify-content:space-between;font-size:13px;color:#aaa;margin-bottom:6px">
-                            <span>Licenses remaining</span>
-                            <span id="proRemaining" style="color:#FFD700;font-weight:700">100 / 100</span>
-                        </div>
-                        <div style="background:#222;border-radius:4px;height:8px;overflow:hidden">
-                            <div id="proBar" style="width:0%;height:100%;background:linear-gradient(90deg,#FFD700,#FFA000);border-radius:4px;transition:width 1s"></div>
-                        </div>
-                        <div style="font-size:11px;color:#888;margin-top:6px;text-align:center">
-                            Next buyer pays: <span id="proNextPrice" style="color:#FFD700">€15.35</span> &mdash; Price rises to €50 at sellout
-                        </div>
-                    </div>
-                    <ul class="pricing-features">
-                        <li class="included">Everything in Pro</li>
-                        <li class="included">No subscription &mdash; pay once</li>
-                        <li class="included">Lifetime updates included</li>
-                        <li class="included">Early adopter pricing</li>
-                    </ul>
-                    <!-- STRIPE-BTN-PRO-LIFETIME DISABLED -->
-                    <a id="btnProLifetime" class="btn btn-primary btn-block" style="background:#555;color:#999;border-color:#555;cursor:default;pointer-events:none">Coming Soon</a>
-                </div>
-                <div class="pricing-card featured reveal reveal-delay-1" style="border-color:#FF4444">
-                    <div class="pricing-badge" style="background:#FF4444">Limited: 100 Licenses</div>
-                    <div class="pricing-tier" style="color:#FF4444">Premium Lifetime</div>
-                    <div class="pricing-price">
-                        <span class="amount" id="premiumPrice" style="color:#FF4444">€25</span>
-                        <span class="period">one-time</span>
-                    </div>
-                    <div class="pricing-divider"></div>
-                    <div style="margin-bottom:16px">
-                        <div style="display:flex;justify-content:space-between;font-size:13px;color:#aaa;margin-bottom:6px">
-                            <span>Licenses remaining</span>
-                            <span id="premiumRemaining" style="color:#FF4444;font-weight:700">100 / 100</span>
-                        </div>
-                        <div style="background:#222;border-radius:4px;height:8px;overflow:hidden">
-                            <div id="premiumBar" style="width:0%;height:100%;background:linear-gradient(90deg,#FF4444,#CC0000);border-radius:4px;transition:width 1s"></div>
-                        </div>
-                        <div style="font-size:11px;color:#888;margin-top:6px;text-align:center">
-                            Next buyer pays: <span id="premiumNextPrice" style="color:#FF4444">€25.75</span> &mdash; Price rises to €100 at sellout
-                        </div>
-                    </div>
-                    <ul class="pricing-features">
-                        <li class="included">Everything in Premium</li>
-                        <li class="included">No subscription &mdash; pay once</li>
-                        <li class="included">Lifetime updates included</li>
-                        <li class="included">Early adopter pricing</li>
-                    </ul>
-                    <!-- STRIPE-BTN-PREMIUM-LIFETIME DISABLED -->
-                    <a id="btnPremiumLifetime" class="btn btn-primary btn-block" style="background:#555;color:#999;border-color:#555;cursor:default;pointer-events:none">Coming Soon</a>
-                </div>
-                <div class="pricing-card featured reveal reveal-delay-2" style="border-color:#00E676">
-                    <div class="pricing-badge" style="background:#00E676;color:#000">🎁 Gift Option</div>
-                    <div class="pricing-tier" style="color:#00E676">Activation Code</div>
-                    <div class="pricing-price">
-                        <span class="amount" style="color:#00E676">&euro;49</span>
-                        <span class="period">one-time</span>
-                    </div>
-                    <div class="pricing-divider"></div>
-                    <div style="margin-bottom:16px;text-align:center">
-                        <div style="font-size:14px;color:#ccc;line-height:1.6">
-                            Premium Forever
-                        </div>
-                    </div>
-                    <ul class="pricing-features">
-                        <li class="included">Buy a Premium activation code</li>
-                        <li class="included">Use it yourself or gift it to anyone</li>
-                        <li class="included">Enter code in Settings &rarr; instant upgrade</li>
-                        <li class="included">No subscription &mdash; permanent Premium</li>
-                        <li class="included">Lifetime updates included</li>
-                    </ul>
-                    <p style="font-size:11px;color:#888;margin-bottom:8px;text-align:center">Secure payment via Google Play. Code delivered instantly in-app.</p>
-                    <!-- STRIPE-BTN-LIFETIME DISABLED
-                    <a href="https://buy.stripe.com/4gMdR8fEl6RF3ii1nO7N602" target="_blank" rel="noopener" class="btn btn-primary btn-block" style="background:#00E676;color:#000;border-color:#00E676">Buy Activation Code &mdash; &euro;49</a>
-                    STRIPE-BTN-LIFETIME -->
-                </div>
-            </div>
-            <!-- STRIPE-BANNER DISABLED
-            <p style="text-align:center;color:#888;font-size:13px;margin-top:24px;background:rgba(255,255,255,0.04);padding:8px 16px;border-radius:8px;display:inline-block">
-                &#128274; Secure payment via Stripe &mdash; Card, PayPal, Klarna, Apple&nbsp;Pay, Google&nbsp;Pay
-            </p>
-            STRIPE-BANNER -->
-        </div>
-    </section>
-
-    <!-- ─── Platform ──────────────────────────────────────── -->
-    <section class="pricing" id="platform" style="padding:5rem 0;">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-label">ECOSYSTEM</span>
-                <h2>The StealthX Platform</h2>
-                <p>Three products. One crypto stack. One token.</p>
-            </div>
-            <div class="pricing-grid">
-                <!-- SecureCall -->
-                <div class="pricing-card reveal" style="border-top:3px solid #22c55e;">
-                    <div class="pricing-badge" style="background:#22c55e;color:#000;">LIVE — Google Play</div>
-                    <div style="font-size:2.5rem;margin-bottom:0.5rem;">&#128222;</div>
-                    <div class="pricing-tier">SecureCall</div>
-                    <p style="color:rgba(255,255,255,0.6);font-size:0.9rem;margin:0.5rem 0 1rem;">Encrypted Voice Calls. Minimal Metadata.</p>
-                    <div class="pricing-divider"></div>
-                    <ul class="pricing-features">
-                        <li class="included">E2E XChaCha20-Poly1305</li>
-                        <li class="included">WireGuard VPN built-in</li>
-                        <li class="included">STEALTH-DELETE</li>
-                    </ul>
-                    <p style="color:#FFD700;font-size:0.85rem;margin:1rem 0;">&ge; 2,000 IFR &rarr; Pro Lifetime</p>
-                    <a href="./#features" class="btn btn-primary btn-block">Learn More</a>
-                </div>
-                <!-- SecureChat -->
-                <div class="pricing-card reveal reveal-delay-1" style="border-top:3px solid #f59e0b;">
-                    <div class="pricing-badge" style="background:#f59e0b;color:#000;">IN DEVELOPMENT</div>
-                    <div style="font-size:2.5rem;margin-bottom:0.5rem;">&#128172;</div>
-                    <div class="pricing-tier">SecureChat</div>
-                    <p style="color:rgba(255,255,255,0.6);font-size:0.9rem;margin:0.5rem 0 1rem;">Decentralized Encrypted Messaging. No Server.</p>
-                    <div class="pricing-divider"></div>
-                    <ul class="pricing-features">
-                        <li class="included">Kaspa Identity Layer</li>
-                        <li class="included">Double Ratchet Forward Secrecy</li>
-                        <li class="included">2-Hop Onion Routing</li>
-                        <li class="included">Emergency Broadcast (Elite)</li>
-                        <li class="included">Chameleon Privacy OS included</li>
-                    </ul>
-                    <p style="color:#FFD700;font-size:0.85rem;margin:1rem 0;">&ge; 2,000 IFR &rarr; Pro Lifetime</p>
-                    <a href="https://securechat.stealthx.tech" class="btn btn-outline btn-block" target="_blank" rel="noopener">Coming Soon</a>
-                </div>
-                <!-- Chameleon -->
-                <div class="pricing-card reveal reveal-delay-2" style="border-top:3px solid #f59e0b;">
-                    <div class="pricing-badge" style="background:#ff6b35;color:#fff;">STANDALONE — chameleon.stealthx.tech</div>
-                    <div style="font-size:2.5rem;margin-bottom:0.5rem;">&#129422;</div>
-                    <div class="pricing-tier">Chameleon</div>
-                    <p style="color:rgba(255,255,255,0.6);font-size:0.9rem;margin:0.5rem 0 1rem;">Privacy OS &middot; Context-Aware Encryption</p>
-                    <div class="pricing-divider"></div>
-                    <ul class="pricing-features">
-                        <li class="included">Overlay Encryption for any App</li>
-                        <li class="included">Rule-Based Automation</li>
-                        <li class="included">Private Zone (encrypted storage)</li>
-                    </ul>
-                    <p style="color:#FFD700;font-size:0.85rem;margin:1rem 0;">&ge; 2,000 IFR &rarr; Pro Lifetime</p>
-                    <a href="https://chameleon.stealthx.tech/" class="btn btn-outline btn-block" target="_blank" rel="noopener">Learn More</a>
-                </div>
-            </div>
-
-            <!-- Suite Banner -->
-            <div style="margin-top:3rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2.5rem;text-align:center;">
-                <h3 style="font-size:1.5rem;margin-bottom:0.5rem;color:#FFD700;">StealthX Suite &mdash; &euro;54 one-time OR Lock &ge; 8,000 IFR</h3>
-                <p style="color:rgba(255,255,255,0.6);margin-bottom:1.5rem;">SecureCall Premium + SecureChat Elite + Chameleon Elite. Everything. Forever.</p>
-                <div style="display:inline-flex;gap:2rem;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem;">
-                    <div style="padding:0.75rem 1.5rem;background:rgba(255,255,255,0.05);border-radius:8px;font-size:0.9rem;">
-                        <strong style="color:#FF4444;">SecureCall</strong><br><span style="color:rgba(255,255,255,0.5);">Premium</span>
-                    </div>
-                    <div style="padding:0.75rem 1.5rem;background:rgba(255,255,255,0.05);border-radius:8px;font-size:0.9rem;">
-                        <strong style="color:#FF4444;">SecureChat</strong><br><span style="color:rgba(255,255,255,0.5);">Elite</span>
-                    </div>
-                    <div style="padding:0.75rem 1.5rem;background:rgba(255,255,255,0.05);border-radius:8px;font-size:0.9rem;">
-                        <strong style="color:#FF4444;">Chameleon</strong><br><span style="color:rgba(255,255,255,0.5);">Elite</span>
-                    </div>
-                </div>
-                <br>
-                <a href="https://ifrunit.tech" class="btn btn-outline" target="_blank" rel="noopener">Learn More &rarr; ifrunit.tech</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- ─── FAQ Preview ─────────────────────────────────────── -->
-    <section class="faq-section">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-label">INTEL</span>
-                <h2>Tactical briefing.</h2>
-                <p>Everything you need to know about the StealthX Platform.</p>
-            </div>
-            <div class="faq-list">
-                <div class="faq-item">
-                    <button class="faq-question">
-                        Can you listen to my calls?
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <div class="faq-answer-inner">
-                            No. Calls are encrypted end-to-end using XChaCha20-Poly1305. Encryption keys are generated on your device and never sent to our servers. We have zero technical ability to decrypt your calls, even if compelled by a court order.
-                        </div>
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-question">
-                        Why is the source code public?
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <div class="faq-answer-inner">
-                            Transparency builds trust. By publishing our source code, we allow anyone &mdash; security researchers, journalists, privacy advocates &mdash; to verify that our encryption works as claimed. Security through obscurity is no security at all.
-                        </div>
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-question">
-                        What data do you collect?
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <div class="faq-answer-inner">
-                            The Free tier collects anonymous crash reports (opt-out available) and shows ads. Pro and Premium have no ads and no crash reporting. All tiers use Firebase Cloud Messaging for push notifications and STUN/TURN for WebRTC connectivity. No call content is ever stored or accessible server-side. See our <a href="privacy.html">Privacy Policy</a> for full details by tier.
-                        </div>
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-question">
-                        What is anti-recording protection?
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <div class="faq-answer-inner">
-                            Pro and Premium tiers include active protection against screen recording, microphone hijacking, and spy apps. The system detects recording attempts and responds based on your tier: Pro blocks the threat, Premium automatically terminates the call to protect you.
-                        </div>
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-question">
-                        What is SecureChat?
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <div class="faq-answer-inner">
-                            SecureChat is the messaging product of the StealthX Platform &mdash; currently in development. It uses the same XChaCha20-Poly1305 crypto stack as SecureCall but for text, files, and group chats. Messages are routed through decentralized Kaspa-incentivized relay nodes with 2-hop onion routing (Pro) or 3-hop (Elite). No central server ever sees your messages. <a href="https://securechat.stealthx.tech/" style="color:#00ff88;">Learn more &rarr;</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-question">
-                        How does SecureChat differ from Signal or SimpleX?
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <div class="faq-answer-inner">
-                            Signal requires a phone number and uses centralized servers. SimpleX is decentralized but has no on-chain identity layer. SecureChat combines the best of both: fully decentralized relay infrastructure with Kaspa blockchain identity anchoring &mdash; your public key is permanently verifiable on-chain without exposing personal data. Plus, IFR token holders get lifetime access with no subscriptions.
-                        </div>
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-question">
-                        When will SecureChat be available?
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <div class="faq-answer-inner">
-                            SecureChat is in Phase 1 (core messaging pre-alpha). Public alpha is planned for Q3 2026 after an external security audit by Trail of Bits. Follow progress at <a href="https://securechat.stealthx.tech/" style="color:#00ff88;">securechat.stealthx.tech</a> or on <a href="https://github.com/NeaBouli/securechat" style="color:#00d4ff;">GitHub</a>.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div style="text-align:center;margin-top:40px">
-                <a href="wiki/faq.html" class="btn btn-outline">View All FAQ &rarr;</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- ─── CTA / Download ──────────────────────────────────── -->
-    <section class="cta" id="download">
-        <div class="container">
-            <h2>Ready to secure<br>your <span class="text-gradient">comms</span>?</h2>
-            <p>Deploy SecureCall and establish your first encrypted channel in under 60 seconds.</p>
-            <div class="cta-buttons">
-                <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="store-badge" aria-label="Get it on Google Play">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.61 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/></svg>
-                    <div class="store-badge-text">
-                        <small>GET IT ON</small>
-                        <strong>Google Play</strong>
-                    </div>
-                </a>
-                <a href="https://github.com/NeaBouli/stealth/releases" class="store-badge" aria-label="Download APK" target="_blank" rel="noopener">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    <div class="store-badge-text">
-                        <small>DIRECT DOWNLOAD</small>
-                        <strong>APK (Free)</strong>
-                    </div>
-                </a>
-            </div>
-            <p class="cta-note">Requires Android 7.0+ &middot; ~80 MB &middot; No account required</p>
-            <p class="cta-note" style="margin-top:8px;color:#aaa">Download FREE &mdash; upgrade anytime with an activation code or in-app purchase</p>
-        </div>
-    </section>
-
-    <!-- ─── Emergency Broadcast ─────────────────────────────── -->
-    <section id="broadcast" style="background:linear-gradient(135deg,#0d0d1a 0%,#1a0a0a 100%);border-top:1px solid rgba(220,38,38,0.3);border-bottom:1px solid rgba(220,38,38,0.3);padding:80px 0">
-        <div class="container">
-            <div style="text-align:center;margin-bottom:48px">
-                <span style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#ef4444;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Privacy-Preserving Alerts</span>
-                <h2 style="font-size:clamp(28px,4vw,42px);font-weight:800;margin:16px 0 12px;color:#fff">&#128680; Emergency Broadcast System</h2>
-                <p style="color:rgba(255,255,255,0.6);font-size:18px;max-width:600px;margin:0 auto">Reach every user instantly &mdash; without knowing who they are.</p>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:32px;max-width:900px;margin:0 auto 48px">
-                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px">
-                    <h3 style="color:#ef4444;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:0 0 20px">How It Works</h3>
-                    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px">
-                        <li style="display:flex;gap:12px;align-items:flex-start"><span style="color:#ef4444;font-size:18px;flex-shrink:0">&#128225;</span><span style="color:rgba(255,255,255,0.7);font-size:14px">Dev team sends only a single numeric ID &mdash; nothing else</span></li>
-                        <li style="display:flex;gap:12px;align-items:flex-start"><span style="color:#ef4444;font-size:18px;flex-shrink:0">&#128274;</span><span style="color:rgba(255,255,255,0.7);font-size:14px">No message text, no user data, no location ever transmitted</span></li>
-                        <li style="display:flex;gap:12px;align-items:flex-start"><span style="color:#ef4444;font-size:18px;flex-shrink:0">&#128241;</span><span style="color:rgba(255,255,255,0.7);font-size:14px">Pre-installed templates stored locally on your device</span></li>
-                        <li style="display:flex;gap:12px;align-items:flex-start"><span style="color:#ef4444;font-size:18px;flex-shrink:0">&#9889;</span><span style="color:rgba(255,255,255,0.7);font-size:14px">1-byte ping reaches all users simultaneously</span></li>
-                        <li style="display:flex;gap:12px;align-items:flex-start"><span style="color:#ef4444;font-size:18px;flex-shrink:0">&#128276;</span><span style="color:rgba(255,255,255,0.7);font-size:14px">Works even when the app is closed via push notification</span></li>
-                    </ul>
-                </div>
-                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px">
-                    <h3 style="color:#ef4444;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:0 0 20px">10 Alert Templates</h3>
-                    <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
-                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(220,38,38,0.05)"><span>&#128308;</span><span style="color:rgba(255,255,255,0.8)">CRITICAL &mdash; Stop using app</span></div>
-                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px"><span>&#128992;</span><span style="color:rgba(255,255,255,0.8)">Security Alert &mdash; Switch comms</span></div>
-                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(220,38,38,0.05)"><span>&#128993;</span><span style="color:rgba(255,255,255,0.8)">Update Required &mdash; Critical update</span></div>
-                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px"><span>&#128309;</span><span style="color:rgba(255,255,255,0.8)">Maintenance &mdash; Temporary pause</span></div>
-                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(220,38,38,0.05)"><span>&#9899;</span><span style="color:rgba(255,255,255,0.8)">Stealth Protocol &mdash; Go dark</span></div>
-                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px"><span>&#128251;</span><span style="color:rgba(255,255,255,0.8)">Emergency &mdash; Turn on radio/TV</span></div>
-                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(220,38,38,0.05)"><span>&#9888;&#65039;</span><span style="color:rgba(255,255,255,0.8)">Network Warning &mdash; Switch network</span></div>
-                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px"><span>&#128994;</span><span style="color:rgba(255,255,255,0.8)">All Clear &mdash; Alert resolved</span></div>
-                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(220,38,38,0.05)"><span>&#128260;</span><span style="color:rgba(255,255,255,0.8)">Update Available &mdash; New version</span></div>
-                        <div style="display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:6px"><span>&#128226;</span><span style="color:rgba(255,255,255,0.8)">Official Announcement &mdash; Read now</span></div>
-                    </div>
-                </div>
-            </div>
-            <div style="text-align:center;max-width:600px;margin:0 auto;padding:24px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px">
-                <p style="color:rgba(255,255,255,0.5);font-size:14px;margin:0;line-height:1.6"><strong style="color:rgba(255,255,255,0.8)">Your privacy is preserved at every step.</strong><br>We don&rsquo;t know who you are or where you are &mdash; and we never will.<br>We send a ping. Your phone does the rest.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- ─── Footer ──────────────────────────────────────────── -->
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
-                <div class="footer-brand">
-                    <a href="./" class="nav-logo">
-                        <img src="logo.png" alt="SecureCall" class="nav-logo-img">
-                        SecureCall
-                    </a>
-                    <p>Your comms are your own.</p>
-                </div>
-                <div class="footer-col">
-                    <h4>Product</h4>
-                    <a href="#features">Features</a>
-                    <a href="#security">Security</a>
-                    <a href="#pricing">Pricing</a>
-                    <a href="#download">Download</a>
-                </div>
-                <div class="footer-col">
-                    <h4>Resources</h4>
-                    <a href="wiki/">Intel Database</a>
-                    <a href="wiki/security-design.html">Security Design</a>
-                    <a href="wiki/faq.html">FAQ</a>
-                    <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
-                </div>
-                <div class="footer-col">
-                    <h4>Legal</h4>
-                    <a href="privacy.html">Privacy Policy</a>
-                    <a href="terms.html">Terms of Service</a>
-                    <a href="impressum.html">Impressum</a>
-                    <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">Contact</a>
-                </div>
+                <div><a href="./" class="sx-logo"><img src="assets/brand/stealthx-logo.png" alt="StealthX"></a><p>Your comms are your own. SecureCall, SecureChat and Chameleon are products of Vendetta Labs.</p></div>
+                <div class="footer-col"><h4>Product</h4><a href="#features">Features</a><a href="#security">Security</a><a href="#pricing">Pricing</a><a href="#download">Download</a></div>
+                <div class="footer-col"><h4>Resources</h4><a href="wiki/">Intel Database</a><a href="wiki/security-design.html">Security Design</a><a href="wiki/faq.html">FAQ</a><a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a></div>
+                <div class="footer-col"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a><a href="impressum.html">Impressum</a><a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">Contact</a></div>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 Vendetta Labs &mdash; Greece | Source available for audit — built by <a href="https://github.com/NeaBouli" target="_blank" rel="noopener" style="color:#aaa">NeaBouli</a></p>
-                <p>Made with security in mind.</p>
-            </div>
+            <div class="footer-bottom"><span>© 2026 Vendetta Labs - Greece | Source available for audit - built by <a href="https://github.com/NeaBouli" target="_blank" rel="noopener">NeaBouli</a></span><span>Made with security in mind.</span></div>
         </div>
     </footer>
 
@@ -1411,68 +589,50 @@
       try{
         const r=await fetch(API+'/licenses/status');
         const d=await r.json();
-        const fmt=c=>'€'+(c/100).toFixed(2);
+        const fmt=function(c){return '€'+(c/100).toFixed(2)};
         const p=d.pro_lifetime;
         if(p){
-          document.getElementById('proPrice').textContent=fmt(p.currentPrice);
-          document.getElementById('btnProPrice').textContent=fmt(p.currentPrice);
-          document.getElementById('proRemaining').textContent=p.remaining+' / 100';
-          document.getElementById('proNextPrice').textContent=fmt(p.nextPrice);
-          document.getElementById('proBar').style.width=p.sold+'%';
-          if(p.soldOut){document.getElementById('btnProLifetime').textContent='Sold Out';document.getElementById('btnProLifetime').onclick=null;}
+          const proPrice=document.getElementById('proPrice');
+          const proRemaining=document.getElementById('proRemaining');
+          const proNextPrice=document.getElementById('proNextPrice');
+          const proBar=document.getElementById('proBar');
+          const btnPro=document.getElementById('btnProLifetime');
+          if(proPrice)proPrice.textContent=fmt(p.currentPrice);
+          if(proRemaining)proRemaining.textContent=p.remaining+' / 100';
+          if(proNextPrice)proNextPrice.textContent=fmt(p.nextPrice);
+          if(proBar)proBar.style.width=p.sold+'%';
+          if(p.soldOut&&btnPro)btnPro.textContent='Sold out';
         }
         const pm=d.premium_lifetime;
         if(pm){
-          document.getElementById('premiumPrice').textContent=fmt(pm.currentPrice);
-          document.getElementById('btnPremiumPrice').textContent=fmt(pm.currentPrice);
-          document.getElementById('premiumRemaining').textContent=pm.remaining+' / 100';
-          document.getElementById('premiumNextPrice').textContent=fmt(pm.nextPrice);
-          document.getElementById('premiumBar').style.width=pm.sold+'%';
-          if(pm.soldOut){document.getElementById('btnPremiumLifetime').textContent='Sold Out';document.getElementById('btnPremiumLifetime').onclick=null;}
+          const premiumPrice=document.getElementById('premiumPrice');
+          const premiumRemaining=document.getElementById('premiumRemaining');
+          const premiumNextPrice=document.getElementById('premiumNextPrice');
+          const premiumBar=document.getElementById('premiumBar');
+          const btnPremium=document.getElementById('btnPremiumLifetime');
+          if(premiumPrice)premiumPrice.textContent=fmt(pm.currentPrice);
+          if(premiumRemaining)premiumRemaining.textContent=pm.remaining+' / 100';
+          if(premiumNextPrice)premiumNextPrice.textContent=fmt(pm.nextPrice);
+          if(premiumBar)premiumBar.style.width=pm.sold+'%';
+          if(pm.soldOut&&btnPremium)btnPremium.textContent='Sold out';
         }
       }catch(e){console.warn('License prices unavailable:',e.message)}
     })();
-    async function createDynamicCheckout(tier){
-      const btn=document.getElementById(tier==='pro_lifetime'?'btnProLifetime':'btnPremiumLifetime');
-      const orig=btn.innerHTML;
-      btn.textContent='Processing...';btn.style.opacity='0.6';
-      try{
-        const r=await fetch(API+'/stripe/create-dynamic-checkout',{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({tier})
-        });
-        const d=await r.json();
-        if(d.url)window.location.href=d.url;
-        else{btn.innerHTML=orig;btn.style.opacity='1';alert(d.error||'Checkout failed');}
-      }catch(e){btn.innerHTML=orig;btn.style.opacity='1';alert('Connection error');}
-    }
-    </script>
-    <style>
-    @keyframes pulse-green{0%,100%{opacity:1;box-shadow:0 0 6px #22c55e}50%{opacity:.4;box-shadow:0 0 12px #22c55e}}
-    @keyframes pulse-red{0%,100%{opacity:1;box-shadow:0 0 6px #ef4444}50%{opacity:.4;box-shadow:0 0 18px #ef4444}}
-    #hero-dot-server{animation:pulse-green 2s infinite}
-    </style>
-    <script>
     (function(){
-      var S='https://protective-healing-production.up.railway.app';
       function u(){
-        fetch(S+'/health',{signal:AbortSignal.timeout(5000)}).then(function(r){return r.json()}).then(function(d){
+        fetch(API+'/health',{signal:AbortSignal.timeout(5000)}).then(function(r){return r.json()}).then(function(d){
           var dot=document.getElementById('hero-dot-server');
-          if(dot){dot.style.background='#22c55e';dot.style.boxShadow='0 0 6px #22c55e';dot.style.animation='pulse-green 2s infinite'}
-          var st=document.getElementById('hero-server-status');
-          if(st)st.textContent='Server Online';
-          var cl=document.getElementById('hero-clients');
-          if(cl)cl.textContent='uptime '+d.uptime+'s';
-          var hb=document.getElementById('hero-heartbeat');
-          if(hb)hb.textContent=d.uptime?Math.round(60000/15000)+' bpm':'—';
+          if(dot){dot.style.background='var(--sx-green)';dot.style.animation='pulse-green 2s infinite'}
+          var st=document.getElementById('hero-server-status'); if(st)st.textContent='Server online';
+          var cl=document.getElementById('hero-clients'); if(cl)cl.textContent='uptime '+d.uptime+'s';
+          var hb=document.getElementById('hero-heartbeat'); if(hb)hb.textContent=d.uptime?Math.round(60000/15000)+' bpm':'waiting';
         }).catch(function(){
           var dot=document.getElementById('hero-dot-server');
-          if(dot){dot.style.background='#ef4444';dot.style.boxShadow='0 0 6px #ef4444';dot.style.animation='pulse-red 1s infinite'}
-          var st=document.getElementById('hero-server-status');
-          if(st)st.textContent='Checking...';
+          if(dot){dot.style.background='var(--sx-red)';dot.style.animation='pulse-red 1s infinite'}
+          var st=document.getElementById('hero-server-status'); if(st)st.textContent='Checking...';
         });
       }
-      u();setInterval(u,15000);
+      u(); setInterval(u,15000);
     })();
     </script>
 </body>
