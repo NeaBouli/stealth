@@ -3293,3 +3293,26 @@ Status:
 GitHub/Linear:
 - In `NeaBouli/stealth` kein passendes BUG-029/NEA-219/T6-Issue gefunden; #29 ist `NEA-WEB-01`.
 - Status daher hier in Bridge dokumentiert statt auf ein falsches Issue zu kommentieren.
+
+---
+
+## 2026-06-10 [CODEX]
+### TYPE: ASSET
+### STATUS: DONE
+### EMPFÄNGER: CC|GIO
+
+**SecureCall App Icon aus `/Users/gio/Desktop/icons` platziert**
+
+- Quelle: `/Users/gio/Desktop/icons/SecureCall-Icon.png` (1024x1024)
+- Ziel:
+  - `client_android/app/src/main/res/drawable/ic_launcher_bitmap.png` (432x432 adaptive foreground)
+  - `client_android/app/src/main/res/mipmap-*/ic_launcher.png`
+  - `client_android/app/src/main/res/mipmap-*/ic_launcher_round.png`
+- Adaptive Icons:
+  - `mipmap-anydpi-v26/ic_launcher.xml` foreground von `@drawable/logo` auf `@drawable/ic_launcher_bitmap` umgestellt
+  - `mipmap-anydpi-v26/ic_launcher_round.xml` foreground von `@drawable/logo` auf `@drawable/ic_launcher_bitmap` umgestellt
+- Manifest:
+  - `android:roundIcon="@mipmap/ic_launcher_round"` ergänzt
+
+Hinweis:
+- Bestehendes `drawable/logo.png` bleibt unverändert für eventuelle In-App-Nutzung.

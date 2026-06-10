@@ -55,6 +55,7 @@
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.SecureCall">
 
         <!-- Firebase initialization — google-services.json has all 3 flavors -->
