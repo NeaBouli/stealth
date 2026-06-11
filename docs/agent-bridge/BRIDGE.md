@@ -888,3 +888,9 @@ Ergebnis BUG-029 Retest:
 - Fix: email template now resolves product info for SecureCall, SecureChat, Chameleon, and StealthX Suite; non-SecureCall mails link the product page instead of SecureCall APKs.
 - Fix: webhook passes productName/productUrl from productKey into sendActivationCode().
 - Verification: backend/signaling npm test ✅ including SecureChat email regression test.
+
+## 2026-06-11 Codex — Railway deploy unblocker
+- Live deploy after cross-product checkout reached Railway container volume mount but produced no Node app logs; live API stayed on the old two-product catalog.
+- Likely blocker: entrypoint ran recursive chown over the mounted /app/data volume before app startup.
+- Fix: entrypoint now performs a shallow data-dir ownership repair, emits explicit start logs, and falls back to `dumb-init -- node src/server.js` if Railway passes no command.
+- Verification: entrypoint shell syntax check ✅. Redeploy required after push.
