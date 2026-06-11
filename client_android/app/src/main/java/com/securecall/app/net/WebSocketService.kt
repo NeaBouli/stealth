@@ -619,18 +619,15 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             prefs.edit().putString("client_id", clientId).apply()
             Log.d("WS_SERVICE", "Generated new clientId: $clientId")
         }
-        // Read device phone number if permission is granted
-        val phoneNumber = getDevicePhoneNumber()
         // App signature for fork protection — SHA-256 of signing certificate
         val appSignature = getAppSignature()
         val json = org.json.JSONObject().apply {
             put("type", "REGISTER")
             put("clientId", clientId)
-            if (phoneNumber != null) put("phoneNumber", phoneNumber)
             put("appSignature", appSignature)
         }.toString()
         client?.send(json)
-        Log.d("WS_SERVICE", "REGISTER sent: $clientId, phone: ${phoneNumber ?: "none"}")
+        Log.d("WS_SERVICE", "REGISTER sent: $clientId")
     }
 
     /** Returns SHA-256 hex digest of the app's signing certificate. */
@@ -662,32 +659,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     /** Re-register with the server (e.g. after manual phone number change in Settings). */
     fun reRegister() {
         registerClient()
-    }
-
-    @android.annotation.SuppressLint("MissingPermission")
-    private fun getDevicePhoneNumber(): String? {
-        return try {
-            // 1. Primary: user-confirmed number (TelephonyManager is unreliable on many carriers)
-            val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
-            val confirmedNumber = prefs.getString("confirmed_phone_number", null)
-            if (!confirmedNumber.isNullOrBlank()) {
-                Log.d("WS_SERVICE", "Device phone number (confirmed): $confirmedNumber")
-                return confirmedNumber
-            }
-
-            // 2. Legacy fallback: manual_phone_number from old prompt
-            val manualNumber = prefs.getString("manual_phone_number", null)
-            if (!manualNumber.isNullOrBlank()) {
-                Log.d("WS_SERVICE", "Device phone number (manual): $manualNumber")
-                return manualNumber
-            }
-
-            Log.d("WS_SERVICE", "Device phone number not yet confirmed by user")
-            null
-        } catch (e: Exception) {
-            Log.w("WS_SERVICE", "Failed to read phone number", e)
-            null
-        }
     }
 
     override fun onDisconnected() {

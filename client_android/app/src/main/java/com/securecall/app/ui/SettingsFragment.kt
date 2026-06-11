@@ -116,6 +116,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // SecureCall ID (tap to copy) — show custom ID if set, otherwise random ID
         val prefs = requireContext().getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit()
+            .remove("manual_phone_number")
+            .remove("confirmed_phone_number")
+            .apply()
+
         findPreference<Preference>("pref_client_id")?.apply {
             val customId = prefs.getString("custom_call_id", null)
             val clientId = prefs.getString("client_id", "Not registered")
@@ -138,37 +143,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()
-                true
-            }
-        }
-
-        // Phone number — read from both confirmed (onboarding) and manual (settings edit)
-        findPreference<EditTextPreference>("pref_phone_number")?.apply {
-            val savedNumber = prefs.getString("manual_phone_number", null)
-                ?: prefs.getString("confirmed_phone_number", null)
-            if (!savedNumber.isNullOrBlank()) {
-                summary = savedNumber
-            }
-            text = savedNumber
-            setOnPreferenceChangeListener { _, newValue ->
-                val number = (newValue as? String)?.trim()
-                if (!number.isNullOrBlank()) {
-                    // Normalize phone number before saving (BUG-025)
-                    val normalized = com.securecall.app.data.PhoneUtils.normalize(number, requireContext())
-                    prefs.edit()
-                        .putString("manual_phone_number", normalized)
-                        .putString("confirmed_phone_number", normalized)
-                        .apply()
-                    summary = normalized
-                } else {
-                    prefs.edit()
-                        .remove("manual_phone_number")
-                        .remove("confirmed_phone_number")
-                        .apply()
-                    summary = getString(R.string.pref_phone_number_summary)
-                }
-                // Re-register with server to update phone number
-                com.securecall.app.net.WebSocketService.instance?.reRegister()
                 true
             }
         }

@@ -833,3 +833,14 @@ Ergebnis BUG-029 Retest:
 - Installed on both devices: SecureCall Premium 1.0.35-premium (versionCode 58001), SecureChat 0.1.1-alpha, Chameleon 0.1.1-alpha.
 - Linear NEA-13 and NEA-18 checked: both already Done; live health aligns with Hetzner migration status.
 - Repo status before final Bridge commit: stealth only BRIDGE.md modified; securechat clean; chameleon clean.
+
+## 2026-06-11 Codex — Cross-app settings/coherence audit fixes
+- Device/UI audit used text-only `uiautomator` dumps; no screenshots used.
+- SecureCall finding: installed Premium settings still exposed "My Phone Number" and client REGISTER still sent stored `phoneNumber`, contradicting SecureID/no-phone product claims.
+- SecureCall fix: removed phone-number settings row, removed READ_PHONE_STATE/READ_PHONE_NUMBERS, stopped REGISTER `phoneNumber` publishing, and defensively clears legacy `manual_phone_number`/`confirmed_phone_number` when Settings opens.
+- SecureCall verification: `./gradlew app:testFreeDebugUnitTest app:assembleFreeDebug` ✅ BUILD SUCCESSFUL; static scan no longer finds phone-number registration keys/permissions in app source.
+- Website fix: softened remaining absolute privacy/GDPR claims and updated payment copy to Google Play subscriptions + Stripe one-time activation codes.
+- Website verification: claim scan for old zero-data/GPlay-only/1,000/5,000 IFR strings ✅ empty; JSON-LD parse ✅ for privacy/FAQ pages; static internal link check ✅ 40 HTML files, 0 missing; v1.0.35 APK links ✅ HTTP 200.
+- SecureChat UI audit on S7: settings show Free tier, `Upgrade to Pro — Lock 2,000 IFR`, Pro `≥ 2,000 IFR`, Elite `≥ 6,000 IFR`; staged features show SOON or Unlock as expected.
+- Chameleon cross-check: found invalid accessibility service `settingsActivity` pointing to non-existent `com.stealthx.presentation.ui.SettingsActivity`; fixed in Chameleon repo to `com.stealthx.chameleon.MainActivity`.
+- Remaining blockers: BUG-029 still blocked pending SecureCall WireGuard config; Chameleon NEA-150 BuilderRegistry registration remains external/on-chain action.
