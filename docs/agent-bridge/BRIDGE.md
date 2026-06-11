@@ -938,3 +938,11 @@ Ergebnis BUG-029 Retest:
 - GitHub Dependabot API recheck after commit `fb43bde`: no open alerts returned.
 - Local `npm audit --audit-level=high`: 0 vulnerabilities.
 - GitHub Basic CI for `fb43bde`: success; Security Audit workflow still in progress at check time.
+
+## 2026-06-11 Codex — Hetzner JSON backups installed
+- Added backup script: `backend/signaling/scripts/backup-signaling-data.sh`; deployed to Hetzner as `/opt/stealthx/scripts/backup-signaling-data.sh` with mode 700.
+- Cron installed: `17 3 * * * /opt/stealthx/scripts/backup-signaling-data.sh`.
+- Backup target: `/opt/stealthx/backups/signaling-data/`; log: `/var/log/stealthx/backup-signaling-data.log`; retention: 30 days.
+- Script uses `flock`, `.tmp` archive + atomic rename, gzip tar, mode 600 archives, and retention cleanup.
+- Manual run verified ✅ created `signaling-data-20260611T203106Z.tar.gz`; archive contents include `activation_codes.json`, `fcm_tokens.json`, `wallets.json`.
+- Added docs: `docs/BACKUP_RESTORE.md`; updated `docs/RELEASE_CHECKLIST.md` with backup verification + restore drill item.

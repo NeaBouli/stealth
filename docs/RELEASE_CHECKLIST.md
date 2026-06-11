@@ -49,6 +49,9 @@ Last updated: 2026-06-11
 - [ ] Backend test suite passes on Hetzner before/after deploy.
 - [ ] PM2 `signaling` is online.
 - [ ] Stale Docker `stealthx-signaling` container remains stopped unless intentionally restored.
+- [x] Daily JSON data backups installed on Hetzner.
+- [x] Manual backup run verified.
+- [ ] Restore drill performed from a backup archive.
 
 ## Store / Release
 
