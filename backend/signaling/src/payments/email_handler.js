@@ -31,7 +31,8 @@ function resolveDownloadLinks(tier) {
 // --- Email HTML Template ---
 
 function generateEmailHTML(code, tier, options = {}) {
-  const tierName = tier === "premium" ? "Premium" : "Pro";
+  const normalizedTier = String(tier || "").toLowerCase();
+  const tierName = normalizedTier === "premium" ? "Premium" : normalizedTier === "elite" ? "Elite" : "Pro";
   const links = {
     ...resolveDownloadLinks(tier),
     ...options.downloadLinks
@@ -161,8 +162,10 @@ async function sendWithBrevo(to, subject, html) {
 async function sendActivationCode(toEmail, code, tier, options = {}) {
   console.log("[EMAIL] sendActivationCode:", toEmail.substring(0, 3) + "***", code.substring(0, 4) + "****", tier);
 
-  const tierName = tier === "premium" ? "Premium" : "Pro";
-  const subject = `Your SecureCall ${tierName} Activation Code`;
+  const normalizedTier = String(tier || "").toLowerCase();
+  const tierName = normalizedTier === "premium" ? "Premium" : normalizedTier === "elite" ? "Elite" : "Pro";
+  const productName = options.productName || "StealthX";
+  const subject = `Your ${productName} ${tierName} Activation Code`;
   const html = generateEmailHTML(code, tier, options);
 
   // 1. Try Brevo (primary)

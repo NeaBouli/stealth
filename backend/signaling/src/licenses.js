@@ -11,6 +11,8 @@ const LICENSES_FILE = process.env.LICENSES_FILE || path.join(__dirname, "..", "d
 
 const LICENSES = {
   pro_lifetime: {
+    name: "SecureCall Pro Lifetime",
+    activationTier: "pro",
     sold: 0,
     max: 100,
     startPrice: 1500,  // €15.00 in cents
@@ -18,11 +20,53 @@ const LICENSES = {
     stripeProductId: "prod_UHMPlLJaBG5v8u"
   },
   premium_lifetime: {
+    name: "SecureCall Premium Lifetime",
+    activationTier: "premium",
     sold: 0,
     max: 100,
     startPrice: 2500,  // €25.00 in cents
     endPrice: 10000,   // €100.00 in cents
     stripeProductId: "prod_UHMc9gmBYfGQTT"
+  },
+  securechat_pro_lifetime: {
+    name: "SecureChat Pro Lifetime",
+    activationTier: "pro",
+    sold: 0,
+    max: 100,
+    startPrice: 900,
+    endPrice: 1499
+  },
+  securechat_elite_lifetime: {
+    name: "SecureChat Elite Lifetime",
+    activationTier: "elite",
+    sold: 0,
+    max: 100,
+    startPrice: 1900,
+    endPrice: 2399
+  },
+  chameleon_pro_lifetime: {
+    name: "Chameleon Pro Lifetime",
+    activationTier: "pro",
+    sold: 0,
+    max: 100,
+    startPrice: 900,
+    endPrice: 1499
+  },
+  chameleon_elite_lifetime: {
+    name: "Chameleon Elite Lifetime",
+    activationTier: "elite",
+    sold: 0,
+    max: 100,
+    startPrice: 1900,
+    endPrice: 2399
+  },
+  stealthx_suite_lifetime: {
+    name: "StealthX Suite Lifetime",
+    activationTier: "elite",
+    sold: 0,
+    max: 100,
+    startPrice: 5400,
+    endPrice: 9900
   }
 };
 
@@ -56,30 +100,24 @@ function recordSale(type) {
 }
 
 function getStatus() {
-  return {
-    pro_lifetime: {
-      remaining: getRemainingLicenses("pro_lifetime"),
-      currentPrice: getCurrentPrice("pro_lifetime"),
-      nextPrice: getNextPrice("pro_lifetime"),
-      sold: LICENSES.pro_lifetime.sold,
-      soldOut: LICENSES.pro_lifetime.sold >= LICENSES.pro_lifetime.max
-    },
-    premium_lifetime: {
-      remaining: getRemainingLicenses("premium_lifetime"),
-      currentPrice: getCurrentPrice("premium_lifetime"),
-      nextPrice: getNextPrice("premium_lifetime"),
-      sold: LICENSES.premium_lifetime.sold,
-      soldOut: LICENSES.premium_lifetime.sold >= LICENSES.premium_lifetime.max
-    }
-  };
+  return Object.fromEntries(Object.entries(LICENSES).map(([key, lic]) => [key, {
+    remaining: getRemainingLicenses(key),
+    currentPrice: getCurrentPrice(key),
+    nextPrice: getNextPrice(key),
+    sold: lic.sold,
+    soldOut: lic.sold >= lic.max
+  }]));
 }
 
 function loadLicenses() {
   try {
     const data = JSON.parse(fs.readFileSync(LICENSES_FILE, "utf8"));
-    if (data.pro_lifetime) LICENSES.pro_lifetime.sold = data.pro_lifetime.sold || 0;
-    if (data.premium_lifetime) LICENSES.premium_lifetime.sold = data.premium_lifetime.sold || 0;
-    console.log(`[LICENSES] Loaded: Pro ${LICENSES.pro_lifetime.sold}/100, Premium ${LICENSES.premium_lifetime.sold}/100`);
+    for (const [key, value] of Object.entries(data || {})) {
+      if (LICENSES[key] && typeof value?.sold === "number") {
+        LICENSES[key].sold = Math.max(0, Math.min(value.sold, LICENSES[key].max));
+      }
+    }
+    console.log(`[LICENSES] Loaded: ${Object.entries(LICENSES).map(([key, lic]) => `${key} ${lic.sold}/${lic.max}`).join(", ")}`);
   } catch (e) {
     console.log("[LICENSES] No saved data — starting at 0 sales");
   }
@@ -88,8 +126,7 @@ function loadLicenses() {
 function saveLicenses() {
   try {
     writeJsonAtomic(LICENSES_FILE, {
-      pro_lifetime: { sold: LICENSES.pro_lifetime.sold },
-      premium_lifetime: { sold: LICENSES.premium_lifetime.sold },
+      ...Object.fromEntries(Object.entries(LICENSES).map(([key, lic]) => [key, { sold: lic.sold }])),
       lastUpdated: new Date().toISOString()
     });
   } catch (e) {

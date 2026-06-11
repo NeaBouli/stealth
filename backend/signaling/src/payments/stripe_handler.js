@@ -240,7 +240,20 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     return null;
   }
 
-  console.log("[STRIPE] Tier:", tier, "ProductKey:", productKey);
+  const licenseTier = session.metadata?.licenseTier ||
+    (session.metadata?.type === "lifetime_dynamic" ? productKey : null);
+
+  tier = session.metadata?.activationTier || tier;
+
+  if (tier === "pro_lifetime") {
+    tier = "pro";
+    productKey = productKey || "pro_lifetime";
+  } else if (tier === "premium_lifetime") {
+    tier = "premium";
+    productKey = productKey || "premium_lifetime";
+  }
+
+  console.log("[STRIPE] Tier:", tier, "ProductKey:", productKey, "LicenseTier:", licenseTier || "none");
 
   // 2. Custom ID purchases are handled separately (no activation code)
   if (tier === "custom_id") {
@@ -272,10 +285,10 @@ async function handleWebhook(event, stripe, activationCodesRef) {
   }
 
   // 5. Record dynamic-pricing sale if applicable
-  if (session.metadata?.type === "lifetime_dynamic" && (tier === "pro_lifetime" || tier === "premium_lifetime")) {
+  if (session.metadata?.type === "lifetime_dynamic" && licenseTier) {
     try {
-      const { recordSale } = require("../licenses");
-      recordSale(tier);
+      const { LICENSES, recordSale } = require("../licenses");
+      if (LICENSES[licenseTier]) recordSale(licenseTier);
     } catch (e) { console.error("[STRIPE] licenses.recordSale failed:", e.message); }
   }
 
@@ -307,7 +320,8 @@ async function handleWebhook(event, stripe, activationCodesRef) {
  */
 function generateActivationCode(tier) {
   const crypto = require("crypto");
-  const prefix = tier === "premium" ? "PREM" : "PRO";
+  const normalizedTier = String(tier || "").toLowerCase();
+  const prefix = normalizedTier === "premium" ? "PREM" : normalizedTier === "elite" ? "ELIT" : "PRO";
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const part = () => Array.from({ length: 4 }, () => chars[crypto.randomInt(chars.length)]).join("");
   return `${prefix}-${part()}-${part()}-${part()}`;

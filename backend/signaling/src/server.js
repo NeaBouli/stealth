@@ -124,7 +124,12 @@ app.use(express.json());
 // or empty, we only emit Allow-Origin for requests coming from stealthx.tech
 // (the app's canonical web origin). Explicit whitelist prevents cross-origin
 // hijacking from attacker-controlled websites.
-const DEFAULT_ALLOWED_ORIGINS = ["https://stealthx.tech", "https://www.stealthx.tech"];
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://stealthx.tech",
+  "https://www.stealthx.tech",
+  "https://securechat.stealthx.tech",
+  "https://chameleon.stealthx.tech"
+];
 app.use((req, res, next) => {
   const allowedOrigins = ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS;
   const origin = req.headers.origin;
@@ -800,7 +805,7 @@ app.get('/licenses/status', (req, res) => {
 
 app.post('/admin/simulate-sale', requireAdmin, (req, res) => {
   const { tier, count } = req.body;
-  if (!tier || !['pro_lifetime', 'premium_lifetime'].includes(tier)) {
+  if (!tier || !licenses.LICENSES[tier]) {
     return res.status(400).json({ error: 'Invalid tier' });
   }
   const n = Math.min(count || 1, 20);
@@ -809,8 +814,7 @@ app.post('/admin/simulate-sale', requireAdmin, (req, res) => {
 });
 
 app.post('/admin/reset-licenses', requireAdmin, (req, res) => {
-  licenses.LICENSES.pro_lifetime.sold = 0;
-  licenses.LICENSES.premium_lifetime.sold = 0;
+  Object.values(licenses.LICENSES).forEach((license) => { license.sold = 0; });
   licenses.saveLicenses();
   console.log('[LICENSES] Reset to 0 by admin');
   res.json({ ok: true, status: licenses.getStatus() });
@@ -846,19 +850,29 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
   try {
     const stripe = require('stripe')(secretKey);
     const lic = licenses.LICENSES[tier];
+    const priceData = {
+      currency: 'eur',
+      unit_amount: price
+    };
+    if (lic.stripeProductId) {
+      priceData.product = lic.stripeProductId;
+    } else {
+      priceData.product_data = { name: lic.name || tier };
+    }
     const session = await stripe.checkout.sessions.create({
       line_items: [{
-        price_data: {
-          currency: 'eur',
-          product: lic.stripeProductId,
-          unit_amount: price
-        },
+        price_data: priceData,
         quantity: 1
       }],
       mode: 'payment',
       success_url: 'https://stealthx.tech/payment-success.html?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://stealthx.tech/#pricing',
-      metadata: { tier, type: 'lifetime_dynamic' },
+      metadata: {
+        tier: lic.activationTier || (tier === 'premium_lifetime' ? 'premium' : 'pro'),
+        product: tier,
+        licenseTier: tier,
+        type: 'lifetime_dynamic'
+      },
       payment_method_types: ['card', 'klarna', 'link']
     });
     res.json({ url: session.url, sessionId: session.id, price });

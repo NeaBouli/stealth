@@ -871,3 +871,14 @@ Ergebnis BUG-029 Retest:
 - Fix: added staggered `voice-frequency` animation to `.voice-bars i` in the SecureCall hero panel.
 - Accessibility: respects `prefers-reduced-motion: reduce` by disabling hero/bar/server-dot animations.
 - Verification: local static server served `/` and `css/landing.css`; confirmed `frequency-drift`, `voice-frequency`, and reduced-motion rules are present in delivered CSS. Playwright browser verification was not available in this environment (`Module not found: playwright`).
+
+## 2026-06-11 Codex — Cross-product purchase/activation audit
+- Scope: SecureCall/stealth backend + website, SecureChat settings/site, Chameleon settings/site.
+- SecureCall audit: no new app blocker found; known external blockers remain BUG-029 WireGuard profile and Chameleon/IFR on-chain BuilderRegistry action.
+- Backend fix: lifetime checkout catalog expanded from SecureCall-only to SecureCall, SecureChat, Chameleon, and Suite product keys.
+- Backend fix: `/stripe/create-dynamic-checkout` now supports product-specific EUR dynamic prices and metadata; default CORS allowlist includes `securechat.stealthx.tech` and `chameleon.stealthx.tech`.
+- Webhook fix: dynamic Lifetime webhooks normalize activation tier, record the matching license counter, and generate correct code prefixes (`PRO`, `PREM`, `ELIT`).
+- Persistence fix: `writeJsonAtomic()` now creates parent directories before atomic writes.
+- Website fix: SecureCall Landing Lifetime buttons are active; `llms.txt` IFR values updated to 2,000/6,000.
+- Verification: `npm test` in backend/signaling passed, including new Stripe dynamic Lifetime webhook test.
+- Live deploy note: pre-push live API still exposed only old `pro_lifetime`/`premium_lifetime` keys and did not yet emit SecureChat CORS header. Requires backend deploy after push.

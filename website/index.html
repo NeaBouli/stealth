@@ -499,8 +499,8 @@
             <div class="container">
                 <div class="section-head"><span class="section-label">Limited time</span><h2>Forever licenses. No subscription.</h2><p class="lead">One-time purchase, lifetime access, only 100 licenses per tier. Price increases with each sale.</p></div>
                 <div class="pricing-grid">
-                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-gold)">Limited: 100</span><h3>Pro Lifetime</h3><div class="price"><span class="amount" id="proPrice">€15</span><span class="period">one-time</span></div><div class="price-meter"><div class="price-meter-head"><span>Licenses remaining</span><strong id="proRemaining">100 / 100</strong></div><div class="meter"><span id="proBar" style="width:0%"></span></div><p style="font-size:12px">Next buyer pays: <span id="proNextPrice">€15.35</span>. Price rises to €50 at sellout.</p></div><ul><li class="included">Everything in Pro</li><li class="included">Pay once</li><li class="included">Lifetime updates</li><li class="included">Early adopter pricing</li></ul><a id="btnProLifetime" class="btn disabled block">Coming soon</a></article>
-                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-red);color:#fff">Limited: 100</span><h3>Premium Lifetime</h3><div class="price"><span class="amount" id="premiumPrice">€25</span><span class="period">one-time</span></div><div class="price-meter"><div class="price-meter-head"><span>Licenses remaining</span><strong id="premiumRemaining">100 / 100</strong></div><div class="meter"><span id="premiumBar" style="width:0%"></span></div><p style="font-size:12px">Next buyer pays: <span id="premiumNextPrice">€25.75</span>. Price rises to €100 at sellout.</p></div><ul><li class="included">Everything in Premium</li><li class="included">Pay once</li><li class="included">Lifetime updates</li><li class="included">Early adopter pricing</li></ul><a id="btnPremiumLifetime" class="btn disabled block">Coming soon</a></article>
+                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-gold)">Limited: 100</span><h3>Pro Lifetime</h3><div class="price"><span class="amount" id="proPrice">€15</span><span class="period">one-time</span></div><div class="price-meter"><div class="price-meter-head"><span>Licenses remaining</span><strong id="proRemaining">100 / 100</strong></div><div class="meter"><span id="proBar" style="width:0%"></span></div><p style="font-size:12px">Next buyer pays: <span id="proNextPrice">€15.35</span>. Price rises to €50 at sellout.</p></div><ul><li class="included">Everything in Pro</li><li class="included">Pay once</li><li class="included">Lifetime updates</li><li class="included">Early adopter pricing</li></ul><button id="btnProLifetime" class="btn primary block" type="button" data-license-tier="pro_lifetime">Buy Pro Lifetime</button></article>
+                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-red);color:#fff">Limited: 100</span><h3>Premium Lifetime</h3><div class="price"><span class="amount" id="premiumPrice">€25</span><span class="period">one-time</span></div><div class="price-meter"><div class="price-meter-head"><span>Licenses remaining</span><strong id="premiumRemaining">100 / 100</strong></div><div class="meter"><span id="premiumBar" style="width:0%"></span></div><p style="font-size:12px">Next buyer pays: <span id="premiumNextPrice">€25.75</span>. Price rises to €100 at sellout.</p></div><ul><li class="included">Everything in Premium</li><li class="included">Pay once</li><li class="included">Lifetime updates</li><li class="included">Early adopter pricing</li></ul><button id="btnPremiumLifetime" class="btn primary block" type="button" data-license-tier="premium_lifetime">Buy Premium Lifetime</button></article>
                     <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-green)">Gift option</span><h3>Activation Code</h3><div class="price"><span class="amount">€49</span><span class="period">one-time</span></div><p>Premium forever. Buy a code, use it yourself or gift it to someone else. Enter it in Settings for instant upgrade.</p><ul><li class="included">Permanent Premium</li><li class="included">No subscription</li><li class="included">Lifetime updates</li><li class="included">Code delivery after purchase</li></ul><a class="btn teal block" href="https://buy.stripe.com/4gMdR8fEl6RF3ii1nO7N602" target="_blank" rel="noopener">Buy activation code</a></article>
                 </div>
             </div>
@@ -578,7 +578,7 @@
           if(proRemaining)proRemaining.textContent=p.remaining+' / 100';
           if(proNextPrice)proNextPrice.textContent=fmt(p.nextPrice);
           if(proBar)proBar.style.width=p.sold+'%';
-          if(p.soldOut&&btnPro)btnPro.textContent='Sold out';
+          if(p.soldOut&&btnPro){btnPro.textContent='Sold out';btnPro.disabled=true;btnPro.classList.add('disabled');}
         }
         const pm=d.premium_lifetime;
         if(pm){
@@ -591,9 +591,34 @@
           if(premiumRemaining)premiumRemaining.textContent=pm.remaining+' / 100';
           if(premiumNextPrice)premiumNextPrice.textContent=fmt(pm.nextPrice);
           if(premiumBar)premiumBar.style.width=pm.sold+'%';
-          if(pm.soldOut&&btnPremium)btnPremium.textContent='Sold out';
+          if(pm.soldOut&&btnPremium){btnPremium.textContent='Sold out';btnPremium.disabled=true;btnPremium.classList.add('disabled');}
         }
       }catch(e){console.warn('License prices unavailable:',e.message)}
+    })();
+    (function wireLifetimeCheckout(){
+      async function startCheckout(button){
+        if(!button||button.disabled)return;
+        button.disabled=true;
+        button.textContent='Opening Stripe...';
+        try{
+          var r=await fetch(API+'/stripe/create-dynamic-checkout',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({tier:button.dataset.licenseTier})
+          });
+          var d=await r.json().catch(function(){return{}});
+          if(!r.ok||!d.url)throw new Error(d.error||'Checkout unavailable');
+          window.location.href=d.url;
+        }catch(e){
+          button.textContent='Try again';
+          button.disabled=false;
+          button.title=e.message;
+        }
+      }
+      var pro=document.getElementById('btnProLifetime');
+      var premium=document.getElementById('btnPremiumLifetime');
+      if(pro)pro.addEventListener('click',function(){startCheckout(pro)});
+      if(premium)premium.addEventListener('click',function(){startCheckout(premium)});
     })();
     (function(){
       function u(){

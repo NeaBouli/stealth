@@ -40,7 +40,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Pro Lifetime: from €15 one-time (limited 100 licenses, price rises to €50)
 - Premium Lifetime: from €25 one-time (limited 100 licenses, price rises to €100)
 - Premium Activation Code: €49 one-time (gift or self-use, 2 devices)
-- IFR Token Lock: 1,000 IFR = Pro | 5,000 IFR = Premium (lifetime while locked)
+- IFR Token Lock: 2,000 IFR = Pro | 6,000 IFR = Premium (lifetime while locked)
 
 ## How does SecureCall compare to Signal?
 - Signal requires a phone number; SecureCall does not
