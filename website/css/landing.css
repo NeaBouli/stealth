@@ -385,6 +385,56 @@ body.landing-redesign {
 .product-card,
 .feature-card,
 .price-card { padding: 24px; }
+.card,
+.product-card,
+.feature-card,
+.price-card,
+.step,
+.faq-item,
+.broadcast-card {
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.card:hover,
+.product-card:hover,
+.feature-card:hover,
+.price-card:hover,
+.step:hover,
+.faq-item:hover,
+.faq-item.open,
+.broadcast-card:hover {
+  background: #eaf4ff;
+  border-color: rgba(50,105,216,.32);
+  box-shadow: 0 14px 34px rgba(50,105,216,.12);
+}
+.card:hover h3,
+.product-card:hover h3,
+.feature-card:hover h3,
+.price-card:hover h3,
+.step:hover h3,
+.faq-item:hover h3,
+.broadcast-card:hover h3 {
+  color: var(--sx-text);
+}
+.faq-item:hover .faq-question,
+.faq-item.open .faq-question {
+  color: var(--sx-text);
+}
+.faq-item:hover .faq-answer-inner,
+.faq-item.open .faq-answer-inner {
+  color: #334155;
+}
+.card:hover p,
+.product-card:hover p,
+.feature-card:hover p,
+.price-card:hover p,
+.step:hover p,
+.faq-item:hover p,
+.broadcast-card:hover p,
+.product-card:hover li,
+.price-card:hover li,
+.plain-list:hover li {
+  color: #334155;
+}
 .product-card { position: relative; overflow: hidden; }
 .product-card::before {
   content: "";

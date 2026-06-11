@@ -996,3 +996,13 @@ Ergebnis BUG-029 Retest:
   - `chameleon_elite_lifetime` ✅ live session
   - `stealthx_suite_lifetime` ✅ live session
 - Note: public route rate-limits after 5 checkout attempts per IP per 10 minutes; further public test calls may return `rate_limited` until the window clears.
+## 2026-06-11 22:17 UTC — Codex Website/Wiki Audit Refresh
+
+- Website audit follow-up completed across StealthX/SecureCall, SecureChat, and Chameleon public pages.
+- Landing page hover readability fixed: cards, FAQ/Tactical Briefing items, steps, price cards, and broadcast cards now hover/open in light blue (`#eaf4ff`) with dark readable text.
+- SecureCall landing audit stats updated from the old headline-only `44/44` claim to current `300+` release checks while preserving `44/44` as the legacy overnight regression suite.
+- IFR/Inferno section updated: `$IFR` marked live on Ethereum Mainnet and linked directly to official Uniswap token page for `0x77e99917Eca8539c62F509ED1193ac36580A6e7B`; IFRLock remains `0x769928aBDfc949D0718d8766a1C2d7dBb63954Eb`.
+- Public header navigation cleaned: Wiki removed from normal landing/legal/header nav and kept in footer/resources/contextual wiki breadcrumbs only.
+- SecureCall wiki updated to current release state: v1.0.35/vC58, Hetzner `api.stealthx.tech`, Release QA wording, no stale Railway/Test Mode/Beta blocker text in current-status pages.
+- SecureCall wiki visual system refreshed to light landing-page style via shared `wiki.css`/`wiki-v2.css` overrides.
+- Remaining historical changelog entries are kept as history only; current status pages no longer present old Beta/Railway/DNS findings as active.

@@ -4,12 +4,12 @@
     <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beta Testing Guide — SecureCall Wiki</title>
-    <meta name="description" content="How to install, test, and report bugs during the SecureCall beta testing phase on Google Play.">
+    <title>Release QA Guide — SecureCall Wiki</title>
+    <meta name="description" content="How to install, test, and report bugs for SecureCall APK, GitHub Release, and Play Console builds.">
     <meta name="theme-color" content="#0a0a12">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://stealthx.tech/wiki/beta-testing.html">
-    <meta property="og:title" content="Beta Testing Guide — SecureCall Wiki">
+    <meta property="og:title" content="Release QA Guide — SecureCall Wiki">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://stealthx.tech/wiki/beta-testing.html">
     <meta property="og:site_name" content="SecureCall">
@@ -29,7 +29,7 @@
       "@context": "https://schema.org",
       "@type": "TechArticle",
       "headline": "Beta Testing Guide — SecureCall Wiki",
-      "description": "How to install, test, and report bugs during the SecureCall beta testing phase on Google Play.",
+      "description": "How to install, test, and report bugs for SecureCall APK, GitHub Release, and Play Console builds.",
       "url": "https://stealthx.tech/wiki/beta-testing.html",
       "author": { "@type": "Organization", "name": "Vendetta Labs" },
       "publisher": { "@type": "Organization", "name": "SecureCall", "url": "https://stealthx.tech" },
@@ -134,15 +134,15 @@
                 <span class="sep">&#9656;</span>
                 <a href="./">Wiki</a>
                 <span class="sep">&#9656;</span>
-                <span>Beta Testing</span>
+                <span>Release QA</span>
             </div>
 
             <div class="wiki-page-header">
-                <div class="wiki-classification">Classification: Restricted &middot; SC-BETA</div>
-                <h1 class="wiki-page-title">Beta Testing Guide</h1>
-                <p class="wiki-page-subtitle">Install, test, and report bugs during the beta testing phase.</p>
+                <div class="wiki-classification">Classification: Restricted &middot; SC-QA</div>
+                <h1 class="wiki-page-title">Release QA Guide</h1>
+                <p class="wiki-page-subtitle">Install, test, and report bugs for release builds.</p>
             </div>
-            <p class="wiki-meta">SecureCall beta testing procedures &middot; Last updated April 2026</p>
+            <p class="wiki-meta">SecureCall release QA procedures &middot; Last updated June 2026</p>
 
             <h2>1. Install the App</h2>
             <ul>
@@ -204,11 +204,11 @@
                 <li>Screenshot if possible</li>
             </ul>
 
-            <h2>Known Limitations (Beta)</h2>
+            <h2>Known Limitations</h2>
             <ul>
                 <li>App displays &ldquo;com.securecall.app.free&rdquo; as package name</li>
                 <li>WireGuard VPN requires own server configuration</li>
-                <li>App available on Google Play (Closed Testing)</li>
+                <li>Play Console AAB is prepared for rollout; APK is available through GitHub Releases</li>
             </ul>
 
             <h2>What to Test</h2>
@@ -259,7 +259,7 @@
                 </tbody>
             </table></div>
 
-            <h2>Play Store Releases (Closed Testing)</h2>
+            <h2>Play Store and GitHub Release History</h2>
             <div class="wiki-table-wrap"><table class="wiki-table">
                 <thead>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
@@ -269,11 +269,11 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">30 (1.0.12-free)</td><td style="padding:6px 0">02.04.2026</td><td style="padding:6px 0;color:#ccc">Closed Testing &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">30 (1.0.12-free)</td><td style="padding:6px 0">02.04.2026</td><td style="padding:6px 0;color:#ccc">Historical Play Console QA &mdash; 170 countries</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">29 (1.0.12-free)</td><td style="padding:6px 0">01.04.2026</td><td style="padding:6px 0;color:#ccc">Internal Testing &mdash; 170 countries</td></tr>
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">28 (1.0.12-free)</td><td style="padding:6px 0">30.03.2026</td><td style="padding:6px 0;color:#ccc">Closed Testing &mdash; 170 countries</td></tr>
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">27 (1.0.12-free)</td><td style="padding:6px 0">30.03.2026</td><td style="padding:6px 0;color:#ccc">Closed Testing &mdash; 170 countries</td></tr>
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">26 (1.0.12-free)</td><td style="padding:6px 0">29.03.2026</td><td style="padding:6px 0;color:#ccc">Closed Testing &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">28 (1.0.12-free)</td><td style="padding:6px 0">30.03.2026</td><td style="padding:6px 0;color:#ccc">Historical Play Console QA &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">27 (1.0.12-free)</td><td style="padding:6px 0">30.03.2026</td><td style="padding:6px 0;color:#ccc">Historical Play Console QA &mdash; 170 countries</td></tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">26 (1.0.12-free)</td><td style="padding:6px 0">29.03.2026</td><td style="padding:6px 0;color:#ccc">Historical Play Console QA &mdash; 170 countries</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">24 (1.0.12-free)</td><td style="padding:6px 0">29.03.2026</td><td style="padding:6px 0;color:#ccc">Alpha Track &mdash; 170 countries</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">22 (1.0.11-free)</td><td style="padding:6px 0">28.03.2026</td><td style="padding:6px 0;color:#ccc">Alpha Track &mdash; 170 countries</td></tr>
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:6px 0;color:#4ade80">21 (1.0.10-free)</td><td style="padding:6px 0">28.03.2026</td><td style="padding:6px 0;color:#ccc">Alpha Track &mdash; 170 countries</td></tr>

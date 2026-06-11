@@ -150,13 +150,13 @@
                 <h1 class="wiki-page-title">Strategic Development Roadmap</h1>
                 <p class="wiki-page-subtitle">Development roadmap and upcoming features.</p>
             </div>
-            <p class="wiki-meta">SecureCall development roadmap &mdash; completed, active, and planned features &middot; Last updated April 3, 2026</p>
+            <p class="wiki-meta">SecureCall development roadmap &mdash; completed, active, and planned features &middot; Last updated June 11, 2026</p>
 
             <!-- OBJECTIVES ACHIEVED -->
-            <div class="section-break">Objectives Achieved (as of v1.0.12)</div>
+            <div class="section-break">Objectives Achieved (as of v1.0.35)</div>
 
             <h2>Completed Milestones</h2>
-            <p>The following objectives have been fully implemented, tested, and verified as of <strong>v1.0.12</strong> (versionCode 30). Current release: v1.0.28 (vC50). All 20 tests pass on 3 physical devices.</p>
+            <p>The following objectives have been fully implemented, tested, and verified for <strong>v1.0.35</strong> (versionCode 58). Current release checks include the legacy 44/44 regression suite plus expanded automated, backend, website and physical-device tests on S10, S7 and Tab S4 hardware.</p>
 
             <ul class="checklist">
                 <li class="done">End-to-End Encryption (XChaCha20-Poly1305 + X25519 key exchange)</li>
@@ -187,20 +187,20 @@
                 <li class="done">Samsung Battery Kill Protection (WakeLock, AlarmManager, BootReceiver)</li>
                 <li class="done">Dark Mode as default</li>
                 <li class="done">Connect/Disconnect Button with status colors</li>
-                <li class="done">Beta Testing &mdash; 15/15 testers enrolled, Alpha Track live</li>
+                <li class="done">Release QA &mdash; GitHub APK, Play Console AAB, Stripe checkout, and physical-device smoke tests verified</li>
             </ul>
 
             <!-- ACTIVE OPERATIONS -->
             <div class="section-break">Active Operations</div>
 
             <h2>Currently In Progress</h2>
-            <p>These objectives are actively being worked on for the next release cycle.</p>
+            <p>These items remain tracked for the next release cycle. They are not launch blockers for the v1 scope unless marked as a blocker in the release checklist.</p>
 
             <ul class="checklist">
-                <li class="pending">BUG-010: FCM background wakeup reliability &mdash; incoming calls when app closed</li>
-                <li class="pending">BUG-011: WebRTC call stability &mdash; call drops after connecting</li>
-                <li class="pending">Google Play Store Production Launch &mdash; pending beta validation</li>
-                <li class="pending">Google Play Service Account for billing verification (TODO-029)</li>
+                <li class="done">FCM background wakeup reliability &mdash; verified in release QA</li>
+                <li class="done">WebRTC call stability &mdash; verified in release QA</li>
+                <li class="done">Google Play AAB prepared and uploaded for production rollout</li>
+                <li class="done">Stripe checkout activation code flow verified against live checkout sessions</li>
             </ul>
 
             <!-- PLANNED v1.1 -->
@@ -210,10 +210,10 @@
             <p>Critical bug fixes and production preparation.</p>
 
             <ul class="checklist">
-                <li class="pending">FCM + WebRTC critical call fixes</li>
-                <li class="pending">German Store Listing in Play Console (TODO-030)</li>
-                <li class="pending">Firebase + AdMob Console integration (TODO-033)</li>
-                <li class="pending">Beta activation codes deactivation + IAP (TODO-047)</li>
+                <li class="pending">WireGuard call retest on external VPN profile (BUG-029)</li>
+                <li class="pending">German Store Listing polish in Play Console</li>
+                <li class="pending">PostgreSQL migration for activation and purchase data after v1 growth</li>
+                <li class="pending">Additional store-distribution hardening and monitoring</li>
             </ul>
 
             <!-- MATRIX INTEGRATION -->
@@ -244,8 +244,8 @@
 
             <h3>v2.x &mdash; Medium-Term (1&ndash;3 Months)</h3>
             <ul class="checklist">
-                <li class="pending"><span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.75rem;font-weight:600;">IN DEVELOPMENT</span> Self-hosted TURN Server as Tor Hidden Service (.onion)</li>
-                <li class="pending"><span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.75rem;font-weight:600;">IN DEVELOPMENT</span> UnifiedPush Evaluation &mdash; decentralized push as FCM alternative</li>
+                <li class="pending"><span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.75rem;font-weight:600;">ROADMAP</span> Self-hosted TURN Server as Tor Hidden Service (.onion)</li>
+                <li class="pending"><span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.75rem;font-weight:600;">ROADMAP</span> UnifiedPush Evaluation &mdash; decentralized push as FCM alternative</li>
             </ul>
 
             <h3>v3.x &mdash; Long-Term</h3>
@@ -264,7 +264,7 @@
                 <li class="pending">Desktop Client &mdash; Linux, macOS, and Windows applications for secure calls from any platform</li>
                 <li class="pending">Post-Quantum Cryptography &mdash; migration to Kyber/ML-KEM for quantum-resistant key exchange</li>
                 <li class="pending">GhostNet multi-hop relay network &mdash; onion-routed transport for metadata resistance</li>
-                <li class="pending">End-to-end encrypted messaging &mdash; secure text communication alongside voice</li>
+                <li class="done">End-to-end encrypted messaging &mdash; delivered through the SecureChat product line</li>
                 <li class="pending">GhostOS &mdash; hardened Android distribution optimized for SecureCall and privacy</li>
             </ul>
 

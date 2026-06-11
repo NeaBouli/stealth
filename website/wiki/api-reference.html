@@ -155,7 +155,7 @@
             <div class="section-break">Signaling Server API</div>
 
             <h2>Overview</h2>
-            <p>The SecureCall signaling server handles real-time communication between clients during call setup using WebSocket connections, and provides a simple HTTP endpoint for health monitoring. The server is deployed on Railway and acts as an opaque relay &mdash; it forwards encrypted signaling messages between clients but cannot read or modify their content.</p>
+            <p>The SecureCall signaling server handles real-time communication between clients during call setup using WebSocket connections, and provides HTTP endpoints for health monitoring, checkout, licenses, activation codes and operational metadata. The production service runs at <code>api.stealthx.tech</code> and acts as an opaque relay &mdash; it forwards encrypted signaling messages between clients but cannot read or modify their content.</p>
 
             <p>The signaling server is responsible for:</p>
             <ul>
@@ -170,7 +170,7 @@
             <div class="section-break">HTTP Endpoints</div>
 
             <h2>REST API</h2>
-            <p>The signaling server exposes a single HTTP endpoint for health monitoring. This endpoint requires no authentication and is used by Railway for deployment health checks.</p>
+            <p>The signaling server exposes a health endpoint for monitoring. Purchase and license endpoints use server-side validation and Stripe checkout where required.</p>
 
             <table>
                 <thead>
@@ -193,7 +193,7 @@
 
             <h3>Example Request</h3>
 <pre><code>GET /health HTTP/1.1
-Host: protective-healing-production.up.railway.app
+Host: api.stealthx.tech
 
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -207,7 +207,7 @@ Content-Type: application/json
             <p>Clients connect to the signaling server via a secure WebSocket connection. All communication after the initial handshake uses JSON-encoded messages.</p>
 
             <h3>Connection URL</h3>
-<pre><code>wss://protective-healing-production.up.railway.app/signal</code></pre>
+<pre><code>wss://api.stealthx.tech/signal</code></pre>
 
             <h3>Message Format</h3>
             <p>All WebSocket messages follow a consistent JSON structure with a <code>type</code> field identifying the message kind and a <code>payload</code> object containing message-specific data:</p>

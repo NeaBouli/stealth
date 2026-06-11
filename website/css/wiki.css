@@ -513,3 +513,128 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Light landing-page wiki refresh */
+:root {
+    --wiki-light-bg: #f7f9fc;
+    --wiki-light-bg-2: #eef3f8;
+    --wiki-light-panel: #ffffff;
+    --wiki-light-panel-2: #f1f5f9;
+    --wiki-light-line: rgba(15,23,42,.1);
+    --wiki-light-line-strong: rgba(15,23,42,.18);
+    --wiki-light-text: #121926;
+    --wiki-light-muted: #526071;
+    --wiki-light-faint: #7a8798;
+    --wiki-light-blue: #3269d8;
+    --wiki-light-teal: #0e9f8f;
+    --wiki-light-red: #d7354a;
+    --wiki-light-green: #069668;
+}
+
+body {
+    color: var(--wiki-light-text);
+    background:
+        linear-gradient(180deg, rgba(50,105,216,.08), transparent 620px),
+        var(--wiki-light-bg);
+}
+
+.wiki-layout {
+    max-width: 1180px;
+    gap: 32px;
+}
+
+.wiki-sidebar {
+    background: rgba(255,255,255,.78);
+    border: 1px solid var(--wiki-light-line);
+    border-radius: 16px;
+    padding: 18px 14px;
+    box-shadow: 0 18px 42px rgba(15,23,42,.06);
+}
+
+.sidebar-label,
+.wiki-content .section-break,
+.wiki-index-card .card-label {
+    color: var(--wiki-light-blue);
+}
+
+.sidebar-nav a,
+.breadcrumbs,
+.breadcrumbs a,
+.breadcrumbs .current,
+.wiki-meta,
+.wiki-content p,
+.wiki-content li,
+.wiki-index-card p {
+    color: var(--wiki-light-muted);
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav a.active,
+.breadcrumbs a:hover,
+.wiki-content a,
+.sidebar-home:hover {
+    color: var(--wiki-light-blue);
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav a.active,
+.sidebar-home:hover {
+    background: #eaf4ff;
+    border-color: rgba(50,105,216,.32);
+}
+
+.sidebar-home,
+.classified-banner,
+.wiki-content .info-box,
+.wiki-index-card,
+.wiki-content table,
+.wiki-content pre {
+    background: var(--wiki-light-panel);
+    border-color: var(--wiki-light-line);
+    box-shadow: 0 12px 30px rgba(15,23,42,.05);
+}
+
+.classified-banner {
+    color: var(--wiki-light-blue);
+    background: rgba(50,105,216,.08);
+}
+
+.wiki-title,
+.wiki-content h2,
+.wiki-content h3,
+.wiki-content strong,
+.wiki-index-card h3,
+.wiki-content td:first-child {
+    color: var(--wiki-light-text);
+}
+
+.wiki-content th {
+    color: var(--wiki-light-blue);
+    background: var(--wiki-light-panel-2);
+    border-color: var(--wiki-light-line);
+}
+
+.wiki-content td {
+    color: var(--wiki-light-muted);
+    border-color: var(--wiki-light-line);
+}
+
+.wiki-content code {
+    color: #1d4ed8;
+    background: rgba(50,105,216,.09);
+}
+
+.wiki-content pre,
+.wiki-content pre code {
+    color: #1e293b;
+}
+
+.wiki-index-card:hover {
+    background: #eaf4ff;
+    border-color: rgba(50,105,216,.32);
+    box-shadow: 0 14px 34px rgba(50,105,216,.12);
+}
+
+.wiki-doc-footer {
+    border-top-color: var(--wiki-light-line);
+}

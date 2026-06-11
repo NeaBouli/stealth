@@ -173,3 +173,84 @@
 .wiki-table tr:hover td { background: rgba(255,255,255,0.02); }
 
 .wiki-divider { border: none; border-top: 0.5px solid var(--wiki-border); margin: 32px 0; }
+
+/* Light landing-page wiki refresh */
+:root {
+  --wiki-bg: #f7f9fc;
+  --wiki-surface: #ffffff;
+  --wiki-border: rgba(15,23,42,.1);
+  --wiki-border-hover: rgba(50,105,216,.32);
+  --wiki-red: #d7354a;
+  --wiki-green: #069668;
+  --wiki-amber: #c58100;
+  --wiki-blue: #3269d8;
+  --wiki-text: #121926;
+  --wiki-text-secondary: #526071;
+  --wiki-text-tertiary: #7a8798;
+}
+
+.wiki-page-header {
+  border-bottom-color: var(--wiki-border);
+}
+
+.wiki-classification {
+  color: var(--wiki-blue);
+  background: rgba(50,105,216,.08);
+  border-color: rgba(50,105,216,.18);
+}
+
+.wiki-stat,
+.wiki-card,
+.wiki-table-wrap {
+  background: var(--wiki-surface);
+  border-color: var(--wiki-border);
+  box-shadow: 0 14px 34px rgba(15,23,42,.05);
+}
+
+.wiki-card:hover {
+  border-color: var(--wiki-border-hover);
+  background: #eaf4ff;
+  box-shadow: 0 14px 34px rgba(50,105,216,.12);
+}
+
+.wiki-section-label,
+.wiki-card-tag,
+.wiki-stat-label,
+.wiki-table th {
+  color: var(--wiki-text-tertiary);
+}
+
+.wiki-page-title,
+.wiki-stat-value,
+.wiki-card-title {
+  color: var(--wiki-text);
+}
+
+.wiki-page-subtitle,
+.wiki-card-desc,
+.wiki-table td {
+  color: var(--wiki-text-secondary);
+}
+
+.wiki-card.featured {
+  border-color: rgba(50,105,216,.24);
+  background: rgba(50,105,216,.055);
+}
+
+.wiki-card.beta {
+  border-color: rgba(14,159,143,.24);
+  background: rgba(14,159,143,.055);
+}
+
+.wiki-table th {
+  background: #f1f5f9;
+  border-bottom-color: var(--wiki-border);
+}
+
+.wiki-table td {
+  border-bottom-color: rgba(15,23,42,.07);
+}
+
+.wiki-table tr:hover td {
+  background: #eaf4ff;
+}
