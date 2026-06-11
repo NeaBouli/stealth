@@ -864,3 +864,10 @@ Ergebnis BUG-029 Retest:
 - Ratings/claims follow-up: removed unsupported `best encrypted calling app 2026` / `beste verschluesselung app 2026` SEO keywords from `website/index.html`.
 - Repo hygiene: root `securecall/` and `securecall v2 /` are already ignored in `.gitignore`; left them untouched.
 - Verification: targeted stale-string scan clean for patched files; static internal link checker ✅ 40 HTML files, 0 missing; JSON-LD parse ✅ for index/download/security-audit/beta-testing pages.
+
+## 2026-06-11 Codex — Landing header frequency animation restored
+- Issue: current landing redesign made the header frequency pattern/static bars feel static because `landing.css` overrode the older animated/page pattern treatment.
+- Fix: added animated `.sx-hero::after` frequency drift layer in `website/css/landing.css`.
+- Fix: added staggered `voice-frequency` animation to `.voice-bars i` in the SecureCall hero panel.
+- Accessibility: respects `prefers-reduced-motion: reduce` by disabling hero/bar/server-dot animations.
+- Verification: local static server served `/` and `css/landing.css`; confirmed `frequency-drift`, `voice-frequency`, and reduced-motion rules are present in delivered CSS. Playwright browser verification was not available in this environment (`Module not found: playwright`).

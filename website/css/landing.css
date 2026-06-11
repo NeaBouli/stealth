@@ -173,8 +173,23 @@ body.landing-redesign {
   background: radial-gradient(circle, rgba(50,105,216,.2), transparent 62%);
   filter: blur(10px);
 }
+.sx-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .18;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 18px, rgba(50,105,216,.34) 18px 20px, transparent 20px 38px),
+    repeating-linear-gradient(90deg, transparent 0 32px, rgba(14,159,143,.24) 32px 34px, transparent 34px 64px);
+  background-size: 240px 100%, 360px 100%;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 78%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 78%, transparent 100%);
+  animation: frequency-drift 18s linear infinite;
+}
 .sx-hero-grid {
   position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1.05fr .95fr;
   gap: 58px;
@@ -284,10 +299,16 @@ body.landing-redesign {
   min-height: 16px;
   border-radius: 999px;
   background: linear-gradient(180deg, var(--sx-blue), rgba(95,157,247,.2));
+  transform-origin: 50% 50%;
+  animation: voice-frequency 1.6s ease-in-out infinite alternate;
 }
 .voice-bars i:nth-child(3n) { height: 92%; }
 .voice-bars i:nth-child(3n+1) { height: 42%; }
 .voice-bars i:nth-child(3n+2) { height: 68%; }
+.voice-bars i:nth-child(2n) { animation-duration: 1.2s; }
+.voice-bars i:nth-child(4n) { animation-delay: -.35s; }
+.voice-bars i:nth-child(5n) { animation-delay: -.7s; }
+.voice-bars i:nth-child(7n) { animation-duration: 1.9s; }
 .status-grid {
   display: grid;
   gap: 10px;
@@ -782,7 +803,24 @@ body.landing-redesign {
   0%,100% { opacity: 1; box-shadow: 0 0 7px var(--sx-red); }
   50% { opacity: .45; box-shadow: 0 0 15px var(--sx-red); }
 }
+@keyframes frequency-drift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 240px 0, -360px 0; }
+}
+@keyframes voice-frequency {
+  0% { transform: scaleY(.56); opacity: .62; }
+  45% { opacity: .92; }
+  100% { transform: scaleY(1.08); opacity: 1; }
+}
 #hero-dot-server { animation: pulse-green 2s infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sx-hero::after,
+  .voice-bars i,
+  #hero-dot-server {
+    animation: none !important;
+  }
+}
 
 @media (max-width: 980px) {
   .landing-redesign .container { width: min(calc(100% - 32px), 720px); }
