@@ -803,3 +803,33 @@ Ergebnis BUG-029 Retest:
 - Linear NEA-12 ([GIO] BUG-029 Retest) reopened to In Progress and labeled blocked.
 - Added Linear comment: retest blocked because SecureCall/GhostVPN WireGuard config is missing; external Mullvad VPN does not activate GhostVpnService.isActive and therefore does not test relay-only ICE path.
 - Required unblock: Gio provisions valid SecureCall WireGuard config, then rerun VPN+VPN call with SecLog verification.
+
+## 2026-06-11 Codex — Repo hygiene design exports
+- Added local design export folders to stealth .gitignore: securecall/ and securecall v2 /.
+- Commit pushed: b54f2dc chore: ignore local design export folders.
+- Rationale: canonical tracked design template exists under website/design-template/securecall; root export folders differ slightly and should not pollute git status or be committed accidentally.
+- Next: broader build/test checks across SecureCall, SecureChat, and Chameleon.
+
+## 2026-06-11 Codex — Broad build/test verification
+- SecureCall Android: ./gradlew app:testFreeDebugUnitTest app:assembleFreeDebug ✅ BUILD SUCCESSFUL.
+- SecureChat: ./gradlew testDebugUnitTest assembleDebug ✅ BUILD SUCCESSFUL.
+- Chameleon: initial parallel build hit Kotlin/KAPT K2 internal compiler collision at features:decoy:kaptGenerateStubsDebugKotlin; reran isolated with ./gradlew --no-daemon --max-workers=1 testDebugUnitTest assembleDebug ✅ BUILD SUCCESSFUL.
+- SecureCall core_crypto: cargo test ✅ 34 tests passed (28 unit + 6 e2e encryption).
+- Notes: Gradle deprecation warnings for future Gradle 9 and KAPT/K2 experimental warnings remain, but no failing tests/builds in isolated verification.
+- Next: static website link/coherence checks and repo status sweep.
+
+## 2026-06-11 Codex — Website internal link hygiene
+- Static website link checker: 40 HTML files checked; internal missing links reduced from 29 to 0.
+- Fixed stale favicon references to /assets/brand/stealthx-logo.png.
+- Fixed invite page favicon/logo path from invite/logo.png to ../logo.png.
+- Commit pushed: 0a336c9 fix(website): repair favicon and invite asset links.
+- Next: live endpoint checks and final repo status sweep.
+
+## 2026-06-11 Codex — Final live/device/status sweep
+- Live HTTP checks ✅: stealthx.tech /, /download.html, /invite/, /assets/brand/stealthx-logo.png all HTTP 200.
+- API health ✅: https://api.stealthx.tech/health HTTP 200.
+- APK release assets ✅: all four v1.0.35 Pro/Premium arm64/armeabi APK links HTTP 200.
+- ADB devices ✅: S7 ce10160adc00152604 and Tab S4 ce12182c68644439037e both authorized.
+- Installed on both devices: SecureCall Premium 1.0.35-premium (versionCode 58001), SecureChat 0.1.1-alpha, Chameleon 0.1.1-alpha.
+- Linear NEA-13 and NEA-18 checked: both already Done; live health aligns with Hetzner migration status.
+- Repo status before final Bridge commit: stealth only BRIDGE.md modified; securechat clean; chameleon clean.
