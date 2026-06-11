@@ -969,3 +969,12 @@ Ergebnis BUG-029 Retest:
   - Stripe purchase buttons now use live API host `https://api.stealthx.tech` instead of stale Railway URL.
   - Live API health and `/licenses/status` checked: HTTP 200.
 - Remaining external blocker: Stripe checkout endpoint is reachable, but Hetzner currently returns `Invalid API Key provided: NEUER_KEY`; Gio must set a real rotated Stripe live secret key and reload PM2.
+
+## 2026-06-11 Codex — Stripe live key final blocker confirmed
+- Hetzner SSH reachable via alias `hetzner`; PM2 process `signaling` is online.
+- `/opt/stealthx/.env.production` currently contains exact placeholder `STRIPE_SECRET_KEY=NEUER_KEY`.
+- Public checkout test:
+  - `POST https://api.stealthx.tech/stripe/create-checkout`
+  - Response: `Invalid API Key provided: NEUER_KEY`
+- No full `sk_live_...` key is available to Codex locally, and Stripe live secret keys cannot be reconstructed from the shortened dashboard prefix.
+- Next required action: Gio must set the full live Stripe secret key on Hetzner, then reload PM2 with `--update-env`.
