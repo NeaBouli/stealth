@@ -852,3 +852,15 @@ Ergebnis BUG-029 Retest:
 - Verification: `./gradlew app:testFreeDebugUnitTest app:assembleFreeDebug` ✅ BUILD SUCCESSFUL.
 - Local Mac WG server path checked: `wg`/`wg-quick` were missing. `brew install wireguard-tools` attempted but failed on `wireguard-go` checksum mismatch under macOS 12/Homebrew Tier 3.
 - Next BUG-029 path: generate one VPNBook config per device or provide own WG server config, paste/import in SecureCall Premium, grant VPN permission, then run S7↔Tab/S10 call with `SecLog`/`GhostVPN`/`WebRTC` logcat verification.
+
+## 2026-06-11 Codex — Website audit follow-up
+- Re-read audit blocker section and reran requested greps for APK links, IFR values, phone-number traces, and ratings/claims.
+- APK finding: `v1.0.34-stable` contains only `SecureCall-v1.0.34-vC57-FINAL.aab` and no `.apk` assets. Kept direct APK links on `v1.0.35` because GitHub release assets exist and all four APK URLs return HTTP 200.
+- IFR finding: no remaining `1,000`/`5,000` IFR unlock/token website hits.
+- Phone-number follow-up fixes:
+  - `website/wiki/beta-testing.html`: setup step now says generated SecureCall ID instead of entering a phone number.
+  - `website/wiki/beta-testing.html`: TB-024 now documents legacy phone-number identity replaced by SecureID instead of `+49`/`0049` normalization.
+  - `website/wiki/security-audit.html`: historical call-signaling row now says SecureID lookup instead of Phone lookup.
+- Ratings/claims follow-up: removed unsupported `best encrypted calling app 2026` / `beste verschluesselung app 2026` SEO keywords from `website/index.html`.
+- Repo hygiene: root `securecall/` and `securecall v2 /` are already ignored in `.gitignore`; left them untouched.
+- Verification: targeted stale-string scan clean for patched files; static internal link checker ✅ 40 HTML files, 0 missing; JSON-LD parse ✅ for index/download/security-audit/beta-testing pages.
