@@ -1006,3 +1006,9 @@ Ergebnis BUG-029 Retest:
 - SecureCall wiki updated to current release state: v1.0.35/vC58, Hetzner `api.stealthx.tech`, Release QA wording, no stale Railway/Test Mode/Beta blocker text in current-status pages.
 - SecureCall wiki visual system refreshed to light landing-page style via shared `wiki.css`/`wiki-v2.css` overrides.
 - Remaining historical changelog entries are kept as history only; current status pages no longer present old Beta/Railway/DNS findings as active.
+
+## 2026-06-11 22:36 UTC — Codex IFR Uniswap CTA + Landing Card Alignment
+
+- SecureCall landing pricing now links the Pro/Premium IFR threshold rows directly to the official Uniswap $IFR token page.
+- SecureCall IFR box CTA simplified to `Buy $IFR on Uniswap`; stale ifrunit public purchase wording removed.
+- Platform product cards now use flex-column layout; SecureChat card button aligns to the same bottom baseline as SecureCall and Chameleon.

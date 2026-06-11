@@ -435,7 +435,12 @@ body.landing-redesign {
 .plain-list:hover li {
   color: #334155;
 }
-.product-card { position: relative; overflow: hidden; }
+.product-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
 .product-card::before {
   content: "";
   position: absolute;
@@ -461,11 +466,20 @@ body.landing-redesign {
   display: grid;
   gap: 9px;
 }
+.product-card .btn {
+  margin-top: auto;
+}
 .product-card li,
 .price-card li,
 .plain-list li {
   color: var(--sx-muted);
   font-size: 14px;
+}
+.price-card li a {
+  color: var(--sx-blue);
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .product-card li::before,
 .price-card .included::before,
