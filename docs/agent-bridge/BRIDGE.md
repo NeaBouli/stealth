@@ -946,3 +946,26 @@ Ergebnis BUG-029 Retest:
 - Script uses `flock`, `.tmp` archive + atomic rename, gzip tar, mode 600 archives, and retention cleanup.
 - Manual run verified ✅ created `signaling-data-20260611T203106Z.tar.gz`; archive contents include `activation_codes.json`, `fcm_tokens.json`, `wallets.json`.
 - Added docs: `docs/BACKUP_RESTORE.md`; updated `docs/RELEASE_CHECKLIST.md` with backup verification + restore drill item.
+
+## 2026-06-11 Codex — Release builds + website purchase/download update
+- Version check:
+  - SecureCall: `versionName 1.0.35`, `versionCode 58`
+  - SecureChat: `versionName 0.1.1-alpha`, `versionCode 2`
+  - Chameleon: `versionName 0.1.1-alpha`, `versionCode 2`
+- Builds completed:
+  - SecureCall `./gradlew bundleFreeRelease assembleFreeRelease` ✅ BUILD SUCCESSFUL
+  - SecureChat `./gradlew assembleRelease` ✅ BUILD SUCCESSFUL
+  - Chameleon `./gradlew assembleRelease` ✅ BUILD SUCCESSFUL
+- Desktop artifacts created:
+  - `/Users/gio/Desktop/SecureCall-LATEST.aab` (37 MB)
+  - `/Users/gio/Desktop/SecureCall-LATEST.apk` (21 MB, free arm64-v8a)
+  - `/Users/gio/Desktop/SecureChat-LATEST.apk` (13 MB)
+  - `/Users/gio/Desktop/Chameleon-LATEST.apk` (11 MB)
+- GitHub releases created:
+  - SecureChat: `v0.1.1-alpha-securechat`
+  - Chameleon: `v0.1.1-alpha-chameleon`
+- Website update:
+  - `website/index.html` Direct Download CTA now displays `APK builds (v1.0.35)`.
+  - Stripe purchase buttons now use live API host `https://api.stealthx.tech` instead of stale Railway URL.
+  - Live API health and `/licenses/status` checked: HTTP 200.
+- Remaining external blocker: Stripe checkout still requires Gio to rotate/set the expired live secret key on Hetzner.
