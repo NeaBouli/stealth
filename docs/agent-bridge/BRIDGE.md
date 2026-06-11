@@ -978,3 +978,21 @@ Ergebnis BUG-029 Retest:
   - Response: `Invalid API Key provided: NEUER_KEY`
 - No full `sk_live_...` key is available to Codex locally, and Stripe live secret keys cannot be reconstructed from the shortened dashboard prefix.
 - Next required action: Gio must set the full live Stripe secret key on Hetzner, then reload PM2 with `--update-env`.
+
+## 2026-06-11 Codex — Stripe checkout live
+- Gio provided a valid restricted live Stripe key; Codex set it as `STRIPE_SECRET_KEY` in `/opt/stealthx/.env.production` without logging the secret value.
+- PM2 reloaded with `pm2 reload /opt/stealthx/signaling/ecosystem.config.js --update-env`; `signaling` online.
+- Static checkout route verified:
+  - `POST /stripe/create-checkout` for `pro_lifetime` returns a live Stripe Checkout session URL ✅.
+- Dynamic checkout initially failed on old hardcoded Stripe product ids (`prod_UHMPlLJaBG5v8u` / `prod_UHMc9gmBYfGQTT`).
+- Fix committed/deployed: `backend/signaling/src/licenses.js` now lets dynamic Checkout use `price_data.product_data.name` instead of stale product ids.
+- Backend tests after fix: `npm test` ✅ all suites passed.
+- Hetzner dynamic checkout verified locally against PM2:
+  - `pro_lifetime` ✅ live session
+  - `premium_lifetime` ✅ live session
+  - `securechat_pro_lifetime` ✅ live session
+  - `securechat_elite_lifetime` ✅ live session
+  - `chameleon_pro_lifetime` ✅ live session
+  - `chameleon_elite_lifetime` ✅ live session
+  - `stealthx_suite_lifetime` ✅ live session
+- Note: public route rate-limits after 5 checkout attempts per IP per 10 minutes; further public test calls may return `rate_limited` until the window clears.
