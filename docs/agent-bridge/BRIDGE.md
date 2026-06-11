@@ -894,3 +894,9 @@ Ergebnis BUG-029 Retest:
 - Likely blocker: entrypoint ran recursive chown over the mounted /app/data volume before app startup.
 - Fix: entrypoint now performs a shallow data-dir ownership repair, emits explicit start logs, and falls back to `dumb-init -- node src/server.js` if Railway passes no command.
 - Verification: entrypoint shell syntax check ✅. Redeploy required after push.
+
+## 2026-06-11 Codex — Railway direct-start Docker fix
+- Finding: Railway deploys built successfully but the replacement container stayed at volume-mount stage with no Node app logs; live API stayed on old two-product catalog.
+- Fix: Dockerfile now starts Node directly via `dumb-init -- node src/server.js` and no longer uses the shell entrypoint/runtime chown path. This removes the suspected Railway start/entrypoint/volume interaction.
+- Verification: backend/signaling npm test ✅ after Dockerfile change.
+- Next: push + Railway source redeploy + live API/CORS/checkout smoke.
