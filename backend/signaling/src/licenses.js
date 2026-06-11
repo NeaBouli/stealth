@@ -16,8 +16,7 @@ const LICENSES = {
     sold: 0,
     max: 100,
     startPrice: 1500,  // €15.00 in cents
-    endPrice: 5000,    // €50.00 in cents
-    stripeProductId: "prod_UHMPlLJaBG5v8u"
+    endPrice: 5000     // €50.00 in cents
   },
   premium_lifetime: {
     name: "SecureCall Premium Lifetime",
@@ -25,8 +24,7 @@ const LICENSES = {
     sold: 0,
     max: 100,
     startPrice: 2500,  // €25.00 in cents
-    endPrice: 10000,   // €100.00 in cents
-    stripeProductId: "prod_UHMc9gmBYfGQTT"
+    endPrice: 10000    // €100.00 in cents
   },
   securechat_pro_lifetime: {
     name: "SecureChat Pro Lifetime",
