@@ -284,7 +284,7 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     try {
       const { sendActivationCode } = require("./email_handler");
       console.log("[STRIPE] Calling sendActivationCode()...");
-      const sent = await sendActivationCode(email, code, tier);
+      const sent = await sendActivationCode(email, code, tier, { productKey });
       console.log("[STRIPE] Email send result:", sent);
     } catch (err) {
       console.error("[STRIPE] Email delivery failed:", err.message, err.stack);
