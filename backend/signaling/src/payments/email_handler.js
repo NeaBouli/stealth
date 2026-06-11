@@ -24,6 +24,36 @@ const APK_DOWNLOADS = {
   }
 };
 
+const PRODUCT_INFO = {
+  SecureCall: {
+    tagline: "Encrypted Voice &middot; Zero Metadata",
+    url: "https://stealthx.tech/download.html"
+  },
+  SecureChat: {
+    tagline: "Encrypted Messaging &middot; Zero Metadata",
+    url: "https://securechat.stealthx.tech/"
+  },
+  Chameleon: {
+    tagline: "Private App Camouflage &middot; Anti-Tamper",
+    url: "https://chameleon.stealthx.tech/"
+  },
+  "StealthX Suite": {
+    tagline: "SecureCall &middot; SecureChat &middot; Chameleon",
+    url: "https://stealthx.tech/"
+  }
+};
+
+function resolveProductInfo(options = {}) {
+  const productName = options.productName || "SecureCall";
+  const base = PRODUCT_INFO[productName] || PRODUCT_INFO.SecureCall;
+  return {
+    name: productName,
+    tagline: options.productTagline || base.tagline,
+    url: options.productUrl || base.url,
+    isSecureCall: productName === "SecureCall"
+  };
+}
+
 function resolveDownloadLinks(tier) {
   return APK_DOWNLOADS[tier] || APK_DOWNLOADS.pro;
 }
@@ -33,40 +63,12 @@ function resolveDownloadLinks(tier) {
 function generateEmailHTML(code, tier, options = {}) {
   const normalizedTier = String(tier || "").toLowerCase();
   const tierName = normalizedTier === "premium" ? "Premium" : normalizedTier === "elite" ? "Elite" : "Pro";
+  const product = resolveProductInfo(options);
   const links = {
     ...resolveDownloadLinks(tier),
     ...options.downloadLinks
   };
-  return `
-<div style="background:#0a0a12;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;padding:40px 20px;max-width:640px;margin:0 auto;">
-  <div style="text-align:center;margin-bottom:32px;">
-    <div style="font-size:34px;font-weight:800;color:#ff4444;letter-spacing:-1px;">SecureCall</div>
-    <div style="font-size:13px;color:#666;margin-top:4px;letter-spacing:2px;text-transform:uppercase;">Encrypted Voice &middot; Zero Metadata</div>
-  </div>
-
-  <div style="background:#11131a;border:1px solid #1f2330;border-radius:12px;padding:32px;margin-bottom:24px;">
-    <h2 style="color:#00E676;margin:0 0 8px 0;font-size:22px;">Payment Confirmed</h2>
-    <p style="color:#aaa;margin:0 0 24px 0;font-size:15px;">Thank you for your purchase. Your ${tierName} activation code is ready below.</p>
-
-    <div style="background:#0a0a12;border:2px solid #ff4444;border-radius:8px;padding:28px;text-align:center;margin:8px 0 0 0;">
-      <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:3px;margin-bottom:12px;">Activation Code</div>
-      <code style="font-size:26px;color:#ff4444;letter-spacing:3px;font-weight:700;font-family:'Courier New',monospace;">${code}</code>
-      <div style="font-size:11px;color:#666;margin-top:14px;">Select and copy &mdash; tap to highlight on mobile</div>
-    </div>
-  </div>
-
-  <div style="background:#11131a;border:1px solid #1f2330;border-radius:12px;padding:28px;margin-bottom:24px;">
-    <h3 style="color:#FFD700;font-size:13px;text-transform:uppercase;letter-spacing:2px;margin:0 0 16px 0;">How to Activate</h3>
-    <ol style="color:#ccc;line-height:1.9;padding-left:22px;margin:0;font-size:15px;">
-      <li>Open <strong style="color:#fff;">SecureCall</strong> on your Android device</li>
-      <li>Go to <strong style="color:#fff;">Settings &rarr; Konto</strong></li>
-      <li>Tap <strong style="color:#fff;">Activation Code</strong></li>
-      <li>Enter the code above and tap <strong style="color:#fff;">Activate</strong></li>
-      <li>Restart the app &mdash; ${tierName} features unlock instantly</li>
-    </ol>
-  </div>
-
-  <div style="background:#11131a;border:1px solid #1f2330;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;">
+  const installBlock = product.isSecureCall ? `
     <h3 style="color:#FFD700;font-size:13px;text-transform:uppercase;letter-spacing:2px;margin:0 0 16px 0;">Don't have the app yet?</h3>
     <p style="color:#aaa;margin:0 0 16px 0;font-size:14px;line-height:1.6;">Install the ${tierName} APK directly after purchase, or use Google Play for the public Free build.</p>
     <div style="margin:0;">
@@ -83,7 +85,44 @@ function generateEmailHTML(code, tier, options = {}) {
         Other APK Builds
       </a>
     </div>
-    <p style="color:#666;margin:14px 0 0 0;font-size:12px;line-height:1.6;">Use ARM64 for most current Android phones. Older 32-bit phones can use the alternate APK from the download page.</p>
+    <p style="color:#666;margin:14px 0 0 0;font-size:12px;line-height:1.6;">Use ARM64 for most current Android phones. Older 32-bit phones can use the alternate APK from the download page.</p>` : `
+    <h3 style="color:#FFD700;font-size:13px;text-transform:uppercase;letter-spacing:2px;margin:0 0 16px 0;">Need the app?</h3>
+    <p style="color:#aaa;margin:0 0 16px 0;font-size:14px;line-height:1.6;">Open ${product.name} on your Android device, then activate this code from the account settings. Use the product page if you need the current build or setup notes.</p>
+    <a href="${product.url}"
+       style="display:inline-block;background:#ff4444;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;margin:6px;font-size:14px;">
+      Open ${product.name}
+    </a>`;
+  return `
+<div style="background:#0a0a12;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;padding:40px 20px;max-width:640px;margin:0 auto;">
+  <div style="text-align:center;margin-bottom:32px;">
+    <div style="font-size:34px;font-weight:800;color:#ff4444;letter-spacing:-1px;">${product.name}</div>
+    <div style="font-size:13px;color:#666;margin-top:4px;letter-spacing:2px;text-transform:uppercase;">${product.tagline}</div>
+  </div>
+
+  <div style="background:#11131a;border:1px solid #1f2330;border-radius:12px;padding:32px;margin-bottom:24px;">
+    <h2 style="color:#00E676;margin:0 0 8px 0;font-size:22px;">Payment Confirmed</h2>
+    <p style="color:#aaa;margin:0 0 24px 0;font-size:15px;">Thank you for your purchase. Your ${tierName} activation code is ready below.</p>
+
+    <div style="background:#0a0a12;border:2px solid #ff4444;border-radius:8px;padding:28px;text-align:center;margin:8px 0 0 0;">
+      <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:3px;margin-bottom:12px;">Activation Code</div>
+      <code style="font-size:26px;color:#ff4444;letter-spacing:3px;font-weight:700;font-family:'Courier New',monospace;">${code}</code>
+      <div style="font-size:11px;color:#666;margin-top:14px;">Select and copy &mdash; tap to highlight on mobile</div>
+    </div>
+  </div>
+
+  <div style="background:#11131a;border:1px solid #1f2330;border-radius:12px;padding:28px;margin-bottom:24px;">
+    <h3 style="color:#FFD700;font-size:13px;text-transform:uppercase;letter-spacing:2px;margin:0 0 16px 0;">How to Activate</h3>
+    <ol style="color:#ccc;line-height:1.9;padding-left:22px;margin:0;font-size:15px;">
+      <li>Open <strong style="color:#fff;">${product.name}</strong> on your Android device</li>
+      <li>Go to <strong style="color:#fff;">Settings &rarr; Konto</strong></li>
+      <li>Tap <strong style="color:#fff;">Activation Code</strong></li>
+      <li>Enter the code above and tap <strong style="color:#fff;">Activate</strong></li>
+      <li>Restart the app &mdash; ${tierName} features unlock instantly</li>
+    </ol>
+  </div>
+
+  <div style="background:#11131a;border:1px solid #1f2330;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;">
+    ${installBlock}
   </div>
 
   <div style="background:rgba(255,152,0,0.08);border:1px solid rgba(255,152,0,0.25);border-radius:12px;padding:20px;margin-bottom:24px;">
@@ -164,7 +203,7 @@ async function sendActivationCode(toEmail, code, tier, options = {}) {
 
   const normalizedTier = String(tier || "").toLowerCase();
   const tierName = normalizedTier === "premium" ? "Premium" : normalizedTier === "elite" ? "Elite" : "Pro";
-  const productName = options.productName || "StealthX";
+  const productName = options.productName || "SecureCall";
   const subject = `Your ${productName} ${tierName} Activation Code`;
   const html = generateEmailHTML(code, tier, options);
 

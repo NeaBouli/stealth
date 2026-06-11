@@ -882,3 +882,9 @@ Ergebnis BUG-029 Retest:
 - Website fix: SecureCall Landing Lifetime buttons are active; `llms.txt` IFR values updated to 2,000/6,000.
 - Verification: `npm test` in backend/signaling passed, including new Stripe dynamic Lifetime webhook test.
 - Live deploy note: pre-push live API still exposed only old `pro_lifetime`/`premium_lifetime` keys and did not yet emit SecureChat CORS header. Requires backend deploy after push.
+
+## 2026-06-11 Codex — Cross-product checkout mail hardening
+- Finding: Stripe webhook could create SecureChat/Chameleon activation codes, but activation email HTML was still SecureCall-specific with SecureCall APK/Play CTAs.
+- Fix: email template now resolves product info for SecureCall, SecureChat, Chameleon, and StealthX Suite; non-SecureCall mails link the product page instead of SecureCall APKs.
+- Fix: webhook passes productName/productUrl from productKey into sendActivationCode().
+- Verification: backend/signaling npm test ✅ including SecureChat email regression test.

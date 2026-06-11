@@ -21,4 +21,13 @@ const proHtml = generateEmailHTML("PRO-ABCD-EFGH-IJKL", "pro");
 assert.ok(proHtml.includes("Download Pro APK"), "pro email should show direct APK CTA");
 assert.ok(proHtml.includes(proLinks.primary), "pro email should include direct Pro APK link");
 
+const secureChatHtml = generateEmailHTML("ELIT-ABCD-EFGH-IJKL", "elite", {
+  productName: "SecureChat",
+  productUrl: "https://securechat.stealthx.tech/"
+});
+assert.ok(secureChatHtml.includes(">SecureChat<"), "SecureChat email should use product name");
+assert.ok(secureChatHtml.includes("https://securechat.stealthx.tech/"), "SecureChat email should link product site");
+assert.ok(!secureChatHtml.includes("Download Elite APK"), "SecureChat email must not show SecureCall APK CTA");
+assert.ok(!secureChatHtml.includes("play.google.com/store/apps/details?id=com.securecall.app.free"), "SecureChat email must not link SecureCall Play listing");
+
 console.log("email_handler.test.js ok");

@@ -195,6 +195,19 @@ function saveProcessedEvents() {
 
 loadProcessedEvents();
 
+function resolveProductEmailOptions(productKey) {
+  if (productKey?.startsWith("securechat_")) {
+    return { productName: "SecureChat", productUrl: "https://securechat.stealthx.tech/" };
+  }
+  if (productKey?.startsWith("chameleon_")) {
+    return { productName: "Chameleon", productUrl: "https://chameleon.stealthx.tech/" };
+  }
+  if (productKey === "stealthx_suite_lifetime") {
+    return { productName: "StealthX Suite", productUrl: "https://stealthx.tech/" };
+  }
+  return { productName: "SecureCall", productUrl: "https://stealthx.tech/download.html" };
+}
+
 async function handleWebhook(event, stripe, activationCodesRef) {
   console.log("[STRIPE] === WEBHOOK RECEIVED ===");
   console.log("[STRIPE] Event type:", event.type, "id:", event.id);
@@ -297,7 +310,10 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     try {
       const { sendActivationCode } = require("./email_handler");
       console.log("[STRIPE] Calling sendActivationCode()...");
-      const sent = await sendActivationCode(email, code, tier, { productKey });
+      const sent = await sendActivationCode(email, code, tier, {
+        productKey,
+        ...resolveProductEmailOptions(productKey)
+      });
       console.log("[STRIPE] Email send result:", sent);
     } catch (err) {
       console.error("[STRIPE] Email delivery failed:", err.message, err.stack);
