@@ -844,3 +844,11 @@ Ergebnis BUG-029 Retest:
 - SecureChat UI audit on S7: settings show Free tier, `Upgrade to Pro — Lock 2,000 IFR`, Pro `≥ 2,000 IFR`, Elite `≥ 6,000 IFR`; staged features show SOON or Unlock as expected.
 - Chameleon cross-check: found invalid accessibility service `settingsActivity` pointing to non-existent `com.stealthx.presentation.ui.SettingsActivity`; fixed in Chameleon repo to `com.stealthx.chameleon.MainActivity`.
 - Remaining blockers: BUG-029 still blocked pending SecureCall WireGuard config; Chameleon NEA-150 BuilderRegistry registration remains external/on-chain action.
+
+## 2026-06-11 Codex — BUG-029 WireGuard enablement
+- Researched external WireGuard test options: WireGuard upstream only provides an insecure demo transport for testing; VPNBook provides generated WireGuard configs that expire after 7 days and must be generated per device.
+- SecureCall gap found: docs said "import WireGuard config", but the app only offered manual endpoint/key fields.
+- Fix added: Premium VPN configuration dialog now has `Paste WireGuard .conf`; parser fills endpoint, port, server public key, client private key, DNS, and client address from a standard WireGuard config.
+- Verification: `./gradlew app:testFreeDebugUnitTest app:assembleFreeDebug` ✅ BUILD SUCCESSFUL.
+- Local Mac WG server path checked: `wg`/`wg-quick` were missing. `brew install wireguard-tools` attempted but failed on `wireguard-go` checksum mismatch under macOS 12/Homebrew Tier 3.
+- Next BUG-029 path: generate one VPNBook config per device or provide own WG server config, paste/import in SecureCall Premium, grant VPN permission, then run S7↔Tab/S10 call with `SecLog`/`GhostVPN`/`WebRTC` logcat verification.

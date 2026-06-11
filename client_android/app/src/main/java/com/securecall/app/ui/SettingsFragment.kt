@@ -862,7 +862,23 @@ class SettingsFragment : PreferenceFragmentCompat() {
             hint = "Client address (e.g. 10.99.0.2/31)"
             setText(prefs.getString("vpn_client_address", ""))
         }
+        val importButton = android.widget.Button(ctx).apply {
+            text = "Paste WireGuard .conf"
+            setOnClickListener {
+                showWireGuardPasteDialog(
+                    onConfigParsed = { cfg ->
+                        endpointInput.setText(cfg.endpoint)
+                        portInput.setText(cfg.port.toString())
+                        pubKeyInput.setText(cfg.serverPublicKey)
+                        privKeyInput.setText(cfg.clientPrivateKey)
+                        dnsInput.setText(cfg.dns)
+                        clientAddrInput.setText(cfg.clientAddress)
+                    }
+                )
+            }
+        }
 
+        layout.addView(importButton)
         layout.addView(endpointInput)
         layout.addView(portInput)
         layout.addView(pubKeyInput)
@@ -898,6 +914,100 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 android.widget.Toast.makeText(ctx, "VPN config cleared", android.widget.Toast.LENGTH_SHORT).show()
             }
             .show()
+    }
+
+    private data class WireGuardConfigFields(
+        val endpoint: String,
+        val port: Int,
+        val serverPublicKey: String,
+        val clientPrivateKey: String,
+        val dns: String,
+        val clientAddress: String,
+    )
+
+    private fun showWireGuardPasteDialog(onConfigParsed: (WireGuardConfigFields) -> Unit) {
+        val ctx = requireContext()
+        val input = android.widget.EditText(ctx).apply {
+            hint = "[Interface]\nPrivateKey = ...\nAddress = ...\nDNS = ...\n\n[Peer]\nPublicKey = ...\nEndpoint = host:port\nAllowedIPs = 0.0.0.0/0"
+            minLines = 10
+            maxLines = 16
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            setHorizontallyScrolling(false)
+        }
+
+        android.app.AlertDialog.Builder(ctx)
+            .setTitle("Paste WireGuard .conf")
+            .setView(input)
+            .setPositiveButton("Parse") { _, _ ->
+                val parsed = parseWireGuardConfig(input.text.toString())
+                if (parsed == null) {
+                    android.widget.Toast.makeText(ctx, "Invalid WireGuard config", android.widget.Toast.LENGTH_LONG).show()
+                } else {
+                    onConfigParsed(parsed)
+                    android.widget.Toast.makeText(ctx, "WireGuard config parsed", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun parseWireGuardConfig(raw: String): WireGuardConfigFields? {
+        var section = ""
+        var privateKey = ""
+        var address = ""
+        var dns = "1.1.1.1"
+        var publicKey = ""
+        var endpoint = ""
+
+        raw.lineSequence()
+            .map { it.substringBefore('#').trim() }
+            .filter { it.isNotEmpty() }
+            .forEach { line ->
+                when {
+                    line.equals("[Interface]", ignoreCase = true) -> section = "interface"
+                    line.equals("[Peer]", ignoreCase = true) -> section = "peer"
+                    "=" in line -> {
+                        val key = line.substringBefore('=').trim()
+                        val value = line.substringAfter('=').trim()
+                        when {
+                            section == "interface" && key.equals("PrivateKey", ignoreCase = true) -> privateKey = value
+                            section == "interface" && key.equals("Address", ignoreCase = true) -> address = value.substringBefore(',').trim()
+                            section == "interface" && key.equals("DNS", ignoreCase = true) -> dns = value.ifEmpty { "1.1.1.1" }
+                            section == "peer" && key.equals("PublicKey", ignoreCase = true) -> publicKey = value
+                            section == "peer" && key.equals("Endpoint", ignoreCase = true) -> endpoint = value
+                        }
+                    }
+                }
+            }
+
+        if (privateKey.isBlank() || publicKey.isBlank() || endpoint.isBlank()) return null
+
+        val parsedEndpoint = parseEndpoint(endpoint) ?: return null
+        val clientAddress = address.ifBlank { "10.66.66.2/32" }
+        return WireGuardConfigFields(
+            endpoint = parsedEndpoint.first,
+            port = parsedEndpoint.second,
+            serverPublicKey = publicKey,
+            clientPrivateKey = privateKey,
+            dns = dns,
+            clientAddress = clientAddress,
+        )
+    }
+
+    private fun parseEndpoint(endpoint: String): Pair<String, Int>? {
+        val clean = endpoint.trim()
+        if (clean.isBlank()) return null
+        return if (clean.startsWith("[") && "]:" in clean) {
+            val host = clean.substringAfter('[').substringBefore(']')
+            val port = clean.substringAfter("]:").toIntOrNull() ?: return null
+            host to port
+        } else {
+            val host = clean.substringBeforeLast(':', missingDelimiterValue = "")
+            val port = clean.substringAfterLast(':').toIntOrNull() ?: return null
+            if (host.isBlank()) null else host to port
+        }
     }
 
     private fun configureIfrUnlock(effectiveTier: String) {
