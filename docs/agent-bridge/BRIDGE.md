@@ -923,3 +923,12 @@ Ergebnis BUG-029 Retest:
 - Product pages ✅ active checkout buttons visible live on SecureChat and Chameleon pages; no disabled Stripe placeholders.
 - Checkout POST reaches Stripe but is BLOCKED by external credential: Stripe returns `Expired API Key provided` for the configured production secret key. No newer StealthX Stripe secret key found locally or on Hetzner.
 - Required to finish payments: create/rotate a live Stripe Secret Key in Stripe Dashboard, update `/opt/stealthx/.env.production` `STRIPE_SECRET_KEY` (and webhook secret if Stripe forces rotation), then `pm2 reload ecosystem.config.js --update-env`; checkout should then return Stripe session URLs.
+
+## 2026-06-11 Codex — Dependabot + release scope
+- Dependabot open HIGH findings checked via GitHub API: alerts #23 and #24, both `@grpc/grpc-js` malformed compressed/malformed request crash advisories in `backend/signaling/package-lock.json`.
+- Fix applied: backend/signaling `overrides.@grpc/grpc-js=^1.14.4`; lockfile now resolves `@grpc/grpc-js@1.14.4`.
+- Verification local: `npm ls @grpc/grpc-js` ✅ 1.14.4 overridden; `npm audit --audit-level=high` ✅ 0 vulnerabilities; backend `npm test` ✅.
+- Verification Hetzner: package files deployed, `npm ci --omit=dev`, `npm ls @grpc/grpc-js` ✅ 1.14.4 overridden; `npm audit --audit-level=high` ✅ 0 vulnerabilities; PM2 reload ✅ online.
+- Hero animation rechecked: `website/css/landing.css` contains `frequency-drift`, `voice-frequency`, and `prefers-reduced-motion` handling.
+- Added release docs: `docs/RELEASE_V1_SCOPE.md` and `docs/RELEASE_CHECKLIST.md`.
+- Remaining external blockers before live: rotate expired Stripe live secret key; BUG-029 WireGuard retest with valid WG profile; Play Store AAB upload.
