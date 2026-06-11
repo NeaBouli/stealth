@@ -968,4 +968,4 @@ Ergebnis BUG-029 Retest:
   - `website/index.html` Direct Download CTA now displays `APK builds (v1.0.35)`.
   - Stripe purchase buttons now use live API host `https://api.stealthx.tech` instead of stale Railway URL.
   - Live API health and `/licenses/status` checked: HTTP 200.
-- Remaining external blocker: Stripe checkout still requires Gio to rotate/set the expired live secret key on Hetzner.
+- Remaining external blocker: Stripe checkout endpoint is reachable, but Hetzner currently returns `Invalid API Key provided: NEUER_KEY`; Gio must set a real rotated Stripe live secret key and reload PM2.
