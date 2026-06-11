@@ -914,3 +914,12 @@ Ergebnis BUG-029 Retest:
 - Hetzner `.env.production` `ALLOWED_ORIGINS` now includes `securechat.stealthx.tech` and `chameleon.stealthx.tech`.
 - PM2 reload verified: process env contains updated ALLOWED_ORIGINS.
 - Remaining checkout blocker: Stripe rejects the configured production secret key as expired. No current StealthX Stripe secret key was found locally or on Hetzner.
+
+## 2026-06-11 Codex — Final checkout/live status
+- Hetzner PM2 live: `api.stealthx.tech/health` fresh uptime after reload; PM2 `signaling` online.
+- Stale Docker `stealthx-signaling` stopped; only `stealthx-coturn` remains from StealthX Docker stack, Traefik now routes `api.stealthx.tech` to PM2 via `host.docker.internal:8080`.
+- Public `/licenses/status` ✅ returns all seven keys: SecureCall Pro/Premium, SecureChat Pro/Elite, Chameleon Pro/Elite, Suite.
+- Public CORS ✅ `access-control-allow-origin` returned for `securechat.stealthx.tech` and `chameleon.stealthx.tech`.
+- Product pages ✅ active checkout buttons visible live on SecureChat and Chameleon pages; no disabled Stripe placeholders.
+- Checkout POST reaches Stripe but is BLOCKED by external credential: Stripe returns `Expired API Key provided` for the configured production secret key. No newer StealthX Stripe secret key found locally or on Hetzner.
+- Required to finish payments: create/rotate a live Stripe Secret Key in Stripe Dashboard, update `/opt/stealthx/.env.production` `STRIPE_SECRET_KEY` (and webhook secret if Stripe forces rotation), then `pm2 reload ecosystem.config.js --update-env`; checkout should then return Stripe session URLs.
