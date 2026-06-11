@@ -102,19 +102,12 @@
         "Anti-recording protection"
       ],
       "image": "https://stealthx.tech/assets/brand/securecall-icon.png",
-      "softwareVersion": "1.0.28",
+      "softwareVersion": "1.0.35",
       "datePublished": "2026-03-01",
-      "dateModified": "2026-05-04",
+      "dateModified": "2026-06-11",
       "inLanguage": ["en", "de", "el", "es", "zh", "ru", "pt", "ar", "ko"],
       "isAccessibleForFree": true,
-      "license": "https://github.com/NeaBouli/stealth/blob/main/LICENSE",
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "reviewCount": "38",
-        "bestRating": "5",
-        "worstRating": "1"
-      }
+      "license": "https://github.com/NeaBouli/stealth/blob/main/LICENSE"
     }
     </script>
 
@@ -167,7 +160,7 @@
           "name": "Is SecureCall free?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. SecureCall has a free tier with full calling functionality. The free version contains ads. Pro (€3.49/month) and Premium (€4.99/month) tiers are available for ad-free experience with additional security features like VPN and anti-recording protection."
+            "text": "Yes. SecureCall has a free tier with encrypted calls, ads, a 15-minute call limit, and up to 10 contacts. Pro (€3.49/month) and Premium (€4.99/month) tiers add higher limits and advanced security features."
           }
         },
         {
@@ -248,20 +241,7 @@
           },
           "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "GR" }
         }
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "5",
-        "reviewCount": "3",
-        "bestRating": "5",
-        "worstRating": "1"
-      },
-      "review": [{
-        "@type": "Review",
-        "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" },
-        "author": { "@type": "Person", "name": "Beta Tester" },
-        "reviewBody": "Excellent encrypted calling app. Very secure and easy to use."
-      }]
+      }
     }
     </script>
     <!-- Google tag (gtag.js) -->
@@ -485,24 +465,21 @@
 
         <section class="section" id="compare">
             <div class="container">
-                <div class="section-head"><span class="section-label">Benchmark</span><h2>Why SecureCall?</h2><p class="lead">Encrypted calling with no phone number, no account and command-level local wipe.</p></div>
-                <div class="table-card"><table class="cmp-table"><thead><tr><th>Feature</th><th class="own">SecureCall</th><th>Signal</th><th>Wire</th><th>Wickr</th></tr></thead><tbody>
-                    <tr><td>No phone number required</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
-                    <tr><td>No account registration</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
-                    <tr><td>End-to-end encrypted calls</td><td class="own yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                    <tr><td>Built-in WireGuard VPN</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
-                    <tr><td>STEALTH-DELETE instant wipe</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
-                    <tr><td>Emergency Broadcast System</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
-                    <tr><td>No call content or logs stored</td><td class="own yes">✓</td><td class="warn">!</td><td class="warn">!</td><td class="warn">!</td></tr>
-                    <tr><td>IFR token lifetime access</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
-                    <tr><td>WalletConnect v2</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
-                    <tr><td>Source available for audit</td><td class="own yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">×</td></tr>
-                    <tr><td>Free tier available</td><td class="own yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">×</td></tr>
-                    <tr><td>Direct APK download</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
-                    <tr><td>EU/GDPR compliant</td><td class="own yes">✓</td><td class="warn">!</td><td class="no">×</td><td class="no">×</td></tr>
-                    <tr><td>Gift activation codes</td><td class="own yes">✓</td><td class="no">×</td><td class="no">×</td><td class="no">×</td></tr>
+                <div class="section-head"><span class="section-label">Benchmark</span><h2>Why SecureCall?</h2><p class="lead">Encrypted calling with anonymous SecureID, local emergency wipe, and optional VPN features.</p></div>
+                <div class="table-card"><table class="cmp-table"><thead><tr><th>Feature</th><th class="own">SecureCall</th><th>Common secure messengers</th></tr></thead><tbody>
+                    <tr><td>Anonymous SecureID instead of phone-number identity</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
+                    <tr><td>End-to-end encrypted calls</td><td class="own yes">✓</td><td class="yes">✓</td></tr>
+                    <tr><td>Built-in WireGuard VPN controls</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
+                    <tr><td>STEALTH-DELETE instant local wipe</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
+                    <tr><td>Emergency Broadcast System</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
+                    <tr><td>No call content stored server-side</td><td class="own yes">✓</td><td class="yes">common</td></tr>
+                    <tr><td>IFR token lifetime access</td><td class="own yes">✓</td><td class="no">not typical</td></tr>
+                    <tr><td>WalletConnect v2 unlock flow</td><td class="own yes">✓</td><td class="no">not typical</td></tr>
+                    <tr><td>Source available for audit</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
+                    <tr><td>Direct APK download</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
+                    <tr><td>Gift activation codes</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                 </tbody></table></div>
-                <p style="font-size:12px;color:var(--sx-faint)">Comparison based on publicly documented features as of April 2026. SecureCall's client source is available for audit; official branding, backend services, store releases, paid licensing and use rights remain operated by Vendetta Labs.</p>
+                <p style="font-size:12px;color:var(--sx-faint)">Comparison uses broad public product characteristics instead of vendor-specific legal claims. Competitor features change over time; verify current third-party terms before relying on them.</p>
             </div>
         </section>
 
@@ -512,9 +489,9 @@
                 <div class="pricing-grid">
                     <article class="price-card reveal"><h3>Free</h3><div class="price"><span class="amount">€0</span><span class="period">forever</span></div><ul><li class="included">E2E encrypted calls</li><li class="included">15 min call limit, 10 contacts</li><li class="included">Basic security warnings</li><li class="included">Dark/Light mode</li><li class="included">Ad-supported banner</li><li class="excluded">Call history and online status</li><li class="excluded">Anti-recording protection</li><li class="excluded">GhostNet IP masking</li></ul><a href="#download" class="btn line block">Get started</a></article>
                     <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">GhostNet IP masking</li><li class="included">OR lock at least 2,000 IFR for lifetime Pro</li></ul><a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn primary block">Buy on Google Play</a></article>
-                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">Zero telemetry</li><li class="included">WireGuard VPN integration</li><li class="included">OR lock at least 6,000 IFR for lifetime Premium</li></ul><a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn primary block">Buy on Google Play</a></article>
+                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">No ads or crash reporting</li><li class="included">WireGuard VPN integration</li><li class="included">OR lock at least 6,000 IFR for lifetime Premium</li></ul><a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn primary block">Buy on Google Play</a></article>
                 </div>
-                <div class="ifr-box reveal"><span class="section-label">Inferno integration</span><h3>IFR Lifetime Unlock</h3><p>Lock IFR tokens. Unlock forever. Your tokens stay yours. Bootstrap ended June 5, 2026; trading is expected August 2026; liquidity reserve unlock is September 1, 2026.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>Pro - lock 2,000 IFR</h3><ul class="plain-list"><li>Online/offline status</li><li>Anti-recording detection</li><li>Enhanced security</li><li>Unlimited calls and contacts</li></ul></div><div class="card" style="padding:18px"><h3>Premium - lock 6,000 IFR</h3><ul class="plain-list"><li>Everything in Pro</li><li>Advanced threat detection</li><li>GhostNet IP masking</li><li>Zero telemetry</li></ul></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a> <a class="btn line" href="https://ifrunit.tech" target="_blank" rel="noopener">Powered by Inferno ($IFR)</a></p></div>
+                <div class="ifr-box reveal"><span class="section-label">Inferno integration</span><h3>IFR Lifetime Unlock</h3><p>Lock IFR tokens. Unlock forever. Your tokens stay yours. Bootstrap ended June 5, 2026; trading is expected August 2026; liquidity reserve unlock is September 1, 2026.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>Pro - lock 2,000 IFR</h3><ul class="plain-list"><li>Online/offline status</li><li>Anti-recording detection</li><li>Enhanced security</li><li>Unlimited calls and contacts</li></ul></div><div class="card" style="padding:18px"><h3>Premium - lock 6,000 IFR</h3><ul class="plain-list"><li>Everything in Pro</li><li>Advanced threat detection</li><li>GhostNet IP masking</li><li>No ads or crash reporting</li></ul></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a> <a class="btn line" href="https://ifrunit.tech" target="_blank" rel="noopener">Powered by Inferno ($IFR)</a></p></div>
             </div>
         </section>
 
