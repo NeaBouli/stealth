@@ -932,3 +932,9 @@ Ergebnis BUG-029 Retest:
 - Hero animation rechecked: `website/css/landing.css` contains `frequency-drift`, `voice-frequency`, and `prefers-reduced-motion` handling.
 - Added release docs: `docs/RELEASE_V1_SCOPE.md` and `docs/RELEASE_CHECKLIST.md`.
 - Remaining external blockers before live: rotate expired Stripe live secret key; BUG-029 WireGuard retest with valid WG profile; Play Store AAB upload.
+
+## 2026-06-11 Codex — Linear update blocker
+- Linear update attempted for BUG-029 with release/dependabot status, but Linear connector returned `token_expired` / 401.
+- GitHub Dependabot API recheck after commit `fb43bde`: no open alerts returned.
+- Local `npm audit --audit-level=high`: 0 vulnerabilities.
+- GitHub Basic CI for `fb43bde`: success; Security Audit workflow still in progress at check time.
