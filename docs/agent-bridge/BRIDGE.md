@@ -908,3 +908,9 @@ Ergebnis BUG-029 Retest:
 - Fix: dynamic checkout route now accepts every key in `licenses.LICENSES`, not only SecureCall pro/premium.
 - Verification so far: local backend npm test ✅; Hetzner npm test ✅; public `/licenses/status` now shows SecureCall, SecureChat, Chameleon, Suite keys after stopping stale container.
 - Next: update Hetzner `ALLOWED_ORIGINS`, PM2 reload, live checkout POST smoke.
+
+## 2026-06-11 Codex — PM2 env/CORS fix
+- Fix: `ecosystem.config.js` now loads `/opt/stealthx/.env.production` so PM2 no longer preserves stale env values across reloads.
+- Hetzner `.env.production` `ALLOWED_ORIGINS` now includes `securechat.stealthx.tech` and `chameleon.stealthx.tech`.
+- PM2 reload verified: process env contains updated ALLOWED_ORIGINS.
+- Remaining checkout blocker: Stripe rejects the configured production secret key as expired. No current StealthX Stripe secret key was found locally or on Hetzner.

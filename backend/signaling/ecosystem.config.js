@@ -2,6 +2,30 @@
 // To apply on server: git pull && pm2 reload ecosystem.config.js --update-env
 "use strict";
 
+const fs = require("fs");
+const path = require("path");
+
+function loadEnvFile(file) {
+  try {
+    const env = {};
+    const raw = fs.readFileSync(file, "utf8");
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const idx = trimmed.indexOf("=");
+      if (idx <= 0) continue;
+      const key = trimmed.slice(0, idx).trim();
+      const value = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, "");
+      env[key] = value;
+    }
+    return env;
+  } catch {
+    return {};
+  }
+}
+
+const productionEnv = loadEnvFile(path.join("/opt", "stealthx", ".env.production"));
+
 module.exports = {
   apps: [
     {
@@ -27,6 +51,7 @@ module.exports = {
       merge_logs: true,
 
       env: {
+        ...productionEnv,
         NODE_ENV: "production",
         TRUST_PROXY: "true",
       },
