@@ -900,3 +900,11 @@ Ergebnis BUG-029 Retest:
 - Fix: Dockerfile now starts Node directly via `dumb-init -- node src/server.js` and no longer uses the shell entrypoint/runtime chown path. This removes the suspected Railway start/entrypoint/volume interaction.
 - Verification: backend/signaling npm test ✅ after Dockerfile change.
 - Next: push + Railway source redeploy + live API/CORS/checkout smoke.
+
+## 2026-06-11 Codex — Hetzner checkout deploy fix
+- Root cause: `api.stealthx.tech` is Hetzner/PM2, not Railway. SecureChat/Chameleon product pages correctly call `api.stealthx.tech`; Railway deploys did not affect that domain.
+- Deployed to Hetzner via SSH/SCP after loading the passphrased key from macOS Keychain into ssh-agent.
+- Found stale `stealthx-signaling` Docker container with same Traefik `Host(api.stealthx.tech)` rule; stopped it so Traefik uses documented PM2 route `host.docker.internal:8080`.
+- Fix: dynamic checkout route now accepts every key in `licenses.LICENSES`, not only SecureCall pro/premium.
+- Verification so far: local backend npm test ✅; Hetzner npm test ✅; public `/licenses/status` now shows SecureCall, SecureChat, Chameleon, Suite keys after stopping stale container.
+- Next: update Hetzner `ALLOWED_ORIGINS`, PM2 reload, live checkout POST smoke.

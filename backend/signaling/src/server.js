@@ -836,7 +836,7 @@ function checkoutRateLimit(req, res, next) {
 
 app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) => {
   const { tier } = req.body;
-  if (!tier || !['pro_lifetime', 'premium_lifetime'].includes(tier)) {
+  if (!tier || !licenses.LICENSES[tier]) {
     return res.status(400).json({ error: 'Invalid tier' });
   }
   const price = licenses.getCurrentPrice(tier);
