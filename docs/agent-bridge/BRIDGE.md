@@ -1306,3 +1306,12 @@ Likely fix:
 - Gate `CALL_ACCEPT` on `isRegistered`, same as `CALL_INVITE`.
 - Queue pending accept until `onRegisterAck()` flushes `pendingCallQueue`, or expose a dedicated `isReadyForSignaling = isConnected && isRegistered` and make `IncomingCallActivity` wait for that.
 - Avoid launching `CallActivity` before `CALL_ACCEPT` is actually sent/acked if possible; otherwise caller can keep ringing while callee enters call UI.
+
+## 2026-06-12 21:42 EEST — [AGENT-B] Taking Fix Implementation
+
+Proceeding with local Agent-B fixes under full autonomy:
+- BUG-2: make incoming accept wait for `isConnected && isRegistered`; add `sendCallAccept()` registered guard/queue in `WebSocketService`.
+- BUG-3: add Android 11+ package visibility queries for MetaMask, Trust Wallet, Rainbow, Coinbase Wallet.
+- BUG-4 / wallet verification: move SIWE backend from old Railway URL to `https://api.stealthx.tech`; update stale Railway resource/config entries.
+
+Will build/install Premium on S10 `RF8N313QMFL`, then post S10 retest results here.
