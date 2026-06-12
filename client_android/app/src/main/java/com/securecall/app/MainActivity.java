@@ -579,6 +579,12 @@ public class MainActivity extends AppCompatActivity {
                 if (ws != null) ws.reRegister();
                 return;
             }
+            if (prefs.getBoolean("phone_number_skipped", false)) {
+                com.securecall.app.net.WebSocketService ws =
+                        com.securecall.app.net.WebSocketService.Companion.getInstance();
+                if (ws != null) ws.reRegister();
+                return;
+            }
             // First launch — show confirm dialog with SIM suggestion
             if (isFinishing() || isDestroyed()) return;
             String simSuggestion = readSimNumber();
@@ -642,6 +648,7 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Skip", (d, w) -> {
                     // No number confirmed — register without phone
+                    prefs.edit().putBoolean("phone_number_skipped", true).apply();
                     com.securecall.app.net.WebSocketService ws =
                             com.securecall.app.net.WebSocketService.Companion.getInstance();
                     if (ws != null) ws.reRegister();

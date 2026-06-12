@@ -1489,3 +1489,62 @@ Outstanding for Agent-A / other Codex:
   - BUG-3/BUG-4 manual wallet UI flow; Agent-B only verified MetaMask package visibility baseline + clean startup logs.
   - Strict release-signed S10 state; S10 should be put back on GitHub release asset `app-premium-arm64-v8a-release.apk` when physically available here or if user wants release-signature parity.
 - No more independent Agent-B work expected.
+
+[AGENT-A] 2026-06-12 20:08 UTC — THREE-DEVICE FRESH INSTALL TEST START
+- User physically connected all three devices to this machine:
+  - S10 `RF8N313QMFL` — target role: Premium
+  - S7 `ce10160adc00152604` — target role: Pro
+  - Tab S4 `ce12182c68644439037e` — target role: Free
+- Plan:
+  1. Build fresh release APKs for SecureChat and Chameleon.
+  2. Uninstall SecureCall/SecureChat/Chameleon packages from all three devices.
+  3. Fresh install:
+     - Tab S4: SecureCall Free + SecureChat + Chameleon
+     - S7: SecureCall Pro + SecureChat + Chameleon
+     - S10: SecureCall Premium + SecureChat + Chameleon
+  4. Verify versions, launch each app, inspect UI text/logcat, and retest critical flows.
+- Agent-A is sole active coordinator; no Agent-B/CC code changes expected.
+
+[AGENT-A] 2026-06-12 20:18 UTC — Fresh install roles verified
+- All old SecureX packages removed from all three attached devices.
+- Fresh installs completed:
+  - Tab S4 `ce12182c68644439037e`: `com.securecall.app.free` `versionCode=67001`, `versionName=1.0.40-free`; SecureChat `0.1.1-alpha`; Chameleon `0.1.1-alpha`.
+  - S7 `ce10160adc00152604`: `com.securecall.app.pro` `versionCode=67001`, `versionName=1.0.40-pro`; SecureChat `0.1.1-alpha`; Chameleon `0.1.1-alpha`.
+  - S10 `RF8N313QMFL`: `com.securecall.app.premium` `versionCode=67001`, `versionName=1.0.40-premium`; SecureChat `0.1.1-alpha`; Chameleon `0.1.1-alpha`.
+- Next: permission grant, launch smoke tests, UI/logcat inspection, then E2E flows.
+
+
+[AGENT-A] 2026-06-12 20:36 UTC — BUG FOUND: SecureCall phone prompt blocked invite/contact deeplinks
+- Fresh install QA on S4/S7/S10 found that `Confirm Your Phone Number` reappeared after every launch/deep link when user tapped `Skip`.
+- Impact: `securecall://add-contact` and invite flows were intercepted by the phone prompt; contacts could not be added reliably after a fresh install.
+- Fix in progress: persist `phone_number_skipped=true` on Skip and bypass future prompts while still re-registering without phone.
+
+
+[AGENT-A] 2026-06-12 21:03 UTC — vC68 fresh install + 3-device E2E results
+- Fixed SecureCall fresh-install blocker: phone-number prompt `Skip` now persists `phone_number_skipped=true` and no longer intercepts every launch/deep link.
+- Bumped SecureCall base `versionCode` 67 → 68; arm64 split installed as `versionCode=68001`.
+- New desktop artifacts:
+  - `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `e027a516c1f11b43c6a5fc17abed28778855407dab33e6a938038fbcccba1b9c`
+  - `/Users/gio/Desktop/SecureCall-LATEST.apk` SHA256 `b0d64a6bed4372385adafa02fd5138feab753c48241c5cbb5941bed54f03163c`
+  - `/Users/gio/Desktop/SecureCall-Pro-LATEST.apk` SHA256 `4913d95ed1b03bbe1cd7e0af35ef403167faf8f13c2451d94ab4dd028cf63be9`
+  - `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `f97540cf95bf86ba7523fef4f846a88e519758d7aa1cdf6911cfa67457892c4b`
+- Installed and verified:
+  - Tab S4 `ce12182c68644439037e`: `com.securecall.app.free` `versionCode=68001`, `versionName=1.0.40-free`
+  - S7 `ce10160adc00152604`: `com.securecall.app.pro` `versionCode=68001`, `versionName=1.0.40-pro`
+  - S10 `RF8N313QMFL`: `com.securecall.app.premium` `versionCode=68001`, `versionName=1.0.40-premium`
+- SecureCall IDs mapped:
+  - S4 Free: `android-72edbb14`
+  - S7 Pro: `android-a5941f39`
+  - S10 Premium: `android-b0625103`
+- Contacts via `securecall://add-contact` verified:
+  - S4 has S7
+  - S7 has S4 + S10
+  - S10 has S7
+- E2E call tests:
+  - S7 Pro → S4 Free: PASS. Incoming UI shown, accept works, server logged `INVITE`, `ACCEPT`, `OFFER`, `ANSWER`; both devices showed active encrypted call.
+  - S7 Pro → S10 Premium: PASS. Incoming UI shown, accept works, server logged `INVITE`, `ACCEPT`, `OFFER`, `ANSWER`; both devices showed active encrypted call.
+- IFR wallet read-only check for `0x319665559c0c878D46a17371212e68fA3c5aEC1C`:
+  - `lockedBalance` = `0 IFR` via `https://ethereum.publicnode.com`.
+  - Result: `insufficient`; no Pro/Elite unlock. Test used service read-only path, no wallet binding persisted.
+- Note: one configured RPC endpoint (`eth.llamarpc.com`) currently returns Cloudflare 403; fallback provider worked. Consider replacing/removing that endpoint before launch-hardening.
+
