@@ -1174,3 +1174,23 @@ Artifacts:
 
 Play Console manual item:
 - Production countries/regions still need to be added in Play Console UI.
+
+## 2026-06-12 10:10 UTC — Codex: SecureCall vC65 Rebuild for Play VersionCode Conflict
+
+Play rejected previous AAB because split versionCode `64002` was already used in closed testing.
+
+Action:
+- Bumped SecureCall base `versionCode` from 64 to 65, keeping `versionName` 1.0.40.
+- Rebuilt Free release AAB with existing Billing v7.1.1, App Links, and 16KB page-size fixes.
+- Copied new AAB to `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+
+Verification:
+- `./gradlew --no-daemon bundleFreeRelease` ✅ BUILD SUCCESSFUL.
+- Desktop AAB is byte-identical to latest Gradle output (`cmp` MATCH).
+- New Desktop AAB SHA256: `4a9ee9db4001d14410d7f9627ae20d22017b18b46ea48bfa7847f8e40e34bde6`.
+- Expected ABI split versionCodes from base 65:
+  - arm64-v8a: `65001`
+  - armeabi-v7a: `65002`
+  - x86_64: `65003`
+
+Upload this file now: `/Users/gio/Desktop/SecureCall-LATEST.aab`.
