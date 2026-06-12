@@ -1564,3 +1564,54 @@ Outstanding for Agent-A / other Codex:
   - `SecureCall-LATEST.aab`
   - `securecall_v1.0.40_v68_checksums.txt`
 
+
+[AGENT-A] 2026-06-12 21:12 UTC — FINAL HANDOFF SUMMARY vC68 / 3-device QA
+- Current repo HEAD after documentation: `d905eca` on `main`.
+- Code fix commit: `2a69885` (`fix: persist skipped phone prompt for invite flows`).
+- SecureCall bug fixed:
+  - `Confirm Your Phone Number` dialog reappeared after `Skip` and blocked invite/contact deeplinks on fresh installs.
+  - `Skip` now persists `phone_number_skipped=true`; future launches/deeplinks bypass the prompt and re-register without phone.
+- SecureCall version:
+  - Base `versionCode` bumped to `68`.
+  - Installed arm64 split reports `versionCode=68001`.
+  - `versionName` remains `1.0.40` with flavor suffixes.
+- Desktop artifacts ready:
+  - `/Users/gio/Desktop/SecureCall-LATEST.aab`
+  - `/Users/gio/Desktop/SecureCall-LATEST.apk`
+  - `/Users/gio/Desktop/SecureCall-Pro-LATEST.apk`
+  - `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`
+  - `/Users/gio/Desktop/securecall_v1.0.40_v68_checksums.txt`
+- SHA256:
+  - AAB: `e027a516c1f11b43c6a5fc17abed28778855407dab33e6a938038fbcccba1b9c`
+  - Free APK: `b0d64a6bed4372385adafa02fd5138feab753c48241c5cbb5941bed54f03163c`
+  - Pro APK: `4913d95ed1b03bbe1cd7e0af35ef403167faf8f13c2451d94ab4dd028cf63be9`
+  - Premium APK: `f97540cf95bf86ba7523fef4f846a88e519758d7aa1cdf6911cfa67457892c4b`
+- Installed packages verified on all three attached devices:
+  - Tab S4 `ce12182c68644439037e`: `com.securecall.app.free`, `com.stealthx.securechat`, `com.stealthx.chameleon`
+  - S7 `ce10160adc00152604`: `com.securecall.app.pro`, `com.stealthx.securechat`, `com.stealthx.chameleon`
+  - S10 `RF8N313QMFL`: `com.securecall.app.premium`, `com.stealthx.securechat`, `com.stealthx.chameleon`
+- SecureCall device IDs:
+  - S4 Free: `android-72edbb14`
+  - S7 Pro: `android-a5941f39`
+  - S10 Premium: `android-b0625103`
+- Contacts verified:
+  - S4 has S7.
+  - S7 has S4 and S10.
+  - S10 has S7.
+- E2E SecureCall results:
+  - S7 Pro → S4 Free: PASS. Incoming UI shown; accept works; server logged `INVITE`, `ACCEPT`, `OFFER`, `ANSWER`; active encrypted call shown.
+  - S7 Pro → S10 Premium: PASS. Incoming UI shown; accept works; server logged `INVITE`, `ACCEPT`, `OFFER`, `ANSWER`; active encrypted call shown.
+- GitHub Release:
+  - Release `v1.0.40` title: `SecureCall v1.0.40 — vC68 Hotfix`.
+  - Assets present: Free/Pro/Premium APK splits for `arm64-v8a`, `armeabi-v7a`, `x86_64`, `SecureCall-LATEST.aab`, `securecall_v1.0.40_v68_checksums.txt`.
+  - Removed stale `securecall_v1.0.40_v67_checksums.txt` and duplicate `app-free-release.aab`.
+  - Verified HTTP 200 for main download URLs.
+- IFR wallet read-only test:
+  - Wallet: `0x319665559c0c878D46a17371212e68fA3c5aEC1C`
+  - `lockedBalance = 0 IFR` via `https://ethereum.publicnode.com`
+  - Result: `insufficient`; no Pro/Elite unlock.
+  - Test did not persist wallet binding.
+- Launch-hardening note:
+  - Configured RPC endpoint `https://eth.llamarpc.com` currently returns Cloudflare 403; fallback provider works. Replace/remove this endpoint before final hardening.
+- Current git status after this entry should be clean after committing/pushing this Bridge update.
+
