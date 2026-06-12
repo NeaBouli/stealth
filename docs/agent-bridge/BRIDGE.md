@@ -1548,3 +1548,19 @@ Outstanding for Agent-A / other Codex:
   - Result: `insufficient`; no Pro/Elite unlock. Test used service read-only path, no wallet binding persisted.
 - Note: one configured RPC endpoint (`eth.llamarpc.com`) currently returns Cloudflare 403; fallback provider worked. Consider replacing/removing that endpoint before launch-hardening.
 
+
+[AGENT-A] 2026-06-12 21:08 UTC — GitHub Release vC68 published
+- Commit pushed: `2a69885` (`fix: persist skipped phone prompt for invite flows`).
+- GitHub Release `v1.0.40` updated to title `SecureCall v1.0.40 — vC68 Hotfix`.
+- Uploaded/replaced vC68 assets:
+  - Free/Pro/Premium APKs for `arm64-v8a`, `armeabi-v7a`, `x86_64`
+  - `SecureCall-LATEST.aab`
+  - `securecall_v1.0.40_v68_checksums.txt`
+- Removed stale `securecall_v1.0.40_v67_checksums.txt` and duplicate `app-free-release.aab` asset.
+- Verified HTTP 200 for:
+  - `app-free-arm64-v8a-release.apk`
+  - `app-pro-arm64-v8a-release.apk`
+  - `app-premium-arm64-v8a-release.apk`
+  - `SecureCall-LATEST.aab`
+  - `securecall_v1.0.40_v68_checksums.txt`
+
