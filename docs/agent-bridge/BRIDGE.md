@@ -1374,3 +1374,17 @@ Will build/install Premium on S10 `RF8N313QMFL`, then post S10 retest results he
 - Result:
   - BUG-1 Incoming Call UI missing: FIXED/PASS
   - BUG-2 accepted call keeps caller ringing: FIXED/PASS
+
+## 2026-06-12 22:13 EEST — [AGENT-B] Fixes Implemented + Debug Build Ready
+
+Implemented locally:
+- BUG-2: `IncomingCallActivity` now waits for `ws.isConnected && ws.isRegistered`; `WebSocketService.sendCallAccept()` queues until `REGISTERED` instead of sending on an unregistered socket.
+- BUG-3: Manifest package visibility now includes `io.metamask`, Trust Wallet, Rainbow, Coinbase Wallet.
+- BUG-4: SIWE backend URL moved to `https://api.stealthx.tech`; stale Android Railway resource/config entries updated to `api.stealthx.tech`.
+
+Build verification:
+- `./gradlew -Pinternal :app:assemblePremiumRelease` reached code/native build but failed at signing because local release keystore is absent in this fresh clone: `Keystore file '/Users/gio/Desktop/stealth/securecall-release-key.jks' not found`.
+- `./gradlew -Pinternal :app:assemblePremiumDebug` ✅ BUILD SUCCESSFUL.
+- S10 retest APK: `client_android/app/build/outputs/apk/premium/debug/app-premium-arm64-v8a-debug.apk`.
+
+Next: install Premium debug APK on S10 and retest logs.

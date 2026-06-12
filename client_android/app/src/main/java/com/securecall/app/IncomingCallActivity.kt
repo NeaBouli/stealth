@@ -176,21 +176,22 @@ class IncomingCallActivity : AppCompatActivity() {
 
         val ws = com.securecall.app.net.WebSocketService.instance
 
-        // If launched from FCM, WS may be connected but not REGISTERED yet.
-        // The backend rejects CALL_ACCEPT until REGISTERED, so wait for both states.
-        if (fromFcm && (ws == null || !ws.isConnected || !ws.isRegistered)) {
-            Log.d(TAG, "FCM accept — waiting for WS registration before CALL_ACCEPT")
-            com.securecall.app.debug.SecLogManager.log("CALL", "FCM accept — waiting for WS registration")
+        // CALL_ACCEPT is only valid after the server REGISTERED ack.
+        // A connected-but-unregistered socket gets `not_registered` from the server.
+        if (ws == null || !ws.isConnected || !ws.isRegistered) {
+            Log.d(TAG, "WS not registered — waiting before CALL_ACCEPT")
+            com.securecall.app.debug.SecLogManager.log("CALL", "Accept waiting for WS registration")
             waitForWsAndAccept()
         } else {
-            ws?.sendCallAccept(sessionId)
+            ws.sendCallAccept(sessionId)
             launchCallActivity()
         }
     }
 
     /**
-     * Wait for WS to reconnect and receive REGISTERED, then send CALL_ACCEPT.
-     * Polls every 500ms. If timeout, queue CALL_ACCEPT and launch the call UI.
+     * Wait for WS to reconnect/register (up to 15s), then send CALL_ACCEPT.
+     * Polls every 500ms. If timeout, queue CALL_ACCEPT if a service exists,
+     * then launch CallActivity so the user is not stuck on ringing UI.
      */
     private fun waitForWsAndAccept() {
         val handler = android.os.Handler(android.os.Looper.getMainLooper())
