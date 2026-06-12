@@ -1341,3 +1341,11 @@ Will build/install Premium on S10 `RF8N313QMFL`, then post S10 retest results he
 [AGENT-A] network_security_config Domain auf api.stealthx.tech aktualisiert; Pins aus Live-Zertifikat berechnet: Leaf + Let's Encrypt R12, Rotation/Expiration 2026-08-14.
 [AGENT-A] Finaler Build: bundleFreeRelease + assemblePremiumRelease erfolgreich. S7 + Tab S4 final vC66001 installiert.
 [AGENT-A] Desktop final: /Users/gio/Desktop/SecureCall-LATEST.aab SHA256 a2e4baa8de8f10aa4ba336a801d8ce8c61b102fa8fcdc1a0b2ec138b9d1a5f2e; /Users/gio/Desktop/SecureCall-Premium-LATEST.apk SHA256 df531077541ab4ca6de27539756abaca055195f2e65bd4c33bb3c3e82439e120.
+
+## 2026-06-12 18:55 UTC — Agent-A Hetzner deploy + reconnect retest
+
+[AGENT-A] Backend Rate-Limit-Fix auf Hetzner deployed: /opt/stealthx/signaling/src/server.js mit Backup ersetzt.
+[AGENT-A] Remote npm test auf Hetzner erfolgreich; pm2 reload ecosystem.config.js --update-env erfolgreich; signaling online.
+[AGENT-A] Healthcheck https://api.stealthx.tech/health ok nach Reload.
+[AGENT-A] S7 Reconnect-Retest nach Deploy: SecureCall ist wieder verbunden; UI zeigt Disconnect-Dialog statt Disconnected. Logcat zeigt keinen HTTP 429 mehr.
+[AGENT-A] Automatischer E2E Call-Retest bleibt eingeschraenkt, weil Tab S4 Pattern-locked ist und per ADB nicht entsperrt werden kann.
