@@ -177,9 +177,9 @@ console.log("\n[Suite] REGISTER_FCM_TOKEN handler");
   assert(lastMsg(ws).type === "REGISTER_FCM_TOKEN_ACK", "valid → ACK");
   assert(ctx.fcmTokens.get("bob") === "fcm-token-abc", "fcmTokens Map updated");
 
-  // FCM token cleared on DEREGISTER
+  // FCM token preserved on DEREGISTER so offline incoming calls can still wake the app
   ctx.handlers.DEREGISTER(ws, connId, {});
-  assert(!ctx.fcmTokens.has("bob"), "FCM token cleared on DEREGISTER");
+  assert(ctx.fcmTokens.get("bob") === "fcm-token-abc", "FCM token preserved on DEREGISTER");
   assert(!ctx.clientIds.has("bob"), "clientId removed on DEREGISTER");
 }
 

@@ -540,7 +540,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         registerFailCount = 0
         Log.d("WS_SERVICE", "REGISTERED received for $ackedClientId — flushing ${pendingCallQueue.size} pending calls")
         com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Registered — ${pendingCallQueue.size} queued calls")
-        // Send FCM token now that the server knows who we are.
+        // Send any cached FCM token immediately now that the server knows who
+        // we are, then refresh asynchronously for first install/token rotation.
+        com.securecall.app.fcm.FcmTokenManager.sendStoredTokenToBackend(this)
         com.securecall.app.fcm.FcmTokenManager.ensureTokenRegistered(this)
         IceServerFetcher.prefetch()
         pendingCallQueue.forEach { it.invoke() }

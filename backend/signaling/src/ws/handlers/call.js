@@ -47,7 +47,14 @@ module.exports = function callHandlers(ctx) {
         });
         console.log("[ROUTING] INVITE:", myClientId, "->", targetClientId, "session:", sessionId);
         ws.send(JSON.stringify({ type: "CALL_INVITE_ACK", ok: true, sessionId, from: myClientId, to: targetClientId }));
-        sendToClient(targetClientId, { type: "CALL_INVITE", sessionId, from: myClientId, to: targetClientId, pubKey: msg.pubKey, callerPhone: msg.callerPhone || "" });
+        const wsDelivered = sendToClient(targetClientId, { type: "CALL_INVITE", sessionId, from: myClientId, to: targetClientId, pubKey: msg.pubKey, callerPhone: msg.callerPhone || "" });
+        console.log("[ROUTING] INVITE WS delivery:", wsDelivered ? "sent" : "failed", "target:", targetClientId, "session:", sessionId);
+        const fcmToken = fcmTokens.get(targetClientId) || fcmTokens.get(msg.to);
+        if (fcmToken && fcm.isInitialized()) {
+          fcm.sendCallInvitePush(fcmToken, sessionId, myClientId, msg.callerPhone || "")
+            .then((ok) => console.log("[ROUTING] INVITE push backup:", ok ? "sent" : "failed", "target:", targetClientId, "session:", sessionId))
+            .catch((err) => console.warn("[ROUTING] INVITE push backup error:", err.message));
+        }
       } else {
         const fcmToken = fcmTokens.get(targetClientId) || fcmTokens.get(msg.to);
         if (fcmToken && fcm.isInitialized()) {

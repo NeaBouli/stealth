@@ -27,6 +27,7 @@ object FcmTokenManager {
     private const val KEY_TOKEN = "fcm_token"
 
     fun ensureTokenRegistered(context: Context) {
+        sendStoredTokenToBackend(context)
         try {
             FirebaseMessaging.getInstance().token
                 .addOnSuccessListener { token ->
@@ -53,6 +54,10 @@ object FcmTokenManager {
         return prefs.getString(KEY_TOKEN, null)
     }
 
+    fun sendStoredTokenToBackend(context: Context) {
+        getStoredToken(context)?.let { sendTokenToBackend(it) }
+    }
+
     private fun saveToken(context: Context, token: String) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
@@ -63,12 +68,10 @@ object FcmTokenManager {
     private fun sendTokenToBackend(token: String) {
         val ws = WebSocketService.instance
         if (ws != null && ws.isRegistered) {
-            val json = """
-                {
-                  "type": "REGISTER_FCM_TOKEN",
-                  "fcmToken": "$token"
-                }
-            """.trimIndent()
+            val json = org.json.JSONObject()
+                .put("type", "REGISTER_FCM_TOKEN")
+                .put("fcmToken", token)
+                .toString()
             ws.sendMessage(json)
             Log.d(TAG, "REGISTER_FCM_TOKEN sent to backend")
         } else {

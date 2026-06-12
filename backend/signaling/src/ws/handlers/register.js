@@ -59,9 +59,7 @@ module.exports = function registerHandlers(ctx) {
             try { oldClient.ws.close(1000, "Superseded"); } catch (e) {}
           }
           if (fcmTokens.has(msg.clientId)) {
-            fcmTokens.delete(msg.clientId);
-            saveFcmTokens();
-            console.log("[REGISTER] Cleared FCM token on supersede for", msg.clientId);
+            console.log("[REGISTER] Keeping existing FCM token on supersede for", msg.clientId);
           }
         }
         clientIds.delete(msg.clientId);
@@ -142,7 +140,9 @@ module.exports = function registerHandlers(ctx) {
         }
       }
       if (clientIds.get(myClientId) === connId) clientIds.delete(myClientId);
-      fcmTokens.delete(myClientId);
+      // Keep the last known FCM token. Deregister/log-out only means the current
+      // WebSocket session ended; preserving push reachability lets offline
+      // incoming calls wake the app after reconnects, OS kills, or network swaps.
       const client = clients.get(connId);
       if (client) { client.clientId = null; client.phoneNumber = null; }
       console.log("[DEREGISTER] Client removed:", myClientId);

@@ -52,9 +52,10 @@ function initFcm() {
  * @param {string} fcmToken - The target device's FCM token
  * @param {string} sessionId - The call session ID
  * @param {string} callerClientId - The caller's client ID
+ * @param {string} callerPhone - Optional caller phone for local contact resolution
  * @returns {Promise<boolean>} true if sent successfully
  */
-async function sendCallInvitePush(fcmToken, sessionId, callerClientId) {
+async function sendCallInvitePush(fcmToken, sessionId, callerClientId, callerPhone = "") {
   if (!initialized || !admin) {
     console.warn("[FCM] Not initialized, cannot send push");
     return false;
@@ -66,6 +67,8 @@ async function sendCallInvitePush(fcmToken, sessionId, callerClientId) {
       type: "CALL_INVITE",
       sessionId: sessionId,
       callerName: callerClientId,
+      callerClientId: callerClientId,
+      callerPhone: callerPhone,
     },
     android: {
       priority: "high",

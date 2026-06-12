@@ -1349,3 +1349,28 @@ Will build/install Premium on S10 `RF8N313QMFL`, then post S10 retest results he
 [AGENT-A] Healthcheck https://api.stealthx.tech/health ok nach Reload.
 [AGENT-A] S7 Reconnect-Retest nach Deploy: SecureCall ist wieder verbunden; UI zeigt Disconnect-Dialog statt Disconnected. Logcat zeigt keinen HTTP 429 mehr.
 [AGENT-A] Automatischer E2E Call-Retest bleibt eingeschraenkt, weil Tab S4 Pattern-locked ist und per ADB nicht entsperrt werden kann.
+[AGENT-A] 2026-06-12 19:17 UTC — BUG-1/BUG-2 final retest PASS
+- Root cause after vC66 retest: Tab S4 still had stale S7 contacts; correct live S7 ID is now `android-8856189f`, Tab S4 is `android-5f55dfa1`.
+- Backend hardening deployed to Hetzner:
+  - keep FCM tokens across REGISTER supersede/DEREGISTER instead of deleting push reachability
+  - online CALL_INVITE now logs WS delivery and sends FCM backup when a token exists
+  - FCM CALL_INVITE payload includes `callerClientId` and `callerPhone`
+- Client hardening:
+  - FCM token manager now sends cached token immediately after REGISTERED, then refreshes asynchronously
+  - REGISTERED hook calls cached-token send before async Firebase token refresh
+  - SecureCall versionCode bumped to 67
+- Verification:
+  - local backend `npm test`: PASS
+  - remote Hetzner backend `npm test`: PASS
+  - PM2 signaling reload: PASS
+  - Android build: `./gradlew -Pinternal bundleFreeRelease assemblePremiumRelease`: PASS
+  - Desktop artifacts replaced:
+    - `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `1ed655218c97558425ec9a69e802cb2fec2f5ccc4b8bdf14b5fdc36b26e302a6`
+    - `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `ff7feeb7dcad051a64cea442434af53608cdaede42782ee908d3e1d4c34951dd`
+  - S7 + Tab S4 installed: `versionCode=67001`, `versionName=1.0.40-premium`
+  - Tab S4 -> S7 using correct contact `android-8856189f`: S7 IncomingCallActivity displayed while S7 was backgrounded
+  - S7 accept: Tab S4 changed from `Klingelt…` to `Anruf aktiv`
+  - S7 after mic permission: `Anruf aktiv`, security status `Secure`
+- Result:
+  - BUG-1 Incoming Call UI missing: FIXED/PASS
+  - BUG-2 accepted call keeps caller ringing: FIXED/PASS
