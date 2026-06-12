@@ -1012,3 +1012,14 @@ Ergebnis BUG-029 Retest:
 - SecureCall landing pricing now links the Pro/Premium IFR threshold rows directly to the official Uniswap $IFR token page.
 - SecureCall IFR box CTA simplified to `Buy $IFR on Uniswap`; stale ifrunit public purchase wording removed.
 - Platform product cards now use flex-column layout; SecureChat card button aligns to the same bottom baseline as SecureCall and Chameleon.
+
+## 2026-06-12 00:22 UTC — Codex BUG-029 WireGuard Retest
+
+- Hetzner WireGuard test profile created/used on `wg-bug029` (`10.77.29.1/24`, UDP `51829`).
+- Server firewall blocker fixed: `ufw allow 51829/udp` and route allow for `10.77.29.0/24` via `wg-bug029 -> eth0`.
+- SecureCall S7 internal VPN config accepted and connected to `135.181.254.229:51829`.
+- Server `wg show wg-bug029` confirmed S7 peer endpoint, handshake, and transfer counters.
+- SecureCall status showed `Connected: 135.181.254.229`; backend also logged one S7 registration through VPN IP `10.77.29.2`.
+- Call attempt exposed a separate stale-contact issue: S7 contact `CHEF` routed to old Tab ID `android-7f36a6b1`, while Tab S4 currently registers as `android-5f55dfa1`.
+- Backend observed `INVITE: android-8856189f -> android-7f36a6b1`; Tab S4 foreground UI did not show the incoming call for the current `android-5f55dfa1` registration.
+- BUG-029 is no longer blocked by missing WireGuard config. Remaining retest requirement: refresh S7<->Tab contact exchange/current device ID, then rerun call with S7 VPN active and verify `INVITE` routes to the current Tab ID.
