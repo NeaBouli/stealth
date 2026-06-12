@@ -1023,3 +1023,17 @@ Ergebnis BUG-029 Retest:
 - Call attempt exposed a separate stale-contact issue: S7 contact `CHEF` routed to old Tab ID `android-7f36a6b1`, while Tab S4 currently registers as `android-5f55dfa1`.
 - Backend observed `INVITE: android-8856189f -> android-7f36a6b1`; Tab S4 foreground UI did not show the incoming call for the current `android-5f55dfa1` registration.
 - BUG-029 is no longer blocked by missing WireGuard config. Remaining retest requirement: refresh S7<->Tab contact exchange/current device ID, then rerun call with S7 VPN active and verify `INVITE` routes to the current Tab ID.
+
+## 2026-06-12 00:40 UTC — Codex BUG-029 Contact Refresh Follow-up
+
+- S7 SecureCall contact `CHEF` was deleted via UI long-press → `Delete Contact` → confirm. Verification: contacts screen shows `Noch keine Kontakte`; old `android-7f36a6b1` no longer present.
+- Tab S4 package check: only `com.securecall.app.premium` installed on both S7 and Tab S4.
+- ADB direct contact injection is not possible on installed Premium release: `run-as` blocked (`package not debuggable`), `CallActivity` and `GhostVpnService` correctly reject shell start because they are not exported.
+- Found two app issues that blocked ADB-only contact refresh:
+  - `securecall://add-contact` saved into legacy `securecall_prefs.saved_contacts`, but the active contacts screen reads `ContactRepository` (`securecall_contacts.contacts_json`).
+  - Contacts FAB overlapped the bottom navigation on S7, so tapping the visible `Kontakt hinzufügen` FAB hit the Settings nav item instead.
+- Code fix applied and verified:
+  - Deep-link Add Contact / Call Now now saves through `ContactRepository`.
+  - Contacts FAB bottom layout margin fixed so it sits above bottom navigation.
+  - Verification: `./gradlew --no-daemon testDebugUnitTest assembleDebug` ✅ BUILD SUCCESSFUL.
+- Remaining for physical BUG-029 retest: install updated APK/build on S7, use `securecall://add-contact?id=android-5f55dfa1&name=CHEF` or fixed FAB to re-add current Tab ID, then call with VPN active.

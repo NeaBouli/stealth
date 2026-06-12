@@ -25,6 +25,8 @@ import android.view.View;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 
 import com.securecall.app.audio.capture.AudioCapturePlaceholder;
+import com.securecall.app.data.Contact;
+import com.securecall.app.data.ContactRepository;
 import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
 import com.securecall.app.security.SecurityEnforcer;
 import com.securecall.app.init.AppInit;
@@ -249,15 +251,20 @@ public class MainActivity extends AppCompatActivity {
             .setTitle("\uD83D\uDD12 Add Contact")
             .setMessage("Add " + displayName + " as a SecureCall contact?\n\nID: " + inviterSecureId)
             .setPositiveButton("Add Contact", (d, w) -> {
-                // Save inviter as a contact
+                // Save inviter as a contact in the active contact repository.
                 SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
-                java.util.Set<String> contacts = new java.util.HashSet<>(
-                        prefs.getStringSet("saved_contacts", new java.util.HashSet<>()));
-                if (!contacts.contains(inviterSecureId)) {
-                    contacts.add(inviterSecureId);
-                    prefs.edit().putStringSet("saved_contacts", contacts).apply();
-                    Log.d(TAG, "Inviter saved as contact: " + inviterSecureId);
-                }
+                ContactRepository.INSTANCE.save(this, new Contact(
+                        java.util.UUID.randomUUID().toString(),
+                        displayName,
+                        inviterSecureId,
+                        System.currentTimeMillis(),
+                        false,
+                        null,
+                        false,
+                        false
+                ));
+                ContactsFragment.Companion.invalidateCache();
+                Log.d(TAG, "Inviter saved as contact: " + inviterSecureId);
                 android.widget.Toast.makeText(this, displayName + " added!", android.widget.Toast.LENGTH_SHORT).show();
 
                 // Notify backend
@@ -266,10 +273,17 @@ public class MainActivity extends AppCompatActivity {
             .setNeutralButton("Call Now", (d, w) -> {
                 // Save + call immediately
                 SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
-                java.util.Set<String> contacts = new java.util.HashSet<>(
-                        prefs.getStringSet("saved_contacts", new java.util.HashSet<>()));
-                contacts.add(inviterSecureId);
-                prefs.edit().putStringSet("saved_contacts", contacts).apply();
+                ContactRepository.INSTANCE.save(this, new Contact(
+                        java.util.UUID.randomUUID().toString(),
+                        displayName,
+                        inviterSecureId,
+                        System.currentTimeMillis(),
+                        false,
+                        null,
+                        false,
+                        false
+                ));
+                ContactsFragment.Companion.invalidateCache();
                 notifyInviteAccepted(inviterSecureId, prefs.getString("client_id", ""));
 
                 Intent callIntent = new Intent(this, CallActivity.class);
