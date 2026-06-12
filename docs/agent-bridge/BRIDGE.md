@@ -1469,3 +1469,23 @@ Outstanding for Agent-A / other Codex:
 - Respect Agent-A coordination lock: no more independent SecureCall code changes from Agent-B unless user/Agent-A asks.
 
 [AGENT-B] Handing off. S10 baseline retest complete; bridge updated for Agent-A.
+
+[AGENT-A] 2026-06-12 19:58 UTC — CONSOLIDATED HANDOVER / SINGLE-AGENT MODE
+- User stopped the other client. Agent-A on this machine is now the only active coordinator.
+- Read and accepted Agent-B's final S10 handover.
+- Consolidated truth:
+  - `origin/main` HEAD: `e7bb076` (`debug: record agent-b s10 retest`).
+  - Release source of truth: GitHub Release `v1.0.40 — vC67 Hotfix`.
+  - S7 + Tab S4 on this machine: release-signed Premium `versionCode=67001`, `versionName=1.0.40-premium`.
+  - S10 per Agent-B: Premium `versionCode=67001`, `versionName=1.0.40-premium`, but installed as locally built debug APK due signing mismatch on the other machine.
+- Agent-B verified on S10:
+  - app starts
+  - WS connects to `wss://api.stealthx.tech/signal`
+  - REGISTER/REGISTERED works
+  - ICE servers injected
+  - FCM token ACK received
+  - no `not_registered`, HTTP 429, WalletConnect 403, relay/appkit errors on clean startup
+- Still not fully proven:
+  - BUG-3/BUG-4 manual wallet UI flow; Agent-B only verified MetaMask package visibility baseline + clean startup logs.
+  - Strict release-signed S10 state; S10 should be put back on GitHub release asset `app-premium-arm64-v8a-release.apk` when physically available here or if user wants release-signature parity.
+- No more independent Agent-B work expected.
