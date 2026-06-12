@@ -1079,3 +1079,13 @@ Ergebnis BUG-029 Retest:
   - `./gradlew --no-daemon assembleFreeDebug` ✅ BUILD SUCCESSFUL.
   - `./gradlew --no-daemon bundleFreeRelease` ✅ BUILD SUCCESSFUL.
   - New AAB copied to `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+
+## 2026-06-12 08:20 UTC — Codex: Play Deep Link Domain Still Failing
+- User still sees Play Console Deep Links warning for `stealthx.tech` and exact `/invite/`, selectedVersionCode `62002`.
+- Browser plugin `iab` unavailable in this Codex session; opened the Play Console URL in Gio's macOS browser via `open`.
+- Live checks:
+  - `https://stealthx.tech/.well-known/assetlinks.json` returns HTTP 200 and is visible via Google's Digital Asset Links statements API.
+  - Current live assetlinks contains only local upload/release cert fingerprint `1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D`.
+- Likely remaining cause: Google Play App Signing uses a different App signing key certificate for store-delivered APKs. Play domain verification requires that SHA-256 in assetlinks, not only the upload/release fingerprint.
+- Required next input from Gio: Play Console -> Setup -> App integrity -> App signing key certificate -> SHA-256. Add it to `website/.well-known/assetlinks.json` for `com.securecall.app.free`.
+- Also note selected Play version is `62002` (versionCode 62 ABI split). Newer local Billing build is `versionCode 63`; Play Deep Links screen will not reflect it until AAB upload/processing.
