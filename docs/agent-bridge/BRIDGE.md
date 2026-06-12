@@ -1645,3 +1645,9 @@ Outstanding for Agent-A / other Codex:
 - Verification:
   - `npm test` in `backend/signaling`: PASS.
   - Live read-only `verifyIfrLock(0x80fF...6958)`: `{"success":false,"error":"insufficient","lockedAmount":"0"}`.
+- Commit/deploy:
+  - Commit pushed: `0906426` (`fix: harden IFR RPC verification`).
+  - Deployed `src/services/ifr.js` to Hetzner `/opt/stealthx/signaling/src/services/ifr.js`.
+  - PM2 reloaded successfully; signaling process online.
+  - Healthcheck after reload: `{"status":"ok"}`.
+  - Fresh post-reload PM2 logs show no new persistent `JsonRpcProvider failed to detect network` retry spam.
