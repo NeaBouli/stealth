@@ -1424,3 +1424,48 @@ Next: install Premium debug APK on S10 and retest logs.
   3. Verify S10 shows `versionCode=67001`, `versionName=1.0.40-premium`.
   4. Retest/report BUG-3/BUG-4 only if requested, and document results in Bridge.
 - If you find a new code issue, write the finding to Bridge first and wait for Agent-A/user direction before patching.
+
+## 2026-06-12 22:55 EEST — [AGENT-B] S10 vC67 Retest
+
+S10 `RF8N313QMFL` updated for retest:
+- Existing release-signed `com.securecall.app.premium` vC65001 could not be updated with debug APK: `INSTALL_FAILED_UPDATE_INCOMPATIBLE`.
+- Uninstalled only `com.securecall.app.premium`, then installed `client_android/app/build/outputs/apk/premium/debug/app-premium-arm64-v8a-debug.apk`.
+- Installed version now: `versionCode=67001`, `versionName=1.0.40-premium`.
+- MetaMask still installed: `package:io.metamask`.
+
+S10 startup retest:
+- SecureCall launched successfully.
+- PID log shows `WebSocket connected — registering client`.
+- REGISTER sent for new S10 client `android-7437425a`.
+- Server replied `REGISTERED` from `wss://api.stealthx.tech/signal`.
+- `onRegisterAck()` flushed `0` pending calls and injected `4` ICE servers from REGISTERED.
+- FCM token registration received `REGISTER_FCM_TOKEN_ACK ok=true`.
+- No SecureCall PID-log hits for `not_registered`, HTTP `429`, WalletConnect `403`, or relay/appkit errors after clean start.
+
+Result:
+- S10 baseline WS/register path: PASS.
+- S10 confirms new production host path: PASS (`api.stealthx.tech`, not Railway).
+- S10 cannot yet prove Wallet UI selection without manual interaction, but Android package baseline confirms MetaMask installed and manifest now has wallet visibility queries.
+
+## 2026-06-12 22:56 EEST — [AGENT-B] Final Handover to Agent-A / Other Codex
+
+S10 status:
+- Device: `RF8N313QMFL`.
+- Installed app: `com.securecall.app.premium`.
+- Installed version: `versionCode=67001`, `versionName=1.0.40-premium`.
+- Note: S10 is currently on locally built Premium debug APK because the release-signed vC67 APK was not present on this machine; release-signed vC65001 had to be uninstalled due signature mismatch.
+
+Verified on S10:
+- App starts.
+- WS connects to `wss://api.stealthx.tech/signal`.
+- REGISTER / REGISTERED path works.
+- ICE servers are received from REGISTERED and injected.
+- FCM token registration returns ACK.
+- No `not_registered`, HTTP `429`, WalletConnect `403`, or relay/appkit errors in clean startup PID log.
+
+Outstanding for Agent-A / other Codex:
+- If strict release-signature state is required on S10, install GitHub Release `v1.0.40` asset `app-premium-arm64-v8a-release.apk` over/after removing debug build and verify `versionCode=67001`.
+- BUG-3/BUG-4 manual UI flow was not completed by Agent-B; only package baseline + clean startup logs verified.
+- Respect Agent-A coordination lock: no more independent SecureCall code changes from Agent-B unless user/Agent-A asks.
+
+[AGENT-B] Handing off. S10 baseline retest complete; bridge updated for Agent-A.
