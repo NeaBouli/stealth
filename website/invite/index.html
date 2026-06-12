@@ -70,7 +70,11 @@
     (function() {
         var path = window.location.pathname;
         var parts = path.split('/').filter(Boolean);
-        var secureId = parts.length >= 2 && parts[0] === 'invite' ? parts[1] : null;
+        var params = new URLSearchParams(window.location.search);
+        var secureId = params.get('id');
+        if (!secureId && parts.length >= 2 && parts[0] === 'invite') {
+            secureId = parts[1];
+        }
         // Fallback: read from hash (set by 404.html SPA router)
         if (!secureId && window.location.hash) {
             secureId = window.location.hash.substring(1);
@@ -79,7 +83,6 @@
         if (secureId) {
             document.getElementById('secureId').textContent = secureId;
             // Read optional name from URL params
-            var params = new URLSearchParams(window.location.search);
             var senderName = params.get('name');
             if (senderName) {
                 document.getElementById('title').textContent = senderName + ' invited you!';
@@ -93,7 +96,7 @@
             // Set deep link for "Open in SecureCall" button (custom scheme + fallback)
             var nameParam = senderName ? '&name=' + encodeURIComponent(senderName) : '';
             var customSchemeLink = 'securecall://add-contact?id=' + secureId + nameParam;
-            var httpsLink = 'https://stealthx.tech/invite/' + secureId + (senderName ? '?name=' + encodeURIComponent(senderName) : '');
+            var httpsLink = 'https://stealthx.tech/invite/?id=' + encodeURIComponent(secureId) + (senderName ? '&name=' + encodeURIComponent(senderName) : '');
             document.getElementById('openAppLink').href = customSchemeLink;
             document.getElementById('openAppLink').addEventListener('click', function(e) {
                 e.preventDefault();

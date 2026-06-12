@@ -1037,3 +1037,32 @@ Ergebnis BUG-029 Retest:
   - Contacts FAB bottom layout margin fixed so it sits above bottom navigation.
   - Verification: `./gradlew --no-daemon testDebugUnitTest assembleDebug` ✅ BUILD SUCCESSFUL.
 - Remaining for physical BUG-029 retest: install updated APK/build on S7, use `securecall://add-contact?id=android-5f55dfa1&name=CHEF` or fixed FAB to re-add current Tab ID, then call with VPN active.
+
+## 2026-06-12 06:35 UTC — Codex Final Pre-Live Audit Started
+
+- Codex is primary auditor; CC should use this Bridge as shared state and append counter-findings or validation notes below this section.
+- Scope: Stealth/SecureCall, SecureChat, Chameleon repos; public websites, wiki pages, README/GitHub structure, backend/signaling, Android build/version/link consistency, purchase/download flows, release docs, and known blockers.
+- Audit method: severity-ranked `CODEX_AUDIT.md` style findings with concrete file/line references, plus immediate fixes only for clearly safe content/link/version/documentation defects.
+- Current known external retest item entering audit: BUG-029 needs updated APK installed on S7 before final physical VPN call retest.
+
+## 2026-06-12 07:25 UTC — Codex: Play Store Icons + App Links Finalized
+- User reported Play Console app-link issue: `stealthx.tech` domain not confirmed and `/invite/` web link problem.
+- Root cause found: app generated `https://stealthx.tech/invite/{id}` links; GitHub Pages returns HTTP 404 for dynamic invite paths even though 404.html JS redirects. Google App Links requires real HTTP success.
+- Fix implemented:
+  - SecureCall manifest changed from `android:pathPrefix="/invite/"` to exact `android:path="/invite/"`.
+  - New app links use `https://stealthx.tech/invite/?id={secureId}`; this path returns HTTP 200.
+  - MainActivity accepts query format plus legacy `/invite/{id}` and `securecall://add-contact`.
+  - Contacts invite flow, dialer invite strings, invite landing pages and beta docs updated.
+- Store/app icons:
+  - Website brand icons from `website/assets/brand/` injected into Android launcher resources.
+  - Play Console 512x512 icons exported to `/Users/gio/Desktop/StealthX-PlayStore-Icons/`.
+  - SecureChat and Chameleon release APKs rebuilt and existing GitHub release assets clobbered with icon-aligned builds.
+- SecureCall final build:
+  - versionName `1.0.39`, versionCode `62`.
+  - `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `87e828cbc087ed2726de954f47c899a1e4e9252861d70a544c0ff065fa778edb`.
+  - `/Users/gio/Desktop/SecureCall-LATEST.apk` SHA256 `cd8d488347ee33f62bdc01d3a2db7bf2851363e54c241f5d430aa099cdacbd42`.
+  - GitHub release created: https://github.com/NeaBouli/stealth/releases/tag/v1.0.39
+- Verification:
+  - `curl -I https://stealthx.tech/invite/?id=android-test` returns HTTP 200.
+  - `curl -I https://stealthx.tech/.well-known/assetlinks.json` returns HTTP 200, content-type `application/json`.
+  - Note: if Play still says domain not confirmed after v1.0.39 upload, add the Play App Signing SHA-256 certificate fingerprint from Play Console to `website/.well-known/assetlinks.json`; current file contains the existing release/upload fingerprint.

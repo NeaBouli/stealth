@@ -115,10 +115,13 @@
             return;
         }
 
-        // --- Legacy: SecureCall invite via /invite/<sxId>?name= ---
+        // --- SecureCall invite via /invite/?id=<sxId>; legacy /invite/<sxId> remains supported. ---
         var path = window.location.pathname;
         var parts = path.split('/').filter(Boolean);
-        var secureId = parts.length >= 2 && parts[0] === 'invite' ? parts[1] : null;
+        var secureId = params.get('id');
+        if (!secureId && parts.length >= 2 && parts[0] === 'invite') {
+            secureId = parts[1];
+        }
         if (!secureId && window.location.hash) {
             secureId = window.location.hash.substring(1);
         }
@@ -136,7 +139,7 @@
             try { localStorage.setItem('pendingInviteSecureId', secureId); } catch(e) {}
             var nameParam = senderName ? '&name=' + encodeURIComponent(senderName) : '';
             var customSchemeLink = 'securecall://add-contact?id=' + secureId + nameParam;
-            var httpsLink = 'https://stealthx.tech/invite/' + secureId + (senderName ? '?name=' + encodeURIComponent(senderName) : '');
+            var httpsLink = 'https://stealthx.tech/invite/?id=' + encodeURIComponent(secureId) + (senderName ? '&name=' + encodeURIComponent(senderName) : '');
             document.getElementById('openAppLink').href = customSchemeLink;
             document.getElementById('openAppLink').addEventListener('click', function(e) {
                 e.preventDefault();

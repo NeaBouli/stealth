@@ -791,7 +791,7 @@ class ContactsFragment : Fragment() {
 
         // Build invite link with optional name param
         val nameParam = java.net.URLEncoder.encode(myId.take(16), "UTF-8")
-        val inviteLink = "https://stealthx.tech/invite/$myId?name=$nameParam"
+        val inviteLink = "https://stealthx.tech/invite/?id=$myId&name=$nameParam"
 
         // Build share text
         val shareText = buildString {
@@ -842,7 +842,7 @@ class ContactsFragment : Fragment() {
             .setView(layout)
             .setPositiveButton("Send Invite") { _, _ ->
                 val link = if (includeNameCheck.isChecked) inviteLink
-                    else "https://stealthx.tech/invite/$myId"
+                    else "https://stealthx.tech/invite/?id=$myId"
                 val text = if (includeNameCheck.isChecked) shareText
                     else "I invited you to SecureCall!\n\uD83D\uDD12 $link"
                 val intent = Intent(Intent.ACTION_SEND).apply {
@@ -853,7 +853,7 @@ class ContactsFragment : Fragment() {
             }
             .setNeutralButton("Copy Link") { _, _ ->
                 val link = if (includeNameCheck.isChecked) inviteLink
-                    else "https://stealthx.tech/invite/$myId"
+                    else "https://stealthx.tech/invite/?id=$myId"
                 val clipboard = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                 clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Invite Link", link))
                 android.widget.Toast.makeText(ctx, "Invite link copied!", android.widget.Toast.LENGTH_SHORT).show()

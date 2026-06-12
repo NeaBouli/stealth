@@ -91,14 +91,14 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="securecall" android:host="wc" />
             </intent-filter>
-            <!-- Invite deep link: stealthx.tech/invite/{secureId} -->
+            <!-- Invite app link: stealthx.tech/invite/?id={secureId} -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https"
                       android:host="stealthx.tech"
-                      android:pathPrefix="/invite/" />
+                      android:path="/invite/" />
             </intent-filter>
             <!-- Custom scheme: securecall://add-contact?id=xxx&name=xxx -->
             <intent-filter>

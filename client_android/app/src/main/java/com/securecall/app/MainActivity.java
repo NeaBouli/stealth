@@ -228,8 +228,9 @@ public class MainActivity extends AppCompatActivity {
         if (intent == null || intent.getData() == null) return;
         android.net.Uri data = intent.getData();
 
-        // Handle securecall://add-contact?id=xxx&name=xxx OR https://stealthx.tech/invite/{id}
-        String id = null;
+        // Handle securecall://add-contact?id=xxx&name=xxx,
+        // https://stealthx.tech/invite/?id=xxx, or legacy https://stealthx.tech/invite/{id}.
+        String id = data.getQueryParameter("id");
         if ("securecall".equals(data.getScheme()) && "add-contact".equals(data.getHost())) {
             id = data.getQueryParameter("id");
         }
