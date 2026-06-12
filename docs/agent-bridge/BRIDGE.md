@@ -1127,3 +1127,17 @@ Action:
 
 Expected result:
 - After GitHub Pages/Fastly and Google Play cache refresh, Play Console Deeplinks domain check for `stealthx.tech` + `/invite/` should pass.
+
+## 2026-06-12 08:40 UTC — Codex: App Links Fix Live Verification
+
+Verification after commit `fe2aa42`:
+- GitHub raw `website/.well-known/assetlinks.json` includes both fingerprints for `com.securecall.app.free`.
+- Live `https://stealthx.tech/.well-known/assetlinks.json` includes both fingerprints:
+  - Play App Signing: `2A:84:ED:E5:72:99:F1:05:B6:78:51:02:E2:D3:85:A6:26:49:B9:A1:CB:3E:01:84:60:9A:25:A9:6A:E4:F8:FB`
+  - Upload key: `1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D`
+- GitHub Pages deployment for `fe2aa42` completed successfully.
+- Google Digital Asset Links API still returns cached old statement for the upload key with `maxAge` around 42 minutes; expected until Google cache refreshes.
+- Existing upload key check returns `linked: true`; Play App Signing key should turn true after Google's cache refresh.
+
+Next user action:
+- In Play Console Deeplinks, wait for Google verification refresh or retry later. No further repo/website code change required for this issue unless Play still fails after cache expiry.
