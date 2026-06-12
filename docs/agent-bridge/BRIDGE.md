@@ -1089,3 +1089,28 @@ Ergebnis BUG-029 Retest:
 - Likely remaining cause: Google Play App Signing uses a different App signing key certificate for store-delivered APKs. Play domain verification requires that SHA-256 in assetlinks, not only the upload/release fingerprint.
 - Required next input from Gio: Play Console -> Setup -> App integrity -> App signing key certificate -> SHA-256. Add it to `website/.well-known/assetlinks.json` for `com.securecall.app.free`.
 - Also note selected Play version is `62002` (versionCode 62 ABI split). Newer local Billing build is `versionCode 63`; Play Deep Links screen will not reflect it until AAB upload/processing.
+
+## 2026-06-12 08:25 UTC — Codex: Play Deeplink Domain Verification Audit
+
+Scope: Google Play Console reports `stealthx.tech` domain not verified for exact web link `/invite/` on SecureCall (`com.securecall.app.MainActivity`, selectedVersionCode=62002).
+
+Verified locally/live:
+- Android manifest contains `android:autoVerify="true"` intent-filter for `https://stealthx.tech/invite/` using exact `android:path="/invite/"`.
+- Live `https://stealthx.tech/invite/` returns HTTP 200.
+- Live `https://stealthx.tech/.well-known/assetlinks.json` returns HTTP 200 with `Content-Type: application/json`.
+- Google Digital Asset Links API reads the domain statements successfully.
+- Current `assetlinks.json` includes only the local upload/release certificate fingerprint:
+  `1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D`
+
+Conclusion:
+- Code/path/domain hosting are OK.
+- Remaining blocker is almost certainly Google Play App Signing: Play verifies the store-delivered APK with Google's App signing key certificate, not the upload key currently listed in `assetlinks.json`.
+
+Required fix:
+1. Get SHA-256 from Play Console -> Setup -> App integrity -> App signing key certificate -> SHA-256.
+2. Add that SHA-256 to `website/.well-known/assetlinks.json` for `com.securecall.app.free`.
+3. Commit/push and wait for GitHub Pages + Google verification cache to refresh.
+
+Browser access note:
+- Chrome is reachable via AppleScript for URL/title, but JavaScript DOM extraction is blocked until Chrome menu `View/Ansicht -> Developer/Entwickler -> Allow JavaScript from Apple Events` is enabled.
+- macOS also denies `osascript` keyboard control, so Codex cannot click/copy the fingerprint from the page without that permission.
