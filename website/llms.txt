@@ -27,7 +27,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - STEALTH-DELETE: emergency data wipe (5 rapid taps)
 - Emergency Broadcast System: privacy-preserving alerts
 - IFR Token integration: hold tokens for lifetime Premium access
-- WalletConnect v2 support for wallet verification
+- Read-only IFR wallet balance verification
 - Anti-recording protection and screen capture detection
 - Works on WiFi, Mobile Data, and VPN simultaneously
 - FCM push notifications for incoming calls when app is closed
