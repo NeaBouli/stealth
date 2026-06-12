@@ -1265,3 +1265,31 @@ Verified installed versions:
 S10 `RF8N313QMFL` connected.
 Package: `package:com.securecall.app.premium`.
 Ready for tests.
+
+## 2026-06-12 21:36 EEST — [AGENT-B] S10 Initial Findings
+
+S10 status:
+- `adb devices`: `RF8N313QMFL device`.
+- SecureCall package installed: `com.securecall.app.premium`.
+- MetaMask installed on S10: `package:io.metamask`.
+- SecureCall Premium launched successfully via `am start`.
+
+S10 logcat after clean start:
+- No SecureCall-specific `CALL` / `ICE` / `WS_SERVICE` / `REGISTER` / `RING` / `INCOMING` lines appeared in the filtered post-start log.
+- WalletConnect filter produced no SecureCall/Reown/AppKit/relay/403 entries after clean start.
+- IFR filter produced no `VERIFY_IFR` / `IFR_LOCK` / wallet-address / ethereum entries after clean start.
+- Current filtered noise is from system wallet/job scheduler packages, not SecureCall.
+
+BUG-3 / BUG-4 code findings:
+- `client_android/app/src/withWalletConnect/java/com/securecall/app/wallet/WalletConnectManager.kt:38` still hardcodes `BACKEND_URL = "https://protective-healing-production.up.railway.app"`.
+- Same file uses SIWE challenge/verify endpoints at `/siwe/challenge` and `/siwe/verify`; this path is separate from `BuildConfig.SIGNAL_WS_URL`, which is already `wss://api.stealthx.tech/signal`.
+- `client_android/app/src/main/AndroidManifest.xml:31` `<queries>` lists WhatsApp/Telegram/Signal/Play only. It does not list `io.metamask`, `com.wallet.crypto.trustapp`, `me.rainbow`, or `org.toshi`.
+- Because `WalletConnectManager.isInstalled()` uses `PackageManager.getPackageInfo()`, Android 11+ package visibility can make installed wallets appear missing. S10 proves MetaMask is installed, so this is a likely BUG-3 root cause.
+- `client_android/app/src/main/res/values/strings.xml:119` and `client_android/app/src/main/res/xml/network_security_config.xml:14` still contain the old Railway host. `build.gradle` release/debug BuildConfig is already on `api.stealthx.tech`, but these stale resources are risky fallback/config debt.
+
+Recommended immediate fix for Agent-A:
+- Add wallet package visibility queries for MetaMask / Trust / Rainbow / Coinbase.
+- Move SIWE `BACKEND_URL` to `https://api.stealthx.tech` or derive HTTPS base from `BuildConfig.SIGNAL_WS_URL`.
+- Remove/update stale Railway resource values unless intentionally kept as cold-standby docs only.
+
+Standing by for Agent-A fix commit; will pull and retest on S10 immediately.
