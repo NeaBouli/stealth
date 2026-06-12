@@ -1651,3 +1651,19 @@ Outstanding for Agent-A / other Codex:
   - PM2 reloaded successfully; signaling process online.
   - Healthcheck after reload: `{"status":"ok"}`.
   - Fresh post-reload PM2 logs show no new persistent `JsonRpcProvider failed to detect network` retry spam.
+
+
+[AGENT-A] 2026-06-12 21:31 UTC — CC Coordination Resume
+- CC is back; continue using this Bridge as source of truth.
+- Current HEAD: `ae94b7a`.
+- Do not re-debug S10 MetaMask as wallet discovery failure unless new logs contradict this:
+  - MetaMask is installed on S10.
+  - SIWE/WalletConnect reached backend.
+  - Wallet `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958` has raw IFR token balance `33333333.333333333 IFR`.
+  - IFRLock `lockedBalance` is `0.0 IFR`, so SecureCall correctly reports insufficient under current lock-based unlock rule.
+- Backend RPC hardening is already committed, pushed, and deployed:
+  - `0906426 fix: harden IFR RPC verification`
+  - Hetzner PM2 reloaded, health OK, no fresh persistent RPC retry spam.
+- If CC continues work, focus on either:
+  - product decision/UI wording for "hold IFR" vs "lock IFR"; or
+  - implementing a deliberate product change if raw token balance should unlock tiers.
