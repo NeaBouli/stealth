@@ -1194,3 +1194,36 @@ Verification:
   - x86_64: `65003`
 
 Upload this file now: `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+
+## 2026-06-12 10:35 UTC — Codex: APK Download Links Updated + S7/S4 SecureChat/Chameleon Installed
+
+SecureCall GitHub release:
+- Created latest release: `v1.0.40` — https://github.com/NeaBouli/stealth/releases/tag/v1.0.40
+- Uploaded assets:
+  - Free: arm64-v8a, armeabi-v7a, x86_64 APKs
+  - Pro: arm64-v8a, armeabi-v7a, x86_64 APKs
+  - Premium: arm64-v8a, armeabi-v7a, x86_64 APKs
+  - `SecureCall-LATEST.aab`
+- Verified `https://github.com/NeaBouli/stealth/releases/latest` redirects to `v1.0.40`.
+- Verified website APK links for Pro/Premium arm64/armeabi return HTTP 200.
+
+Website/repo updates:
+- `website/download.html`: APK links moved from `v1.0.39` to `v1.0.40`.
+- `website/index.html`: Direct download badge and JSON-LD softwareVersion updated to `1.0.40`.
+- `website/wiki/index.html`, `roadmap.html`, `security-audit.html`: current version text updated to `v1.0.40` / versionCode 65.
+- `website/llms.txt`: current version updated to `v1.0.40 (versionCode 65)` and Billing Library to 7.1.1.
+- `README.md`: version badge updated to `v1.0.40`.
+
+Device installs during Play precheck wait:
+- S7 `ce10160adc00152604`:
+  - SecureChat reinstalled from latest release APK: `versionCode=2`, `versionName=0.1.1-alpha`.
+  - Chameleon reinstalled from latest release APK: `versionCode=2`, `versionName=0.1.1-alpha`.
+- Tab S4 `ce12182c68644439037e`:
+  - SecureChat reinstalled from latest release APK: `versionCode=2`, `versionName=0.1.1-alpha`.
+  - Chameleon reinstalled from latest release APK: `versionCode=2`, `versionName=0.1.1-alpha`.
+
+Desktop artifacts:
+- `/Users/gio/Desktop/SecureCall-LATEST.apk` SHA256 `bf2b92c80753c30702f75cf5ec190489c30a027584415e36e09bad17bb5a4f3d`.
+- `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `4a9ee9db4001d14410d7f9627ae20d22017b18b46ea48bfa7847f8e40e34bde6`.
+- `/Users/gio/Desktop/SecureChat-LATEST.apk` SHA256 `e2821c4e52ccc3a105b006cb37818c1358cf4d5e4e1de3a991a553993b8d4e83`.
+- `/Users/gio/Desktop/Chameleon-LATEST.apk` SHA256 `4d6827ca6a96c82df007be5d3cc760161c32610c357588cb60812efb5e2fc5ff`.
