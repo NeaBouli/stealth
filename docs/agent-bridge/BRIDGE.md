@@ -1114,3 +1114,16 @@ Required fix:
 Browser access note:
 - Chrome is reachable via AppleScript for URL/title, but JavaScript DOM extraction is blocked until Chrome menu `View/Ansicht -> Developer/Entwickler -> Allow JavaScript from Apple Events` is enabled.
 - macOS also denies `osascript` keyboard control, so Codex cannot click/copy the fingerprint from the page without that permission.
+
+## 2026-06-12 08:35 UTC — Codex: Play App Signing Fingerprint Added
+
+Gio copied the Play Console App signing certificate SHA-256 for SecureCall Free:
+`2A:84:ED:E5:72:99:F1:05:B6:78:51:02:E2:D3:85:A6:26:49:B9:A1:CB:3E:01:84:60:9A:25:A9:6A:E4:F8:FB`
+
+Action:
+- Added this Google Play App Signing fingerprint to `website/.well-known/assetlinks.json` for `com.securecall.app.free`.
+- Kept existing upload/release fingerprint in the same package entry for non-Play/direct APK compatibility.
+- JSON validation passed via `python3 -m json.tool`.
+
+Expected result:
+- After GitHub Pages/Fastly and Google Play cache refresh, Play Console Deeplinks domain check for `stealthx.tech` + `/invite/` should pass.
