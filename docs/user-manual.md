@@ -20,7 +20,7 @@ Your SecureCall ID is your identity on the network. It is randomly generated on 
 
 ## Tier Overview
 
-SecureCall is available in three tiers. Your effective tier is the highest of: your build flavor, any active activation code, or your IFR token lock.
+SecureCall is available in three tiers. Your effective tier is the highest of: your build flavor, any active activation code, or your IFR token holding.
 
 | Feature | Free | Pro | Premium |
 |---|---|---|---|
@@ -206,19 +206,19 @@ When on, all internet traffic is blocked if the VPN connection drops. This preve
 
 ### IFR Token Unlock
 
-Lock IFR tokens on Ethereum to activate Pro or Premium tier permanently, with no subscription.
+Hold IFR tokens on Ethereum to activate Pro or Premium tier permanently, with no subscription.
 
 **Thresholds:**
-- 1,000 IFR locked → Pro
-- 5,000 IFR locked → Premium
+- 2,000 IFR held → Pro
+- 6,000 IFR held → Premium
 
-**Status display** shows your current state: wallet address, locked amount, tier, and whether the result is live or from cache (cache is valid for 30 days).
+**Status display** shows your current state: wallet address, held amount, tier, and whether the result is live or from cache (cache is valid for 30 days).
 
 **Wallet Address**
 Enter your Ethereum wallet address (0x format, 42 characters). Used for manual verification.
 
-**Verify Lock**
-Runs a manual verification against your entered wallet address. The backend queries the Ethereum blockchain and returns your locked amount. If sufficient, your tier is upgraded immediately. Manual verifications expire after 30 days and re-check every 24 hours.
+**Verify Balance**
+Runs a manual verification against your entered wallet address. The backend queries the Ethereum blockchain and returns your held amount. If sufficient, your tier is upgraded immediately. Manual verifications expire after 30 days and re-check every 24 hours.
 
 **Connect Wallet** (WalletConnect / SIWE)
 Opens a wallet selector showing MetaMask, Trust Wallet, Rainbow, and Coinbase Wallet. Installed wallets appear with a green checkmark. Tap one to begin the Sign-In With Ethereum (SIWE) flow:
@@ -226,7 +226,7 @@ Opens a wallet selector showing MetaMask, Trust Wallet, Rainbow, and Coinbase Wa
 1. The app fetches a one-time challenge from the server.
 2. Your wallet app opens and shows a sign request.
 3. Sign the message with your wallet — this proves you own the address without revealing your private key.
-4. The signature is verified server-side. If your locked IFR balance is sufficient, your tier is permanently unlocked with no expiry.
+4. The signature is verified server-side. If your IFR balance is sufficient, your tier is permanently unlocked with no expiry.
 
 SIWE-verified wallets do not expire. Manual address verifications expire after 30 days.
 
@@ -319,4 +319,4 @@ Your device cannot reach the SecureCall server. Check your internet connection. 
 Activation codes restart the app automatically. Wait for the restart to complete. If the tier still shows Free, check the code for typos.
 
 **The IFR verification shows insufficient balance**
-Ensure your IFR tokens are locked in the IFR contract (not just held in your wallet). Visit ifrunit.tech to lock tokens.
+Ensure the verified wallet holds enough IFR on Ethereum Mainnet. Visit ifrunit.tech or Uniswap if you need more tokens.

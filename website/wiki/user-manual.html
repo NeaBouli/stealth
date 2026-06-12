@@ -160,7 +160,7 @@
             <p>When you make a call, SecureCall establishes a direct encrypted audio channel using WebRTC with hardware-backed key exchange. Once connected, audio travels peer-to-peer. If a direct path is not possible, a TURN relay forwards the packets &mdash; but audio remains end-to-end encrypted and the relay cannot read it.</p>
 
             <h2>Tier Overview</h2>
-            <p>Your effective tier is the highest of: your installed build flavor, an active activation code, or your IFR token lock.</p>
+            <p>Your effective tier is the highest of: your installed build flavor, an active activation code, or your IFR token holding.</p>
             <table>
                 <thead><tr><th>Feature</th><th>Free</th><th>Pro</th><th>Premium</th></tr></thead>
                 <tbody>
@@ -286,18 +286,18 @@
             </ul>
 
             <h2>IFR Token Unlock</h2>
-            <p>Lock IFR tokens on Ethereum to activate Pro or Premium permanently &mdash; no subscription required.</p>
+            <p>Hold IFR tokens on Ethereum to activate Pro or Premium permanently &mdash; no subscription required.</p>
             <table>
-                <thead><tr><th>IFR Locked</th><th>Tier Unlocked</th><th>Expiry</th></tr></thead>
+                <thead><tr><th>IFR Held</th><th>Tier Unlocked</th><th>Expiry</th></tr></thead>
                 <tbody>
                 <tr><td>2,000 IFR</td><td>Pro</td><td>Manual: 30 days &mdash; WalletConnect: never</td></tr>
                 <tr><td>6,000 IFR</td><td>Premium</td><td>Manual: 30 days &mdash; WalletConnect: never</td></tr>
                 </tbody>
             </table>
             <ul>
-                <li><strong>Status display</strong> &mdash; Shows wallet address, locked amount, tier, and whether the result is live or from cache.</li>
+                <li><strong>Status display</strong> &mdash; Shows wallet address, held amount, tier, and whether the result is live or from cache.</li>
                 <li><strong>Wallet Address</strong> &mdash; Enter your Ethereum address (0x format, 42 characters) for manual verification.</li>
-                <li><strong>Verify Lock</strong> &mdash; Runs manual verification. The backend queries Ethereum and returns your locked amount. Expires after 30 days; re-checks every 24 hours.</li>
+                <li><strong>Verify Balance</strong> &mdash; Runs manual verification. The backend queries Ethereum and returns your held amount. Expires after 30 days; re-checks every 24 hours.</li>
                 <li><strong>Connect Wallet (WalletConnect / SIWE)</strong> &mdash; Opens a wallet selector showing MetaMask, Trust Wallet, Rainbow, and Coinbase Wallet. Installed wallets show a green checkmark. Tap one to start the Sign-In With Ethereum flow: the app fetches a challenge &rarr; your wallet signs it &rarr; the signature is verified server-side &rarr; if IFR balance is sufficient, your tier is permanently unlocked with no expiry.</li>
                 <li><strong>Disconnect WalletConnect</strong> &mdash; Shown when a wallet is connected. Disconnects and reverts to your base tier.</li>
                 <li><strong>Buy IFR Token</strong> &mdash; Opens the official $IFR token page on Uniswap.</li>
@@ -364,7 +364,7 @@
                 <li><strong>Poor call quality</strong> &mdash; Check your network. Try switching between WiFi and mobile data. If behind a restrictive firewall, the STUN/TURN relay is used as fallback.</li>
                 <li><strong>Connection stays red</strong> &mdash; Your device cannot reach the SecureCall server. Check internet access. If the WireGuard VPN is active, verify the tunnel is up and the server endpoint is reachable.</li>
                 <li><strong>Tier still shows Free after activation code</strong> &mdash; Activation codes restart the app automatically. Wait for the restart. If tier still shows Free, check the code for typos.</li>
-                <li><strong>IFR verification shows insufficient balance</strong> &mdash; Ensure your IFR tokens are <em>locked</em> in the IFR contract, not just held in your wallet. Open <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">$IFR on Uniswap</a> if you need to buy more tokens before locking.</li>
+                <li><strong>IFR verification shows insufficient balance</strong> &mdash; Ensure the verified wallet holds enough IFR on Ethereum Mainnet. Open <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">$IFR on Uniswap</a> if you need to buy more tokens.</li>
                 <li><strong>No audio during call</strong> &mdash; Raise media volume. Disable any active VPN. Try switching network type (WiFi &harr; Mobile).</li>
                 <li><strong>Calls dropped</strong> &mdash; Check network stability. The app reconnects automatically; or tap the connection icon in the toolbar to force reconnect.</li>
             </ul>

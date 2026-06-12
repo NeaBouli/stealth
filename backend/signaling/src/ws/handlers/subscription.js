@@ -91,7 +91,7 @@ module.exports = function subscriptionHandlers(ctx) {
         return ws.send(JSON.stringify({ type: "IFR_LOCK_RESULT", success: false, error: "wallet_bound", boundTo: existing.clientId.substring(0, 8) + "..." }));
       }
 
-      console.log("[IFR] Verifying lock for wallet:", wallet, "client:", myClientId);
+      console.log("[IFR] Verifying balance for wallet:", wallet, "client:", myClientId);
 
       verifyIfrLock(wallet).then(result => {
         if (result.success) {
@@ -104,12 +104,13 @@ module.exports = function subscriptionHandlers(ctx) {
             walletMappings.push({ wallet: wallet.toLowerCase(), clientId: myClientId, tier: result.tier, lastVerified: Date.now() });
           }
           saveWalletMappings();
-          console.log("[IFR] Lock verified:", wallet, "->", result.tier, "(", result.lockedAmount, "IFR)");
+          console.log("[IFR] Balance verified:", wallet, "->", result.tier, "(", result.balanceAmount || result.lockedAmount, "IFR)");
         }
         // H-07: guard against closed WS after async
         try {
           if (ws.readyState === 1) {
-            ws.send(JSON.stringify({ type: "IFR_LOCK_RESULT", success: result.success, tier: result.tier || "", lockedAmount: result.lockedAmount || "0", walletAddress: wallet, error: result.error || "" }));
+            const amount = result.balanceAmount || result.lockedAmount || "0";
+            ws.send(JSON.stringify({ type: "IFR_LOCK_RESULT", success: result.success, tier: result.tier || "", lockedAmount: amount, balanceAmount: amount, walletAddress: wallet, error: result.error || "" }));
           }
         } catch (_) {}
       }).catch(e => {

@@ -188,7 +188,7 @@
     <string name="pref_ifr_wallet">Wallet Address</string>
     <string name="pref_ifr_wallet_summary">Enter your Ethereum wallet address</string>
     <string name="pref_ifr_wallet_dialog">Enter your wallet address (0x\u2026)</string>
-    <string name="pref_ifr_verify">Verify Lock</string>
+    <string name="pref_ifr_verify">Verify Balance</string>
     <string name="pref_ifr_walletconnect">Connect Wallet</string>
     <string name="pref_ifr_walletconnect_summary">Connect via WalletConnect for permanent unlock</string>
     <string name="ifr_status_none">No wallet connected</string>

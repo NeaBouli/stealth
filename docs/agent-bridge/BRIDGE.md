@@ -1667,3 +1667,23 @@ Outstanding for Agent-A / other Codex:
 - If CC continues work, focus on either:
   - product decision/UI wording for "hold IFR" vs "lock IFR"; or
   - implementing a deliberate product change if raw token balance should unlock tiers.
+## 2026-06-12 15:22 PT — Codex SecureCall IFR Hold Model + Device Refresh
+
+- IFR-Modell final auf HOLD umgestellt: Backend nutzt ERC-20 `balanceOf()` auf IFR Token `0x77e99917Eca8539c62F509ED1193ac36580A6e7B`, kein Lock-Contract mehr.
+- Thresholds: `>= 2,000 IFR` -> Pro, `>= 6,000 IFR` -> Premium.
+- Compatibility-Felder bleiben in API/WS erhalten (`lockedAmount`), zusätzlich wird `balanceAmount` geliefert.
+- Hetzner deploy: `ifr.js`, `server.js`, `subscription.js` kopiert und PM2 reload erfolgreich; Live-Read fuer `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958` ergab `33,333,333 IFR` und Tier `premium`.
+- Tests: `backend/signaling npm test` gruen; SecureCall Android `assembleFreeRelease bundleFreeRelease assembleProRelease assemblePremiumRelease` gruen.
+- Desktop-Artefakte aktualisiert:
+  - `/Users/gio/Desktop/SecureCall-LATEST.aab`
+  - `/Users/gio/Desktop/SecureCall-LATEST.apk`
+  - `/Users/gio/Desktop/SecureCall-Pro-LATEST.apk`
+  - `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`
+- Device refresh:
+  - Tab S4 `ce12182c68644439037e`: SecureCall Free + SecureChat + Chameleon frisch installiert.
+  - S7 `ce10160adc00152604`: SecureCall Pro + SecureChat + Chameleon frisch installiert.
+  - S10 `RF8N313QMFL`: SecureCall Premium + SecureChat + Chameleon frisch installiert.
+- Text-only smoke:
+  - S4 SecureCall/SecureChat/Chameleon starten ohne Crash.
+  - S7 war im Sleep/Lockscreen; nach `KEYCODE_WAKEUP` starten SecureCall Pro, SecureChat und Chameleon ohne Crash.
+  - S10 SecureCall/SecureChat/Chameleon starten ohne Crash.

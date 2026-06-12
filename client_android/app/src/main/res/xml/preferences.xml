@@ -285,7 +285,7 @@
         <Preference
             android:key="pref_donate_ifr"
             android:title="IFR Token"
-            android:summary="Lock tokens at ifrunit.tech for Premium access"
+            android:summary="Hold IFR for Premium access"
             android:icon="@drawable/ic_shield" />
     </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
