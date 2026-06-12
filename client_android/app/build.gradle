@@ -24,8 +24,8 @@ android {
         applicationId "com.securecall.app"
         minSdkVersion 24
         targetSdkVersion 35
-        versionCode 62
-        versionName "1.0.39"
+        versionCode 63
+        versionName "1.0.40"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -237,7 +237,8 @@ dependencies {
     // Reown AppKit removed due to unresolved relay 403 bug (reown-kotlin #240/#74).
 
     // Google Play Billing (FREE flavor only)
-    freeImplementation 'com.android.billingclient:billing-ktx:6.2.1'
+    freeImplementation 'com.android.billingclient:billing:7.1.1'
+    freeImplementation 'com.android.billingclient:billing-ktx:7.1.1'
 
     // AdMob ads (FREE flavor only)
     freeImplementation 'com.google.android.gms:play-services-ads:23.6.0'

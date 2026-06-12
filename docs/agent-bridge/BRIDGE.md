@@ -1066,3 +1066,16 @@ Ergebnis BUG-029 Retest:
   - `curl -I https://stealthx.tech/invite/?id=android-test` returns HTTP 200.
   - `curl -I https://stealthx.tech/.well-known/assetlinks.json` returns HTTP 200, content-type `application/json`.
   - Note: if Play still says domain not confirmed after v1.0.39 upload, add the Play App Signing SHA-256 certificate fingerprint from Play Console to `website/.well-known/assetlinks.json`; current file contains the existing release/upload fingerprint.
+
+## 2026-06-12 08:00 UTC — Codex: Google Play Billing v7 Fix
+- User requested Play Billing Library v7+ fix for SecureCall Play upload.
+- Previous dependency: `freeImplementation 'com.android.billingclient:billing-ktx:6.2.1'`.
+- Updated dependencies in `client_android/app/build.gradle`:
+  - `freeImplementation 'com.android.billingclient:billing:7.1.1'`
+  - `freeImplementation 'com.android.billingclient:billing-ktx:7.1.1'`
+- Version bumped for Play upload: versionName `1.0.40`, versionCode `63`.
+- API adjustment: `BillingManager` now uses v7 `PendingPurchasesParams.newBuilder().enableOneTimeProducts().build()` instead of deprecated no-arg `enablePendingPurchases()`.
+- Verification:
+  - `./gradlew --no-daemon assembleFreeDebug` ✅ BUILD SUCCESSFUL.
+  - `./gradlew --no-daemon bundleFreeRelease` ✅ BUILD SUCCESSFUL.
+  - New AAB copied to `/Users/gio/Desktop/SecureCall-LATEST.aab`.
