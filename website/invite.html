@@ -65,8 +65,8 @@
         <a id="downloadLink" href="https://github.com/NeaBouli/stealth/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
             Download SecureCall APK
         </a>
-        <a id="playLink" href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener" class="btn btn-outline">
-            Google Play (Beta)
+        <a id="playLink" href="https://github.com/NeaBouli/stealth/releases/latest" target="_blank" rel="noopener" class="btn btn-outline">
+            GitHub Releases
         </a>
 
         <p class="note">
@@ -90,7 +90,9 @@
 
             var appName = app === 'chameleon' ? 'Chameleon' : 'SecureChat';
             var appId   = app === 'chameleon' ? 'com.stealthx.chameleon' : 'com.stealthx.securechat';
-            var downloadUrl = 'https://stealthx.tech/download';
+            var downloadUrl = app === 'chameleon'
+                ? 'https://chameleon.stealthx.tech/'
+                : 'https://securechat.stealthx.tech/';
 
             document.getElementById('title').textContent = 'You\'re invited to ' + appName;
             document.getElementById('subtitle').textContent = 'Tap below to add this contact in ' + appName + '. If you don\'t have the app yet, download it first.';
@@ -103,8 +105,8 @@
             document.getElementById('openAppLink').style.color = '#000';
             document.getElementById('downloadLink').textContent = 'Download ' + appName;
             document.getElementById('downloadLink').href = downloadUrl;
-            document.getElementById('playLink').textContent = 'Google Play';
-            document.getElementById('playLink').href = 'https://play.google.com/store/apps/details?id=' + appId;
+            document.getElementById('playLink').textContent = appName + ' release page';
+            document.getElementById('playLink').href = downloadUrl;
 
             document.getElementById('openAppLink').href = deepLink;
             document.getElementById('openAppLink').addEventListener('click', function(e) {

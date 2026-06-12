@@ -1687,3 +1687,20 @@ Outstanding for Agent-A / other Codex:
   - S4 SecureCall/SecureChat/Chameleon starten ohne Crash.
   - S7 war im Sleep/Lockscreen; nach `KEYCODE_WAKEUP` starten SecureCall Pro, SecureChat und Chameleon ohne Crash.
   - S10 SecureCall/SecureChat/Chameleon starten ohne Crash.
+
+## 2026-06-12 16:01 PT — Codex Final Cross-App Audit Pass
+
+- Repos/Bridge nach CC-Resume gelesen; Arbeit auf diesem Rechner fortgesetzt, kein paralleles Gegeneinander.
+- SecureCall:
+  - S4 Free, S7 Pro, S10 Premium installiert und Versionsstand geprüft: `1.0.40-*`, split `versionCode=68001` aus Basis v68.
+  - Phone-Prompt UX geprüft: Nach `Skip` auf S4 und S10 bleibt der Prompt nach App-Neustart weg; Hauptscreen `StealthX / Connected` sichtbar.
+  - 3x Device Monkey Stabilitätslauf: Free/S4, Pro/S7, Premium/S10 jeweils 180 Events, keine appbezogenen Fatal Exceptions/ANRs.
+  - Public Website korrigiert: keine toten Google-Play-Links mehr solange Produktion noch in Review ist; Download-Ziele gehen auf signierte APK/GitHub Releases.
+  - Website/Wiki Metadaten auf `v1.0.40` / versionCode `68` aktualisiert.
+- Cross-site Link/Content Audit:
+  - Stale-Claim Scan leer fuer: `Lock IFR`, `WalletConnect v2`, `No central server`, alte 1,000/5,000 IFR-Werte, Play-Live-Claims.
+  - Externe Nutzerlinks geprüft: 59 Links, 0 Fehler. `rel=preconnect` Ressourcen bewusst nicht als Nutzerlinks gewertet.
+- Stripe:
+  - Live `/licenses/status` kennt alle 7 Lifetime-Tiers.
+  - Externer Checkout-Test war rate-limited; Hetzner-local Test gegen laufende Route `127.0.0.1:8080` erzeugt Checkout-URLs fuer `chameleon_elite_lifetime`, `stealthx_suite_lifetime`, `securechat_elite_lifetime`.
+- Chameleon/SecureChat Ergebnis siehe jeweilige Repo-Bridge; beide Apps frisch auf S4/S7/S10 installiert und per text-only UI/logcat/Monkey getestet.

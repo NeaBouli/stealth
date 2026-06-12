@@ -65,11 +65,11 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Tested on 38 Android devices (Samsung, Pixel, Xiaomi, OnePlus)
 
 ## Download
-- Google Play: search "SecureCall" or visit play.google.com/store/apps/details?id=com.securecall.app.free
+- Google Play: production release submitted, public listing pending review
 - Direct APK: github.com/NeaBouli/stealth/releases
 
 ## Current Version
-- v1.0.40 (versionCode 67) — June 2026
+- v1.0.40 (versionCode 68) — June 2026
 - Latest: Billing v7.1.1, verified App Links, Android 15+ 16KB native page-size support
 
 ## Company
