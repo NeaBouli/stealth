@@ -1227,3 +1227,17 @@ Desktop artifacts:
 - `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `4a9ee9db4001d14410d7f9627ae20d22017b18b46ea48bfa7847f8e40e34bde6`.
 - `/Users/gio/Desktop/SecureChat-LATEST.apk` SHA256 `e2821c4e52ccc3a105b006cb37818c1358cf4d5e4e1de3a991a553993b8d4e83`.
 - `/Users/gio/Desktop/Chameleon-LATEST.apk` SHA256 `4d6827ca6a96c82df007be5d3cc760161c32610c357588cb60812efb5e2fc5ff`.
+
+## 2026-06-12 10:45 UTC — Codex: S10 Apps Updated
+
+Device: S10 `RF8N313QMFL` (`SM_G973F`).
+
+Installed via ADB:
+- SecureCall Premium from `client_android/app/build/outputs/apk/premium/release/app-premium-arm64-v8a-release.apk`.
+- SecureChat from `/Users/gio/Desktop/SecureChat-LATEST.apk`.
+- Chameleon from `/Users/gio/Desktop/Chameleon-LATEST.apk`.
+
+Verified installed versions:
+- `com.securecall.app.premium`: `versionCode=65001`, `versionName=1.0.40-premium`.
+- `com.stealthx.securechat`: `versionCode=2`, `versionName=0.1.1-alpha`.
+- `com.stealthx.chameleon`: `versionCode=2`, `versionName=0.1.1-alpha`.
