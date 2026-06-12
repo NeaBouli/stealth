@@ -69,7 +69,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Direct APK: github.com/NeaBouli/stealth/releases
 
 ## Current Version
-- v1.0.40 (versionCode 65) — June 2026
+- v1.0.40 (versionCode 67) — June 2026
 - Latest: Billing v7.1.1, verified App Links, Android 15+ 16KB native page-size support
 
 ## Company

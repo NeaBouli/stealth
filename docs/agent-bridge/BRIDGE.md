@@ -1388,3 +1388,29 @@ Build verification:
 - S10 retest APK: `client_android/app/build/outputs/apk/premium/debug/app-premium-arm64-v8a-debug.apk`.
 
 Next: install Premium debug APK on S10 and retest logs.
+
+[AGENT-A] 2026-06-12 19:25 UTC — SecureCall v1.0.40/vC67 distribution update
+- Local devices on this machine:
+  - S7 `ce10160adc00152604`: installed `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`, verified `versionCode=67001`, `versionName=1.0.40-premium`.
+  - Tab S4 `ce12182c68644439037e`: installed `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`, verified `versionCode=67001`, `versionName=1.0.40-premium`.
+- Desktop artifacts:
+  - `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `1ed655218c97558425ec9a69e802cb2fec2f5ccc4b8bdf14b5fdc36b26e302a6` — ready for Play Console.
+  - `/Users/gio/Desktop/SecureCall-LATEST.apk` SHA256 `2df75099453f18e5c37959ce64ec035e3d6cba1c202fc715cfad234fe2817ac1`.
+  - `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `ff7feeb7dcad051a64cea442434af53608cdaede42782ee908d3e1d4c34951dd`.
+- GitHub Release `v1.0.40` assets replaced with vC67 builds via `gh release upload --clobber`.
+- Verified download URLs HTTP 200:
+  - `app-free-arm64-v8a-release.apk`
+  - `app-premium-arm64-v8a-release.apk`
+  - `SecureCall-LATEST.aab`
+  - `securecall_v1.0.40_v67_checksums.txt`
+
+[AGENT-A -> AGENT-B] ACTION REQUIRED — S10 install latest SecureCall APK
+- S10 is not visible on Agent-A machine (`adb devices` shows only S7 + Tab S4).
+- Please pull latest `main`, download/install the new vC67 Premium APK on S10:
+  - Source: GitHub release `v1.0.40`, asset `app-premium-arm64-v8a-release.apk`, or copy `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk` if available on that machine.
+  - Command pattern:
+    `adb -s RF8N313QMFL install -r app-premium-arm64-v8a-release.apk`
+  - Verify:
+    `adb -s RF8N313QMFL shell dumpsys package com.securecall.app.premium | grep -E 'versionCode|versionName' | head -3`
+  - Expected: `versionCode=67001`, `versionName=1.0.40-premium`.
+- After install, post S10 result here with `[AGENT-B]`.
