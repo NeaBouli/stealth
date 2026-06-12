@@ -10,27 +10,25 @@ const IFR_PRO_THRESHOLD   = BigInt(2000) * BigInt(10 ** IFR_DECIMALS);
 const IFR_ELITE_THRESHOLD = BigInt(6000) * BigInt(10 ** IFR_DECIMALS);
 const IFR_LOCK_ABI = ["function lockedBalance(address) view returns (uint256)"];
 
-const ETH_RPC_URLS = (process.env.ETH_RPC_URL || "https://eth.llamarpc.com")
-  .split(",")
-  .concat(["https://ethereum.publicnode.com", "https://cloudflare-eth.com"]);
+const DEFAULT_ETH_RPC_URLS = [
+  "https://ethereum.publicnode.com",
+  "https://cloudflare-eth.com",
+];
+const ETH_RPC_URLS = Array.from(new Set(
+  (process.env.ETH_RPC_URL || DEFAULT_ETH_RPC_URLS.join(","))
+    .split(",")
+    .map(url => url.trim())
+    .filter(Boolean)
+));
 
-const ifrLockContracts = [];
-
-for (const url of ETH_RPC_URLS) {
-  try {
-    const provider = new ethers.JsonRpcProvider(url);
-    const lockContract = new ethers.Contract(IFR_LOCK_ADDRESS, IFR_LOCK_ABI, provider);
-    ifrLockContracts.push({ contract: lockContract, url });
-  } catch (e) {
-    console.warn("[IFR] Failed to init provider:", url, e.message);
-  }
-}
-console.log(`[IFR] Initialized ${ifrLockContracts.length} Ethereum RPC endpoints for IFR lock ${IFR_LOCK_ADDRESS}`);
+console.log(`[IFR] Configured ${ETH_RPC_URLS.length} Ethereum RPC endpoints for IFR lock ${IFR_LOCK_ADDRESS}`);
 
 async function verifyIfrLock(walletAddress) {
-  if (ifrLockContracts.length === 0) return { success: false, error: "eth_unavailable" };
+  if (ETH_RPC_URLS.length === 0) return { success: false, error: "eth_unavailable" };
 
-  for (const { contract, url } of ifrLockContracts) {
+  for (const url of ETH_RPC_URLS) {
+    const provider = new ethers.JsonRpcProvider(url);
+    const contract = new ethers.Contract(IFR_LOCK_ADDRESS, IFR_LOCK_ABI, provider);
     try {
       const withTimeout = (p) => Promise.race([
         p,
@@ -44,6 +42,8 @@ async function verifyIfrLock(walletAddress) {
       return { success: false, error: "insufficient", lockedAmount: humanAmount };
     } catch (e) {
       console.warn("[IFR] RPC failed (" + url + "):", e.message, "— trying next");
+    } finally {
+      provider.destroy();
     }
   }
   return { success: false, error: "all_rpc_failed" };

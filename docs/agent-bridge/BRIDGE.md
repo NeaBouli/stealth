@@ -1615,3 +1615,33 @@ Outstanding for Agent-A / other Codex:
   - Configured RPC endpoint `https://eth.llamarpc.com` currently returns Cloudflare 403; fallback provider works. Replace/remove this endpoint before final hardening.
 - Current git status after this entry should be clean after committing/pushing this Bridge update.
 
+
+[AGENT-A] 2026-06-12 21:21 UTC — S10 IFR / MetaMask Wallet Investigation
+- User reported S10 MetaMask-connected wallet `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958` holds enough IFR but app does not recognize it.
+- Device baseline:
+  - S10 `RF8N313QMFL` connected.
+  - SecureCall Premium installed: `com.securecall.app.premium`, versionCode split `68001`, v1.0.40-premium.
+  - MetaMask installed: `io.metamask`.
+- S10 PID log:
+  - No SecureCall WalletConnect crash, no MetaMask package lookup failure, no Reown/AppKit/relay error in filtered app PID log.
+- Backend evidence:
+  - SIWE challenge was issued for S10 client `android-b0625103`.
+  - Backend verified wallet path and bound wallet as insufficient:
+    - `[IFR] lockedBalance(0x80ff32c5441cbcbfa5c3ce0dc70359bdd05b6958) = 0 IFR (via https://ethereum.publicnode.com)`
+    - `[SIWE] Wallet bound (insufficient): 0x80ff32c5441cbcbfa5c3ce0dc70359bdd05b6958 ( 0 IFR) device: android-b0625103`
+  - Manual VERIFY_IFR_LOCK path also returns `lockedBalance = 0 IFR` for the same wallet.
+- Direct read-only Ethereum check:
+  - IFR token `0x77e99917Eca8539c62F509ED1193ac36580A6e7B`, symbol `IFR`, decimals `9`.
+  - Wallet token `balanceOf` = `33333333.333333333 IFR`.
+  - IFR Lock contract `0x769928aBDfc949D0718d8766a1C2d7dBb63954Eb` `lockedBalance` = `0.0 IFR`.
+- Conclusion:
+  - This is not a MetaMask detection failure.
+  - Current product/backend rule unlocks by locked IFR in the IFRLock contract, not by raw wallet token balance.
+  - The wallet has IFR tokens but has not locked them in the IFRLock contract, so the app correctly returns insufficient under current rules.
+- Backend hardening:
+  - `backend/signaling/src/services/ifr.js` updated to remove `https://eth.llamarpc.com` as default RPC because it returns Cloudflare 403 from Hetzner.
+  - RPC providers are now created per verification and destroyed afterwards to prevent persistent `JsonRpcProvider failed to detect network` retry spam.
+  - Default RPC list now starts with `https://ethereum.publicnode.com`.
+- Verification:
+  - `npm test` in `backend/signaling`: PASS.
+  - Live read-only `verifyIfrLock(0x80fF...6958)`: `{"success":false,"error":"insufficient","lockedAmount":"0"}`.
