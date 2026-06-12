@@ -110,7 +110,7 @@ object IfrLockManager {
 
     fun verify(context: Context, walletAddress: String, callback: (Boolean, String, String, String) -> Unit) {
         val ws = com.securecall.app.net.WebSocketService.instance
-        if (ws == null || !ws.isConnected) {
+        if (ws == null || !ws.isConnected || !ws.isRegistered) {
             callback(false, "", "0", "not_connected")
             return
         }

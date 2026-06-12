@@ -16,7 +16,7 @@ class SecureCallMessagingService : FirebaseMessagingService() {
 
     companion object {
         private const val TAG = "FCM_SERVICE"
-        private const val CHANNEL_ID = "securecall_incoming_call"
+        private const val CHANNEL_ID = "securecall_incoming_call_urgent"
         private const val NOTIFICATION_ID = 9001
     }
 
@@ -58,7 +58,11 @@ class SecureCallMessagingService : FirebaseMessagingService() {
     private fun handleFcmCallInvite(sessionId: String, callerName: String, callerClientId: String, callerPhone: String) {
         // A) Acquire WakeLock immediately to keep CPU alive for ringing
         val pm = getSystemService(POWER_SERVICE) as PowerManager
-        val wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SecureCall:FCMCallWakeup")
+        @Suppress("DEPRECATION")
+        val wl = pm.newWakeLock(
+            PowerManager.FULL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+            "SecureCall:FCMCallWakeup"
+        )
         wl.acquire(60_000L) // 60s max — will be released when call is answered/declined
         Log.d(TAG, "WakeLock acquired for FCM call wakeup")
 
@@ -130,6 +134,8 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             ).apply {
                 description = "Notifications for incoming secure calls"
                 setBypassDnd(true)
+                enableVibration(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             }
             manager.createNotificationChannel(channel)
         }
@@ -156,6 +162,7 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             .setContentText("Call from $callerName")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setSilent(true) // Service handles ringtone — prevent double sound
             .setAutoCancel(true)
             .setOngoing(true)

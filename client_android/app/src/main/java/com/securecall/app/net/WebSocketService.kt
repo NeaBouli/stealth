@@ -214,7 +214,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         @Volatile
         var instance: WebSocketService? = null
         private const val CHANNEL_ID = "securecall_foreground"
-        private const val CHANNEL_INCOMING = "securecall_incoming_call"
+        private const val CHANNEL_INCOMING = "securecall_incoming_call_urgent"
         private const val NOTIFICATION_ID = 1001
         private const val INCOMING_CALL_NOTIFICATION_ID = 1002
     }
@@ -458,6 +458,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     /** Verify IFR token lock status on Ethereum via server. */
     fun verifyIfrLock(walletAddress: String, callback: (success: Boolean, tier: String, lockedAmount: String, error: String) -> Unit) {
+        if (!isRegistered) {
+            Log.w("WS_SERVICE", "VERIFY_IFR_LOCK blocked — WS not registered")
+            callback(false, "", "0", "not_connected")
+            return
+        }
         _ifrLockCallback = callback
         val json = org.json.JSONObject().apply {
             put("type", "VERIFY_IFR_LOCK")
@@ -585,6 +590,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setFullScreenIntent(fullScreenPending, true)
             .setContentIntent(fullScreenPending)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setSilent(true) // Service handles ringtone — prevent double sound
             .setAutoCancel(true)
             .setOngoing(true)
@@ -604,6 +610,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             ).apply {
                 description = "Notifications for incoming secure calls"
                 setShowBadge(true)
+                enableVibration(true)
                 lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             }
             val nm = getSystemService(android.app.NotificationManager::class.java)
@@ -940,6 +947,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     fun sendCallAccept(sessionId: String) {
+        if (!isRegistered) {
+            Log.w("WS_SERVICE", "CALL_ACCEPT queued — WS not registered for session $sessionId")
+            com.securecall.app.debug.SecLogManager.log("WS", "CALL_ACCEPT queued — waiting for registration")
+            pendingCallQueue.add { sendCallAccept(sessionId) }
+            if (!isConnected) {
+                try { client?.forceReconnect() } catch (_: Exception) {}
+            }
+            return
+        }
+
         var pubKeyB64 = ""
         val remotePub = remotePubKey
         if (com.securecall.crypto.CoreCrypto.isNativeAvailable() && remotePub != null) {

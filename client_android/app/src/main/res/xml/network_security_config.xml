@@ -7,14 +7,12 @@
     </domain-config>
 
     <!-- Certificate pinning for signaling server (H-09) -->
-    <!-- Primary pin: Let's Encrypt E7 intermediate (valid until 2027-03-12) -->
-    <!-- Backup pin: ISRG Root X1 (Let's Encrypt root, long-lived) -->
-    <!-- Rotate primary pin when LE intermediate changes (well before 2027) -->
+    <!-- api.stealthx.tech leaf + Let's Encrypt R12 intermediate. Rotate before 2026-08-14. -->
     <domain-config>
-        <domain includeSubdomains="false">protective-healing-production.up.railway.app</domain>
-        <pin-set expiration="2027-03-12">
-            <pin digest="SHA-256">y7xVm0TVJNahMr2sZydE2jQH8SquXV9yLF9seROHHHU=</pin>
-            <pin digest="SHA-256">C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=</pin>
+        <domain includeSubdomains="false">api.stealthx.tech</domain>
+        <pin-set expiration="2026-08-14">
+            <pin digest="SHA-256">1e85xNSEj+dcImOJS0iNkfMZOrZdvJJzzPCqT1/CZDc=</pin>
+            <pin digest="SHA-256">kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ=</pin>
         </pin-set>
     </domain-config>
 </network-security-config>

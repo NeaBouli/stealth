@@ -110,7 +110,9 @@ function getIceServers(userId) {
 // --- Security Configuration ---
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || null;
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").filter(Boolean);
-const MAX_CONNS_PER_IP = parseInt(process.env.MAX_CONNS_PER_IP || "10", 10);
+const MAX_CONNS_PER_IP = parseInt(process.env.MAX_CONNS_PER_IP || "40", 10);
+const WS_ATTEMPT_WINDOW_MS = parseInt(process.env.WS_ATTEMPT_WINDOW_MS || "60000", 10);
+const MAX_WS_ATTEMPTS_PER_IP = parseInt(process.env.MAX_WS_ATTEMPTS_PER_IP || "240", 10);
 const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 
 // --- App Setup ---
@@ -335,16 +337,17 @@ const wss = new WebSocket.Server({
     }
 
     // Throttle rapid reconnects from rejected clients (anti-spam)
-    // Track connection attempts per IP in a sliding 60s window
+    // Track connection attempts per IP in a sliding window.
+    // Mobile clients behind the same NAT/VPN can reconnect aggressively during
+    // radio handover, app update, and FCM wake-up. Keep this high enough for
+    // several owned devices while still rejecting clear abuse.
     const now = Date.now();
     const attempts = ipConnectionAttempts.get(ip) || [];
-    // Purge entries older than 60s
-    const recent = attempts.filter(t => now - t < 60000);
+    const recent = attempts.filter(t => now - t < WS_ATTEMPT_WINDOW_MS);
     recent.push(now);
     ipConnectionAttempts.set(ip, recent);
-    if (recent.length > 90) {
-      // >90 connections in 60s from same IP = spam (allows up to 3 devices @ 30 each)
-      console.warn("[SIGNAL] Throttled IP:", ip, `(${recent.length} attempts in 60s)`);
+    if (recent.length > MAX_WS_ATTEMPTS_PER_IP) {
+      console.warn("[SIGNAL] Throttled IP:", ip, `(${recent.length} attempts in ${WS_ATTEMPT_WINDOW_MS}ms)`);
       return done(false, 429, "Too many connection attempts");
     }
 

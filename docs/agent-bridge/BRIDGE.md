@@ -1315,3 +1315,29 @@ Proceeding with local Agent-B fixes under full autonomy:
 - BUG-4 / wallet verification: move SIWE backend from old Railway URL to `https://api.stealthx.tech`; update stale Railway resource/config entries.
 
 Will build/install Premium on S10 `RF8N313QMFL`, then post S10 retest results here.
+
+## 2026-06-12 18:24 UTC — Agent-A fixes implemented
+
+[AGENT-A] Fix umgesetzt: AndroidManifest Package-Queries fuer MetaMask/Trust/Rainbow/Coinbase + metamask/wc VIEW schemes.
+[AGENT-A] Fix umgesetzt: WalletConnect/SIWE Backend von alter Railway-URL auf https://api.stealthx.tech gesetzt.
+[AGENT-A] Fix umgesetzt: CALL_ACCEPT wird bei nicht registriertem WS gequeued und IncomingCallActivity wartet auf isRegistered statt nur isConnected.
+[AGENT-A] Fix umgesetzt: IFR Verify blockt vor REGISTERED mit not_connected statt ins Server-Race/Timeout zu laufen.
+
+## 2026-06-12 18:36 UTC — Agent-A BUG-1 lock-screen hardening
+
+[AGENT-A] Repro nach vC66 initial: Tab S4 zeigt Klingelt, S7 auf AOD zeigt nur SecureCall-Notification, keine IncomingCallActivity. BUG-1 bestaetigt.
+[AGENT-A] Fix umgesetzt: neuer urgent Incoming-Call-Channel, public lockscreen visibility, vibration enabled, Full-Screen-Intent bleibt aktiv, FCM WakeLock von PARTIAL auf FULL_WAKE_LOCK + ACQUIRE_CAUSES_WAKEUP fuer Samsung/AOD geaendert.
+[AGENT-A] Rebuild laeuft.
+
+## 2026-06-12 18:46 UTC — Agent-A test blocker
+
+[AGENT-A] S7 + Tab S4 final vC66 installiert. Free AAB liegt auf /Users/gio/Desktop/SecureCall-LATEST.aab; Premium Test APK auf /Users/gio/Desktop/SecureCall-Premium-LATEST.apk.
+[AGENT-A] Zweiter E2E-Repro blockiert: Tab S4 ist Pattern-locked und per ADB nicht entsperrbar; S7 als Sender bleibt Disconnected. Logcat zeigt WebSocket Reconnect Fehler: HTTP 429 Too Many Requests.
+[AGENT-A] Untersuche jetzt Backend Rate-Limit, weil Reconnect/FCM Accept sonst CALL_ACCEPT und Incoming-Call-Flows destabilisiert.
+
+## 2026-06-12 18:53 UTC — Agent-A final config cleanup
+
+[AGENT-A] Agent-B stale Railway finding aufgegriffen: server_url_production auf wss://api.stealthx.tech/signal gesetzt.
+[AGENT-A] network_security_config Domain auf api.stealthx.tech aktualisiert; Pins aus Live-Zertifikat berechnet: Leaf + Let's Encrypt R12, Rotation/Expiration 2026-08-14.
+[AGENT-A] Finaler Build: bundleFreeRelease + assemblePremiumRelease erfolgreich. S7 + Tab S4 final vC66001 installiert.
+[AGENT-A] Desktop final: /Users/gio/Desktop/SecureCall-LATEST.aab SHA256 a2e4baa8de8f10aa4ba336a801d8ce8c61b102fa8fcdc1a0b2ec138b9d1a5f2e; /Users/gio/Desktop/SecureCall-Premium-LATEST.apk SHA256 df531077541ab4ca6de27539756abaca055195f2e65bd4c33bb3c3e82439e120.

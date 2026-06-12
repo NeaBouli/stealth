@@ -176,11 +176,11 @@ class IncomingCallActivity : AppCompatActivity() {
 
         val ws = com.securecall.app.net.WebSocketService.instance
 
-        // BUG-010: If launched from FCM, WS may not be connected yet.
-        // Wait for WS to be ready (up to 10s) before sending CALL_ACCEPT.
-        if (fromFcm && (ws == null || !ws.isConnected)) {
-            Log.d(TAG, "BUG-010: WS not connected — waiting for reconnect before CALL_ACCEPT")
-            com.securecall.app.debug.SecLogManager.log("CALL", "FCM accept — waiting for WS reconnect")
+        // If launched from FCM, WS may be connected but not REGISTERED yet.
+        // The backend rejects CALL_ACCEPT until REGISTERED, so wait for both states.
+        if (fromFcm && (ws == null || !ws.isConnected || !ws.isRegistered)) {
+            Log.d(TAG, "FCM accept — waiting for WS registration before CALL_ACCEPT")
+            com.securecall.app.debug.SecLogManager.log("CALL", "FCM accept — waiting for WS registration")
             waitForWsAndAccept()
         } else {
             ws?.sendCallAccept(sessionId)
@@ -189,9 +189,8 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     /**
-     * BUG-010: Wait for WS to reconnect (up to 10s), then send CALL_ACCEPT.
-     * Polls every 500ms. If timeout, launch CallActivity anyway — the WS
-     * reconnect + server CALL_INVITE will eventually pair them.
+     * Wait for WS to reconnect and receive REGISTERED, then send CALL_ACCEPT.
+     * Polls every 500ms. If timeout, queue CALL_ACCEPT and launch the call UI.
      */
     private fun waitForWsAndAccept() {
         val handler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -200,14 +199,15 @@ class IncomingCallActivity : AppCompatActivity() {
             override fun run() {
                 val ws = com.securecall.app.net.WebSocketService.instance
                 val elapsed = System.currentTimeMillis() - startTime
-                if (ws != null && ws.isConnected) {
-                    Log.d(TAG, "BUG-010: WS connected after ${elapsed}ms — sending CALL_ACCEPT")
-                    com.securecall.app.debug.SecLogManager.log("CALL", "WS ready after ${elapsed}ms — sending CALL_ACCEPT")
+                if (ws != null && ws.isConnected && ws.isRegistered) {
+                    Log.d(TAG, "WS registered after ${elapsed}ms — sending CALL_ACCEPT")
+                    com.securecall.app.debug.SecLogManager.log("CALL", "WS registered after ${elapsed}ms — sending CALL_ACCEPT")
                     ws.sendCallAccept(sessionId)
                     launchCallActivity()
-                } else if (elapsed > 10_000) {
-                    Log.w(TAG, "BUG-010: WS reconnect timeout (10s) — launching CallActivity anyway")
-                    com.securecall.app.debug.SecLogManager.log("CALL", "WS reconnect timeout — launching CallActivity without CALL_ACCEPT")
+                } else if (elapsed > 15_000) {
+                    Log.w(TAG, "WS registration timeout (15s) — queueing CALL_ACCEPT and launching CallActivity")
+                    com.securecall.app.debug.SecLogManager.log("CALL", "WS registration timeout — CALL_ACCEPT queued")
+                    ws?.sendCallAccept(sessionId)
                     launchCallActivity()
                 } else {
                     handler.postDelayed(this, 500)

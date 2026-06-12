@@ -35,7 +35,7 @@ object WalletConnectManager {
     private const val TAG = "WalletConnect"
     private val WALLET_REGEX = "^0x[0-9a-fA-F]{40}$".toRegex()
     private val SIG_REGEX = "^0x[0-9a-fA-F]{130}$".toRegex()
-    private const val BACKEND_URL = "https://protective-healing-production.up.railway.app"
+    private const val BACKEND_URL = "https://api.stealthx.tech"
 
     private val WALLETS = listOf(
         WalletApp("MetaMask", "io.metamask", "https://metamask.app.link"),
@@ -328,7 +328,7 @@ object WalletConnectManager {
     fun verifyAndUnlock(context: Context, walletAddress: String, callback: (Boolean, String) -> Unit) {
         try {
             val ws = com.securecall.app.net.WebSocketService.instance
-            if (ws == null || !ws.isConnected) {
+            if (ws == null || !ws.isConnected || !ws.isRegistered) {
                 callback(false, "Not connected to server")
                 return
             }
