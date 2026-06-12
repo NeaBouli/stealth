@@ -1241,3 +1241,15 @@ Verified installed versions:
 - `com.securecall.app.premium`: `versionCode=65001`, `versionName=1.0.40-premium`.
 - `com.stealthx.securechat`: `versionCode=2`, `versionName=0.1.1-alpha`.
 - `com.stealthx.chameleon`: `versionCode=2`, `versionName=0.1.1-alpha`.
+
+## DUAL-AGENT DEBUG SESSION — 2026-06-12 18:19 UTC
+
+[AGENT-A] Session gestartet. S7 + Tab S4 angeschlossen.
+[AGENT-A] Warte auf AGENT-B Verbindung / S10-Findings.
+
+[AGENT-A] Bugs in Scope:
+- BUG-1: Incoming Call UI fehlt
+- BUG-2: Anruf angenommen aber Anrufer hört weiter klingeln
+- BUG-3: WalletConnect MetaMask nicht gefunden
+- BUG-4: Manuelle Wallet-Adresse → IFR Verifikation schlägt fehl
+
