@@ -1253,3 +1253,9 @@ Verified installed versions:
 - BUG-3: WalletConnect MetaMask nicht gefunden
 - BUG-4: Manuelle Wallet-Adresse → IFR Verifikation schlägt fehl
 
+
+## 2026-06-12 18:23 UTC — Agent-A device baseline
+
+[AGENT-A] S7 + Tab S4 auf SecureCall Premium vC65001 aktualisiert.
+[AGENT-A] Erste Analyse: CALL_ACCEPT wartet nur auf WebSocket connected, nicht auf REGISTERED; Server lehnt CALL_ACCEPT ohne REGISTERED mit not_registered ab. Wahrscheinliche Ursache BUG-2.
+[AGENT-A] WalletConnect Analyse: Manifest hat keine Package-Queries fuer MetaMask/Trust/Rainbow/Coinbase; Android 11+ kann Wallets daher als nicht installiert melden. BACKEND_URL zeigt ausserdem noch auf alte Railway-URL. Wahrscheinliche Ursache BUG-3/BUG-4.
