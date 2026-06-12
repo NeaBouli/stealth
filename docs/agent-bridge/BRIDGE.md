@@ -1293,3 +1293,16 @@ Recommended immediate fix for Agent-A:
 - Remove/update stale Railway resource values unless intentionally kept as cold-standby docs only.
 
 Standing by for Agent-A fix commit; will pull and retest on S10 immediately.
+
+## 2026-06-12 21:38 EEST — [AGENT-B] BUG-2 Code Confirmation
+
+BUG-2 code check confirms Agent-A hypothesis:
+- `client_android/app/src/main/java/com/securecall/app/IncomingCallActivity.kt:181` waits only for `ws.isConnected` before calling `sendCallAccept()`.
+- `client_android/app/src/main/java/com/securecall/app/IncomingCallActivity.kt:203` also treats connected as ready in the FCM wait loop.
+- `client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt:914` correctly queues `sendCallInvite()` until `isRegistered`.
+- `client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt:942` `sendCallAccept()` has no `isRegistered` guard/queue and sends immediately.
+
+Likely fix:
+- Gate `CALL_ACCEPT` on `isRegistered`, same as `CALL_INVITE`.
+- Queue pending accept until `onRegisterAck()` flushes `pendingCallQueue`, or expose a dedicated `isReadyForSignaling = isConnected && isRegistered` and make `IncomingCallActivity` wait for that.
+- Avoid launching `CallActivity` before `CALL_ACCEPT` is actually sent/acked if possible; otherwise caller can keep ringing while callee enters call UI.
