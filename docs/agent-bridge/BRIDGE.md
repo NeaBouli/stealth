@@ -1141,3 +1141,36 @@ Verification after commit `fe2aa42`:
 
 Next user action:
 - In Play Console Deeplinks, wait for Google verification refresh or retry later. No further repo/website code change required for this issue unless Play still fails after cache expiry.
+
+## 2026-06-12 09:00 UTC — Codex: SecureCall vC64 + 16KB Page Size Fix
+
+Actions:
+- Bumped SecureCall `versionCode` from 63 to 64, keeping `versionName` 1.0.40.
+- Built Free release AAB and copied to `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+- Built Free release APK and copied arm64 artifact to `/Users/gio/Desktop/SecureCall-LATEST.apk`.
+- Built internal Premium release APK and installed it on connected devices S7 + Tab S4.
+
+Device verification:
+- S7 `ce10160adc00152604`: `com.securecall.app.premium` versionCode `64001`, versionName `1.0.40-premium`.
+- Tab S4 `ce12182c68644439037e`: `com.securecall.app.premium` versionCode `64001`, versionName `1.0.40-premium`.
+
+16KB page size support:
+- NDK is r27, so CMake link flags were added for `libsecurecall.so`:
+  `-Wl,-z,max-page-size=16384` and `-Wl,-z,common-page-size=16384`.
+- Enabled modern JNI packaging in Gradle: `packaging { jniLibs { useLegacyPackaging false } }`.
+- Enabled `prefab true` in Gradle build features.
+- Local ignored `client_android/gradle.properties` contains `android.useNewNativeLibraryProvider=true` for the build; not committed because the file is gitignored and contains local signing secrets.
+
+Verification:
+- `./gradlew --no-daemon bundleFreeRelease` ✅ BUILD SUCCESSFUL.
+- `./gradlew --no-daemon assembleFreeRelease` ✅ BUILD SUCCESSFUL.
+- Python ELF program-header check: all 64-bit Free release native libs have `LOAD p_align >= 0x4000`.
+- `zipalign -c -P 16 -v 4 /Users/gio/Desktop/SecureCall-LATEST.apk` ✅ Verification successful.
+
+Artifacts:
+- `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `2e0ea7a58cc37e12d09009ee80e86d189d238ced323e3bd1984f6cd035abde6f`.
+- `/Users/gio/Desktop/SecureCall-LATEST.apk` SHA256 `6a6f0b28d1d8d1a64125e94235bc1bf4d53968618ff03d7085cea848562893d3`.
+- `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `5d0d6f3b01aff48af999508b6bc1b32d76a6e5e2188af97048de5116452cdb23`.
+
+Play Console manual item:
+- Production countries/regions still need to be added in Play Console UI.

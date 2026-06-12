@@ -26,6 +26,11 @@ find_library(
 
 target_include_directories(securecall PRIVATE opus/include)
 
+target_link_options(securecall PRIVATE
+        "-Wl,-z,max-page-size=16384"
+        "-Wl,-z,common-page-size=16384"
+)
+
 target_link_libraries(
         securecall
         opus
