@@ -1717,6 +1717,7 @@ Outstanding for Agent-A / other Codex:
   - `npm test` in `backend/signaling`: ✅ PASS.
   - Lokaler Service-Test Wallet `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958`: `balanceOf = 33333333 IFR`, `tier = premium`.
   - Hetzner deploy: `server.js` kopiert, PM2 reload, Health OK.
+  - Hetzner ENV bereinigt: `ETH_RPC_URL=https://ethereum.publicnode.com,https://cloudflare-eth.com`; alter LlamaRPC-403 Provider ist nicht mehr in der Produktions-ENV.
   - Live Curl `POST https://api.stealthx.tech/verify-ifr` mit Wallet `0x80fF...6958`:
     - `success: true`
     - `tier: premium`
