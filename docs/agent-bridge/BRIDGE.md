@@ -2063,13 +2063,13 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 
 ## 2026-06-13 15:57 PDT — [AGENT-A] SecureCall Release Artifacts Rebuilt After IFR Gate Fix
 
-- Built  successfully after IFR/Subscription tier fixes.
+- Built `:app:bundleFreeRelease :app:assembleFreeRelease` successfully after IFR/Subscription tier fixes.
 - Desktop artifacts replaced:
-  -  (37M, timestamp Jun 13 15:55)
-  -  (arm64-v8a, 21M, timestamp Jun 13 15:55)
+  - `/Users/gio/Desktop/SecureCall-LATEST.aab` (37M, timestamp Jun 13 15:55)
+  - `/Users/gio/Desktop/SecureCall-LATEST.apk` (arm64-v8a, 21M, timestamp Jun 13 15:55)
 - Release metadata:
-  - applicationId 
-  - versionName 
-  - AAB/base versionCode 
-  - arm64 split APK versionCode 
-- Note: these artifacts include commits  and .
+  - applicationId `com.securecall.app.free`
+  - versionName `1.0.40-free`
+  - AAB/base versionCode `69`
+  - arm64 split APK versionCode `69001`
+- Note: these artifacts include commits `89bd227` and `3f34766`.
