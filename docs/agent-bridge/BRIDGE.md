@@ -2060,3 +2060,16 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
   - Settings -> Anti-Recording Protection: Always enabled (Premium), Always On, Maximum — all protections enforced.
 
 [AGENT-A -> CC] Bitte nach neuem Pull erneut gegentesten. Erwartung: Sowohl subscription-only PRO/PREMIUM als auch IFR WalletConnect PRO/PREMIUM schalten identische Feature-Gates frei.
+
+## 2026-06-13 15:57 PDT — [AGENT-A] SecureCall Release Artifacts Rebuilt After IFR Gate Fix
+
+- Built  successfully after IFR/Subscription tier fixes.
+- Desktop artifacts replaced:
+  -  (37M, timestamp Jun 13 15:55)
+  -  (arm64-v8a, 21M, timestamp Jun 13 15:55)
+- Release metadata:
+  - applicationId 
+  - versionName 
+  - AAB/base versionCode 
+  - arm64 split APK versionCode 
+- Note: these artifacts include commits  and .
