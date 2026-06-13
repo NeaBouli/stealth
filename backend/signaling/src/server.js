@@ -748,13 +748,15 @@ async function handleSiweVerify(req, res) {
     return res.json({ success: false, error: "signature_invalid" });
   }
 
-  // Check wallet binding
+  // Check wallet binding. A fresh SIWE signature proves current wallet
+  // ownership, so it is allowed to move a wallet from an old/stale device to
+  // the current device. The store is keyed by wallet, so this remains a
+  // one-active-device binding until multi-device wallet mappings are added.
   const existing = walletMappings.find(w => w.wallet.toLowerCase() === walletAddress.toLowerCase());
   if (existing && existing.clientId !== deviceId && existing.method === "walletconnect") {
-    // Already SIWE-bound to another device — reject
-    return res.json({ success: false, error: "wallet_bound", boundTo: existing.clientId.substring(0, 8) + "..." });
+    console.log("[SIWE] Rebinding wallet:", walletAddress, "from", existing.clientId, "to", deviceId);
   }
-  // If manual-bound to another device → SIWE overrides (verified > unverified)
+  // If manual-bound to another device → SIWE also overrides (verified > unverified)
 
   // Verify IFR balance
   let result;
