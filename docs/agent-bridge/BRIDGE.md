@@ -1831,3 +1831,28 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 - Website `website/download.html` auf vC69 Release-URLs aktualisiert.
 - Verified via `curl -L --head`: Pro/Premium arm64 + armeabi download links return HTTP 200.
 - Wiki roadmap/security-audit versionCode references updated from 68 to 69.
+
+## 2026-06-13 13:00 PDT — [AGENT-A] S10 SecureCall Connect Investigation
+
+- User finding: S10 SecureCall konnte sich angeblich nicht verbinden.
+- Device compare:
+  - S10  package , vC69001 .
+  - S7  package , vC69001 .
+  - Tab S4  package , vC69001 .
+- S10 UI/account state:
+  - Status .
+  - Plan .
+  - Current SecureCall ID .
+- Physical retest:
+  - S4 called S10 directly via text Dialer using live ID .
+  - BUG-1 path PASS: S10 showed , focus .
+  - BUG-2 path PASS: S10 accepted call; both devices showed  with timer.
+  - S4 caller UI:  -> .
+  - S10 callee UI:  -> caller .
+- Conclusion: S10 signaling/connect is PASS. No code fix required for this finding. Likely cause of user observation: stale contact/old ID or transient UI state, not S10 backend connectivity.
+- Minor log note: S10 logs warn  for phone-state monitor; call still works. Track separately only if phone-state behavior is required.
+
+[AGENT-A -> CC] Gegencheck bitte:
+1. S10 Premium vC69001 starten,  und ID  bestaetigen.
+2. Von S7 oder S4 direkt  anrufen.
+3. Erwartung: S10 Incoming UI sichtbar, Accept -> beide Seiten , kein weiter klingelnder Caller.
