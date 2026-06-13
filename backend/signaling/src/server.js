@@ -706,8 +706,11 @@ app.post("/verify-ifr", async (req, res) => {
   }
 });
 
-app.post("/siwe/verify", async (req, res) => {
-  const { walletAddress, signature, nonce, deviceId } = req.body;
+async function handleSiweVerify(req, res) {
+  const walletAddress = (req.body?.walletAddress || req.query?.walletAddress || "").trim();
+  const signature = (req.body?.signature || req.query?.signature || "").trim();
+  const nonce = (req.body?.nonce || req.query?.nonce || "").trim();
+  const deviceId = (req.body?.deviceId || req.query?.deviceId || "").trim();
 
   // Validate input
   if (!walletAddress || !signature || !nonce || !deviceId) {
@@ -787,7 +790,13 @@ app.post("/siwe/verify", async (req, res) => {
     console.log("[SIWE] Wallet bound (insufficient):", walletAddress, "(", amount, "IFR) device:", deviceId);
     res.json({ success: false, tier: "", lockedAmount: amount, balanceAmount: amount, error: "insufficient", walletBound: true });
   }
-});
+}
+
+app.post("/siwe/verify", handleSiweVerify);
+// Fallback for wallet WebViews that block cross-origin fetch/XHR. The SIWE
+// page can send this as an image beacon; the response body is intentionally
+// not required by the client because SecureCall refreshes via /siwe/status.
+app.get("/siwe/verify-link", handleSiweVerify);
 
 async function handleSiweStatus(req, res) {
   const deviceId = (req.body?.deviceId || req.query?.deviceId || "").trim();
@@ -837,7 +846,7 @@ async function handleSiweStatus(req, res) {
 app.post("/siwe/status", handleSiweStatus);
 app.get("/siwe/status", handleSiweStatus);
 
-console.log("[SIWE] Endpoints ready: GET /siwe/challenge, POST /siwe/verify, GET/POST /siwe/status");
+console.log("[SIWE] Endpoints ready: GET /siwe/challenge, POST /siwe/verify, GET /siwe/verify-link, GET/POST /siwe/status");
 
 // --- Health Check Endpoint ---
 app.get("/health", (req, res) => {
