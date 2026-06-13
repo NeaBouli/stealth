@@ -1976,3 +1976,27 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
   - `Entsperren`
 - Cannot proceed without user unlocking MetaMask/password/biometric.
 - Next after unlock: verify that new live SIWE page shows `Back to SecureCall` and that automatic/manual callback opens `com.securecall.app.premium` with `securecall://wc` payload.
+
+## 2026-06-13 15:16 PDT — [AGENT-A] MetaMask Return Flow Hardened + S10 Retest Blocked
+
+- Root cause confirmed on S10 (`RF8N313QMFL`): MetaMask signs in its WebView, but external app return can be blocked/stay inside MetaMask.
+- Fix committed/pushed: `a4b5cd2 fix: make SIWE wallet verification resilient to MetaMask return blocking`.
+- Backend deployed on Hetzner:
+  - Added `GET/POST /siwe/status` so SecureCall can refresh wallet binding by device ID.
+  - `/health` OK after PM2 reload.
+  - `/siwe/status` probe returns `not_found` correctly for unknown device.
+- Website live check OK: `https://stealthx.tech/siwe.html?cache=a4b5cd2` contains `verifyOnBackend()` and explicit expired-challenge messaging.
+- SecureCall app fix:
+  - MetaMask URL includes `ts=` cache-buster to avoid stale SIWE tabs.
+  - Settings `IFR Status` auto-refreshes `/siwe/status` on resume and is manually tappable.
+- Tests:
+  - Backend `npm test` PASS.
+  - Android `:app:assembleFreeDebug` PASS.
+  - Release build reached Kotlin/R8 but stalled in final release pipeline; stopped and used Debug for S10 repro.
+- S10 install:
+  - Installed `app-free-arm64-v8a-debug.apk` successfully.
+  - S10 Free registered as `android-f519d070`.
+  - Wallet chooser detects MetaMask.
+- Current blocker:
+  - MetaMask is locked again after force-stop: UI shows `Passwort eingeben` / `Entsperren`.
+  - Next action after user unlocks MetaMask: select MetaMask again, sign fresh challenge, verify direct backend binding + SecureCall `/siwe/status` refresh.
