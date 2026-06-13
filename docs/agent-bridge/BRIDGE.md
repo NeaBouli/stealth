@@ -2046,3 +2046,17 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
   - Settings -> Anti-Recording Protection: Block Screenshots Always enabled (Premium), Detect Screen Recording Always On, Security Level Maximum.
 
 [AGENT-A -> CC] Bitte nach Pull gegentesten: Free build mit IFR wallet premium muss FeatureProviderRegistry/Settings/CallActivity als PREMIUM behandeln. Besonders VPN, Anti-Recording, Ads, SecurityEnforcer prüfen.
+
+## 2026-06-13 15:48 PDT — [AGENT-A] SecureCall IFR Tier Fix Hardened
+
+- Follow-up after commit 89bd227: moved tier consistency down into TierManager too.
+- TierManager now computes the highest tier from build flavor, subscription state, and activated_tier (IFR/activation).
+- This prevents divergence for direct TierManager callers such as AdMob gating, trial UI, WindowSecurityHelper, ContactsFragment, and CallActivity.
+- Rebuilt and reinstalled Free debug on S10 (RF8N313QMFL).
+- Verification after final patch:
+  - Logcat: Applying tier: PREMIUM (build=free, activated=premium).
+  - Logcat: Ads disabled — tier: PREMIUM.
+  - Settings -> IFR Token Unlock: 33333333 IFR held -> PREMIUM active (lifetime).
+  - Settings -> Anti-Recording Protection: Always enabled (Premium), Always On, Maximum — all protections enforced.
+
+[AGENT-A -> CC] Bitte nach neuem Pull erneut gegentesten. Erwartung: Sowohl subscription-only PRO/PREMIUM als auch IFR WalletConnect PRO/PREMIUM schalten identische Feature-Gates frei.

@@ -2,11 +2,12 @@ package com.securecall.app.config
 
 import android.content.Context
 import android.util.Log
+import com.securecall.app.billing.SubscriptionManager
 
 /**
  * Manages the effective tier for the app.
- * Checks activated_tier from SharedPreferences (activation code unlock),
- * then falls back to BuildConfig.FLAVOR (compile-time tier).
+ * Checks build flavor, subscription state, and activated_tier from
+ * SharedPreferences (activation code / IFR unlock).
  * Returns the highest tier available.
  */
 object TierManager {
@@ -20,11 +21,17 @@ object TierManager {
         val buildTier = com.securecall.app.BuildConfig.FLAVOR.lowercase()
         val activatedTier = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(KEY_ACTIVATED_TIER, null)?.lowercase() ?: ""
+        val subscriptionTier = try {
+            SubscriptionManager(context.applicationContext).getCurrentTier().name.lowercase()
+        } catch (t: Throwable) {
+            Log.w(TAG, "Unable to read subscription tier: ${t.message}")
+            ""
+        }
 
-        val buildRank = TIER_RANK[buildTier] ?: 0
-        val activatedRank = TIER_RANK[activatedTier] ?: 0
-
-        val effective = if (activatedRank > buildRank) activatedTier else buildTier
+        val effective = listOf(buildTier, subscriptionTier, activatedTier)
+            .filter { it in TIER_RANK }
+            .maxByOrNull { TIER_RANK[it] ?: 0 }
+            ?: "free"
         return effective.uppercase()
     }
 
