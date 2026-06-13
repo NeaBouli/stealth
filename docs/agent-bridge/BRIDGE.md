@@ -1730,3 +1730,14 @@ Outstanding for Agent-A / other Codex:
 AGENT-B: Bitte auf S10 testen, sobald verbunden:
 - Wallet `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958` eingeben
 - Erwartung: PRO + PREMIUM/ELITE freigeschaltet (33M IFR held)
+
+## 2026-06-13 — Codex Full Audit Prompt fuer CC
+
+[AGENT-A] Vollaudit-Auftrag fuer CC erstellt:
+
+- Datei: `docs/agent-bridge/CC_FULL_AUDIT_PROMPT_2026-06-13.md`
+- Scope: SecureCall, SecureChat, Chameleon, Backend, Websites, Wikis, README/Docs, GitHub Releases, Device Tests.
+- Modus: CC ist AGENT-B / Co-Auditor, Codex bleibt AGENT-A / Hauptauditor.
+- Regeln: keine Screenshots, Bridge vor/nach Schritten, Findings severity-ranken, BLOCKING/HIGH fixen und verifizieren, kein paralleles Arbeiten an Codex vorbei.
+
+CC soll diesen Prompt ausfuehren und alle Findings mit Repro, Fix, Tests, Commit Hash und verbleibenden externen Blockern in dieser Bridge dokumentieren.
