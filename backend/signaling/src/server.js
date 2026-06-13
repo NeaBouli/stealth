@@ -671,6 +671,41 @@ app.get("/siwe/challenge", (req, res) => {
   res.json({ nonce, message });
 });
 
+// Read-only IFR hold verification endpoint.
+// This is intentionally not a wallet-binding endpoint; SIWE/WebSocket flows still
+// handle device binding. It exists for app support, QA, and website diagnostics.
+app.post("/verify-ifr", async (req, res) => {
+  const walletAddress = (req.body?.walletAddress || "").trim();
+  if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
+    return res.status(400).json({ success: false, error: "invalid_address" });
+  }
+
+  try {
+    const result = await verifyIfrLock(walletAddress);
+    const amount = result.balanceAmount || result.lockedAmount || "0";
+    const eligibleTiers = [];
+    if (result.success && (result.tier === "pro" || result.tier === "premium")) {
+      eligibleTiers.push("pro");
+    }
+    if (result.success && result.tier === "premium") {
+      eligibleTiers.push("premium", "elite");
+    }
+
+    return res.json({
+      ...result,
+      walletAddress,
+      balanceAmount: amount,
+      // Backward-compatible field for older clients still reading lockedAmount.
+      lockedAmount: amount,
+      eligibleTiers,
+      model: "hold"
+    });
+  } catch (e) {
+    console.error("[IFR] /verify-ifr error:", e.message);
+    return res.status(500).json({ success: false, error: "balance_check_failed" });
+  }
+});
+
 app.post("/siwe/verify", async (req, res) => {
   const { walletAddress, signature, nonce, deviceId } = req.body;
 

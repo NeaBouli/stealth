@@ -1704,3 +1704,28 @@ Outstanding for Agent-A / other Codex:
   - Live `/licenses/status` kennt alle 7 Lifetime-Tiers.
   - Externer Checkout-Test war rate-limited; Hetzner-local Test gegen laufende Route `127.0.0.1:8080` erzeugt Checkout-URLs fuer `chameleon_elite_lifetime`, `stealthx_suite_lifetime`, `securechat_elite_lifetime`.
 - Chameleon/SecureChat Ergebnis siehe jeweilige Repo-Bridge; beide Apps frisch auf S4/S7/S10 installiert und per text-only UI/logcat/Monkey getestet.
+
+## 2026-06-12 23:10 PT — Codex IFR Hold Endpoint Fix
+
+- Re-audit auf User-Hinweis: Backend-Service war bereits auf Hold-Modell (`balanceOf()` gegen IFR Token) umgestellt und Hetzner hatte `src/services/ifr.js` korrekt deployed.
+- Fehlender Baustein gefunden: Direkter HTTP-Test-Endpunkt `/verify-ifr` existierte nicht, daher lieferte der vorgegebene Curl-Test `Cannot POST /verify-ifr`.
+- Fix:
+  - `backend/signaling/src/server.js` ergaenzt `POST /verify-ifr`.
+  - Endpoint ist read-only, bindet keine Wallet an ein Device und nutzt denselben `verifyIfrLock()` Compatibility-Service, der intern `balanceOf()` prueft.
+  - Response enthaelt `model: "hold"`, `balanceAmount`, kompatibles `lockedAmount`, und `eligibleTiers`.
+- Verification:
+  - `npm test` in `backend/signaling`: ✅ PASS.
+  - Lokaler Service-Test Wallet `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958`: `balanceOf = 33333333 IFR`, `tier = premium`.
+  - Hetzner deploy: `server.js` kopiert, PM2 reload, Health OK.
+  - Live Curl `POST https://api.stealthx.tech/verify-ifr` mit Wallet `0x80fF...6958`:
+    - `success: true`
+    - `tier: premium`
+    - `balanceAmount: "33333333"`
+    - `eligibleTiers: ["pro","premium","elite"]`
+    - `model: "hold"`
+- S10 ist laut User gerade abgeklemmt; Geraete-Verifikation wird nach Wiederanschluss nachgezogen.
+
+[AGENT-A] IFR Hold-Model deployed.
+AGENT-B: Bitte auf S10 testen, sobald verbunden:
+- Wallet `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958` eingeben
+- Erwartung: PRO + PREMIUM/ELITE freigeschaltet (33M IFR held)
