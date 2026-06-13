@@ -2007,3 +2007,25 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 - Wallet `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958` is not bound to an old device.
 - Expected next S10 SIWE result after MetaMask unlock/signature: backend can bind wallet to current S10 device ID (`android-f519d070` in Free debug test) and `/siwe/status` should return verified tier/balance.
 - Active blocker remains local-only: MetaMask lock screen on S10.
+
+## 2026-06-13 15:32 PDT — [AGENT-A] S10 MetaMask/SIWE Root Cause + Current State
+
+- S10 current SecureCall Free debug device ID: `android-f519d070`.
+- Root causes found:
+  1. MetaMask had 20 open tabs and reused stale SIWE tabs instead of opening fresh challenge URLs.
+  2. Stale SIWE tab contained old device `android-b0625103` and expired challenge from `2026-06-12T21:10:54.150Z`.
+  3. MetaMask blocks external-app return with warning: `Diese Webseite wurde automatisch für das Öffnen einer externen App blockiert.` Even after `ERLAUBEN`, it may stay inside MetaMask.
+  4. Backend had stale wallet binding: `0x80ff...6958` -> `android-b0625103`, tier empty. This caused `wallet_bound` for current S10.
+- Fixes committed/deployed:
+  - `fd3f437 fix: add SIWE image beacon fallback for MetaMask WebView`.
+  - `c780f8b fix: allow SIWE wallet rebind after stale device binding`.
+- Production repair:
+  - Verified IFR hold for `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958`: `33333333 IFR`, tier `premium`.
+  - Rebound `/app/data/wallets.json` to current S10 `android-f519d070`.
+  - `/siwe/status` now returns success=true, tier=premium, balanceAmount=33333333.
+- Device verification:
+  - Brought SecureCall back to foreground.
+  - Settings -> IFR Token Unlock shows `33333333 IFR held -> PREMIUM active (lifetime)`.
+  - App prefs confirm `activated_tier=premium`, `ifr_tier=premium`, method `walletconnect`, wallet `0x80ff...6958`.
+- Remaining UX issue to fix next:
+  - MetaMask tab overflow and blocked external-app return still create poor UX. Need app/site flow change to avoid relying on MetaMask opening a new tab and to display a clear `Close this tab / return to SecureCall` instruction after server verification.
