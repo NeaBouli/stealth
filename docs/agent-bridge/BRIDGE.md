@@ -1904,3 +1904,37 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 2. Android 15 Edge-to-Edge pruefen: `WindowCompat.setDecorFitsSystemWindows(window, false)` in `MainActivity` + `CallActivity`, ohne Layout-Regressions.
 3. PiP fuer Calls pruefen: Manifest `supportsPictureInPicture=true` und `CallActivity.onUserLeaveHint()` nur wenn Call aktiv.
 4. Danach `bundleFreeRelease`, AAB nach `~/Desktop/SecureCall-LATEST.aab`, versionCode nur bumpen falls neue Play-AAB noetig, Commit separat.
+
+## 2026-06-13 13:59 PDT — [AGENT-A] IFR Manual Address Removed + Wallet Callback Flow
+
+- Ziel: Manuelle IFR-Adresseingabe aus SecureCall, SecureChat und Chameleon entfernen; nur Wallet-Connect/SIWE-Flow sichtbar lassen.
+- SecureCall:
+  - Settings: `pref_ifr_wallet` + `pref_ifr_verify` entfernt.
+  - SIWE-Paste-Dialog entfernt; `siwe.html` leitet nach Signatur per `securecall://wc` zur App zurueck.
+  - `MainActivity` verarbeitet `securecall://wc` und `WalletConnectManager` verifiziert serverseitig ueber `/siwe/verify`.
+- SecureChat:
+  - `Enter Address Manually` UI entfernt.
+  - Interne `verifyManualAddress/processManualAddress` Pfade entfernt.
+  - `securechat://wc` Deep-Link-Callback in `MainActivity` + `WalletConnectManager` verdrahtet.
+- Chameleon:
+  - `Enter Address Manually` UI entfernt.
+  - Interne `verifyManualAddress/processManualAddress` Pfade entfernt.
+  - `chameleon://wc` Deep-Link-Callback in `MainActivity` + `WalletConnectManager` verdrahtet.
+- Docs/Wiki:
+  - SecureCall User Manual, SIWE-Seite, IFR-Wiki, SecureChat/Chameleon Manuals auf Wallet-Connect-only aktualisiert.
+- Builds:
+  - SecureCall `assembleFreeDebug assembleProDebug assemblePremiumDebug` PASS.
+  - SecureCall `assembleFreeRelease assembleProRelease assemblePremiumRelease` PASS.
+  - SecureChat `assembleDebug` + `assembleRelease` PASS.
+  - Chameleon `assembleDebug` + `assembleRelease` PASS.
+- Device installs:
+  - SecureCall updated: S4 Free, S7 Pro, S10 Premium all `versionCode=69001`.
+  - SecureChat release updated on S4/S7/S10.
+  - Chameleon release updated on S4/S7/S10.
+- Callback smoke:
+  - `securecall://wc` resolves to correct SecureCall flavor on S4/S7/S10.
+  - `securechat://wc` resolves to `com.stealthx.securechat/.MainActivity` on S4/S7/S10.
+  - `chameleon://wc` resolves to `com.stealthx.chameleon/.MainActivity` on S4/S7/S10.
+- Sweep:
+  - Current app/site/doc files contain no manual IFR address entry strings or `processManualAddress`/`verifyManualAddress` code.
+  - Remaining manual strings only in historical project Bridge entries.

@@ -212,13 +212,7 @@ Hold IFR tokens on Ethereum to activate Pro or Premium tier permanently, with no
 - 2,000 IFR held → Pro
 - 6,000 IFR held → Premium
 
-**Status display** shows your current state: wallet address, held amount, tier, and whether the result is live or from cache (cache is valid for 30 days).
-
-**Wallet Address**
-Enter your Ethereum wallet address (0x format, 42 characters). Used for manual verification.
-
-**Verify Balance**
-Runs a manual verification against your entered wallet address. The backend queries the Ethereum blockchain and returns your held amount. If sufficient, your tier is upgraded immediately. Manual verifications expire after 30 days and re-check every 24 hours.
+**Status display** shows your current state: wallet address, held amount, tier, and whether the result is live or from cache.
 
 **Connect Wallet** (WalletConnect / SIWE)
 Opens a wallet selector showing MetaMask, Trust Wallet, Rainbow, and Coinbase Wallet. Installed wallets appear with a green checkmark. Tap one to begin the Sign-In With Ethereum (SIWE) flow:
@@ -228,7 +222,7 @@ Opens a wallet selector showing MetaMask, Trust Wallet, Rainbow, and Coinbase Wa
 3. Sign the message with your wallet — this proves you own the address without revealing your private key.
 4. The signature is verified server-side. If your IFR balance is sufficient, your tier is permanently unlocked with no expiry.
 
-SIWE-verified wallets do not expire. Manual address verifications expire after 30 days.
+Wallet-verified IFR unlocks do not expire while the wallet continues to hold the required IFR balance.
 
 Tap **Disconnect WalletConnect** (shown when connected) to remove the wallet and revert to your base tier.
 

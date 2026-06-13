@@ -8,8 +8,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
-import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.Toast
 import com.securecall.app.config.IfrLockManager
 import okhttp3.MediaType.Companion.toMediaType
@@ -59,6 +57,9 @@ object WalletConnectManager {
     var connectedAddress: String? = null
         private set
 
+    @Volatile
+    private var pendingCallback: ((Boolean, String) -> Unit)? = null
+
     data class WalletApp(val name: String, val packageName: String, val deepLink: String)
 
     fun init(application: Application) {
@@ -83,7 +84,6 @@ object WalletConnectManager {
         val items = mutableListOf<String>()
         installed.forEach { items.add("\uD83D\uDFE2 ${it.name}") }
         notInstalled.forEach { items.add("\u26AA ${it.name} (not installed)") }
-        items.add("\u270F\uFE0F Enter manually (no signature required)")
 
         AlertDialog.Builder(activity)
             .setTitle("\uD83D\uDD10 Verify Wallet Ownership")
@@ -94,12 +94,8 @@ object WalletConnectManager {
                         startSiweFlow(activity, wallet, callback)
                     }
                     which < installed.size + notInstalled.size -> {
-                        Toast.makeText(activity, "Not installed — use manual entry", Toast.LENGTH_SHORT).show()
-                        callback(false, "manual_fallback")
-                    }
-                    else -> {
-                        // Manual entry — no SIWE, uses existing manual verify flow
-                        callback(false, "manual_fallback")
+                        Toast.makeText(activity, "Install ${notInstalled[which - installed.size].name} to connect this wallet", Toast.LENGTH_SHORT).show()
+                        callback(false, "Wallet app not installed")
                     }
                 }
             }
@@ -125,18 +121,20 @@ object WalletConnectManager {
                 val nonce = challenge.first
                 val message = challenge.second
 
-                // Open signing page in wallet's built-in dApp browser
+                // Open signing page in wallet's built-in dApp browser. The page redirects
+                // back to securecall://wc after the wallet signs the challenge.
                 val encodedMsg = Uri.encode(message)
                 val encodedDevice = Uri.encode(deviceId)
-                val pageUrl = "https://stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg"
+                val pageUrl = "https://stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg&returnScheme=securecall&returnHost=wc"
 
                 // Each wallet has a different deep link format for its in-app browser
                 val mmDeepLink = when (wallet.packageName) {
-                    "io.metamask" -> "metamask://dapp/stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg"
+                    "io.metamask" -> "metamask://dapp/stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg&returnScheme=securecall&returnHost=wc"
                     "com.wallet.crypto.trustapp" -> "https://link.trustwallet.com/open_url?coin_id=60&url=${Uri.encode(pageUrl)}"
                     else -> pageUrl
                 }
 
+                pendingCallback = callback
                 try {
                     activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(mmDeepLink)))
                     Log.d(TAG, "Opened signing page in ${wallet.name} browser")
@@ -145,120 +143,9 @@ object WalletConnectManager {
                     activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(pageUrl)))
                 }
 
-                // After user signs and comes back, show paste dialog
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    if (!activity.isFinishing && !activity.isDestroyed) {
-                        showVerifyDialog(activity, nonce, deviceId, callback)
-                    }
-                }, 2000)
+                Toast.makeText(activity, "Sign the challenge in your wallet. SecureCall will return automatically.", Toast.LENGTH_LONG).show()
             }
         }, "siwe-challenge").start()
-    }
-
-    /**
-     * Dialog to paste wallet address + signature after signing in MetaMask browser.
-     */
-    private fun showVerifyDialog(
-        activity: Activity, nonce: String, deviceId: String,
-        callback: (Boolean, String) -> Unit
-    ) {
-        val dp = activity.resources.displayMetrics.density
-        val pad = (16 * dp).toInt()
-
-        val layout = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(pad, pad, pad, 0)
-        }
-
-        val addrInput = EditText(activity).apply {
-            hint = "Wallet Address (0x...)"
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            textSize = 13f; setSingleLine(true)
-        }
-        layout.addView(addrInput)
-
-        val sigInput = EditText(activity).apply {
-            hint = "Signature (0x... from MetaMask)"
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            textSize = 13f; setSingleLine(true)
-        }
-        layout.addView(sigInput)
-
-        val dialog = AlertDialog.Builder(activity)
-            .setTitle("\uD83D\uDD10 Paste Signed Values")
-            .setMessage("Copy your wallet address and signature from the MetaMask signing page:")
-            .setView(layout)
-            .setPositiveButton("Verify", null)
-            .setNegativeButton("Cancel") { _, _ -> callback(false, "Cancelled") }
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val address = addrInput.text.toString().trim()
-                val signature = sigInput.text.toString().trim()
-
-                if (!WALLET_REGEX.matches(address)) {
-                    Toast.makeText(activity, "Invalid wallet address", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                if (!SIG_REGEX.matches(signature)) {
-                    Toast.makeText(activity, "Invalid signature (must be 0x + 130 hex chars)", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).text = "Verifying..."
-
-                Thread({
-                    val result = submitSiweVerification(address, signature, nonce, deviceId)
-                    activity.runOnUiThread {
-                        if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
-                        if (result != null && result.optBoolean("success")) {
-                            val tier = result.optString("tier", "")
-                            val amount = result.optString("lockedAmount", "0")
-                            connectedAddress = address
-                            IfrLockManager.storeVerificationResult(
-                                activity, address, tier, amount, IfrLockManager.METHOD_WALLETCONNECT
-                            )
-                            dialog.dismiss()
-                            callback(true, "Unlocked $tier with $amount IFR (permanent, SIWE verified)")
-                        } else {
-                            val error = result?.optString("error", "unknown") ?: "network_error"
-                            val walletBound = result?.optBoolean("walletBound", false) ?: false
-                            val amount = result?.optString("lockedAmount", "0") ?: "0"
-
-                            if (error == "insufficient" && walletBound) {
-                                // Wallet SIWE-verified but not enough IFR — store binding anyway
-                                connectedAddress = address
-                                // Store as walletconnect method but without tier
-                                val prefs = activity.getSharedPreferences("securecall_prefs", Context.MODE_PRIVATE)
-                                prefs.edit()
-                                    .putString("ifr_wallet_address", address.lowercase())
-                                    .putString("ifr_locked_amount", amount)
-                                    .putString("ifr_verification_method", IfrLockManager.METHOD_WALLETCONNECT)
-                                    .putLong("ifr_last_verified", System.currentTimeMillis())
-                                    .putLong("ifr_wallet_verified_at", System.currentTimeMillis())
-                                    .apply()
-                                dialog.dismiss()
-                                callback(true, "Wallet verified & connected ($amount IFR held).\nNeed 2,000 IFR for Pro / 6,000 for Premium.\nTier activates automatically when you hold enough IFR.")
-                            } else {
-                                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
-                                dialog.getButton(AlertDialog.BUTTON_POSITIVE).text = "Verify"
-                                val msg = when (error) {
-                                    "signature_invalid" -> "Signature verification failed — did you sign the exact message?"
-                                    "wallet_bound" -> "This wallet is already linked to another device"
-                                    "invalid_nonce", "challenge_expired" -> "Challenge expired — try again"
-                                    "balance_check_failed" -> "Ethereum RPC unavailable — try again later"
-                                    else -> "Verification failed: $error"
-                                }
-                                Toast.makeText(activity, msg, Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
-                }, "siwe-verify").start()
-            }
-        }
-        dialog.show()
     }
 
     private fun fetchChallenge(deviceId: String): Pair<String, String>? { // nonce, message
@@ -300,6 +187,74 @@ object WalletConnectManager {
             Log.e(TAG, "SIWE verify failed: ${e.message}")
             null
         }
+    }
+
+    fun handleDeepLink(context: Context, uri: Uri?): Boolean {
+        if (uri?.scheme != "securecall" || uri.host != "wc") return false
+        val address = uri.getQueryParameter("address")
+            ?: uri.getQueryParameter("walletAddress")
+        val signature = uri.getQueryParameter("signature")
+        val nonce = uri.getQueryParameter("nonce")
+        val deviceId = uri.getQueryParameter("deviceId")
+        if (address == null || !WALLET_REGEX.matches(address) ||
+            signature == null || !SIG_REGEX.matches(signature) ||
+            nonce.isNullOrBlank() || deviceId.isNullOrBlank()
+        ) {
+            pendingCallback?.invoke(false, "Wallet callback was incomplete")
+            Toast.makeText(context, "Wallet callback was incomplete", Toast.LENGTH_LONG).show()
+            return true
+        }
+
+        Thread({
+            val result = submitSiweVerification(address, signature, nonce, deviceId)
+            val callback = pendingCallback
+            pendingCallback = null
+            val message = applySiweResult(context, address, result)
+            callback?.invoke(message.first, message.second)
+            if (context is Activity) {
+                context.runOnUiThread {
+                    Toast.makeText(context, message.second, Toast.LENGTH_LONG).show()
+                }
+            }
+        }, "siwe-callback-verify").start()
+        return true
+    }
+
+    private fun applySiweResult(context: Context, address: String, result: JSONObject?): Pair<Boolean, String> {
+        if (result != null && result.optBoolean("success")) {
+            val tier = result.optString("tier", "")
+            val amount = result.optString("balanceAmount", result.optString("lockedAmount", "0"))
+            connectedAddress = address
+            IfrLockManager.storeVerificationResult(
+                context, address, tier, amount, IfrLockManager.METHOD_WALLETCONNECT
+            )
+            return true to "Unlocked $tier with $amount IFR (permanent, wallet verified)"
+        }
+
+        val error = result?.optString("error", "unknown") ?: "network_error"
+        val walletBound = result?.optBoolean("walletBound", false) ?: false
+        val amount = result?.optString("balanceAmount", result.optString("lockedAmount", "0")) ?: "0"
+        if (error == "insufficient" && walletBound) {
+            connectedAddress = address
+            val prefs = context.getSharedPreferences("securecall_prefs", Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString("ifr_wallet_address", address.lowercase())
+                .putString("ifr_locked_amount", amount)
+                .putString("ifr_verification_method", IfrLockManager.METHOD_WALLETCONNECT)
+                .putLong("ifr_last_verified", System.currentTimeMillis())
+                .putLong("ifr_wallet_verified_at", System.currentTimeMillis())
+                .apply()
+            return true to "Wallet verified & connected ($amount IFR held).\nNeed 2,000 IFR for Pro / 6,000 for Premium."
+        }
+
+        val msg = when (error) {
+            "signature_invalid" -> "Signature verification failed — did you sign the exact message?"
+            "wallet_bound" -> "This wallet is already linked to another device"
+            "invalid_nonce", "challenge_expired" -> "Challenge expired — try again"
+            "balance_check_failed" -> "Ethereum RPC unavailable — try again later"
+            else -> "Verification failed: $error"
+        }
+        return false to msg
     }
 
     private fun openWalletApp(activity: Activity, wallet: WalletApp) {

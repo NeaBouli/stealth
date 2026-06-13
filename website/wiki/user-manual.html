@@ -290,14 +290,12 @@
             <table>
                 <thead><tr><th>IFR Held</th><th>Tier Unlocked</th><th>Expiry</th></tr></thead>
                 <tbody>
-                <tr><td>2,000 IFR</td><td>Pro</td><td>Manual: 30 days &mdash; WalletConnect: never</td></tr>
-                <tr><td>6,000 IFR</td><td>Premium</td><td>Manual: 30 days &mdash; WalletConnect: never</td></tr>
+                <tr><td>2,000 IFR</td><td>Pro</td><td>WalletConnect verified</td></tr>
+                <tr><td>6,000 IFR</td><td>Premium</td><td>WalletConnect verified</td></tr>
                 </tbody>
             </table>
             <ul>
                 <li><strong>Status display</strong> &mdash; Shows wallet address, held amount, tier, and whether the result is live or from cache.</li>
-                <li><strong>Wallet Address</strong> &mdash; Enter your Ethereum address (0x format, 42 characters) for manual verification.</li>
-                <li><strong>Verify Balance</strong> &mdash; Runs manual verification. The backend queries Ethereum and returns your held amount. Expires after 30 days; re-checks every 24 hours.</li>
                 <li><strong>Connect Wallet (WalletConnect / SIWE)</strong> &mdash; Opens a wallet selector showing MetaMask, Trust Wallet, Rainbow, and Coinbase Wallet. Installed wallets show a green checkmark. Tap one to start the Sign-In With Ethereum flow: the app fetches a challenge &rarr; your wallet signs it &rarr; the signature is verified server-side &rarr; if IFR balance is sufficient, your tier is permanently unlocked with no expiry.</li>
                 <li><strong>Disconnect WalletConnect</strong> &mdash; Shown when a wallet is connected. Disconnects and reverts to your base tier.</li>
                 <li><strong>Buy IFR Token</strong> &mdash; Opens the official $IFR token page on Uniswap.</li>

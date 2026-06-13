@@ -206,6 +206,8 @@ public class MainActivity extends AppCompatActivity {
         handleInviteDeepLink(getIntent());
         // Handle custom-id deep link: securecall://custom-id?id=xxx&token=xxx
         handleCustomIdDeepLink(getIntent());
+        // Handle wallet verification deep link: securecall://wc?address=...&signature=...
+        handleWalletDeepLink(getIntent());
 
         // Trial: show expired dialog at app start if applicable
         if (com.securecall.app.trial.TrialManager.INSTANCE.shouldShowExpiredDialog(this)) {
@@ -220,8 +222,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        setIntent(intent);
         handleInviteDeepLink(intent);
         handleCustomIdDeepLink(intent);
+        handleWalletDeepLink(intent);
+    }
+
+    private void handleWalletDeepLink(Intent intent) {
+        if (intent == null || intent.getData() == null) return;
+        if (com.securecall.app.wallet.WalletConnectManager.INSTANCE.handleDeepLink(this, intent.getData())) {
+            Log.d(TAG, "Wallet verification callback received");
+        }
     }
 
     private void handleInviteDeepLink(Intent intent) {

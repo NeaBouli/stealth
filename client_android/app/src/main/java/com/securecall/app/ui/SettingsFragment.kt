@@ -1033,37 +1033,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             else -> getString(R.string.ifr_status_none) + "\n" + getString(R.string.ifr_threshold_info)
         }
 
-        // Wallet input
-        findPreference<EditTextPreference>("pref_ifr_wallet")?.apply {
-            text = wallet
-            if (wallet != null) summary = "${wallet.take(6)}...${wallet.takeLast(4)}"
-            setOnPreferenceChangeListener { _, newValue ->
-                val addr = (newValue as? String)?.trim() ?: ""
-                if (addr.matches(Regex("^0x[0-9a-fA-F]{40}$"))) {
-                    ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
-                        .edit().putString("ifr_wallet_address", addr.lowercase()).apply()
-                    summary = "${addr.take(6)}...${addr.takeLast(4)}"
-                } else if (addr.isNotEmpty()) {
-                    android.widget.Toast.makeText(ctx, "Invalid wallet address", android.widget.Toast.LENGTH_SHORT).show()
-                }
-                true
-            }
-        }
-
-        // Verify button
-        findPreference<Preference>("pref_ifr_verify")?.apply {
-            summary = getString(R.string.ifr_threshold_info)
-            setOnPreferenceClickListener {
-                val addr = findPreference<EditTextPreference>("pref_ifr_wallet")?.text?.trim() ?: ""
-                if (addr.isEmpty() || !addr.matches(Regex("^0x[0-9a-fA-F]{40}$"))) {
-                    android.widget.Toast.makeText(ctx, "Enter a valid wallet address first", android.widget.Toast.LENGTH_SHORT).show()
-                    return@setOnPreferenceClickListener true
-                }
-                submitIfrVerification(addr)
-                true
-            }
-        }
-
         // WalletConnect — connect wallet for permanent tier unlock
         findPreference<Preference>("pref_ifr_walletconnect")?.apply {
             val wcWallet = com.securecall.app.wallet.WalletConnectManager.getConnectedWallet()
@@ -1097,9 +1066,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                                 // SIWE verified — tier already set inside WalletConnectManager
                                 android.widget.Toast.makeText(ctx, result, android.widget.Toast.LENGTH_LONG).show()
                                 configureIfrUnlock(effectiveTier)
-                            } else if (result == "manual_fallback") {
-                                // User chose manual entry — click the wallet address pref instead
-                                android.widget.Toast.makeText(ctx, "Enter your wallet address above and tap Verify Lock", android.widget.Toast.LENGTH_LONG).show()
                             } else if (result != "Cancelled") {
                                 summary = result
                             }
@@ -1108,63 +1074,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
                 true
             }
-        }
-    }
-
-    private fun submitIfrVerification(walletAddress: String) {
-        val ctx = requireContext()
-        findPreference<Preference>("pref_ifr_verify")?.apply {
-            isEnabled = false
-            summary = "Verifying on Ethereum..."
-        }
-
-        com.securecall.app.config.IfrLockManager.verify(ctx, walletAddress) { success, tier, amount, error ->
-            activity?.runOnUiThread {
-                if (!isAdded) return@runOnUiThread
-                findPreference<Preference>("pref_ifr_verify")?.isEnabled = true
-                if (success && tier.isNotEmpty()) {
-                    findPreference<Preference>("pref_ifr_status")?.summary =
-                        getString(R.string.ifr_status_active, amount, tier.uppercase())
-                    findPreference<Preference>("pref_ifr_verify")?.summary =
-                        getString(R.string.ifr_verify_success, amount, tier.uppercase())
-                    android.widget.Toast.makeText(ctx,
-                        getString(R.string.ifr_verify_success, amount, tier.uppercase()),
-                        android.widget.Toast.LENGTH_LONG).show()
-                    // Restart to apply tier
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        val intent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
-                        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                        ctx.startActivity(intent)
-                        Runtime.getRuntime().exit(0)
-                    }, 2000)
-                } else {
-                    val amountInfo = if (amount != "0" && amount.isNotEmpty()) " ($amount IFR held)" else ""
-                    val msg = when (error) {
-                        "insufficient" -> getString(R.string.ifr_verify_insufficient) + amountInfo
-                        "wallet_bound" -> getString(R.string.ifr_wallet_bound)
-                        "invalid_address" -> "Invalid wallet address format"
-                        "not_connected", "timeout" -> getString(R.string.activation_error_connection)
-                        "all_rpc_failed" -> "Ethereum RPC unavailable — try again later"
-                        else -> getString(R.string.ifr_verify_error, error) + amountInfo
-                    }
-                    findPreference<Preference>("pref_ifr_verify")?.summary = msg
-                    // Update status to show the balance even on failure
-                    if (amount != "0" && amount.isNotEmpty()) {
-                        val addr = findPreference<androidx.preference.EditTextPreference>("pref_ifr_wallet")?.text?.trim() ?: ""
-                        if (addr.isNotEmpty()) {
-                            findPreference<Preference>("pref_ifr_status")?.summary =
-                                "Wallet: ${addr.take(6)}...${addr.takeLast(4)} — $amount IFR held"
-                        }
-                    }
-                    android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-
-        // Learn more about IFR Token
-        findPreference<Preference>("pref_ifr_learn_more")?.setOnPreferenceClickListener {
-            openUrl("https://ifrunit.tech")
-            true
         }
     }
 

@@ -83,20 +83,14 @@ h2 { color: #ff4444; font-size: 16px; margin-bottom: 12px; }
   <h2 class="success">Signed Successfully</h2>
 
   <div class="result-box">
-    <div class="label">Wallet Address</div>
+    <div class="label">Connected Address</div>
     <code id="result-address"></code>
-    <button class="btn btn-dark" onclick="copyText('result-address')">Copy Address</button>
   </div>
 
-  <div class="result-box" style="margin-top:12px;">
-    <div class="label">Signature</div>
-    <code id="result-signature"></code>
-    <button class="btn btn-dark" onclick="copyText('result-signature')">Copy Signature</button>
-  </div>
+  <code id="result-signature" class="hidden"></code>
 
-  <div class="back-hint">
-    Go back to <strong>SecureCall</strong> and paste both values<br>
-    in the verification dialog.
+  <div class="back-hint" id="back-hint">
+    Returning to the app for automatic verification...
   </div>
 </div>
 
@@ -114,6 +108,8 @@ const params = new URLSearchParams(window.location.search);
 const nonce = params.get('nonce') || '';
 const deviceId = params.get('deviceId') || '';
 const message = params.get('message') ? decodeURIComponent(params.get('message')) : '';
+const returnScheme = params.get('returnScheme') || 'securecall';
+const returnHost = params.get('returnHost') || 'wc';
 
 let userAccount = null;
 
@@ -196,6 +192,7 @@ async function signMessage() {
     document.getElementById('step-result').classList.remove('hidden');
     document.getElementById('result-address').textContent = userAccount;
     document.getElementById('result-signature').textContent = signature;
+    returnToApp(userAccount, signature);
   } catch (e) {
     status.textContent = 'Signing failed: ' + (e.message || e);
     status.style.color = '#ff4444';
@@ -222,6 +219,19 @@ function copyText(elementId) {
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
   }
+}
+
+function returnToApp(address, signature) {
+  const callback =
+    returnScheme + '://' + returnHost +
+    '?address=' + encodeURIComponent(address) +
+    '&signature=' + encodeURIComponent(signature) +
+    '&nonce=' + encodeURIComponent(nonce) +
+    '&deviceId=' + encodeURIComponent(deviceId);
+  document.getElementById('back-hint').textContent = 'Returning to the app for automatic verification...';
+  setTimeout(() => {
+    window.location.href = callback;
+  }, 600);
 }
 </script>
 </body>

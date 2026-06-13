@@ -174,8 +174,8 @@
                 <li><strong>Get IFR tokens</strong> &mdash; Open <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">the official $IFR token page on Uniswap</a>.</li>
                 <li><strong>Hold IFR in your wallet</strong> &mdash; Keep at least 2,000 IFR for Pro or 6,000 IFR for Premium in the wallet you verify.</li>
                 <li><strong>Open SecureCall Settings</strong> &mdash; Navigate to the <strong>IFR Token Unlock</strong> section.</li>
-                <li><strong>Enter your wallet address</strong> &mdash; Paste the Ethereum wallet address that holds your IFR tokens.</li>
-                <li><strong>Tap "Verify Balance"</strong> &mdash; SecureCall checks the IFR token contract on Ethereum to confirm your wallet balance.</li>
+                <li><strong>Connect your wallet</strong> &mdash; Tap <strong>Connect Wallet</strong>. SecureCall opens your installed wallet app for Sign-In With Ethereum verification.</li>
+                <li><strong>Sign the challenge</strong> &mdash; Approve the read-only ownership challenge in your wallet. SecureCall returns automatically and checks the IFR token contract on Ethereum.</li>
                 <li><strong>Enjoy Pro or Premium</strong> &mdash; Features unlock instantly based on your held amount. The app restarts to apply the new tier.</li>
             </ol>
 
@@ -223,40 +223,40 @@
             <p>Yes. Your IFR tokens are never spent, transferred, or locked by SecureCall. If you move them and your wallet balance falls below the threshold, your tier reverts to Free after re-verification.</p>
 
             <h3>What if I add more tokens?</h3>
-            <p>If your wallet balance crosses a higher threshold (e.g., from 2,000 to 6,000 IFR), tap "Verify Balance" again in Settings. Your tier will upgrade to Premium immediately.</p>
+            <p>If your wallet balance crosses a higher threshold (e.g., from 2,000 to 6,000 IFR), run <strong>Connect Wallet</strong> again in Settings. Your tier will upgrade to Premium immediately after verification.</p>
 
             <h3>Is it safe?</h3>
             <p>SecureCall never has access to your private keys or wallet. Verification is read-only &mdash; the server calls a <code>view</code> function on the smart contract (no gas cost, no transaction). Your wallet address is stored locally on your device.</p>
 
             <h3>Can I use the same wallet on multiple devices?</h3>
-            <p>Manual wallet entry is limited to one device per wallet address to prevent abuse. Multi-device wallet use requires re-verification on each device.</p>
+            <p>Wallet verification is device-bound to prevent abuse. Multi-device wallet use requires wallet verification on each device.</p>
 
             <h3>What happens if the Ethereum network is down?</h3>
             <p>Your current tier is cached locally. If re-verification fails due to network issues, your tier remains active until the next successful check. Only a confirmed "insufficient balance" result reverts your tier.</p>
 
             <!-- ════════════════════════════════════════════════════ -->
-            <div class="section-break">Manual Wallet Entry</div>
+            <div class="section-break">WalletConnect Verification</div>
 
-            <h2>Entering Your Wallet Address</h2>
+            <h2>Connecting Your Wallet</h2>
             <ol>
                 <li>Open SecureCall and go to <strong>Settings</strong> (gear icon)</li>
                 <li>Scroll to the <strong>IFR Token Unlock</strong> section</li>
-                <li>Tap <strong>Wallet Address</strong> and paste your Ethereum address (starts with 0x, 42 characters)</li>
-                <li>Tap <strong>OK</strong> to save</li>
-                <li>Tap <strong>Verify Balance</strong></li>
-                <li>Wait for Ethereum verification (5&ndash;15 seconds)</li>
-                <li>If successful, the app shows your held amount and tier, then restarts</li>
+                <li>Tap <strong>Connect Wallet</strong></li>
+                <li>Select MetaMask, Trust Wallet, Rainbow, or Coinbase Wallet</li>
+                <li>Sign the ownership challenge in your wallet</li>
+                <li>SecureCall returns automatically and verifies your held IFR balance</li>
+                <li>If successful, the app shows your held amount and tier</li>
             </ol>
 
             <div class="info-box warning">
-                <strong>Important:</strong> Make sure to enter the correct wallet address. The address must be the one that holds your IFR token balance.
+                <strong>Important:</strong> SecureCall never asks you to paste a wallet address manually. Use the wallet app connection flow only.
             </div>
 
             <!-- ════════════════════════════════════════════════════ -->
             <div class="section-break">Wallet Apps</div>
 
             <h2>Wallet App Helper</h2>
-            <p>SecureCall can open installed wallet apps such as MetaMask or Trust Wallet so you can copy your public address. Verification remains read-only: paste the address and tap <strong>Verify Balance</strong>.</p>
+            <p>SecureCall can open installed wallet apps such as MetaMask or Trust Wallet for read-only ownership verification. Your private keys never leave your wallet, and no token transfer or gas transaction is required.</p>
 
             <div class="wiki-doc-footer">
                 <span class="end-mark">Document End // Classification: Restricted</span>
