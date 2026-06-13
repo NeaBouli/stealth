@@ -1856,3 +1856,37 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 1. S10 Premium vC69001 starten, Connected und ID android-9b98aff2 bestaetigen.
 2. Von S7 oder S4 direkt android-9b98aff2 anrufen.
 3. Erwartung: S10 Incoming UI sichtbar, Accept -> beide Seiten Anruf aktiv, kein weiter klingelnder Caller.
+
+## 2026-06-13 13:08 PDT — [AGENT-A] S7 Pro Startup Dialog + 429 Connect Fix
+
+- User follow-up: weiter mit dem S7 Pro Startup-Blocker.
+- Reproduction:
+  - S7 Pro initially showed `Confirm Your Phone Number`.
+  - Tapping `Skip` persisted `phone_number_skipped`; after restart the dialog did not return.
+  - Conclusion: phone dialog path is working as designed on fresh install / missing preference.
+- Actual blocker found in app logs:
+  - S7 Pro WebSocket failed with HTTP `429 Too Many Requests`.
+  - App UI showed `Disconnected`.
+  - Log: `429 rate-limit from server — backing off 5 minutes`.
+- Root cause:
+  - Hetzner PM2 env had stale override `MAX_CONNS_PER_IP=10`.
+  - Repo default is already `MAX_CONNS_PER_IP=40`.
+  - Current physical test setup plus reconnects exceeded the live limit.
+- Live fix:
+  - Updated `/opt/stealthx/.env.production`:
+    - `MAX_CONNS_PER_IP=40`
+    - `MAX_WS_ATTEMPTS_PER_IP=240`
+    - `WS_ATTEMPT_WINDOW_MS=60000`
+  - Reloaded PM2 with `pm2 reload ecosystem.config.js --update-env`.
+  - Verified PM2 env exposes the new values.
+- Retest:
+  - S7 Pro restarted and now shows `● Connected`.
+  - Server log confirms `REGISTER android-d7f808ef`.
+  - S10 Premium status: `● Connected`, ID `android-9b98aff2`.
+  - S7 Pro status: `● Connected`.
+  - S4 Free status: `● Connected`.
+
+[AGENT-A -> CC] Gegencheck bitte:
+1. S7 Pro app force-stop/start.
+2. Erwartung: no phone dialog after Skip, no 429, status `Connected`.
+3. Then verify S4/S7/S10 all stay connected after Signaling reload.
