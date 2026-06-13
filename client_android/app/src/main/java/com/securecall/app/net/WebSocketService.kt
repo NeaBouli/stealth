@@ -949,6 +949,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     fun sendCallAccept(sessionId: String) {
+        // Accept is the authoritative local transition out of ringing. Stop both
+        // service-owned incoming audio and any activity-owned tones before network
+        // signaling so delayed ACKs cannot leave the device audibly ringing.
+        killAllAudio()
+
         if (!isRegistered) {
             Log.w("WS_SERVICE", "CALL_ACCEPT queued — WS not registered for session $sessionId")
             com.securecall.app.debug.SecLogManager.log("WS", "CALL_ACCEPT queued — waiting for registration")
@@ -1243,12 +1248,14 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                         Log.d("WS_SERVICE", "E2E session key derived (caller)")
                     }
                     Log.d("WS_SERVICE", "Remote accepted call, sessionId=$sessionId")
+                    killAllAudio()
                     _onCallAccepted?.invoke(sessionId)
                     // Caller initiates WebRTC P2P
                     startWebRtc(sessionId, isOfferer = true)
                 }
                 "CALL_ACCEPT_ACK" -> {
                     Log.d("WS_SERVICE", "CALL_ACCEPT_ACK received")
+                    killAllAudio()
                 }
                 "CALL_END_ACK" -> {
                     Log.d("WS_SERVICE", "CALL_END_ACK received")

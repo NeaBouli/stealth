@@ -1776,3 +1776,33 @@ IFR Contract 0x77e99917Eca8539c62F509ED1193ac36580A6e7B
 war faelschlich von Blockaid geflaggt — jetzt entfernt.
 Propagation: ~24h.
 Nach 24h: WalletConnect/MetaMask Flow erneut testen.
+
+## 2026-06-13 PT — [AGENT-A] BUG-1/BUG-2 Fix In Progress
+
+- Kontext gelesen: S7=`com.securecall.app.pro`, Tab S4=`com.securecall.app.free`, S10=`com.securecall.app.premium`.
+- BUG-1 Root Cause: `IncomingCallActivity` konnte sich sofort beenden, wenn `WebSocketService.getCurrentSessionId()` beim Activity-Start noch `null` war. Das ist ein Race zwischen Service-Signaling und UI-Launch und erklaert "nur Klingeln, kein Screen".
+- BUG-2 Root Cause: Ringback/Ringtone-Stop hing zu stark an Activity-Callbacks. Bei CALL_ACCEPT/CALL_ACCEPT_ACK fehlte ein globaler Audio-Cleanup im Signaling-Service.
+- Fix vorbereitet:
+  - Incoming UI bleibt bei Session-State-Race offen.
+  - `sendCallAccept`, empfangenes `CALL_ACCEPT` und `CALL_ACCEPT_ACK` rufen `killAllAudio()` auf.
+- Naechster Schritt: Build der Free/Pro/Premium Varianten, Installation auf S4/S7/S10, dann Logcat Call-Retest.
+
+## 2026-06-13 PT — [AGENT-A] BUG-1/BUG-2 Fixed + Physical Retest PASS
+
+- Code-Fixes:
+  - `IncomingCallActivity` beendet sich bei `WebSocketService.currentSessionId == null` nicht mehr sofort. Das war ein Race zwischen CALL_INVITE/Session-State und Activity-Launch.
+  - `WebSocketService.sendCallAccept()`, empfangenes `CALL_ACCEPT` und `CALL_ACCEPT_ACK` rufen jetzt `killAllAudio()` auf, damit Incoming-Ringtone und Caller-Ringback bei Accept robust stoppen.
+- Build:
+  - `./gradlew -Pinternal assembleFreeDebug assembleProDebug assemblePremiumDebug` PASS.
+  - `./gradlew -Pinternal assembleFreeRelease assembleProRelease assemblePremiumRelease` PASS.
+- Installation:
+  - S4 Free `com.securecall.app.free` updated to `versionName=1.0.40-free`, split `versionCode=68001`.
+  - S7 Pro `com.securecall.app.pro` updated to `versionName=1.0.40-pro`, split `versionCode=68001`.
+  - S10 Premium `com.securecall.app.premium` updated to `versionName=1.0.40-premium`, split `versionCode=68001`.
+- Physical Retest S4 -> S7:
+  - Aktuelle Live-IDs per UI/Backend ermittelt: S4 `android-76982fd9`, S7 `android-d7f808ef`.
+  - Stale ID `android-a5941f39` war offline; erster Test nur zur Diagnose, kein Code-Fail.
+  - Test gegen `android-d7f808ef`: Backend logged `INVITE`, `INVITE WS delivery`, `ACCEPT`, `WEBRTC OFFER`, `WEBRTC ANSWER`.
+  - BUG-1 PASS: S7 Focus/UI = `com.securecall.app.pro/com.securecall.app.IncomingCallActivity`; UI zeigte Accept/Decline.
+  - BUG-2 PASS: Nach Accept wechselte S4 von `Klingelt...` zu `Anruf aktiv`; Logcat zeigte Ringback `local_off`; S7 wechselte zu `Anruf aktiv`.
+  - Beide Seiten zeigten aktiven Ende-zu-Ende verschluesselten Call mit Timer.

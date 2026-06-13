@@ -82,16 +82,13 @@ class IncomingCallActivity : AppCompatActivity() {
         fromFcm = intent.getBooleanExtra("from_fcm", false)
         Log.d(TAG, "Incoming call: session=$sessionId, from=$callerClientId, phone=$callerPhone, fromFcm=$fromFcm")
 
-        // Check if this call was already cancelled before we launched
-        // BUG-010: Skip this check when launched from FCM — WS may not be connected yet,
-        // so getCurrentSessionId() will be null. That's expected, not a cancelled call.
+        // The service can launch this activity before its current-session state is
+        // visible to the UI thread. Treat a missing service session as a race, not
+        // as proof that the caller cancelled, otherwise the user hears ringing but
+        // never sees the answer/decline screen.
         val ws = com.securecall.app.net.WebSocketService.instance
         if (!fromFcm && ws?.getCurrentSessionId() == null && sessionId.isNotEmpty()) {
-            Log.d(TAG, "Call already cancelled before IncomingCallActivity created")
-            saveMissedCallFromIntent()
-            dismissIncomingCallNotification()
-            finish()
-            return
+            Log.w(TAG, "Incoming UI launched before WS session state is visible; keeping UI open")
         }
 
         // Resolve caller name: phone book first, then SecureCall contacts, then fallback
@@ -175,6 +172,7 @@ class IncomingCallActivity : AppCompatActivity() {
         Log.d(TAG, "Accepting call, session=$sessionId, fromFcm=$fromFcm")
 
         val ws = com.securecall.app.net.WebSocketService.instance
+        ws?.killAllAudio()
 
         // CALL_ACCEPT is only valid after the server REGISTERED ack.
         // A connected-but-unregistered socket gets `not_registered` from the server.
