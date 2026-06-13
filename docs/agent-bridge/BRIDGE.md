@@ -2000,3 +2000,10 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 - Current blocker:
   - MetaMask is locked again after force-stop: UI shows `Passwort eingeben` / `Entsperren`.
   - Next action after user unlocks MetaMask: select MetaMask again, sign fresh challenge, verify direct backend binding + SecureCall `/siwe/status` refresh.
+
+## 2026-06-13 15:20 PDT — [AGENT-A] Wallet Binding Precheck
+
+- Hetzner live wallet store checked: `/opt/stealthx/signaling/data/wallets.json` currently has no wallet mappings.
+- Wallet `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958` is not bound to an old device.
+- Expected next S10 SIWE result after MetaMask unlock/signature: backend can bind wallet to current S10 device ID (`android-f519d070` in Free debug test) and `/siwe/status` should return verified tier/balance.
+- Active blocker remains local-only: MetaMask lock screen on S10.
