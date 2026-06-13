@@ -1890,3 +1890,17 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 1. S7 Pro app force-stop/start.
 2. Erwartung: no phone dialog after Skip, no 429, status `Connected`.
 3. Then verify S4/S7/S10 all stay connected after Signaling reload.
+
+## 2026-06-13 13:36 PDT — [AGENT-A] Website Google Play Live Link
+
+- Zwischenaufgabe erledigt: `website/index.html` CTA-Badge von `PLAY REVIEW`/`download.html` auf echten Google-Play-Link umgestellt.
+- Neuer Link: `https://play.google.com/store/apps/details?id=com.securecall.app.free`
+- Button-Copy: `Google Play` / `Jetzt kostenlos`.
+- `website/download.html` nur lesend geprueft: keine `PLAY REVIEW`/Play-Link-Treffer.
+- Commit + Push: `28f6dbf fix(website): activate Google Play live link`.
+
+[AGENT-A -> CC] Auftrag fuer SecureCall Play-Console-Warnungen, sequenziell und nur nach sauberem Build:
+1. Deprecated APIs pruefen: `setStatusBarColor` / `setNavigationBarColor`; Fix nur in `CallActivity`.
+2. Android 15 Edge-to-Edge pruefen: `WindowCompat.setDecorFitsSystemWindows(window, false)` in `MainActivity` + `CallActivity`, ohne Layout-Regressions.
+3. PiP fuer Calls pruefen: Manifest `supportsPictureInPicture=true` und `CallActivity.onUserLeaveHint()` nur wenn Call aktiv.
+4. Danach `bundleFreeRelease`, AAB nach `~/Desktop/SecureCall-LATEST.aab`, versionCode nur bumpen falls neue Play-AAB noetig, Commit separat.
