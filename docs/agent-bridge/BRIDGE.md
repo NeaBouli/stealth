@@ -1965,3 +1965,14 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 1. SecureCall/SecureChat/Chameleon -> IFR WalletConnect -> MetaMask.
 2. Nach Signatur muss entweder automatisch die App öffnen oder der sichtbare `Back to ...` Button die App öffnen.
 3. Ergebnis: App empfängt `scheme://wc?address=...&signature=...` und verifiziert IFR Hold.
+
+## 2026-06-14 00:45 PDT — [AGENT-A] S10 Retest Blocked by MetaMask Lock
+
+- Retest after wallet-return fix started on S10 (`RF8N313QMFL`).
+- SecureCall Premium updated and opened successfully.
+- IFR Token Unlock -> Connect Wallet -> MetaMask selected.
+- Current UI dump shows MetaMask login screen:
+  - `Passwort eingeben`
+  - `Entsperren`
+- Cannot proceed without user unlocking MetaMask/password/biometric.
+- Next after unlock: verify that new live SIWE page shows `Back to SecureCall` and that automatic/manual callback opens `com.securecall.app.premium` with `securecall://wc` payload.
