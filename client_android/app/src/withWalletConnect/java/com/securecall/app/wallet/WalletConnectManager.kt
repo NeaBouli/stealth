@@ -127,7 +127,7 @@ object WalletConnectManager {
                 val encodedMsg = Uri.encode(message)
                 val encodedDevice = Uri.encode(deviceId)
                 val encodedPackage = Uri.encode(activity.packageName)
-                val dappPath = "stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg&returnScheme=securecall&returnHost=wc&returnPackage=$encodedPackage"
+                val dappPath = "stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg&returnScheme=securecall&returnHost=wc&returnPackage=$encodedPackage&ts=${System.currentTimeMillis()}"
                 val pageUrl = "https://$dappPath"
 
                 // Each wallet has a different deep link format for its in-app browser

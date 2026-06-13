@@ -789,7 +789,55 @@ app.post("/siwe/verify", async (req, res) => {
   }
 });
 
-console.log("[SIWE] Endpoints ready: GET /siwe/challenge, POST /siwe/verify");
+async function handleSiweStatus(req, res) {
+  const deviceId = (req.body?.deviceId || req.query?.deviceId || "").trim();
+  if (!deviceId) {
+    return res.status(400).json({ success: false, verified: false, error: "missing_device_id" });
+  }
+
+  const mapping = walletMappings.find(w => w.clientId === deviceId && w.method === "walletconnect");
+  if (!mapping) {
+    return res.json({ success: false, verified: false, error: "not_found" });
+  }
+
+  let result;
+  try {
+    result = await verifyIfrLock(mapping.wallet);
+  } catch (e) {
+    console.error("[SIWE] Status balance check error:", e.message);
+    return res.json({
+      success: false,
+      verified: true,
+      walletAddress: mapping.wallet,
+      tier: mapping.tier || "",
+      error: "balance_check_failed",
+      walletBound: true
+    });
+  }
+
+  const amount = result.balanceAmount || result.lockedAmount || "0";
+  mapping.lastVerified = Date.now();
+  mapping.tier = result.success ? result.tier : "";
+  saveWalletMappings();
+
+  return res.json({
+    success: !!result.success,
+    verified: true,
+    walletAddress: mapping.wallet,
+    tier: mapping.tier,
+    balanceAmount: amount,
+    // Backward-compatible field for older clients still reading lockedAmount.
+    lockedAmount: amount,
+    walletBound: true,
+    model: "hold",
+    error: result.success ? "" : (result.error || "insufficient")
+  });
+}
+
+app.post("/siwe/status", handleSiweStatus);
+app.get("/siwe/status", handleSiweStatus);
+
+console.log("[SIWE] Endpoints ready: GET /siwe/challenge, POST /siwe/verify, GET/POST /siwe/status");
 
 // --- Health Check Endpoint ---
 app.get("/health", (req, res) => {

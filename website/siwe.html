@@ -201,6 +201,7 @@ async function signMessage() {
     signedAddress = userAccount;
     signedSignature = signature;
     document.getElementById('btn-return').textContent = 'Back to ' + getAppName();
+    await verifyOnBackend(userAccount, signature);
     returnToApp(userAccount, signature);
   } catch (e) {
     status.textContent = 'Signing failed: ' + (e.message || e);
@@ -230,6 +231,38 @@ function copyText(elementId) {
   }
 }
 
+async function verifyOnBackend(address, signature) {
+  const hint = document.getElementById('back-hint');
+  hint.textContent = 'Verifying IFR balance...';
+  try {
+    const response = await fetch('https://api.stealthx.tech/siwe/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress: address, signature, nonce, deviceId })
+    });
+    const result = await response.json();
+    const amount = result.balanceAmount || result.lockedAmount || '0';
+
+    if (result.success) {
+      hint.textContent = 'Wallet verified: ' + amount + ' IFR held. Return to ' + getAppName() + '; status refreshes automatically.';
+      return true;
+    }
+    if (result.walletBound && result.error === 'insufficient') {
+      hint.textContent = 'Wallet connected, but only ' + amount + ' IFR held. Return to ' + getAppName() + ' for status.';
+      return true;
+    }
+    if (result.error === 'invalid_nonce' || result.error === 'challenge_expired') {
+      hint.textContent = 'This signing request expired. Return to ' + getAppName() + ' and start WalletConnect again.';
+      return false;
+    }
+    hint.textContent = 'Verification failed: ' + (result.error || 'unknown') + '. Return to ' + getAppName() + ' and try again.';
+    return false;
+  } catch (e) {
+    hint.textContent = 'Network verification failed. Return to ' + getAppName() + ' and tap IFR status to refresh.';
+    return false;
+  }
+}
+
 function returnToApp(address, signature) {
   const query =
     'address=' + encodeURIComponent(address) +
@@ -237,7 +270,10 @@ function returnToApp(address, signature) {
     '&nonce=' + encodeURIComponent(nonce) +
     '&deviceId=' + encodeURIComponent(deviceId);
   const callback = returnScheme + '://' + returnHost + '?' + query;
-  document.getElementById('back-hint').textContent = 'Returning to the app for automatic verification...';
+  const hint = document.getElementById('back-hint');
+  if (!hint.textContent || hint.textContent.indexOf('Verifying IFR balance') === 0) {
+    hint.textContent = 'Returning to the app for automatic verification...';
+  }
   setTimeout(() => {
     if (/Android/i.test(navigator.userAgent) && returnPackage) {
       window.location.href =

@@ -191,6 +191,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // BUG-022: Refresh network info + bound status on every resume
         refreshNetworkStatus()
+        refreshIfrStatusFromServer(showToast = false)
     }
 
     /** BUG-022: Refresh network info so eSIM status doesn't stay stale. */
@@ -1019,18 +1020,24 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val daysRemaining = com.securecall.app.config.IfrLockManager.getDaysRemaining(ctx)
 
         // Status display with expiration info and token count
-        findPreference<Preference>("pref_ifr_status")?.summary = when {
-            ifrTier != null && method == com.securecall.app.config.IfrLockManager.METHOD_WALLETCONNECT ->
-                getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (lifetime)"
-            ifrTier != null && daysRemaining > 0 ->
-                getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (expires in $daysRemaining days)"
-            ifrTier != null && daysRemaining == 0 ->
-                getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (expiring today!)"
-            wallet != null && amount != "0" ->
-                "Wallet: ${wallet.take(6)}...${wallet.takeLast(4)} — $amount IFR held"
-            wallet != null ->
-                "Wallet: ${wallet.take(6)}...${wallet.takeLast(4)}"
-            else -> getString(R.string.ifr_status_none) + "\n" + getString(R.string.ifr_threshold_info)
+        findPreference<Preference>("pref_ifr_status")?.apply {
+            summary = when {
+                ifrTier != null && method == com.securecall.app.config.IfrLockManager.METHOD_WALLETCONNECT ->
+                    getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (lifetime)"
+                ifrTier != null && daysRemaining > 0 ->
+                    getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (expires in $daysRemaining days)"
+                ifrTier != null && daysRemaining == 0 ->
+                    getString(R.string.ifr_status_active, amount, ifrTier.uppercase()) + " (expiring today!)"
+                wallet != null && amount != "0" ->
+                    "Wallet: ${wallet.take(6)}...${wallet.takeLast(4)} - $amount IFR held"
+                wallet != null ->
+                    "Wallet: ${wallet.take(6)}...${wallet.takeLast(4)}"
+                else -> getString(R.string.ifr_status_none) + "\n" + getString(R.string.ifr_threshold_info)
+            }
+            setOnPreferenceClickListener {
+                refreshIfrStatusFromServer(showToast = true)
+                true
+            }
         }
 
         // WalletConnect — connect wallet for permanent tier unlock
@@ -1075,6 +1082,83 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 true
             }
         }
+    }
+
+    private fun refreshIfrStatusFromServer(showToast: Boolean) {
+        val ctx = context ?: return
+        val prefs = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
+        val deviceId = prefs.getString("client_id", null)?.takeIf { it.isNotBlank() } ?: return
+        val statusPref = findPreference<Preference>("pref_ifr_status")
+
+        if (showToast) {
+            statusPref?.summary = "Refreshing wallet status..."
+        }
+
+        Thread {
+            val result = try {
+                val serverUrl = BuildConfig.SIGNAL_WS_URL
+                    .replace("wss://", "https://")
+                    .replace("ws://", "http://")
+                    .replace("/signal", "")
+                val json = org.json.JSONObject().apply {
+                    put("deviceId", deviceId)
+                }.toString()
+                val body = json.toRequestBody("application/json".toMediaTypeOrNull())
+                val request = okhttp3.Request.Builder()
+                    .url("$serverUrl/siwe/status")
+                    .post(body)
+                    .build()
+                val response = com.securecall.app.net.NetworkManager.buildPinnedClient().newCall(request).execute()
+                val text = response.body?.string() ?: ""
+                if (!response.isSuccessful || text.isBlank()) null else org.json.JSONObject(text)
+            } catch (_: Throwable) {
+                null
+            }
+
+            activity?.runOnUiThread {
+                if (!isAdded) return@runOnUiThread
+                if (result == null) {
+                    if (showToast) {
+                        android.widget.Toast.makeText(ctx, "Wallet status refresh failed", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    configureIfrUnlock(TierManager.getCurrentTier(ctx))
+                    return@runOnUiThread
+                }
+
+                val verified = result.optBoolean("verified", false)
+                val walletAddress = result.optString("walletAddress", "")
+                val tier = result.optString("tier", "")
+                val amount = result.optString("balanceAmount", result.optString("lockedAmount", "0"))
+                if (verified && walletAddress.matches(Regex("^0x[0-9a-fA-F]{40}$"))) {
+                    if (result.optBoolean("success") && tier.isNotBlank()) {
+                        com.securecall.app.config.IfrLockManager.storeVerificationResult(
+                            ctx,
+                            walletAddress,
+                            tier,
+                            amount,
+                            com.securecall.app.config.IfrLockManager.METHOD_WALLETCONNECT
+                        )
+                        if (showToast) {
+                            android.widget.Toast.makeText(ctx, "Wallet verified: $amount IFR", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        prefs.edit()
+                            .putString("ifr_wallet_address", walletAddress.lowercase())
+                            .putString("ifr_locked_amount", amount)
+                            .putString("ifr_verification_method", com.securecall.app.config.IfrLockManager.METHOD_WALLETCONNECT)
+                            .putLong("ifr_last_verified", System.currentTimeMillis())
+                            .putLong("ifr_wallet_verified_at", System.currentTimeMillis())
+                            .apply()
+                        if (showToast) {
+                            android.widget.Toast.makeText(ctx, "Wallet connected: $amount IFR held", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } else if (showToast) {
+                    android.widget.Toast.makeText(ctx, "No verified wallet for this device yet", android.widget.Toast.LENGTH_SHORT).show()
+                }
+                configureIfrUnlock(TierManager.getCurrentTier(ctx))
+            }
+        }.start()
     }
 
     @android.annotation.SuppressLint("MissingPermission")
