@@ -2029,3 +2029,20 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
   - App prefs confirm `activated_tier=premium`, `ifr_tier=premium`, method `walletconnect`, wallet `0x80ff...6958`.
 - Remaining UX issue to fix next:
   - MetaMask tab overflow and blocked external-app return still create poor UX. Need app/site flow change to avoid relying on MetaMask opening a new tab and to display a clear `Close this tab / return to SecureCall` instruction after server verification.
+
+## 2026-06-13 15:44 PDT — [AGENT-A] SecureCall IFR Premium Feature-Gate Fix
+
+- User finding reproduced on S10 (RF8N313QMFL): wallet status showed 33,333,333 IFR / PREMIUM, but Free-build feature gates could still behave as FREE.
+- Root cause: free flavor RuntimeFeatureProvider read only subscription state and ignored IFR/activation effective tier from TierManager. Settings IFR status used TierManager, so status and feature gates diverged.
+- Fix implemented:
+  - RuntimeFeatureProvider now merges subscription tier and TierManager effective tier and uses the highest tier.
+  - MainActivity.onResume reapplies TierManager so WalletConnect/activation changes apply when returning to the app.
+- Verification on S10:
+  - Installed fresh Free debug build.
+  - Logcat: TierManager Applying tier: PREMIUM (build=free, activated=premium).
+  - Logcat: AdMob Ads disabled — tier: PREMIUM.
+  - Settings -> IFR Token Unlock: 33333333 IFR held -> PREMIUM active (lifetime).
+  - Settings -> VPN Configuration now shows real WireGuard options, not a premium lock.
+  - Settings -> Anti-Recording Protection: Block Screenshots Always enabled (Premium), Detect Screen Recording Always On, Security Level Maximum.
+
+[AGENT-A -> CC] Bitte nach Pull gegentesten: Free build mit IFR wallet premium muss FeatureProviderRegistry/Settings/CallActivity als PREMIUM behandeln. Besonders VPN, Anti-Recording, Ads, SecurityEnforcer prüfen.

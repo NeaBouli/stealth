@@ -5,17 +5,29 @@ import com.securecall.app.billing.SubscriptionManager
 import com.securecall.app.billing.SubscriptionTier
 
 /**
- * FREE-flavor FeatureProvider that reads the active subscription tier
- * at runtime from SubscriptionManager.
+ * FREE-flavor FeatureProvider that reads the effective runtime tier.
  *
- * When the user upgrades via In-App-Purchase, features unlock immediately.
+ * Paid access can come from Google Play/Stripe subscription state, activation
+ * codes, or IFR WalletConnect. Use the highest tier so one unlock path cannot
+ * accidentally mask another one.
  */
 class RuntimeFeatureProvider(context: Context) : FeatureProvider {
 
-    private val subManager = SubscriptionManager(context)
+    private val appContext = context.applicationContext
+    private val subscriptionManager = SubscriptionManager(appContext)
 
     private val currentTier: SubscriptionTier
-        get() = subManager.getCurrentTier()
+        get() {
+            val subscriptionTier = subscriptionManager.getCurrentTier()
+            val activatedTier = SubscriptionTier.fromName(TierManager.getCurrentTier(appContext))
+            return if (rank(activatedTier) > rank(subscriptionTier)) activatedTier else subscriptionTier
+        }
+
+    private fun rank(tier: SubscriptionTier): Int = when (tier) {
+        SubscriptionTier.FREE -> 0
+        SubscriptionTier.PRO -> 1
+        SubscriptionTier.PREMIUM -> 2
+    }
 
     override val tier: String
         get() = currentTier.name

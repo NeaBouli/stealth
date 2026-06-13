@@ -671,6 +671,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Runtime unlocks (activation code / IFR WalletConnect) can be applied
+        // while the app is already alive, so re-apply the effective tier before
+        // refreshing UI, ads, and feature gates.
+        com.securecall.app.config.TierManager.INSTANCE.applyTier(this);
         checkMissedCallBadge();
         // Always clear launcher badge (notification-based) when user opens the app
         clearMissedCallNotifications();
