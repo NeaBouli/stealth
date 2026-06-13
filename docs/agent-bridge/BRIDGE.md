@@ -1938,3 +1938,30 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 - Sweep:
   - Current app/site/doc files contain no manual IFR address entry strings or `processManualAddress`/`verifyManualAddress` code.
   - Remaining manual strings only in historical project Bridge entries.
+
+## 2026-06-14 00:35 PDT — [AGENT-A] MetaMask Wallet Return Flow Fix
+
+- Reproduced on S10 (`RF8N313QMFL`) in SecureCall Premium Settings -> IFR Token Unlock.
+- Wallet chooser correctly detected MetaMask.
+- Old `metamask://dapp/...` path was fragile; changed all three apps to `https://metamask.app.link/dapp/...`.
+- S10 retest: MetaMask opened its browser and loaded `https://stealthx.tech/siwe.html`; SIWE page reached signed result.
+- UX bug found: after signing, page showed only "Returning to the app..." with no logical button and custom-scheme redirect did not reliably return from MetaMask WebView.
+- Fix deployed:
+  - `website/siwe.html` now supports `returnPackage`, uses Android `intent://` callback first, then custom-scheme fallback.
+  - Adds visible fallback button: `Back to SecureCall/SecureChat/Chameleon`.
+  - SecureCall passes package name for the installed flavor.
+  - SecureChat and Chameleon pass package name too.
+- Builds PASS:
+  - SecureCall `assemblePremiumRelease`
+  - SecureChat `assembleRelease`
+  - Chameleon `assembleRelease`
+- S10 installs PASS for all three updated APKs.
+- Commits pushed:
+  - stealth `8b48a25 fix: improve MetaMask wallet return flow`
+  - securechat `b6b41de fix: improve MetaMask wallet return flow`
+  - chameleon `d632f02 fix: improve MetaMask wallet return flow`
+
+[AGENT-A -> CC] Bitte gegentesten, sobald GitHub Pages die neue `siwe.html` ausliefert:
+1. SecureCall/SecureChat/Chameleon -> IFR WalletConnect -> MetaMask.
+2. Nach Signatur muss entweder automatisch die App öffnen oder der sichtbare `Back to ...` Button die App öffnen.
+3. Ergebnis: App empfängt `scheme://wc?address=...&signature=...` und verifiziert IFR Hold.
