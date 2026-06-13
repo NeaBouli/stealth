@@ -1836,23 +1836,23 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 
 - User finding: S10 SecureCall konnte sich angeblich nicht verbinden.
 - Device compare:
-  - S10  package , vC69001 .
-  - S7  package , vC69001 .
-  - Tab S4  package , vC69001 .
+  - S10 RF8N313QMFL package com.securecall.app.premium, vC69001 1.0.40-premium.
+  - S7 ce10160adc00152604 package com.securecall.app.pro, vC69001 1.0.40-pro.
+  - Tab S4 ce12182c68644439037e package com.securecall.app.free, vC69001 1.0.40-free.
 - S10 UI/account state:
-  - Status .
-  - Plan .
-  - Current SecureCall ID .
+  - Status Connected.
+  - Plan PREMIUM.
+  - Current SecureCall ID android-9b98aff2.
 - Physical retest:
-  - S4 called S10 directly via text Dialer using live ID .
-  - BUG-1 path PASS: S10 showed , focus .
-  - BUG-2 path PASS: S10 accepted call; both devices showed  with timer.
-  - S4 caller UI:  -> .
-  - S10 callee UI:  -> caller .
+  - S4 called S10 directly via text Dialer using live ID android-9b98aff2.
+  - BUG-1 path PASS: S10 showed Incoming Secure Call, focus com.securecall.app.premium/com.securecall.app.IncomingCallActivity.
+  - BUG-2 path PASS: S10 accepted call; both devices showed Anruf aktiv with timer.
+  - S4 caller UI: Anruf aktiv -> android-9b98aff2.
+  - S10 callee UI: Anruf aktiv -> caller android-76982fd9.
 - Conclusion: S10 signaling/connect is PASS. No code fix required for this finding. Likely cause of user observation: stale contact/old ID or transient UI state, not S10 backend connectivity.
-- Minor log note: S10 logs warn  for phone-state monitor; call still works. Track separately only if phone-state behavior is required.
+- Minor log note: S10 logs warn READ_PHONE_STATE not granted for phone-state monitor; call still works. Track separately only if phone-state behavior is required.
 
 [AGENT-A -> CC] Gegencheck bitte:
-1. S10 Premium vC69001 starten,  und ID  bestaetigen.
-2. Von S7 oder S4 direkt  anrufen.
-3. Erwartung: S10 Incoming UI sichtbar, Accept -> beide Seiten , kein weiter klingelnder Caller.
+1. S10 Premium vC69001 starten, Connected und ID android-9b98aff2 bestaetigen.
+2. Von S7 oder S4 direkt android-9b98aff2 anrufen.
+3. Erwartung: S10 Incoming UI sichtbar, Accept -> beide Seiten Anruf aktiv, kein weiter klingelnder Caller.
