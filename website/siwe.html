@@ -92,6 +92,9 @@ h2 { color: #ff4444; font-size: 16px; margin-bottom: 12px; }
   <div class="back-hint" id="back-hint">
     Returning to the app for automatic verification...
   </div>
+  <button class="btn btn-green" id="btn-return" onclick="retryReturnToApp()">
+    Back to SecureCall
+  </button>
 </div>
 
 <!-- No wallet -->
@@ -110,8 +113,11 @@ const deviceId = params.get('deviceId') || '';
 const message = params.get('message') ? decodeURIComponent(params.get('message')) : '';
 const returnScheme = params.get('returnScheme') || 'securecall';
 const returnHost = params.get('returnHost') || 'wc';
+const returnPackage = params.get('returnPackage') || '';
 
 let userAccount = null;
+let signedAddress = null;
+let signedSignature = null;
 
 // Show challenge message
 if (message) {
@@ -192,6 +198,9 @@ async function signMessage() {
     document.getElementById('step-result').classList.remove('hidden');
     document.getElementById('result-address').textContent = userAccount;
     document.getElementById('result-signature').textContent = signature;
+    signedAddress = userAccount;
+    signedSignature = signature;
+    document.getElementById('btn-return').textContent = 'Back to ' + getAppName();
     returnToApp(userAccount, signature);
   } catch (e) {
     status.textContent = 'Signing failed: ' + (e.message || e);
@@ -222,16 +231,38 @@ function copyText(elementId) {
 }
 
 function returnToApp(address, signature) {
-  const callback =
-    returnScheme + '://' + returnHost +
-    '?address=' + encodeURIComponent(address) +
+  const query =
+    'address=' + encodeURIComponent(address) +
     '&signature=' + encodeURIComponent(signature) +
     '&nonce=' + encodeURIComponent(nonce) +
     '&deviceId=' + encodeURIComponent(deviceId);
+  const callback = returnScheme + '://' + returnHost + '?' + query;
   document.getElementById('back-hint').textContent = 'Returning to the app for automatic verification...';
   setTimeout(() => {
+    if (/Android/i.test(navigator.userAgent) && returnPackage) {
+      window.location.href =
+        'intent://' + returnHost + '?' + query +
+        '#Intent;scheme=' + encodeURIComponent(returnScheme) +
+        ';package=' + encodeURIComponent(returnPackage) +
+        ';S.browser_fallback_url=' + encodeURIComponent(callback) +
+        ';end';
+      setTimeout(() => { window.location.href = callback; }, 1200);
+      return;
+    }
     window.location.href = callback;
   }, 600);
+}
+
+function getAppName() {
+  if (returnScheme === 'securechat') return 'SecureChat';
+  if (returnScheme === 'chameleon') return 'Chameleon';
+  return 'SecureCall';
+}
+
+function retryReturnToApp() {
+  if (!signedAddress || !signedSignature) return;
+  document.getElementById('back-hint').textContent = 'Opening ' + getAppName() + '...';
+  returnToApp(signedAddress, signedSignature);
 }
 </script>
 </body>

@@ -22,9 +22,10 @@ import java.util.concurrent.TimeUnit
  *
  * Flow:
  * 1. App requests challenge from backend (nonce + message)
- * 2. User copies message → signs in MetaMask → pastes signature
- * 3. Backend verifies: ecrecover(message, signature) == walletAddress
- * 4. Backend checks IFR balance → permanent tier unlock
+ * 2. User signs in MetaMask / wallet browser
+ * 3. Wallet redirects back to securecall://wc with address + signature
+ * 4. Backend verifies: ecrecover(message, signature) == walletAddress
+ * 5. Backend checks IFR balance → permanent tier unlock
  *
  * No external SDK needed. Cryptographic proof of wallet ownership.
  */
@@ -125,11 +126,13 @@ object WalletConnectManager {
                 // back to securecall://wc after the wallet signs the challenge.
                 val encodedMsg = Uri.encode(message)
                 val encodedDevice = Uri.encode(deviceId)
-                val pageUrl = "https://stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg&returnScheme=securecall&returnHost=wc"
+                val encodedPackage = Uri.encode(activity.packageName)
+                val dappPath = "stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg&returnScheme=securecall&returnHost=wc&returnPackage=$encodedPackage"
+                val pageUrl = "https://$dappPath"
 
                 // Each wallet has a different deep link format for its in-app browser
                 val mmDeepLink = when (wallet.packageName) {
-                    "io.metamask" -> "metamask://dapp/stealthx.tech/siwe.html?nonce=$nonce&deviceId=$encodedDevice&message=$encodedMsg&returnScheme=securecall&returnHost=wc"
+                    "io.metamask" -> "https://metamask.app.link/dapp/$dappPath"
                     "com.wallet.crypto.trustapp" -> "https://link.trustwallet.com/open_url?coin_id=60&url=${Uri.encode(pageUrl)}"
                     else -> pageUrl
                 }
