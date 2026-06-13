@@ -1770,3 +1770,9 @@ CC soll diesen Prompt ausfuehren und alle Findings mit Repro, Fix, Tests, Commit
 - Bewertung:
   - Code/Backend/Prod fuer IFR Hold: PASS.
   - S10 sichtbarer Wallet-UI-Nachweis: WAITING_FOR_MANUAL_UNLOCK, kein Code-Finding.
+
+## Blockaid Unflag — 2026-06-13 02:28
+IFR Contract 0x77e99917Eca8539c62F509ED1193ac36580A6e7B
+war faelschlich von Blockaid geflaggt — jetzt entfernt.
+Propagation: ~24h.
+Nach 24h: WalletConnect/MetaMask Flow erneut testen.
