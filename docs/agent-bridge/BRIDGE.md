@@ -1820,3 +1820,14 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
   - S10 Premium: `versionCode=69001`, `versionName=1.0.40-premium`.
 - Smoke start PASS: all three packages launch to `MainActivity`.
 - Note: Physical BUG-1/BUG-2 call retest was run immediately before the v69 bump on identical code at v68; v69 only changes `versionCode`.
+
+## 2026-06-13 PT — [AGENT-A] SecureCall vC69 GitHub Release + Website Links
+
+- GitHub Release erstellt: `v1.0.40-vC69` — SecureCall v1.0.40 vC69 Call UI Hotfix.
+- Release assets enthalten:
+  - Free/Pro/Premium arm64-v8a, armeabi-v7a, x86_64 APK splits.
+  - `SecureCall-LATEST.aab`, `SecureCall-LATEST.apk`, `SecureCall-Pro-LATEST.apk`, `SecureCall-Premium-LATEST.apk`.
+  - SHA256 checksum file.
+- Website `website/download.html` auf vC69 Release-URLs aktualisiert.
+- Verified via `curl -L --head`: Pro/Premium arm64 + armeabi download links return HTTP 200.
+- Wiki roadmap/security-audit versionCode references updated from 68 to 69.
