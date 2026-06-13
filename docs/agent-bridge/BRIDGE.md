@@ -1741,3 +1741,32 @@ AGENT-B: Bitte auf S10 testen, sobald verbunden:
 - Regeln: keine Screenshots, Bridge vor/nach Schritten, Findings severity-ranken, BLOCKING/HIGH fixen und verifizieren, kein paralleles Arbeiten an Codex vorbei.
 
 CC soll diesen Prompt ausfuehren und alle Findings mit Repro, Fix, Tests, Commit Hash und verbleibenden externen Blockern in dieser Bridge dokumentieren.
+
+## 2026-06-13 12:25 PT — Codex S10 Reconnected / IFR Hold Retest
+
+- S10 `RF8N313QMFL` ist wieder per ADB verbunden.
+- Device: `SM-G973F`.
+- Installierte relevante Pakete:
+  - `com.securecall.app.premium`
+  - `com.stealthx.securechat`
+  - `com.stealthx.chameleon`
+  - `io.metamask`
+- SecureCall Premium Version:
+  - `versionName=1.0.40-premium`
+  - split `versionCode=68001`
+- Backend/Live IFR Hold Test:
+  - `POST https://api.stealthx.tech/verify-ifr`
+  - Wallet `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958`
+  - Ergebnis: `success=true`, `tier=premium`, `balanceAmount=33333333`, `eligibleTiers=["pro","premium","elite"]`, `model=hold`.
+  - Hetzner PM2 log bestaetigt `balanceOf(...) = 33333333 IFR` via `https://ethereum.publicnode.com`.
+- S10 App Smoke:
+  - SecureCall Premium startet ohne appbezogene Fatal Exception/ANR.
+  - App-UI war kurz erreichbar (`StealthX`, `Connected`, `Keine Anrufe`).
+- Blocker fuer finalen sichtbaren S10-IFR-UI-Test:
+  - Geraet wechselte in Keyguard/Bouncer: `mCurrentFocus=Window{... Bouncer}`, `mDreamingLockscreen=true`.
+  - UI zeigt `Zeichnen Sie das Entsperrmuster.`
+  - `run-as com.securecall.app.premium` nicht moeglich, weil Release-App nicht debuggable ist.
+  - Ohne manuelles Entsperrmuster kann Codex die Settings/Wallet-Eingabe nicht textbasiert bedienen.
+- Bewertung:
+  - Code/Backend/Prod fuer IFR Hold: PASS.
+  - S10 sichtbarer Wallet-UI-Nachweis: WAITING_FOR_MANUAL_UNLOCK, kein Code-Finding.
