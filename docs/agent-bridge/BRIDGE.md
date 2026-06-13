@@ -1806,3 +1806,17 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
   - BUG-1 PASS: S7 Focus/UI = `com.securecall.app.pro/com.securecall.app.IncomingCallActivity`; UI zeigte Accept/Decline.
   - BUG-2 PASS: Nach Accept wechselte S4 von `Klingelt...` zu `Anruf aktiv`; Logcat zeigte Ringback `local_off`; S7 wechselte zu `Anruf aktiv`.
   - Beide Seiten zeigten aktiven Ende-zu-Ende verschluesselten Call mit Timer.
+
+## 2026-06-13 PT — [AGENT-A] SecureCall v69 Artifacts + Device Install
+
+- Base `versionCode` bumped `68 -> 69` after BUG-1/BUG-2 fix so the next Play artifact has a fresh code.
+- Build PASS: `./gradlew -Pinternal bundleFreeRelease assembleFreeRelease assembleProRelease assemblePremiumRelease`.
+- Desktop artifacts replaced:
+  - `/Users/gio/Desktop/SecureCall-LATEST.aab` — Free release bundle, timestamp 2026-06-13 03:06 PT.
+  - `/Users/gio/Desktop/SecureCall-LATEST.apk` — Free arm64 release APK, timestamp 2026-06-13 03:06 PT.
+- Installed on devices:
+  - S4 Free: `versionCode=69001`, `versionName=1.0.40-free`.
+  - S7 Pro: `versionCode=69001`, `versionName=1.0.40-pro`.
+  - S10 Premium: `versionCode=69001`, `versionName=1.0.40-premium`.
+- Smoke start PASS: all three packages launch to `MainActivity`.
+- Note: Physical BUG-1/BUG-2 call retest was run immediately before the v69 bump on identical code at v68; v69 only changes `versionCode`.
