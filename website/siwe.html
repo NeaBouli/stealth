@@ -37,7 +37,7 @@ h2 { color: #ff4444; font-size: 16px; margin-bottom: 12px; }
 .btn {
   display: block; width: 100%; padding: 14px; border: none; border-radius: 8px;
   font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s; text-align: center; text-decoration: none;
 }
 .btn:active { opacity: 0.7; }
 .btn-red { background: #ff4444; color: #fff; }
@@ -92,9 +92,9 @@ h2 { color: #ff4444; font-size: 16px; margin-bottom: 12px; }
   <div class="back-hint" id="back-hint">
     Tap the button below to return to the app.
   </div>
-  <button class="btn btn-green" id="btn-return" onclick="retryReturnToApp()">
+  <a class="btn btn-green" id="btn-return" href="#" onclick="return retryReturnToApp()">
     Back to SecureCall
-  </button>
+  </a>
 </div>
 
 <!-- No wallet -->
@@ -200,7 +200,9 @@ async function signMessage() {
     document.getElementById('result-signature').textContent = signature;
     signedAddress = userAccount;
     signedSignature = signature;
-    document.getElementById('btn-return').textContent = 'Back to ' + getAppName();
+    const returnButton = document.getElementById('btn-return');
+    returnButton.textContent = 'Back to ' + getAppName();
+    returnButton.href = buildCallbackUrl(userAccount, signature);
     await verifyOnBackend(userAccount, signature);
   } catch (e) {
     status.textContent = 'Signing failed: ' + (e.message || e);
@@ -280,26 +282,20 @@ function sendVerifyBeacon(address, signature) {
   window.__siweVerifyBeacon = img;
 }
 
-function returnToApp(address, signature) {
+function buildCallbackUrl(address, signature) {
   const query =
     'address=' + encodeURIComponent(address) +
     '&signature=' + encodeURIComponent(signature) +
     '&nonce=' + encodeURIComponent(nonce) +
     '&deviceId=' + encodeURIComponent(deviceId);
-  const callback = returnScheme + '://' + returnHost + '?' + query;
+  return returnScheme + '://' + returnHost + '?' + query;
+}
+
+function returnToApp(address, signature) {
+  const callback = buildCallbackUrl(address, signature);
   const hint = document.getElementById('back-hint');
   if (!hint.textContent || hint.textContent.indexOf('Verifying IFR balance') === 0) {
     hint.textContent = 'Opening ' + getAppName() + '...';
-  }
-  if (/Android/i.test(navigator.userAgent) && returnPackage) {
-    window.location.href =
-      'intent://' + returnHost + '?' + query +
-      '#Intent;scheme=' + encodeURIComponent(returnScheme) +
-      ';package=' + encodeURIComponent(returnPackage) +
-      ';S.browser_fallback_url=' + encodeURIComponent(callback) +
-      ';end';
-    setTimeout(() => { window.location.href = callback; }, 1200);
-    return;
   }
   window.location.href = callback;
 }
@@ -311,9 +307,10 @@ function getAppName() {
 }
 
 function retryReturnToApp() {
-  if (!signedAddress || !signedSignature) return;
+  if (!signedAddress || !signedSignature) return false;
   document.getElementById('back-hint').textContent = 'Opening ' + getAppName() + '...';
-  returnToApp(signedAddress, signedSignature);
+  document.getElementById('btn-return').href = buildCallbackUrl(signedAddress, signedSignature);
+  return true;
 }
 </script>
 </body>
