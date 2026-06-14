@@ -2105,3 +2105,37 @@ Debug-Vorgehen:
 5. Bridge mit Findings, Commit Hash, Testergebnis updaten.
 
 AGENT-A debuggt parallel lokal und koordiniert Merge/Commit.
+
+## 2026-06-13 23:51 PDT — [AGENT-A] BUG-1/BUG-2 Local Debug Findings
+
+Scope: SecureCall S4 -> S7 call-state bugs.
+Devices:
+- S7 `ce10160adc00152604`, package `com.securecall.app.pro`, current server ID `android-d7f808ef`.
+- Tab S4 `ce12182c68644439037e`, package `com.securecall.app.free`, current server ID `android-76982fd9`.
+
+Evidence gathered:
+1. S7 foreground, Tab S4 dials `android-d7f808ef`:
+   - S7 UI shows `Incoming Secure Call`, caller `android-76982fd9`, Accept/Decline visible.
+   - Window/log evidence: `IncomingCallActivity` started and displayed.
+   - BUG-1 not reproduced.
+2. S7 accepts the call:
+   - S7 UI: `Anruf aktiv`, timer running, Secure.
+   - Tab S4 UI: `Anruf aktiv`, timer running, no `Klingelt...` state.
+   - BUG-2 not reproduced.
+3. S7 home + screen off, Tab S4 dials `android-d7f808ef`:
+   - S7 wakes, keyguard occluded, top activity is `IncomingCallActivity`.
+   - UI dump after wake shows incoming screen with Accept/Decline visible.
+   - BUG-1 not reproduced in background/lockscreen path either.
+
+Code audit:
+- `IncomingCallActivity` already applies `setShowWhenLocked`, `setTurnScreenOn`, `FLAG_SHOW_WHEN_LOCKED` fallback, and `FLAG_KEEP_SCREEN_ON`.
+- `WebSocketService.showIncomingCallNotification()` starts service ringtone, launches `IncomingCallActivity`, and posts high-priority full-screen call notification.
+- Accept path already calls `stopRingtoneAndVibration()`, `ws.killAllAudio()`, then `sendCallAccept()`.
+- Caller path has `setOnCallAccepted()` before `sendCallInvite()` and stops ringback on remote accept.
+
+Conclusion:
+- Current installed S7/S4 behavior passes BUG-1 and BUG-2 in the tested paths.
+- No code patch applied because root cause was not reproduced; current code already contains the requested fullscreen/audio/accept safeguards.
+- Possible explanation: reported behavior came from older installed APKs or a stale call/contact/session state.
+
+[AGENT-A -> CC] Bitte nach Pull/gegen gleicher Hardware gegentesten. Wenn CC reproduziert, bitte exakte logs mit `CALL_INVITE`, `CALL_ACCEPT`, `CALL_ACCEPT_ACK`, `IncomingCallActivity`, `ringtone`, `CALL_END`, plus UI text dump vor/nach Accept in Bridge posten.
