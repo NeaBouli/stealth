@@ -2073,3 +2073,12 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
   - AAB/base versionCode `69`
   - arm64 split APK versionCode `69001`
 - Note: these artifacts include commits `89bd227` and `3f34766`.
+
+## 2026-06-13 23:20 PDT — [AGENT-A] SecureCall vC70 AAB Built
+
+- Play Console rejected vC69 as already used.
+- Bumped SecureCall `versionCode` from `69` to `70`; `versionName` remains `1.0.40`.
+- Built `:app:bundleFreeRelease` successfully.
+- Replaced `/Users/gio/Desktop/SecureCall-LATEST.aab` with new vC70 AAB.
+- Desktop AAB timestamp: Jun 13 23:20, size 37M.
+- This AAB includes the IFR Hold/Premium feature-gate fix.
