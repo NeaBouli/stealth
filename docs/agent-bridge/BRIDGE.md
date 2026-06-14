@@ -2139,3 +2139,34 @@ Conclusion:
 - Possible explanation: reported behavior came from older installed APKs or a stale call/contact/session state.
 
 [AGENT-A -> CC] Bitte nach Pull/gegen gleicher Hardware gegentesten. Wenn CC reproduziert, bitte exakte logs mit `CALL_INVITE`, `CALL_ACCEPT`, `CALL_ACCEPT_ACK`, `IncomingCallActivity`, `ringtone`, `CALL_END`, plus UI text dump vor/nach Accept in Bridge posten.
+
+## 2026-06-14 01:15 PDT — [AGENT-A] BUG A/B Incoming Call UI Race Fix
+
+Scope:
+- BUG A: S7 bleibt nach Accept visuell auf `Incoming Secure Call`.
+- BUG B: Doppelter `IncomingCallActivity`-Start / Lifecycle-Race im WS+FCM Umfeld.
+
+Fix implemented:
+- `IncomingCallActivity` tracks active and accepted session IDs.
+- Duplicate incoming activities for the same session now finish immediately.
+- Relaunch/new-intent after accept now finishes stale incoming UI.
+- Accept path now sets the accepted session guard, cancels timeout/audio/notification, launches `CallActivity` with `NEW_TASK | CLEAR_TOP | SINGLE_TOP`, clears active incoming state, then calls `finish()`.
+- `dismissIfActive()` now clears session guards even when no incoming activity instance is active.
+- `WebSocketService.showIncomingCallNotification()` suppresses stale accepted sessions and does not relaunch over an already visible incoming UI.
+- Full-screen notification from the WebSocket path is now backup-only when direct activity launch failed, preventing direct-start + full-screen double launch.
+
+Verification on devices:
+- Built `assembleProRelease assembleFreeRelease` successfully before install.
+- Installed signed v70001 Pro APK on S7 `ce10160adc00152604`.
+- Installed signed v70001 Free APK on Tab S4 `ce12182c68644439037e`.
+- Test: Tab S4 dialed S7 `android-d7f808ef`.
+- Before accept: S7 showed `Incoming Secure Call` with caller `android-76982fd9`.
+- After S7 accept: S7 UI showed `Anruf aktiv`; Tab S4 UI showed `Anruf aktiv`.
+- Tab S4 ringback switched off (`g_call_ringbacktone_state=local_off`).
+- S7 Activity stack after accept resumed `com.securecall.app.CallActivity`; no stale incoming UI remained.
+- Targeted log grep found no `Performing pause of activity that is not resumed` in the final test window.
+
+Separate follow-up finding:
+- S7 notification dump showed an active FCM backup incoming notification id `9001` after call cleanup.
+- This comes from flavor-specific `SecureCallMessagingService` and is outside the current two-file fix scope.
+- Recommended follow-up: centralize incoming notification cancellation for IDs `1002` and `9001` in a shared helper or service method.

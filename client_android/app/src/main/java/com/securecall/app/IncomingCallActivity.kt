@@ -20,6 +20,21 @@ class IncomingCallActivity : AppCompatActivity() {
         @Volatile
         var activeInstance: IncomingCallActivity? = null
 
+        @Volatile
+        private var activeSessionId: String? = null
+
+        @Volatile
+        private var acceptedSessionId: String? = null
+
+        fun isShowingSession(sessionId: String): Boolean {
+            if (sessionId.isEmpty()) return activeInstance != null
+            val activity = activeInstance ?: return false
+            return activity.sessionId == sessionId || activeSessionId == sessionId
+        }
+
+        fun isAcceptedSession(sessionId: String): Boolean =
+            sessionId.isNotEmpty() && acceptedSessionId == sessionId
+
         /** Stop ringtone+vibration on the active instance from any thread. */
         fun stopActiveAudio() {
             val activity = activeInstance ?: return
@@ -28,8 +43,8 @@ class IncomingCallActivity : AppCompatActivity() {
 
         /** Called by WebSocketService when CALL_END arrives during ringing. */
         fun dismissIfActive(sessionId: String) {
-            val activity = activeInstance ?: return
-            if (activity.sessionId == sessionId || sessionId.isEmpty()) {
+            val activity = activeInstance
+            if (activity != null && (activity.sessionId == sessionId || sessionId.isEmpty())) {
                 Log.d(TAG, "Caller cancelled call — auto-dismissing")
                 activity.cancelRingTimeout()
                 activity.saveMissedCall()
@@ -39,6 +54,8 @@ class IncomingCallActivity : AppCompatActivity() {
                     activity.finish()
                 }
             }
+            if (sessionId.isEmpty() || activeSessionId == sessionId) activeSessionId = null
+            if (sessionId.isEmpty() || acceptedSessionId == sessionId) acceptedSessionId = null
         }
     }
 
@@ -73,14 +90,27 @@ class IncomingCallActivity : AppCompatActivity() {
         }
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        setContentView(R.layout.activity_incoming_call)
-        activeInstance = this
-
         sessionId = intent.getStringExtra("sessionId") ?: ""
         callerClientId = intent.getStringExtra("callerClientId") ?: ""
         callerPhone = intent.getStringExtra("callerPhone") ?: ""
         fromFcm = intent.getBooleanExtra("from_fcm", false)
         Log.d(TAG, "Incoming call: session=$sessionId, from=$callerClientId, phone=$callerPhone, fromFcm=$fromFcm")
+
+        val existing = activeInstance
+        if (existing != null && existing !== this && existing.sessionId == sessionId) {
+            Log.w(TAG, "Duplicate IncomingCallActivity for session=$sessionId — finishing duplicate")
+            finish()
+            return
+        }
+        if (isAcceptedSession(sessionId)) {
+            Log.w(TAG, "IncomingCallActivity relaunched after accept for session=$sessionId — finishing")
+            finish()
+            return
+        }
+
+        setContentView(R.layout.activity_incoming_call)
+        activeInstance = this
+        activeSessionId = sessionId
 
         // The service can launch this activity before its current-session state is
         // visible to the UI thread. Treat a missing service session as a race, not
@@ -149,8 +179,17 @@ class IncomingCallActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        // fullScreenIntent may re-deliver the same intent — just ignore it
-        Log.d(TAG, "onNewIntent (ignored, already ringing)")
+        val newSessionId = intent?.getStringExtra("sessionId") ?: ""
+        if (accepted || isAcceptedSession(newSessionId)) {
+            Log.d(TAG, "onNewIntent after accept for session=$newSessionId — finishing stale incoming UI")
+            finish()
+            return
+        }
+        if (newSessionId == sessionId || newSessionId.isEmpty()) {
+            Log.d(TAG, "onNewIntent duplicate while ringing for session=$sessionId — ignored")
+            return
+        }
+        Log.w(TAG, "onNewIntent for different session=$newSessionId while ringing session=$sessionId — ignored")
     }
 
     private fun dismissIncomingCallNotification() {
@@ -165,7 +204,12 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun acceptCall() {
+        if (accepted) {
+            Log.d(TAG, "Accept ignored — already accepted session=$sessionId")
+            return
+        }
         accepted = true
+        acceptedSessionId = sessionId
         cancelRingTimeout()
         stopRingtoneAndVibration()
         dismissIncomingCallNotification()
@@ -223,7 +267,14 @@ class IncomingCallActivity : AppCompatActivity() {
             putExtra("phoneNumber", callerClientId)
             putExtra("originalPhone", callerPhone)
             putExtra("isIncoming", true)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
+        activeInstance = null
+        activeSessionId = null
+        dismissIncomingCallNotification()
+        Log.d(TAG, "Launching CallActivity and finishing incoming UI, session=$sessionId")
         startActivity(intent)
         finish()
     }
@@ -237,6 +288,8 @@ class IncomingCallActivity : AppCompatActivity() {
         val ws = com.securecall.app.net.WebSocketService.instance
         if (sessionId.isNotEmpty()) ws?.sendCallEnd(sessionId)
         ws?.clearSession() // BUG-032: clear session so next call isn't rejected as BUSY
+        activeSessionId = null
+        if (acceptedSessionId == sessionId) acceptedSessionId = null
         finish()
     }
 
@@ -339,6 +392,8 @@ class IncomingCallActivity : AppCompatActivity() {
         if (activeInstance === this) {
             activeInstance = null
         }
+        if (activeSessionId == sessionId) activeSessionId = null
+        if (!accepted && acceptedSessionId == sessionId) acceptedSessionId = null
         // Only clear callback if we didn't accept — CallActivity sets its own onCallEnded
         if (!accepted) {
             com.securecall.app.net.WebSocketService.instance?.setOnCallEnded(null)

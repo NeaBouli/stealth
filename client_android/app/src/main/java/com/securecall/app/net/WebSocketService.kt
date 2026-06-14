@@ -557,6 +557,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     private fun showIncomingCallNotification(sessionId: String, fromClientId: String, callerPhone: String = "") {
+        if (com.securecall.app.IncomingCallActivity.isAcceptedSession(sessionId)) {
+            Log.d("WS_SERVICE", "Suppressing stale IncomingCallActivity launch for accepted session $sessionId")
+            return
+        }
+
         // Resolve caller name: phone book first, then SecureCall contacts, then fallback
         val callerName = com.securecall.app.data.PhoneBookResolver.resolveCallerName(this, fromClientId, callerPhone)
 
@@ -570,12 +575,21 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         // Start ringtone+vibration from service (works even if activity doesn't launch on Android 10+)
         startIncomingRingtone()
 
-        // Always launch activity directly (works when app is in foreground or background)
-        try {
-            startActivity(intent)
-            Log.d("WS_SERVICE", "IncomingCallActivity launched directly for $callerName")
-        } catch (e: Exception) {
-            Log.e("WS_SERVICE", "Failed to launch IncomingCallActivity directly", e)
+        // Direct launch is needed for foreground/background reliability, but FCM
+        // and WS can both deliver the same session. Do not relaunch over an
+        // already visible incoming UI because it can race the accept transition.
+        var directLaunchSucceeded = false
+        if (com.securecall.app.IncomingCallActivity.isShowingSession(sessionId)) {
+            Log.d("WS_SERVICE", "IncomingCallActivity already visible for session $sessionId — skipping direct relaunch")
+            directLaunchSucceeded = true
+        } else {
+            try {
+                startActivity(intent)
+                directLaunchSucceeded = true
+                Log.d("WS_SERVICE", "IncomingCallActivity launched directly for $callerName")
+            } catch (e: Exception) {
+                Log.e("WS_SERVICE", "Failed to launch IncomingCallActivity directly", e)
+            }
         }
 
         // Also show high-priority notification as backup (for lock screen / DND / Android 10+ restrictions)
@@ -590,7 +604,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             .setContentText(callerName)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setFullScreenIntent(fullScreenPending, true)
+            .setFullScreenIntent(fullScreenPending, !directLaunchSucceeded)
             .setContentIntent(fullScreenPending)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setSilent(true) // Service handles ringtone — prevent double sound

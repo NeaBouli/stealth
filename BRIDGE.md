@@ -3,6 +3,60 @@
 
 ---
 
+## 2026-06-14 [CODEX]
+### TYPE: DIAGNOSE
+### STATUS: BUG-1/BUG-2 REAL-DEVICE RETEST ABGESCHLOSSEN
+
+**Auftrag:** BUG-1 + BUG-2 unter realen Bedingungen auf S7 und Tab S4 reproduzieren.
+
+**Geräte / Builds**
+- S7 `ce10160adc00152604` / SM-G930F: `com.securecall.app.pro`, `versionName=1.0.40-pro`, `versionCode=69001`, eigene ID `android-d7f808ef`
+- Tab S4 `ce12182c68644439037e` / SM-T835: `com.securecall.app.free`, `versionName=1.0.40-free`, `versionCode=69001`, eigene ID `android-76982fd9`
+- Tab S4 hatte keine Kontakte; echter Call wurde über Dialer-ABC auf `android-d7f808ef` gestartet. Vorherige Koordinaten/alter Dialerwert führten nur zu "Invite ... to SecureCall" und waren nicht aussagekräftig.
+
+**Szenario 1 — S7 Screen gesperrt + App Hintergrund (FCM/Fullscreen-Pfad)**
+- Setup: S7 Pro gestartet, Home, Screen aus; Tab S4 Free ruft `android-d7f808ef`.
+- Ergebnis: **BUG nicht reproduziert.**
+- S7 UI-Dump zeigte: `Incoming Secure Call`, Caller `android-76982fd9`, `Secure ID: android-76982fd9`.
+- S7 Logs zeigten Fullscreen-Pfad: `SecureCall:FCMCallWakeup`, `StatusBar addNotification ... fullscreen:true`, `ActivityManager START ... IncomingCallActivity`.
+- Tab S4 zeigte: `Klingelt...`, Ziel `android-d7f808ef`.
+
+**Szenario 2 — S7 App komplett geschlossen (`am force-stop`)**
+- Setup: `adb shell am force-stop com.securecall.app.pro`, danach echter Call vom Tab.
+- Ergebnis: **BUG nicht reproduziert.**
+- S7 wurde durch den Call wieder gestartet und zeigte `Incoming Secure Call`.
+- S7 Logs zeigten Ringtone/Vibration, Notification-Fullscreen und `START ... IncomingCallActivity`.
+- Auffälligkeit: S7 startete `IncomingCallActivity` doppelt und loggte `ActivityThread: Performing pause of activity that is not resumed` für `IncomingCallActivity`. Das blockierte den Incoming-Screen nicht, ist aber ein realer Lifecycle-Race-Hinweis.
+
+**Szenario 3 — Accept-Test / BUG-2**
+- Setup: bestehender Incoming Call auf S7, Accept-Button bei Bounds `[816,2048][1104,2336]` getippt.
+- Ergebnis zur Kernfrage: **Tab S4 klingelt nach Accept NICHT weiter.**
+- Tab S4 wechselte auf `Anruf aktiv`, Ziel `android-d7f808ef`, Timer lief (`00:09` im Dump), Ringback war beendet.
+- S7 Logs zeigten WebRTC/Audio-Initialisierung nach Accept (`PeerConnectionFactory`, `WebRtcAudioRecord`, `WebRtcAudioTrack`, NetworkMonitor).
+- Auffälligkeit: S7 UI-Dump zeigte nach Accept weiterhin `Incoming Secure Call` statt `CallActivity`, obwohl der Tab bereits aktiv war und S7 WebRTC initialisierte. Vermutung: `IncomingCallActivity.acceptCall()` sendet/initialisiert korrekt, aber die UI-Transition `startActivity(CallActivity) + finish()` verliert gegen einen zweiten `IncomingCallActivity`-Start oder bleibt unter Lock/Fullscreen-State sichtbar. Codepfad: `IncomingCallActivity.kt acceptCall()` → `ws.sendCallAccept(sessionId)` → `launchCallActivity()`; `onNewIntent()` ignoriert Re-Delivery.
+
+**Szenario 4 — S7 WiFi aus + Mobile Data an**
+- Setup: `svc wifi disable`, `svc data enable`, danach Call vom Tab.
+- Ergebnis: **Incoming auf S7 nicht angekommen, aber Testumgebung nicht sauber validiert.**
+- S7 UI blieb auf AOD/Lockscreen, kein `Incoming Secure Call`.
+- Tab S4 blieb auf `Klingelt...`.
+- Connectivity-Dump vor Call zeigte auf S7 kein validiertes `MOBILE`-Netz; sichtbar waren u.a. `WIFI_P2P DISCONNECTED` und alte Requests, aber kein aktiver Mobile-Data `NetworkAgentInfo ... CONNECTED/VALIDATED`.
+- Bewertung: **kein belastbarer App-Bug-Beweis**, weil der Receiver unter Mobile Data offenbar nicht online/FCM-erreichbar war. Root Cause für diesen Testlauf wahrscheinlich Gerät/Carrier/Roaming/Mobile-Data-State, nicht SecureCall-Call-Flow.
+- WiFi wurde nach dem Test wieder aktiviert.
+
+**Root-Cause-Einschätzung**
+- BUG-1 (Incoming erscheint nicht bei Locked/Background/Force-stop): auf S7 Pro 1.0.40 mit Tab S4 Free 1.0.40 **nicht reproduziert**, solange S7 über WiFi erreichbar ist.
+- BUG-2 (Caller klingelt nach Accept weiter): **nicht reproduziert**; Tab S4 stoppt Ringback und wird aktiv.
+- Neuer relevanter Befund: **S7 Accept-UI bleibt auf IncomingCallActivity hängen**, während der Call auf Tab aktiv wird und S7 WebRTC initialisiert. Das ist vermutlich ein UI-/Lifecycle-Race, nicht ein Signaling-/Accept-Ringback-Fehler.
+- Zweiter Befund: `force-stop`/FCM kann `IncomingCallActivity` doppelt starten; mögliche Ursache für den UI-Stuck ist Duplicate fullscreen intent / Activity launch race um `IncomingCallActivity.onNewIntent()` und `launchCallActivity()`.
+
+**Empfohlene nächste Fix-/Testschritte**
+1. `IncomingCallActivity.launchCallActivity()` härten: vor `startActivity()` `activeInstance = null`, Incoming-Notification canceln, ggf. `FLAG_ACTIVITY_CLEAR_TOP | FLAG_ACTIVITY_SINGLE_TOP` für `CallActivity` prüfen.
+2. Duplicate Incoming verhindern: bei aktivem/accepted `sessionId` zweite `IncomingCallActivity` in `onCreate()` sofort `finish()` oder auf bestehende Instanz routen; `onNewIntent()` nicht nur ignorieren, sondern bei `accepted=true` dismissen.
+3. Mobile-Data-Test erst wiederholen, wenn `dumpsys connectivity` auf S7 ein aktives `MOBILE ... CONNECTED/VALIDATED` zeigt und ein einfacher Internet-/FCM-Erreichbarkeitstest erfolgreich ist.
+
+---
+
 ## 2026-06-08 [CC]
 ### TYPE: FIX
 ### STATUS: DONE
@@ -3379,3 +3433,36 @@ Hinweis:
 CC:
 - Bitte Landing-Page, Logo-Asset-Verwendung, mobile Darstellung, Linkziele, Pricing/IFR-Text und SEO/schema Daten auditieren.
 - Auditierbare Dateien: `website/index.html`, `website/css/landing.css`, `website/js/main.js`, `website/assets/brand/*`, `website/design-template/securecall/*`.
+
+---
+
+## 2026-06-14 01:15 PDT — [AGENT-A]
+### TYPE: BUGFIX
+### STATUS: VERIFIED
+### EMPFÄNGER: CC|GIO
+
+**SecureCall Incoming Call UI Race fixed**
+
+Root cause:
+- `IncomingCallActivity` could be relaunched by duplicate WS/fullscreen delivery while the user accepted the call.
+- The accepted callee was already initializing WebRTC/audio, but stale incoming UI could remain above `CallActivity`.
+
+Fix:
+- Added active/accepted session guards in `IncomingCallActivity`.
+- Duplicate or accepted-session incoming activity starts now finish immediately.
+- Accept now clears the active incoming state, launches `CallActivity` with stable task flags, and finishes the incoming screen.
+- `WebSocketService` no longer relaunches over a visible incoming UI and arms full-screen notification only as fallback for the WS path.
+
+Device verification:
+- Built signed `assembleProRelease assembleFreeRelease`.
+- Installed S7 Pro `v70001` and Tab S4 Free `v70001`.
+- Test S4 -> S7:
+  - S7 incoming screen visible before accept.
+  - S7 after accept: `Anruf aktiv`.
+  - Tab S4 after accept: `Anruf aktiv`.
+  - Caller ringback stopped.
+  - No `Performing pause of activity that is not resumed` seen in final test window.
+
+Follow-up:
+- S7 still showed active FCM backup notification id `9001` after cleanup.
+- That source is flavor-specific `SecureCallMessagingService`; recommended next fix is shared cancellation for incoming notification ids `1002` and `9001`.
