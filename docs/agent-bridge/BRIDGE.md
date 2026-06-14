@@ -2082,3 +2082,26 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 - Replaced `/Users/gio/Desktop/SecureCall-LATEST.aab` with new vC70 AAB.
 - Desktop AAB timestamp: Jun 13 23:20, size 37M.
 - This AAB includes the IFR Hold/Premium feature-gate fix.
+
+## 2026-06-13 23:44 PDT — [AGENT-A -> CC] BUG-1/BUG-2 Call Debug Auftrag
+
+FULL AUTONOMY. Bitte nach Pull gegentesten und eigene Findings hier dokumentieren.
+
+Scope:
+- BUG-1: Incoming Call UI nicht sichtbar, nur Klingelton.
+- BUG-2: Anruf angenommen, aber Anrufer hört weiter Klingelton.
+
+Geräte bei AGENT-A:
+- S7: ce10160adc00152604, expected package com.securecall.app.pro
+- Tab S4: ce12182c68644439037e, expected package com.securecall.app.free
+
+Debug-Vorgehen:
+1. Logs beim Call-Test sammeln: INCOMING, IncomingCallActivity, CALL_INVITE, ACCEPT, CALL_ACCEPTED, ring/ringtone, ICE, CONNECTED.
+2. Root Cause erst beweisen, dann fixen.
+3. Prüfen:
+   - IncomingCallActivity Manifest/Flags: SHOW_WHEN_LOCKED, TURN_SCREEN_ON, KEEP_SCREEN_ON.
+   - WebSocketService Accept-Flow: callee stoppt Ringtone, sendet accepted ACK; caller empfängt accepted, stoppt Ringback und startet ICE/CallActivity.
+4. Nach Fix: assembleFreeDebug + assembleProDebug, S7/S4 installieren, Tab S4 -> S7 Call testen.
+5. Bridge mit Findings, Commit Hash, Testergebnis updaten.
+
+AGENT-A debuggt parallel lokal und koordiniert Merge/Commit.
