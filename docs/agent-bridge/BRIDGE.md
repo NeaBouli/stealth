@@ -2219,6 +2219,12 @@ Fix implemented:
 - Status copy now tells the user to tap the button instead of promising automatic return.
 - `MainActivity` handles `securecall://wc` before onboarding redirect, avoiding dropped callbacks on cold start.
 
+Follow-up hotfix:
+- User confirmed MetaMask still blocked the manual button because the button used JavaScript `intent://...` navigation plus a timeout fallback.
+- `website/siwe.html` now renders `Back to <App>` as a real `<a href="securecall://wc?...">` link after signing.
+- Removed `intent://` and the delayed fallback from the return path.
+- Live check confirmed `https://stealthx.tech/siwe.html` no longer contains `intent://`.
+
 Build notes:
 - `./gradlew -Pinternal assemblePremiumDebug assembleProDebug assembleFreeDebug` succeeded for SecureCall.
 - SecureChat and Chameleon release builds succeeded after switching their SIWE launchers to backend challenge URLs.
