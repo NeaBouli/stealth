@@ -11,13 +11,13 @@ import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.securecall.app.R
+import com.securecall.app.notifications.IncomingCallNotifications
 
 class SecureCallMessagingService : FirebaseMessagingService() {
 
     companion object {
         private const val TAG = "FCM_SERVICE"
         private const val CHANNEL_ID = "securecall_incoming_call_urgent"
-        private const val NOTIFICATION_ID = 9001
     }
 
     override fun onNewToken(token: String) {
@@ -170,6 +170,6 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             .setFullScreenIntent(pendingIntent, true)
             .build()
 
-        manager.notify(NOTIFICATION_ID, notification)
+        manager.notify(IncomingCallNotifications.FCM_BACKUP_NOTIFICATION_ID, notification)
     }
 }

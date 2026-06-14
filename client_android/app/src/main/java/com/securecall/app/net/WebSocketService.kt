@@ -15,6 +15,7 @@ import androidx.preference.PreferenceManager
 import com.securecall.app.BuildConfig
 import com.securecall.app.MainActivity
 import com.securecall.app.R
+import com.securecall.app.notifications.IncomingCallNotifications
 
 /**
  * BACKEND-22..58 / PATCH 201..204:
@@ -216,7 +217,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         private const val CHANNEL_ID = "securecall_foreground"
         private const val CHANNEL_INCOMING = "securecall_incoming_call_urgent"
         private const val NOTIFICATION_ID = 1001
-        private const val INCOMING_CALL_NOTIFICATION_ID = 1002
     }
 
     // BUG-009/024: Network change monitor for auto-reconnect
@@ -613,7 +613,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             .build()
 
         val nm = getSystemService(android.app.NotificationManager::class.java)
-        nm.notify(INCOMING_CALL_NOTIFICATION_ID, notification)
+        nm.notify(IncomingCallNotifications.WS_NOTIFICATION_ID, notification)
         Log.d("WS_SERVICE", "Incoming call notification shown for $callerName")
     }
 
@@ -1384,9 +1384,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         killAllAudio()
         // Dismiss IncomingCallActivity if it's showing (caller cancelled during ringing)
         com.securecall.app.IncomingCallActivity.dismissIfActive(sessionId)
-        // Also dismiss the incoming call notification directly
-        val nm = getSystemService(android.app.NotificationManager::class.java)
-        nm.cancel(INCOMING_CALL_NOTIFICATION_ID)
+        // Also dismiss incoming call notifications shown by WS or FCM fallback paths.
+        IncomingCallNotifications.cancelAll(this)
         _onCallEnded?.invoke(sessionId)
     }
 

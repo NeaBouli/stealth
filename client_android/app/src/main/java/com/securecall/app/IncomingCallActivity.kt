@@ -11,6 +11,7 @@ import android.view.WindowManager
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.securecall.app.notifications.IncomingCallNotifications
 
 class IncomingCallActivity : AppCompatActivity() {
 
@@ -193,8 +194,7 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun dismissIncomingCallNotification() {
-        val nm = getSystemService(NotificationManager::class.java)
-        nm.cancel(1002) // INCOMING_CALL_NOTIFICATION_ID
+        IncomingCallNotifications.cancelAll(this)
     }
 
     private fun cancelRingTimeout() {
