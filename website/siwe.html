@@ -90,7 +90,7 @@ h2 { color: #ff4444; font-size: 16px; margin-bottom: 12px; }
   <code id="result-signature" class="hidden"></code>
 
   <div class="back-hint" id="back-hint">
-    Returning to the app for automatic verification...
+    Tap the button below to return to the app.
   </div>
   <button class="btn btn-green" id="btn-return" onclick="retryReturnToApp()">
     Back to SecureCall
@@ -202,7 +202,6 @@ async function signMessage() {
     signedSignature = signature;
     document.getElementById('btn-return').textContent = 'Back to ' + getAppName();
     await verifyOnBackend(userAccount, signature);
-    returnToApp(userAccount, signature);
   } catch (e) {
     status.textContent = 'Signing failed: ' + (e.message || e);
     status.style.color = '#ff4444';
@@ -248,22 +247,22 @@ async function verifyOnBackend(address, signature) {
     const amount = result.balanceAmount || result.lockedAmount || '0';
 
     if (result.success) {
-      hint.textContent = 'Wallet verified: ' + amount + ' IFR held. Return to ' + getAppName() + '; status refreshes automatically.';
+      hint.textContent = 'Wallet verified: ' + amount + ' IFR held. Tap below to return to ' + getAppName() + '.';
       return true;
     }
     if (result.walletBound && result.error === 'insufficient') {
-      hint.textContent = 'Wallet connected, but only ' + amount + ' IFR held. Return to ' + getAppName() + ' for status.';
+      hint.textContent = 'Wallet connected, but only ' + amount + ' IFR held. Tap below to return to ' + getAppName() + '.';
       return true;
     }
     if (result.error === 'invalid_nonce' || result.error === 'challenge_expired') {
-      hint.textContent = 'This signing request expired. Return to ' + getAppName() + ' and start WalletConnect again.';
+      hint.textContent = 'This signing request expired. Tap below to return to ' + getAppName() + ' and start WalletConnect again.';
       return false;
     }
-    hint.textContent = 'Verification failed: ' + (result.error || 'unknown') + '. Return to ' + getAppName() + ' and try again.';
+    hint.textContent = 'Verification failed: ' + (result.error || 'unknown') + '. Tap below to return to ' + getAppName() + ' and try again.';
     return false;
   } catch (e) {
     sendVerifyBeacon(address, signature);
-    hint.textContent = 'Verification sent. Return to ' + getAppName() + '; status refreshes automatically.';
+    hint.textContent = 'Verification sent. Tap below to return to ' + getAppName() + '; status refreshes automatically.';
     return false;
   }
 }
@@ -290,21 +289,19 @@ function returnToApp(address, signature) {
   const callback = returnScheme + '://' + returnHost + '?' + query;
   const hint = document.getElementById('back-hint');
   if (!hint.textContent || hint.textContent.indexOf('Verifying IFR balance') === 0) {
-    hint.textContent = 'Returning to the app for automatic verification...';
+    hint.textContent = 'Opening ' + getAppName() + '...';
   }
-  setTimeout(() => {
-    if (/Android/i.test(navigator.userAgent) && returnPackage) {
-      window.location.href =
-        'intent://' + returnHost + '?' + query +
-        '#Intent;scheme=' + encodeURIComponent(returnScheme) +
-        ';package=' + encodeURIComponent(returnPackage) +
-        ';S.browser_fallback_url=' + encodeURIComponent(callback) +
-        ';end';
-      setTimeout(() => { window.location.href = callback; }, 1200);
-      return;
-    }
-    window.location.href = callback;
-  }, 600);
+  if (/Android/i.test(navigator.userAgent) && returnPackage) {
+    window.location.href =
+      'intent://' + returnHost + '?' + query +
+      '#Intent;scheme=' + encodeURIComponent(returnScheme) +
+      ';package=' + encodeURIComponent(returnPackage) +
+      ';S.browser_fallback_url=' + encodeURIComponent(callback) +
+      ';end';
+    setTimeout(() => { window.location.href = callback; }, 1200);
+    return;
+  }
+  window.location.href = callback;
 }
 
 function getAppName() {

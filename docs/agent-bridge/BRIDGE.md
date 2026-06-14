@@ -2170,3 +2170,59 @@ Separate follow-up finding:
 - S7 notification dump showed an active FCM backup incoming notification id `9001` after call cleanup.
 - This comes from flavor-specific `SecureCallMessagingService` and is outside the current two-file fix scope.
 - Recommended follow-up: centralize incoming notification cancellation for IDs `1002` and `9001` in a shared helper or service method.
+
+## 2026-06-14 02:05 PDT — [AGENT-A] Pre-Restart Handoff Saved
+
+Reason:
+- Local Gradle/Java process state became unstable during SecureCall vC71 AAB build.
+- `./gradlew --stop` and `bundleFreeRelease` hung repeatedly.
+- Direct Java Gradle wrapper reached single-use daemon fork, then hung.
+- Process inspection showed stuck `jspawnhelper`/Gradle wrapper paths.
+
+Safe state:
+- Last known pushed functional commit: `2921f6e`.
+- BUG-A/BUG-B incoming-call UI race fix is pushed and verified on S7 + Tab S4.
+- Local `client_android/app/build.gradle` has `versionCode 71`.
+- vC71 AAB has NOT been built.
+- Existing project AAB observed: `client_android/app/build/outputs/bundle/freeRelease/app-free-release.aab`, timestamp `Jun 13 23:20`, size `37M`.
+- `/Users/gio/Desktop/SecureCall-LATEST.aab` was not replaced during failed attempts.
+
+Saved handoff files:
+- `/Users/gio/Desktop/repos/stealth/docs/RESTART_HANDOFF_2026-06-14.md`
+- `/Users/gio/Desktop/STEALTHX_RESTART_STATUS_2026-06-14.md`
+
+After Mac restart:
+```bash
+cd /Users/gio/Desktop/repos/stealth/client_android
+./gradlew --stop
+./gradlew --no-daemon --max-workers=1 bundleFreeRelease
+cp app/build/outputs/bundle/freeRelease/app-free-release.aab ~/Desktop/SecureCall-LATEST.aab
+ls -lh ~/Desktop/SecureCall-LATEST.aab
+git add app/build.gradle
+git commit -m "chore: bump versionCode to 71"
+git push origin main
+```
+
+Do not commit `gradle.properties`; it was restored after temporary troubleshooting.
+
+## 2026-06-14 07:40 PDT — [AGENT-A] WalletConnect Return Blocker
+
+Runtime finding from user screenshots:
+- MetaMask browser signs SIWE successfully and reaches `Signed Successfully`.
+- The automatic return attempt from `https://stealthx.tech/siwe.html` is blocked by Android/MetaMask:
+  `Diese Webseite wurde automatisch für das Öffnen einer externen App blockiert.`
+- This confirms the remaining blocker is not the IFR contract and not the SIWE signature step; it is the automatic external-app redirect after signing.
+
+Fix implemented:
+- `website/siwe.html` no longer auto-calls `returnToApp()` after `verifyOnBackend()`.
+- The green `Back to <App>` button is now the only app-return trigger, so the external app open runs from a real user gesture.
+- Status copy now tells the user to tap the button instead of promising automatic return.
+- `MainActivity` handles `securecall://wc` before onboarding redirect, avoiding dropped callbacks on cold start.
+
+Build notes:
+- `./gradlew -Pinternal assemblePremiumDebug assembleProDebug assembleFreeDebug` succeeded for SecureCall.
+- SecureChat and Chameleon release builds succeeded after switching their SIWE launchers to backend challenge URLs.
+
+Install notes:
+- ADB installs started hanging in Package Manager on the connected devices.
+- S10 SecureCall Premium debug install also hit `INSTALL_FAILED_UPDATE_INCOMPATIBLE` because the installed app uses a different signature.

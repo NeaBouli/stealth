@@ -108,6 +108,10 @@ public class MainActivity extends AppCompatActivity {
         // Request phone number permission for server registration
         requestPhoneNumberPermission();
 
+        // Handle wallet verification before any onboarding redirect. MetaMask may cold-start
+        // the app with securecall://wc; dropping that intent loses the SIWE result.
+        boolean walletCallbackHandled = handleWalletDeepLink(getIntent());
+
         // Check if onboarding needed
         SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
         if (!prefs.getBoolean("onboarding_complete", false)) {
@@ -207,7 +211,9 @@ public class MainActivity extends AppCompatActivity {
         // Handle custom-id deep link: securecall://custom-id?id=xxx&token=xxx
         handleCustomIdDeepLink(getIntent());
         // Handle wallet verification deep link: securecall://wc?address=...&signature=...
-        handleWalletDeepLink(getIntent());
+        if (!walletCallbackHandled) {
+            handleWalletDeepLink(getIntent());
+        }
 
         // Trial: show expired dialog at app start if applicable
         if (com.securecall.app.trial.TrialManager.INSTANCE.shouldShowExpiredDialog(this)) {
@@ -228,11 +234,13 @@ public class MainActivity extends AppCompatActivity {
         handleWalletDeepLink(intent);
     }
 
-    private void handleWalletDeepLink(Intent intent) {
-        if (intent == null || intent.getData() == null) return;
+    private boolean handleWalletDeepLink(Intent intent) {
+        if (intent == null || intent.getData() == null) return false;
         if (com.securecall.app.wallet.WalletConnectManager.INSTANCE.handleDeepLink(this, intent.getData())) {
             Log.d(TAG, "Wallet verification callback received");
+            return true;
         }
+        return false;
     }
 
     private void handleInviteDeepLink(Intent intent) {
