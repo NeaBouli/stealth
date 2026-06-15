@@ -90,7 +90,7 @@ h2 { color: #ff4444; font-size: 16px; margin-bottom: 12px; }
   <code id="result-signature" class="hidden"></code>
 
   <div class="back-hint" id="back-hint">
-    Tap the button below to return to the app.
+    Tap the button below to close MetaMask and return to the app.
   </div>
   <a class="btn btn-green" id="btn-return" href="#" onclick="return retryReturnToApp()">
     Back to SecureCall
@@ -248,27 +248,27 @@ async function verifyOnBackend(address, signature) {
     const amount = result.balanceAmount || result.lockedAmount || '0';
 
     if (result.success) {
-      hint.textContent = 'Wallet verified: ' + amount + ' IFR held. Open ' + getAppName() + ' again to continue.';
-      setManualReturnButton('Verified - open ' + getAppName());
+      hint.textContent = 'Wallet verified: ' + amount + ' IFR held. Close MetaMask to return to ' + getAppName() + '.';
+      setCloseMetaMaskButton();
       return true;
     }
     if (result.walletBound && result.error === 'insufficient') {
-      hint.textContent = 'Wallet connected, but only ' + amount + ' IFR held. Open ' + getAppName() + ' again to continue.';
-      setManualReturnButton('Open ' + getAppName());
+      hint.textContent = 'Wallet connected, but only ' + amount + ' IFR held. Close MetaMask to return to ' + getAppName() + '.';
+      setCloseMetaMaskButton();
       return true;
     }
     if (result.error === 'invalid_nonce' || result.error === 'challenge_expired') {
       hint.textContent = 'This signing request expired. Open ' + getAppName() + ' again and start WalletConnect again.';
-      setManualReturnButton('Open ' + getAppName());
+      setCloseMetaMaskButton();
       return false;
     }
     hint.textContent = 'Verification failed: ' + (result.error || 'unknown') + '. Open ' + getAppName() + ' again and try again.';
-    setManualReturnButton('Open ' + getAppName());
+    setCloseMetaMaskButton();
     return false;
   } catch (e) {
     sendVerifyBeacon(address, signature);
-    hint.textContent = 'Verification sent. Open ' + getAppName() + ' again; status refreshes automatically.';
-    setManualReturnButton('Open ' + getAppName());
+    hint.textContent = 'Verification sent. Close MetaMask to return to ' + getAppName() + '; status refreshes automatically.';
+    setCloseMetaMaskButton();
     return false;
   }
 }
@@ -341,8 +341,7 @@ function getReturnPackage() {
 
 function retryReturnToApp() {
   if (!signedAddress || !signedSignature) return false;
-  setManualReturnButton('Open ' + getAppName());
-  document.getElementById('back-hint').textContent = 'Open ' + getAppName() + ' again to continue.';
+  closeMetaMaskTab();
   return false;
 }
 
@@ -355,6 +354,38 @@ function setManualReturnButton(label) {
       'MetaMask blocks automatic return. Close this tab or switch back to ' + getAppName() + '.';
     return false;
   };
+}
+
+function setCloseMetaMaskButton() {
+  const button = document.getElementById('btn-return');
+  button.textContent = 'Close MetaMask';
+  button.href = 'about:blank';
+  button.onclick = function () {
+    closeMetaMaskTab();
+    return false;
+  };
+}
+
+function closeMetaMaskTab() {
+  document.getElementById('back-hint').textContent = 'Closing MetaMask...';
+  try {
+    window.open('', '_self');
+    window.close();
+  } catch (e) {
+    // Ignore and run browser fallbacks below.
+  }
+  setTimeout(() => {
+    try {
+      window.close();
+    } catch (e) {
+      // Ignore and run browser fallbacks below.
+    }
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    window.location.replace('about:blank');
+  }, 150);
 }
 </script>
 </body>
