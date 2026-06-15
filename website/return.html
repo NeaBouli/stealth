@@ -34,18 +34,26 @@ const params = new URLSearchParams(window.location.search);
 const pathApp = window.location.pathname.split('/').filter(Boolean).pop();
 const app = params.get('app') || pathApp || 'securecall';
 const schemes = {
-  securecall: 'securecall://wc',
-  securechat: 'securechat://wc',
-  chameleon: 'chameleon://wc'
+  securecall: { path: 'securecall', packageName: 'com.securecall.app.premium' },
+  securechat: { path: 'securechat', packageName: 'com.stealthx.securechat' },
+  chameleon: { path: 'chameleon', packageName: 'com.stealthx.chameleon' }
 };
-const scheme = schemes[app] || schemes.securecall;
+const target = schemes[app] || schemes.securecall;
 const query = new URLSearchParams({
+  app,
   address: params.get('address') || params.get('addr') || '',
+  addr: params.get('address') || params.get('addr') || '',
   signature: params.get('signature') || params.get('sig') || '',
+  sig: params.get('signature') || params.get('sig') || '',
   nonce: params.get('nonce') || '',
-  deviceId: params.get('deviceId') || ''
+  deviceId: params.get('deviceId') || '',
+  returnPackage: params.get('returnPackage') || params.get('package') || target.packageName
 }).toString();
-document.getElementById('fallback').href = scheme + '?' + query;
+const pkg = params.get('returnPackage') || params.get('package') || target.packageName;
+document.getElementById('fallback').href =
+  'intent://stealthx.tech/return/' + target.path + '?' + query +
+  '#Intent;scheme=https;package=' + encodeURIComponent(pkg) +
+  ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
 </script>
 </body>
 </html>

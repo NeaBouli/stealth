@@ -202,7 +202,7 @@ async function signMessage() {
     signedSignature = signature;
     const returnButton = document.getElementById('btn-return');
     returnButton.textContent = 'Back to ' + getAppName();
-    returnButton.href = buildCallbackUrl(userAccount, signature);
+    returnButton.href = buildAppOpenUrl(userAccount, signature);
     await verifyOnBackend(userAccount, signature);
   } catch (e) {
     status.textContent = 'Signing failed: ' + (e.message || e);
@@ -283,19 +283,32 @@ function sendVerifyBeacon(address, signature) {
 }
 
 function buildCallbackUrl(address, signature) {
-  const query =
+  return 'https://stealthx.tech/return/' + encodeURIComponent(getAppSlug()) + '?' + buildCallbackQuery(address, signature);
+}
+
+function buildCallbackQuery(address, signature) {
+  return (
     'app=' + encodeURIComponent(getAppSlug()) +
     '&address=' + encodeURIComponent(address) +
     '&addr=' + encodeURIComponent(address) +
     '&signature=' + encodeURIComponent(signature) +
     '&sig=' + encodeURIComponent(signature) +
     '&nonce=' + encodeURIComponent(nonce) +
-    '&deviceId=' + encodeURIComponent(deviceId);
-  return 'https://stealthx.tech/return/' + encodeURIComponent(getAppSlug()) + '?' + query;
+    '&deviceId=' + encodeURIComponent(deviceId) +
+    '&returnPackage=' + encodeURIComponent(getReturnPackage())
+  );
+}
+
+function buildAppOpenUrl(address, signature) {
+  const path = 'stealthx.tech/return/' + encodeURIComponent(getAppSlug());
+  const query = buildCallbackQuery(address, signature);
+  return 'intent://' + path + '?' + query +
+    '#Intent;scheme=https;package=' + encodeURIComponent(getReturnPackage()) +
+    ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
 }
 
 function returnToApp(address, signature) {
-  const callback = buildCallbackUrl(address, signature);
+  const callback = buildAppOpenUrl(address, signature);
   const hint = document.getElementById('back-hint');
   if (!hint.textContent || hint.textContent.indexOf('Verifying IFR balance') === 0) {
     hint.textContent = 'Opening ' + getAppName() + '...';
@@ -315,10 +328,17 @@ function getAppSlug() {
   return 'securecall';
 }
 
+function getReturnPackage() {
+  if (returnPackage) return returnPackage;
+  if (returnScheme === 'securechat') return 'com.stealthx.securechat';
+  if (returnScheme === 'chameleon') return 'com.stealthx.chameleon';
+  return 'com.securecall.app.premium';
+}
+
 function retryReturnToApp() {
   if (!signedAddress || !signedSignature) return false;
   document.getElementById('back-hint').textContent = 'Opening ' + getAppName() + '...';
-  document.getElementById('btn-return').href = buildCallbackUrl(signedAddress, signedSignature);
+  document.getElementById('btn-return').href = buildAppOpenUrl(signedAddress, signedSignature);
   return true;
 }
 </script>

@@ -32,12 +32,20 @@ a {
 <script>
 const params = new URLSearchParams(window.location.search);
 const query = new URLSearchParams({
+  app: 'securechat',
   address: params.get('address') || params.get('addr') || '',
+  addr: params.get('address') || params.get('addr') || '',
   signature: params.get('signature') || params.get('sig') || '',
+  sig: params.get('signature') || params.get('sig') || '',
   nonce: params.get('nonce') || '',
-  deviceId: params.get('deviceId') || ''
+  deviceId: params.get('deviceId') || '',
+  returnPackage: params.get('returnPackage') || params.get('package') || 'com.stealthx.securechat'
 }).toString();
-document.getElementById('fallback').href = 'securechat://wc?' + query;
+const pkg = params.get('returnPackage') || params.get('package') || 'com.stealthx.securechat';
+document.getElementById('fallback').href =
+  'intent://stealthx.tech/return/securechat?' + query +
+  '#Intent;scheme=https;package=' + encodeURIComponent(pkg) +
+  ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
 </script>
 </body>
 </html>

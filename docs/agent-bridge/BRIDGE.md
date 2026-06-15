@@ -2266,3 +2266,18 @@ Verification:
 
 Remaining note:
 - Full live MetaMask return test needs the website and `.well-known/assetlinks.json` deployed, then Android domain verification must refresh from `1024` to verified/approved on target devices.
+
+## 2026-06-15 10:25 PDT — [AGENT-A] MetaMask WebView App-Link Delegation Hotfix
+
+Runtime finding:
+- S10 SecureCall Premium is installed and `stealthx.tech` is verified for App Links.
+- `adb am start` with `https://stealthx.tech/return/securecall?...` opens `com.securecall.app.premium/.MainActivity`.
+- User still sees MetaMask block the return button after signing.
+- Root cause is MetaMask's in-app browser keeping same-domain HTTPS navigation inside the WebView, then the fallback button used `securecall://wc`, which Android/MetaMask blocks.
+
+Hotfix:
+- `siwe.html` now sets the green return button to an Android intent URL:
+  `intent://stealthx.tech/return/<app>?...#Intent;scheme=https;package=<returnPackage>;...;end`
+- Return payload remains HTTPS App-Link based and includes `returnPackage`.
+- All `/return` fallback pages now use the same package-targeted HTTPS intent URL instead of custom schemes.
+- No Android rebuild is required for this hotfix; website deploy is sufficient.
