@@ -3,19 +3,12 @@ package com.securecall.app.wallet
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.Application
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.util.Log
 import android.widget.Toast
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import com.securecall.app.R
 import com.securecall.app.config.IfrLockManager
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -42,8 +35,6 @@ object WalletConnectManager {
     private val WALLET_REGEX = "^0x[0-9a-fA-F]{40}$".toRegex()
     private val SIG_REGEX = "^0x[0-9a-fA-F]{130}$".toRegex()
     private const val BACKEND_URL = "https://api.stealthx.tech"
-    private const val RETURN_CHANNEL_ID = "wallet_return"
-    private const val RETURN_NOTIFICATION_ID = 9042
 
     private val WALLETS = listOf(
         WalletApp("MetaMask", "io.metamask", "https://metamask.app.link"),
@@ -150,11 +141,9 @@ object WalletConnectManager {
                 try {
                     activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(mmDeepLink)))
                     Log.d(TAG, "Opened signing page in ${wallet.name} browser")
-                    startStatusPolling(activity.applicationContext, deviceId)
                 } catch (e: Throwable) {
                     Log.w(TAG, "Deep link failed, opening in default browser: ${e.message}")
                     activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(pageUrl)))
-                    startStatusPolling(activity.applicationContext, deviceId)
                 }
 
                 Toast.makeText(activity, "Sign the challenge in your wallet. SecureCall will return automatically.", Toast.LENGTH_LONG).show()
@@ -200,80 +189,6 @@ object WalletConnectManager {
         } catch (e: Throwable) {
             Log.e(TAG, "SIWE verify failed: ${e.message}")
             null
-        }
-    }
-
-    private fun fetchSiweStatus(deviceId: String): JSONObject? {
-        return try {
-            val url = "$BACKEND_URL/siwe/status?deviceId=${Uri.encode(deviceId)}"
-            val request = Request.Builder().url(url).get().build()
-            val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) return null
-            JSONObject(response.body?.string() ?: return null)
-        } catch (e: Throwable) {
-            Log.d(TAG, "SIWE status poll failed: ${e.message}")
-            null
-        }
-    }
-
-    private fun startStatusPolling(context: Context, deviceId: String) {
-        Thread({
-            repeat(150) {
-                Thread.sleep(2000)
-                val status = fetchSiweStatus(deviceId) ?: return@repeat
-                if (!status.optBoolean("verified", false)) return@repeat
-
-                val address = status.optString("walletAddress", "")
-                if (!WALLET_REGEX.matches(address)) return@repeat
-
-                val pending = pendingCallback ?: return@Thread
-                val result = applySiweResult(context, address, status)
-                pendingCallback = null
-                pending.invoke(result.first, result.second)
-                showReturnNotification(context, result.second)
-                Log.d(TAG, "SIWE status confirmed in background: $address")
-                return@Thread
-            }
-        }, "siwe-status-poll").start()
-    }
-
-    private fun showReturnNotification(context: Context, message: String) {
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(
-                    RETURN_CHANNEL_ID,
-                    "Wallet return",
-                    NotificationManager.IMPORTANCE_HIGH
-                )
-            )
-        }
-
-        val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-            ?: Intent().setPackage(context.packageName)
-        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            RETURN_NOTIFICATION_ID,
-            launchIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or
-                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
-        )
-
-        val notification = NotificationCompat.Builder(context, RETURN_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_shield)
-            .setContentTitle("SecureCall wallet verified")
-            .setContentText("Tap to return to SecureCall")
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-
-        try {
-            NotificationManagerCompat.from(context).notify(RETURN_NOTIFICATION_ID, notification)
-        } catch (e: SecurityException) {
-            Log.w(TAG, "Cannot show wallet return notification: ${e.message}")
         }
     }
 
