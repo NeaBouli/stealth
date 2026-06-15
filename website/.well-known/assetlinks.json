@@ -29,5 +29,25 @@
         "1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D"
       ]
     }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.stealthx.securechat",
+      "sha256_cert_fingerprints": [
+        "C5:3D:9D:8E:35:32:4C:F5:3F:A0:18:67:4D:24:0A:3A:E9:58:7A:E2:5F:F5:48:6A:C5:3C:E6:02:24:4C:4B:DC"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.stealthx.chameleon",
+      "sha256_cert_fingerprints": [
+        "1E:80:A6:07:68:95:EB:88:9C:9B:3C:1E:46:CE:FD:FD:B4:EF:9C:9E:8B:D2:1C:2D:F3:2C:04:A6:9D:E0:CE:8D"
+      ]
+    }
   }
 ]

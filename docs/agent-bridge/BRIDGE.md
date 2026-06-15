@@ -2232,3 +2232,37 @@ Build notes:
 Install notes:
 - ADB installs started hanging in Package Manager on the connected devices.
 - S10 SecureCall Premium debug install also hit `INSTALL_FAILED_UPDATE_INCOMPATIBLE` because the installed app uses a different signature.
+
+## 2026-06-14 09:30 PDT — [AGENT-A] SIWE Return Moved to HTTPS App Links
+
+Root cause:
+- MetaMask's in-app browser / Android WebView blocks `securecall://wc` external app launches after SIWE signing.
+- Replacing the JavaScript redirect with a manual anchor still hit the same external-app warning.
+- A shared App Link path like `/return?app=...` is not enough when multiple apps are installed, because Android intent filters do not match query parameters and falls back to the resolver.
+
+Fix implemented:
+- `website/siwe.html` now builds HTTPS App Links:
+  - `https://stealthx.tech/return/securecall?...`
+  - `https://stealthx.tech/return/securechat?...`
+  - `https://stealthx.tech/return/chameleon?...`
+- Added static fallback pages under `website/return/` with app-specific `Open App` buttons.
+- Added app-specific HTTPS intent filters:
+  - SecureCall: `/return/securecall`
+  - SecureChat: `/return/securechat`
+  - Chameleon: `/return/chameleon`
+- WalletConnect/SIWE parsers in all three apps now accept HTTPS return links and `addr`/`sig` aliases while retaining the legacy custom scheme fallback.
+- `assetlinks.json` now includes SecureChat and Chameleon package signatures in addition to SecureCall.
+
+Verification:
+- SecureCall: `./gradlew -Pinternal assemblePremiumDebug assembleProDebug assembleFreeDebug` succeeded.
+- SecureChat: `./gradlew --no-daemon assembleRelease` succeeded after resetting a transient Kotlin/KAPT daemon error.
+- Chameleon: `./gradlew assembleRelease` succeeded.
+- SecureChat release APK installed successfully on S10, S7, and Tab S4.
+- Chameleon release APK installed successfully on S10, S7, and Tab S4.
+- SecureCall debug APKs could not replace installed apps without uninstall because all three devices report signature mismatch.
+- S10 local App-Link approval test:
+  - `/return/securechat` launches `com.stealthx.securechat/.MainActivity`.
+  - `/return/chameleon` launches `com.stealthx.chameleon/.MainActivity`.
+
+Remaining note:
+- Full live MetaMask return test needs the website and `.well-known/assetlinks.json` deployed, then Android domain verification must refresh from `1024` to verified/approved on target devices.

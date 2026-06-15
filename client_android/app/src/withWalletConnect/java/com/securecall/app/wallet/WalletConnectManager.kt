@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
  * Flow:
  * 1. App requests challenge from backend (nonce + message)
  * 2. User signs in MetaMask / wallet browser
- * 3. Wallet redirects back to securecall://wc with address + signature
+ * 3. Wallet redirects back to https://stealthx.tech/return/securecall with address + signature
  * 4. Backend verifies: ecrecover(message, signature) == walletAddress
  * 5. Backend checks IFR balance → permanent tier unlock
  *
@@ -122,8 +122,8 @@ object WalletConnectManager {
                 val nonce = challenge.first
                 val message = challenge.second
 
-                // Open signing page in wallet's built-in dApp browser. The page redirects
-                // back to securecall://wc after the wallet signs the challenge.
+                // Open signing page in wallet's built-in dApp browser. The page returns
+                // through the verified https app link after the wallet signs the challenge.
                 val encodedMsg = Uri.encode(message)
                 val encodedDevice = Uri.encode(deviceId)
                 val encodedPackage = Uri.encode(activity.packageName)
@@ -193,10 +193,20 @@ object WalletConnectManager {
     }
 
     fun handleDeepLink(context: Context, uri: Uri?): Boolean {
-        if (uri?.scheme != "securecall" || uri.host != "wc") return false
+        if (uri == null) return false
+        val isCustomCallback = uri.scheme == "securecall" && uri.host == "wc"
+        val isHttpsCallback = uri.scheme == "https" && uri.host == "stealthx.tech" &&
+            (uri.path?.startsWith("/return/securecall") == true ||
+                (uri.path?.startsWith("/return") == true &&
+                    (uri.getQueryParameter("app") ?: "securecall") == "securecall")) &&
+            (uri.getQueryParameter("app") ?: "securecall") == "securecall"
+        if (!isCustomCallback && !isHttpsCallback) return false
+
         val address = uri.getQueryParameter("address")
             ?: uri.getQueryParameter("walletAddress")
+            ?: uri.getQueryParameter("addr")
         val signature = uri.getQueryParameter("signature")
+            ?: uri.getQueryParameter("sig")
         val nonce = uri.getQueryParameter("nonce")
         val deviceId = uri.getQueryParameter("deviceId")
         if (address == null || !WALLET_REGEX.matches(address) ||
