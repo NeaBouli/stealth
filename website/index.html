@@ -595,8 +595,8 @@
     })();
 		    (function wireLifetimeCheckout(){
 			      function openMetaMaskBrowser(){
-			        var target=location.hostname+location.pathname+location.search+'#ifr';
-			        location.href='https://metamask.app.link/dapp/'+target.replace(/^\/+/,'');
+			        var target=location.host+location.pathname+location.search;
+			        location.href='https://link.metamask.io/dapp/'+target.replace(/^\/+/,'')+'%23ifr';
 			      }
 			      async function connectIfrWallet(){
 			        var input=document.getElementById('ifrWalletAddress');
