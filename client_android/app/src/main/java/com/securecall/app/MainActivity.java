@@ -143,8 +143,20 @@ public class MainActivity extends AppCompatActivity {
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
             int navBarHeight = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars()).bottom;
             v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), navBarHeight);
+            updateContentBottomInset();
             return insets;
         });
+        android.widget.FrameLayout adContainer = findViewById(R.id.adBannerContainer);
+        View navHost = findViewById(R.id.nav_host_fragment);
+        View.OnLayoutChangeListener bottomInsetUpdater = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
+                updateContentBottomInset();
+        bottomNav.addOnLayoutChangeListener(bottomInsetUpdater);
+        if (adContainer != null) {
+            adContainer.addOnLayoutChangeListener(bottomInsetUpdater);
+        }
+        if (navHost != null) {
+            navHost.post(this::updateContentBottomInset);
+        }
         ExtendedFloatingActionButton fab = findViewById(R.id.fabNewCall);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -190,12 +202,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // AdMob — only show ads if effective tier is FREE (TB-013: ensure container visible)
-        android.widget.FrameLayout adContainer = findViewById(R.id.adBannerContainer);
         if (com.securecall.app.config.TierManager.INSTANCE.isFreeTier(this)) {
             if (adContainer != null) adContainer.setVisibility(android.view.View.VISIBLE);
             com.securecall.app.ads.AdMobManager.INSTANCE.init(this);
             com.securecall.app.ads.AdMobManager.INSTANCE.loadBanner(this, adContainer);
             com.securecall.app.ads.AdMobManager.INSTANCE.preloadInterstitial(this);
+            updateAdVisibilityForTab(bottomNav.getSelectedItemId() != R.id.nav_settings);
         } else {
             // Upgraded user — hide ad container completely
             if (adContainer != null) {
@@ -421,6 +433,29 @@ public class MainActivity extends AppCompatActivity {
         if (adContainer == null) return;
         boolean showAds = allowAds && com.securecall.app.config.TierManager.INSTANCE.isFreeTier(this);
         adContainer.setVisibility(showAds ? android.view.View.VISIBLE : android.view.View.GONE);
+        adContainer.post(this::updateContentBottomInset);
+    }
+
+    private void updateContentBottomInset() {
+        View navHost = findViewById(R.id.nav_host_fragment);
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        android.widget.FrameLayout adContainer = findViewById(R.id.adBannerContainer);
+        if (navHost == null || bottomNav == null) return;
+
+        int bottomInset = bottomNav.getHeight();
+        if (adContainer != null && adContainer.getVisibility() == View.VISIBLE) {
+            bottomInset += adContainer.getHeight();
+        }
+
+        android.view.ViewGroup.LayoutParams rawParams = navHost.getLayoutParams();
+        if (rawParams instanceof android.view.ViewGroup.MarginLayoutParams) {
+            android.view.ViewGroup.MarginLayoutParams params =
+                    (android.view.ViewGroup.MarginLayoutParams) rawParams;
+            if (params.bottomMargin != bottomInset) {
+                params.bottomMargin = bottomInset;
+                navHost.setLayoutParams(params);
+            }
+        }
     }
 
     private void handleCallToggle(ExtendedFloatingActionButton fab) {

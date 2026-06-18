@@ -2375,3 +2375,35 @@ Runtime verification:
 Notes:
 - UI dumps for the three tested main screens showed no IFR/Wallet/WalletConnect texts.
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
+## 2026-06-18 13:56 PDT — [AGENT-A] Settings Ad Banner Overlap Fix
+
+User report:
+- On Free builds, the ad banner could interfere with the bottom menu / Settings screen so the lower Settings area was not reliably actionable.
+- User reconfirmed product direction: public app must stay without WalletConnect/IFR in-app unlock; IFR benefit should be browser wallet verification plus Stripe discount later.
+
+Confirmed current product state:
+- Public Android app line has no active WalletConnect/IFR app unlock references.
+- Internal WalletConnect/SIWE test line remains preserved as tag `internal-ifr-wallet-test-2026-06-18`.
+- Public README, website FAQ/download/wiki/user manual, and disabled `siwe.html` describe IFR holder benefits as planned browser verification plus Stripe discount, currently planned at 50%.
+- Deprecated WalletConnect setup doc remains only for internal-test history.
+
+Fix implemented:
+- `MainActivity` now dynamically applies bottom margin to `nav_host_fragment` equal to visible bottom navigation height plus visible ad banner height.
+- Settings content no longer extends underneath the bottom navigation or ad area.
+- After AdMob init, the current selected tab is re-applied so Settings keeps the ad container hidden even if ad setup runs after tab selection.
+- Ad visibility changes now trigger a content inset recalculation.
+
+Verification:
+- `./gradlew --no-daemon --max-workers=1 -Pinternal assembleFreeRelease assembleProRelease` succeeded.
+- Installed updated release APKs:
+  - S10 `RF8N313QMFL`: Free release install success.
+  - S7 `ce10160adc00152604`: Pro release install success.
+  - Tab S4 `ce12182c68644439037e`: Free release install success.
+- S10 Settings UI dump after fix:
+  - `nav_host_fragment` bounds end at `y=1848`.
+  - `bottomNav` bounds start at `y=1848`.
+  - No overlap between Settings content and bottom menu.
+- S7 Pro Settings opened and bottom navigation remained selectable.
+- Tab S4 Free Settings opened; lower Settings entries including `VPN Configuration` and `Über` were visible above bottom navigation.
+- UI dumps showed no IFR/Wallet/WalletConnect texts in the tested public app Settings screens.
