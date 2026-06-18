@@ -2337,3 +2337,41 @@ Verification:
 - S10 install was blocked by signature mismatch:
   `INSTALL_FAILED_UPDATE_INCOMPATIBLE: Package com.securecall.app.free signatures do not match previously installed version`.
 - Do not uninstall S10 app automatically without explicit user approval because uninstalling deletes app data.
+
+## 2026-06-18 13:28 PDT — [AGENT-A] Post-Uninstall Device Verification
+
+Public app state:
+- Confirmed current Android public app line has no active IFR/WalletConnect references in app sources.
+- Current app line includes `ce4bb1a fix: remove IFR wallet flow from app` plus `8e9a5e7 fix: harden phone confirmation persistence`.
+
+Install state:
+- User approved uninstall/reinstall testing.
+- Installed release APKs on all three connected devices:
+  - S10 `RF8N313QMFL`: `com.securecall.app.free`, `versionCode=71001`, `versionName=1.0.40-free`
+  - S7 `ce10160adc00152604`: `com.securecall.app.pro`, `versionCode=71001`, `versionName=1.0.40-pro`
+  - Tab S4 `ce12182c68644439037e`: `com.securecall.app.free`, `versionCode=71001`, `versionName=1.0.40-free`
+
+Runtime verification:
+- S10:
+  - Started Free release after fresh install.
+  - Skipped onboarding.
+  - Entered `491701234567` in `Confirm Your Phone Number`.
+  - Tapped `Confirm`.
+  - Restarted app; phone confirmation dialog did not return.
+  - App landed on Calls tab with `Keine Anrufe`.
+- S7:
+  - Woke from Samsung AOD/lockscreen, opened Pro release.
+  - Skipped onboarding and allowed Contacts permission.
+  - Skipped phone confirmation dialog.
+  - Restarted app; phone dialog did not return.
+  - App landed on Calls tab with `Keine Anrufe`.
+- Tab S4:
+  - Started Free release.
+  - Skipped onboarding.
+  - Skipped phone confirmation dialog.
+  - Restarted app; phone dialog did not return.
+  - App landed on Calls tab with `Keine Anrufe`.
+
+Notes:
+- UI dumps for the three tested main screens showed no IFR/Wallet/WalletConnect texts.
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
