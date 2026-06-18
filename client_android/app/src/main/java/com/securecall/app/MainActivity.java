@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private AudioCapturePlaceholder audioCapture;
     private MaterialToolbar toolbar;
     private int wireRetryCount = 0;
+    private androidx.appcompat.app.AlertDialog phoneNumberDialog;
 
     private static final String TAG = "MainActivity";
     private static final int REQUEST_RECORD_AUDIO = 1001;
@@ -596,6 +597,7 @@ public class MainActivity extends AppCompatActivity {
             }
             // First launch — show confirm dialog with SIM suggestion
             if (isFinishing() || isDestroyed()) return;
+            if (phoneNumberDialog != null && phoneNumberDialog.isShowing()) return;
             String simSuggestion = readSimNumber();
             promptForPhoneNumber(prefs, simSuggestion);
         }, 3000);
@@ -637,7 +639,7 @@ public class MainActivity extends AppCompatActivity {
         container.setPadding(padding, padding / 2, padding, 0);
         container.addView(input);
 
-        new androidx.appcompat.app.AlertDialog.Builder(this)
+        phoneNumberDialog = new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Confirm Your Phone Number")
                 .setMessage("Please verify your phone number. Others will use this number to call you on SecureCall.")
                 .setView(container)
@@ -646,21 +648,27 @@ public class MainActivity extends AppCompatActivity {
                     if (!number.isEmpty()) {
                         // Normalize phone number before saving (BUG-025)
                         String normalized = com.securecall.app.data.PhoneUtils.INSTANCE.normalize(number, MainActivity.this);
-                        prefs.edit()
-                                .putString("confirmed_phone_number", normalized)
-                                .apply();
-                        Log.d(TAG, "Phone number confirmed: " + number + " -> normalized: " + normalized);
+                        String confirmed = normalized == null ? "" : normalized.trim();
+                        if (confirmed.isEmpty()) confirmed = number;
+                        boolean saved = prefs.edit()
+                                .putString("manual_phone_number", number)
+                                .putString("confirmed_phone_number", confirmed)
+                                .putBoolean("phone_number_skipped", false)
+                                .commit();
+                        Log.d(TAG, "Phone number confirmed: " + number + " -> stored: " + confirmed + " saved=" + saved);
                         com.securecall.app.net.WebSocketService ws =
                                 com.securecall.app.net.WebSocketService.Companion.getInstance();
                         if (ws != null) ws.reRegister();
                     }
+                    phoneNumberDialog = null;
                 })
                 .setNegativeButton("Skip", (d, w) -> {
                     // No number confirmed — register without phone
-                    prefs.edit().putBoolean("phone_number_skipped", true).apply();
+                    prefs.edit().putBoolean("phone_number_skipped", true).commit();
                     com.securecall.app.net.WebSocketService ws =
                             com.securecall.app.net.WebSocketService.Companion.getInstance();
                     if (ws != null) ws.reRegister();
+                    phoneNumberDialog = null;
                 })
                 .setCancelable(false)
                 .show();
