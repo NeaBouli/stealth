@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SecureCall IFR Discount</title>
+<style>
+body{margin:0;min-height:100vh;background:#070910;color:#eef3f8;font-family:system-ui,-apple-system,Segoe UI,sans-serif;display:grid;place-items:center;padding:20px}
+.card{width:min(560px,100%);border:1px solid rgba(255,255,255,.14);border-radius:12px;background:#10141d;padding:22px}
+h1{margin:0 0 8px;color:#ff4444}.muted{color:#a8b0bc;line-height:1.5}.btn{display:block;width:100%;padding:14px;margin:10px 0;border:1px solid #18e676;border-radius:8px;background:#18e676;color:#03140a;font-weight:800;text-align:center;text-decoration:none;cursor:pointer}.line{background:transparent;color:#18e676}input{width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:#070910;color:#eef3f8;margin:8px 0 10px}#status{font-size:13px;color:#a8b0bc}
+</style>
+</head>
+<body>
+<main class="card">
+<h1>SecureCall IFR Discount</h1>
+<p class="muted">Connect MetaMask, sign the discount request, then Stripe opens with the eligible 50% discount. No manual wallet address proof is accepted.</p>
+<button id="connect" class="btn line" type="button">Connect MetaMask</button>
+<input id="wallet" readonly placeholder="Connected wallet address">
+<button class="btn" type="button" data-tier="pro_lifetime">Pro 50% Checkout</button>
+<button class="btn" type="button" data-tier="premium_lifetime">Premium 50% Checkout</button>
+<p id="status">If this page is not inside MetaMask, the button opens MetaMask Browser first.</p>
+</main>
+<script>
+(function(){
+var API='https://api.stealthx.tech';
+function openMM(){location.href='https://link.metamask.io/dapp/'+location.host+'/ifr.html'}
+async function connect(){
+  var s=document.getElementById('status'), w=document.getElementById('wallet');
+  if(!window.ethereum||!window.ethereum.request){s.textContent='Opening MetaMask Browser...';openMM();throw new Error('Open in MetaMask Browser, then tap Connect again.')}
+  s.textContent='Connecting MetaMask...';
+  var a=await window.ethereum.request({method:'eth_requestAccounts'});
+  if(!a||!a[0])throw new Error('No wallet account returned.');
+  w.value=a[0]; s.textContent='Wallet connected: '+a[0].slice(0,6)+'...'+a[0].slice(-4);
+  return a[0];
+}
+async function checkout(tier,btn){
+  var s=document.getElementById('status'), label=btn.textContent; btn.disabled=true; btn.textContent='Signing wallet...';
+  try{
+    var walletAddress=await connect();
+    var cr=await fetch(API+'/stripe/ifr-discount-challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier,walletAddress})});
+    var c=await cr.json().catch(function(){return{}});
+    if(!cr.ok||!c.message||!c.nonce)throw new Error(c.error||'Wallet challenge unavailable');
+    s.textContent='Sign the MetaMask message to prove wallet ownership...';
+    var walletSignature=await window.ethereum.request({method:'personal_sign',params:[c.message,walletAddress]});
+    btn.textContent='Verifying IFR...';
+    var r=await fetch(API+'/stripe/create-dynamic-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier,ifrDiscount:true,walletAddress,walletNonce:c.nonce,walletSignature})});
+    var d=await r.json().catch(function(){return{}});
+    if(!r.ok||!d.url)throw new Error(d.error||'Checkout unavailable');
+    s.textContent='IFR verified. Redirecting to Stripe...'; location.href=d.url;
+  }catch(e){s.textContent=e.message;btn.disabled=false;btn.textContent=label}
+}
+document.getElementById('connect').onclick=function(){connect().catch(function(e){document.getElementById('status').textContent=e.message})};
+document.querySelectorAll('[data-tier]').forEach(function(b){b.onclick=function(){checkout(b.dataset.tier,b)}});
+})();
+</script>
+</body>
+</html>
