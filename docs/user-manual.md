@@ -20,7 +20,7 @@ Your SecureCall ID is your identity on the network. It is randomly generated on 
 
 ## Tier Overview
 
-SecureCall is available in three tiers. Your effective tier is the highest of: your build flavor, any active activation code, or your IFR token holding.
+SecureCall is available in three tiers. Your effective tier is the highest of: your build flavor, any active subscription, or any active activation code.
 
 | Feature | Free | Pro | Premium |
 |---|---|---|---|
@@ -204,27 +204,19 @@ When on, all internet traffic is blocked if the VPN connection drops. This preve
 
 ---
 
-### IFR Token Unlock
+### IFR Holder Discount *(planned)*
 
-Hold IFR tokens on Ethereum to activate Pro or Premium tier permanently, with no subscription.
+The current SecureCall app does not include WalletConnect or in-app IFR tier unlocking.
 
-**Thresholds:**
-- 2,000 IFR held → Pro
-- 6,000 IFR held → Premium
+IFR holder benefits are planned as a web checkout flow:
 
-**Status display** shows your current state: wallet address, held amount, tier, and whether the result is live or from cache.
+1. Open the StealthX web checkout.
+2. Verify an eligible wallet in the browser.
+3. The backend checks IFR balance read-only on Ethereum Mainnet.
+4. Eligible holders receive a Stripe discount, currently planned at 50%.
+5. SecureCall unlocks through the normal activation-code or license path.
 
-**Connect Wallet** (WalletConnect / SIWE)
-Opens a wallet selector showing MetaMask, Trust Wallet, Rainbow, and Coinbase Wallet. Installed wallets appear with a green checkmark. Tap one to begin the Sign-In With Ethereum (SIWE) flow:
-
-1. The app fetches a one-time challenge from the server.
-2. Your wallet app opens and shows a sign request.
-3. Sign the message with your wallet — this proves you own the address without revealing your private key.
-4. The signature is verified server-side. If your IFR balance is sufficient, your tier is permanently unlocked with no expiry.
-
-Wallet-verified IFR unlocks do not expire while the wallet continues to hold the required IFR balance.
-
-Tap **Disconnect WalletConnect** (shown when connected) to remove the wallet and revert to your base tier.
+This keeps wallet state out of the Android app and avoids fragile app-return links from wallet browsers.
 
 ---
 

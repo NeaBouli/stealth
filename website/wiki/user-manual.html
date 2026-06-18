@@ -86,7 +86,7 @@
                     <a href="./">Overview</a>
                     <a href="installation-guide.html">Installation Guide</a>
                     <a href="getting-started.html">Quick Start</a>
-                    <a href="ifr-unlock.html">IFR Token Unlock</a>
+                    <a href="ifr-unlock.html">IFR Holder Discount</a>
                 </nav>
             </div>
             <div class="sidebar-section">
@@ -160,7 +160,7 @@
             <p>When you make a call, SecureCall establishes a direct encrypted audio channel using WebRTC with hardware-backed key exchange. Once connected, audio travels peer-to-peer. If a direct path is not possible, a TURN relay forwards the packets &mdash; but audio remains end-to-end encrypted and the relay cannot read it.</p>
 
             <h2>Tier Overview</h2>
-            <p>Your effective tier is the highest of: your installed build flavor, an active activation code, or your IFR token holding.</p>
+            <p>Your effective tier is the highest of: your installed build flavor, an active subscription, or an active activation code.</p>
             <table>
                 <thead><tr><th>Feature</th><th>Free</th><th>Pro</th><th>Premium</th></tr></thead>
                 <tbody>
@@ -285,20 +285,13 @@
                 <li><strong>Kill Switch</strong> &mdash; When on, all internet traffic is blocked if the VPN drops. Prevents any data leaving the device unencrypted during a VPN failure. Off by default.</li>
             </ul>
 
-            <h2>IFR Token Unlock</h2>
-            <p>Hold IFR tokens on Ethereum to activate Pro or Premium permanently &mdash; no subscription required.</p>
-            <table>
-                <thead><tr><th>IFR Held</th><th>Tier Unlocked</th><th>Expiry</th></tr></thead>
-                <tbody>
-                <tr><td>2,000 IFR</td><td>Pro</td><td>WalletConnect verified</td></tr>
-                <tr><td>6,000 IFR</td><td>Premium</td><td>WalletConnect verified</td></tr>
-                </tbody>
-            </table>
+            <h2>IFR Holder Discount</h2>
+            <p>The current SecureCall app does not include WalletConnect or in-app IFR tier unlocking. IFR holder benefits are planned as a browser-based checkout discount.</p>
             <ul>
-                <li><strong>Status display</strong> &mdash; Shows wallet address, held amount, tier, and whether the result is live or from cache.</li>
-                <li><strong>Connect Wallet (WalletConnect / SIWE)</strong> &mdash; Opens a wallet selector showing MetaMask, Trust Wallet, Rainbow, and Coinbase Wallet. Installed wallets show a green checkmark. Tap one to start the Sign-In With Ethereum flow: the app fetches a challenge &rarr; your wallet signs it &rarr; the signature is verified server-side &rarr; if IFR balance is sufficient, your tier is permanently unlocked with no expiry.</li>
-                <li><strong>Disconnect WalletConnect</strong> &mdash; Shown when a wallet is connected. Disconnects and reverts to your base tier.</li>
-                <li><strong>Buy IFR Token</strong> &mdash; Opens the official $IFR token page on Uniswap.</li>
+                <li><strong>Planned flow</strong> &mdash; verify a wallet in the browser, then continue to Stripe checkout.</li>
+                <li><strong>Discount</strong> &mdash; eligible holders may receive a checkout discount, currently planned at 50%.</li>
+                <li><strong>App unlock</strong> &mdash; SecureCall receives a normal license or activation-code unlock.</li>
+                <li><strong>No wallet state in app</strong> &mdash; the Android app does not open wallet apps or store wallet addresses for tier unlocks.</li>
             </ul>
 
             <h2>Diagnostics <em>(Pro and Premium)</em></h2>

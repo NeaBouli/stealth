@@ -89,8 +89,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private var _onlineStatusCallback: ((Map<String, Boolean>) -> Unit)? = null
     // Activation code callback: returns (success, tier, error)
     private var _activateCodeCallback: ((Boolean, String, String) -> Unit)? = null
-    // IFR lock verification callback: returns (success, tier, lockedAmount, error)
-    private var _ifrLockCallback: ((Boolean, String, String, String) -> Unit)? = null
 
     fun getCurrentSessionId(): String? = _currentSessionId
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
@@ -454,34 +452,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 callback(false, "", "timeout")
             }
         }, 10000)
-    }
-
-    /** Verify IFR token lock status on Ethereum via server. */
-    fun verifyIfrLock(walletAddress: String, callback: (success: Boolean, tier: String, lockedAmount: String, error: String) -> Unit) {
-        if (!isRegistered) {
-            Log.w("WS_SERVICE", "VERIFY_IFR_LOCK blocked — WS not registered")
-            callback(false, "", "0", "not_connected")
-            return
-        }
-        _ifrLockCallback = callback
-        val json = org.json.JSONObject().apply {
-            put("type", "VERIFY_IFR_LOCK")
-            put("walletAddress", walletAddress.trim())
-        }.toString()
-        val sent = client?.send(json) ?: false
-        if (!sent) {
-            _ifrLockCallback = null
-            callback(false, "", "0", "not_connected")
-            return
-        }
-        Log.d("WS_SERVICE", "VERIFY_IFR_LOCK sent: $walletAddress")
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            val pending = _ifrLockCallback
-            if (pending === callback) {
-                _ifrLockCallback = null
-                callback(false, "", "0", "timeout")
-            }
-        }, 15000)
     }
 
     // ===================== HeartbeatClient.Listener =====================
@@ -1152,17 +1122,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 val cb = _batchPhoneLookupCallback
                 _batchPhoneLookupCallback = null
                 cb?.invoke(registered)
-                return
-            }
-            if (obj.optString("type") == "IFR_LOCK_RESULT") {
-                val success = obj.optBoolean("success", false)
-                val tier = obj.optString("tier", "")
-                val amount = obj.optString("lockedAmount", "0")
-                val error = obj.optString("error", "")
-                Log.d("WS_SERVICE", "IFR_LOCK_RESULT: success=$success, tier=$tier, amount=$amount, error=$error")
-                val cb = _ifrLockCallback
-                _ifrLockCallback = null
-                cb?.invoke(success, tier, amount, error)
                 return
             }
             if (obj.optString("type") == "ACTIVATE_CODE_RESULT") {

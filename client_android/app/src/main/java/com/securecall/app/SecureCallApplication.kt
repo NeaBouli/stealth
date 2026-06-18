@@ -40,15 +40,5 @@ class SecureCallApplication : Application() {
             android.util.Log.d("SecureCallApp", "WebRTC PeerConnectionFactory initialized")
         }, "webrtc-init").start()
 
-        // Initialize WalletConnect / Reown AppKit (non-blocking)
-        // Catch Throwable (not just Exception) to handle NoClassDefFoundError / LinkageError
-        // that can occur during class loading if WalletConnect's android-core pulls in
-        // Firebase/PushClient refs that aren't bundled. See F-010 / Crashlytics issue
-        // in 1.0.13-free (vC34) where ClassNotFoundException crashed 2 users.
-        try {
-            com.securecall.app.wallet.WalletConnectManager.init(this)
-        } catch (e: Throwable) {
-            android.util.Log.e("SecureCallApp", "WalletConnect init failed (non-fatal)", e)
-        }
     }
 }

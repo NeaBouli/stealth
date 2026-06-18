@@ -3,390 +3,89 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SecureCall — Sign Wallet Verification</title>
+<title>SecureCall - IFR Holder Discount</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background: #0a0a12; color: #e0e0e0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  background: #0a0a12;
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 24px 16px;
 }
-.logo { font-size: 28px; font-weight: 800; color: #ff4444; margin-bottom: 4px; }
-.sub { font-size: 11px; color: #666; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 24px; }
 .card {
-  background: #11131a; border: 1px solid #1f2330; border-radius: 12px;
-  padding: 20px; width: 100%; max-width: 480px; margin-bottom: 16px;
+  width: 100%;
+  max-width: 520px;
+  background: #11131a;
+  border: 1px solid #1f2330;
+  border-radius: 12px;
+  padding: 24px;
 }
-h2 { color: #ff4444; font-size: 16px; margin-bottom: 12px; }
-.msg-box {
-  background: #0a0a12; border: 1px solid #2a2a3a; border-radius: 8px;
-  padding: 12px; font-size: 12px; color: #888; word-break: break-all;
-  max-height: 120px; overflow-y: auto; margin-bottom: 12px;
+.logo {
+  font-size: 30px;
+  font-weight: 800;
+  color: #ff4444;
+  margin-bottom: 4px;
 }
-.result-box {
-  background: #0a0a12; border: 2px solid #ff4444; border-radius: 8px;
-  padding: 16px; text-align: center; margin: 8px 0;
+.sub {
+  font-size: 11px;
+  color: #888;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
 }
-.result-box code {
-  font-size: 13px; color: #ff4444; word-break: break-all;
-  font-family: 'Courier New', monospace; display: block; margin: 8px 0;
-  user-select: all; -webkit-user-select: all;
+h1 {
+  font-size: 20px;
+  color: #fff;
+  margin-bottom: 12px;
 }
-.label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 2px; }
+p {
+  color: #b9bdc8;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+ul {
+  margin: 12px 0 18px 20px;
+  color: #b9bdc8;
+  line-height: 1.7;
+}
+.notice {
+  background: rgba(255, 152, 0, 0.08);
+  border: 1px solid rgba(255, 152, 0, 0.25);
+  color: #ffb74d;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 18px 0;
+}
 .btn {
-  display: block; width: 100%; padding: 14px; border: none; border-radius: 8px;
-  font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px;
-  transition: opacity 0.2s; text-align: center; text-decoration: none;
+  display: inline-block;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #fff;
+  background: #ff4444;
+  text-decoration: none;
+  font-weight: 700;
 }
-.btn:active { opacity: 0.7; }
-.btn-red { background: #ff4444; color: #fff; }
-.btn-dark { background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid rgba(255,255,255,0.12); }
-.btn-green { background: #00C853; color: #fff; }
-.status { text-align: center; color: #888; font-size: 14px; padding: 20px 0; }
-.error { color: #ff4444; text-align: center; padding: 12px; font-size: 14px; }
-.success { color: #00E676; }
-.back-hint {
-  background: rgba(255,152,0,0.08); border: 1px solid rgba(255,152,0,0.25);
-  border-radius: 8px; padding: 14px; margin-top: 12px; text-align: center;
-  color: #FF9800; font-size: 13px; line-height: 1.6;
-}
-.hidden { display: none; }
 </style>
 </head>
 <body>
-
-<div class="logo">SecureCall</div>
-<div class="sub">Wallet Verification</div>
-
-<!-- Step 1: Connect -->
-<div class="card" id="step-connect">
-  <h2>Step 1 — Connect Wallet</h2>
-  <p style="color:#aaa;font-size:13px;margin-bottom:12px;">
-    Connect your Ethereum wallet to prove ownership.
-  </p>
-  <button class="btn btn-red" id="btn-connect" onclick="connectWallet()">Connect Wallet</button>
-  <div id="connect-status" class="status hidden"></div>
-</div>
-
-<!-- Step 2: Sign -->
-<div class="card hidden" id="step-sign">
-  <h2>Step 2 — Sign Message</h2>
-  <p style="color:#aaa;font-size:13px;margin-bottom:8px;">Sign this challenge to verify ownership:</p>
-  <div class="msg-box" id="challenge-msg"></div>
-  <button class="btn btn-red" id="btn-sign" onclick="signMessage()">Sign Message</button>
-  <div id="sign-status" class="status hidden"></div>
-</div>
-
-<!-- Step 3: Result -->
-<div class="card hidden" id="step-result">
-  <h2 class="success">Signed Successfully</h2>
-
-  <div class="result-box">
-    <div class="label">Connected Address</div>
-    <code id="result-address"></code>
-  </div>
-
-  <code id="result-signature" class="hidden"></code>
-
-  <div class="back-hint" id="back-hint">
-    Tap the button below to close MetaMask and return to the app.
-  </div>
-  <a class="btn btn-green" id="btn-return" href="#" onclick="return retryReturnToApp()">
-    Back to SecureCall
-  </a>
-</div>
-
-<!-- No wallet -->
-<div class="card hidden" id="no-wallet">
-  <div class="error">
-    No Ethereum wallet detected.<br><br>
-    Open this page inside <strong>MetaMask Browser</strong><br>
-    (MetaMask app &rarr; Explore &rarr; paste URL).
-  </div>
-</div>
-
-<script>
-const params = new URLSearchParams(window.location.search);
-const nonce = params.get('nonce') || '';
-const deviceId = params.get('deviceId') || '';
-const message = params.get('message') ? decodeURIComponent(params.get('message')) : '';
-const returnScheme = params.get('returnScheme') || 'securecall';
-const returnHost = params.get('returnHost') || 'wc';
-const returnPackage = params.get('returnPackage') || '';
-
-let userAccount = null;
-let signedAddress = null;
-let signedSignature = null;
-
-// Show challenge message
-if (message) {
-  document.getElementById('challenge-msg').textContent = message;
-}
-
-// Wait for wallet injection (MetaMask browser injects with delay)
-let walletCheckAttempts = 0;
-function checkWallet() {
-  walletCheckAttempts++;
-  if (window.ethereum) {
-    document.getElementById('step-connect').classList.remove('hidden');
-    document.getElementById('no-wallet').classList.add('hidden');
-    return;
-  }
-  if (walletCheckAttempts < 20) { // retry for 10 seconds
-    setTimeout(checkWallet, 500);
-  } else {
-    document.getElementById('step-connect').classList.add('hidden');
-    document.getElementById('no-wallet').classList.remove('hidden');
-  }
-}
-window.addEventListener('load', checkWallet);
-
-async function connectWallet() {
-  const btn = document.getElementById('btn-connect');
-  const status = document.getElementById('connect-status');
-  btn.disabled = true;
-  btn.textContent = 'Connecting...';
-  status.classList.remove('hidden');
-  status.textContent = 'Requesting accounts...';
-
-  try {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    if (accounts.length === 0) throw new Error('No accounts');
-    userAccount = accounts[0];
-    status.textContent = 'Connected: ' + userAccount.substring(0, 6) + '...' + userAccount.substring(38);
-    status.classList.add('success');
-
-    // Auto-advance to Step 2
-    setTimeout(() => {
-      document.getElementById('step-connect').classList.add('hidden');
-      document.getElementById('step-sign').classList.remove('hidden');
-    }, 800);
-  } catch (e) {
-    status.textContent = 'Failed: ' + (e.message || e);
-    status.style.color = '#ff4444';
-    btn.disabled = false;
-    btn.textContent = 'Connect Wallet';
-  }
-}
-
-async function signMessage() {
-  if (!userAccount) return;
-  const btn = document.getElementById('btn-sign');
-  const status = document.getElementById('sign-status');
-  btn.disabled = true;
-  btn.textContent = 'Signing...';
-  status.classList.remove('hidden');
-  status.textContent = 'Confirm in your wallet...';
-
-  const msgToSign = message || (
-    'SecureCall wants you to verify your Ethereum wallet.\n\n' +
-    'Device: ' + deviceId + '\n' +
-    'Nonce: ' + nonce + '\n' +
-    'Issued At: ' + new Date().toISOString() + '\n\n' +
-    'This request will expire in 5 minutes.'
-  );
-
-  try {
-    const signature = await window.ethereum.request({
-      method: 'personal_sign',
-      params: [msgToSign, userAccount]
-    });
-
-    // Show result
-    document.getElementById('step-sign').classList.add('hidden');
-    document.getElementById('step-result').classList.remove('hidden');
-    document.getElementById('result-address').textContent = userAccount;
-    document.getElementById('result-signature').textContent = signature;
-    signedAddress = userAccount;
-    signedSignature = signature;
-    const returnButton = document.getElementById('btn-return');
-    setManualReturnButton('Verifying...');
-    await verifyOnBackend(userAccount, signature);
-  } catch (e) {
-    status.textContent = 'Signing failed: ' + (e.message || e);
-    status.style.color = '#ff4444';
-    btn.disabled = false;
-    btn.textContent = 'Sign Message';
-  }
-}
-
-function copyText(elementId) {
-  const text = document.getElementById(elementId).textContent;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = event.target;
-      const orig = btn.textContent;
-      btn.textContent = 'Copied!';
-      btn.style.background = '#00C853';
-      btn.style.color = '#fff';
-      setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 1500);
-    });
-  } else {
-    // Fallback: select all
-    const range = document.createRange();
-    range.selectNodeContents(document.getElementById(elementId));
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-  }
-}
-
-async function verifyOnBackend(address, signature) {
-  const hint = document.getElementById('back-hint');
-  hint.textContent = 'Verifying IFR balance...';
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2500);
-    const response = await fetch('https://api.stealthx.tech/siwe/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ walletAddress: address, signature, nonce, deviceId }),
-      signal: controller.signal
-    });
-    clearTimeout(timeout);
-    const result = await response.json();
-    const amount = result.balanceAmount || result.lockedAmount || '0';
-
-    if (result.success) {
-      hint.textContent = 'Wallet verified: ' + amount + ' IFR held. Close MetaMask to return to ' + getAppName() + '.';
-      setCloseMetaMaskButton();
-      return true;
-    }
-    if (result.walletBound && result.error === 'insufficient') {
-      hint.textContent = 'Wallet connected, but only ' + amount + ' IFR held. Close MetaMask to return to ' + getAppName() + '.';
-      setCloseMetaMaskButton();
-      return true;
-    }
-    if (result.error === 'invalid_nonce' || result.error === 'challenge_expired') {
-      hint.textContent = 'This signing request expired. Open ' + getAppName() + ' again and start WalletConnect again.';
-      setCloseMetaMaskButton();
-      return false;
-    }
-    hint.textContent = 'Verification failed: ' + (result.error || 'unknown') + '. Open ' + getAppName() + ' again and try again.';
-    setCloseMetaMaskButton();
-    return false;
-  } catch (e) {
-    sendVerifyBeacon(address, signature);
-    hint.textContent = 'Verification sent. Close MetaMask to return to ' + getAppName() + '; status refreshes automatically.';
-    setCloseMetaMaskButton();
-    return false;
-  }
-}
-
-function sendVerifyBeacon(address, signature) {
-  const query =
-    'walletAddress=' + encodeURIComponent(address) +
-    '&signature=' + encodeURIComponent(signature) +
-    '&nonce=' + encodeURIComponent(nonce) +
-    '&deviceId=' + encodeURIComponent(deviceId) +
-    '&t=' + Date.now();
-  const img = new Image();
-  img.referrerPolicy = 'no-referrer';
-  img.src = 'https://api.stealthx.tech/siwe/verify-link?' + query;
-  window.__siweVerifyBeacon = img;
-}
-
-function buildCallbackUrl(address, signature) {
-  return 'https://stealthx.tech/return/' + encodeURIComponent(getAppSlug()) + '?' + buildCallbackQuery(address, signature);
-}
-
-function buildCallbackQuery(address, signature) {
-  return (
-    'app=' + encodeURIComponent(getAppSlug()) +
-    '&address=' + encodeURIComponent(address) +
-    '&addr=' + encodeURIComponent(address) +
-    '&signature=' + encodeURIComponent(signature) +
-    '&sig=' + encodeURIComponent(signature) +
-    '&nonce=' + encodeURIComponent(nonce) +
-    '&deviceId=' + encodeURIComponent(deviceId) +
-    '&returnPackage=' + encodeURIComponent(getReturnPackage())
-  );
-}
-
-function buildAppOpenUrl(address, signature) {
-  const path = 'stealthx.tech/return/' + encodeURIComponent(getAppSlug());
-  const query = buildCallbackQuery(address, signature);
-  return 'intent://' + path + '?' + query +
-    '#Intent;scheme=https;package=' + encodeURIComponent(getReturnPackage()) +
-    ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
-}
-
-function returnToApp(address, signature) {
-  const callback = buildAppOpenUrl(address, signature);
-  const hint = document.getElementById('back-hint');
-  if (!hint.textContent || hint.textContent.indexOf('Verifying IFR balance') === 0) {
-    hint.textContent = 'Opening ' + getAppName() + '...';
-  }
-  window.location.href = callback;
-}
-
-function getAppName() {
-  if (returnScheme === 'securechat') return 'SecureChat';
-  if (returnScheme === 'chameleon') return 'Chameleon';
-  return 'SecureCall';
-}
-
-function getAppSlug() {
-  if (returnScheme === 'securechat') return 'securechat';
-  if (returnScheme === 'chameleon') return 'chameleon';
-  return 'securecall';
-}
-
-function getReturnPackage() {
-  if (returnPackage) return returnPackage;
-  if (returnScheme === 'securechat') return 'com.stealthx.securechat';
-  if (returnScheme === 'chameleon') return 'com.stealthx.chameleon';
-  return 'com.securecall.app.premium';
-}
-
-function retryReturnToApp() {
-  if (!signedAddress || !signedSignature) return false;
-  closeMetaMaskTab();
-  return false;
-}
-
-function setManualReturnButton(label) {
-  const button = document.getElementById('btn-return');
-  button.textContent = label;
-  button.href = '#';
-  button.onclick = function () {
-    document.getElementById('back-hint').textContent =
-      'MetaMask blocks automatic return. Close this tab or switch back to ' + getAppName() + '.';
-    return false;
-  };
-}
-
-function setCloseMetaMaskButton() {
-  const button = document.getElementById('btn-return');
-  button.textContent = 'Close MetaMask';
-  button.href = 'about:blank';
-  button.onclick = function () {
-    closeMetaMaskTab();
-    return false;
-  };
-}
-
-function closeMetaMaskTab() {
-  document.getElementById('back-hint').textContent = 'Closing MetaMask...';
-  try {
-    window.open('', '_self');
-    window.close();
-  } catch (e) {
-    // Ignore and run browser fallbacks below.
-  }
-  setTimeout(() => {
-    try {
-      window.close();
-    } catch (e) {
-      // Ignore and run browser fallbacks below.
-    }
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    window.location.replace('about:blank');
-  }, 150);
-}
-</script>
+  <main class="card">
+    <div class="logo">SecureCall</div>
+    <div class="sub">IFR Holder Discount</div>
+    <h1>Wallet verification is not active in the app.</h1>
+    <p>The old WalletConnect / SIWE return flow has been disabled. Current SecureCall releases do not unlock Pro or Premium by connecting a wallet inside the Android app.</p>
+    <div class="notice">IFR holder benefits are planned as a browser-based Stripe checkout discount, currently planned at 50% for eligible purchases.</div>
+    <ul>
+      <li>Verify wallet ownership in the browser.</li>
+      <li>Server checks IFR balance read-only on Ethereum Mainnet.</li>
+      <li>Eligible users receive a Stripe checkout discount.</li>
+      <li>SecureCall unlocks through a normal license or activation code.</li>
+    </ul>
+    <a class="btn" href="/wiki/ifr-unlock.html">Read IFR discount plan</a>
+  </main>
 </body>
 </html>

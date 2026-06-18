@@ -2,20 +2,21 @@
 
 ## Lifetime Licenses (One-Time Payment)
 
-| Product | Tier | Launch Price | Max Price | IFR Alternative |
-|---------|------|-------------|-----------|-----------------|
-| SecureCall | Pro | €15 | €50 | >= 1.000 IFR |
-| SecureCall | Premium | €25 | €100 | >= 5.000 IFR |
-| SecureChat | Pro | €9 | €14.99 | >= 2.000 IFR |
-| SecureChat | Elite | €19 | €23.99 | >= 6.000 IFR |
-| Chameleon | Pro | €9 | €14.99 | >= 2.000 IFR |
-| Chameleon | Elite | €19 | €23.99 | >= 6.000 IFR |
-| StealthX Suite | All | €54 | €99 | >= 8.000 IFR |
+| Product | Tier | Launch Price | Max Price | IFR Holder Benefit |
+|---------|------|-------------|-----------|--------------------|
+| SecureCall | Pro | €15 | €50 | Planned web checkout discount |
+| SecureCall | Premium | €25 | €100 | Planned web checkout discount |
+| SecureChat | Pro | €9 | €14.99 | Planned web checkout discount |
+| SecureChat | Elite | €19 | €23.99 | Planned web checkout discount |
+| Chameleon | Pro | €9 | €14.99 | Planned web checkout discount |
+| Chameleon | Elite | €19 | €23.99 | Planned web checkout discount |
+| StealthX Suite | All | €54 | €99 | Planned web checkout discount |
 
 ## Rules
 - Price rises with every sold license
 - Maximum 100 licenses per tier at launch price
-- IFR lock is always the most cost-effective option
+- IFR is not an in-app unlock in the current release line
+- Planned IFR holder benefit: browser wallet verification plus Stripe discount, currently planned at 50%
 - Lifetime = no subscription, no renewal, forever
 - Suite includes all products at all tiers
 

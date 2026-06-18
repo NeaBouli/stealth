@@ -35,12 +35,10 @@ Empfangen Sie kritische Sicherheitswarnungen vom Entwicklerteam. Vorinstallierte
 • Pro — Keine Werbung, Kontakte, Anrufverlauf, Online-Status
 • Premium — Alle Funktionen + WireGuard VPN + Anti-Recording-Schutz
 
-🔓 PREMIUM FREISCHALTEN — DREI WEGE
-• Google Play In-App-Kauf
-• Aktivierungscode (kontaktiere @secureslot auf X)
-• Sperre ≥ 1.000 IFR Token — lebenslanger Zugang, kein Abo
-  IFR ist der native Token des Inferno Protocol (ifrunit.tech)
-  Bootstrap-Phase endet 5. Juni 2026 — Handel erwartet ab August 2026
+	🔓 PREMIUM FREISCHALTEN
+	• Google Play In-App-Kauf
+	• Aktivierungscode / Stripe-Code
+	• IFR Holder Rabatte sind später als Web-Checkout geplant
 
 🎁 PREMIUM VERSCHENKEN
 Erstelle einen einmaligen Geschenkcode für einen Freund. Eingabe in Einstellungen — sofort Premium. Kein Account nötig. Läuft nach 30 Tagen ab.
@@ -65,7 +63,7 @@ ETH: 0xA0860f872a9cAB34817D9a764e71ab43B942b275
 BTC: bc1qu0z0yur24cck25wc6rmack9tvczvx6g50y9sse
 
 Folge uns: @secureslot auf X
-IFR Token: ifrunit.tech
+	IFR Token: ifrunit.tech — Holder-Rabatte später als Web-Checkout geplant
 ```
 
 ## Keywords
@@ -88,7 +86,7 @@ Alle Altersstufen
 v2.0 — Erstveröffentlichung
 • Ende-zu-Ende verschlüsselte P2P-Anrufe
 • WireGuard VPN Integration (Premium)
-• IFR Token Freischaltung via WalletConnect v2
+	• Saubere App-Version ohne WalletConnect/IFR-In-App-Flow
 • STEALTH-DELETE Notfall-Löschung
 • Notfall-Broadcast-System
 • AdMob Werbung (nur Free-Version)

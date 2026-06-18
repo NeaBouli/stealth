@@ -4,12 +4,12 @@
     <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IFR Token Unlock — SecureCall Wiki</title>
-    <meta name="description" content="Hold IFR tokens to unlock Pro or Premium SecureCall features. Lifetime access while tokens remain in your wallet.">
+    <title>IFR Holder Discount — SecureCall Wiki</title>
+    <meta name="description" content="Planned IFR holder discount for SecureCall: browser wallet verification, server-side balance check, and Stripe checkout discount.">
     <meta name="theme-color" content="#0a0a12">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://stealthx.tech/wiki/ifr-unlock.html">
-    <meta property="og:title" content="IFR Token Unlock — SecureCall Wiki">
+    <meta property="og:title" content="IFR Holder Discount — SecureCall Wiki">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://stealthx.tech/wiki/ifr-unlock.html">
     <meta property="og:site_name" content="SecureCall">
@@ -28,8 +28,8 @@
     {
       "@context": "https://schema.org",
       "@type": "TechArticle",
-      "headline": "IFR Token Unlock — SecureCall Wiki",
-      "description": "Hold IFR tokens to unlock Pro or Premium SecureCall features. Lifetime access while tokens remain in your wallet.",
+      "headline": "IFR Holder Discount — SecureCall Wiki",
+      "description": "Planned IFR holder discount for SecureCall: browser wallet verification, server-side balance check, and Stripe checkout discount.",
       "url": "https://stealthx.tech/wiki/ifr-unlock.html",
       "author": { "@type": "Organization", "name": "Vendetta Labs" },
       "publisher": { "@type": "Organization", "name": "SecureCall", "url": "https://stealthx.tech" },
@@ -44,7 +44,7 @@
       "itemListElement": [
         { "@type": "ListItem", "position": 1, "name": "SecureCall", "item": "https://stealthx.tech/" },
         { "@type": "ListItem", "position": 2, "name": "Wiki", "item": "https://stealthx.tech/wiki/" },
-        { "@type": "ListItem", "position": 3, "name": "IFR Token Unlock", "item": "https://stealthx.tech/wiki/ifr-unlock.html" }
+        { "@type": "ListItem", "position": 3, "name": "IFR Holder Discount", "item": "https://stealthx.tech/wiki/ifr-unlock.html" }
       ]
     }
     </script>
@@ -86,7 +86,7 @@
                     <a href="./">Overview</a>
                     <a href="installation-guide.html">Installation Guide</a>
                     <a href="getting-started.html">Quick Start</a>
-                    <a href="ifr-unlock.html" class="active">IFR Token Unlock</a>
+                    <a href="ifr-unlock.html" class="active">IFR Holder Discount</a>
                 </nav>
             </div>
             <div class="sidebar-section">
@@ -135,7 +135,7 @@
                 <a href="./" class="active">Wiki</a>
                 <a href="../faq.html">FAQ</a>
                 <span class="sep">&#9656;</span>
-                <span class="current">IFR Token Unlock</span>
+                <span class="current">IFR Holder Discount</span>
             </div>
 
             <div class="classified-banner">
@@ -146,72 +146,70 @@
 
             <div class="wiki-page-header">
                 <div class="wiki-classification">Classification: Restricted &middot; SC-IFR</div>
-                <h1 class="wiki-page-title">IFR Token Unlock</h1>
-                <p class="wiki-page-subtitle">Hold IFR tokens on Ethereum for lifetime Pro or Premium access.</p>
+                <h1 class="wiki-page-title">IFR Holder Discount</h1>
+                <p class="wiki-page-subtitle">Planned browser-based IFR verification for discounted Stripe checkout.</p>
             </div>
-            <p class="wiki-meta">Hold $IFR tokens for lifetime Pro or Premium access &middot; <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Buy $IFR on Uniswap</a></p>
+            <p class="wiki-meta">IFR is not currently used for in-app tier unlocking &middot; <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Open $IFR on Uniswap</a></p>
 
             <!-- ════════════════════════════════════════════════════ -->
             <div class="section-break">Overview</div>
 
-            <h2>What is IFR?</h2>
-            <p><strong>$IFR (Inferno)</strong> is an ERC-20 token on Ethereum. SecureCall uses a hold model: simply hold enough IFR in your Ethereum wallet and gain lifetime access to Pro or Premium features.</p>
-            <p>Your tokens stay yours. They are never spent, transferred, or locked. If your wallet balance drops below the threshold, your SecureCall tier can revert to Free on the next verification.</p>
+            <h2>Current status</h2>
+            <p><strong>$IFR (Inferno)</strong> is an ERC-20 token on Ethereum. SecureCall no longer includes WalletConnect or in-app IFR tier unlocking in the current release line.</p>
+            <p>The previous Android WalletConnect/SIWE flow is kept only as an internal test build. The planned public model is a web checkout discount: verify an eligible wallet in the browser, receive a Stripe discount, then unlock the app through the normal purchase or activation-code path.</p>
             <ul>
                 <li><strong>Token:</strong> $IFR (Inferno) &mdash; 9 decimals</li>
                 <li><strong>Network:</strong> Ethereum Mainnet (Chain ID: 1)</li>
                 <li><strong>Token Contract:</strong> <code>0x77e99917Eca8539c62F509ED1193ac36580A6e7B</code></li>
                 <li><strong>Trade:</strong> <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Open $IFR on Uniswap</a></li>
-                <li><strong>Buy:</strong> <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Buy $IFR on Uniswap</a></li>
+                <li><strong>App status:</strong> no in-app WalletConnect or IFR unlock in the current SecureCall release</li>
             </ul>
 
             <!-- ════════════════════════════════════════════════════ -->
             <div class="section-break">How It Works</div>
 
-            <h2>Step-by-Step Guide</h2>
+            <h2>Planned web flow</h2>
             <ol>
-                <li><strong>Download SecureCall FREE</strong> &mdash; Get the app from <a href="../#download">our website</a> or Google Play. The Free tier includes E2E encrypted calls.</li>
-                <li><strong>Get IFR tokens</strong> &mdash; Open <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">the official $IFR token page on Uniswap</a>.</li>
-                <li><strong>Hold IFR in your wallet</strong> &mdash; Keep at least 2,000 IFR for Pro or 6,000 IFR for Premium in the wallet you verify.</li>
-                <li><strong>Open SecureCall Settings</strong> &mdash; Navigate to the <strong>IFR Token Unlock</strong> section.</li>
-                <li><strong>Connect your wallet</strong> &mdash; Tap <strong>Connect Wallet</strong>. SecureCall opens your installed wallet app for Sign-In With Ethereum verification.</li>
-                <li><strong>Sign the challenge</strong> &mdash; Approve the read-only ownership challenge in your wallet. SecureCall returns automatically and checks the IFR token contract on Ethereum.</li>
-                <li><strong>Enjoy Pro or Premium</strong> &mdash; Features unlock instantly based on your held amount. The app restarts to apply the new tier.</li>
+                <li><strong>Open web checkout</strong> &mdash; The user starts from the StealthX website, not from the Android app.</li>
+                <li><strong>Verify wallet in browser</strong> &mdash; MetaMask or another browser wallet signs a read-only ownership challenge.</li>
+                <li><strong>Check IFR balance server-side</strong> &mdash; The backend verifies the wallet and IFR balance on Ethereum Mainnet.</li>
+                <li><strong>Apply Stripe discount</strong> &mdash; Eligible holders receive a checkout discount, currently planned at 50%.</li>
+                <li><strong>Unlock normally</strong> &mdash; Stripe delivers an activation code or license state. SecureCall stays wallet-free.</li>
             </ol>
 
             <!-- ════════════════════════════════════════════════════ -->
-            <div class="section-break">Tier Thresholds</div>
+            <div class="section-break">Discount Plan</div>
 
-            <h2>IFR Holding Requirements</h2>
+            <h2>Planned eligibility</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Tier</th>
-                        <th>IFR Required</th>
-                        <th>Key Features Unlocked</th>
+                        <th>Item</th>
+                        <th>Status</th>
+                        <th>Result</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Free</strong></td>
-                        <td>0 IFR</td>
-                        <td>E2E encrypted calls, contact verification, call history, dark/light mode</td>
+                        <td><strong>Current app</strong></td>
+                        <td>Live</td>
+                        <td>No WalletConnect, no in-app IFR unlock</td>
                     </tr>
                     <tr>
-                        <td><strong>Pro</strong></td>
-                        <td>2,000 IFR</td>
-                        <td>Everything in Free + online status, anti-recording, enhanced security, unlimited calls/contacts</td>
+                        <td><strong>IFR holder checkout</strong></td>
+                        <td>Planned</td>
+                        <td>Browser verification plus Stripe discount</td>
                     </tr>
                     <tr>
-                        <td><strong>Premium</strong></td>
-                        <td>6,000 IFR</td>
-                        <td>Everything in Pro + advanced threat detection, exclusive audio focus, GhostNet IP masking, zero telemetry</td>
+                        <td><strong>Discount value</strong></td>
+                        <td>Planned</td>
+                        <td>50% off eligible Stripe purchases</td>
                     </tr>
                 </tbody>
             </table>
 
             <div class="info-box info">
-                <strong>Lifetime access:</strong> Your tier remains active as long as your wallet holds enough IFR. SecureCall re-verifies periodically. If your balance drops below the threshold, your tier reverts to Free.
+                <strong>Important:</strong> Current SecureCall releases do not unlock Pro or Premium by connecting a wallet inside the app. Use Play billing or activation codes until the web discount flow is released.
             </div>
 
             <!-- ════════════════════════════════════════════════════ -->
@@ -220,43 +218,40 @@
             <h2>Frequently Asked Questions</h2>
 
             <h3>Can I move my tokens?</h3>
-            <p>Yes. Your IFR tokens are never spent, transferred, or locked by SecureCall. If you move them and your wallet balance falls below the threshold, your tier reverts to Free after re-verification.</p>
+            <p>Yes. The planned flow is read-only and does not spend, transfer, or lock IFR. Eligibility will be checked at web checkout time.</p>
 
             <h3>What if I add more tokens?</h3>
-            <p>If your wallet balance crosses a higher threshold (e.g., from 2,000 to 6,000 IFR), run <strong>Connect Wallet</strong> again in Settings. Your tier will upgrade to Premium immediately after verification.</p>
+            <p>When the web discount flow is live, eligibility will be checked in the browser before Stripe checkout. The Android app will not need a wallet connection.</p>
 
             <h3>Is it safe?</h3>
-            <p>SecureCall never has access to your private keys or wallet. Verification is read-only &mdash; the server calls a <code>view</code> function on the smart contract (no gas cost, no transaction). Your wallet address is stored locally on your device.</p>
+            <p>The planned browser verification never gives SecureCall access to private keys. The server performs a read-only balance check and Stripe handles payment details.</p>
 
             <h3>Can I use the same wallet on multiple devices?</h3>
-            <p>Wallet verification is device-bound to prevent abuse. Multi-device wallet use requires wallet verification on each device.</p>
+            <p>The planned discount is checkout-bound, not device-bound. Once a license or activation code is issued, the app uses the normal unlock path.</p>
 
             <h3>What happens if the Ethereum network is down?</h3>
-            <p>Your current tier is cached locally. If re-verification fails due to network issues, your tier remains active until the next successful check. Only a confirmed "insufficient balance" result reverts your tier.</p>
+            <p>The discount check would be unavailable until Ethereum RPC access recovers. Existing app purchases and activation codes are not affected.</p>
 
             <!-- ════════════════════════════════════════════════════ -->
-            <div class="section-break">WalletConnect Verification</div>
+            <div class="section-break">Why Web Checkout</div>
 
-            <h2>Connecting Your Wallet</h2>
+            <h2>Why not WalletConnect in the app?</h2>
             <ol>
-                <li>Open SecureCall and go to <strong>Settings</strong> (gear icon)</li>
-                <li>Scroll to the <strong>IFR Token Unlock</strong> section</li>
-                <li>Tap <strong>Connect Wallet</strong></li>
-                <li>Select MetaMask, Trust Wallet, Rainbow, or Coinbase Wallet</li>
-                <li>Sign the ownership challenge in your wallet</li>
-                <li>SecureCall returns automatically and verifies your held IFR balance</li>
-                <li>If successful, the app shows your held amount and tier</li>
+                <li>Android wallet return links are fragile across MetaMask browser, WebView, and app-link policies.</li>
+                <li>The app should remain focused on calls, contacts, settings, and normal tier unlocks.</li>
+                <li>Stripe checkout is easier to audit and support than wallet state inside the Android app.</li>
+                <li>Users still keep their IFR tokens; verification stays read-only and browser-based.</li>
             </ol>
 
             <div class="info-box warning">
-                <strong>Important:</strong> SecureCall never asks you to paste a wallet address manually. Use the wallet app connection flow only.
+                <strong>Internal test note:</strong> the old WalletConnect/SIWE app build is retained only for internal testing and is not the current public release path.
             </div>
 
             <!-- ════════════════════════════════════════════════════ -->
             <div class="section-break">Wallet Apps</div>
 
             <h2>Wallet App Helper</h2>
-            <p>SecureCall can open installed wallet apps such as MetaMask or Trust Wallet for read-only ownership verification. Your private keys never leave your wallet, and no token transfer or gas transaction is required.</p>
+            <p>When the web discount flow is released, wallet verification will happen in the browser with wallets such as MetaMask. SecureCall itself will not open wallet apps or store wallet state.</p>
 
             <div class="wiki-doc-footer">
                 <span class="end-mark">Document End // Classification: Restricted</span>

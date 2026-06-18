@@ -58,13 +58,11 @@ public class MainActivity extends AppCompatActivity {
         // Initialize flavor-specific FeatureProvider
         AppInit.INSTANCE.init(this);
 
-        // Apply activated tier override (activation code / IFR lock unlock)
+        // Apply activated tier override (activation code unlock)
         com.securecall.app.config.TierManager.INSTANCE.applyTier(this);
 
         // FLAG_SECURE: prevent screenshots based on tier/preference
         applyFlagSecure();
-        // Re-verify IFR lock if due (every 24h)
-        com.securecall.app.config.IfrLockManager.INSTANCE.reverifyIfNeeded(this);
 
         // Security checks at startup
         runSecurityChecks();
@@ -108,10 +106,6 @@ public class MainActivity extends AppCompatActivity {
         // Request phone number permission for server registration
         requestPhoneNumberPermission();
 
-        // Handle wallet verification before any onboarding redirect. MetaMask may cold-start
-        // the app with securecall://wc; dropping that intent loses the SIWE result.
-        boolean walletCallbackHandled = handleWalletDeepLink(getIntent());
-
         // Check if onboarding needed
         SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
         if (!prefs.getBoolean("onboarding_complete", false)) {
@@ -154,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_calls) {
+                updateAdVisibilityForTab(true);
                 showFragment(new CallsFragment());
                 fab.setVisibility(View.GONE); // BUG-017: FAB only in Dialer tab
                 // Mark calls as seen — clear badge and dismiss notifications
@@ -163,15 +158,18 @@ public class MainActivity extends AppCompatActivity {
                 clearMissedCallNotifications();
                 return true;
             } else if (id == R.id.nav_contacts) {
+                updateAdVisibilityForTab(true);
                 showFragment(new ContactsFragment());
                 fab.setVisibility(View.GONE); // BUG-017: FAB only in Dialer tab
                 return true;
             } else if (id == R.id.nav_dialer) {
+                updateAdVisibilityForTab(true);
                 showFragment(new DialerFragment());
                 // Hide fabNewCall so the dialer's own fabCall is accessible
                 fab.setVisibility(View.GONE);
                 return true;
             } else if (id == R.id.nav_settings) {
+                updateAdVisibilityForTab(false);
                 showFragment(new SettingsFragment());
                 fab.setVisibility(View.GONE);
                 return true;
@@ -210,11 +208,6 @@ public class MainActivity extends AppCompatActivity {
         handleInviteDeepLink(getIntent());
         // Handle custom-id deep link: securecall://custom-id?id=xxx&token=xxx
         handleCustomIdDeepLink(getIntent());
-        // Handle wallet verification deep link: securecall://wc?address=...&signature=...
-        if (!walletCallbackHandled) {
-            handleWalletDeepLink(getIntent());
-        }
-
         // Trial: show expired dialog at app start if applicable
         if (com.securecall.app.trial.TrialManager.INSTANCE.shouldShowExpiredDialog(this)) {
             com.securecall.app.trial.TrialManager.INSTANCE.showTrialExpiredDialog(this);
@@ -231,16 +224,6 @@ public class MainActivity extends AppCompatActivity {
         setIntent(intent);
         handleInviteDeepLink(intent);
         handleCustomIdDeepLink(intent);
-        handleWalletDeepLink(intent);
-    }
-
-    private boolean handleWalletDeepLink(Intent intent) {
-        if (intent == null || intent.getData() == null) return false;
-        if (com.securecall.app.wallet.WalletConnectManager.INSTANCE.handleDeepLink(this, intent.getData())) {
-            Log.d(TAG, "Wallet verification callback received");
-            return true;
-        }
-        return false;
     }
 
     private void handleInviteDeepLink(Intent intent) {
@@ -430,6 +413,13 @@ public class MainActivity extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.nav_host_fragment, fragment)
                 .commit();
+    }
+
+    private void updateAdVisibilityForTab(boolean allowAds) {
+        android.widget.FrameLayout adContainer = findViewById(R.id.adBannerContainer);
+        if (adContainer == null) return;
+        boolean showAds = allowAds && com.securecall.app.config.TierManager.INSTANCE.isFreeTier(this);
+        adContainer.setVisibility(showAds ? android.view.View.VISIBLE : android.view.View.GONE);
     }
 
     private void handleCallToggle(ExtendedFloatingActionButton fab) {
@@ -679,7 +669,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Runtime unlocks (activation code / IFR WalletConnect) can be applied
+        // Runtime unlocks (activation code) can be applied
         // while the app is already alive, so re-apply the effective tier before
         // refreshing UI, ads, and feature gates.
         com.securecall.app.config.TierManager.INSTANCE.applyTier(this);

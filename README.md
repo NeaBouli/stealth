@@ -38,6 +38,10 @@ No call content ever leaves your device unencrypted. Every call is protected end
 - **Rust Crypto Core** -- All cryptographic operations run in a native Rust library via JNI -- no Java crypto, no OpenSSL.
 - **Source-available client** -- The client source code is publicly visible for transparency and independent audit. Copying, building, running, distributing, rebranding, or using the software requires prior written permission from Vendetta Labs.
 
+## IFR Status
+
+The current SecureCall release does not include WalletConnect or in-app IFR tier unlocking. The former IFR/SIWE Android build is retained only as the internal test tag `internal-ifr-wallet-test-2026-06-18`. IFR holder benefits are planned as a web checkout flow: verify a wallet in the browser, receive an eligible Stripe discount, then unlock SecureCall through the normal license or activation-code path.
+
 ## Architecture
 
 SecureCall consists of three core components:

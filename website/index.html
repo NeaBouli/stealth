@@ -97,8 +97,7 @@
         "STEALTH-DELETE emergency data wipe",
         "Emergency Broadcast System",
         "No call content or logs stored — signaling metadata transient",
-        "IFR Token integration",
-        "Read-only IFR wallet balance verification",
+        "Planned IFR web checkout discount",
         "Anti-recording protection"
       ],
       "image": "https://stealthx.tech/assets/brand/securecall-icon.png",
@@ -176,7 +175,7 @@
           "name": "How is SecureCall different from Signal?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Unlike Signal, SecureCall requires no phone number or account. It includes a built-in WireGuard VPN, IFR token integration for lifetime access, an emergency broadcast system, and STEALTH-DELETE for instant data wipe. The source code is publicly available for audit."
+            "text": "Unlike Signal, SecureCall requires no phone number or account. It includes a built-in WireGuard VPN, an emergency broadcast system, and STEALTH-DELETE for instant data wipe. IFR holder benefits are planned for a browser-based checkout discount instead of in-app wallet access. The source code is publicly available for audit."
           }
         },
         {
@@ -197,10 +196,10 @@
         },
         {
           "@type": "Question",
-          "name": "What is IFR token integration?",
+          "name": "What is the planned IFR holder benefit?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "SecureCall integrates with the Inferno Protocol IFR token on Ethereum. Users who hold 2,000 IFR tokens receive lifetime Pro access. Users who hold 6,000 IFR tokens receive lifetime Premium access. No subscription required."
+            "text": "The current SecureCall app does not include WalletConnect or in-app IFR tier unlocking. IFR holder benefits are planned as a web checkout flow: verify a wallet in the browser, receive an eligible Stripe discount, then unlock the app through the normal purchase or activation path."
           }
         }
       ]
@@ -341,7 +340,7 @@
                         <div class="product-top"><img class="app-mark" src="assets/brand/securecall-icon.png" alt="SecureCall icon"><span class="tag">APK live - Play review</span></div>
                         <h3>SecureCall</h3>
                         <p>Encrypted voice calls with minimal metadata, WireGuard VPN, STEALTH-DELETE and emergency broadcast alerts.</p>
-                        <ul><li>E2E XChaCha20-Poly1305</li><li>WireGuard VPN built in</li><li>IFR lifetime unlock</li></ul>
+                        <ul><li>E2E XChaCha20-Poly1305</li><li>WireGuard VPN built in</li><li>Clean app checkout flow</li></ul>
                         <a class="btn primary block" href="#features">Learn more</a>
                     </article>
                     <article class="product-card reveal" style="--accent:var(--sx-teal)">
@@ -361,7 +360,7 @@
                 </div>
                 <div class="suite-band reveal">
                     <div class="suite-icons"><img src="assets/brand/securecall-icon.png" alt=""><img src="assets/brand/securechat-icon.png" alt=""><img src="assets/brand/chameleon-icon.png" alt=""></div>
-                    <div><h3>StealthX Suite - everything, forever</h3><p>SecureCall Premium + SecureChat Elite + Chameleon Elite. One-time purchase or IFR holding, no subscription stack.</p></div>
+                    <div><h3>StealthX Suite - everything, forever</h3><p>SecureCall Premium + SecureChat Elite + Chameleon Elite. One-time purchase, no subscription stack.</p></div>
                     <a class="btn teal" href="#pricing">See suite</a>
                 </div>
             </div>
@@ -389,7 +388,7 @@
                     <article class="feature-card reveal"><div class="feature-icon">SIM</div><h3>eSIM Call Routing</h3><p>Premium routing mode can bind the WireGuard underlay to cellular when an eligible mobile network is available.</p></article>
                     <article class="feature-card reveal"><div class="feature-icon">↻</div><h3>Auto-Reconnect</h3><p>Network switches are detected through ConnectivityManager so calls recover without manual restart.</p></article>
                     <article class="feature-card reveal"><div class="feature-icon">🔔</div><h3>FCM Push Notifications</h3><p>Incoming encrypted calls can wake the device even when the app is closed.</p></article>
-                    <article class="feature-card reveal"><div class="feature-icon">IFR</div><h3>IFR Token Access</h3><p>Hold IFR tokens in your wallet for lifetime Pro or Premium access and verify your balance through read-only Ethereum checks.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">IFR</div><h3>IFR Holder Discount</h3><p>Planned web checkout flow: verify IFR ownership in a browser wallet and receive an eligible Stripe discount without wallet code inside the Android app.</p></article>
                 </div>
                 <div class="notice-grid">
                     <div class="notice"><strong>v1.7 - Matrix Contact Exchange</strong><p>Share SecureCall ID through Element, FluffyChat or any Matrix client.</p></div>
@@ -439,7 +438,7 @@
                 </div>
                 <p style="font-size:12px;color:var(--sx-faint)">Last verified: June 11, 2026. Current release checks include the 44/44 legacy overnight regression suite plus expanded automated, website, backend and physical-device testing on S10, S7 and Tab S4 hardware.</p>
                 <div class="audit-grid">
-                    <div class="card" style="padding:24px"><h3>Quality Audit - v1.0.40</h3><ul class="plain-list"><li>Incoming call accept, hold and end</li><li>Outgoing call through dialer</li><li>FCM push wakes killed app</li><li>Online status dots refresh in under 15s</li><li>Dynamic TURN credentials</li><li>IFR wallet verification</li><li>Tier gating across settings</li><li>Contact deduplication</li><li>Screenshot blocking</li><li>Network audit: TLS, VPN compatibility, no cleartext</li></ul></div>
+                    <div class="card" style="padding:24px"><h3>Quality Audit - v1.0.40</h3><ul class="plain-list"><li>Incoming call accept, hold and end</li><li>Outgoing call through dialer</li><li>FCM push wakes killed app</li><li>Online status dots refresh in under 15s</li><li>Dynamic TURN credentials</li><li>Tier gating across settings</li><li>Contact deduplication</li><li>Screenshot blocking</li><li>Network audit: TLS, VPN compatibility, no cleartext</li></ul></div>
                     <div class="card" style="padding:24px"><h3>Security architecture</h3><ul class="plain-list"><li>Zero-knowledge server cannot decrypt calls</li><li>E2E encryption: XChaCha20-Poly1305 + X25519</li><li>STEALTH-DELETE emergency wipe</li><li>Anti-recording and mic hijack detection</li><li>Proximity sensor wake lock during calls</li><li>Certificate pinning enabled for protected backend traffic</li></ul></div>
                 </div>
                 <p style="margin-top:26px"><a href="wiki/security-audit.html" class="btn line">Full audit report</a></p>
@@ -472,8 +471,8 @@
                     <tr><td>STEALTH-DELETE instant local wipe</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                     <tr><td>Emergency Broadcast System</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                     <tr><td>No call content stored server-side</td><td class="own yes">✓</td><td class="yes">common</td></tr>
-                    <tr><td>IFR token lifetime access</td><td class="own yes">✓</td><td class="no">not typical</td></tr>
-                    <tr><td>Read-only IFR wallet balance verification</td><td class="own yes">✓</td><td class="no">not typical</td></tr>
+                    <tr><td>Planned IFR holder checkout discount</td><td class="own warn">planned</td><td class="no">not typical</td></tr>
+                    <tr><td>In-app wallet code required for calling</td><td class="own no">no</td><td class="warn">varies</td></tr>
                     <tr><td>Source available for audit</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                     <tr><td>Direct APK download</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                     <tr><td>Gift activation codes</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
@@ -484,13 +483,13 @@
 
         <section class="section alt" id="pricing">
             <div class="container">
-                <div class="section-head"><span class="section-label">Access levels</span><h2>Choose your clearance level.</h2><p class="lead">Every tier includes end-to-end encryption. Upgrade for advanced protection or use IFR for lifetime access.</p></div>
+                <div class="section-head"><span class="section-label">Access levels</span><h2>Choose your clearance level.</h2><p class="lead">Every tier includes end-to-end encryption. Upgrade for advanced protection through Play billing or activation codes.</p></div>
                 <div class="pricing-grid">
                     <article class="price-card reveal"><h3>Free</h3><div class="price"><span class="amount">€0</span><span class="period">forever</span></div><ul><li class="included">E2E encrypted calls</li><li class="included">15 min call limit, 10 contacts</li><li class="included">Basic security warnings</li><li class="included">Dark/Light mode</li><li class="included">Ad-supported banner</li><li class="excluded">Call history and online status</li><li class="excluded">Anti-recording protection</li><li class="excluded">GhostNet IP masking</li></ul><a href="#download" class="btn line block">Get started</a></article>
-                    <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">GhostNet IP masking</li><li class="included"><a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Buy and hold at least 2,000 IFR for lifetime Pro</a></li></ul><a href="download.html" class="btn primary block">Install APK build</a></article>
-                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">No ads or crash reporting</li><li class="included">WireGuard VPN integration</li><li class="included"><a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Buy and hold at least 6,000 IFR for lifetime Premium</a></li></ul><a href="download.html" class="btn primary block">Install APK build</a></article>
+                    <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">GhostNet IP masking</li><li class="included">IFR holder web discount planned for later</li></ul><a href="download.html" class="btn primary block">Install APK build</a></article>
+                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">No ads or crash reporting</li><li class="included">WireGuard VPN integration</li><li class="included">IFR holder web discount planned for later</li></ul><a href="download.html" class="btn primary block">Install APK build</a></article>
                 </div>
-                <div class="ifr-box reveal"><span class="section-label">Inferno integration</span><h3>IFR Lifetime Unlock</h3><p>Hold IFR tokens in your wallet. Unlock forever. Your tokens stay yours. $IFR is live on Ethereum Mainnet and can be opened directly on Uniswap.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>Pro - hold 2,000 IFR</h3><ul class="plain-list"><li>Online/offline status</li><li>Anti-recording detection</li><li>Enhanced security</li><li>Unlimited calls and contacts</li></ul></div><div class="card" style="padding:18px"><h3>Premium - hold 6,000 IFR</h3><ul class="plain-list"><li>Everything in Pro</li><li>Advanced threat detection</li><li>GhostNet IP masking</li><li>No ads or crash reporting</li></ul></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a> <a class="btn line" href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Buy $IFR on Uniswap</a></p></div>
+                <div class="ifr-box reveal"><span class="section-label">Inferno integration</span><h3>IFR Holder Discount - planned</h3><p>IFR is moving out of the Android app. The planned flow is web-based: verify an eligible wallet in the browser, receive a Stripe checkout discount, then unlock SecureCall through the normal license or activation-code path.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>App stays clean</h3><ul class="plain-list"><li>No WalletConnect inside SecureCall</li><li>No wallet callback issues on Android</li><li>Normal Play billing and activation-code unlocks</li></ul></div><div class="card" style="padding:18px"><h3>Planned web benefit</h3><ul class="plain-list"><li>Browser wallet verification</li><li>Server-side IFR balance check</li><li>Eligible Stripe discount, currently planned at 50%</li></ul></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a> <a class="btn line" href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Open $IFR on Uniswap</a></p></div>
             </div>
         </section>
 

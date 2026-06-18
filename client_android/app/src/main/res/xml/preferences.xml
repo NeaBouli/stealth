@@ -256,7 +256,7 @@
         <Preference
             android:key="pref_terms"
             android:title="Terms of Service"
-            android:summary="Activation codes, subscriptions, IFR tokens"
+            android:summary="Activation codes, subscriptions, legal terms"
             android:icon="@drawable/ic_settings" />
         <Preference
             android:key="pref_licenses"
@@ -282,11 +282,6 @@
             android:title="SOL"
             android:summary="7tXfgs...HXDv"
             android:icon="@drawable/ic_lock" />
-        <Preference
-            android:key="pref_donate_ifr"
-            android:title="IFR Token"
-            android:summary="Hold IFR for Premium access"
-            android:icon="@drawable/ic_shield" />
     </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
     <com.securecall.app.ui.CollapsiblePreferenceCategory
@@ -307,26 +302,6 @@
             android:title="Clear Logs"
             android:summary="Delete all collected log entries"
             android:icon="@drawable/ic_settings" />
-    </com.securecall.app.ui.CollapsiblePreferenceCategory>
-
-    <!-- BUG-020: IFR Token section LAST -->
-    <com.securecall.app.ui.CollapsiblePreferenceCategory
-        android:title="@string/settings_ifr_unlock">
-        <Preference
-            android:key="pref_ifr_status"
-            android:title="@string/pref_ifr_status"
-            android:selectable="false"
-            android:icon="@drawable/ic_shield" />
-        <Preference
-            android:key="pref_ifr_walletconnect"
-            android:title="@string/pref_ifr_walletconnect"
-            android:summary="@string/pref_ifr_walletconnect_summary"
-            android:icon="@drawable/ic_lock" />
-        <Preference
-            android:key="pref_ifr_learn_more"
-            android:title="Learn about IFR Token"
-            android:summary="Visit ifrunit.tech for details"
-            android:icon="@drawable/ic_search" />
     </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
 </PreferenceScreen>

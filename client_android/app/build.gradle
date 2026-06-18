@@ -209,11 +209,6 @@ android {
         unitTests.returnDefaultValues = true
     }
 
-    sourceSets {
-        free.java.srcDirs += 'src/withWalletConnect/java'
-        pro.java.srcDirs += 'src/withWalletConnect/java'
-        premium.java.srcDirs += 'src/withWalletConnect/java'
-    }
 }
 
 dependencies {
@@ -238,10 +233,6 @@ dependencies {
 
     // WireGuard VPN tunnel (Premium only, uses GoBackend with Noise_IKpsk2)
     implementation 'com.wireguard.android:tunnel:1.0.20260102'
-
-    // Wallet connection for IFR token verification — NO external SDK needed.
-    // Uses deep links to open wallet apps (MetaMask/Trust) + manual address paste.
-    // Reown AppKit removed due to unresolved relay 403 bug (reown-kotlin #240/#74).
 
     // Google Play Billing (FREE flavor only)
     freeImplementation 'com.android.billingclient:billing:7.1.1'

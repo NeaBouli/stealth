@@ -1,5 +1,9 @@
 # WalletConnect v2 Setup — SecureCall
 
+> Deprecated: WalletConnect and in-app IFR tier unlocking were removed from the current SecureCall app line. This document is retained only for the internal test tag `internal-ifr-wallet-test-2026-06-18`.
+>
+> Current direction: IFR holder benefits should be implemented as a browser-based wallet verification plus Stripe checkout discount. The Android app should receive a normal license or activation-code unlock and should not contain wallet return/deep-link logic.
+
 ## Project ID — MUST BE REGISTERED
 
 The Project ID must be created at [cloud.reown.com](https://cloud.reown.com):
@@ -18,7 +22,7 @@ All three flavors:
 - `com.securecall.app.premium`
 
 ## How it works
-1. User taps "Connect Wallet" in Settings → IFR Token Unlock
+1. User taps "Connect Wallet" in Settings → IFR Holder Discount
 2. WalletConnect Sign protocol creates a pairing URI
 3. URI opens in installed wallet app (MetaMask, Trust Wallet, etc.)
 4. User approves connection in their wallet app

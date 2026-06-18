@@ -197,7 +197,7 @@
             android:gravity="center"
             android:layout_marginBottom="12dp" />
 
-        <!-- IFR Token Lock -->
+        <!-- Lifetime license status -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -209,7 +209,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="IFR Token Lock — No subscription needed"
+                android:text="Lifetime licenses"
                 android:textSize="14sp"
                 android:textColor="#FF9800"
                 android:textStyle="bold"
@@ -217,7 +217,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="&#8226; Lock ≥ 2,000 IFR → Pro forever\n&#8226; Lock ≥ 6,000 IFR → Premium forever\n&#8226; Your tokens stay yours — unlock anytime"
+                android:text="One-time SecureCall licenses will return after the current Play Store rollout is stable."
                 android:textSize="13sp"
                 android:textColor="#CCCCCC"
                 android:lineSpacingMultiplier="1.4" />

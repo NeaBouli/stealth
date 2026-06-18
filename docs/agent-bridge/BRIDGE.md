@@ -2281,3 +2281,34 @@ Hotfix:
 - Return payload remains HTTPS App-Link based and includes `returnPackage`.
 - All `/return` fallback pages now use the same package-targeted HTTPS intent URL instead of custom schemes.
 - No Android rebuild is required for this hotfix; website deploy is sufficient.
+
+## 2026-06-18 03:45 PDT — [AGENT-A] Removed IFR Wallet Flow From Public App Line
+
+Decision:
+- WalletConnect/SIWE return remains unreliable in MetaMask/Android WebView for the app-return step.
+- Public app line now removes in-app WalletConnect/IFR unlocking completely.
+- The previous WalletConnect build is preserved as tag `internal-ifr-wallet-test-2026-06-18`.
+- New product direction: IFR holder benefit should be browser wallet verification plus Stripe checkout discount, currently planned at 50%, with the Android app receiving a normal license or activation-code unlock.
+
+Android changes:
+- Removed `withWalletConnect` source set from app flavors.
+- Removed wallet package visibility, custom-scheme callback filters, and SIWE App Link filters from SecureCall manifest.
+- Removed WalletConnect manager init, wallet deep-link handling, `IfrLockManager`, and backend `VERIFY_IFR_LOCK` client callback path.
+- Removed IFR settings/preferences/strings and upgrade-screen IFR copy.
+- Fixed phone confirmation loop: Settings no longer clears `manual_phone_number` or `confirmed_phone_number` on open.
+- Hid AdMob banner on Settings tab via `updateAdVisibilityForTab(false)` so the banner no longer overlaps the last settings items.
+
+Docs/website:
+- Landing, FAQ, download page, terms, wiki, README, pricing, Play Store DE listing, and user manual now describe IFR as planned web checkout discount instead of active in-app unlock.
+- `website/siwe.html` is disabled and explains the new web-discount direction.
+- WalletConnect setup doc marked deprecated/internal-test only.
+
+Verification:
+- Android source grep for active IFR/WalletConnect references in app sources: empty.
+- `./gradlew --no-daemon --max-workers=1 -Pinternal app:assemblePremiumRelease app:assembleProRelease app:assembleFreeRelease` succeeded.
+- Installed final release APKs:
+  - S7 `ce10160adc00152604`: `app-pro-arm64-v8a-release.apk`
+  - Tab S4 `ce12182c68644439037e`: `app-free-arm64-v8a-release.apk`
+- S7 Settings UI dump showed no IFR/WalletConnect texts.
+- Tab S4 APK installed successfully, but UI inspection was blocked by device lockscreen/Bouncer.
+- S10 was not connected.
