@@ -2305,3 +2305,26 @@ Verification:
 - S10 install was blocked by signature mismatch:
   `INSTALL_FAILED_UPDATE_INCOMPATIBLE: Package com.securecall.app.free signatures do not match previously installed version`.
 - Do not uninstall S10 app automatically without explicit user approval because uninstalling deletes app data.
+
+## 2026-06-18 15:23 PDT — [AGENT-A] Closed Test IFR Wallet Build v72
+
+Purpose:
+- Build a separate Google Play closed-test AAB that intentionally includes WalletConnect/SIWE/IFR app unlock code.
+- Keep public `main` clean without WalletConnect/IFR in-app unlock.
+
+Source:
+- Branch/worktree: `internal-ifr-closed-test-v72`
+- Based on tag `internal-ifr-wallet-test-2026-06-18`.
+- Included targeted fixes from public app line:
+  - Phone confirmation persistence hardening.
+  - Settings ad/banner overlap fix.
+- Did not include `ce4bb1a fix: remove IFR wallet flow from app`.
+
+Version:
+- `versionCode 72`
+- `versionName 1.0.41`
+- Free flavor will report `1.0.41-free`.
+
+Notes:
+- This build is for closed/internal testing only.
+- Wallet/IFR return flow may still have the known MetaMask/WebView return limitations captured in earlier bridge entries.
