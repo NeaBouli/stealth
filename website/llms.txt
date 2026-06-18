@@ -61,7 +61,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - VPN: WireGuard (Noise_IKpsk2 handshake)
 - Billing: Google Play Billing Library 7.1.1
 - Push: Firebase Cloud Messaging
-- Wallet: WalletConnect Sign SDK 2.26.0
+- Wallet: no in-app WalletConnect; IFR holder verification happens on the website for Stripe checkout discounts
 - Tested on 38 Android devices (Samsung, Pixel, Xiaomi, OnePlus)
 
 ## Download

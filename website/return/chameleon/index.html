@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Returning to Chameleon...</title>
+<title>Chameleon IFR Discount</title>
 <style>
 * { box-sizing: border-box; }
 body {
@@ -25,27 +25,9 @@ a {
 </head>
 <body>
   <div class="card">
-    <h1>Returning to Chameleon...</h1>
-    <p>If the app does not open automatically, use the button below.</p>
-    <a id="fallback" href="#">Open Chameleon</a>
+    <h1>Chameleon IFR Discount</h1>
+    <p>The old app-return flow is disabled. Verify IFR and complete discounted Stripe checkout on the Chameleon website, then unlock the app with the normal activation code.</p>
+    <a id="fallback" href="https://chameleon.stealthx.tech/#ifr">Open Chameleon Checkout</a>
   </div>
-<script>
-const params = new URLSearchParams(window.location.search);
-const query = new URLSearchParams({
-  app: 'chameleon',
-  address: params.get('address') || params.get('addr') || '',
-  addr: params.get('address') || params.get('addr') || '',
-  signature: params.get('signature') || params.get('sig') || '',
-  sig: params.get('signature') || params.get('sig') || '',
-  nonce: params.get('nonce') || '',
-  deviceId: params.get('deviceId') || '',
-  returnPackage: params.get('returnPackage') || params.get('package') || 'com.stealthx.chameleon'
-}).toString();
-const pkg = params.get('returnPackage') || params.get('package') || 'com.stealthx.chameleon';
-document.getElementById('fallback').href =
-  'intent://stealthx.tech/return/chameleon?' + query +
-  '#Intent;scheme=https;package=' + encodeURIComponent(pkg) +
-  ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
-</script>
 </body>
 </html>

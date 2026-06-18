@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Returning to app...</title>
+<title>StealthX IFR Discount</title>
 <style>
 * { box-sizing: border-box; }
 body {
@@ -25,35 +25,11 @@ a {
 </head>
 <body>
   <div class="card">
-    <h1>Returning to app...</h1>
-    <p>If the app does not open automatically, use the button below.</p>
-    <a id="fallback" href="#">Open App</a>
+    <h1>StealthX IFR Discount</h1>
+    <p>The old app-return flow is disabled. Choose a product page, verify IFR in the browser, then complete discounted Stripe checkout and unlock with an activation code.</p>
+    <a href="https://stealthx.tech/#ifr">SecureCall Checkout</a>
+    <a href="https://securechat.stealthx.tech/#ifr">SecureChat Checkout</a>
+    <a href="https://chameleon.stealthx.tech/#ifr">Chameleon Checkout</a>
   </div>
-<script>
-const params = new URLSearchParams(window.location.search);
-const pathApp = window.location.pathname.split('/').filter(Boolean).pop();
-const app = params.get('app') || pathApp || 'securecall';
-const schemes = {
-  securecall: { path: 'securecall', packageName: 'com.securecall.app.premium' },
-  securechat: { path: 'securechat', packageName: 'com.stealthx.securechat' },
-  chameleon: { path: 'chameleon', packageName: 'com.stealthx.chameleon' }
-};
-const target = schemes[app] || schemes.securecall;
-const query = new URLSearchParams({
-  app,
-  address: params.get('address') || params.get('addr') || '',
-  addr: params.get('address') || params.get('addr') || '',
-  signature: params.get('signature') || params.get('sig') || '',
-  sig: params.get('signature') || params.get('sig') || '',
-  nonce: params.get('nonce') || '',
-  deviceId: params.get('deviceId') || '',
-  returnPackage: params.get('returnPackage') || params.get('package') || target.packageName
-}).toString();
-const pkg = params.get('returnPackage') || params.get('package') || target.packageName;
-document.getElementById('fallback').href =
-  'intent://stealthx.tech/return/' + target.path + '?' + query +
-  '#Intent;scheme=https;package=' + encodeURIComponent(pkg) +
-  ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end';
-</script>
 </body>
 </html>

@@ -2407,3 +2407,43 @@ Verification:
 - S7 Pro Settings opened and bottom navigation remained selectable.
 - Tab S4 Free Settings opened; lower Settings entries including `VPN Configuration` and `Über` were visible above bottom navigation.
 - UI dumps showed no IFR/Wallet/WalletConnect texts in the tested public app Settings screens.
+
+## 2026-06-18 16:01 PDT — [AGENT-A] IFR Holder Discount Moved To Web Checkout
+
+User direction:
+- Keep Android apps clean: no WalletConnect / IFR unlock flow inside the public app.
+- Move IFR holder benefit to browser wallet verification on sales pages.
+- Eligible holders get 50% Stripe checkout discount, then unlock apps by normal activation-code path.
+
+SecureCall changes:
+- `backend/signaling/src/server.js` dynamic checkout accepts `ifrDiscount=true` plus `walletAddress`.
+- Backend verifies IFR balance server-side with the existing IFR verifier before applying any discount.
+- Eligibility:
+  - Pro checkout: wallet tier `pro` or `premium`.
+  - Premium / Elite / Suite checkout: wallet tier `premium`.
+- Discounted checkout uses 50% of current dynamic license price; metadata records wallet, IFR tier, original price, checkout price, and discount percent.
+- `website/index.html` now has an active IFR Holder Discount section with:
+  - Uniswap $IFR buy link.
+  - Browser MetaMask connection or manual address fallback.
+  - Pro/Premium 50% Stripe checkout buttons.
+- Disabled SIWE/return pages no longer build Android app-return intents; they route users to web checkout pages instead.
+- Settings upgrade link now opens `https://stealthx.tech/#ifr`.
+- Website FAQ/download/wiki/user manual/terms/llms and README/PRICING copy updated from "planned" to active web checkout discount.
+
+Cross-product website state:
+- SecureChat and Chameleon sales pages now expose the same IFR holder discount model:
+  - Buy IFR on Uniswap.
+  - Verify wallet in browser.
+  - Open Pro/Elite/Suite Stripe checkout with 50% discount when eligible.
+
+Verification:
+- `node -c backend/signaling/src/server.js` succeeded.
+- `client_android`: `./gradlew --no-daemon --max-workers=1 :app:compileFreeReleaseKotlin` succeeded.
+- Full SecureCall `assembleFreeRelease assembleRelease` reached Kotlin/Javac successfully but was stopped after hanging in `minifyFreeReleaseWithR8`.
+- SecureChat: `:app:compileReleaseKotlin :presentation:compileReleaseKotlin` succeeded.
+- Chameleon: `:app:compileReleaseKotlin :presentation:compileReleaseKotlin` succeeded.
+
+Notes:
+- Public app line remains wallet-free.
+- Internal WalletConnect/SIWE app experiment remains preserved only by prior internal tag/history.
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.

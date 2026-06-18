@@ -40,7 +40,7 @@ No call content ever leaves your device unencrypted. Every call is protected end
 
 ## IFR Status
 
-The current SecureCall release does not include WalletConnect or in-app IFR tier unlocking. The former IFR/SIWE Android build is retained only as the internal test tag `internal-ifr-wallet-test-2026-06-18`. IFR holder benefits are planned as a web checkout flow: verify a wallet in the browser, receive an eligible Stripe discount, then unlock SecureCall through the normal license or activation-code path.
+The current SecureCall release does not include WalletConnect or in-app IFR tier unlocking. The former IFR/SIWE Android build is retained only as the internal test tag `internal-ifr-wallet-test-2026-06-18`. IFR holder benefits are available as a web checkout flow: verify a wallet in the browser, receive a 50% Stripe discount, then unlock SecureCall through the normal license or activation-code path.
 
 ## Architecture
 

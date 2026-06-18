@@ -81,17 +81,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("pref_upgrade")?.apply {
             when (effectiveTier) {
                 "PREMIUM" -> isVisible = false
-                "PRO" -> { isVisible = true; title = "Upgrade to Premium" }
-                else -> { isVisible = true; title = getString(R.string.upgrade_to_pro) }
+                "PRO" -> { isVisible = true; title = "Upgrade to Premium / IFR Discount" }
+                else -> { isVisible = true; title = "Buy Pro / Premium or IFR Discount" }
             }
+            summary = "Open Stripe checkout, activation codes, and 50% IFR holder discount"
             setOnPreferenceClickListener {
-                try {
-                    val intent = Intent()
-                    intent.setClassName(requireContext().packageName, "com.securecall.app.billing.UpgradeActivity")
-                    startActivity(intent)
-                } catch (_: Exception) {
-                    android.widget.Toast.makeText(requireContext(), "Use an activation code below to upgrade", android.widget.Toast.LENGTH_SHORT).show()
-                }
+                startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://stealthx.tech/#ifr")))
                 true
             }
         }

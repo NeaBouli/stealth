@@ -97,7 +97,7 @@
         "STEALTH-DELETE emergency data wipe",
         "Emergency Broadcast System",
         "No call content or logs stored — signaling metadata transient",
-        "Planned IFR web checkout discount",
+        "Active IFR web checkout discount",
         "Anti-recording protection"
       ],
       "image": "https://stealthx.tech/assets/brand/securecall-icon.png",
@@ -175,7 +175,7 @@
           "name": "How is SecureCall different from Signal?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Unlike Signal, SecureCall requires no phone number or account. It includes a built-in WireGuard VPN, an emergency broadcast system, and STEALTH-DELETE for instant data wipe. IFR holder benefits are planned for a browser-based checkout discount instead of in-app wallet access. The source code is publicly available for audit."
+            "text": "Unlike Signal, SecureCall requires no phone number or account. It includes a built-in WireGuard VPN, an emergency broadcast system, and STEALTH-DELETE for instant data wipe. IFR holder benefits are handled by browser-based checkout discounts instead of in-app wallet access. The source code is publicly available for audit."
           }
         },
         {
@@ -196,10 +196,10 @@
         },
         {
           "@type": "Question",
-          "name": "What is the planned IFR holder benefit?",
+          "name": "What is the IFR holder benefit?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The current SecureCall app does not include WalletConnect or in-app IFR tier unlocking. IFR holder benefits are planned as a web checkout flow: verify a wallet in the browser, receive an eligible Stripe discount, then unlock the app through the normal purchase or activation path."
+            "text": "The current SecureCall app does not include WalletConnect or in-app IFR tier unlocking. IFR holder benefits use a web checkout flow: verify a wallet in the browser, receive a 50% Stripe discount, then unlock the app through the normal purchase or activation path."
           }
         }
       ]
@@ -388,7 +388,7 @@
                     <article class="feature-card reveal"><div class="feature-icon">SIM</div><h3>eSIM Call Routing</h3><p>Premium routing mode can bind the WireGuard underlay to cellular when an eligible mobile network is available.</p></article>
                     <article class="feature-card reveal"><div class="feature-icon">↻</div><h3>Auto-Reconnect</h3><p>Network switches are detected through ConnectivityManager so calls recover without manual restart.</p></article>
                     <article class="feature-card reveal"><div class="feature-icon">🔔</div><h3>FCM Push Notifications</h3><p>Incoming encrypted calls can wake the device even when the app is closed.</p></article>
-                    <article class="feature-card reveal"><div class="feature-icon">IFR</div><h3>IFR Holder Discount</h3><p>Planned web checkout flow: verify IFR ownership in a browser wallet and receive an eligible Stripe discount without wallet code inside the Android app.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">IFR</div><h3>IFR Holder Discount</h3><p>Active web checkout flow: verify IFR ownership in a browser wallet and receive a 50% Stripe discount without wallet code inside the Android app.</p></article>
                 </div>
                 <div class="notice-grid">
                     <div class="notice"><strong>v1.7 - Matrix Contact Exchange</strong><p>Share SecureCall ID through Element, FluffyChat or any Matrix client.</p></div>
@@ -471,7 +471,7 @@
                     <tr><td>STEALTH-DELETE instant local wipe</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                     <tr><td>Emergency Broadcast System</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                     <tr><td>No call content stored server-side</td><td class="own yes">✓</td><td class="yes">common</td></tr>
-                    <tr><td>Planned IFR holder checkout discount</td><td class="own warn">planned</td><td class="no">not typical</td></tr>
+                    <tr><td>IFR holder checkout discount</td><td class="own yes">active</td><td class="no">not typical</td></tr>
                     <tr><td>In-app wallet code required for calling</td><td class="own no">no</td><td class="warn">varies</td></tr>
                     <tr><td>Source available for audit</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                     <tr><td>Direct APK download</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
@@ -486,10 +486,10 @@
                 <div class="section-head"><span class="section-label">Access levels</span><h2>Choose your clearance level.</h2><p class="lead">Every tier includes end-to-end encryption. Upgrade for advanced protection through Play billing or activation codes.</p></div>
                 <div class="pricing-grid">
                     <article class="price-card reveal"><h3>Free</h3><div class="price"><span class="amount">€0</span><span class="period">forever</span></div><ul><li class="included">E2E encrypted calls</li><li class="included">15 min call limit, 10 contacts</li><li class="included">Basic security warnings</li><li class="included">Dark/Light mode</li><li class="included">Ad-supported banner</li><li class="excluded">Call history and online status</li><li class="excluded">Anti-recording protection</li><li class="excluded">GhostNet IP masking</li></ul><a href="#download" class="btn line block">Get started</a></article>
-                    <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">GhostNet IP masking</li><li class="included">IFR holder web discount planned for later</li></ul><a href="download.html" class="btn primary block">Install APK build</a></article>
-                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">No ads or crash reporting</li><li class="included">WireGuard VPN integration</li><li class="included">IFR holder web discount planned for later</li></ul><a href="download.html" class="btn primary block">Install APK build</a></article>
+                    <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">GhostNet IP masking</li><li class="included">IFR holder web discount available at checkout</li></ul><a href="#ifr" class="btn primary block">Get IFR discount</a></article>
+                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">No ads or crash reporting</li><li class="included">WireGuard VPN integration</li><li class="included">IFR holder web discount available at checkout</li></ul><a href="#ifr" class="btn primary block">Get IFR discount</a></article>
                 </div>
-                <div class="ifr-box reveal"><span class="section-label">Inferno integration</span><h3>IFR Holder Discount - planned</h3><p>IFR is moving out of the Android app. The planned flow is web-based: verify an eligible wallet in the browser, receive a Stripe checkout discount, then unlock SecureCall through the normal license or activation-code path.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>App stays clean</h3><ul class="plain-list"><li>No WalletConnect inside SecureCall</li><li>No wallet callback issues on Android</li><li>Normal Play billing and activation-code unlocks</li></ul></div><div class="card" style="padding:18px"><h3>Planned web benefit</h3><ul class="plain-list"><li>Browser wallet verification</li><li>Server-side IFR balance check</li><li>Eligible Stripe discount, currently planned at 50%</li></ul></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a> <a class="btn line" href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Open $IFR on Uniswap</a></p></div>
+                <div class="ifr-box reveal" id="ifr"><span class="section-label">Inferno integration</span><h3>IFR Holder Discount - 50% checkout</h3><p>SecureCall stays wallet-free. Verify an eligible browser wallet here, receive a 50% Stripe checkout discount, then unlock the app with the normal activation-code path.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>Buy IFR</h3><ul class="plain-list"><li>Open $IFR on Uniswap</li><li>Hold at least 2,000 IFR for Pro discount</li><li>Hold at least 6,000 IFR for Premium discount</li></ul><p><a class="btn line block" href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Buy $IFR on Uniswap</a></p></div><div class="card" style="padding:18px"><h3>Verify for Stripe discount</h3><ul class="plain-list"><li>Connect MetaMask in this browser or paste a wallet address</li><li>Server checks IFR balance read-only on Ethereum Mainnet</li><li>Eligible checkout opens with 50% discount applied</li></ul><input id="ifrWalletAddress" type="text" inputmode="text" autocomplete="off" placeholder="0x wallet address (optional fallback)" style="width:100%;margin:8px 0 10px;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:#06080d;color:var(--sx-text)"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn primary block" type="button" data-license-tier="pro_lifetime" data-ifr-discount="true">Pro 50% checkout</button><button class="btn primary block" type="button" data-license-tier="premium_lifetime" data-ifr-discount="true">Premium 50% checkout</button></div><p id="ifrDiscountStatus" style="font-size:12px;color:var(--sx-faint);margin-top:10px">No wallet state is stored in the Android app.</p></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a></p></div>
             </div>
         </section>
 
@@ -593,31 +593,61 @@
         }
       }catch(e){console.warn('License prices unavailable:',e.message)}
     })();
-    (function wireLifetimeCheckout(){
-      async function startCheckout(button){
-        if(!button||button.disabled)return;
-        button.disabled=true;
-        button.textContent='Opening Stripe...';
-        try{
-          var r=await fetch(API+'/stripe/create-dynamic-checkout',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({tier:button.dataset.licenseTier})
-          });
-          var d=await r.json().catch(function(){return{}});
-          if(!r.ok||!d.url)throw new Error(d.error||'Checkout unavailable');
-          window.location.href=d.url;
-        }catch(e){
-          button.textContent='Try again';
-          button.disabled=false;
-          button.title=e.message;
-        }
-      }
-      var pro=document.getElementById('btnProLifetime');
-      var premium=document.getElementById('btnPremiumLifetime');
-      if(pro)pro.addEventListener('click',function(){startCheckout(pro)});
-      if(premium)premium.addEventListener('click',function(){startCheckout(premium)});
-    })();
+	    (function wireLifetimeCheckout(){
+	      async function getIfrWalletAddress(){
+	        var input=document.getElementById('ifrWalletAddress');
+	        var status=document.getElementById('ifrDiscountStatus');
+	        if(window.ethereum&&window.ethereum.request){
+	          try{
+	            if(status)status.textContent='Connecting browser wallet...';
+	            var accounts=await window.ethereum.request({method:'eth_requestAccounts'});
+	            if(accounts&&accounts[0]){
+	              if(input)input.value=accounts[0];
+	              return accounts[0];
+	            }
+	          }catch(e){
+	            if(status)status.textContent='Wallet connection cancelled. Paste the wallet address or try again.';
+	          }
+	        }
+	        var manual=(input&&input.value||'').trim();
+	        if(/^0x[0-9a-fA-F]{40}$/.test(manual))return manual;
+	        throw new Error('Connect MetaMask or enter a valid 0x wallet address for the IFR discount');
+	      }
+	      async function startCheckout(button){
+	        if(!button||button.disabled)return;
+	        var label=button.textContent;
+	        button.disabled=true;
+	        button.textContent='Opening Stripe...';
+	        try{
+	          var payload={tier:button.dataset.licenseTier};
+	          if(button.dataset.ifrDiscount==='true'){
+	            button.textContent='Verifying IFR...';
+	            payload.ifrDiscount=true;
+	            payload.walletAddress=await getIfrWalletAddress();
+	          }
+	          var r=await fetch(API+'/stripe/create-dynamic-checkout',{
+	            method:'POST',
+	            headers:{'Content-Type':'application/json'},
+	            body:JSON.stringify(payload)
+	          });
+	          var d=await r.json().catch(function(){return{}});
+	          if(!r.ok||!d.url)throw new Error(d.error||'Checkout unavailable');
+	          var status=document.getElementById('ifrDiscountStatus');
+	          if(status&&d.ifrDiscountApplied)status.textContent='IFR verified: 50% discount applied. Redirecting to Stripe...';
+	          window.location.href=d.url;
+	        }catch(e){
+	          button.textContent='Try again';
+	          button.disabled=false;
+	          button.title=e.message;
+	          var status=document.getElementById('ifrDiscountStatus');
+	          if(status)status.textContent=e.message;
+	          setTimeout(function(){ if(!button.disabled) button.textContent=label; },2500);
+	        }
+	      }
+	      document.querySelectorAll('[data-license-tier]').forEach(function(button){
+	        button.addEventListener('click',function(){startCheckout(button)});
+	      });
+	    })();
     (function(){
       function u(){
         fetch(API+'/health',{signal:AbortSignal.timeout(5000)}).then(function(r){return r.json()}).then(function(d){
