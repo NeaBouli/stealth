@@ -917,6 +917,38 @@ app.post('/admin/reset-licenses', requireAdmin, (req, res) => {
   res.json({ ok: true, status: licenses.getStatus() });
 });
 
+app.post('/stripe/ifr-discount-challenge', checkoutRateLimit, (req, res) => {
+  const tier = (req.body?.tier || '').trim();
+  const walletAddress = (req.body?.walletAddress || '').trim();
+  if (!tier || !licenses.LICENSES[tier]) {
+    return res.status(400).json({ error: 'invalid_tier' });
+  }
+  if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
+    return res.status(400).json({ error: 'invalid_wallet' });
+  }
+
+  const nonce = crypto.randomBytes(32).toString('hex');
+  const issuedAt = new Date().toISOString();
+  const message =
+    'StealthX IFR holder discount\n\n' +
+    'Wallet: ' + walletAddress.toLowerCase() + '\n' +
+    'Product: ' + tier + '\n' +
+    'Discount: 50% Stripe checkout\n' +
+    'Nonce: ' + nonce + '\n' +
+    'Issued At: ' + issuedAt + '\n\n' +
+    'Sign this message to prove wallet ownership. This does not transfer tokens or grant spending permission.';
+
+  siweChallenges.set(nonce, {
+    deviceId: 'stripe-checkout',
+    purpose: 'stripe_ifr_discount',
+    tier,
+    walletAddress: walletAddress.toLowerCase(),
+    message,
+    createdAt: Date.now()
+  });
+  res.json({ nonce, message });
+});
+
 // Rate limit: 5 checkout requests per IP per 10 minutes
 function checkoutRateLimit(req, res, next) {
   const ip = getClientIp(req);
@@ -946,20 +978,47 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
   }
   try {
     const stripe = require('stripe')(secretKey);
-    const lic = licenses.LICENSES[tier];
-    const requestedIfrDiscount = req.body?.ifrDiscount === true || req.body?.ifrDiscount === 'true';
-    const walletAddress = (req.body?.walletAddress || '').trim();
-    let checkoutPrice = price;
-    let ifrDiscountApplied = false;
-    let ifrTier = "";
-    let ifrBalanceAmount = "";
+	    const lic = licenses.LICENSES[tier];
+	    const requestedIfrDiscount = req.body?.ifrDiscount === true || req.body?.ifrDiscount === 'true';
+	    const walletAddress = (req.body?.walletAddress || '').trim();
+	    const walletSignature = (req.body?.walletSignature || '').trim();
+	    const walletNonce = (req.body?.walletNonce || '').trim();
+	    let checkoutPrice = price;
+	    let ifrDiscountApplied = false;
+	    let ifrTier = "";
+	    let ifrBalanceAmount = "";
 
-    if (requestedIfrDiscount) {
-      if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
-        return res.status(400).json({ error: 'invalid_wallet' });
-      }
+	    if (requestedIfrDiscount) {
+	      if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
+	        return res.status(400).json({ error: 'invalid_wallet' });
+	      }
+	      if (!walletSignature || !walletNonce) {
+	        return res.status(400).json({ error: 'wallet_signature_required' });
+	      }
 
-      const ifr = await verifyIfrLock(walletAddress);
+	      const challenge = siweChallenges.get(walletNonce);
+	      if (!challenge || challenge.purpose !== 'stripe_ifr_discount') {
+	        return res.status(403).json({ error: 'invalid_wallet_challenge' });
+	      }
+	      if (Date.now() - challenge.createdAt > SIWE_TTL_MS) {
+	        siweChallenges.delete(walletNonce);
+	        return res.status(403).json({ error: 'wallet_challenge_expired' });
+	      }
+	      if (challenge.tier !== tier || challenge.walletAddress !== walletAddress.toLowerCase()) {
+	        return res.status(403).json({ error: 'wallet_challenge_mismatch' });
+	      }
+	      siweChallenges.delete(walletNonce);
+
+	      try {
+	        const recovered = ethers.verifyMessage(challenge.message, walletSignature);
+	        if (recovered.toLowerCase() !== walletAddress.toLowerCase()) {
+	          return res.status(403).json({ error: 'wallet_signature_invalid' });
+	        }
+	      } catch (e) {
+	        return res.status(403).json({ error: 'wallet_signature_invalid' });
+	      }
+
+	      const ifr = await verifyIfrLock(walletAddress);
       ifrTier = ifr.tier || "";
       ifrBalanceAmount = ifr.balanceAmount || ifr.lockedAmount || "";
       if (!ifr.success) {

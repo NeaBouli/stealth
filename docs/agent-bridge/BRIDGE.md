@@ -2447,3 +2447,22 @@ Notes:
 - Public app line remains wallet-free.
 - Internal WalletConnect/SIWE app experiment remains preserved only by prior internal tag/history.
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
+## 2026-06-18 16:18 PDT — [AGENT-A] IFR Discount Requires Wallet Signature
+
+User correction:
+- Manual wallet address fallback is not secure because a known IFR holder address could be pasted.
+
+Fix:
+- Removed manual address entry as an eligibility proof from the active checkout UI.
+- Added explicit `Connect MetaMask` buttons on SecureCall, SecureChat, and Chameleon IFR checkout blocks.
+- Discount checkout now requires:
+  1. MetaMask account connection in the browser.
+  2. Backend-issued `/stripe/ifr-discount-challenge` nonce/message for the selected product.
+  3. `personal_sign` wallet signature.
+  4. Backend `ethers.verifyMessage(...)` recovery matching the connected wallet.
+  5. Server-side IFR balance check before 50% Stripe discount.
+- Checkout rejects unsigned or stale challenges with `wallet_signature_required`, `invalid_wallet_challenge`, `wallet_challenge_expired`, or `wallet_signature_invalid`.
+
+Verification:
+- `node -c backend/signaling/src/server.js` succeeded.
