@@ -593,12 +593,20 @@
         }
       }catch(e){console.warn('License prices unavailable:',e.message)}
     })();
-	    (function wireLifetimeCheckout(){
-		      async function connectIfrWallet(){
-		        var input=document.getElementById('ifrWalletAddress');
-		        var status=document.getElementById('ifrDiscountStatus');
-		        if(!window.ethereum||!window.ethereum.request)throw new Error('MetaMask browser wallet is required for the IFR discount');
-		        if(status)status.textContent='Connecting browser wallet...';
+		    (function wireLifetimeCheckout(){
+			      function openMetaMaskBrowser(){
+			        var target=location.hostname+location.pathname+location.search+'#ifr';
+			        location.href='https://metamask.app.link/dapp/'+target.replace(/^\/+/,'');
+			      }
+			      async function connectIfrWallet(){
+			        var input=document.getElementById('ifrWalletAddress');
+			        var status=document.getElementById('ifrDiscountStatus');
+			        if(!window.ethereum||!window.ethereum.request){
+			          if(status)status.textContent='Opening this checkout in MetaMask Browser...';
+			          openMetaMaskBrowser();
+			          throw new Error('Open this page in MetaMask Browser, then tap Connect MetaMask again.');
+			        }
+			        if(status)status.textContent='Connecting browser wallet...';
 		        var accounts=await window.ethereum.request({method:'eth_requestAccounts'});
 		        if(!accounts||!accounts[0])throw new Error('No wallet account returned by MetaMask');
 		        if(input)input.value=accounts[0];
