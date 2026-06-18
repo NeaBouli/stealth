@@ -2281,3 +2281,27 @@ Hotfix:
 - Return payload remains HTTPS App-Link based and includes `returnPackage`.
 - All `/return` fallback pages now use the same package-targeted HTTPS intent URL instead of custom schemes.
 - No Android rebuild is required for this hotfix; website deploy is sufficient.
+## 2026-06-18 13:05 PDT — [AGENT-A] S10 Phone Confirm Loop Hardening
+
+Runtime finding:
+- S10 `RF8N313QMFL` is connected and currently has `com.securecall.app.free` installed.
+- Installed S10 package reports `versionCode=70002`, `versionName=1.0.40-free`.
+- Reproduced the visible dialog on S10:
+  - Title: `Confirm Your Phone Number`
+  - Buttons: `Skip`, `Confirm`
+- `Skip` persists `phone_number_skipped=true`, so the dialog stops.
+- `Confirm` could still loop when the stored normalized value was blank/invalid; startup only skips the prompt when `confirmed_phone_number` is non-empty.
+
+Fix implemented:
+- `MainActivity.promptForPhoneNumber()` now stores both `manual_phone_number` and `confirmed_phone_number`.
+- If `PhoneUtils.normalize()` returns blank, the raw trimmed number is stored as the confirmed fallback.
+- Confirm clears `phone_number_skipped=false`.
+- Confirm and Skip now use synchronous `commit()` so the prompt state is durable before re-registration/app restart.
+- Added a `phoneNumberDialog` guard so duplicate delayed prompts cannot stack while one dialog is already visible.
+
+Verification:
+- `./gradlew --no-daemon --max-workers=1 -Pinternal assembleFreeRelease` succeeded.
+- Generated APK: `client_android/app/build/outputs/apk/free/release/app-free-arm64-v8a-release.apk` (~21 MB).
+- S10 install was blocked by signature mismatch:
+  `INSTALL_FAILED_UPDATE_INCOMPATIBLE: Package com.securecall.app.free signatures do not match previously installed version`.
+- Do not uninstall S10 app automatically without explicit user approval because uninstalling deletes app data.
