@@ -2466,3 +2466,38 @@ Fix:
 
 Verification:
 - `node -c backend/signaling/src/server.js` succeeded.
+
+## 2026-06-18 23:36 PDT — [AGENT-A] Web IFR Checkout Uses Multi-Wallet Connector
+
+User report:
+- MetaMask-only connector on the IFR discount page did not open MetaMask reliably.
+- Wallet verification should also support Phantom and similar wallets, not only MetaMask.
+
+Root cause:
+- The web checkout pages still used a MetaMask-only `window.ethereum` / MetaMask browser redirect path.
+- On browsers without injected MetaMask, `/ifr.html` returned early instead of opening the WalletConnect fallback.
+
+Fix implemented:
+- Replaced the MetaMask-only checkout connector on SecureCall, SecureChat, and Chameleon web pages.
+- Added Inferno-derived WalletConnect v2 fallback using `@walletconnect/ethereum-provider@2.17.3` and project id `32f56abaa4b1d7f59fb1571c0c0a551f`.
+- Connector order is now:
+  1. Injected EIP-1193 providers (`window.ethereum`, multi-provider arrays, `window.phantom.ethereum`).
+  2. WalletConnect modal for compatible Ethereum wallets.
+  3. Dedicated mobile helper buttons on `/ifr.html` for MetaMask and Phantom in-app browsers.
+- Manual wallet address proof remains removed; Stripe discount still requires wallet signature plus backend IFR balance verification.
+
+Files:
+- SecureCall: `website/ifr.html`, `website/index.html`
+- SecureChat: `ifr.html`, `index.html`
+- Chameleon: `ifr.html`, `index.html`
+
+Commits pushed:
+- SecureCall / stealth: `b08c63c fix: replace IFR MetaMask-only checkout connector`
+- SecureChat: `0a40f73 fix: replace IFR MetaMask-only checkout connector`
+- Chameleon: `5bc7ea7 fix: replace IFR MetaMask-only checkout connector`
+
+Verification:
+- HTML inline scripts parsed successfully for all six changed pages.
+- CDN endpoint `https://esm.sh/@walletconnect/ethereum-provider@2.17.3` returned HTTP 200 with CORS enabled.
+- Local Chrome/Playwright test on `http://127.0.0.1:8765/ifr.html` clicked `Connect Wallet` and reached `Opening WalletConnect...`.
+- The only local browser error was missing `favicon.ico`, unrelated to wallet connection.
