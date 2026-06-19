@@ -26,6 +26,7 @@ input::placeholder{color:#64748b;font-weight:500}
 <h1>SecureCall IFR Discount</h1>
 <p class="muted">Connect a wallet, sign the discount request, then Stripe opens with the eligible 50% discount. No manual wallet address proof is accepted.</p>
 <button id="connect" class="btn" type="button">Connect Wallet</button>
+<button id="disconnect" class="btn line" type="button">Disconnect Wallet</button>
 <div class="wallets">
   <button id="metamask" class="btn line" type="button">Open in MetaMask</button>
   <button id="phantom" class="btn line" type="button">Open in Phantom</button>
@@ -135,6 +136,14 @@ async function signMessage(message,address){
   try{return await connectedProvider.request({method:'personal_sign',params:[message,address]})}
   catch(e){return await connectedProvider.request({method:'personal_sign',params:[address,message]})}
 }
+async function disconnect(){
+  var provider=connectedProvider;
+  connectedProvider=null;
+  connectedAddress='';
+  document.getElementById('wallet').value='';
+  try{if(provider&&provider.disconnect)await provider.disconnect()}catch(e){}
+  status('Wallet disconnected. Connect a wallet to verify IFR discount eligibility.');
+}
 async function checkout(tier,btn){
   var label=btn.textContent;btn.disabled=true;btn.textContent='Connecting wallet...';
   try{
@@ -157,6 +166,7 @@ async function checkout(tier,btn){
   }catch(e){status(e&&e.message?e.message:'Wallet connection failed.');btn.disabled=false;btn.textContent=label}
 }
 document.getElementById('connect').onclick=function(){connect().catch(function(e){status(e&&e.message?e.message:'Wallet connection failed.')})};
+document.getElementById('disconnect').onclick=function(){disconnect()};
 document.getElementById('metamask').onclick=openMetaMask;
 document.getElementById('phantom').onclick=openPhantom;
 document.querySelectorAll('[data-tier]').forEach(function(b){b.onclick=function(){checkout(b.dataset.tier,b)}});
