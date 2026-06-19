@@ -15,8 +15,9 @@ h1{margin:0 0 8px;color:var(--brand);font-size:clamp(28px,7vw,42px);line-height:
 .line{background:transparent;color:var(--accent)}
 .wallets{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
 .wallets .btn{margin:0}
-input{width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:#070910;color:var(--text);margin:8px 0 10px}
-#status{font-size:13px;color:var(--muted);min-height:20px}
+input{width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.28);background:#f8fafc;color:#07111f;margin:8px 0 10px;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+input::placeholder{color:#64748b;font-weight:500}
+#status{font-size:14px;color:#d8e2ee;min-height:20px;line-height:1.45}
 @media(max-width:520px){.wallets{grid-template-columns:1fr}}
 </style>
 </head>
@@ -44,6 +45,18 @@ var connectedProvider=null;
 var connectedAddress='';
 function status(msg){document.getElementById('status').textContent=msg}
 function short(addr){return addr.slice(0,6)+'...'+addr.slice(-4)}
+function balanceText(value){return value?(' Balance: '+value+' IFR.'):""}
+function checkoutError(data){
+  var error=(data&&data.error)||'Checkout unavailable';
+  if(error==='ifr_not_eligible')return 'No eligible IFR balance found for this wallet.'+balanceText(data.balanceAmount);
+  if(error==='ifr_tier_too_low')return 'IFR balance found, but tier is too low. Required: '+(data.requiredTier||'higher tier')+'. Current: '+(data.walletTier||'none')+'.'+balanceText(data.balanceAmount);
+  if(error==='wallet_signature_required')return 'Wallet signature is required before IFR discount checkout can open.';
+  if(error==='wallet_signature_invalid')return 'Wallet signature could not be verified. Please reconnect and sign again.';
+  if(error==='wallet_challenge_expired')return 'Wallet verification expired. Please tap checkout again and sign the new request.';
+  if(error==='invalid_wallet_challenge'||error==='wallet_challenge_mismatch')return 'Wallet verification mismatch. Please reconnect the wallet and try again.';
+  if(error==='rate_limited')return 'Too many checkout attempts. Please wait a few minutes and try again.';
+  return error;
+}
 function dappPath(){return location.host+location.pathname}
 function openMetaMask(){location.href='https://link.metamask.io/dapp/'+dappPath()}
 function openPhantom(){location.href='https://phantom.app/ul/browse/'+encodeURIComponent(location.href)+'?ref='+encodeURIComponent(location.origin)}
@@ -75,7 +88,7 @@ async function connectInjected(){
   connectedProvider=provider;
   connectedAddress=accounts[0];
   document.getElementById('wallet').value=connectedAddress;
-  status('Wallet connected: '+short(connectedAddress));
+  status('Wallet connected: '+short(connectedAddress)+'. Choose checkout to check IFR eligibility.');
   return connectedAddress;
 }
 async function connectWalletConnect(){
@@ -104,7 +117,7 @@ async function connectWalletConnect(){
   connectedProvider=provider;
   connectedAddress=accounts[0];
   document.getElementById('wallet').value=connectedAddress;
-  status('Wallet connected: '+short(connectedAddress));
+  status('Wallet connected: '+short(connectedAddress)+'. Choose checkout to check IFR eligibility.');
   return connectedAddress;
 }
 async function connect(){
@@ -126,6 +139,7 @@ async function checkout(tier,btn){
   var label=btn.textContent;btn.disabled=true;btn.textContent='Connecting wallet...';
   try{
     var walletAddress=await connect();
+    status('Preparing wallet proof for '+short(walletAddress)+'...');
     btn.textContent='Preparing signature...';
     var cr=await fetch(API+'/stripe/ifr-discount-challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:tier,walletAddress:walletAddress})});
     var c=await cr.json().catch(function(){return{}});
@@ -133,12 +147,13 @@ async function checkout(tier,btn){
     status('Sign the wallet message to prove ownership.');
     btn.textContent='Signing wallet...';
     var walletSignature=await signMessage(c.message,walletAddress);
-    btn.textContent='Verifying IFR...';
+    btn.textContent='Checking IFR...';
+    status('Checking IFR balance on Ethereum Mainnet...');
     var r=await fetch(API+'/stripe/create-dynamic-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:tier,ifrDiscount:true,walletAddress:walletAddress,walletNonce:c.nonce,walletSignature:walletSignature})});
     var d=await r.json().catch(function(){return{}});
-    if(!r.ok||!d.url)throw new Error(d.error||'Checkout unavailable');
-    status('IFR verified. Redirecting to Stripe...');
-    location.href=d.url;
+    if(!r.ok||!d.url)throw new Error(checkoutError(d));
+    status('IFR eligible: '+(d.ifrTier||'verified')+balanceText(d.ifrBalanceAmount)+' Opening Stripe with 50% discount...');
+    setTimeout(function(){location.href=d.url},900);
   }catch(e){status(e&&e.message?e.message:'Wallet connection failed.');btn.disabled=false;btn.textContent=label}
 }
 document.getElementById('connect').onclick=function(){connect().catch(function(e){status(e&&e.message?e.message:'Wallet connection failed.')})};

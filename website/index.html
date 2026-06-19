@@ -489,7 +489,7 @@
                     <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">GhostNet IP masking</li><li class="included">IFR holder web discount available at checkout</li></ul><a href="#ifr" class="btn primary block">Get IFR discount</a></article>
                     <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">No ads or crash reporting</li><li class="included">WireGuard VPN integration</li><li class="included">IFR holder web discount available at checkout</li></ul><a href="#ifr" class="btn primary block">Get IFR discount</a></article>
                 </div>
-                <div class="ifr-box reveal" id="ifr"><span class="section-label">Inferno integration</span><h3>IFR Holder Discount - 50% checkout</h3><p>SecureCall stays wallet-free. Verify an eligible browser wallet here, receive a 50% Stripe checkout discount, then unlock the app with the normal activation-code path.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>Buy IFR</h3><ul class="plain-list"><li>Open $IFR on Uniswap</li><li>Hold at least 2,000 IFR for Pro discount</li><li>Hold at least 6,000 IFR for Premium discount</li></ul><p><a class="btn line block" href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Buy $IFR on Uniswap</a></p></div><div class="card" style="padding:18px"><h3>Verify for Stripe discount</h3><ul class="plain-list"><li>Connect MetaMask, Phantom, or WalletConnect</li><li>Sign the discount request to prove wallet ownership</li><li>Server checks IFR balance read-only on Ethereum Mainnet</li></ul><button id="connectIfrWallet" class="btn line block" type="button" style="margin:8px 0 10px">Connect Wallet</button><input id="ifrWalletAddress" type="text" readonly placeholder="Connected wallet address" style="width:100%;margin:0 0 10px;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:#06080d;color:var(--sx-text)"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn primary block" type="button" data-license-tier="pro_lifetime" data-ifr-discount="true">Pro 50% checkout</button><button class="btn primary block" type="button" data-license-tier="premium_lifetime" data-ifr-discount="true">Premium 50% checkout</button></div><p id="ifrDiscountStatus" style="font-size:12px;color:var(--sx-faint);margin-top:10px">Wallet signature is required before Stripe opens. No wallet state is stored in the Android app.</p></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a></p></div>
+                <div class="ifr-box reveal" id="ifr"><span class="section-label">Inferno integration</span><h3>IFR Holder Discount - 50% checkout</h3><p>SecureCall stays wallet-free. Verify an eligible browser wallet here, receive a 50% Stripe checkout discount, then unlock the app with the normal activation-code path.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>Buy IFR</h3><ul class="plain-list"><li>Open $IFR on Uniswap</li><li>Hold at least 2,000 IFR for Pro discount</li><li>Hold at least 6,000 IFR for Premium discount</li></ul><p><a class="btn line block" href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Buy $IFR on Uniswap</a></p></div><div class="card" style="padding:18px"><h3>Verify for Stripe discount</h3><ul class="plain-list"><li>Connect MetaMask, Phantom, or WalletConnect</li><li>Sign the discount request to prove wallet ownership</li><li>Server checks IFR balance read-only on Ethereum Mainnet</li></ul><button id="connectIfrWallet" class="btn line block" type="button" style="margin:8px 0 10px">Connect Wallet</button><input id="ifrWalletAddress" type="text" readonly placeholder="Connected wallet address" style="width:100%;margin:0 0 10px;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.28);background:#f8fafc;color:#07111f;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn primary block" type="button" data-license-tier="pro_lifetime" data-ifr-discount="true">Pro 50% checkout</button><button class="btn primary block" type="button" data-license-tier="premium_lifetime" data-ifr-discount="true">Premium 50% checkout</button></div><p id="ifrDiscountStatus" style="font-size:13px;color:#d8e2ee;margin-top:10px;line-height:1.45">Wallet signature is required before Stripe opens. No wallet state is stored in the Android app.</p></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a></p></div>
             </div>
         </section>
 
@@ -603,6 +603,18 @@
             var status=document.getElementById('ifrDiscountStatus');
             if(status)status.textContent=message;
           }
+          function balanceText(value){return value?(' Balance: '+value+' IFR.'):""}
+          function checkoutError(data){
+            var error=(data&&data.error)||'Checkout unavailable';
+            if(error==='ifr_not_eligible')return 'No eligible IFR balance found for this wallet.'+balanceText(data.balanceAmount);
+            if(error==='ifr_tier_too_low')return 'IFR balance found, but tier is too low. Required: '+(data.requiredTier||'higher tier')+'. Current: '+(data.walletTier||'none')+'.'+balanceText(data.balanceAmount);
+            if(error==='wallet_signature_required')return 'Wallet signature is required before IFR discount checkout can open.';
+            if(error==='wallet_signature_invalid')return 'Wallet signature could not be verified. Please reconnect and sign again.';
+            if(error==='wallet_challenge_expired')return 'Wallet verification expired. Please tap checkout again and sign the new request.';
+            if(error==='invalid_wallet_challenge'||error==='wallet_challenge_mismatch')return 'Wallet verification mismatch. Please reconnect the wallet and try again.';
+            if(error==='rate_limited')return 'Too many checkout attempts. Please wait a few minutes and try again.';
+            return error;
+          }
           function injectedProviders(){
             var list=[];
             if(window.ethereum&&Array.isArray(window.ethereum.providers))list=list.concat(window.ethereum.providers);
@@ -684,7 +696,7 @@
             catch(e){signature=await ifrProvider.request({method:'personal_sign',params:[walletAddress,challenge.message]})}
 		        return {walletAddress:walletAddress,walletNonce:challenge.nonce,walletSignature:signature};
 		      }
-	      async function startCheckout(button){
+		      async function startCheckout(button){
 	        if(!button||button.disabled)return;
 	        var label=button.textContent;
 	        button.disabled=true;
@@ -693,19 +705,22 @@
 	          var payload={tier:button.dataset.licenseTier};
 		          if(button.dataset.ifrDiscount==='true'){
 		            button.textContent='Signing wallet...';
+                setIfrStatus('Preparing wallet proof...');
 		            payload.ifrDiscount=true;
 		            Object.assign(payload,await signIfrDiscount(payload.tier));
+                button.textContent='Checking IFR...';
+                setIfrStatus('Checking IFR balance on Ethereum Mainnet...');
 		          }
 	          var r=await fetch(API+'/stripe/create-dynamic-checkout',{
 	            method:'POST',
 	            headers:{'Content-Type':'application/json'},
 	            body:JSON.stringify(payload)
 	          });
-	          var d=await r.json().catch(function(){return{}});
-	          if(!r.ok||!d.url)throw new Error(d.error||'Checkout unavailable');
-	          var status=document.getElementById('ifrDiscountStatus');
-	          if(status&&d.ifrDiscountApplied)status.textContent='IFR verified: 50% discount applied. Redirecting to Stripe...';
-	          window.location.href=d.url;
+		          var d=await r.json().catch(function(){return{}});
+		          if(!r.ok||!d.url)throw new Error(checkoutError(d));
+		          var status=document.getElementById('ifrDiscountStatus');
+		          if(status&&d.ifrDiscountApplied)status.textContent='IFR eligible: '+(d.ifrTier||'verified')+balanceText(d.ifrBalanceAmount)+' Opening Stripe with 50% discount...';
+		          setTimeout(function(){window.location.href=d.url},900);
 	        }catch(e){
 	          button.textContent='Try again';
 	          button.disabled=false;
