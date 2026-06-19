@@ -2,54 +2,148 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SecureCall IFR Discount</title>
 <style>
-body{margin:0;min-height:100vh;background:#070910;color:#eef3f8;font-family:system-ui,-apple-system,Segoe UI,sans-serif;display:grid;place-items:center;padding:20px}
-.card{width:min(560px,100%);border:1px solid rgba(255,255,255,.14);border-radius:12px;background:#10141d;padding:22px}
-h1{margin:0 0 8px;color:#ff4444}.muted{color:#a8b0bc;line-height:1.5}.btn{display:block;width:100%;padding:14px;margin:10px 0;border:1px solid #18e676;border-radius:8px;background:#18e676;color:#03140a;font-weight:800;text-align:center;text-decoration:none;cursor:pointer}.line{background:transparent;color:#18e676}input{width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:#070910;color:#eef3f8;margin:8px 0 10px}#status{font-size:13px;color:#a8b0bc}
+:root{color-scheme:dark;--accent:#18e676;--brand:#ff4444;--bg:#070910;--panel:#10141d;--text:#eef3f8;--muted:#a8b0bc}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif;display:grid;place-items:center;padding:20px}
+.card{width:min(580px,100%);box-sizing:border-box;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:var(--panel);padding:22px}
+h1{margin:0 0 8px;color:var(--brand);font-size:clamp(28px,7vw,42px);line-height:1.05}
+.muted{color:var(--muted);line-height:1.5}
+.btn{display:block;width:100%;box-sizing:border-box;padding:14px;margin:10px 0;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#03140a;font-weight:800;text-align:center;text-decoration:none;cursor:pointer;font-size:16px}
+.btn:disabled{opacity:.65;cursor:wait}
+.line{background:transparent;color:var(--accent)}
+.wallets{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.wallets .btn{margin:0}
+input{width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:#070910;color:var(--text);margin:8px 0 10px}
+#status{font-size:13px;color:var(--muted);min-height:20px}
+@media(max-width:520px){.wallets{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main class="card">
 <h1>SecureCall IFR Discount</h1>
-<p class="muted">Connect MetaMask, sign the discount request, then Stripe opens with the eligible 50% discount. No manual wallet address proof is accepted.</p>
-<button id="connect" class="btn line" type="button">Connect MetaMask</button>
+<p class="muted">Connect a wallet, sign the discount request, then Stripe opens with the eligible 50% discount. No manual wallet address proof is accepted.</p>
+<button id="connect" class="btn" type="button">Connect Wallet</button>
+<div class="wallets">
+  <button id="metamask" class="btn line" type="button">Open in MetaMask</button>
+  <button id="phantom" class="btn line" type="button">Open in Phantom</button>
+</div>
 <input id="wallet" readonly placeholder="Connected wallet address">
 <button class="btn" type="button" data-tier="pro_lifetime">Pro 50% Checkout</button>
 <button class="btn" type="button" data-tier="premium_lifetime">Premium 50% Checkout</button>
-<p id="status">If this page is not inside MetaMask, the button opens MetaMask Browser first.</p>
+<p id="status">Connect MetaMask, Phantom, or any WalletConnect-compatible Ethereum wallet.</p>
 </main>
 <script>
 (function(){
 var API='https://api.stealthx.tech';
-function openMM(){location.href='https://link.metamask.io/dapp/'+location.host+'/ifr.html'}
+var WC_PROJECT_ID='32f56abaa4b1d7f59fb1571c0c0a551f';
+var WC_ESM_URL='https://esm.sh/@walletconnect/ethereum-provider@2.17.3';
+var RPC_URL='https://eth.llamarpc.com';
+var connectedProvider=null;
+var connectedAddress='';
+function status(msg){document.getElementById('status').textContent=msg}
+function short(addr){return addr.slice(0,6)+'...'+addr.slice(-4)}
+function dappPath(){return location.host+location.pathname}
+function openMetaMask(){location.href='https://link.metamask.io/dapp/'+dappPath()}
+function openPhantom(){location.href='https://phantom.app/ul/browse/'+encodeURIComponent(location.href)+'?ref='+encodeURIComponent(location.origin)}
+function injectedProviders(){
+  var list=[];
+  if(window.ethereum&&Array.isArray(window.ethereum.providers))list=list.concat(window.ethereum.providers);
+  if(window.ethereum)list.push(window.ethereum);
+  if(window.phantom&&window.phantom.ethereum)list.push(window.phantom.ethereum);
+  return list.filter(function(p,i,a){return p&&p.request&&a.indexOf(p)===i})
+}
+function namedProvider(){
+  var providers=injectedProviders();
+  if(!providers.length)return null;
+  return providers.find(function(p){return p.isMetaMask})||
+    providers.find(function(p){return p.isPhantom})||
+    providers.find(function(p){return p.isCoinbaseWallet})||
+    providers[0];
+}
+async function switchMainnet(provider){
+  try{await provider.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x1'}]})}catch(e){}
+}
+async function connectInjected(){
+  var provider=namedProvider();
+  if(!provider)return null;
+  status('Connecting browser wallet...');
+  var accounts=await provider.request({method:'eth_requestAccounts'});
+  if(!accounts||!accounts[0])throw new Error('No wallet account returned.');
+  await switchMainnet(provider);
+  connectedProvider=provider;
+  connectedAddress=accounts[0];
+  document.getElementById('wallet').value=connectedAddress;
+  status('Wallet connected: '+short(connectedAddress));
+  return connectedAddress;
+}
+async function connectWalletConnect(){
+  status('Opening WalletConnect...');
+  var mod=await import(WC_ESM_URL);
+  var EthereumProvider=mod.EthereumProvider||mod.default;
+  if(!EthereumProvider)throw new Error('WalletConnect provider unavailable.');
+  var provider=await EthereumProvider.init({
+    projectId:WC_PROJECT_ID,
+    optionalChains:[1],
+    showQrModal:true,
+    rpcMap:{1:RPC_URL},
+    methods:['eth_requestAccounts','personal_sign','wallet_switchEthereumChain'],
+    events:['accountsChanged','chainChanged','disconnect'],
+    metadata:{
+      name:'SecureCall IFR Discount',
+      description:'Read-only IFR holder discount verification for SecureCall checkout.',
+      url:location.origin,
+      icons:[location.origin+'/favicon.ico']
+    },
+    qrModalOptions:{themeMode:'dark'}
+  });
+  var accounts=await provider.enable();
+  if(!accounts||!accounts[0])throw new Error('No wallet account returned.');
+  await switchMainnet(provider);
+  connectedProvider=provider;
+  connectedAddress=accounts[0];
+  document.getElementById('wallet').value=connectedAddress;
+  status('Wallet connected: '+short(connectedAddress));
+  return connectedAddress;
+}
 async function connect(){
-  var s=document.getElementById('status'), w=document.getElementById('wallet');
-  if(!window.ethereum||!window.ethereum.request){s.textContent='Opening MetaMask Browser...';openMM();throw new Error('Open in MetaMask Browser, then tap Connect again.')}
-  s.textContent='Connecting MetaMask...';
-  var a=await window.ethereum.request({method:'eth_requestAccounts'});
-  if(!a||!a[0])throw new Error('No wallet account returned.');
-  w.value=a[0]; s.textContent='Wallet connected: '+a[0].slice(0,6)+'...'+a[0].slice(-4);
-  return a[0];
+  if(connectedProvider&&connectedAddress)return connectedAddress;
+  var address;
+  try{address=await connectInjected()}catch(e){
+    if(e&&e.code===4001)throw e;
+    console.warn('Injected wallet connect failed, falling back to WalletConnect',e);
+  }
+  if(address)return address;
+  return await connectWalletConnect();
+}
+async function signMessage(message,address){
+  if(!connectedProvider)throw new Error('Wallet is not connected.');
+  try{return await connectedProvider.request({method:'personal_sign',params:[message,address]})}
+  catch(e){return await connectedProvider.request({method:'personal_sign',params:[address,message]})}
 }
 async function checkout(tier,btn){
-  var s=document.getElementById('status'), label=btn.textContent; btn.disabled=true; btn.textContent='Signing wallet...';
+  var label=btn.textContent;btn.disabled=true;btn.textContent='Connecting wallet...';
   try{
     var walletAddress=await connect();
-    var cr=await fetch(API+'/stripe/ifr-discount-challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier,walletAddress})});
+    btn.textContent='Preparing signature...';
+    var cr=await fetch(API+'/stripe/ifr-discount-challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:tier,walletAddress:walletAddress})});
     var c=await cr.json().catch(function(){return{}});
     if(!cr.ok||!c.message||!c.nonce)throw new Error(c.error||'Wallet challenge unavailable');
-    s.textContent='Sign the MetaMask message to prove wallet ownership...';
-    var walletSignature=await window.ethereum.request({method:'personal_sign',params:[c.message,walletAddress]});
+    status('Sign the wallet message to prove ownership.');
+    btn.textContent='Signing wallet...';
+    var walletSignature=await signMessage(c.message,walletAddress);
     btn.textContent='Verifying IFR...';
-    var r=await fetch(API+'/stripe/create-dynamic-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier,ifrDiscount:true,walletAddress,walletNonce:c.nonce,walletSignature})});
+    var r=await fetch(API+'/stripe/create-dynamic-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:tier,ifrDiscount:true,walletAddress:walletAddress,walletNonce:c.nonce,walletSignature:walletSignature})});
     var d=await r.json().catch(function(){return{}});
     if(!r.ok||!d.url)throw new Error(d.error||'Checkout unavailable');
-    s.textContent='IFR verified. Redirecting to Stripe...'; location.href=d.url;
-  }catch(e){s.textContent=e.message;btn.disabled=false;btn.textContent=label}
+    status('IFR verified. Redirecting to Stripe...');
+    location.href=d.url;
+  }catch(e){status(e&&e.message?e.message:'Wallet connection failed.');btn.disabled=false;btn.textContent=label}
 }
-document.getElementById('connect').onclick=function(){connect().catch(function(e){document.getElementById('status').textContent=e.message})};
+document.getElementById('connect').onclick=function(){connect().catch(function(e){status(e&&e.message?e.message:'Wallet connection failed.')})};
+document.getElementById('metamask').onclick=openMetaMask;
+document.getElementById('phantom').onclick=openPhantom;
 document.querySelectorAll('[data-tier]').forEach(function(b){b.onclick=function(){checkout(b.dataset.tier,b)}});
 })();
 </script>

@@ -489,7 +489,7 @@
                     <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">GhostNet IP masking</li><li class="included">IFR holder web discount available at checkout</li></ul><a href="#ifr" class="btn primary block">Get IFR discount</a></article>
                     <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">No ads or crash reporting</li><li class="included">WireGuard VPN integration</li><li class="included">IFR holder web discount available at checkout</li></ul><a href="#ifr" class="btn primary block">Get IFR discount</a></article>
                 </div>
-                <div class="ifr-box reveal" id="ifr"><span class="section-label">Inferno integration</span><h3>IFR Holder Discount - 50% checkout</h3><p>SecureCall stays wallet-free. Verify an eligible browser wallet here, receive a 50% Stripe checkout discount, then unlock the app with the normal activation-code path.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>Buy IFR</h3><ul class="plain-list"><li>Open $IFR on Uniswap</li><li>Hold at least 2,000 IFR for Pro discount</li><li>Hold at least 6,000 IFR for Premium discount</li></ul><p><a class="btn line block" href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Buy $IFR on Uniswap</a></p></div><div class="card" style="padding:18px"><h3>Verify for Stripe discount</h3><ul class="plain-list"><li>Connect MetaMask in this browser</li><li>Sign the discount request to prove wallet ownership</li><li>Server checks IFR balance read-only on Ethereum Mainnet</li></ul><button id="connectIfrWallet" class="btn line block" type="button" style="margin:8px 0 10px">Connect MetaMask</button><input id="ifrWalletAddress" type="text" readonly placeholder="Connected wallet address" style="width:100%;margin:0 0 10px;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:#06080d;color:var(--sx-text)"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn primary block" type="button" data-license-tier="pro_lifetime" data-ifr-discount="true">Pro 50% checkout</button><button class="btn primary block" type="button" data-license-tier="premium_lifetime" data-ifr-discount="true">Premium 50% checkout</button></div><p id="ifrDiscountStatus" style="font-size:12px;color:var(--sx-faint);margin-top:10px">Wallet signature is required before Stripe opens. No wallet state is stored in the Android app.</p></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a></p></div>
+                <div class="ifr-box reveal" id="ifr"><span class="section-label">Inferno integration</span><h3>IFR Holder Discount - 50% checkout</h3><p>SecureCall stays wallet-free. Verify an eligible browser wallet here, receive a 50% Stripe checkout discount, then unlock the app with the normal activation-code path.</p><div class="ifr-grid"><div class="card" style="padding:18px"><h3>Buy IFR</h3><ul class="plain-list"><li>Open $IFR on Uniswap</li><li>Hold at least 2,000 IFR for Pro discount</li><li>Hold at least 6,000 IFR for Premium discount</li></ul><p><a class="btn line block" href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Buy $IFR on Uniswap</a></p></div><div class="card" style="padding:18px"><h3>Verify for Stripe discount</h3><ul class="plain-list"><li>Connect MetaMask, Phantom, or WalletConnect</li><li>Sign the discount request to prove wallet ownership</li><li>Server checks IFR balance read-only on Ethereum Mainnet</li></ul><button id="connectIfrWallet" class="btn line block" type="button" style="margin:8px 0 10px">Connect Wallet</button><input id="ifrWalletAddress" type="text" readonly placeholder="Connected wallet address" style="width:100%;margin:0 0 10px;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:#06080d;color:var(--sx-text)"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn primary block" type="button" data-license-tier="pro_lifetime" data-ifr-discount="true">Pro 50% checkout</button><button class="btn primary block" type="button" data-license-tier="premium_lifetime" data-ifr-discount="true">Premium 50% checkout</button></div><p id="ifrDiscountStatus" style="font-size:12px;color:var(--sx-faint);margin-top:10px">Wallet signature is required before Stripe opens. No wallet state is stored in the Android app.</p></div></div><p><a class="btn line" href="wiki/ifr-unlock.html">Learn more</a></p></div>
             </div>
         </section>
 
@@ -594,22 +594,78 @@
       }catch(e){console.warn('License prices unavailable:',e.message)}
     })();
 		    (function wireLifetimeCheckout(){
-			      function openMetaMaskBrowser(){
-			        location.href='https://link.metamask.io/dapp/'+location.host+'/ifr.html';
-			      }
-			      async function connectIfrWallet(){
-			        var input=document.getElementById('ifrWalletAddress');
-			        var status=document.getElementById('ifrDiscountStatus');
-			        if(!window.ethereum||!window.ethereum.request){
-			          if(status)status.textContent='Opening this checkout in MetaMask Browser...';
-			          openMetaMaskBrowser();
-			          throw new Error('Open this page in MetaMask Browser, then tap Connect MetaMask again.');
-			        }
-			        if(status)status.textContent='Connecting browser wallet...';
-		        var accounts=await window.ethereum.request({method:'eth_requestAccounts'});
-		        if(!accounts||!accounts[0])throw new Error('No wallet account returned by MetaMask');
-		        if(input)input.value=accounts[0];
-		        return accounts[0];
+          var WC_PROJECT_ID='32f56abaa4b1d7f59fb1571c0c0a551f';
+          var WC_ESM_URL='https://esm.sh/@walletconnect/ethereum-provider@2.17.3';
+          var RPC_URL='https://eth.llamarpc.com';
+          var ifrProvider=null;
+          var ifrAddress='';
+          function setIfrStatus(message){
+            var status=document.getElementById('ifrDiscountStatus');
+            if(status)status.textContent=message;
+          }
+          function injectedProviders(){
+            var list=[];
+            if(window.ethereum&&Array.isArray(window.ethereum.providers))list=list.concat(window.ethereum.providers);
+            if(window.ethereum)list.push(window.ethereum);
+            if(window.phantom&&window.phantom.ethereum)list.push(window.phantom.ethereum);
+            return list.filter(function(provider,index,all){return provider&&provider.request&&all.indexOf(provider)===index});
+          }
+          function preferredProvider(){
+            var providers=injectedProviders();
+            if(!providers.length)return null;
+            return providers.find(function(provider){return provider.isMetaMask})||
+              providers.find(function(provider){return provider.isPhantom})||
+              providers.find(function(provider){return provider.isCoinbaseWallet})||
+              providers[0];
+          }
+          async function switchMainnet(provider){
+            try{await provider.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x1'}]})}catch(e){}
+          }
+          async function connectInjectedWallet(){
+            var provider=preferredProvider();
+            if(!provider)return null;
+            setIfrStatus('Connecting browser wallet...');
+            var accounts=await provider.request({method:'eth_requestAccounts'});
+            if(!accounts||!accounts[0])throw new Error('No wallet account returned.');
+            await switchMainnet(provider);
+            ifrProvider=provider;
+            ifrAddress=accounts[0];
+            return ifrAddress;
+          }
+          async function connectWalletConnect(){
+            setIfrStatus('Opening WalletConnect...');
+            var mod=await import(WC_ESM_URL);
+            var EthereumProvider=mod.EthereumProvider||mod.default;
+            if(!EthereumProvider)throw new Error('WalletConnect provider unavailable.');
+            var provider=await EthereumProvider.init({
+              projectId:WC_PROJECT_ID,
+              optionalChains:[1],
+              showQrModal:true,
+              rpcMap:{1:RPC_URL},
+              methods:['eth_requestAccounts','personal_sign','wallet_switchEthereumChain'],
+              events:['accountsChanged','chainChanged','disconnect'],
+              metadata:{name:'SecureCall IFR Discount',description:'Read-only IFR holder discount verification for SecureCall checkout.',url:location.origin,icons:[location.origin+'/favicon.ico']},
+              qrModalOptions:{themeMode:'dark'}
+            });
+            var accounts=await provider.enable();
+            if(!accounts||!accounts[0])throw new Error('No wallet account returned.');
+            await switchMainnet(provider);
+            ifrProvider=provider;
+            ifrAddress=accounts[0];
+            return ifrAddress;
+          }
+			    async function connectIfrWallet(){
+            if(ifrProvider&&ifrAddress)return ifrAddress;
+            var walletAddress;
+            try{walletAddress=await connectInjectedWallet()}catch(e){
+              if(e&&e.code===4001)throw e;
+              console.warn('Injected wallet connect failed, falling back to WalletConnect',e);
+            }
+            if(!walletAddress)walletAddress=await connectWalletConnect();
+		        var input=document.getElementById('ifrWalletAddress');
+		        if(input)input.value=walletAddress;
+            setIfrStatus('Wallet connected: '+walletAddress.slice(0,6)+'...'+walletAddress.slice(-4)+'. Choose Pro or Premium checkout.');
+		        return walletAddress;
 		      }
 		      async function signIfrDiscount(tier){
 		        var walletAddress=await connectIfrWallet();
@@ -621,8 +677,11 @@
 		        var challenge=await challengeResponse.json().catch(function(){return{}});
 		        if(!challengeResponse.ok||!challenge.message||!challenge.nonce)throw new Error(challenge.error||'Wallet challenge unavailable');
 		        var status=document.getElementById('ifrDiscountStatus');
-		        if(status)status.textContent='Sign the MetaMask message to prove wallet ownership...';
-		        var signature=await window.ethereum.request({method:'personal_sign',params:[challenge.message,walletAddress]});
+		        if(status)status.textContent='Sign the wallet message to prove ownership...';
+            if(!ifrProvider)throw new Error('Wallet is not connected.');
+		        var signature;
+            try{signature=await ifrProvider.request({method:'personal_sign',params:[challenge.message,walletAddress]})}
+            catch(e){signature=await ifrProvider.request({method:'personal_sign',params:[walletAddress,challenge.message]})}
 		        return {walletAddress:walletAddress,walletNonce:challenge.nonce,walletSignature:signature};
 		      }
 	      async function startCheckout(button){
