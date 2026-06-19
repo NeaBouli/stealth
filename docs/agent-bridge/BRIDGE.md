@@ -2501,3 +2501,16 @@ Verification:
 - CDN endpoint `https://esm.sh/@walletconnect/ethereum-provider@2.17.3` returned HTTP 200 with CORS enabled.
 - Local Chrome/Playwright test on `http://127.0.0.1:8765/ifr.html` clicked `Connect Wallet` and reached `Opening WalletConnect...`.
 - The only local browser error was missing `favicon.ico`, unrelated to wallet connection.
+
+## 2026-06-19 14:58 PDT — CODEX TERMINAL FIX
+
+User report:
+- The `Wallet signature is required before Stripe opens. No wallet state is stored in the Android app.` status text in the IFR discount box was hard to read.
+
+Fix:
+- SecureCall `website/index.html`: `#ifrDiscountStatus` now uses `color:#f8fafc` and `font-weight:700`.
+- Same contrast fix was mirrored on SecureChat and Chameleon sales pages in their repos.
+
+Verification:
+- `rg` confirmed the active status text style uses `#f8fafc` and no stale `#d8e2ee` remains for the IFR discount status on SecureCall/SecureChat/Chameleon.
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
