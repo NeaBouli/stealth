@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureCall — Download APK</title>
-    <meta name="description" content="Download current SecureCall Pro and Premium APKs directly from the verified GitHub release.">
+    <meta name="description" content="Download current SecureCall Free, Pro, and Premium APKs directly from the verified GitHub release.">
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#0a0a12">
     <link rel="canonical" href="https://stealthx.tech/download">
@@ -18,6 +18,7 @@
             --accent-dim: rgba(0,230,118,0.12);
             --text: #e8e8f0;
             --text-muted: #8888a0;
+            --free: #00e676;
             --pro: #4fc3f7;
             --premium: #b39ddb;
         }
@@ -91,6 +92,7 @@
             font-size: 18px;
             font-weight: 700;
         }
+        .tier-label.free { color: var(--free); }
         .tier-label.pro { color: var(--pro); }
         .tier-label.premium { color: var(--premium); }
         .tier-tag {
@@ -100,6 +102,7 @@
             border-radius: 4px;
             letter-spacing: 0.5px;
         }
+        .tier-tag.free { background: rgba(0,230,118,0.15); color: var(--free); }
         .tier-tag.pro { background: rgba(79,195,247,0.15); color: var(--pro); }
         .tier-tag.premium { background: rgba(179,157,219,0.15); color: var(--premium); }
         .apk-grid {
@@ -188,8 +191,8 @@
 <header>
     <a class="logo" href="/">← stealthx.tech</a>
     <h1>SecureCall APK Downloads</h1>
-    <p class="subtitle">Direct download for Pro and Premium from the verified GitHub release.</p>
-    <span class="version-badge">v1.0.40 — vC69 Latest</span>
+    <p class="subtitle">Direct download for Free, Pro, and Premium from the verified GitHub release.</p>
+    <span class="version-badge">v1.0.40 — vC72 Latest</span>
 </header>
 
 <div class="container">
@@ -197,6 +200,32 @@
         <strong>&#9888; Enable Unknown Sources</strong>
         Before installing: Settings → Security → Install unknown apps → allow your browser or file manager.
         This is required for all sideloaded APKs on Android.
+    </div>
+
+    <!-- FREE -->
+    <div class="tier-section">
+        <div class="tier-header">
+            <span class="tier-label free">Free</span>
+            <span class="tier-tag free">AD-SUPPORTED</span>
+        </div>
+        <div class="apk-grid">
+            <a class="apk-card"
+               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC72/app-free-arm64-v8a-release.apk">
+                <span class="download-icon">&#8681;</span>
+                <span class="arch">arm64-v8a</span>
+                <span class="arch-sub">64-bit ARM</span>
+                <span class="recommended">&#10003; Recommended (most phones)</span>
+                <span class="filesize">~21 MB</span>
+            </a>
+            <a class="apk-card"
+               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC72/app-free-armeabi-v7a-release.apk">
+                <span class="download-icon">&#8681;</span>
+                <span class="arch">armeabi-v7a</span>
+                <span class="arch-sub">32-bit ARM</span>
+                <span class="arch-sub">Older devices (pre-2016)</span>
+                <span class="filesize">~16 MB</span>
+            </a>
+        </div>
     </div>
 
     <!-- PREMIUM -->
@@ -207,7 +236,7 @@
         </div>
         <div class="apk-grid">
             <a class="apk-card"
-               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC69/app-premium-arm64-v8a-release.apk">
+               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC72/app-premium-arm64-v8a-release.apk">
                 <span class="download-icon">&#8681;</span>
                 <span class="arch">arm64-v8a</span>
                 <span class="arch-sub">64-bit ARM</span>
@@ -215,7 +244,7 @@
                 <span class="filesize">~19 MB</span>
             </a>
             <a class="apk-card"
-               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC69/app-premium-armeabi-v7a-release.apk">
+               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC72/app-premium-armeabi-v7a-release.apk">
                 <span class="download-icon">&#8681;</span>
                 <span class="arch">armeabi-v7a</span>
                 <span class="arch-sub">32-bit ARM</span>
@@ -233,7 +262,7 @@
         </div>
         <div class="apk-grid">
             <a class="apk-card"
-               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC69/app-pro-arm64-v8a-release.apk">
+               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC72/app-pro-arm64-v8a-release.apk">
                 <span class="download-icon">&#8681;</span>
                 <span class="arch">arm64-v8a</span>
                 <span class="arch-sub">64-bit ARM</span>
@@ -241,7 +270,7 @@
                 <span class="filesize">~19 MB</span>
             </a>
             <a class="apk-card"
-               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC69/app-pro-armeabi-v7a-release.apk">
+               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC72/app-pro-armeabi-v7a-release.apk">
                 <span class="download-icon">&#8681;</span>
                 <span class="arch">armeabi-v7a</span>
                 <span class="arch-sub">32-bit ARM</span>
@@ -266,7 +295,7 @@
             </div>
             <div class="faq-item">
                 <dt>How do I verify the APK signature?</dt>
-                <dd>All builds are signed with the SecureCall release keystore. Check the <a href="https://github.com/NeaBouli/stealth/releases/tag/v1.0.40-vC69" target="_blank" rel="noopener">GitHub release</a> for SHA256 checksums.</dd>
+                <dd>All builds are signed with the SecureCall release keystore. Check the <a href="https://github.com/NeaBouli/stealth/releases/tag/v1.0.40-vC72" target="_blank" rel="noopener">GitHub release</a> for SHA256 checksums.</dd>
             </div>
             <div class="faq-item">
                 <dt>Something not working?</dt>

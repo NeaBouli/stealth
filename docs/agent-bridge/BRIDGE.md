@@ -2531,3 +2531,39 @@ Verification:
 - `./gradlew --no-daemon --max-workers=1 :app:compileFreeReleaseKotlin :app:compileFreeReleaseJavaWithJavac :app:mergeFreeReleaseGeneratedProguardFiles` succeeded.
 - A full `:app:assembleFreeRelease` run reached `minifyFreeReleaseWithR8`, then the PTY did not return a final status while no Gradle/Java/R8 process was visible; not counted as a completed full assemble.
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
+## 2026-06-20 02:17 PDT — CODEX TERMINAL RELEASE/STATUS
+
+User resumed release QA after device wait.
+
+Builds:
+- SecureCall Free v1.0.40 vC72:
+  - `:app:assembleFreeRelease :app:bundleFreeRelease` succeeded with `lintVital` excluded after aggregate `assembleRelease` hung in the local PTY.
+- SecureCall Pro/Premium are internal-only variants and require `-Pinternal`; both were built explicitly:
+  - `-Pinternal :app:assembleProRelease :app:bundleProRelease` succeeded.
+  - `-Pinternal :app:assemblePremiumRelease :app:bundlePremiumRelease` succeeded after a retry; first retry hit an AAPT2 daemon link failure, second retry completed.
+- Desktop artifacts refreshed under `/Users/gio/Desktop/StealthX-Release-2026-06-20`.
+- Latest AAB copied to `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+
+GitHub release / downloads:
+- Created `https://github.com/NeaBouli/stealth/releases/tag/v1.0.40-vC72`.
+- Uploaded 13 assets: Free/Pro/Premium arm64, armeabi-v7a, x86_64 APKs, Free/Pro/Premium AABs, and `SHA256SUMS.txt`.
+- `website/download.html` updated from vC69 to vC72 and now lists Free, Pro, and Premium APK downloads.
+- `website/index.html` direct-download badge now says `APK builds (v1.0.40 vC72)`.
+- Verified representative GitHub asset URLs returned HTTP 200.
+
+Device QA:
+- Connected devices at test time: S7 `ce10160adc00152604`, Tab S4 `ce12182c68644439037e`.
+- S10 was not connected; no local Android emulator/AVD was available.
+- Installed and smoke-tested on S7 and Tab S4:
+  - `com.securecall.app.free` vC72001 / `1.0.40-free`
+  - `com.securecall.app.pro` vC72001 / `1.0.40-pro`
+  - `com.securecall.app.premium` vC72001 / `1.0.40-premium`
+- Final package-restricted 100-event Monkey smoke passed on both devices for all three SecureCall packages.
+- Earlier one S7 Premium 50-event Monkey run reported a crash once; rerun with the same seed completed cleanly, and a separate 200-event Premium run passed. Final 100-event run also passed.
+- `com.neabouli.woizz` was not touched.
+
+Open:
+- S10 physical smoke remains pending until S10 is connected.
+- Emulator smoke remains pending until an AVD exists on the machine.
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
