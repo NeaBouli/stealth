@@ -7,6 +7,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.securecall.app.ui.EdgeToEdgeHelper
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 
@@ -18,6 +19,7 @@ class QrCodeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        EdgeToEdgeHelper.enable(this)
         com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this)
 
         val inviteLink = intent.getStringExtra("invite_link") ?: ""
@@ -79,6 +81,7 @@ class QrCodeActivity : AppCompatActivity() {
         })
 
         setContentView(layout)
+        EdgeToEdgeHelper.applySystemBarPadding(layout)
     }
 
     private fun generateQrCode(text: String, size: Int): Bitmap {

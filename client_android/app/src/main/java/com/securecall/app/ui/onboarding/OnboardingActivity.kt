@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.securecall.app.MainActivity
 import com.securecall.app.R
+import com.securecall.app.ui.EdgeToEdgeHelper
 
 class OnboardingActivity : AppCompatActivity() {
 
@@ -21,8 +22,10 @@ class OnboardingActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        EdgeToEdgeHelper.enable(this)
         com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this)
         setContentView(R.layout.activity_onboarding)
+        EdgeToEdgeHelper.applySystemBarPaddingToContent(this)
 
         val viewPager = findViewById<ViewPager2>(R.id.viewPager)
         val btnSkip = findViewById<Button>(R.id.btnSkip)

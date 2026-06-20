@@ -24,7 +24,7 @@ android {
         applicationId "com.securecall.app"
         minSdkVersion 24
         targetSdkVersion 35
-        versionCode 72
+        versionCode 73
         versionName "1.0.40"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -216,6 +216,7 @@ dependencies {
     implementation 'io.github.webrtc-sdk:android:125.6422.07'
 
     implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.activity:activity:1.9.3'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     // Material Design 3

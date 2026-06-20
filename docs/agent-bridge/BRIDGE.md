@@ -2603,3 +2603,37 @@ Verification:
   - `TierManager.setActivatedTier(...)` applies an `ActivatedFeatureProvider` for Pro/Premium unlocks.
   - Settings contains activation code entry and submit flow.
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
+## 2026-06-20 14:44 PDT — CODEX TERMINAL FIX/RELEASE
+
+User reported Google Play rejected `/Users/gio/Desktop/SecureCall-LATEST.aab` because generated versionCode `72002` had already been used.
+
+Fix:
+- Bumped SecureCall `versionCode` from `72` to `73`.
+- Added explicit AndroidX Activity dependency for Java `EdgeToEdge.enable(...)`.
+- Added `EdgeToEdgeHelper` for View-based screens.
+- Enabled Android 15 edge-to-edge compatibility in SecureCall:
+  - `MainActivity`
+  - `SettingsActivity`
+  - `CallActivity`
+  - `IncomingCallActivity`
+  - `OnboardingActivity`
+  - `QrCodeActivity`
+  - `EmergencyBroadcastActivity`
+- Removed legacy `fitsSystemWindows` usage from `activity_main.xml` and replaced it with explicit top/bottom inset handling.
+
+Build:
+- `./gradlew --no-daemon --no-watch-fs --max-workers=1 :app:bundleFreeRelease` succeeded.
+- Refreshed `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+- Copied archival artifact:
+  - `/Users/gio/Desktop/StealthX-Release-2026-06-20/SecureCall-Free-v1.0.40-vC73.aab`
+
+Verification:
+- New AAB package: `com.securecall.app.free`
+- New AAB versionCode: `73009`
+- New AAB versionName: `1.0.40-free`
+- Size: 37 MB
+- SHA256: `7a0ce28d827a826389e9045a78d9bd97e79ddaccfc5c2c78caf252a7ef18e0e0`
+- `SHA256SUMS.txt` in the desktop release folder was refreshed.
+- Note: SecureChat and Chameleon still need their own Android 15 edge-to-edge pass before their next Google Play uploads.
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.

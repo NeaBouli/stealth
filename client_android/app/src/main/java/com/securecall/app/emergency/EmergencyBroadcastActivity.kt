@@ -10,6 +10,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.securecall.app.R
+import com.securecall.app.ui.EdgeToEdgeHelper
 
 /**
  * Full-screen emergency alert overlay.
@@ -22,6 +23,7 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        EdgeToEdgeHelper.enable(this)
 
         // Keep screen on
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -131,6 +133,7 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
 
         scrollView.addView(layout)
         setContentView(scrollView)
+        EdgeToEdgeHelper.applySystemBarPadding(scrollView)
     }
 
     override fun onBackPressed() {

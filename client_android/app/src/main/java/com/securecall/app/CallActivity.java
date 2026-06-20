@@ -31,6 +31,7 @@ import com.securecall.app.data.CallHistoryRepository;
 import com.securecall.app.data.CallRecord;
 import com.securecall.app.data.CallType;
 import com.securecall.app.security.SecureCallMonitor;
+import com.securecall.app.ui.EdgeToEdgeHelper;
 
 public class CallActivity extends AppCompatActivity {
 
@@ -92,6 +93,7 @@ public class CallActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdgeHelper.enable(this);
 
         // F-009 FIX — Show the call UI over the lock screen so the user can interact
         // (mute/speaker/hangup) without having to unlock the device first.
@@ -128,6 +130,7 @@ public class CallActivity extends AppCompatActivity {
         com.securecall.app.ads.AdMobManager.INSTANCE.pauseForCall();
 
         setContentView(R.layout.activity_call);
+        EdgeToEdgeHelper.applySystemBarPaddingToContent(this);
 
         // Lock rotation — nosensor ignores accelerometer completely
         setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);

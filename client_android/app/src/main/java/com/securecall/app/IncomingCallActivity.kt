@@ -12,6 +12,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.securecall.app.notifications.IncomingCallNotifications
+import com.securecall.app.ui.EdgeToEdgeHelper
 
 class IncomingCallActivity : AppCompatActivity() {
 
@@ -71,6 +72,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        EdgeToEdgeHelper.enable(this)
 
         // FLAG_SECURE: prevent screenshots of incoming call screen
         com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this)
@@ -110,6 +112,7 @@ class IncomingCallActivity : AppCompatActivity() {
         }
 
         setContentView(R.layout.activity_incoming_call)
+        EdgeToEdgeHelper.applySystemBarPaddingToContent(this)
         activeInstance = this
         activeSessionId = sessionId
 
@@ -178,9 +181,9 @@ class IncomingCallActivity : AppCompatActivity() {
         }
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        val newSessionId = intent?.getStringExtra("sessionId") ?: ""
+        val newSessionId = intent.getStringExtra("sessionId") ?: ""
         if (accepted || isAcceptedSession(newSessionId)) {
             Log.d(TAG, "onNewIntent after accept for session=$newSessionId — finishing stale incoming UI")
             finish()

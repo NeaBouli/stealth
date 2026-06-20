@@ -34,6 +34,7 @@ import com.securecall.app.fcm.FcmTokenManager;
 import com.securecall.app.ui.CallsFragment;
 import com.securecall.app.ui.ContactsFragment;
 import com.securecall.app.ui.DialerFragment;
+import com.securecall.app.ui.EdgeToEdgeHelper;
 import com.securecall.app.ui.SettingsFragment;
 import com.securecall.app.ui.onboarding.OnboardingActivity;
 
@@ -55,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
         // Splash screen (must be before super.onCreate)
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        EdgeToEdgeHelper.enable(this);
 
         // Initialize flavor-specific FeatureProvider
         AppInit.INSTANCE.init(this);
@@ -116,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_main);
+        EdgeToEdgeHelper.applyTopSystemBarPadding(findViewById(R.id.appBarLayout));
 
         audioCapture = new AudioCapturePlaceholder();
 
@@ -140,12 +143,25 @@ public class MainActivity extends AppCompatActivity {
 
         // Setup bottom navigation with system bar insets (TB-005: Samsung navbar overlap fix)
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        final int bottomNavInitialLeft = bottomNav.getPaddingLeft();
+        final int bottomNavInitialTop = bottomNav.getPaddingTop();
+        final int bottomNavInitialRight = bottomNav.getPaddingRight();
+        final int bottomNavInitialBottom = bottomNav.getPaddingBottom();
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
-            int navBarHeight = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars()).bottom;
-            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), navBarHeight);
+            androidx.core.graphics.Insets bars = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.navigationBars()
+                            | androidx.core.view.WindowInsetsCompat.Type.displayCutout()
+            );
+            v.setPadding(
+                    bottomNavInitialLeft + bars.left,
+                    bottomNavInitialTop,
+                    bottomNavInitialRight + bars.right,
+                    bottomNavInitialBottom + bars.bottom
+            );
             updateContentBottomInset();
             return insets;
         });
+        androidx.core.view.ViewCompat.requestApplyInsets(bottomNav);
         android.widget.FrameLayout adContainer = findViewById(R.id.adBannerContainer);
         View navHost = findViewById(R.id.nav_host_fragment);
         View.OnLayoutChangeListener bottomInsetUpdater = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
