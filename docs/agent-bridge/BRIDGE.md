@@ -2567,3 +2567,39 @@ Open:
 - S10 physical smoke remains pending until S10 is connected.
 - Emulator smoke remains pending until an AVD exists on the machine.
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
+## 2026-06-20 14:07 PDT — CODEX TERMINAL DECISION/FIX
+
+User clarified the distribution model:
+- Customers should not choose between Free/Pro/Premium APKs.
+- There should be one public app/APK/AAB per product; paid plans unlock inside the app with activation/subscription state.
+
+Decision:
+- SecureCall public distribution uses the Free/Public package only.
+- Pro/Premium APKs and AABs can remain internal/testing artifacts, but they should not be offered to customers on the download page.
+- Google Play upload target remains `/Users/gio/Desktop/SecureCall-LATEST.aab`, which is the public Free bundle.
+
+Fix:
+- `client_android/app/build.gradle` now enables a universal APK output for direct website downloads while keeping ABI splits for technical/internal artifacts.
+- Universal APK output uses APK versionCode `base*1000+9` so it can update over any existing ABI split APK from the same base release.
+- `website/download.html` now offers only one customer-facing SecureCall Public APK:
+  - `SecureCall-LATEST.apk` from GitHub Release `v1.0.40-vC72`.
+- Removed customer-facing Pro/Premium APK sections from the download page.
+- Added clear copy: install once, unlock Pro or Premium in Settings with an activation code.
+
+Verification:
+- Built `:app:assembleFreeRelease` successfully after enabling `universalApk true`.
+- Produced `/Users/gio/Desktop/SecureCall-LATEST.apk`:
+  - APK: `com.securecall.app.free`
+  - versionCode: `72009`
+  - versionName: `1.0.40-free`
+  - size: 63 MB
+  - SHA256: `3f0e73a2ba0044a2335cf8189625f1742ec262b309e555d31061c83d800dbf82`
+- Uploaded `SecureCall-LATEST.apk` and refreshed `SHA256SUMS.txt` on GitHub Release `v1.0.40-vC72`.
+- Verified `https://github.com/NeaBouli/stealth/releases/download/v1.0.40-vC72/SecureCall-LATEST.apk` returns HTTP 200 after redirect.
+- Verified no direct SecureCall website links remain to ABI split, Pro, or Premium APK assets.
+- Confirmed SecureCall Android has runtime tier support:
+  - `TierManager.getCurrentTier(...)` uses build flavor, subscription tier, and `activated_tier`, taking the highest valid tier.
+  - `TierManager.setActivatedTier(...)` applies an `ActivatedFeatureProvider` for Pro/Premium unlocks.
+  - Settings contains activation code entry and submit flow.
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.

@@ -136,13 +136,13 @@ android {
         }
     }
 
-    // ABI split — separate APK per architecture
+    // ABI splits for store/internal artifacts plus one universal APK for direct website downloads.
     splits {
         abi {
             enable true
             reset()
             include 'arm64-v8a', 'armeabi-v7a', 'x86_64'
-            universalApk false
+            universalApk true
         }
     }
 
@@ -288,8 +288,9 @@ android {
     }
 }
 
-// ABI-specific versionCodes for split APKs
-// arm64-v8a: base*1000+1, armeabi-v7a: base*1000+2, x86_64: base*1000+3
+// ABI-specific versionCodes for split APKs and a higher universal APK code.
+// arm64-v8a: base*1000+1, armeabi-v7a: base*1000+2, x86_64: base*1000+3,
+// universal: base*1000+9 so direct-download users can update from any split APK.
 android.applicationVariants.all { variant ->
     variant.outputs.each { output ->
         def abi = output.getFilter(com.android.build.OutputFile.ABI)
@@ -297,6 +298,7 @@ android.applicationVariants.all { variant ->
         if (abi == "arm64-v8a") abiCode = 1
         else if (abi == "armeabi-v7a") abiCode = 2
         else if (abi == "x86_64") abiCode = 3
+        else if (abi == null) abiCode = 9
         if (abiCode > 0) {
             output.versionCodeOverride = variant.versionCode * 1000 + abiCode
         }
