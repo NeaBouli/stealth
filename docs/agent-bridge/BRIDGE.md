@@ -2514,3 +2514,20 @@ Fix:
 Verification:
 - `rg` confirmed the active status text style uses `#f8fafc` and no stale `#d8e2ee` remains for the IFR discount status on SecureCall/SecureChat/Chameleon.
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
+## 2026-06-20 00:09 PDT — CODEX TERMINAL FIX/STATUS
+
+User clarification:
+- "Remove IFR/wallet" means the Android apps must be free of the mechanism in code too, not only hide the UI.
+
+SecureCall Android cleanup:
+- Removed the last app-side WalletConnect build wiring from `client_android/app/proguard-rules.pro`:
+  - `com.walletconnect.android.internal.common.di.PushModuleKt`
+  - `com.walletconnect.android.push.**`
+
+Verification:
+- Hard Android scan over `client_android` excluding build/.gradle output has no code hits for IFR, WalletConnect, MetaMask, Uniswap, Web3, Ethereum, SIWE, wallet callback schemes, wallet signatures, IFR discount identifiers, or old hold/Connect Wallet phrases.
+- Cross-repo Android scans for SecureChat and Chameleon were also clean and are documented in their bridges.
+- `./gradlew --no-daemon --max-workers=1 :app:compileFreeReleaseKotlin :app:compileFreeReleaseJavaWithJavac :app:mergeFreeReleaseGeneratedProguardFiles` succeeded.
+- A full `:app:assembleFreeRelease` run reached `minifyFreeReleaseWithR8`, then the PTY did not return a final status while no Gradle/Java/R8 process was visible; not counted as a completed full assemble.
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.

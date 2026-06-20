@@ -13,10 +13,6 @@
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 
-# ---- WalletConnect push (not used, internal WC refs) ----
--dontwarn com.walletconnect.android.internal.common.di.PushModuleKt
--dontwarn com.walletconnect.android.push.**
-
 # ---- JNI / Native Methods ----
 -keep class com.securecall.crypto.CoreCrypto {
     native <methods>;
