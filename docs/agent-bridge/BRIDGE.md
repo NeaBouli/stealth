@@ -2754,6 +2754,30 @@ Device parity:
 Open:
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
 
+## 2026-06-21 15:35 PDT - CODEX TERMINAL S10 ALL-TIERS INSTALLED
+
+User requested all three tiers of SecureCall, SecureChat, and Chameleon on S10.
+
+S10 (`RF8N313QMFL`) install verification:
+- SecureCall Free: `com.securecall.app.free` vC76001 / `1.0.40-free` / targetSdk 35
+- SecureCall Pro: `com.securecall.app.pro` vC76001 / `1.0.40-pro` / targetSdk 35
+- SecureCall Premium: `com.securecall.app.premium` vC76001 / `1.0.40-premium` / targetSdk 35
+- SecureChat Free: `securechat.app.free` vC5 / `0.1.4-alpha-free` / targetSdk 35
+- SecureChat Pro: `securechat.app.pro` vC5 / `0.1.4-alpha-pro` / targetSdk 35
+- SecureChat Elite: `securechat.app.elite` vC5 / `0.1.4-alpha-elite` / targetSdk 35
+- Chameleon Free: `chameleon24.app.free` vC6 / `0.1.5-alpha-free` / targetSdk 35
+- Chameleon Pro: `chameleon24.app.pro` vC6 / `0.1.5-alpha-pro` / targetSdk 35
+- Chameleon Elite: `chameleon24.app.elite` vC6 / `0.1.5-alpha-elite` / targetSdk 35
+
+Also updated public app packages on S10:
+- `securechat.app` vC5 / `0.1.4-alpha` / targetSdk 35
+- `chameleon24.app` vC6 / `0.1.5-alpha` / targetSdk 35
+
+Notes:
+- SecureChat and Chameleon now have test-only parallel tier release build types so all tiers can coexist on one physical test device.
+- Public app distribution remains a single package per app; paid access still unlocks by activation/subscription state.
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
 ## 2026-06-21 10:10 PDT - CODEX TERMINAL FIX/ARTIFACTS
 
 User asked whether the Settings "Background Service" switch is configured correctly for users who only want SecureCall connected while actively using it.
