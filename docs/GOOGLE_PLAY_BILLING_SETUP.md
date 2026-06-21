@@ -87,7 +87,7 @@ Response:
 
 ## Important Notes
 
-- Billing library version: 6.2.1 (`billing-ktx`)
+- Billing library version: 8.2.1 (`billing`)
 - Only the FREE flavor includes billing (Pro/Premium are pre-activated)
 - Activation codes are stored server-side in the giftCodes map
 - Codes are redeemed via WebSocket `ACTIVATE_CODE` message

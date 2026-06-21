@@ -85,7 +85,8 @@ class BillingManager(
             .setProductList(productList)
             .build()
 
-        billingClient?.queryProductDetailsAsync(params) { result, detailsList ->
+        billingClient?.queryProductDetailsAsync(params) { result, queryResult ->
+            val detailsList = queryResult.productDetailsList
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                 productDetailsList = productDetailsList + detailsList
                 Log.d(TAG, "Subscription products loaded: ${detailsList.size}")
@@ -108,7 +109,8 @@ class BillingManager(
             .setProductList(productList)
             .build()
 
-        billingClient?.queryProductDetailsAsync(params) { result, detailsList ->
+        billingClient?.queryProductDetailsAsync(params) { result, queryResult ->
+            val detailsList = queryResult.productDetailsList
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                 productDetailsList = productDetailsList + detailsList
                 Log.d(TAG, "In-app products loaded: ${detailsList.size}")

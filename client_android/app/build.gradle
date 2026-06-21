@@ -24,8 +24,8 @@ android {
         applicationId "com.securecall.app"
         minSdkVersion 24
         targetSdkVersion 35
-        versionCode 76
-        versionName "1.0.40"
+        versionCode 77
+        versionName "1.0.41"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -236,8 +236,7 @@ dependencies {
     implementation 'com.wireguard.android:tunnel:1.0.20260102'
 
     // Google Play Billing (FREE flavor only)
-    freeImplementation 'com.android.billingclient:billing:7.1.1'
-    freeImplementation 'com.android.billingclient:billing-ktx:7.1.1'
+    freeImplementation 'com.android.billingclient:billing:8.2.1'
 
     // AdMob ads (FREE flavor only)
     freeImplementation 'com.google.android.gms:play-services-ads:23.6.0'
