@@ -2721,6 +2721,39 @@ Device installs:
 Open:
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
 
+## 2026-06-21 11:05 PDT - CODEX TERMINAL DEVICE UPDATE
+
+S10 (`RF8N313QMFL`) was reconnected.
+
+Installed and verified:
+- `com.securecall.app.free`
+  - `versionCode=76001`
+  - `versionName=1.0.40-free`
+  - `targetSdk=35`
+- `com.securecall.app.pro`
+  - `versionCode=76001`
+  - `versionName=1.0.40-pro`
+  - `targetSdk=35`
+- `com.securecall.app.premium`
+  - `versionCode=76001`
+  - `versionName=1.0.40-premium`
+  - `targetSdk=35`
+- `securechat.app`
+  - `versionCode=4`
+  - `versionName=0.1.3-alpha`
+  - `targetSdk=35`
+- `chameleon24.app`
+  - `versionCode=5`
+  - `versionName=0.1.4-alpha`
+  - `targetSdk=35`
+
+Device parity:
+- S7, Tab S4, and S10 now all have the latest SecureCall Free/Pro/Premium device builds installed.
+- S7, Tab S4, and S10 also have the latest SecureChat and Chameleon release APKs installed.
+
+Open:
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
 ## 2026-06-21 10:10 PDT - CODEX TERMINAL FIX/ARTIFACTS
 
 User asked whether the Settings "Background Service" switch is configured correctly for users who only want SecureCall connected while actively using it.
