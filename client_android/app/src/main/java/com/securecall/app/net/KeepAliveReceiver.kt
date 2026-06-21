@@ -23,6 +23,11 @@ import androidx.core.content.ContextCompat
 class KeepAliveReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        if (!WebSocketService.isBackgroundServiceEnabled(context)) {
+            Log.d("KeepAliveReceiver", "Background service disabled; cancelling keep-alive")
+            cancel(context)
+            return
+        }
         Log.d("KeepAliveReceiver", "Alarm fired; ensuring WebSocketService is running")
         try {
             val serviceIntent = Intent(context, WebSocketService::class.java)
@@ -38,6 +43,11 @@ class KeepAliveReceiver : BroadcastReceiver() {
 
         fun scheduleNext(context: Context) {
             try {
+                if (!WebSocketService.isBackgroundServiceEnabled(context)) {
+                    Log.d("KeepAliveReceiver", "Background service disabled; not scheduling keep-alive")
+                    cancel(context)
+                    return
+                }
                 val pi = buildPendingIntent(context)
                 val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                 val triggerAt = SystemClock.elapsedRealtime() + INTERVAL_MS

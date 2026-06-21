@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.Build
@@ -210,11 +211,24 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     companion object {
+        private const val PREF_BACKGROUND_SERVICE = "pref_background_service"
+
         @Volatile
         var instance: WebSocketService? = null
         private const val CHANNEL_ID = "securecall_foreground"
         private const val CHANNEL_INCOMING = "securecall_incoming_call_urgent"
         private const val NOTIFICATION_ID = 1001
+
+        @JvmStatic
+        fun isBackgroundServiceEnabled(context: Context): Boolean {
+            return PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(PREF_BACKGROUND_SERVICE, true)
+        }
+
+        @JvmStatic
+        fun hasActiveCall(): Boolean {
+            return instance?._currentSessionId != null
+        }
     }
 
     // BUG-009/024: Network change monitor for auto-reconnect
@@ -232,16 +246,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         // On slow devices (e.g. Galaxy S7), any delay here causes an ANR.
         ensureForegroundImmediate()
         createIncomingCallChannel()
-        // BUG-027: Acquire partial wake lock to keep heartbeats alive on Samsung devices
-        acquireCpuWakeLock()
-        // Apply saved network preference before connecting (binds process to preferred network)
-        NetworkManager.bindToPreferredNetwork(this)
-        client = HeartbeatClient(wsUrl, this)
-        client?.connect()
-        // BUG-009/024: Register network change callback for instant reconnect
-        registerNetworkChangeCallback()
-        // BUG-027: Schedule self-restart alarm in case Samsung kills the service
-        scheduleServiceRestart()
+        startSignaling()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -255,6 +260,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
         Log.d("WS_SERVICE", "App swiped away — scheduling restart")
+        if (!isBackgroundServiceEnabled(this)) {
+            Log.d("WS_SERVICE", "Background service disabled; stopping after task removal")
+            stopSignaling()
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
         // BUG-027: Samsung may kill service after swipe — schedule immediate restart
         try {
             val restartIntent = Intent(this, WebSocketService::class.java)
@@ -310,9 +322,43 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         }
     }
 
+    private fun startSignaling(forceKeepAlive: Boolean = false) {
+        acquireCpuWakeLock()
+        NetworkManager.bindToPreferredNetwork(this)
+        if (client == null) {
+            client = HeartbeatClient(wsUrl, this)
+            client?.connect()
+        } else if (!isConnected) {
+            client?.forceReconnect()
+        }
+        registerNetworkChangeCallback()
+        if (forceKeepAlive || isBackgroundServiceEnabled(this)) {
+            scheduleServiceRestart()
+        } else {
+            KeepAliveReceiver.cancel(this)
+            Log.d("WS_SERVICE", "Background service disabled; signaling active only for app session")
+        }
+    }
+
+    private fun stopSignaling() {
+        isConnected = false
+        isRegistered = false
+        statusCallbackOffline?.invoke()
+        KeepAliveReceiver.cancel(this)
+        unregisterNetworkChangeCallback()
+        try { client?.close() } catch (_: Exception) {}
+        client = null
+        releaseCpuWakeLock()
+    }
+
     /** NEA-180: Schedule Doze-tolerant keep-alive via KeepAliveReceiver.
      *  Also keeps the legacy setInexactRepeating as a belt-and-suspenders fallback. */
     private fun scheduleServiceRestart() {
+        if (!isBackgroundServiceEnabled(this)) {
+            KeepAliveReceiver.cancel(this)
+            Log.d("WS_SERVICE", "Background service disabled; keep-alive alarms not scheduled")
+            return
+        }
         // Primary: Doze-tolerant alarm chain (NEA-180)
         KeepAliveReceiver.scheduleNext(this)
 
@@ -330,7 +376,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 15 * 60 * 1000,
                 pi
             )
-            Log.d("WS_SERVICE", "Keep-alive alarms scheduled (exact + inexact fallback)")
+            Log.d("WS_SERVICE", "Keep-alive alarms scheduled (idle-tolerant + inexact fallback)")
         } catch (e: Exception) {
             Log.w("WS_SERVICE", "Failed to schedule inexact fallback alarm: ${e.message}")
         }
@@ -1430,13 +1476,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.w("WS_SERVICE", "updateForegroundMode: enabled=$enabled")
         if (enabled) {
             startForegroundWithNotification()
+            startSignaling(forceKeepAlive = true)
         } else {
+            stopSignaling()
             stopForeground(STOP_FOREGROUND_REMOVE)
             foregroundStarted = false // Reset so startForeground() is called again when re-enabled
             // Samsung sometimes keeps the notification after stopForeground — force-cancel it
             val nm = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
             nm.cancel(NOTIFICATION_ID)
-            Log.w("WS_SERVICE", "stopForeground + cancel notification — background service disabled")
+            stopSelf()
+            Log.w("WS_SERVICE", "Foreground signaling stopped — background service disabled")
         }
     }
 

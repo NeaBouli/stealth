@@ -64,12 +64,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Background service toggle
         findPreference<SwitchPreferenceCompat>("pref_background_service")?.setOnPreferenceChangeListener { _, newValue ->
             val enabled = newValue as Boolean
+            androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
+                .edit()
+                .putBoolean("pref_background_service", enabled)
+                .apply()
             val ws = com.securecall.app.net.WebSocketService.instance
             android.util.Log.w("SettingsFragment", "Background service toggle: enabled=$enabled, ws=${if (ws != null) "OK" else "NULL"}")
             if (ws != null) {
                 ws.updateForegroundMode(enabled)
+            } else if (enabled) {
+                val serviceIntent = Intent(requireContext(), com.securecall.app.net.WebSocketService::class.java)
+                androidx.core.content.ContextCompat.startForegroundService(requireContext(), serviceIntent)
             } else {
-                android.util.Log.e("SettingsFragment", "WebSocketService.instance is NULL — cannot toggle foreground mode")
+                android.util.Log.d("SettingsFragment", "WebSocketService already stopped")
             }
             true
         }

@@ -16,6 +16,11 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
             intent.action == "android.intent.action.QUICKBOOT_POWERON" ||
             intent.action == "com.htc.intent.action.QUICKBOOT_POWERON") {
+            if (!WebSocketService.isBackgroundServiceEnabled(context)) {
+                Log.d("BootReceiver", "Background service disabled — skipping WebSocketService boot start")
+                KeepAliveReceiver.cancel(context)
+                return
+            }
             Log.d("BootReceiver", "Device booted — starting WebSocketService")
             try {
                 val serviceIntent = Intent(context, WebSocketService::class.java)
@@ -23,7 +28,7 @@ class BootReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.e("BootReceiver", "Failed to start service after boot", e)
             }
-            // NEA-180: Start Doze-safe keep-alive alarm chain after boot
+            // NEA-180: Start Doze-tolerant keep-alive alarm chain after boot
             KeepAliveReceiver.scheduleNext(context)
         }
     }

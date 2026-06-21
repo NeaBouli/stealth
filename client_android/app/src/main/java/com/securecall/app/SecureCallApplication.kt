@@ -1,24 +1,62 @@
 package com.securecall.app
 
+import android.app.Activity
 import android.app.Application
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
+import com.securecall.app.net.WebSocketService
 
 class SecureCallApplication : Application() {
+    private val backgroundStopHandler = Handler(Looper.getMainLooper())
+    private var startedActivityCount = 0
+
     override fun onCreate() {
         super.onCreate()
 
-        // CRITICAL: Start the foreground service FIRST — before any other work.
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityStarted(activity: Activity) {
+                startedActivityCount++
+                backgroundStopHandler.removeCallbacksAndMessages(null)
+            }
+
+            override fun onActivityStopped(activity: Activity) {
+                startedActivityCount = (startedActivityCount - 1).coerceAtLeast(0)
+                if (startedActivityCount == 0) {
+                    backgroundStopHandler.postDelayed({
+                        if (startedActivityCount == 0 &&
+                            !WebSocketService.isBackgroundServiceEnabled(this@SecureCallApplication) &&
+                            !WebSocketService.hasActiveCall()
+                        ) {
+                            android.util.Log.d("SecureCallApp", "Background service disabled; stopping WebSocketService after app background")
+                            stopService(android.content.Intent(this@SecureCallApplication, WebSocketService::class.java))
+                        }
+                    }, 15_000L)
+                }
+            }
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityResumed(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
+        })
+
+        // CRITICAL: Start the foreground service first when always-on mode is enabled.
         // On Android 8 (Galaxy S7), the 5-second startForeground() timeout starts
         // from this call. The service's onCreate() runs as soon as Application.onCreate()
-        // returns (before Activity.onCreate()), giving it the earliest chance to call
-        // startForeground(). If we delay this to MainActivity.onCreate(), the service
-        // has to wait for the entire Activity setup to complete first.
-        try {
-            val wsIntent = android.content.Intent(this, com.securecall.app.net.WebSocketService::class.java)
-            androidx.core.content.ContextCompat.startForegroundService(this, wsIntent)
-        } catch (e: Exception) {
-            android.util.Log.e("SecureCallApp", "Failed to start foreground service", e)
+        // returns, giving it the earliest chance to call startForeground().
+        if (WebSocketService.isBackgroundServiceEnabled(this)) {
+            try {
+                val wsIntent = android.content.Intent(this, WebSocketService::class.java)
+                androidx.core.content.ContextCompat.startForegroundService(this, wsIntent)
+            } catch (e: Exception) {
+                android.util.Log.e("SecureCallApp", "Failed to start foreground service", e)
+            }
+        } else {
+            android.util.Log.d("SecureCallApp", "Background service disabled; skipping startup WebSocketService")
         }
 
         // Restore dark mode preference before any activity renders (default: dark)
