@@ -220,7 +220,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // BUG-009/024: Network change monitor for auto-reconnect
     private var networkCallback: android.net.ConnectivityManager.NetworkCallback? = null
 
-    // BUG-027: Partial wake lock keeps CPU alive for heartbeats on Samsung A-series
+    // BUG-027: Partial wake lock keeps CPU alive for heartbeats on Samsung devices.
     private var cpuWakeLock: android.os.PowerManager.WakeLock? = null
 
     override fun onCreate() {
@@ -247,8 +247,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Ensure foreground notification is up — Android 8 ANR if not called within 5s of startForegroundService()
         startForegroundWithNotification()
-        // Refresh WakeLock on every onStartCommand (triggered by AlarmManager every 15 min).
-        // This ensures CPU stays alive even after the 30-min WakeLock expires.
+        // Ensure the foreground signaling service keeps the CPU alive while it is running.
         acquireCpuWakeLock()
         return START_STICKY
     }
@@ -284,8 +283,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         super.onDestroy()
     }
 
-    /** BUG-027: Partial wake lock keeps CPU alive for WebSocket heartbeats on aggressive OEMs.
-     *  Called in onCreate() and refreshed in onStartCommand() (AlarmManager triggers every 15 min). */
+    /** BUG-027: Partial wake lock keeps CPU alive for WebSocket heartbeats on aggressive OEMs. */
     private fun acquireCpuWakeLock() {
         try {
             if (cpuWakeLock == null) {
@@ -293,8 +291,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 cpuWakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "securecall:ws_heartbeat")
                 cpuWakeLock?.setReferenceCounted(false)
             }
-            cpuWakeLock?.acquire(30 * 60 * 1000L) // 30 min max — refreshed by AlarmManager every 15 min
-            Log.d("WS_SERVICE", "CPU wake lock acquired/refreshed for heartbeats (30min timeout)")
+            if (cpuWakeLock?.isHeld != true) {
+                cpuWakeLock?.acquire()
+                Log.d("WS_SERVICE", "CPU wake lock acquired for foreground signaling service")
+            } else {
+                Log.d("WS_SERVICE", "CPU wake lock already held for foreground signaling service")
+            }
         } catch (e: Exception) {
             Log.w("WS_SERVICE", "Failed to acquire wake lock: ${e.message}")
         }
@@ -308,10 +310,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         }
     }
 
-    /** NEA-180: Schedule Doze-safe keep-alive via KeepAliveReceiver (setExactAndAllowWhileIdle).
+    /** NEA-180: Schedule Doze-tolerant keep-alive via KeepAliveReceiver.
      *  Also keeps the legacy setInexactRepeating as a belt-and-suspenders fallback. */
     private fun scheduleServiceRestart() {
-        // Primary: Doze-safe exact alarm chain (NEA-180)
+        // Primary: Doze-tolerant alarm chain (NEA-180)
         KeepAliveReceiver.scheduleNext(this)
 
         // Legacy fallback: inexact repeating (fires in normal mode, may be stretched in deep Doze)

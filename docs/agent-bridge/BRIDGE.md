@@ -2671,3 +2671,39 @@ Device install reminder:
 
 Open:
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
+## 2026-06-21 09:20 PDT - CODEX TERMINAL FIX/ARTIFACTS
+
+User reported SecureCall disconnects when the phone sleeps.
+
+Root cause:
+- The previous sleep fix held a 30-minute `PARTIAL_WAKE_LOCK` and relied on periodic Doze alarms to refresh it.
+- On newer Android/Samsung devices, the refresh alarm path can be delayed or denied, so the foreground signaling service can lose CPU time after the device sleeps.
+
+Fix:
+- `WebSocketService` now holds the `PARTIAL_WAKE_LOCK` for the full foreground signaling service lifetime and releases it in `onDestroy()`.
+- `KeepAliveReceiver` is now a self-heal/restart path only, not a required wake-lock refresh path.
+- Replaced exact idle alarm scheduling with `setAndAllowWhileIdle(...)`/`set(...)`, avoiding an exact-alarm dependency.
+- Bumped SecureCall Android `versionCode` from `73` to `74`.
+
+Build verification:
+- `./gradlew -Pinternal --no-daemon --max-workers=1 assembleRelease` succeeded.
+- `./gradlew --no-daemon --max-workers=1 bundleFreeRelease` succeeded.
+
+Desktop AABs refreshed:
+- `/Users/gio/Desktop/SecureCall-LATEST.aab`
+  - SHA256 `29ad9dc6c7b861337ab5f1022fde2d670caf2d0031e534f0fa667f7e20dd4d41`
+- `/Users/gio/Desktop/SecureCall-Free-LATEST.aab`
+  - SHA256 `29ad9dc6c7b861337ab5f1022fde2d670caf2d0031e534f0fa667f7e20dd4d41`
+- `/Users/gio/Desktop/SecureCall-Pro-LATEST.aab`
+  - SHA256 `8dd7a14c9cd810b3a07c447d5cbb62a32bc57d961b6dd7148fdf48d6f03a3c84`
+- `/Users/gio/Desktop/SecureCall-Premium-LATEST.aab`
+  - SHA256 `66e3b2a626e7fe2f21617153346ad49ade9d5113889c7684cdcdc3f340e25307`
+
+Device installs:
+- S7 (`ce10160adc00152604`) updated with SecureCall Free/Pro/Premium and verified at `versionCode=74001`, `targetSdk=35`.
+- Tab S4 (`ce12182c68644439037e`) updated with SecureCall Free/Pro/Premium and verified at `versionCode=74001`, `targetSdk=35`.
+- S10 (`RF8N313QMFL`) is not connected; reinstall SecureCall Free/Pro/Premium v74 when reconnected.
+
+Open:
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
