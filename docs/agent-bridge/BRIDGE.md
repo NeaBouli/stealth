@@ -2672,6 +2672,55 @@ Device install reminder:
 Open:
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
 
+## 2026-06-21 10:45 PDT - CODEX TERMINAL SETTINGS AUDIT/FIX
+
+User requested a full Settings pass from top to bottom.
+
+Audit artifact:
+- `docs/SETTINGS_AUDIT_2026-06-21.md`
+
+Findings fixed:
+- Removed remaining app-side IFR references from:
+  - `SettingsFragment` upgrade title/summary/link
+  - Free `UpgradeActivity` sideload status
+  - `RuntimeFeatureProvider` comment
+  - `TierManager` comment
+- Added SecureCall Gradle task `verifyNoAppIfrWalletCode` and wired it into `preBuild`.
+- Fixed external Settings links so missing browser handlers show a toast instead of crashing.
+- Fixed `pref_licenses` XML selectability mismatch.
+- Fixed VPN toggle persistence: `vpn_enabled=true` is no longer saved before WireGuard config exists.
+- Fixed VPN clear behavior: clear now stops VPN, unchecks the toggle, and refreshes status.
+- Battery Optimization and VPN status now refresh on Settings resume.
+- Bumped SecureCall Android `versionCode` from `75` to `76`.
+
+Checks:
+- Settings XML keys were matched against `SettingsFragment`; only `pref_call_history` is intentionally automatic via DefaultSharedPreferences and is read by `CallActivity` / `IncomingCallActivity`.
+- About/legal/custom-id links returned HTTP 200.
+- Custom-ID transfer uses backend `/custom-id/activate`; backend treats existing ID + valid password as transfer.
+
+Build verification:
+- `./gradlew --no-daemon --max-workers=1 verifyNoAppIfrWalletCode` succeeded.
+- `./gradlew -Pinternal --no-daemon --max-workers=1 assembleRelease` succeeded.
+- `./gradlew --no-daemon --max-workers=1 bundleFreeRelease` succeeded.
+
+Desktop artifacts refreshed:
+- `/Users/gio/Desktop/SecureCall-LATEST.aab`
+  - SHA256 `14e4b4a9bf4a2c6f3ccc2ea1b1ecd30d864c111407de230235176e681a0e0aa8`
+- `/Users/gio/Desktop/SecureCall-Free-LATEST.aab`
+  - SHA256 `14e4b4a9bf4a2c6f3ccc2ea1b1ecd30d864c111407de230235176e681a0e0aa8`
+- `/Users/gio/Desktop/SecureCall-Pro-LATEST.apk`
+  - SHA256 `3566209c9a6f4603bfaa34e519a22bc2fa0bf7cbe5833c142b3bfb34aae4d94c`
+- `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`
+  - SHA256 `fd4caeeabb0eb5610b5b3bfe8a4dad61d49b2e5243ba3874a9eec8698c0ce42b`
+
+Device installs:
+- S7 (`ce10160adc00152604`) updated with SecureCall Free/Pro/Premium and verified at `versionCode=76001`, `targetSdk=35`.
+- Tab S4 (`ce12182c68644439037e`) updated with SecureCall Free/Pro/Premium and verified at `versionCode=76001`, `targetSdk=35`.
+- S10 (`RF8N313QMFL`) is not connected; reinstall SecureCall Free/Pro/Premium v76 when reconnected.
+
+Open:
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
 ## 2026-06-21 10:10 PDT - CODEX TERMINAL FIX/ARTIFACTS
 
 User asked whether the Settings "Background Service" switch is configured correctly for users who only want SecureCall connected while actively using it.

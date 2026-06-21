@@ -261,7 +261,7 @@
         <Preference
             android:key="pref_licenses"
             android:title="@string/settings_licenses"
-            android:selectable="false"
+            android:selectable="true"
             android:icon="@drawable/ic_lock" />
     </com.securecall.app.ui.CollapsiblePreferenceCategory>
 

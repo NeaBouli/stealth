@@ -66,7 +66,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         updateCurrentTierDisplay()
         updateLifetimePricing()
 
-        // Sideload/ADB installs: hide IAP buttons, show code/IFR only
+        // Sideload/ADB installs: hide IAP buttons and direct users to activation codes.
         val isPlayStore = com.securecall.app.update.UpdateManager.getUpdateUrl(this).contains("market://")
         if (!isPlayStore) {
             Log.d(TAG, "Non-Play-Store install — hiding IAP subscription buttons")
@@ -75,7 +75,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
             findViewById<Button>(R.id.btnActivationCode).visibility = android.view.View.GONE
             findViewById<Button>(R.id.btnRestore).visibility = android.view.View.GONE
             // Show sideload hint
-            tvStatus.text = "Sideload install — upgrade via Activation Code in Settings or IFR Token"
+            tvStatus.text = "Sideload install — upgrade via Activation Code in Settings"
         }
 
         billingManager = BillingManager(this, this)

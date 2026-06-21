@@ -18,3 +18,67 @@ allprojects {
         maven { url "https://jitpack.io" }
     }
 }
+
+tasks.register('verifyNoAppIfrWalletCode') {
+    group = 'verification'
+    description = 'Fail if Android app source contains IFR or wallet code paths'
+
+    def sourceRoots = [
+            file('app/src/main'),
+            file('app/src/free'),
+            file('app/src/pro'),
+            file('app/src/premium')
+    ].findAll { it.exists() }
+
+    inputs.files(sourceRoots)
+
+    doLast {
+        def sourceExtensions = ['java', 'json', 'kt', 'kts', 'pro', 'xml'] as Set
+        def forbiddenTerms = [
+                'IFR',
+                'Ifr',
+                'ifr',
+                'WalletConnect',
+                'walletconnect',
+                'MetaMask',
+                'metamask',
+                'Uniswap',
+                'uniswap',
+                'web3',
+                'Web3',
+                'Ethereum',
+                'ethereum',
+                'walletAddress',
+                'walletSignature',
+                'ifrDiscount',
+                'stealthx-ifr'
+        ]
+
+        def hits = []
+        sourceRoots.each { root ->
+            root.eachFileRecurse { sourceFile ->
+                if (!sourceFile.isFile()) return
+                if (!sourceExtensions.contains(sourceFile.name.tokenize('.').last()?.toLowerCase())) return
+                def sourcePath = sourceFile.path.replace(File.separatorChar, '/' as char)
+                if (sourcePath.contains('/build/')) return
+
+                def text = sourceFile.getText('UTF-8')
+                forbiddenTerms.each { term ->
+                    if (text.contains(term)) {
+                        hits << "${sourcePath}: ${term}"
+                    }
+                }
+            }
+        }
+
+        if (!hits.isEmpty()) {
+            throw new GradleException("Android app code must remain IFR/wallet-free:\n${hits.join('\n')}")
+        }
+    }
+}
+
+subprojects {
+    tasks.matching { it.name == 'preBuild' }.configureEach {
+        dependsOn rootProject.tasks.named('verifyNoAppIfrWalletCode')
+    }
+}

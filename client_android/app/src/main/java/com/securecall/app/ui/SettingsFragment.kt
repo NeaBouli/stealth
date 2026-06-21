@@ -88,12 +88,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("pref_upgrade")?.apply {
             when (effectiveTier) {
                 "PREMIUM" -> isVisible = false
-                "PRO" -> { isVisible = true; title = "Upgrade to Premium / IFR Discount" }
-                else -> { isVisible = true; title = "Buy Pro / Premium or IFR Discount" }
+                "PRO" -> { isVisible = true; title = "Upgrade to Premium" }
+                else -> { isVisible = true; title = "Buy Pro / Premium" }
             }
-            summary = "Open Stripe checkout, activation codes, and 50% IFR holder discount"
+            summary = "Open checkout and activation-code options"
             setOnPreferenceClickListener {
-                startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://stealthx.tech/#ifr")))
+                openUrl("https://stealthx.tech/#pricing")
                 true
             }
         }
@@ -177,6 +177,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // BUG-022: Refresh network info + bound status on every resume
         refreshNetworkStatus()
+        configureBatteryOptimization()
+        updateVpnStatus(requireContext(), TierManager.isPremium(requireContext()))
     }
 
     /** BUG-022: Refresh network info so eSIM status doesn't stay stale. */
@@ -257,7 +259,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun openUrl(url: String) {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(requireContext(), "No browser available", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 
     /** SecLog diagnostics — Pro/Premium only. */
@@ -736,13 +742,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 isEnabled = true
                 setOnPreferenceChangeListener { _, newValue ->
                     val enabled = newValue as Boolean
-                    com.securecall.app.vpn.VpnController.setEnabled(ctx, enabled)
                     if (enabled) {
                         if (!com.securecall.app.vpn.VpnController.hasConfig(ctx)) {
                             android.widget.Toast.makeText(ctx, "Configure WireGuard first", android.widget.Toast.LENGTH_SHORT).show()
                             return@setOnPreferenceChangeListener false
                         }
                         val vpnIntent = android.net.VpnService.prepare(ctx)
+                        com.securecall.app.vpn.VpnController.setEnabled(ctx, true)
                         if (vpnIntent != null) {
                             @Suppress("DEPRECATION")
                             startActivityForResult(vpnIntent, com.securecall.app.vpn.VpnController.VPN_PERMISSION_REQUEST)
@@ -750,6 +756,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                             com.securecall.app.vpn.VpnController.start(ctx)
                         }
                     } else {
+                        com.securecall.app.vpn.VpnController.setEnabled(ctx, false)
                         com.securecall.app.vpn.VpnController.stop(ctx)
                     }
                     // Update status text immediately
@@ -892,7 +899,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             .setNegativeButton(android.R.string.cancel, null)
             .setNeutralButton("Clear") { _, _ ->
                 com.securecall.app.vpn.VpnController.clearConfig(ctx)
+                com.securecall.app.vpn.VpnController.stop(ctx)
+                findPreference<SwitchPreferenceCompat>("pref_vpn_enabled")?.isChecked = false
                 findPreference<Preference>("pref_vpn_config")?.summary = getString(R.string.pref_vpn_config_summary)
+                updateVpnStatus(ctx, true)
                 android.widget.Toast.makeText(ctx, "VPN config cleared", android.widget.Toast.LENGTH_SHORT).show()
             }
             .show()

@@ -7,9 +7,8 @@ import com.securecall.app.billing.SubscriptionTier
 /**
  * FREE-flavor FeatureProvider that reads the effective runtime tier.
  *
- * Paid access can come from Google Play/Stripe subscription state, activation
- * codes, or IFR WalletConnect. Use the highest tier so one unlock path cannot
- * accidentally mask another one.
+ * Paid access can come from Google Play/Stripe subscription state or activation
+ * codes. Use the highest tier so one unlock path cannot accidentally mask another one.
  */
 class RuntimeFeatureProvider(context: Context) : FeatureProvider {
 

@@ -7,7 +7,7 @@ import com.securecall.app.billing.SubscriptionManager
 /**
  * Manages the effective tier for the app.
  * Checks build flavor, subscription state, and activated_tier from
- * SharedPreferences (activation code / IFR unlock).
+ * SharedPreferences (activation-code unlock).
  * Returns the highest tier available.
  */
 object TierManager {
