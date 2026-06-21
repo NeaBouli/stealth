@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.securecall.app.R
 import com.securecall.app.config.TierManager
 import com.securecall.app.net.WebSocketService
+import com.securecall.app.ui.EdgeToEdgeHelper
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -40,7 +41,9 @@ class PurchaseResultActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        EdgeToEdgeHelper.enable(this)
         setContentView(R.layout.activity_purchase_result)
+        EdgeToEdgeHelper.applySystemBarPaddingToContent(this)
 
         tvCode = findViewById(R.id.tvActivationCode)
         tvStatus = findViewById(R.id.tvStatus)

@@ -14,6 +14,7 @@ import com.securecall.app.R
 import com.securecall.app.config.FeatureProviderRegistry
 import com.securecall.app.config.RuntimeFeatureProvider
 import com.securecall.app.net.WebSocketService
+import com.securecall.app.ui.EdgeToEdgeHelper
 
 class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
 
@@ -43,7 +44,9 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        EdgeToEdgeHelper.enable(this)
         setContentView(R.layout.activity_upgrade)
+        EdgeToEdgeHelper.applySystemBarPaddingToContent(this)
 
         subscriptionManager = SubscriptionManager(this)
 

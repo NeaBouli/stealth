@@ -2637,3 +2637,37 @@ Verification:
 - `SHA256SUMS.txt` in the desktop release folder was refreshed.
 - Note: SecureChat and Chameleon still need their own Android 15 edge-to-edge pass before their next Google Play uploads.
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
+## 2026-06-21 03:50 PDT — CODEX TERMINAL FIX/ARTIFACTS
+
+User asked to bring all three apps to the latest state and prepare fresh AABs.
+
+Android 15 edge-to-edge status:
+- SecureChat already has `enableEdgeToEdge()` in `MainActivity` and wraps content in `safeDrawingPadding()`.
+- Chameleon already has `enableEdgeToEdge()` in `MainActivity` and wraps content in `safeDrawingPadding()`.
+- SecureCall already had `EdgeToEdgeHelper` coverage for main/call/incoming/settings/onboarding/QR/emergency screens.
+- Added missing SecureCall Free billing coverage:
+  - `UpgradeActivity`
+  - `PurchaseResultActivity`
+
+Build verification:
+- `./gradlew -Pinternal --no-daemon --max-workers=1 assembleRelease` succeeded after the billing edge-to-edge patch.
+- `./gradlew --no-daemon --max-workers=1 bundleFreeRelease` succeeded.
+- SecureChat `./gradlew --no-daemon --max-workers=1 app:bundleRelease` succeeded.
+- Chameleon `./gradlew --no-daemon --max-workers=1 app:bundleRelease` succeeded.
+
+Desktop AABs refreshed:
+- `/Users/gio/Desktop/SecureCall-LATEST.aab`
+  - SHA256 `05d7af68e16c721730a15a12ae42e901b221daabaec284f112e02e89d90f0f65`
+- `/Users/gio/Desktop/SecureChat-LATEST.aab`
+  - SHA256 `de3992d84ffd12b7e08f8c9697d7fcba5e610140a1697e8aeb831efdee284c43`
+- `/Users/gio/Desktop/Chameleon-LATEST.aab`
+  - SHA256 `ba298d1b05ee2b2c4efc78636ad6835e0e771b4ad33233d8b38a62f10bcc87ed`
+
+Device install reminder:
+- S10 (`RF8N313QMFL`) was disconnected before the patched SecureCall build could be reinstalled.
+- When S10 is reconnected, reinstall patched SecureCall Free/Pro/Premium APKs from current `client_android/app/build/outputs/apk/*/release/`.
+- S7 (`ce10160adc00152604`) and Tab S4 (`ce12182c68644439037e`) were updated after this note with patched SecureCall Free/Pro/Premium APKs and verified at vC73001.
+
+Open:
+- `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
