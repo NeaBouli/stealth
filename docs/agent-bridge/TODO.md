@@ -169,7 +169,7 @@
 ## Priority 2
 
 - [x] README-/Download-Statusdrift — DONE
-- [ ] Play Integrity API fuer SecureCall planen: zunaechst nur als Risk-Signal/Logging fuer Lizenz-, App-, Geraete-, Play-Protect- und App-Access-Risiko; keine harte Sperre am App-Start. Harte Checks erst spaeter fuer kritische Aktionen wie Kauf/Upgrade/Activation-Code-Redeem entscheiden.
+- [x] Play Integrity API fuer SecureCall planen: Plan in `docs/PLAY_INTEGRITY_PLAN.md`; zunaechst nur Risk-Signal/Logging, keine harte Sperre am App-Start.
 - [ ] Hybrid-Migration ausfuehren (siehe `MIGRATION_PLAN.md`, Hetzner entschieden)
 
 ## Priority 3
