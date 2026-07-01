@@ -2860,3 +2860,37 @@ Device installs:
 
 Open:
 - `docs/RESTART_HANDOFF_2026-06-14.md` remains untracked and untouched.
+
+## 2026-07-01 21:35 EEST - CODEX TERMINAL SECURITY FIX
+
+Trigger:
+- GitHub reported 7 open Dependabot alerts on `NeaBouli/stealth` after the Play Integrity planning push.
+- `gh api repos/NeaBouli/stealth/dependabot/alerts?state=open` showed:
+  - `nodemailer` alerts #30/#31 high and #26/#27/#29 medium.
+  - `form-data` alert #28 high.
+  - `protobufjs` alert #25 medium.
+
+Fix:
+- Removed unused direct `nodemailer` dependency from `backend/signaling/package.json`.
+  - Code search found no `nodemailer`, `createTransport`, or `sendMail` usage.
+  - Current email delivery uses Brevo HTTP and Resend.
+- Added dependency overrides:
+  - `form-data: ^2.5.6`
+  - `protobufjs: ^7.6.3`
+- Refreshed `backend/signaling/package-lock.json`.
+
+Verification:
+- `npm audit --audit-level=moderate` -> `found 0 vulnerabilities`.
+- `npm ls nodemailer form-data protobufjs --all`:
+  - no `nodemailer`
+  - `form-data@2.5.6`
+  - `protobufjs@7.6.4`
+- `npm test` -> all backend tests passed:
+  - context smoke
+  - handlers
+  - subscription/webrtc
+  - email handler
+  - stripe handler
+
+Follow-up:
+- Recheck GitHub Dependabot after push to confirm server-side alert closure.

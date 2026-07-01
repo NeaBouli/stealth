@@ -15,14 +15,15 @@
   "overrides": {
     "ws": "^8.21.0",
     "uuid": ">=11.1.1",
-    "@grpc/grpc-js": "^1.14.4"
+    "@grpc/grpc-js": "^1.14.4",
+    "form-data": "^2.5.6",
+    "protobufjs": "^7.6.3"
   },
   "dependencies": {
     "@getbrevo/brevo": "^5.0.3",
     "ethers": "^6.16.0",
     "express": "^4.19.0",
     "firebase-admin": "^13.10.0",
-    "nodemailer": "^8.0.7",
     "resend": "^6.10.0",
     "stripe": "^22.0.0",
     "ws": "^8.21.0"
