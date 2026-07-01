@@ -15,7 +15,7 @@
     - GitHub API vor Fix: 7 offene Alerts (#25-31): `nodemailer`, `form-data`, `protobufjs`.
     - Fix: ungenutzte direkte `nodemailer`-Dependency entfernt; transitive `form-data` und `protobufjs` per Patch-Override aktualisiert.
     - Verifikation lokal: `npm audit --audit-level=moderate` -> 0 vulnerabilities; `npm test` -> PASS.
-    - Nach Push GitHub Dependabot erneut pruefen, damit Alert-Closure serverseitig bestaetigt ist.
+    - GitHub Dependabot API nach Push: 0 offene Alerts.
   - GitHub meldete beim Push am 2026-05-03: 6 Vulnerabilities.
   - Schweregrade: 1 critical, 1 high, 2 moderate, 2 low.
   - Stand nach Commit `da9b1bb` und erneuter GitHub Dependabot API-Abfrage:

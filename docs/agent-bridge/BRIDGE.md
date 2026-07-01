@@ -2893,4 +2893,4 @@ Verification:
   - stripe handler
 
 Follow-up:
-- Recheck GitHub Dependabot after push to confirm server-side alert closure.
+- GitHub Dependabot API after push returned `open_alerts=0`.
