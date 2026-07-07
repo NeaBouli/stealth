@@ -3466,3 +3466,379 @@ Device verification:
 Follow-up:
 - S7 still showed active FCM backup notification id `9001` after cleanup.
 - That source is flavor-specific `SecureCallMessagingService`; recommended next fix is shared cancellation for incoming notification ids `1002` and `9001`.
+
+---
+
+## 2026-07-07 10:24 UTC — [CODEX OPERATOR]
+### TYPE: CREDENTIAL_NOTICE
+### STATUS: SAVED_FOR_RESTART
+### EMPFÄNGER: GIO|DEV
+
+**Brevo API-Key Inaktivitaetswarnung `securecall-railway` gesichert**
+
+Eingegangene Meldung:
+- Anbieter meldet API-Schluessel-Inaktivitaet und geplante Deaktivierung/Inaktiv-Markierung in 7 Tagen.
+- Betroffener Key-Name: `securecall-railway`.
+- Betroffener Key-Marker: `xkeysib-*306Tk0`.
+- Vollstaendigen Key nicht in Repo/Chat/Logs speichern.
+
+Lokale Einordnung:
+- `xkeysib` deutet auf Brevo/Sendinblue.
+- Stealth/SecureCall nutzt Brevo als Mailprovider fuer Aktivierungscode-/Payment-E-Mails:
+  - `backend/signaling/src/payments/email_handler.js`: Primary `BREVO_API_KEY`, Fallback `RESEND_API_KEY`.
+  - `backend/payments/email_handler.js`: Brevo-Fallback/Providerpfad.
+  - `BRIDGE.md` Altstand NEA-13: Email aktuell Brevo primary + Resend fallback.
+- Railway-Kontext im Projekt:
+  - `docs/RAILWAY_DEPLOYMENT.md`: SecureCall Railway.app Deployment.
+  - `docs/RAILWAY_ENV_VARS.md`: Railway Project `263caa21-e6f6-4075-9470-22427cfcf5f9`, URL `protective-healing-production.up.railway.app`.
+  - Bridge-Altstand: Railway `disciplined-flexibility` / `protective-healing-production.up.railway.app` ist Cold-Standby bzw. Fallback-Kontext.
+
+Zwischenbefund:
+- Die Warnung gehoert sehr wahrscheinlich zum Stealth/SecureCall-Projekt, konkret zur Brevo-Variable `BREVO_API_KEY` im Railway/SecureCall-Mailkontext.
+- Lokale `.env*`-Dateien im aktuellen `stealth`-Repo enthielten beim sicheren Pfad-Check keinen Treffer fuer `BREVO_API_KEY`/`xkeysib`; der aktive Wert liegt vermutlich bei Railway/Provider-Secrets oder Server-Env, nicht lokal im Repo.
+
+Gesicherte externe Restart-Notiz:
+- `/Users/gio/Desktop/API_KEY_DEACTIVATION_NOTICE_2026-07-07.md`
+
+Naechste Schritte nach Neustart:
+1. Entscheiden, ob Railway/SecureCall-Mailpfad noch gebraucht wird.
+2. Falls ja: Brevo-Key sicher rotieren oder kontrolliert ueber die betroffene Integration nutzen, ohne Key-Wert auszugeben.
+3. Railway/Server-Secrets fuer `BREVO_API_KEY` pruefen; keine Secrets in Bridge oder Git speichern.
+4. Falls Railway nur Cold-Standby bleibt und Brevo nicht mehr gebraucht wird: Inaktivierung akzeptieren oder alte Secret-Referenzen bereinigen.
+
+---
+
+## 2026-07-07 17:19 UTC — [CODEX OPERATOR]
+### TYPE: DIAGNOSE
+### STATUS: S10_NOT_ATTACHED__DOCS_PUSHED
+### EMPFÄNGER: GIO|CC|DEV
+
+**SecureCall S10 Disconnect / "zu Hause ploetzlich connected" — Restart-Follow-up**
+
+Repo:
+- `/Users/gio/Desktop/repos/stealth`
+
+Git-Stand:
+- S10-Investigationsnotiz erweitert und nach `origin/main` gepusht.
+- Commit: `5395173 docs: capture S10 disconnect investigation note`
+- `main` ist synchron mit `origin/main`.
+- `BRIDGE.md` bleibt lokal modified; Brevo/API-Key-Notiz war bereits uncommitted und wurde nicht entfernt.
+
+Gesicherte Detailnotiz:
+- `docs/agent-bridge/S10_DISCONNECT_INVESTIGATION_2026-07-07.md`
+
+ADB-Status nach Neustart:
+- `adb` startet wieder sauber.
+- Erwarteter S10 `RF8N313QMFL` ist aktuell **nicht** sichtbar.
+- Sichtbare Vergleichsgeraete:
+  - `ce10160adc00152604` — `SM-G930F`
+  - `ce12182c68644439037e` — `SM-T835`
+
+Vergleichsbefunde:
+- `SM-G930F` hat `com.securecall.app.premium` `1.0.41-premium` aktiv.
+- `WebSocketService` laeuft dort seit ca. 13 Tagen als Foreground-Service.
+- `dumpsys power` zeigt langen Partial WakeLock `securecall:ws_heartbeat`.
+- `dumpsys deviceidle` zeigt `com.securecall.app.premium` in der User-Whitelist.
+- `dumpsys alarm` zeigt aktive `WebSocketService`- und `KeepAliveReceiver`-Alarme.
+- `SM-T835` hat SecureCall-Pakete installiert, aber keinen laufenden SecureCall-Prozess; gleichzeitig ist ein VPN Default-Netz aktiv.
+- Release-Builds strippen `Log.d`/`Log.i`; normale WebSocket-/REGISTER-Ereignisse sind in Logcat daher kaum sichtbar. Fuer belastbare Diagnose auf Produktionsbuild: `SecLogManager` aktivieren/exportieren oder Backend-Logs vergleichen.
+
+Code-Spur:
+- `WebSocketService.startSignaling()` ruft immer `NetworkManager.bindToPreferredNetwork(this)` vor dem Connect auf.
+- `NetworkManager` liest `preferred_network_transport` aus `securecall_prefs`.
+- Bei `default` ist der Prozess ungebunden; Android waehlt das aktive Netz.
+- Bei `wifi`, `cellular` oder `esim` wird der Prozess explizit an diesen Transport gebunden und `forceReconnect()` bei Netzwechseln ausgeloest.
+- Dieses Verhalten passt zur Nutzerbeobachtung "nicht verbunden, aber im Heimnetz ploetzlich connected", falls auf dem S10 eine feste Netzwerkpraeferenz, VPN, DNS-/Mobilfunkproblem oder backendseitig unterschiedliche Erreichbarkeit pro Netz vorliegt.
+
+Aktuelle Einschaetzung:
+- S10-Bug noch **nicht reproduziert**, weil das S10 nicht per ADB verfuegbar ist.
+- Staerkste Hypothese: Netzwerkbindung/Routing/DNS/VPN oder Backend-Erreichbarkeit je nach Netz.
+- Battery/Doze ist nach Vergleichsdaten weniger wahrscheinlich, muss aber auf dem echten S10 geprueft werden.
+- Backend-Rejection bleibt moeglich, besonders 4000-4099 Close Codes wie 4003; ohne S10-SecLog oder Serverlog nicht beweisbar.
+
+Naechste Befehle sobald S10 angeschlossen ist:
+
+```bash
+cd /Users/gio/Desktop/repos/stealth
+adb devices -l
+adb -s RF8N313QMFL shell getprop ro.product.model
+adb -s RF8N313QMFL shell pm list packages | rg -i 'securecall|stealth|ghost|nea'
+adb -s RF8N313QMFL shell ps -A | rg 'securecall|neabouli|stealth'
+adb -s RF8N313QMFL shell dumpsys package com.securecall.app.premium | rg 'versionName|versionCode|targetSdk|firstInstallTime|lastUpdateTime|enabled='
+adb -s RF8N313QMFL shell dumpsys activity services com.securecall.app.premium
+adb -s RF8N313QMFL shell dumpsys power | rg -i 'securecall|ws_heartbeat|Wake Locks|mWakefulness'
+adb -s RF8N313QMFL shell dumpsys deviceidle | rg -i 'mState|mLightState|mNetworkConnected|Whitelist|com.securecall'
+adb -s RF8N313QMFL shell dumpsys alarm | rg -i 'securecall|KeepAliveReceiver|WebSocketService' -C 2
+adb -s RF8N313QMFL shell dumpsys connectivity | rg -i 'NetworkAgentInfo|WIFI|CELLULAR|VPN|VALIDATED|SSID|CONNECTED'
+adb -s RF8N313QMFL logcat -d -v time | rg -i 'WS_SERVICE|\bHB\b|NetworkManager|SecLog|REGISTER timeout|4003|429|UnknownHost|Unable to resolve|network lost|forceReconnect|WebSocket error'
+```
+
+Wenn `run-as` fuer den S10-Build erlaubt ist:
+
+```bash
+adb -s RF8N313QMFL shell run-as com.securecall.app.premium sh -c 'cat shared_prefs/securecall_prefs.xml' | rg 'preferred_network_transport|esim_routing_enabled|seclog_enabled|pref_background_service'
+```
+
+GitHub Issue #28:
+- Issue ist offen: `[Feature]: Send a text message`.
+- Neuer Kommentar von `zig-VS-python` vom 2026-07-05 fordert Single-App mit Dialer + Messaging und vergleicht Richtung WhatsApp/Signal ohne echte Telefonnummer-Identitaet.
+- Einordnung: Produkt-Scope-Entscheidung, kein S10-Disconnect-Beweis.
+
+---
+
+## 2026-07-07 20:38 EEST — [CODEX TERMINAL]
+### TYPE: DEVICE_DIAGNOSE
+### STATUS: S10_ATTACHED__VPN_PATH_IDENTIFIED
+### EMPFÄNGER: GIO|CC|DEV
+
+**SecureCall S10 Disconnect — ADB-Follow-up mit angeschlossenem S10**
+
+Repo:
+- `/Users/gio/Desktop/repos/stealth`
+
+Bridge-Kontext:
+- `BRIDGE.md` war bereits lokal modified mit den uncommitted Eintraegen:
+  - Brevo/API-Key-Inaktivitaetswarnung `securecall-railway`
+  - SecureCall S10 Disconnect Restart-Follow-up
+- Diese Eintraege wurden nicht bereinigt oder ueberschrieben; dieser Befund wurde darunter angehaengt.
+
+ADB:
+- S10 ist sichtbar:
+  - Serial `RF8N313QMFL`
+  - Model `SM-G973F`
+- Weiterhin sichtbar:
+  - `ce10160adc00152604` — `SM-G930F`
+
+Installierter/aktiver SecureCall-Stand auf S10:
+- Installiert: `com.securecall.app.premium`
+- Version:
+  - `versionCode=77009`
+  - `versionName=1.0.41-premium`
+  - `targetSdk=35`
+  - `firstInstallTime=2026-06-21 13:20:02`
+  - `lastUpdateTime=2026-06-23 12:23:51`
+- Prozess aktiv:
+  - PID `13811`
+  - UID `10780`
+
+Service-/Power-Befund:
+- `WebSocketService` laeuft als Foreground-Service:
+  - `isForeground=true`
+  - foreground notification id `1001`
+  - Service `createTime=-11d11h45m...`
+  - `restartTime=-10d18h59m...`
+  - `restartCount=1`
+- `dumpsys power`:
+  - `mWakefulness=Awake`
+  - langer `PARTIAL_WAKE_LOCK` aktiv:
+    - `securecall:ws_heartbeat`
+    - UID `10780`
+    - PID `13811`
+    - `ACQ=-10d18h59m... LONG`
+- `dumpsys deviceidle`:
+  - `com.securecall.app.premium` ist in der User-Whitelist.
+  - `mNetworkConnected=true`
+  - `mState=ACTIVE`
+  - `mLightState=ACTIVE`
+- `dumpsys alarm`:
+  - aktive `WebSocketService`-Alarme.
+  - aktive `KeepAliveReceiver`-Alarme.
+  - S10 zeigt bereits viele SecureCall Wakeups; der KeepAlive-/Alarm-Pfad lebt.
+
+Netzwerkbefund:
+- Aktive Netze:
+  - Network `111`: `MOBILE[LTE] CONNECTED ROAMING`, APN `web.vodafone.de`, validated, Interface `rmnet0`.
+  - Network `112`: `VPN CONNECTED ROAMING`, Interface `tun1`, Provider/Owner `net.mullvad.mullvadvpn`, validated.
+- VPN-Details:
+  - `Transports: CELLULAR|VPN`
+  - `OwnerUid: 10301`
+  - `AdminUids: [10301]`
+  - `Uids: <{0-99999}>`
+  - Interface filtering: `tun1`, UIDs `[0-99999]`
+- SecureCall-Netzrequest:
+  - `uid/pid:10780/13811`
+  - active request id `2410`
+  - package `com.securecall.app.premium`
+  - liegt unter VPN Network `112`.
+- Current legacy state:
+  - `0 [111 CELLULAR]`
+  - `17 [112 CELLULAR|VPN]`
+
+Logcat-Befund:
+- PID-spezifische Logs fuer `13811` zeigen fortlaufende OkHttp-WebSocket-Aktivitaet:
+  - `OkHttp WebSocket https://api.stealthx.tech/... writer`
+  - `OkHttp WebSocket https://api.stealthx.tech/... ping`
+  - Ping-Zyklus etwa alle 30 Sekunden.
+- Im aktuellen Log-Auszug keine Treffer auf:
+  - `4003`
+  - `429`
+  - `UnknownHost`
+  - `Unable to resolve`
+  - `REGISTER timeout`
+  - harte `WebSocket error`-Indikatoren
+- Release-Build strippt weiter normale App-Logs; sichtbar sind vor allem OkHttp TaskRunner Debug-Zeilen.
+
+Prefs/Debug-Zugriff:
+- `run-as com.securecall.app.premium` nicht nutzbar:
+  - `run-as: package not debuggable: com.securecall.app.premium`
+- Direkter Zugriff auf `securecall_prefs.xml` ist damit auf diesem Release-Build nicht moeglich.
+
+AppOps/Policy:
+- `WAKE_LOCK: allow`
+- `RUN_ANY_IN_BACKGROUND: allow`
+- `START_FOREGROUND: allow`
+- `POST_NOTIFICATION: ignore`
+- NetPolicy:
+  - `Restrict background: false`
+  - `Restrict power: false`
+  - `Device idle: false`
+  - UID `10780` in Power-save-Whitelist.
+
+Aktuelle Einschaetzung:
+- Der S10-Prozess ist aktuell **nicht tot** und der Android-Foreground-/WakeLock-/Alarm-Pfad wirkt gesund.
+- Aktuell laeuft SecureCall auf dem S10 ueber **Mullvad VPN auf Cellular/Roaming**.
+- Die Nutzerbeobachtung "zu Hause ploetzlich connected" passt weiterhin besser zu Netzwerkpfad/VPN/DNS/Routing/Backend-Erreichbarkeit als zu Doze oder fehlendem WakeLock.
+- Weil OkHttp WebSocket ping/write aktiv ist, ist ein simples "Socket tot" aktuell unwahrscheinlich.
+- Falls die App-UI trotzdem "disconnected" zeigt, liegt der Fehler wahrscheinlich in einem der folgenden Bereiche:
+  - REGISTER/ACK-Status oder Server-State trotz offenem Socket.
+  - Backend lehnt Registrierung ab, ohne dass Release-Logcat es sichtbar genug macht.
+  - UI-State/Foreground-Service-State driftet vom echten OkHttp-Socket-Zustand weg.
+  - Mullvad/VPN routet den WebSocket anders als Heim-Wi-Fi; Backend/DNS/TLS/Policy kann je nach Netz anders reagieren.
+
+Naechste sinnvolle Tests:
+1. Auf S10 Mullvad/VPN ausschalten und SecureCall-Verbindungsstatus beobachten.
+2. Danach VPN wieder einschalten und vergleichen.
+3. Auf Heim-Wi-Fi reproduzieren und Connectivity erneut sichern:
+   - `dumpsys connectivity`
+   - PID-Logcat fuer `13811`
+   - App-UI-Verbindungsstatus
+4. In der App `SecLog` aktivieren/exportieren, weil `run-as` auf Release nicht moeglich ist.
+5. Backend-Logs zu S10/`com.securecall.app.premium` zeitgleich pruefen, insbesondere REGISTER/ACK/Close-Codes.
+
+Empfohlene Code-Follow-ups:
+- Release-sichere Diagnose ueber `SecLogManager` erweitern:
+  - Network id / transport / VPN ja-nein beim Connect.
+  - REGISTER gesendet.
+  - REGISTER ACK erhalten.
+  - Close-Code und Reconnect-Entscheidung.
+  - UI-connected-State-Aenderungen.
+- Optional eine sichtbare Debug-Zeile im Settings/Diagnostics-Screen:
+  - aktueller Transport `WIFI/CELLULAR/VPN`
+  - letzter REGISTER ACK Zeitpunkt
+  - letzter Close-Code
+  - letzter DNS-/TLS-/HTTP Fehler
+
+---
+
+## 2026-07-07 20:55 EEST — [CODEX TERMINAL]
+### TYPE: CI_AUDIT_FIX
+### STATUS: LOCAL_VERIFIED
+### EMPFÄNGER: GIO|CC|DEV
+
+**GitHub Actions / CI Workflows geprueft und Audit-Coverage nachgezogen**
+
+Repo:
+- `/Users/gio/Desktop/repos/stealth`
+
+Remote CI-Status:
+- Aktueller HEAD:
+  - `5395173 docs: capture S10 disconnect investigation note`
+- `main` und `origin/main` waren vor lokalen CI-Aenderungen synchron.
+- Aktuelle GitHub-Actions-Laeufe auf `5395173`:
+  - `Basic CI` — success
+    - Run `28833997242`
+    - URL `https://github.com/NeaBouli/stealth/actions/runs/28833997242`
+  - `Security Audit` — success
+    - Run `28833997232`
+    - URL `https://github.com/NeaBouli/stealth/actions/runs/28833997232`
+- Aeltere Scheduled-Failure:
+  - `Security Audit` scheduled run `28774451048` auf altem Commit `2683d80` war rot.
+  - Ursache dort: `Secret Detection` / Gitleaks.
+  - Auf aktuellem Commit `5395173` ist Gitleaks wieder gruen.
+- `Deploy to GitHub Pages`:
+  - aktiv.
+  - letzte gelistete Runs waren erfolgreich.
+  - letzter gelisteter Run `27921638169`, Commit `a8f5b2d`, success.
+
+Lokale Workflow-Dateien:
+- `.github/workflows/ci-basic.yml`
+- `.github/workflows/security-audit.yml`
+- `.github/workflows/deploy-pages.yml`
+
+Befund:
+- YAML-Syntax aller Workflows ist gueltig.
+- `Basic CI` macht aktuell nur `yamllint .`; kein Android-/Backend-Build.
+- `Security Audit` hatte eine Node-Coverage-Luecke:
+  - Workflow pruefte `npm audit` nur, wenn `./package.json` im Repo-Root existiert.
+  - Tatsaechliches Node-Paket liegt unter `backend/signaling/package.json`.
+  - Dadurch wurde `npm audit` in CI uebersprungen, obwohl `backend/signaling` npm-Dependencies hat.
+- Lokales `yamllint .` stolperte bei installiertem Backend-`node_modules` ueber Vendor-YAML; frischer GitHub-Checkout war deshalb gruen, lokaler Check aber unnoetig fragil.
+
+Fix:
+- `.github/workflows/security-audit.yml`
+  - `Check for package.json` sucht jetzt bis `maxdepth 4`.
+  - `npm audit` laeuft fuer jedes gefundene `package.json` ausserhalb von `node_modules`.
+  - Audit wird im jeweiligen Package-Verzeichnis ausgefuehrt, dadurch wird `backend/signaling` korrekt geprueft.
+  - `npm audit --audit-level=high` ist nicht mehr per `|| true` maskiert.
+- `.yamllint.yml`
+  - `**/node_modules/**` ignoriert.
+  - `**/build/**` ignoriert.
+
+Lokale Verifikation:
+- Ruby YAML parse:
+  - `.yamllint.yml`
+  - alle `.github/workflows/*.yml`
+  - Ergebnis: ok.
+- Neuer npm-audit Loop:
+  - fand `./backend/signaling/package.json`
+  - `npm audit --audit-level=high` Ergebnis: `found 0 vulnerabilities`.
+- Backend-Test:
+  - `npm test` in `backend/signaling`
+  - Ergebnis: alle Tests erfolgreich.
+- `yamllint .` via temporaerem venv:
+  - Ergebnis: ok nach Ignore-Fix.
+
+Offen / Empfehlung:
+- `Basic CI` ist weiterhin sehr schmal. Fuer echte Release-Sicherheit waere ein separater Build/Test-Workflow sinnvoll:
+  - Backend: `npm test` in `backend/signaling`.
+  - Android: mindestens `./gradlew test...` oder ein klar definierter assemble/check Task.
+  - Crypto: `cargo test`/`cargo audit` fuer `core_crypto`, sofern CI-Zeit ok ist.
+- `cargo audit` wird im Workflow installiert und laeuft remote; lokal ist `cargo audit` aktuell nicht installiert.
+<!-- CODEX_CLAUDE_CODE_TERMINAL_BRIDGE_V1 -->
+## Codex -> Claude Code Terminal Bridge
+
+Status: configured on 2026-07-07. Codex must call Claude Code through the local terminal wrapper, not through the Anthropic API.
+
+Use this probe:
+
+```bash
+env -u LC_ALL claude-code-terminal --probe
+```
+
+Expected output:
+
+```text
+claude-code-terminal-ok
+```
+
+Send prompts to Claude Code with:
+
+```bash
+env -u LC_ALL claude-code-terminal "PROMPT_TEXT"
+```
+
+or via stdin:
+
+```bash
+printf '%s\n' "PROMPT_TEXT" | env -u LC_ALL claude-code-terminal
+```
+
+Rules for all dev agents:
+
+- Do not use the Anthropic API, Anthropic SDK, `ANTHROPIC_API_KEY`, or direct HTTP calls for Codex -> Claude Code handoff.
+- Do not use `claude --bare`; bare mode does not read the local claude.ai OAuth/keychain session and will report not logged in.
+- Do not use `cc` for Claude Code; on this machine `cc` is the C compiler.
+- The Claude Code CLI command is `claude`; the stable wrapper is `/Users/gio/.local/bin/claude-code-terminal`.
+- If a probe returns `401 Invalid authentication credentials`, the integration is using the wrong path: API instead of terminal.
+- Keep secrets, tokens, passwords, private keys, and keychain material out of bridge files.
+<!-- /CODEX_CLAUDE_CODE_TERMINAL_BRIDGE_V1 -->

@@ -35,7 +35,7 @@ jobs:
       - name: Check for package.json
         id: check-npm
         run: |
-          if [ -f package.json ]; then
+          if [ -f package.json ] || find . -maxdepth 4 -name "package.json" -print -quit | grep -q .; then
             echo "has_npm=true" >> $GITHUB_OUTPUT
           else
             echo "has_npm=false" >> $GITHUB_OUTPUT
@@ -43,7 +43,13 @@ jobs:
 
       - name: npm audit
         if: steps.check-npm.outputs.has_npm == 'true'
-        run: npm audit --audit-level=high || true
+        run: |
+          find . -maxdepth 4 -name "package.json" -not -path "*/node_modules/*" -print0 |
+            while IFS= read -r -d '' package_json; do
+              package_dir="$(dirname "$package_json")"
+              echo "Auditing npm package in ${package_dir}"
+              (cd "$package_dir" && npm audit --audit-level=high)
+            done
 
       - name: Check for Cargo.toml
         id: check-cargo

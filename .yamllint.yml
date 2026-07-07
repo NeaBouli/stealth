@@ -1,6 +1,10 @@
 ---
 extends: default
 
+ignore: |
+  **/node_modules/**
+  **/build/**
+
 rules:
   line-length:
     max: 200
