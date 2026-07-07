@@ -3732,7 +3732,7 @@ Empfohlene Code-Follow-ups:
 
 ## 2026-07-07 20:55 EEST — [CODEX TERMINAL]
 ### TYPE: CI_AUDIT_FIX
-### STATUS: LOCAL_VERIFIED
+### STATUS: PUSHED_REMOTE_GREEN
 ### EMPFÄNGER: GIO|CC|DEV
 
 **GitHub Actions / CI Workflows geprueft und Audit-Coverage nachgezogen**
@@ -3797,6 +3797,21 @@ Lokale Verifikation:
   - Ergebnis: alle Tests erfolgreich.
 - `yamllint .` via temporaerem venv:
   - Ergebnis: ok nach Ignore-Fix.
+
+Remote-Verifikation nach Push:
+- Commit:
+  - `7921042 fix: extend security audit workflow coverage`
+- `Basic CI`:
+  - Run `28854335412`
+  - Ergebnis: success
+  - URL `https://github.com/NeaBouli/stealth/actions/runs/28854335412`
+- `Security Audit`:
+  - Run `28854335366`
+  - Ergebnis: success
+  - `Secret Detection`: success
+  - `Dependency Audit`: success
+  - Neuer `npm audit`-Step lief remote erfolgreich.
+  - URL `https://github.com/NeaBouli/stealth/actions/runs/28854335366`
 
 Offen / Empfehlung:
 - `Basic CI` ist weiterhin sehr schmal. Fuer echte Release-Sicherheit waere ein separater Build/Test-Workflow sinnvoll:
