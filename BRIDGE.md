@@ -4230,3 +4230,30 @@ Rules for all dev agents:
   - stealth `docs/agent-bridge/*`
   - securechat `BRIDGE.md`
   - chameleon `BRIDGE.md`
+
+---
+
+### 2026-07-08 11:37 EEST — CODEX TERMINAL — FIX
+
+**FAQ Page Style Alignment**
+- Removed stale classified/intelligence wording from public FAQ surfaces:
+  - SecureCall `website/faq.html`
+  - SecureCall wiki `website/wiki/faq.html`
+  - SecureChat `faq.html`
+- Updated FAQ accordion styling to match the current product landing pages:
+  - SecureCall uses wider card-style FAQ items via `website/css/style.css`.
+  - SecureChat FAQ now uses the landing-page honeycomb background and card-style FAQ rows.
+  - Chameleon landing FAQ was converted from inline paragraph styling to product FAQ cards.
+- Chameleon navigation/wiki FAQ links now point to the Chameleon FAQ section instead of sending users to SecureChat FAQ.
+
+**Verification**
+- Public FAQ style drift scan passed for:
+  - `CLASSIFIED`
+  - `Intelligence FAQ`
+  - `Classification: Restricted`
+  - `Briefing`
+  - old SecureChat FAQ link from Chameleon
+- `git diff --check` passed for touched FAQ/style files in `stealth`, `securechat`, and `chameleon`.
+
+**Pending**
+- Commit/push FAQ style sync in all three repos.
