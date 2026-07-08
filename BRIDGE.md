@@ -4137,3 +4137,23 @@ Rules for all dev agents:
 - stealth still has pre-existing modified `docs/agent-bridge/*` files not created by this pass.
 - securechat still has pre-existing modified `BRIDGE.md`.
 - chameleon still has pre-existing modified `BRIDGE.md`.
+
+---
+
+### 2026-07-08 08:47 EEST — CODEX TERMINAL — FIX
+
+**CI Hang Guard Follow-up**
+- GitHub Actions started after the audit-fix pushes, but several remote jobs remained `in_progress` without retrievable logs:
+  - stealth Security Audit: `cargo audit` step.
+  - securechat Android CI: `Run checks` step.
+  - chameleon CI: `Build debug APK` step.
+- Local verification for those same paths had already passed.
+- Added explicit workflow/job timeouts so future CI runs cannot hang indefinitely:
+  - stealth `f5b1644` `ci: add security audit job timeouts`
+  - securechat `ccf6342` `ci: add Android workflow timeout`
+  - chameleon `c383366` `ci: add workflow timeouts`
+- YAML parse verification passed after timeout edits.
+
+**Open Follow-up**
+- Observe next GitHub Actions run conclusions after timeout commits.
+- If CI still times out remotely while local Gradle passes, inspect runner dependency/cache/network behavior rather than app code.
