@@ -4097,3 +4097,43 @@ Rules for all dev agents:
 **Workspace Caution**
 - Existing modified `docs/agent-bridge/*` files in `stealth` remain local/uncommitted and were not touched.
 - Existing modified `BRIDGE.md` files in `securechat` and `chameleon` remain local/uncommitted and were not touched.
+
+---
+
+### 2026-07-08 08:40 EEST — CODEX TERMINAL — STATUS
+
+**Audit Fix Commits Pushed**
+- SecureCall / stealth:
+  - `faca477` `fix: harden Stripe webhook and security audit`
+  - Pushed to `origin/main`.
+- SecureChat:
+  - `5ada6db` `fix: restore Android CI and remove release tier override risk`
+  - Pushed to `origin/main`.
+- Chameleon:
+  - `8db3de7` `fix: restore CI after IFR removal and harden release tiers`
+  - Pushed to `origin/main`.
+
+**GitHub Issues Closed**
+- Closed as fixed:
+  - stealth `#31`, `#32`
+  - securechat `#1`, `#2`, `#3`, `#4`
+  - chameleon `#17`, `#18`, `#19`
+- Still open:
+  - stealth `#30` certificate pinning policy for Free build. Needs decision before code/docs alignment.
+
+**Verification Summary**
+- SecureCall backend `npm test`: passed.
+- Workflow YAML parsing:
+  - stealth `security-audit.yml`: passed.
+  - securechat `android-ci.yml`: passed.
+  - chameleon `ci.yml` and `release.yml`: passed.
+- Android local verification:
+  - SecureChat `./gradlew --no-daemon check`: passed.
+  - SecureChat `./gradlew --no-daemon assembleDebug`: passed.
+  - Chameleon `./gradlew --no-daemon check`: passed.
+  - Chameleon `./gradlew --no-daemon assembleDebug`: passed.
+
+**Remaining Local Dirt**
+- stealth still has pre-existing modified `docs/agent-bridge/*` files not created by this pass.
+- securechat still has pre-existing modified `BRIDGE.md`.
+- chameleon still has pre-existing modified `BRIDGE.md`.
