@@ -1,0 +1,32 @@
+---
+name: Brevo API Key Keepalive
+
+on:
+  schedule:
+    - cron: '17 2 1,15 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  keepalive:
+    name: Probe Brevo API key
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Brevo keepalive probe
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: |
+          if [ -z "${BREVO_API_KEY}" ]; then
+            echo "::error::BREVO_API_KEY repository secret is not configured."
+            exit 2
+          fi
+
+          tools/brevo_keepalive.sh

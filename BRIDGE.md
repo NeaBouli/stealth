@@ -3891,3 +3891,32 @@ Rules for all dev agents:
 1. Re-check Brevo dashboard for `securecall-railway` last-used timestamp.
 2. If Brevo still warns after propagation, send one controlled transactional test through the actual backend mail path or rotate/remove the stale key.
 3. Keep full key values out of Bridge, chat, logs, and commits.
+
+---
+
+## 2026-07-08 02:49 UTC — CODEX TERMINAL
+### TYPE: FIX
+### STATUS: BREVO KEEPALIVE AUTOMATION ADDED
+
+**Context**
+- User requested an automatic job that uses the Brevo key before inactivity expiry so it stays active.
+
+**Changed**
+- Added `tools/brevo_keepalive.sh`.
+  - Requires `BREVO_API_KEY` from environment.
+  - Calls `GET https://api.brevo.com/v3/account`.
+  - Prints only HTTP status / safe error summary; does not print the API key or arbitrary account response.
+- Added `.github/workflows/brevo-keepalive.yml`.
+  - Runs on GitHub Actions schedule at `02:17 UTC` on the 1st and 15th of every month.
+  - Also supports manual `workflow_dispatch`.
+  - Fails clearly if repository secret `BREVO_API_KEY` is missing.
+- Set/updated GitHub Actions repository secret `BREVO_API_KEY` from the existing Railway `protective-healing` value without printing the secret.
+
+**Verification**
+- Local keepalive script run against Railway `BREVO_API_KEY`: `HTTP 200`.
+- Workflow YAML parsed successfully with Ruby YAML.
+- Script syntax checked with `bash -n`.
+
+**Open**
+- After push, run the workflow manually once or check the first scheduled GitHub Actions run.
+- Brevo dashboard can be checked later to confirm the "last used" timestamp updated.
