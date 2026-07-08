@@ -4220,6 +4220,13 @@ Rules for all dev agents:
   - WalletConnect relay/direct app wallet claims
 - `git diff --check` passed for the touched files in all three repos.
 
-**Open Next Steps**
-- Commit/push the documentation sync changes in `stealth`, `securechat`, and `chameleon` after confirming no co-dev wants to batch them with adjacent website edits.
-- Do not overwrite existing unrelated dirty bridge/agent files in the repos.
+**Committed/Pushed**
+- stealth: `ae3b5a9` `docs: align public IFR discount copy`
+- securechat: `bcbe5d2` `docs: align public IFR discount copy`
+- chameleon: `111063d` `docs: align public IFR discount copy`
+
+**Remaining Local Dirt**
+- Existing unrelated dirty bridge/agent files remain untouched:
+  - stealth `docs/agent-bridge/*`
+  - securechat `BRIDGE.md`
+  - chameleon `BRIDGE.md`
