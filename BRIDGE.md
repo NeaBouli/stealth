@@ -4045,3 +4045,55 @@ Rules for all dev agents:
 **Workspace Caution**
 - Existing modified `docs/agent-bridge/*` files in `stealth` remain local/uncommitted and were not touched.
 - Existing modified `BRIDGE.md` files in `securechat` and `chameleon` were not touched to avoid mixing with pre-existing changes.
+
+---
+
+### 2026-07-08 08:32 EEST — CODEX TERMINAL — FIX
+
+**VLABS Audit Fix Pass**
+- Fixed actionable audit findings that did not require product-owner decisions.
+- SecureCall / stealth:
+  - Hardened `.github/workflows/security-audit.yml` so `cargo audit` and `pip-audit` failures are no longer hidden behind `|| true`.
+  - Changed cargo auditing to iterate discovered crates instead of running only at repo root.
+  - Added Stripe activation-code email delivery state to sold-code persistence.
+  - Stripe webhook now throws on sold-code persistence failure, so Stripe can retry instead of marking a purchase silently processed.
+  - Added test coverage for failed activation-code email delivery status.
+- SecureChat:
+  - Fixed `verifyNoAppIfrWalletCode` Gradle input wiring so generated `build/` outputs are excluded from task inputs.
+  - Added Android CI workflow running `check` and `assembleDebug`.
+  - Removed unused JitPack repository.
+  - Restricted `DevTierOverride` to debug builds only.
+  - Added `.internal` package suffix for `internalRelease`.
+  - Added optional camera feature declaration to satisfy Android/Play lint.
+- Chameleon:
+  - Fixed `verifyNoAppIfrWalletCode` Gradle input wiring so generated `build/` outputs are excluded from task inputs.
+  - Removed stale `:stealthx-ifr:testDebugUnitTest` references from CI and release workflows.
+  - Removed unused JitPack repository.
+  - Restricted `DevTierOverride` to debug builds only.
+  - Added `.internal` package suffix for `internalRelease`.
+  - Fixed manifest lint issues: removed protected app-level `BIND_ACCESSIBILITY_SERVICE` permission, added optional camera/NFC features, and added coarse location alongside fine location.
+
+**Verification**
+- SecureCall backend:
+  - `npm test` in `backend/signaling` passed.
+  - GitHub workflow YAML parsed for `security-audit.yml`.
+- SecureChat:
+  - GitHub workflow YAML parsed for `android-ci.yml`.
+  - `./gradlew --no-daemon check` passed.
+  - `./gradlew --no-daemon assembleDebug` passed.
+- Chameleon:
+  - GitHub workflow YAML parsed for `ci.yml` and `release.yml`.
+  - `./gradlew --no-daemon check` passed.
+  - `./gradlew --no-daemon assembleDebug` passed.
+
+**Issue State**
+- Ready to close after commits/push:
+  - stealth `#31`, `#32`
+  - securechat `#1`, `#2`, `#3`, `#4`
+  - chameleon `#17`, `#18`, `#19`
+- Still open by design:
+  - stealth `#30` needs product decision: Free flavor certificate pinning should either be enabled or documentation should explicitly state the Free exception.
+
+**Workspace Caution**
+- Existing modified `docs/agent-bridge/*` files in `stealth` remain local/uncommitted and were not touched.
+- Existing modified `BRIDGE.md` files in `securechat` and `chameleon` remain local/uncommitted and were not touched.

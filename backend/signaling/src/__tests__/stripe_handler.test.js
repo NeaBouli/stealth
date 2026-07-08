@@ -9,6 +9,8 @@ fs.mkdirSync(testDir, { recursive: true });
 process.env.SOLD_CODES_FILE = path.join(testDir, "sold_codes.json");
 process.env.STRIPE_PROCESSED_FILE = path.join(testDir, "stripe_processed_events.json");
 process.env.LICENSES_FILE = path.join(testDir, "licenses.json");
+delete process.env.BREVO_API_KEY;
+delete process.env.RESEND_API_KEY;
 
 const {
   generateActivationCode,
@@ -82,8 +84,43 @@ async function runProductLifetimeWebhookTest() {
   assert.strictEqual(activationCodes[0].tier, "elite", "stored SecureChat code activates Elite");
 }
 
+async function runEmailDeliveryStatusTest() {
+  const activationCodes = [];
+  const stripe = {
+    checkout: {
+      sessions: {
+        listLineItems: async () => ({ data: [] })
+      }
+    }
+  };
+
+  const result = await handleWebhook({
+    id: "evt_email_delivery_failed_test",
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: "cs_email_delivery_failed_test",
+        customer_email: "buyer@example.com",
+        metadata: {
+          tier: "pro",
+          product: "pro_monthly"
+        }
+      }
+    }
+  }, stripe, activationCodes);
+
+  assert.strictEqual(result.emailDeliveryStatus, "failed", "webhook returns failed email delivery status");
+
+  const soldCodes = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8")).codes;
+  const stored = soldCodes.find(c => c.stripeSessionId === "cs_email_delivery_failed_test");
+  assert.ok(stored, "sold code was persisted");
+  assert.strictEqual(stored.emailDelivery.status, "failed", "email delivery failure is persisted");
+  assert.strictEqual(stored.emailDelivery.attempts, 1, "email delivery attempt count is persisted");
+}
+
 runDynamicLifetimeWebhookTest()
   .then(runProductLifetimeWebhookTest)
+  .then(runEmailDeliveryStatusTest)
   .then(() => console.log("stripe_handler.test.js ok"))
   .catch((err) => {
     console.error(err);

@@ -63,8 +63,15 @@ jobs:
       - name: cargo audit
         if: steps.check-cargo.outputs.has_cargo == 'true'
         run: |
-          cargo install cargo-audit 2>/dev/null || true
-          cargo audit || true
+          if ! command -v cargo-audit >/dev/null 2>&1; then
+            cargo install cargo-audit
+          fi
+          find . -maxdepth 4 -name "Cargo.toml" -not -path "*/target/*" -print0 |
+            while IFS= read -r -d '' cargo_toml; do
+              crate_dir="$(dirname "$cargo_toml")"
+              echo "Auditing Rust crate in ${crate_dir}"
+              (cd "$crate_dir" && cargo audit)
+            done
 
       - name: Check for requirements.txt
         id: check-pip
@@ -78,8 +85,12 @@ jobs:
       - name: pip audit
         if: steps.check-pip.outputs.has_pip == 'true'
         run: |
-          pip install pip-audit 2>/dev/null || true
-          find . -maxdepth 3 -name "requirements.txt" -exec pip-audit -r {} \; || true
+          python -m pip install pip-audit
+          find . -maxdepth 3 -name "requirements.txt" -print0 |
+            while IFS= read -r -d '' requirements_file; do
+              echo "Auditing Python requirements in ${requirements_file}"
+              pip-audit -r "$requirements_file"
+            done
 
   security-summary:
     name: Security Summary

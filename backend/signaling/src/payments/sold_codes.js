@@ -36,7 +36,21 @@ function save(codes) {
     writeJsonAtomic(SOLD_FILE, { codes });
   } catch (e) {
     console.error("[SOLD-CODES] Save failed:", e.message);
+    throw e;
   }
+}
+
+function mergeIntoActivationCodes(entry, activationCodesRef) {
+  if (!Array.isArray(activationCodesRef)) return;
+  const alreadyPresent = activationCodesRef.some(c => c.code === entry.code);
+  if (alreadyPresent) return;
+  activationCodesRef.push({
+    code: entry.code,
+    tier: entry.tier,
+    maxUses: entry.maxUses,
+    currentUses: entry.currentUses,
+    usedBy: entry.usedBy
+  });
 }
 
 /**
@@ -51,6 +65,16 @@ function save(codes) {
  * @returns {Object} The stored entry (also in activationCodes format)
  */
 function recordSale({ code, tier, email, stripeSessionId, productKey, activationCodesRef }) {
+  const existing = load();
+  if (stripeSessionId) {
+    const existingEntry = existing.find(c => c.stripeSessionId === stripeSessionId);
+    if (existingEntry) {
+      mergeIntoActivationCodes(existingEntry, activationCodesRef);
+      console.log(`[SOLD-CODES] Existing sale reused for Stripe session: ${stripeSessionId}`);
+      return existingEntry;
+    }
+  }
+
   const entry = {
     code,
     tier,
@@ -62,27 +86,46 @@ function recordSale({ code, tier, email, stripeSessionId, productKey, activation
     stripeSessionId: stripeSessionId || null,
     productKey: productKey || null,
     createdAt: new Date().toISOString(),
+    emailDelivery: {
+      status: "pending",
+      attempts: 0,
+      lastAttemptAt: null,
+      deliveredAt: null,
+      lastError: null
+    },
     used: false
   };
 
-  const existing = load();
   existing.push(entry);
   save(existing);
 
   // Live-merge into the server's activationCodes array so the new code
   // is immediately usable by the ACTIVATE_CODE handler without restart.
-  if (Array.isArray(activationCodesRef)) {
-    activationCodesRef.push({
-      code: entry.code,
-      tier: entry.tier,
-      maxUses: entry.maxUses,
-      currentUses: entry.currentUses,
-      usedBy: entry.usedBy
-    });
-  }
+  mergeIntoActivationCodes(entry, activationCodesRef);
 
   console.log(`[SOLD-CODES] Recorded: ${code} (${tier}) -> ${email}`);
   return entry;
+}
+
+function updateEmailDelivery(stripeSessionId, delivery) {
+  if (!stripeSessionId) return null;
+  const existing = load();
+  const index = existing.findIndex(c => c.stripeSessionId === stripeSessionId);
+  if (index === -1) return null;
+
+  const current = existing[index].emailDelivery || {};
+  existing[index] = {
+    ...existing[index],
+    emailDelivery: {
+      status: delivery.status,
+      attempts: typeof delivery.attempts === "number" ? delivery.attempts : (current.attempts || 0),
+      lastAttemptAt: delivery.lastAttemptAt || current.lastAttemptAt || null,
+      deliveredAt: delivery.deliveredAt || current.deliveredAt || null,
+      lastError: delivery.lastError || null
+    }
+  };
+  save(existing);
+  return existing[index];
 }
 
 /**
@@ -99,4 +142,4 @@ function loadAsActivationCodes() {
   }));
 }
 
-module.exports = { load, save, recordSale, loadAsActivationCodes };
+module.exports = { load, save, recordSale, updateEmailDelivery, loadAsActivationCodes };

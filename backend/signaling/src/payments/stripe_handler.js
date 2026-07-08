@@ -283,9 +283,10 @@ async function handleWebhook(event, stripe, activationCodesRef) {
   console.log("[STRIPE] Activation code generated:", code.substring(0, 4) + "****", "tier:", tier);
 
   // 4. Record sale + inject into activationCodes array (so ACTIVATE_CODE handler finds it)
+  let soldCodeEntry;
   try {
     const soldCodes = require("./sold_codes");
-    soldCodes.recordSale({
+    soldCodeEntry = soldCodes.recordSale({
       code,
       tier,
       email: email || "unknown",
@@ -295,6 +296,7 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     });
   } catch (err) {
     console.error("[STRIPE] Failed to record sold code:", err.message);
+    throw err;
   }
 
   // 5. Record dynamic-pricing sale if applicable
@@ -306,6 +308,14 @@ async function handleWebhook(event, stripe, activationCodesRef) {
   }
 
   // 6. Send activation code via email
+  const emailDelivery = {
+    status: email ? "pending" : "missing_email",
+    attempts: (soldCodeEntry?.emailDelivery?.attempts || 0) + (email ? 1 : 0),
+    lastAttemptAt: email ? new Date().toISOString() : null,
+    deliveredAt: null,
+    lastError: null
+  };
+
   if (email) {
     try {
       const { sendActivationCode } = require("./email_handler");
@@ -315,11 +325,24 @@ async function handleWebhook(event, stripe, activationCodesRef) {
         ...resolveProductEmailOptions(productKey)
       });
       console.log("[STRIPE] Email send result:", sent);
+      emailDelivery.status = sent ? "delivered" : "failed";
+      emailDelivery.deliveredAt = sent ? new Date().toISOString() : null;
+      emailDelivery.lastError = sent ? null : "email_provider_not_configured_or_rejected";
     } catch (err) {
       console.error("[STRIPE] Email delivery failed:", err.message, err.stack);
+      emailDelivery.status = "failed";
+      emailDelivery.lastError = err.message;
     }
   } else {
     console.warn("[STRIPE] No customer email — code saved but not delivered:", code.substring(0, 4) + "****");
+  }
+
+  try {
+    const soldCodes = require("./sold_codes");
+    soldCodes.updateEmailDelivery(session.id, emailDelivery);
+  } catch (err) {
+    console.error("[STRIPE] Failed to persist email delivery status:", err.message);
+    throw err;
   }
 
   // Mark event as successfully processed (idempotency guard for Stripe retries).
@@ -328,7 +351,7 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     saveProcessedEvents();
   }
 
-  return { code, tier, email, productKey };
+  return { code, tier, email, productKey, emailDeliveryStatus: emailDelivery.status };
 }
 
 /**
