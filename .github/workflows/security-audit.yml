@@ -15,6 +15,7 @@ jobs:
   secret-scan:
     name: Secret Detection
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,6 +30,7 @@ jobs:
   dependency-audit:
     name: Dependency Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -95,6 +97,7 @@ jobs:
   security-summary:
     name: Security Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [secret-scan, dependency-audit]
     if: always()
     steps:
