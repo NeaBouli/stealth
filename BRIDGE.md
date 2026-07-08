@@ -4233,6 +4233,26 @@ Rules for all dev agents:
 
 ---
 
+### 2026-07-08 21:56 EEST — CODEX TERMINAL — DECISION
+
+**Duplicate Claude-Code-Terminal Bridge Blocks**
+- User asked whether the remaining dirty bridge/agent files are needed.
+- Diff review showed the dirty files only append the same `CODEX_CLAUDE_CODE_TERMINAL_BRIDGE_V1` coordination block:
+  - stealth `docs/agent-bridge/*` — 21 files, same 38-line block duplicated.
+  - securechat `BRIDGE.md` — same 38-line block.
+  - chameleon `BRIDGE.md` — same 38-line block.
+- Decision:
+  - Product/app/web functionality does not need these duplicate blocks.
+  - Keep one canonical coordination note in `/Users/gio/Desktop/repos/stealth/BRIDGE.md`.
+  - Treat the duplicated dirty blocks as cleanup candidates, not release blockers.
+  - Do not commit or remove them unless the user explicitly approves cleanup, because they may have been produced by another agent/session.
+
+**Open Work Snapshot**
+- Current website FAQ/navigation work is complete and live-verified.
+- Next useful work should focus on CI/release hardening and remaining product QA, not the duplicate bridge blocks.
+
+---
+
 ### 2026-07-08 11:37 EEST — CODEX TERMINAL — FIX
 
 **FAQ Page Style Alignment**
