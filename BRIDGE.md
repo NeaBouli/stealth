@@ -4314,6 +4314,9 @@ Rules for all dev agents:
 - `git diff --check` passed for both changed repos before commit.
 - Drift scan confirmed no remaining old inline `#FFD700` Lifetime header links in SecureCall FAQ/wiki navigation.
 - SecureChat FAQ now contains `id="nav-links"`, `id="nav-toggle"`, Architecture/Roadmap tabs, and mobile open/close JS.
+- Live cache-busted checks after push confirmed:
+  - `https://stealthx.tech/faq.html?nocache=20260708-nav2` returns the `sx-nav` header, `Broadcast`, `aria-current="page"`, and no old `#FFD700`/`#00ff88` inline FAQ colors.
+  - `https://securechat.stealthx.tech/faq.html?nocache=20260708-nav2` returns `nav-toggle`, `id="nav-links"`, `/#architecture`, `/#roadmap`, and `Chameleon ↗`.
 
 **Committed/Pushed**
 - stealth: `9f8cef2` `docs: align FAQ navigation with landing pages`
