@@ -4157,3 +4157,17 @@ Rules for all dev agents:
 **Open Follow-up**
 - Observe next GitHub Actions run conclusions after timeout commits.
 - If CI still times out remotely while local Gradle passes, inspect runner dependency/cache/network behavior rather than app code.
+
+---
+
+### 2026-07-08 08:50 EEST — CODEX TERMINAL — STATUS
+
+**CI Cleanup**
+- Cancel requested for old in-progress runs that were started before timeout guards existed:
+  - stealth Security Audit run `28893262829`
+  - securechat Android CI run `28893223243`
+  - chameleon CI run `28893223199`
+- Current post-timeout runs remain active and should be observed:
+  - stealth Security Audit for `f5b1644` / Bridge follow-up push
+  - securechat Android CI for `ccf6342`
+  - chameleon CI for `c383366`
