@@ -3920,3 +3920,25 @@ Rules for all dev agents:
 **Open**
 - After push, run the workflow manually once or check the first scheduled GitHub Actions run.
 - Brevo dashboard can be checked later to confirm the "last used" timestamp updated.
+
+---
+
+## 2026-07-08 02:41 UTC — CODEX TERMINAL
+### TYPE: STATUS
+### STATUS: BREVO KEEPALIVE WORKFLOW VERIFIED
+
+**Commit**
+- `0950e84 ci: keep Brevo API key active`
+
+**Remote Verification**
+- Manual GitHub Actions run completed successfully:
+  - Workflow: `Brevo API Key Keepalive`
+  - Run: `28882933783`
+  - URL: `https://github.com/NeaBouli/stealth/actions/runs/28882933783`
+  - Conclusion: `success`
+- `Basic CI` for commit `0950e84` completed successfully.
+- `Security Audit` for commit `0950e84` was still in progress at this note.
+
+**Next Steps**
+1. Check the next scheduled Brevo keepalive run after `2026-07-15 02:17 UTC`.
+2. Optionally verify Brevo dashboard "last used" timestamp for `securecall-railway`.
