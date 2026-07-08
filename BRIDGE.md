@@ -3966,3 +3966,82 @@ Rules for all dev agents:
 
 **Workspace Caution**
 - Existing modified `docs/agent-bridge/*` files remain local/uncommitted and were not touched by this Brevo keepalive update.
+
+---
+
+## 2026-07-08 04:48 UTC — CODEX TERMINAL
+### TYPE: STATUS
+### STATUS: VLABS AUDIT PASS — FINDING TICKETS CREATED
+
+**Context**
+- User requested a full audit of `stealth` / SecureCall, `securechat`, and `chameleon`.
+- Audit method was aligned with `NeaBouli/vlabs`:
+  - `products/vlabs-codebase-github-audit-kit/SYSTEM_PROMPT.md`
+  - `TASK_FLOW.md`
+  - `OUTPUT_FORMAT.md`
+  - `public/downloads/skills/vlabs-codebase-risk-map.skill`
+- Local `code-audit` methodology also used: evidence-backed findings, severity, file/line evidence, concrete fix/test.
+
+**Scope Covered**
+- Repos:
+  - `/Users/gio/Desktop/repos/stealth` → `NeaBouli/stealth`
+  - `/Users/gio/Desktop/repos/securechat` → `NeaBouli/securechat`
+  - `/Users/gio/Desktop/repos/chameleon` → `NeaBouli/chameleon`
+- Focus:
+  - Android manifests/build variants.
+  - Tier/activation-code flow.
+  - IFR/wallet-code removal verification.
+  - Backend Stripe/email activation-code delivery.
+  - CI/security workflow coverage.
+  - Supply-chain repository configuration.
+
+**Verification**
+- SecureChat app source scan: productive app code has no `IFR`, `WalletConnect`, `MetaMask`, `web3`, or wallet-code hits.
+- Chameleon app source scan: productive app code has no `IFR`, `WalletConnect`, `MetaMask`, `web3`, or wallet-code hits.
+- SecureCall Android main source: no in-app wallet/IFR path found; IFR remains in backend/web checkout path.
+- SecureCall backend tests:
+  - `npm test` in `backend/signaling` passed.
+- SecureChat local check:
+  - `./gradlew --no-daemon check` failed in `:verifyNoAppIfrWalletCode` due Gradle implicit-dependency validation.
+- Chameleon local reproduction:
+  - `./gradlew --no-daemon :stealthx-ifr:testDebugUnitTest` failed because project `:stealthx-ifr` is not included.
+- GitHub Chameleon CI:
+  - Latest listed Chameleon CI runs are failing.
+  - Run `28502352054` failed with `project 'stealthx-ifr' not found`.
+
+**Issues Created**
+- SecureCall / stealth:
+  - `#30` `[VLABS-AUDIT][HIGH] Align SecureCall certificate-pinning policy for Free build`
+    - https://github.com/NeaBouli/stealth/issues/30
+  - `#31` `[VLABS-AUDIT][HIGH] Stripe webhook marks paid events processed even when activation email is not delivered`
+    - https://github.com/NeaBouli/stealth/issues/31
+  - `#32` `[VLABS-AUDIT][MEDIUM] Security audit workflow masks cargo/pip audit failures`
+    - https://github.com/NeaBouli/stealth/issues/32
+- SecureChat:
+  - `#1` `[VLABS-AUDIT][HIGH] Gradle check fails in verifyNoAppIfrWalletCode task`
+    - https://github.com/NeaBouli/securechat/issues/1
+  - `#2` `[VLABS-AUDIT][HIGH] Android build/test CI is missing for SecureChat`
+    - https://github.com/NeaBouli/securechat/issues/2
+  - `#3` `[VLABS-AUDIT][HIGH] Release-signed internal/elite variants can force paid tier`
+    - https://github.com/NeaBouli/securechat/issues/3
+  - `#4` `[VLABS-AUDIT][MEDIUM] Remove unused JitPack repository after Wallet/IFR app code removal`
+    - https://github.com/NeaBouli/securechat/issues/4
+- Chameleon:
+  - `#17` `[VLABS-AUDIT][HIGH] CI and release workflows still reference removed :stealthx-ifr module`
+    - https://github.com/NeaBouli/chameleon/issues/17
+  - `#18` `[VLABS-AUDIT][HIGH] Release-signed internal/elite variants can force paid tier`
+    - https://github.com/NeaBouli/chameleon/issues/18
+  - `#19` `[VLABS-AUDIT][MEDIUM] Remove unused JitPack repository after Wallet/IFR app code removal`
+    - https://github.com/NeaBouli/chameleon/issues/19
+
+**Recommended Fix Order**
+1. Chameleon `#17`: unblock CI/release by removing stale `:stealthx-ifr` workflow references.
+2. SecureChat `#1` + `#2`: fix `verifyNoAppIfrWalletCode`, then add Android CI so future regressions are caught.
+3. SecureChat `#3` + Chameleon `#18`: prevent release-signed forced-tier artifacts with production package IDs.
+4. stealth `#31`: make Stripe activation-code delivery retryable/recoverable.
+5. stealth `#30`: decide certificate pinning policy for Free and align code/docs.
+6. stealth `#32`, SecureChat `#4`, Chameleon `#19`: harden CI/supply chain.
+
+**Workspace Caution**
+- Existing modified `docs/agent-bridge/*` files in `stealth` remain local/uncommitted and were not touched.
+- Existing modified `BRIDGE.md` files in `securechat` and `chameleon` were not touched to avoid mixing with pre-existing changes.
