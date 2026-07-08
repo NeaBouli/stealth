@@ -4287,3 +4287,39 @@ Rules for all dev agents:
 - `https://stealthx.tech/faq.html?nocache=20260708b` now returns the new `faq-refresh` markup, Schibsted/Hanken font link, and `css/style.css?v=20260708-faq2`.
 - `https://securechat.stealthx.tech/faq.html?nocache=20260708b` now returns the new SecureChat FAQ refresh marker, Schibsted/Hanken font link, and desktop two-column FAQ card grid.
 - Note: the first post-push check briefly saw old custom-domain HTML while `neabouli.github.io/stealth/faq.html` was already updated; the custom domain caught up after GitHub Pages/Fastly propagation.
+
+---
+
+### 2026-07-08 12:00 EEST — CODEX TERMINAL — FIX
+
+**FAQ Navigation/Header Alignment**
+- User reported the FAQ navigation header still had wrong text colors and stale tabs:
+  - SecureCall FAQ header still used old `navbar/nav-links` markup with inline gold/green link colors.
+  - SecureChat FAQ header was missing the landing-page mobile toggle and current Architecture/Roadmap tabs.
+- SecureCall public FAQ updated to the same `sx-nav` structure as the current landing page:
+  - `Platform`, `Features`, `Security`, `Audit`, `Compare`, `Pricing`, `Lifetime`, `Broadcast`, `FAQ`, `GitHub`
+  - `SecureChat` and `Download` moved into landing-style action buttons.
+  - Removed the stale inline header colors and loaded the landing navigation stylesheet.
+- SecureCall wiki top navigation was mechanically aligned across wiki pages:
+  - Added `Platform` and `Broadcast`.
+  - Removed the old inline gold `Lifetime` header color.
+- SecureChat FAQ navigation aligned with the SecureChat landing page:
+  - Added mobile hamburger/toggle behavior.
+  - Added `Architecture` and `Roadmap`.
+  - Updated Chameleon cross-link styling and label to match the landing header.
+- Chameleon was checked; no separate FAQ header page required a matching patch in this pass.
+
+**Verification**
+- `git diff --check` passed for both changed repos before commit.
+- Drift scan confirmed no remaining old inline `#FFD700` Lifetime header links in SecureCall FAQ/wiki navigation.
+- SecureChat FAQ now contains `id="nav-links"`, `id="nav-toggle"`, Architecture/Roadmap tabs, and mobile open/close JS.
+
+**Committed/Pushed**
+- stealth: `9f8cef2` `docs: align FAQ navigation with landing pages`
+- securechat: `e3e868c` `docs: align FAQ navigation with landing page`
+
+**Remaining Local Dirt**
+- Existing unrelated dirty bridge/agent files remain untouched:
+  - stealth `docs/agent-bridge/*`
+  - securechat `BRIDGE.md`
+  - chameleon `BRIDGE.md`
