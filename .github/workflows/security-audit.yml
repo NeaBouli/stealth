@@ -64,15 +64,18 @@ jobs:
 
       - name: cargo audit
         if: steps.check-cargo.outputs.has_cargo == 'true'
+        timeout-minutes: 12
+        env:
+          CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
         run: |
           if ! command -v cargo-audit >/dev/null 2>&1; then
-            cargo install cargo-audit
+            timeout 600s cargo install cargo-audit --locked
           fi
           find . -maxdepth 4 -name "Cargo.toml" -not -path "*/target/*" -print0 |
             while IFS= read -r -d '' cargo_toml; do
               crate_dir="$(dirname "$cargo_toml")"
               echo "Auditing Rust crate in ${crate_dir}"
-              (cd "$crate_dir" && cargo audit)
+              (cd "$crate_dir" && timeout 300s cargo audit)
             done
 
       - name: Check for requirements.txt
