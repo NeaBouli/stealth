@@ -4259,3 +4259,25 @@ Rules for all dev agents:
 - stealth: `355f125` `docs: refresh public FAQ styling`
 - securechat: `f97213f` `docs: refresh public FAQ styling`
 - chameleon: `6b3469c` `docs: refresh public FAQ styling`
+
+---
+
+### 2026-07-08 11:50 EEST — CODEX TERMINAL — FIX
+
+**FAQ Live Style Follow-up**
+- User reported the live FAQ pages still looked too old:
+  - `https://stealthx.tech/faq.html`
+  - `https://securechat.stealthx.tech/faq.html`
+- Verified live HTML already contained the prior text changes, but the visual treatment was still too close to the old FAQ template.
+- Applied stronger visible redesign:
+  - SecureCall FAQ now uses the current light landing-page palette, Schibsted/Hanken typography, wider FAQ layout, two-column FAQ cards on desktop, and cache-busted `css/style.css?v=20260708-faq2`.
+  - SecureChat FAQ now uses the current light SecureChat landing-page style, same modern typography, honeycomb background, two-column FAQ cards, and refreshed nav/footer coloring.
+
+**Verification**
+- `git diff --check` passed for:
+  - `stealth/website/faq.html`
+  - `securechat/faq.html`
+- Local browser screenshot tooling was not available (`playwright`, `puppeteer`, `@playwright/test` not installed), so post-push validation should use live HTML markers and manual visual browser refresh.
+
+**Pending**
+- Commit/push SecureCall and SecureChat FAQ live-style follow-up.
