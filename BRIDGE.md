@@ -4279,5 +4279,6 @@ Rules for all dev agents:
   - `securechat/faq.html`
 - Local browser screenshot tooling was not available (`playwright`, `puppeteer`, `@playwright/test` not installed), so post-push validation should use live HTML markers and manual visual browser refresh.
 
-**Pending**
-- Commit/push SecureCall and SecureChat FAQ live-style follow-up.
+**Committed**
+- stealth: `92cb054` `docs: modernize public FAQ page styling`
+- securechat: `11f3247` `docs: modernize public FAQ page styling`
