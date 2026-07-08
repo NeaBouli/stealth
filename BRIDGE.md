@@ -4255,5 +4255,7 @@ Rules for all dev agents:
   - old SecureChat FAQ link from Chameleon
 - `git diff --check` passed for touched FAQ/style files in `stealth`, `securechat`, and `chameleon`.
 
-**Pending**
-- Commit/push FAQ style sync in all three repos.
+**Committed**
+- stealth: `355f125` `docs: refresh public FAQ styling`
+- securechat: `f97213f` `docs: refresh public FAQ styling`
+- chameleon: `6b3469c` `docs: refresh public FAQ styling`
