@@ -4282,3 +4282,8 @@ Rules for all dev agents:
 **Committed**
 - stealth: `92cb054` `docs: modernize public FAQ page styling`
 - securechat: `11f3247` `docs: modernize public FAQ page styling`
+
+**Live Verification**
+- `https://stealthx.tech/faq.html?nocache=20260708b` now returns the new `faq-refresh` markup, Schibsted/Hanken font link, and `css/style.css?v=20260708-faq2`.
+- `https://securechat.stealthx.tech/faq.html?nocache=20260708b` now returns the new SecureChat FAQ refresh marker, Schibsted/Hanken font link, and desktop two-column FAQ card grid.
+- Note: the first post-push check briefly saw old custom-domain HTML while `neabouli.github.io/stealth/faq.html` was already updated; the custom domain caught up after GitHub Pages/Fastly propagation.
