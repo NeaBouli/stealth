@@ -3857,3 +3857,37 @@ Rules for all dev agents:
 - If a probe returns `401 Invalid authentication credentials`, the integration is using the wrong path: API instead of terminal.
 - Keep secrets, tokens, passwords, private keys, and keychain material out of bridge files.
 <!-- /CODEX_CLAUDE_CODE_TERMINAL_BRIDGE_V1 -->
+
+---
+
+## 2026-07-08 02:36 UTC — CODEX TERMINAL
+### TYPE: EXTERNAL
+### STATUS: BREVO INACTIVITY WARNING PROBED
+
+**Context**
+- User asked whether the Brevo inactivity warning for `securecall-railway` can be cleared by briefly using the key.
+- Full API key value was not printed, committed, or written to Bridge.
+
+**Checked**
+- Railway linked project/service:
+  - Project: `disciplined-flexibility`
+  - Service: `protective-healing`
+  - Public URL: `https://protective-healing-production.up.railway.app`
+- Railway production variables include `BREVO_API_KEY`.
+- The Railway `BREVO_API_KEY` matches the email suffix marker `xkeysib-*306Tk0`.
+
+**Probe**
+- Performed minimal Brevo API account probe:
+  - Endpoint: `GET https://api.brevo.com/v3/account`
+  - Auth: Railway `BREVO_API_KEY`
+  - Result: `HTTP 200`
+
+**Interpretation**
+- The key is still active and accepted by Brevo.
+- This API usage should refresh Brevo's inactivity tracking if Brevo counts account probes as key usage.
+- Dashboard should still be checked later for the key's "last used" timestamp because Brevo's warning UI/email timing can lag.
+
+**Next Steps**
+1. Re-check Brevo dashboard for `securecall-railway` last-used timestamp.
+2. If Brevo still warns after propagation, send one controlled transactional test through the actual backend mail path or rotate/remove the stale key.
+3. Keep full key values out of Bridge, chat, logs, and commits.
