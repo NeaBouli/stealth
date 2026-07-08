@@ -46,7 +46,7 @@ android {
             buildConfigField "int", "MAX_CONTACTS", "10"
             buildConfigField "boolean", "DEVICE_ATTESTATION_REQUIRED", "false"
             buildConfigField "boolean", "ROOT_DETECTION_BLOCKS", "false"
-            buildConfigField "boolean", "CERTIFICATE_PINNING", "false"
+            buildConfigField "boolean", "CERTIFICATE_PINNING", "true"
             buildConfigField "boolean", "CALL_RECORDING_ALLOWED", "true"
             buildConfigField "boolean", "TELEMETRY_ENABLED", "true"
             buildConfigField "boolean", "THIRD_PARTY_ANALYTICS", "true"

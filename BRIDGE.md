@@ -4171,3 +4171,20 @@ Rules for all dev agents:
   - stealth Security Audit for `f5b1644` / Bridge follow-up push
   - securechat Android CI for `ccf6342`
   - chameleon CI for `c383366`
+
+---
+
+### 2026-07-08 10:59 EEST — CODEX TERMINAL — FIX
+
+**SecureCall Free Certificate Pinning Decision Applied**
+- Product decision received: Option A.
+- SecureCall Free now enables `BuildConfig.CERTIFICATE_PINNING=true`, matching Pro and Premium.
+- Updated public flavor documentation so all three tiers show Certificate Pinning as enabled.
+
+**Verification**
+- `cd client_android && ./gradlew --no-daemon --max-workers=1 assembleFreeDebug`: passed.
+- `cd client_android && ./gradlew --no-daemon --max-workers=1 bundleFreeRelease`: passed.
+
+**Issue State**
+- Ready to close:
+  - stealth `#30` `[VLABS-AUDIT][HIGH] Align SecureCall certificate-pinning policy for Free build`

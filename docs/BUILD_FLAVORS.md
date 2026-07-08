@@ -14,7 +14,7 @@ SecureCall uses Android Product Flavors to produce three distinct app tiers from
 | **Contacts** | 10 | Unlimited | Unlimited |
 | **Device Attestation** | No | Yes | Yes |
 | **Root Detection** | Warn | Block | Terminate |
-| **Certificate Pinning** | No | Yes | Yes |
+| **Certificate Pinning** | Yes | Yes | Yes |
 | **Screen Capture Detection** | No | No | Yes |
 | **Debugger Detection** | No | No | Yes (terminate) |
 | **Emulator Detection** | No | No | Yes (block) |
