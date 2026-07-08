@@ -26,8 +26,8 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Built-in WireGuard VPN (Premium)
 - STEALTH-DELETE: emergency data wipe (5 rapid taps)
 - Emergency Broadcast System: privacy-preserving alerts
-- IFR Token integration: hold tokens for lifetime Premium access
-- Read-only IFR wallet balance verification
+- IFR holder discount: browser wallet verification for 50% Stripe checkout discounts
+- Read-only IFR balance verification on the website; no in-app wallet unlock
 - Anti-recording protection and screen capture detection
 - Works on WiFi, Mobile Data, and VPN simultaneously
 - FCM push notifications for incoming calls when app is closed
@@ -40,14 +40,14 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Pro Lifetime: from €15 one-time (limited 100 licenses, price rises to €50)
 - Premium Lifetime: from €25 one-time (limited 100 licenses, price rises to €100)
 - Premium Activation Code: €49 one-time (gift or self-use, 2 devices)
-- IFR Token Hold: 2,000 IFR = Pro | 6,000 IFR = Premium (lifetime while held)
+- IFR Holder Discount: 2,000 IFR = 50% off Pro checkout | 6,000 IFR = 50% off Premium checkout
 
 ## How does SecureCall compare to Signal?
 - Signal requires a phone number; SecureCall does not
 - Unlike Signal's open-source model, SecureCall publishes source code for auditability only; copying, building, running, distributing, rebranding, hosting, or using SecureCall requires prior written permission from Vendetta Labs.
 - Signal does not have built-in VPN; SecureCall has WireGuard VPN
 - Signal does not have emergency data wipe; SecureCall has STEALTH-DELETE
-- Signal does not have token-based lifetime access; SecureCall has IFR Token
+- Signal does not have browser-based IFR holder checkout discounts; SecureCall does
 - Both use end-to-end encryption; SecureCall uses X25519 + XChaCha20-Poly1305
 
 ## Technical Stack

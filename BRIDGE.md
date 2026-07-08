@@ -4188,3 +4188,38 @@ Rules for all dev agents:
 **Issue State**
 - Closed:
   - stealth `#30` `[VLABS-AUDIT][HIGH] Align SecureCall certificate-pinning policy for Free build`
+
+---
+
+### 2026-07-08 11:24 EEST — CODEX TERMINAL — STATUS
+
+**Landing/Wiki IFR Sales-Model Sync**
+- Verified the public landing/wiki model across SecureCall, SecureChat, and Chameleon:
+  - Android apps stay free of in-app WalletConnect/IFR unlock logic.
+  - IFR holder benefits are handled on the websites through signed browser-wallet verification.
+  - Eligible holders receive 50% Stripe checkout discounts and unlock apps through normal purchase/activation-code paths.
+- SecureCall public pages were already aligned on the main landing/wiki flow; cleaned stale public/supporting copy in:
+  - `website/llms.txt`
+  - `website/disclaimer.html`
+  - `docs/IFR_PARTNERS.md`
+  - `docs/PLAY_STORE_LISTING.md`
+  - `docs/GITHUB_RELEASES.md`
+- SecureChat public wiki/AI context cleaned:
+  - Removed stale lock/lifetime-access wording from `llms.txt`.
+  - Removed manual wallet-address fallback wording from `wiki/ifr-unlock.html` and `wiki/user-manual.html`.
+  - Replaced app IFR-cache/tier-unlock wording in `wiki/security-design.html`, `wiki/architecture.html`, and `wiki/user-manual.html`.
+- Chameleon public wiki/docs cleaned:
+  - Removed stale IFR Lock/tier-system wording from `README.md`, `ECOSYSTEM.md`, `wiki/user-manual.html`, `wiki/index.html`, and F-Droid metadata.
+  - Chameleon docs now point to website-only signed wallet verification for Stripe discounts; no in-app wallet verification.
+
+**Verification**
+- Drift scan passed for public landing/wiki/README/LLM/F-Droid surfaces against stale patterns:
+  - manual wallet address fallback
+  - IFR Lock / IFR Required
+  - in-app IFR tier unlock
+  - WalletConnect relay/direct app wallet claims
+- `git diff --check` passed for the touched files in all three repos.
+
+**Open Next Steps**
+- Commit/push the documentation sync changes in `stealth`, `securechat`, and `chameleon` after confirming no co-dev wants to batch them with adjacent website edits.
+- Do not overwrite existing unrelated dirty bridge/agent files in the repos.

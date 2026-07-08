@@ -38,9 +38,9 @@ Receive critical security alerts from the development team. Pre-installed templa
 🔓 UNLOCK PREMIUM — THREE WAYS
 • Google Play in-app purchase
 • Activation code (contact @secureslot on X)
-• Lock ≥ 1,000 IFR tokens — lifetime access, no subscription
-  IFR is the native token of Inferno Protocol (ifrunit.tech)
-  Bootstrap phase ends June 5, 2026 — trading expected August 2026
+• IFR holders can verify a browser wallet on stealthx.tech
+  for a 50% Stripe checkout discount. No wallet connection
+  runs inside the Android app.
 
 🎁 GIFT PREMIUM ACCESS
 Generate a one-time gift code for a friend. They enter it in Settings → instant Premium. No account needed. Expires in 30 days.
@@ -91,7 +91,7 @@ Everyone
 v2.0 — Initial Release
 • End-to-end encrypted P2P calls
 • WireGuard VPN integration (Premium)
-• IFR Token unlock via WalletConnect v2
+• Website IFR holder discount via signed browser-wallet verification
 • STEALTH-DELETE emergency wipe
 • Emergency Broadcast System
 • AdMob ads (Free version only)

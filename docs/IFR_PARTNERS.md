@@ -58,10 +58,10 @@
 **Website:** stealthx.tech
 
 ### IFR Integration
-- **Pro Tier:** Lock >= 1,000 IFR → Lifetime Pro access
-- **Premium Tier:** Lock >= 5,000 IFR → Lifetime Premium access
-- **WalletConnect v2:** Wallet verification directly in the app
-- **Multi-Device:** WalletConnect-verified wallets = unlimited devices
+- **Current public model:** Browser wallet verification on the website for Stripe checkout discounts
+- **Pro discount:** Hold >= 2,000 IFR -> 50% off eligible Pro checkout
+- **Premium discount:** Hold >= 6,000 IFR -> 50% off eligible Premium checkout
+- **Android app status:** No WalletConnect, no in-app IFR unlock in the public app line
 
 ---
 

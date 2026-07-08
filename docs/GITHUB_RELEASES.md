@@ -28,7 +28,7 @@ No phone number. No account. Zero metadata.
 - WireGuard VPN (Premium)
 - STEALTH-DELETE emergency wipe
 - Emergency Broadcast System
-- IFR Token lifetime unlock via WalletConnect v2
+- Website IFR holder discount via signed browser-wallet verification
 
 ## Requirements
 - Android 7.0+ (API 24)
