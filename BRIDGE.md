@@ -4307,6 +4307,7 @@ Rules for all dev agents:
   - Added mobile hamburger/toggle behavior.
   - Added `Architecture` and `Roadmap`.
   - Updated Chameleon cross-link styling and label to match the landing header.
+- Removed a remaining old green inline FAQ body-link color from SecureCall FAQ so the page no longer carries stale FAQ color styling outside the header either.
 - Chameleon was checked; no separate FAQ header page required a matching patch in this pass.
 
 **Verification**
@@ -4316,6 +4317,7 @@ Rules for all dev agents:
 
 **Committed/Pushed**
 - stealth: `9f8cef2` `docs: align FAQ navigation with landing pages`
+- stealth: `6df4333` `docs: remove stale FAQ inline link color`
 - securechat: `e3e868c` `docs: align FAQ navigation with landing page`
 
 **Remaining Local Dirt**
