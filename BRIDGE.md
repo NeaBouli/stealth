@@ -4186,5 +4186,5 @@ Rules for all dev agents:
 - `cd client_android && ./gradlew --no-daemon --max-workers=1 bundleFreeRelease`: passed.
 
 **Issue State**
-- Ready to close:
+- Closed:
   - stealth `#30` `[VLABS-AUDIT][HIGH] Align SecureCall certificate-pinning policy for Free build`
