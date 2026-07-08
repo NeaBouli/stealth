@@ -3942,3 +3942,27 @@ Rules for all dev agents:
 **Next Steps**
 1. Check the next scheduled Brevo keepalive run after `2026-07-15 02:17 UTC`.
 2. Optionally verify Brevo dashboard "last used" timestamp for `securecall-railway`.
+
+---
+
+## 2026-07-08 03:07 UTC — CODEX TERMINAL
+### TYPE: STATUS
+### STATUS: BREVO KEEPALIVE CI GREEN
+
+**Current HEAD**
+- `4461aa2 docs: record Brevo keepalive verification`
+
+**Remote Verification**
+- `Brevo API Key Keepalive` manual run `28882933783`: `success`.
+- `Basic CI` for `0950e84 ci: keep Brevo API key active`: `success`.
+- `Security Audit` for `0950e84 ci: keep Brevo API key active`: `success`.
+- `Basic CI` for `4461aa2 docs: record Brevo keepalive verification`: `success`.
+- `Security Audit` for `4461aa2 docs: record Brevo keepalive verification`: `success`.
+
+**Notes**
+- GitHub Actions secret `BREVO_API_KEY` is configured for the repo and was not printed.
+- The scheduled keepalive remains configured for the 1st and 15th of every month at `02:17 UTC`.
+- The next scheduled run to check is after `2026-07-15 02:17 UTC`.
+
+**Workspace Caution**
+- Existing modified `docs/agent-bridge/*` files remain local/uncommitted and were not touched by this Brevo keepalive update.
