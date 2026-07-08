@@ -19,6 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css?v=20260708-faq2">
+    <link rel="stylesheet" href="css/landing.css?v=20260708-nav1">
     <style>
         body.faq-refresh {
             background:
@@ -34,21 +35,11 @@
                 linear-gradient(150deg, rgba(14,159,143,.16) 12%, transparent 12.5%, transparent 87%, rgba(14,159,143,.16) 87.5%, rgba(14,159,143,.16));
             background-size: 96px 120px;
         }
-        .faq-refresh .navbar.scrolled {
-            background: rgba(247,249,252,.90);
-            border-bottom: 1px solid rgba(15,23,42,.10);
+        .faq-refresh .sx-nav {
             box-shadow: 0 10px 32px rgba(15,23,42,.05);
         }
-        .faq-refresh .nav-logo,
-        .faq-refresh .nav-links a,
-        .faq-refresh .nav-links a:hover {
+        .faq-refresh .sx-nav-links a[aria-current="page"] {
             color: #121926;
-        }
-        .faq-refresh .nav-logo-img {
-            width: 142px;
-            height: auto;
-            max-height: 42px;
-            object-fit: contain;
         }
         .faq-refresh .page-content {
             max-width: 1040px;
@@ -121,6 +112,10 @@
             border-top-color: rgba(15,23,42,.08);
             padding: 0 22px 22px;
         }
+        .faq-refresh .faq-answer-inner a {
+            color: #3269d8;
+            font-weight: 700;
+        }
         @media (max-width: 820px) {
             .faq-refresh .faq-list { grid-template-columns: 1fr; }
             .faq-refresh .page-content { padding: 108px 18px 72px; }
@@ -143,32 +138,30 @@
     }
     </script>
 </head>
-<body class="faq-refresh">
+<body class="landing-redesign faq-refresh">
 <!-- ─── Navigation ──────────────────────────────────────── -->
-    <nav class="navbar scrolled" id="navbar">
-        <div class="container nav-inner">
-            <a href="./" class="nav-logo">
-                <img src="logo.png" alt="SecureCall" class="nav-logo-img">
-                SecureCall
+    <nav class="sx-nav" id="navbar">
+        <div class="container sx-nav-inner">
+            <a href="./" class="sx-logo" aria-label="StealthX home">
+                <img src="assets/brand/stealthx-logo.png" alt="StealthX">
             </a>
-            <div class="nav-links" id="navLinks">
+            <div class="sx-nav-links" id="navLinks">
+                <a href="./#platform">Platform</a>
                 <a href="./#features">Features</a>
                 <a href="./#security">Security</a>
                 <a href="./#audit">Audit</a>
                 <a href="./#compare">Compare</a>
                 <a href="./#pricing">Pricing</a>
-                <a href="./#lifetime" style="color:#FFD700">Lifetime</a>
-                <a href="faq.html" class="active">FAQ</a>
+                <a href="./#lifetime">Lifetime</a>
+                <a href="./#broadcast">Broadcast</a>
+                <a href="faq.html" aria-current="page">FAQ</a>
                 <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>
-                <a href="./#platform">Platform</a>
-                <a href="https://securechat.stealthx.tech/" target="_blank" rel="noopener" style="color:#00ff88;font-weight:700;">SecureChat</a>
-                <a href="./#download" class="btn btn-primary btn-sm nav-cta">Download</a>
             </div>
-            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
+            <div class="sx-nav-actions">
+                <a href="https://securechat.stealthx.tech/" target="_blank" rel="noopener" class="btn line">SecureChat</a>
+                <a href="./#download" class="btn primary">Download</a>
+                <button class="sx-nav-toggle" id="navToggle" aria-label="Toggle menu" type="button"><span></span><span></span><span></span></button>
+            </div>
         </div>
     </nav>
 
