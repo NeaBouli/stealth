@@ -592,17 +592,18 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
     return res.status(400).json({ error: "missing fields: purchase_token, product_id, package_name" });
   }
 
-  // Determine tier from product_id
-  let tier = "premium";
-  if (product_id.includes("pro") && !product_id.includes("premium")) {
-    tier = "pro";
-  }
+  const { findCodeByPurchaseToken, resolveOneTimeProduct } = require("./payments/google_play_billing");
+  const product = resolveOneTimeProduct(package_name, product_id);
+  if (!product) return res.status(400).json({ error: "unsupported_package_or_product" });
+  const tier = product.tier;
 
   // Google Play Developer API verification
   // Requires GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 env var (base64-encoded JSON key)
   const serviceAccountB64 = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64;
-  if (serviceAccountB64) {
-    try {
+  if (!serviceAccountB64) {
+    return res.status(503).json({ error: "google_play_verification_not_configured" });
+  }
+  try {
       const { google } = require("googleapis");
       const keyJson = JSON.parse(Buffer.from(serviceAccountB64, "base64").toString("utf8"));
       const auth = new google.auth.GoogleAuth({
@@ -623,17 +624,18 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
       }
 
       console.log("[BILLING] Purchase verified via Google API:", product_id, "state:", result.data.purchaseState);
-    } catch (e) {
-      console.error("[BILLING] Google API verification failed:", e.message);
-      return res.status(500).json({ error: "verification_failed", detail: e.message });
-    }
-  } else {
-    // No service account configured — accept in development, log warning
-    console.warn("[BILLING] No GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 set — skipping verification (dev mode)");
+  } catch (e) {
+    console.error("[BILLING] Google API verification failed:", e.message);
+    return res.status(502).json({ error: "verification_failed" });
+  }
+
+  const existing = findCodeByPurchaseToken(giftCodes, purchase_token);
+  if (existing) {
+    return res.json({ code: existing.code, tier: existing.record.tier, expires: existing.record.expires, product_id });
   }
 
   // Generate activation code
-  const code = "PREM-" + crypto.randomBytes(4).toString("hex").toUpperCase();
+  const code = `${tier === "pro" ? "PRO" : "PREM"}-` + crypto.randomBytes(4).toString("hex").toUpperCase();
   const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year to redeem
 
   giftCodes.set(code, {
