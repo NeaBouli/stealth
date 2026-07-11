@@ -1,5 +1,14 @@
 # Stealth Action Log
 
+## 2026-07-11 — Codex Payment-Ownership dokumentiert
+
+- Gio hat Codex als verantwortlichen Agenten fuer Stripe, Zahlung, Fulfillment, Refund und Etimologio/myDATA von SecureCall/StealthX eingesetzt.
+- Rollen, Projektstatus und Payment-TODO aktualisiert.
+- Private steuerliche Daten bleiben ausschliesslich in VLABS/Runtime-Secrets; keine Werte in Public Repo oder Bridge.
+- Keine Produktcodeaenderung in diesem Schritt, keine Zahlung, keine Rechnung, kein Provider-/AADE-Request, kein Deploy.
+- Aufgabenmatrix nachgeschaerft: Codex baut Payment/Etimologio; Core-Dev baut Produkt/Krypto und reviewt Integrationsgrenzen; Gio/Accountant/Provider liefern externe Freigaben.
+- Gio-Folgeentscheidung eingetragen: Codex uebernimmt das gesamte Public Repo. Andere Devs arbeiten nur nach Handover oder als Reviewer; private Daten bleiben lokal/Runtime-only.
+
 ## 2026-05-09 - Codex: Rechnerwechsel-Handover fuer neuen Codex/CC
 
 - Agent: Codex

@@ -1,5 +1,16 @@
 # Stealth Project State
 
+## 2026-07-11 — Payment-/Etimologio-Ownership und VLABS-Verkaufsvorbereitung
+
+- Repository Owner: Codex ist durch Gio fuer das gesamte oeffentliche SecureCall/StealthX-Repository verantwortlich, einschliesslich Produktcode, Security-Integration, Tests, Website, Payment und Etimologio/myDATA.
+- Andere Devs arbeiten nur nach Codex-Handover oder als Reviewer; keine parallele Implementierung.
+- VLABS fuehrt die private steuerliche Source of Truth; dieses Public Repo erhaelt keine Steuer-ID, Provider-ID, Stripe-Secrets, Kundendaten oder AADE-Credentials.
+- VLABS-Shopwaren sind lokal vorbereitet: SecureCall Pro/Premium sowie StealthX Suite mit serverkontrollierten Produkt-IDs/Preisen, Privat-/Firmenauswahl und AFM/VAT-Erfassung vor Stripe.
+- SecureCall besitzt lokal einen signierten, session-idempotenten Aktivierungs-Consumer und einen separaten Vollrefund-Revoke-Pfad. Legacy-Direktcheckouts sind standardmaessig deaktiviert, damit VLABS der kanonische Verkaufseinstieg wird.
+- Rechtshinweise auf den Produktseiten wurden auf VLABS-Preise, digitale Leistung, sofortige Lieferung, Widerruf und gesetzliche Rechte angepasst.
+- Release-Gate bleibt geschlossen: kein Live-Checkout/Deploy, bis Runtime-Secrets, End-to-End-Test mit Stripe-Testmodus, Accountant-Produktmapping und Gio-Launch-Freigabe vorliegen. Etimologio-Provider ist noch nicht produktiv aktiv.
+- Kein Secret gelesen/geschrieben, keine Zahlung, keine Rechnung, kein Provider-/AADE-Request und kein Deploy bei dieser Bridge-Aktualisierung.
+
 ## 2026-05-09 (Abend) — AKTUELLER STAND — CC Autonomous Session
 
 ### Git HEAD

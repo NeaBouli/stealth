@@ -1,12 +1,36 @@
 # Rollenverteilung CC + Codex — verbindlich ab 2026-05-04
 
-## Claude Code (CC) — Hauptentwickler
+## Vollstaendige Codex-Ownership — verbindlich ab 2026-07-11
+
+- Gio hat Codex als alleinigen Main Developer und Integrations-Owner fuer das oeffentliche SecureCall/StealthX-Repository eingesetzt.
+- Codex uebernimmt Produktcode, Android, Signaling, Kryptografie-Integration, Tests, Website, Releases-Vorbereitung sowie Stripe, Fulfillment, Refunds und Etimologio/myDATA.
+- Andere Devs arbeiten nur nach explizitem Bridge-Handover oder als unabhaengige Reviewer und duerfen keine parallelen Produkt-/Payment-Implementierungen beginnen.
+- Secrets, AFM, Kunden-, Stripe-, Provider- und AADE-Daten duerfen nie in dieses oeffentliche Repository oder seine Bridge. Sie bleiben ausschliesslich in privaten Runtime-Secrets bzw. der privaten VLABS-Steuerzentrale.
+- Live-Zahlungen, Deployments, Releases und produktive Rechnungsausgabe benoetigen weiterhin Gio-Freigabe; steuerliche Klassifizierung benoetigt Accountant-/Provider-Freigabe.
+
+### Verbindliche Aufgabenaufteilung
+
+**Codex uebernimmt:**
+- VLABS/Stripe Checkout, Produkt-/Preis-IDs und Webhook-Verarbeitung.
+- SecureCall-Fulfillment, Aktivierungscode-Auslieferung, Idempotenz, Refund/Revoke und Payment-Tests.
+- Privat/Firma/AFM-Datenerfassung, interne Invoice-/Etimologio-Drafts und lizenzierten Provider-Adapter.
+- Payment-Rechtscopy, Monitoring, Rollback-Plan und laufende Bridge-Dokumentation.
+
+**Andere Devs/CC uebernehmen nur nach Handover:**
+- Von Codex konkret zugewiesene, dateibezogene Teilaufgaben.
+- Unabhaengige Code-, Security- und Regression-Reviews nach Codex-Handover.
+- Keine parallele Produkt-, Krypto-, Stripe- oder Etimologio-Implementierung.
+
+**Nur Gio/Accountant/Provider kann liefern oder freigeben:**
+- Private Runtime-Secrets und Deployment-/Live-Start-Freigabe durch Gio.
+- Steuerliche Produktklassifizierung durch Accountant und produktive Provider-Freigabe.
+
+## Claude Code (CC) — Reviewer / Support nach Handover
 
 **Darf:**
-- Produktcode aendern (Backend, Android, Website)
-- Commits erstellen und pushen
-- Builds ausfuehren und testen
-- Neue Dateien/Features erstellen
+- Von Codex explizit uebergebene Produktcode-Dateien bearbeiten
+- Uebergebene Builds/Tests und unabhaengige Reviews ausfuehren
+- Commits nur im dokumentierten Handover-Scope erstellen
 - Bridge-Dateien aktualisieren
 
 **Darf nicht:**
@@ -16,20 +40,19 @@
 
 ---
 
-## Codex — Auditor & Reviewer
+## Codex — Main Developer / Owner
 
 **Darf:**
-- Code lesen und auditieren (read-only)
+- Produktcode, Backend, Android, Website und Tests implementieren
+- Commits erstellen und pushen
+- Builds, Releases-Vorbereitung und Audits ausfuehren
 - Findings dokumentieren in CODEX_FINDINGS.md
 - CC-Fixes re-verifizieren (VERIFIED_FIXED / STILL_OPEN)
 - Neue Schwachstellen melden
 - Bridge-Dateien aktualisieren (eigene Findings + Status)
-- Kleine Textfixes (Docs, Kommentare) committen wenn eindeutig
 
 **Darf nicht:**
-- Produktlogik aendern (Backend-Endpoints, Android-Verhalten, Payment-Flows)
-- Grosse Refactors oder Feature-Arbeit
-- CC-Fixes ueberschreiben oder revertieren
+- Secrets oder private Steuer-/Kundendaten in Git, Bridge oder Logs schreiben.
 - .env / Secrets / Keystores lesen oder ausgeben
 
 ---

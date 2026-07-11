@@ -1,5 +1,20 @@
 # Stealth TODO
 
+## Payment / Etimologio — Owner Codex (2026-07-11)
+
+**Zuweisung:** Alle Checkboxen in diesem Abschnitt sind Codex-Aufgaben, ausser eine Zeile nennt ausdruecklich `Core-Dev`, `Gio` oder `Accountant`. Der Core-Dev baut keinen parallelen Checkout-/Etimologio-Pfad.
+
+**Repository-Zuweisung:** Auch alle Nicht-Payment-Produktaufgaben dieses Public Repos liegen bei Codex. Andere Devs bearbeiten nur explizit uebergebene Teilaufgaben oder Reviews.
+
+- [x] VLABS als kanonischen Checkout fuer SecureCall/StealthX festlegen; Legacy-Direktcheckout default-off.
+- [x] Signiertes/idempotentes SecureCall-Fulfillment und Vollrefund-Revoke lokal vorbereiten.
+- [x] Produktseiten mit Preis-, Digitalleistungs-, Widerrufs- und Rechtehinweisen angleichen.
+- [ ] Runtime-Secrets fuer VLABS -> SecureCall Fulfillment/Revocation in den jeweiligen privaten Deployments setzen; keine Werte in Git/Bridge.
+- [ ] Stripe-Testmode E2E: Checkout -> paid webhook -> genau eine Aktivierung -> interne Invoice/Etimologio-Draft; Refund -> Revoke/Accounting Review.
+- [ ] Accountant Mapping fuer SecureCall Pro/Premium und Suite freigeben; Provider-Demo danach separat testen.
+- [ ] Gio Launch-/Deployment-Freigabe; erst danach Waren in VLABS von Coming Soon auf kaufbar stellen.
+- [ ] Reviewer nach Handover: gezieltes Regression-/Security-Review der Fulfillment-/Activation-Grenze; keine Doppelimplementierung.
+
 ## Priority 1
 
 - [x] F-Droid-/Lizenz-Restdrift — ERLEDIGT (Commit `8064dbd`)
