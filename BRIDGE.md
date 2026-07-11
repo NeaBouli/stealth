@@ -4544,6 +4544,71 @@ Rules for all dev agents:
   - stealth `docs/agent-bridge/*`
   - securechat `BRIDGE.md`
   - chameleon `BRIDGE.md`
+### 2026-07-11 11:22 EEST — CODEX TERMINAL — RELEASE VERSION FIX
+
+**SecureCall VersionCode Bumped For Google Play**
+- Found before final handoff:
+  - Rebuilt 1.0.42 AAB used base `versionCode=78`.
+  - User previously reported Google Play had already used `72002`, so `78` would be invalid for upload.
+- Fixed in:
+  - `client_android/app/build.gradle`
+- New release values:
+  - `versionName=1.0.43`
+  - AAB/base `versionCode=78010`
+  - Universal APK `versionCode=78010009`
+- Rebuild command:
+  - `cd /Users/gio/Desktop/repos/stealth/client_android`
+  - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleRelease bundleRelease`
+- Result:
+  - `BUILD SUCCESSFUL in 11m 9s`
+  - `verifyNoAppIfrWalletCode` ran again.
+
+**Final Desktop Artifacts**
+- Folder:
+  - `/Users/gio/Desktop/aab apk/`
+- AABs:
+  - `SecureCall-Free-v1.0.43-vc78010.aab` — 37M
+  - `SecureCall-Pro-v1.0.43-vc78010.aab` — 33M
+  - `SecureCall-Premium-v1.0.43-vc78010.aab` — 33M
+  - `SecureCall-LATEST.aab` — alias of Free AAB, current upload candidate
+- Universal APKs:
+  - `SecureCall-Free-v1.0.43-universal-vc78010009.apk` — 63M
+  - `SecureCall-Pro-v1.0.43-universal-vc78010009.apk` — 61M
+  - `SecureCall-Premium-v1.0.43-universal-vc78010009.apk` — 61M
+  - `SecureCall-Free-LATEST.apk`
+  - `SecureCall-Pro-LATEST.apk`
+  - `SecureCall-Premium-LATEST.apk`
+- Release notes:
+  - `SecureCall-v1.0.43-release-notes.txt`
+
+**Verification**
+- `aapt dump badging` confirmed Universal APKs:
+  - Free: `com.securecall.app.free`, `versionCode=78010009`, `versionName=1.0.43-free`, `targetSdkVersion=35`
+  - Pro: `com.securecall.app.pro`, `versionCode=78010009`, `versionName=1.0.43-pro`, `targetSdkVersion=35`
+  - Premium: `com.securecall.app.premium`, `versionCode=78010009`, `versionName=1.0.43-premium`, `targetSdkVersion=35`
+- AAB archive contains `BundleConfig.pb` and `base/manifest/AndroidManifest.xml`.
+
+**Device Install Status**
+- S10 `RF8N313QMFL`:
+  - Installed Premium 1.0.43 Universal APK successfully.
+  - Package verified: `versionCode=78010009`, `versionName=1.0.43-premium`.
+  - App started; window focus was `NotificationShade`, focused app remained SecureCall MainActivity.
+- Tab S4 `ce12182c68644439037e`:
+  - Installed Free 1.0.43 Universal APK successfully.
+  - Package verified: `versionCode=78010009`, `versionName=1.0.43-free`.
+  - Launch reached permission-controller dialog plus SecureCall MainActivity task.
+- S7 `ce10160adc00152604`:
+  - Installed Pro 1.0.43 Universal APK successfully.
+  - Package verified: `versionCode=78010009`, `versionName=1.0.43-pro`.
+  - Still affected by known device/system UI and network validation blocker.
+
+**QA Note**
+- Physical S10 <-> Tab call QA was performed on the same code before the version bump; only version metadata changed after that pass.
+- S7/emulator/fresh-install/accessory interruption items remain open as documented.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
 ### 2026-07-11 11:06 EEST — CODEX TERMINAL — INSTALL / STATUS
 
 **SecureCall 1.0.42 Final Universal APKs Installed From Desktop Artifacts**
