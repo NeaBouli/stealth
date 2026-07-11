@@ -98,10 +98,7 @@ public class MainActivity extends AppCompatActivity {
         // On Android 8 (Galaxy S7), starting from Activity is too late — the 5-second
         // startForeground() window expires before the service's onCreate() runs.
         // This is now just a safety net in case the Application path didn't fire.
-        if (com.securecall.app.net.WebSocketService.Companion.getInstance() == null) {
-            Intent wsIntent = new Intent(this, com.securecall.app.net.WebSocketService.class);
-            androidx.core.content.ContextCompat.startForegroundService(this, wsIntent);
-        }
+        startWebSocketServiceIfNeeded();
 
         // FIX 7: Request battery optimization exemption for reliable call reception
         requestBatteryOptimizationExemption();
@@ -411,7 +408,13 @@ public class MainActivity extends AppCompatActivity {
         com.securecall.app.net.WebSocketService ws =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
         if (ws == null) {
-            Toast.makeText(this, "Service not ready", Toast.LENGTH_SHORT).show();
+            startWebSocketServiceIfNeeded();
+            toolbar.setSubtitle("Reconnecting\u2026");
+            toolbar.setSubtitleTextColor(getResources().getColor(android.R.color.darker_gray, null));
+            tintConnectionButton(0xFFFFC107);
+            wireRetryCount = 0;
+            wireConnectionStatusCallbacks();
+            Toast.makeText(this, "Reconnecting\u2026", Toast.LENGTH_SHORT).show();
             return;
         }
         if (ws.isConnected()) {
@@ -442,6 +445,17 @@ public class MainActivity extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.nav_host_fragment, fragment)
                 .commit();
+    }
+
+    private void startWebSocketServiceIfNeeded() {
+        if (com.securecall.app.net.WebSocketService.Companion.getInstance() != null) return;
+        try {
+            Intent wsIntent = new Intent(this, com.securecall.app.net.WebSocketService.class);
+            androidx.core.content.ContextCompat.startForegroundService(this, wsIntent);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start WebSocketService", e);
+            Toast.makeText(this, "Connection service could not start", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void updateAdVisibilityForTab(boolean allowAds) {
@@ -646,6 +660,12 @@ public class MainActivity extends AppCompatActivity {
                 if (ws != null) ws.reRegister();
                 return;
             }
+            if (prefs.getBoolean("phone_number_prompt_completed", false)) {
+                com.securecall.app.net.WebSocketService ws =
+                        com.securecall.app.net.WebSocketService.Companion.getInstance();
+                if (ws != null) ws.reRegister();
+                return;
+            }
             // First launch — show confirm dialog with SIM suggestion
             if (isFinishing() || isDestroyed()) return;
             if (phoneNumberDialog != null && phoneNumberDialog.isShowing()) return;
@@ -705,8 +725,17 @@ public class MainActivity extends AppCompatActivity {
                                 .putString("manual_phone_number", number)
                                 .putString("confirmed_phone_number", confirmed)
                                 .putBoolean("phone_number_skipped", false)
+                                .putBoolean("phone_number_prompt_completed", true)
                                 .commit();
                         Log.d(TAG, "Phone number confirmed: " + number + " -> stored: " + confirmed + " saved=" + saved);
+                        com.securecall.app.net.WebSocketService ws =
+                                com.securecall.app.net.WebSocketService.Companion.getInstance();
+                        if (ws != null) ws.reRegister();
+                    } else {
+                        prefs.edit()
+                                .putBoolean("phone_number_skipped", true)
+                                .putBoolean("phone_number_prompt_completed", true)
+                                .commit();
                         com.securecall.app.net.WebSocketService ws =
                                 com.securecall.app.net.WebSocketService.Companion.getInstance();
                         if (ws != null) ws.reRegister();
@@ -715,7 +744,10 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Skip", (d, w) -> {
                     // No number confirmed — register without phone
-                    prefs.edit().putBoolean("phone_number_skipped", true).commit();
+                    prefs.edit()
+                            .putBoolean("phone_number_skipped", true)
+                            .putBoolean("phone_number_prompt_completed", true)
+                            .commit();
                     com.securecall.app.net.WebSocketService ws =
                             com.securecall.app.net.WebSocketService.Companion.getInstance();
                     if (ws != null) ws.reRegister();
@@ -863,6 +895,10 @@ public class MainActivity extends AppCompatActivity {
             wireRetryCount++;
             if (wireRetryCount <= 10 && !isDestroyed()) {
                 new android.os.Handler(getMainLooper()).postDelayed(this::wireConnectionStatusCallbacks, 1000);
+            } else if (toolbar != null) {
+                toolbar.setSubtitle("\u25CF Disconnected");
+                toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_end_red, null));
+                tintConnectionButton(0xFF9E9E9E);
             }
         }
     }

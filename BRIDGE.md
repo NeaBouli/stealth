@@ -4233,6 +4233,58 @@ Rules for all dev agents:
 
 ---
 
+### 2026-07-11 09:24 EEST — CODEX TERMINAL — FIX / STATUS
+
+**SecureCall Three-Device QA Continuation**
+- Continued from the three-device QA protocol in `docs/qa/SECURECALL_THREE_DEVICE_AUDIT_PROTOCOL_2026-07-11.md`.
+- Devices present:
+  - S10 `RF8N313QMFL` / SM-G973F / target package `com.securecall.app.premium`
+  - S7 `ce10160adc00152604` / SM-G930F / target package `com.securecall.app.pro`
+  - Tab S4 `ce12182c68644439037e` / SM-T835 / target package `com.securecall.app.free`
+- Deployed the WebSocket attempt-limit fix from commit `914bbd6` to the actual live Hetzner/PM2 backend at `/opt/stealthx/signaling`.
+  - Railway was not serving `api.stealthx.tech`; DNS points to Hetzner `135.181.254.229`.
+  - Remote `npm test` passed before PM2 reload.
+  - `https://api.stealthx.tech/status/live` now exposes `wsLimits` and the direct `wss://api.stealthx.tech/signal` handshake opens successfully.
+
+**Android Fixes**
+- `client_android/app/src/main/java/com/securecall/app/MainActivity.java`
+  - Reconnect toolbar action now attempts to start `WebSocketService` when the singleton is missing instead of only showing `Service not ready`.
+  - Connection status callback retry now settles to `● Disconnected` instead of leaving the toolbar stuck at `Connecting…` when service startup fails.
+  - Phone number prompt now persists `phone_number_prompt_completed=true` on Confirm/Skip, and treats empty Confirm as skip. This prevents the repeated confirm dialog loop.
+
+**Build / Install Verification**
+- Built release APKs successfully:
+  - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleFreeRelease assembleProRelease assemblePremiumRelease`
+  - Build result: `BUILD SUCCESSFUL`
+- Installed:
+  - S10 Premium: `app-premium-universal-release.apk`
+  - S7 Pro: `app-pro-universal-release.apk`
+  - Tab S4 Free: `app-free-universal-release.apk`
+
+**Device Results**
+- S10 Premium:
+  - Launches to main UI.
+  - Toolbar shows `● Connected`.
+- Tab S4 Free:
+  - Initial update install had stale Android service state (`Unable to start service ... WebSocketService ... not found`) despite the APK manifest and installed `base.apk` containing the service.
+  - Clean uninstall/reinstall of `com.securecall.app.free` fixed the stale service state.
+  - `WebSocketService` active after reinstall.
+  - Phone prompt Skip persisted; relaunch did not show the prompt again.
+  - Toolbar shows `● Connected`.
+  - Settings screen checked: ad banner is hidden on Settings and bottom navigation is not covered.
+- S7 Pro:
+  - `WebSocketService` starts.
+  - Phone prompt Skip persisted; relaunch did not show the prompt again.
+  - Toolbar shows `● Disconnected`.
+  - Root cause is device/network: repeated `SocketTimeoutException` to `api.stealthx.tech/135.181.254.229:443`; earlier ping to `api.stealthx.tech` also had 100% packet loss on S7 Wi-Fi `GL-MT300N-V2-5df`.
+
+**Open Next Steps**
+- Fix S7 network/VPN/routing before real S7 call tests can be meaningful.
+- Continue call-flow/audio route QA once at least two test devices are simultaneously connected.
+- Keep unrelated dirty `docs/agent-bridge/*` files untouched unless explicitly approved for cleanup.
+
+---
+
 ### 2026-07-11 03:08 EEST — CODEX TERMINAL — QA PLAN
 
 **SecureCall Three-Device Audit And Emulation Protocol**
