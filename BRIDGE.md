@@ -1,5 +1,13 @@
 # BRIDGE — stealth
 
+## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
+
+- Custom-ID checkout now validates receipt versus business invoice, billing country, email and company AFM/VAT fields before creating Stripe Checkout. Billing data is attached only to the signed payment session; passwords remain server-only.
+- Confirmed Custom-ID sales and full-refund/dispute adjustments can be HMAC-exported to the private VLABS finance receiver. Export is default-off without runtime URL/secret and webhook processing retries when an enabled receiver fails.
+- Full Stripe refunds/disputes revoke both pending and activated Custom IDs by exact Checkout Session binding. Partial refunds remain review-only and do not incorrectly delete the full ID.
+- Public Custom-ID pricing is consistently EUR 1/2/5, and the technical copy now correctly describes the opaque one-time activation token instead of claiming a JWT.
+- Full signaling suite and focused payment suite PASS. No Stripe/VLABS request, payment, invoice, AADE action or deploy was executed; changes are in PR #33.
+
 ## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
 
 - Added authenticated Google Play RTDN push handling at `/billing/google-play-rtdn`: Google OIDC signature/audience/email checks, package allowlist, bounded payload and persistent Pub/Sub message-id idempotency.

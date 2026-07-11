@@ -214,17 +214,17 @@
                 <tbody>
                     <tr>
                         <td><strong>10+ characters</strong></td>
-                        <td>$1.00</td>
+                        <td>&euro;1.00</td>
                         <td><code>nighthawk42</code></td>
                     </tr>
                     <tr>
                         <td><strong>5&ndash;9 characters</strong></td>
-                        <td>$2.00</td>
+                        <td>&euro;2.00</td>
                         <td><code>marco</code>, <code>ghost</code></td>
                     </tr>
                     <tr>
                         <td><strong>3&ndash;4 characters</strong></td>
-                        <td>$5.00</td>
+                        <td>&euro;5.00</td>
                         <td><code>ace</code>, <code>vip</code></td>
                     </tr>
                     <tr>
@@ -246,7 +246,7 @@
             <ol>
                 <li><strong>Choose your ID</strong> &mdash; Enter your desired ID in the generator below. The system checks availability and shows the price in real time.</li>
                 <li><strong>Set a password</strong> &mdash; Choose a strong password (minimum 8 characters). This password is your only way to transfer or recover the ID.</li>
-                <li><strong>Pay via Stripe</strong> &mdash; Complete the one-time payment securely through Stripe (card, Klarna, SEPA).</li>
+                <li><strong>Pay via Stripe</strong> &mdash; Complete the one-time payment through the payment methods shown by Stripe.</li>
                 <li><strong>Scan the QR code</strong> &mdash; After payment, a QR code appears containing your activation deep link.</li>
                 <li><strong>Open with SecureCall</strong> &mdash; Scan the QR code with your device camera or tap it on mobile. SecureCall activates your Custom ID instantly.</li>
             </ol>
@@ -271,6 +271,24 @@
                     <input type="password" id="pwInput" placeholder="Choose a strong password" minlength="8" autocomplete="new-password">
                 </div>
 
+                <div class="pw-group" id="billingGroup" style="display:none">
+                    <label>Email for payment confirmation</label>
+                    <input type="email" id="billingEmail" placeholder="you@example.com" autocomplete="email">
+                    <label>Billing country (ISO code)</label>
+                    <input type="text" id="billingCountry" value="GR" maxlength="2" autocomplete="country">
+                    <label>Document type</label>
+                    <select id="docType" style="width:100%;padding:13px 14px;margin-bottom:12px;border:1px solid rgba(255,255,255,.18);border-radius:6px;background:#111827;color:#fff">
+                        <option value="receipt">Private receipt</option>
+                        <option value="invoice">Business invoice</option>
+                    </select>
+                    <div id="businessFields" style="display:none">
+                        <label>Company name</label>
+                        <input type="text" id="companyName" maxlength="120" autocomplete="organization">
+                        <label>AFM / VAT number</label>
+                        <input type="text" id="taxId" maxlength="24" autocomplete="off">
+                    </div>
+                </div>
+
                 <div id="priceDisplay" style="display:none; margin-bottom:16px;">
                     <div class="price-tag" id="priceTag"></div>
                     <div class="price-length" id="priceLength"></div>
@@ -291,8 +309,8 @@
 
             <h2>Technical Details</h2>
             <p>After payment, a signed deep link is generated:</p>
-            <pre><code>securecall://custom-id?id=marco&amp;token=SIGNED_TOKEN</code></pre>
-            <p>The token is a server-signed JWT that proves the purchase. The SecureCall app validates this token, then activates the Custom ID on your device.</p>
+            <pre><code>securecall://custom-id?id=marco&amp;token=OPAQUE_ONE_TIME_TOKEN</code></pre>
+            <p>The token is an opaque, single-use reference. The server activates it only after a signed Stripe webhook confirms the exact Checkout Session and Custom ID.</p>
 
             <!-- ════════════════════════════════════════════════════ -->
             <div class="section-break">Important Notes</div>
@@ -303,7 +321,7 @@
                 <li>Refunds follow the checkout terms and applicable consumer law. A lost password or ID cannot be technically recovered.</li>
                 <li><strong>IDs are bound to passwords, not persons.</strong> Anyone with the password can transfer the ID to their device.</li>
                 <li><strong>Premium required.</strong> Custom IDs only work on devices with an active Premium subscription or lifetime license.</li>
-                <li><strong>Offensive IDs</strong> may be removed without refund at our discretion.</li>
+                <li><strong>Offensive IDs</strong> may be removed under the usage policy; refund rights follow applicable law and the checkout terms.</li>
                 <li><strong>Privacy by design:</strong> Your ID is stored as HMAC-SHA256 hash with a server-side secret. Neither the ID nor your password exist in cleartext on our servers. <a href="../terms.html">Full Terms of Service</a>.</li>
             </ul>
 
@@ -325,7 +343,7 @@
     <script>
     (function() {
         const API = "https://api.stealthx.tech";
-        const PRICES = { 100: "$1.00", 200: "$2.00", 500: "$5.00" };
+        const PRICES = { 100: "€1.00", 200: "€2.00", 500: "€5.00" };
         const PRICE_IDS = { 100: "price_1TJITIBcyoLtm3FA0qZyTL5O", 200: "price_1TJITKBcyoLtm3FARalsHHII", 500: "price_1TJITNBcyoLtm3FAlvw1HlRY" };
         // NOTE: No fallback Payment Links — raw Payment Links bypass the
         // custom_id metadata flow (password_hash, pending_token) and would
@@ -335,6 +353,13 @@
         const idStatus = document.getElementById("idStatus");
         const pwGroup = document.getElementById("pwGroup");
         const pwInput = document.getElementById("pwInput");
+        const billingGroup = document.getElementById("billingGroup");
+        const billingEmail = document.getElementById("billingEmail");
+        const billingCountry = document.getElementById("billingCountry");
+        const docType = document.getElementById("docType");
+        const businessFields = document.getElementById("businessFields");
+        const companyName = document.getElementById("companyName");
+        const taxId = document.getElementById("taxId");
         const priceDisplay = document.getElementById("priceDisplay");
         const priceTag = document.getElementById("priceTag");
         const priceLength = document.getElementById("priceLength");
@@ -351,6 +376,7 @@
             if (val.length < 1) {
                 idStatus.className = "id-status";
                 pwGroup.style.display = "none";
+                billingGroup.style.display = "none";
                 priceDisplay.style.display = "none";
                 purchaseBtn.disabled = true;
                 return;
@@ -372,27 +398,31 @@
                     currentPrice = data.price;
                     idStatus.className = "id-status available";
                     idStatus.innerHTML = '<strong>"' + data.id + '"</strong> is available!';
-                    priceTag.textContent = PRICES[data.price] || "$?.??";
+                    priceTag.textContent = PRICES[data.price] || "€?.??";
                     priceLength.textContent = data.id.length + " characters — one-time payment";
                     priceDisplay.style.display = "block";
                     pwGroup.style.display = "block";
+                    billingGroup.style.display = "block";
                     updatePurchaseBtn();
                 } else if (data.error === "taken") {
                     idStatus.className = "id-status taken";
                     idStatus.innerHTML = '<strong>"' + id + '"</strong> is already taken.';
                     pwGroup.style.display = "none";
+                    billingGroup.style.display = "none";
                     priceDisplay.style.display = "none";
                     purchaseBtn.disabled = true;
                 } else if (data.error === "reserved") {
                     idStatus.className = "id-status error";
                     idStatus.textContent = "IDs with 1-2 characters are reserved for the dev team.";
                     pwGroup.style.display = "none";
+                    billingGroup.style.display = "none";
                     priceDisplay.style.display = "none";
                     purchaseBtn.disabled = true;
                 } else {
                     idStatus.className = "id-status error";
                     idStatus.textContent = "Invalid format. Use lowercase letters, digits, and hyphens.";
                     pwGroup.style.display = "none";
+                    billingGroup.style.display = "none";
                     priceDisplay.style.display = "none";
                     purchaseBtn.disabled = true;
                 }
@@ -404,9 +434,17 @@
         }
 
         pwInput.addEventListener("input", updatePurchaseBtn);
+        billingEmail.addEventListener("input", updatePurchaseBtn);
+        billingCountry.addEventListener("input", function(){ this.value=this.value.toUpperCase().replace(/[^A-Z]/g, ""); updatePurchaseBtn(); });
+        companyName.addEventListener("input", updatePurchaseBtn);
+        taxId.addEventListener("input", function(){ this.value=this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ""); updatePurchaseBtn(); });
+        docType.addEventListener("change", function(){ businessFields.style.display=this.value === "invoice" ? "block" : "none"; updatePurchaseBtn(); });
 
         function updatePurchaseBtn() {
-            purchaseBtn.disabled = !(currentId && currentPrice && pwInput.value.length >= 8);
+            const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billingEmail.value.trim());
+            const countryOk = /^[A-Z]{2}$/.test(billingCountry.value.trim());
+            const businessOk = docType.value !== "invoice" || (companyName.value.trim() && /^[A-Z0-9-]{5,24}$/.test(taxId.value.trim()));
+            purchaseBtn.disabled = !(currentId && currentPrice && pwInput.value.length >= 8 && emailOk && countryOk && businessOk);
         }
 
         purchaseBtn.addEventListener("click", async function() {
@@ -420,7 +458,12 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         id: currentId,
-                        password: pwInput.value
+                        password: pwInput.value,
+                        customerEmail: billingEmail.value.trim(),
+                        billingCountry: billingCountry.value.trim(),
+                        docType: docType.value,
+                        companyName: companyName.value.trim(),
+                        taxId: taxId.value.trim()
                     })
                 });
                 const data = await res.json();

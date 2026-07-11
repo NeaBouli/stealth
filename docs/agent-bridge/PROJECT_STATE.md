@@ -1,5 +1,10 @@
 # Stealth Project State
 
+## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
+
+- Custom-ID technical sell path now includes billing intake, paid binding, private signed accounting export and full-refund/dispute revocation.
+- Runtime receiver secrets, Stripe webhook event registration, test-mode E2E and legal/accounting approval remain external release gates.
+
 ## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
 
 - Google Play purchase verification, subscription lifecycle and full-refund revocation are now technically prepared and fail-closed in PR #33.

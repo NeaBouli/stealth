@@ -1,5 +1,13 @@
 # Stealth TODO
 
+## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
+
+- [x] Receipt-/Business-Invoice-Daten fuer Custom-ID Checkout serverseitig validieren.
+- [x] Paid sale und Vollrefund/Dispute signiert an den privaten VLABS-Finance-Receiver exportieren.
+- [x] Pending und aktivierte Custom IDs bei Vollrefund/Dispute ueber exakte Checkout-Session widerrufen.
+- [ ] `Gio`: Stripe Webhook um `charge.refunded` und `charge.dispute.created` erweitern, Runtime-Receiver-Secret setzen und Testmode-E2E freigeben.
+- [ ] `Gio/Accountant`: Custom-ID Produkt-/VAT-/Belegmapping und Partial-Refund-Prozess freigeben.
+
 ## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
 
 - [x] Authentifizierten/idempotenten RTDN-Empfänger mit Subscriptions-v2-Revalidierung bauen.

@@ -1,5 +1,11 @@
 # Stealth Action Log
 
+## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
+
+- Added B2C/B2B billing intake, private signed VLABS invoice/adjustment export and exact Checkout-Session refund/dispute revocation for Custom IDs.
+- Corrected public Custom-ID currency and opaque-token claims. Password hashes never enter Stripe or the accounting export.
+- Full and focused payment tests PASS; no external request or deployment was made.
+
 ## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
 
 - Implemented authenticated, idempotent Google Play RTDN processing with Google OIDC identity checks and Play API subscription revalidation.

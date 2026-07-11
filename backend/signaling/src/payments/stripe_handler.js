@@ -231,6 +231,31 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     return { alreadyProcessed: true, eventId: event.id };
   }
 
+  if (["charge.refunded", "charge.dispute.created"].includes(event.type)) {
+    const object = event.data?.object || {};
+    const isFullRefund = event.type === "charge.dispute.created"
+      || (Number.isSafeInteger(object.amount) && object.amount > 0 && object.amount_refunded >= object.amount);
+    if (!isFullRefund) return { ignored: true, reason: "partial_refund_requires_review" };
+    const paymentIntent = typeof object.payment_intent === "string" ? object.payment_intent : object.payment_intent?.id;
+    if (!paymentIntent) throw new Error("missing_payment_intent");
+    const sessions = await stripe.checkout.sessions.list({ payment_intent: paymentIntent, limit: 10 });
+    const session = sessions.data?.find(candidate => candidate.metadata?.type === "custom_id");
+    if (!session) return { ignored: true, reason: "not_custom_id_payment" };
+    const revoked = require("../custom_ids").revokeByStripeSession(session.id);
+    const { buildRecord, exportFinanceRecord } = require("./vlabs_finance_export");
+    await exportFinanceRecord(buildRecord(
+      { ...session, payment_status: "refunded" },
+      session.metadata?.product || "custom_id",
+      "adjustment",
+      event.type === "charge.dispute.created" ? "stripe_dispute" : "stripe_full_refund"
+    ));
+    if (event.id) {
+      processedEvents.set(event.id, Date.now());
+      saveProcessedEvents();
+    }
+    return { revoked, tier: "custom_id", productKey: session.metadata?.product || "custom_id" };
+  }
+
   if (!["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
     console.log("[STRIPE] Unhandled event type:", event.type);
     return null;
@@ -291,6 +316,8 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     const customId = session.metadata?.custom_id;
     const markedPaid = require("../custom_ids").markPendingPaid(pendingToken, customId, session.id);
     if (!markedPaid) throw new Error("custom_id_payment_binding_failed");
+    const { buildRecord, exportFinanceRecord } = require("./vlabs_finance_export");
+    await exportFinanceRecord(buildRecord(session, productKey));
     console.log("[STRIPE] Custom ID payment confirmed for activation");
     if (event.id) {
       processedEvents.set(event.id, Date.now());
