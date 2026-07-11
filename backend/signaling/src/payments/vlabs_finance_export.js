@@ -6,7 +6,7 @@ function buildRecord(session, productId, kind = "invoice", eventType = "sale") {
   const metadata = session.metadata || {};
   const idPrefix = kind === "adjustment" ? "adj" : "inv";
   return {
-    id: `${idPrefix}-${String(session.id).replace(/[^A-Za-z0-9_-]/g, "")}`,
+    id: `${idPrefix}-${kind === "adjustment" ? `${eventType}-` : ""}${String(session.id).replace(/[^A-Za-z0-9_-]/g, "")}`,
     kind,
     source: "securecall",
     fields: {
