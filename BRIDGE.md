@@ -4544,6 +4544,60 @@ Rules for all dev agents:
   - stealth `docs/agent-bridge/*`
   - securechat `BRIDGE.md`
   - chameleon `BRIDGE.md`
+### 2026-07-11 11:27 EEST — CODEX TERMINAL — QA STATUS
+
+**SecureCall QA Continuation: S7 Proven Network/TCP Blocker, Emulator Toolchain Missing**
+- Continued the active SecureCall QA goal after final 1.0.43 artifact handoff.
+- Updated QA report:
+  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+
+**S7 Pro 1.0.43 Retest**
+- Device:
+  - S7 `ce10160adc00152604`
+  - Package: `com.securecall.app.pro`
+  - Installed version: `1.0.43-pro`, `versionCode=78010009`
+- Display/keyguard recovered successfully:
+  - `mWakefulness=Awake`
+  - `Display Power: state=ON`
+  - `mDreamingLockscreen=false`
+  - Focus: `com.securecall.app.pro/com.securecall.app.MainActivity`
+- SecureCall Pro UI is reachable:
+  - Shows `StealthX`
+  - Shows `● Disconnected`
+  - Calls screen/bottom navigation visible.
+- Service state:
+  - `WebSocketService` is running as a foreground service.
+- Network/TCP evidence:
+  - S7 TCP-443 checks via `toybox nc -w 5` timed out for:
+    - `google.com:443`
+    - `8.8.8.8:443`
+    - `cloudflare.com:443`
+    - `1.1.1.1:443`
+    - `api.stealthx.tech:443`
+    - `135.181.254.229:443`
+  - S10 comparison on the same endpoint set returned exit `0` for all.
+  - SecureCall logs still show `SocketTimeoutException` to `api.stealthx.tech/135.181.254.229:443` from S7 `192.168.8.187`.
+- Conclusion:
+  - S7 is no longer blocked by keyguard for basic UI visibility, but call/signaling QA remains BLOCKED by device/network TCP reachability.
+  - Current evidence points to S7 network path / router / device policy, not a SecureCall-only app crash.
+
+**Emulator Matrix Status**
+- Protocol requires emulator API 24/30/35 phone/tablet passes.
+- Current machine cannot run this matrix:
+  - No AVDs listed.
+  - No `/Users/gio/Library/Android/sdk/system-images` directory.
+  - SDK tree contains platforms/build-tools/NDK/platform-tools only.
+  - No local `emulator`, `sdkmanager`, or `avdmanager` in the SDK tree.
+- Emulator matrix is therefore BLOCKED until Android emulator tooling and system images are installed.
+
+**Still Open**
+- S7 call QA once TCP-443 works from the device.
+- Fresh-install/onboarding/phone-confirm loop destructive tests.
+- Bluetooth/headset/GSM interruption tests.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
 ### 2026-07-11 11:22 EEST — CODEX TERMINAL — RELEASE VERSION FIX
 
 **SecureCall VersionCode Bumped For Google Play**
