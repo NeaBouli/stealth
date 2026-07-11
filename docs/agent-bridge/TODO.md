@@ -1,5 +1,13 @@
 # Stealth TODO
 
+## 2026-07-12 00:30 EEST — CODEX — PUBLIC SALES CLAIMS / CHECKOUT ROUTING
+
+- [x] Public direct Stripe Payment Link entfernen und Einmalkäufe auf den kanonischen VLABS-Shop routen.
+- [x] Default-off IFR-/Dynamic-Checkout auf Website und Wiki als geplant/launch-gated kennzeichnen.
+- [x] Aktivierungscode-Preis und Rechtsangaben auf öffentlichen Verkaufsseiten konsistent machen.
+- [ ] `Gio`: PR #33 reviewen/mergen und erst nach Testmode-E2E deployen.
+- [ ] `Gio/Accountant`: IFR-Rabatt, Custom-ID-Verkauf und Crypto-Support steuerlich/rechtlich freigeben, bevor die Runtime-Gates aktiviert werden.
+
 ## 2026-07-11 23:59 EEST — CODEX — CUSTOM-ID PAYMENT P0 / CRYPTO SUPPORT
 
 - Custom-ID checkout is now fail-closed behind `CUSTOM_ID_STRIPE_CHECKOUT_ENABLED=true`. Direct activation cannot mint an unpaid ID, and a pending token alone cannot activate one.

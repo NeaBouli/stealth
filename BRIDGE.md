@@ -1,5 +1,13 @@
 # BRIDGE — stealth
 
+## 2026-07-12 00:30 EEST — CODEX — PUBLIC SALES CLAIMS / CHECKOUT ROUTING
+
+- Removed the public direct Stripe Payment Link from the SecureCall activation-code card. One-time SecureCall products now route through the canonical VLABS shop; no payment provider URL is embedded in the public page.
+- The website no longer presents the default-off IFR/dynamic Stripe route as active. IFR checkout is consistently marked planned/launch-gated, and active controls were removed from the main sales page.
+- Public product schema, pricing copy, FAQ, terms and disclaimer now use the VLABS 25 EUR activation-code catalog price and avoid unconditional future-update or no-refund claims.
+- Google Play subscriptions remain in-app; backend purchase and subscription verification stays server-side and fail-closed.
+- No deploy, Stripe request, wallet request, invoice or AADE request was executed. Changes are part of PR #33.
+
 ## 2026-07-11 23:59 EEST — CODEX — CUSTOM-ID PAYMENT P0 / CRYPTO SUPPORT
 
 - Custom-ID checkout is now fail-closed behind `CUSTOM_ID_STRIPE_CHECKOUT_ENABLED=true`. Direct activation cannot mint an unpaid ID, and a pending token alone cannot activate one.

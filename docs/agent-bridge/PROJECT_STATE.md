@@ -1,5 +1,12 @@
 # Stealth Project State
 
+## 2026-07-12 00:30 EEST — CODEX — PUBLIC SALES CLAIMS / CHECKOUT ROUTING
+
+- SecureCall one-time sales route through the canonical VLABS shop. The former public direct Stripe Payment Link is removed.
+- IFR discount and dynamic Stripe checkout are launch-gated in backend and public copy; the main sales page no longer exposes active controls for a disabled payment path.
+- Public product schema, price and legal copy are aligned with the 25 EUR VLABS activation-code catalog entry.
+- Production enablement still requires Gio-owned runtime secrets, test-mode E2E and legal/accounting approval. No deploy or external payment request was made.
+
 ## 2026-07-11 23:59 EEST — CODEX — CUSTOM-ID PAYMENT P0 / CRYPTO SUPPORT
 
 - Custom-ID checkout is now fail-closed behind `CUSTOM_ID_STRIPE_CHECKOUT_ENABLED=true`. Direct activation cannot mint an unpaid ID, and a pending token alone cannot activate one.

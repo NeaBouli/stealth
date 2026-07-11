@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IFR Holder Discount — SecureCall Wiki</title>
-    <meta name="description" content="IFR holder discount for SecureCall: browser wallet verification, server-side balance check, and Stripe checkout discount.">
+    <meta name="description" content="Planned IFR holder discount for SecureCall: browser wallet verification, server-side balance check, and a future checkout discount.">
     <meta name="theme-color" content="#0a0a12">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://stealthx.tech/wiki/ifr-unlock.html">
@@ -29,7 +29,7 @@
       "@context": "https://schema.org",
       "@type": "TechArticle",
       "headline": "IFR Holder Discount — SecureCall Wiki",
-      "description": "IFR holder discount for SecureCall: browser wallet verification, server-side balance check, and Stripe checkout discount.",
+      "description": "Planned IFR holder discount for SecureCall: browser wallet verification, server-side balance check, and a future checkout discount.",
       "url": "https://stealthx.tech/wiki/ifr-unlock.html",
       "author": { "@type": "Organization", "name": "Vendetta Labs" },
       "publisher": { "@type": "Organization", "name": "SecureCall", "url": "https://stealthx.tech" },
@@ -149,7 +149,7 @@
             <div class="wiki-page-header">
                 <div class="wiki-classification">Classification: Restricted &middot; SC-IFR</div>
                 <h1 class="wiki-page-title">IFR Holder Discount</h1>
-                <p class="wiki-page-subtitle">Browser-based IFR verification for discounted Stripe checkout.</p>
+                <p class="wiki-page-subtitle">Planned browser-based IFR verification for discounted checkout.</p>
             </div>
             <p class="wiki-meta">IFR is not used for in-app tier unlocking &middot; <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Open $IFR on Uniswap</a></p>
 
@@ -158,7 +158,7 @@
 
             <h2>Current status</h2>
             <p><strong>$IFR (Inferno)</strong> is an ERC-20 token on Ethereum. SecureCall no longer includes WalletConnect or in-app IFR tier unlocking in the current release line.</p>
-            <p>The previous Android WalletConnect/SIWE flow is kept only as an internal test build. The public model is a web checkout discount: verify an eligible wallet in the browser, receive a 50% Stripe discount, then unlock the app through the normal purchase or activation-code path.</p>
+            <p>The previous Android WalletConnect/SIWE flow is kept only as an internal test build. A browser-based checkout discount is planned, but it remains disabled until payment, accounting, and production configuration are approved.</p>
             <ul>
                 <li><strong>Token:</strong> $IFR (Inferno) &mdash; 9 decimals</li>
                 <li><strong>Network:</strong> Ethereum Mainnet (Chain ID: 1)</li>
@@ -170,7 +170,7 @@
             <!-- ════════════════════════════════════════════════════ -->
             <div class="section-break">How It Works</div>
 
-            <h2>Web checkout flow</h2>
+            <h2>Planned web checkout flow</h2>
             <ol>
                 <li><strong>Open web checkout</strong> &mdash; The user starts from the StealthX website, not from the Android app.</li>
                 <li><strong>Verify wallet in browser</strong> &mdash; MetaMask or another browser wallet signs a read-only ownership challenge.</li>
@@ -199,13 +199,13 @@
                     </tr>
                     <tr>
                         <td><strong>IFR holder checkout</strong></td>
-                        <td>Active</td>
-                        <td>Browser verification plus Stripe discount</td>
+                        <td>Launch-gated</td>
+                        <td>Disabled pending payment and accounting approval</td>
                     </tr>
                     <tr>
                         <td><strong>Discount value</strong></td>
-                        <td>Active</td>
-                        <td>50% off eligible Stripe purchases</td>
+                        <td>Planned</td>
+                        <td>Proposed 50% off eligible purchases</td>
                     </tr>
                 </tbody>
             </table>
