@@ -472,7 +472,20 @@ public class MainActivity extends AppCompatActivity {
         android.widget.FrameLayout adContainer = findViewById(R.id.adBannerContainer);
         if (navHost == null || bottomNav == null) return;
 
-        int bottomInset = bottomNav.getHeight();
+        int bottomNavHeight = bottomNav.getHeight();
+        if (adContainer != null) {
+            android.view.ViewGroup.LayoutParams rawAdParams = adContainer.getLayoutParams();
+            if (rawAdParams instanceof android.view.ViewGroup.MarginLayoutParams) {
+                android.view.ViewGroup.MarginLayoutParams adParams =
+                        (android.view.ViewGroup.MarginLayoutParams) rawAdParams;
+                if (adParams.bottomMargin != bottomNavHeight) {
+                    adParams.bottomMargin = bottomNavHeight;
+                    adContainer.setLayoutParams(adParams);
+                }
+            }
+        }
+
+        int bottomInset = bottomNavHeight;
         if (adContainer != null && adContainer.getVisibility() == View.VISIBLE) {
             bottomInset += adContainer.getHeight();
         }

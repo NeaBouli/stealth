@@ -4544,3 +4544,130 @@ Rules for all dev agents:
   - stealth `docs/agent-bridge/*`
   - securechat `BRIDGE.md`
   - chameleon `BRIDGE.md`
+### 2026-07-11 11:03 EEST — CODEX TERMINAL — BUILD / RELEASE ARTIFACTS
+
+**SecureCall 1.0.42 Artifacts Rebuilt After Banner Fix**
+- Build command:
+  - `cd /Users/gio/Desktop/repos/stealth/client_android`
+  - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleRelease bundleRelease`
+- Result:
+  - `BUILD SUCCESSFUL in 10m 8s`
+  - `verifyNoAppIfrWalletCode` ran during the build.
+- First attempted command without `-Pinternal` failed because Pro/Premium release tasks are intentionally internal-only; rebuilt correctly with `-Pinternal`.
+
+**Desktop Artifacts**
+- Folder:
+  - `/Users/gio/Desktop/aab apk/`
+- AABs:
+  - `SecureCall-Free-v1.0.42-vc78.aab` — 37M
+  - `SecureCall-Pro-v1.0.42-vc78.aab` — 33M
+  - `SecureCall-Premium-v1.0.42-vc78.aab` — 33M
+  - `SecureCall-LATEST.aab` — alias of Free AAB for Google Play upload line
+- Universal APKs:
+  - `SecureCall-Free-v1.0.42-universal-vc78009.apk` — 63M
+  - `SecureCall-Pro-v1.0.42-universal-vc78009.apk` — 61M
+  - `SecureCall-Premium-v1.0.42-universal-vc78009.apk` — 61M
+  - `SecureCall-Free-LATEST.apk`
+  - `SecureCall-Pro-LATEST.apk`
+  - `SecureCall-Premium-LATEST.apk`
+- Release notes:
+  - `SecureCall-v1.0.42-release-notes.txt`
+
+**APK Verification**
+- `aapt dump badging` confirmed:
+  - Free APK: `com.securecall.app.free`, `versionCode=78009`, `versionName=1.0.42-free`, `targetSdkVersion=35`
+  - Pro APK: `com.securecall.app.pro`, `versionCode=78009`, `versionName=1.0.42-pro`, `targetSdkVersion=35`
+  - Premium APK: `com.securecall.app.premium`, `versionCode=78009`, `versionName=1.0.42-premium`, `targetSdkVersion=35`
+
+**Caveats**
+- S10/Tab S4 physical core call QA passed as documented in the QA report.
+- S7 remains blocked by network/device state and was not marked green.
+- Emulator/fresh-install/accessory interruption tests remain open.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
+### 2026-07-11 10:49 EEST — CODEX TERMINAL — QA STATUS
+
+**SecureCall Three-Device QA: S10 ↔ Tab Verified, S7 Blocked**
+- QA report written:
+  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+- Devices visible:
+  - S10 `RF8N313QMFL` — `com.securecall.app.premium` `1.0.42-premium` / `78009`
+  - S7 `ce10160adc00152604` — `com.securecall.app.pro` `1.0.42-pro` / `78009`
+  - Tab S4 `ce12182c68644439037e` — `com.securecall.app.free` `1.0.42-free` / `78009`
+
+**Passed Physical Flows**
+- S10 Premium:
+  - Launches, shows `● Connected`, Settings reachable, no IFR/Wallet text in visible Settings dump.
+  - SecureCall ID captured from Settings: `android-158f3691`.
+- Tab S4 Free:
+  - Launches, shows `● Connected`, Settings reachable, no IFR/Wallet text in visible Settings dump.
+  - SecureCall ID captured from Settings: `android-a53fc22d`.
+  - Free ad banner no longer overlaps bottom navigation after `MainActivity.java` inset fix.
+- S10 -> Tab:
+  - S10 Dialer placed call to `android-a53fc22d`.
+  - Tab displayed `IncomingCallActivity` with caller `android-158f3691`.
+  - Accept succeeded; both devices entered `CallActivity`.
+  - End from S10 returned S10 to MainActivity and Tab showed expected Save Contact prompt.
+- Tab -> S10:
+  - Tab Dialer placed call to `android-158f3691`.
+  - S10 displayed `IncomingCallActivity` with caller `android-a53fc22d`.
+  - Accept succeeded; both devices entered `CallActivity`.
+  - End returned both devices to MainActivity.
+- S10 speaker route in a real active call:
+  - Before: `Active communication device: earpiece`.
+  - Speaker ON: `Active communication device: speaker`, UI `content-desc="Lautsprecher an"`, `selected="true"`.
+  - Speaker OFF: returned to `Active communication device: earpiece`.
+
+**S7 Status**
+- S7 Pro remains BLOCKED for network-dependent call QA:
+  - Wi-Fi `GL-MT300N-V2-5df` connected but `lastValidated=false`.
+  - Logcat shows repeated `SocketTimeoutException` to `api.stealthx.tech/135.181.254.229:443` from `192.168.8.187`.
+  - Device also repeatedly entered Dozing/display-off state during UI testing.
+- This is documented as a device/network blocker, not a confirmed SecureCall app crash.
+
+**Open QA Limits**
+- Destructive fresh-install/onboarding/phone-confirm-loop tests were not run in this pass because installed release data was preserved.
+- Emulator API 24/30/35 matrix still open.
+- Bluetooth/headset/GSM interruption tests still open.
+- Final release APK/AAB artifacts must be rebuilt after the `MainActivity.java` banner fix.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
+### 2026-07-11 10:41 EEST — CODEX TERMINAL — FIX / QA STATUS
+
+**SecureCall Three-Device QA: Free Banner Overlap**
+- Continuing the full SecureCall S10/S7/Tab S4 QA run under:
+  `/Users/gio/Desktop/securecall-full-qa-20260711-102458`
+- Found a confirmed Free-tier tablet UI blocker:
+  - Device: Tab S4 `ce12182c68644439037e`
+  - Package: `com.securecall.app.free`
+  - Screen(s): Calls, Contacts, Dialer
+  - Problem: `adBannerContainer` overlapped `bottomNav`, making the bottom menu unreliable.
+- Root cause:
+  - `activity_main.xml` used a fixed `56dp` bottom margin for the ad banner.
+  - The real bottom navigation height on the Tab S4 with system insets was larger than that fixed margin.
+- Fix applied in:
+  - `client_android/app/src/main/java/com/securecall/app/MainActivity.java`
+  - `updateContentBottomInset()` now measures the live bottom navigation height and uses it as the ad banner bottom margin before computing content inset.
+- Verification performed after rebuilding/installing Free Release on Tab S4:
+  - Calls: banner `[0,2160][1600,2272]`, bottom nav `[0,2272][1600,2452]` → no overlap.
+  - Dialer: banner `[0,2160][1600,2272]`, bottom nav `[0,2272][1600,2452]` → no overlap.
+  - Settings: no visible ad banner; nav host ends above bottom nav.
+
+**Build/Test**
+- Command run:
+  - `cd client_android && ./gradlew --no-daemon --max-workers=1 -Pinternal assembleFreeRelease`
+- Result:
+  - `BUILD SUCCESSFUL in 6m 38s`
+- Installed rebuilt Free APK on Tab S4 and verified the affected layouts by UI bounds.
+
+**Open Next Steps**
+- Continue full QA matrix on S10/S7/Tab S4.
+- S7 currently needs permission-dialog cleanup and network/connectivity retest.
+- Rebuild final APK/AAB artifacts only after the complete QA pass and remaining fixable blockers are handled.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
