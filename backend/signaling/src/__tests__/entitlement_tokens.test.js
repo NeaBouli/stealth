@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519");
 process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM = privateKey.export({ type: "pkcs8", format: "pem" });
 
-const { issueEntitlementToken, audienceForProduct, TOKEN_TTL_SECONDS } = require("../payments/entitlement_tokens");
+const { issueEntitlementToken, verifyEntitlementToken, audienceForProduct, orderHash, TOKEN_TTL_SECONDS } = require("../payments/entitlement_tokens");
 
 assert.strictEqual(audienceForProduct("securechat_pro_lifetime"), "securechat");
 assert.strictEqual(audienceForProduct("chameleon_elite_lifetime"), "chameleon");
@@ -31,6 +31,20 @@ assert.strictEqual(
   crypto.verify(null, Buffer.from(encodedPayload, "utf8"), publicKey, Buffer.from(encodedSignature, "base64url")),
   true,
 );
+const verified = verifyEntitlementToken(token, { expectedSubject: "sx_test_device", nowSeconds: now + 60 });
+assert.strictEqual(verified.product, "securechat_pro_lifetime");
+assert.strictEqual(verified.order, orderHash("cs_test_secret_order"));
+assert.throws(() => verifyEntitlementToken(token, { expectedSubject: "copied_device", nowSeconds: now + 60 }));
+assert.doesNotThrow(() => verifyEntitlementToken(token, {
+  expectedSubject: "sx_test_device",
+  nowSeconds: now + TOKEN_TTL_SECONDS + 60,
+  expiryGraceSeconds: 120,
+}));
+assert.throws(() => verifyEntitlementToken(token, {
+  expectedSubject: "sx_test_device",
+  nowSeconds: now + TOKEN_TTL_SECONDS + 121,
+  expiryGraceSeconds: 120,
+}));
 assert.strictEqual(
   crypto.verify(null, Buffer.from(`${encodedPayload}x`, "utf8"), publicKey, Buffer.from(encodedSignature, "base64url")),
   false,

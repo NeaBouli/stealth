@@ -63,7 +63,7 @@ const { verifyIfrLock }                                             = require(".
 const { buildContext, wireWs }                                      = require("./context");
 const { writeJsonAtomic }                                           = require("./utils/json_store");
 const { sanitize: sanitizeUtil }                                    = require("./utils/sanitize");
-const { issueEntitlementToken }                                    = require("./payments/entitlement_tokens");
+const { issueEntitlementToken, verifyEntitlementToken, orderHash: entitlementOrderHash } = require("./payments/entitlement_tokens");
 
 // Hoisted so HTTP route handlers (defined below) can call ctx.sendToClient
 // after buildContext() runs at startup — before any request arrives.
@@ -1127,7 +1127,7 @@ ctx = buildContext({
   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
   rateLimit, hb,
   giftCodes, saveGiftCodes,
-  issueEntitlementToken,
+  issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
 });
 wireWs(wss, ctx);
 

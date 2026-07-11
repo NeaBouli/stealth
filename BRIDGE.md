@@ -5206,3 +5206,13 @@ Rules for all dev agents:
 - Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
 
 ---
+# 2026-07-11 — Signed entitlement lease refresh (Codex)
+
+- Neuer WS-Befehl `REFRESH_ENTITLEMENT`: prueft Ed25519-Signatur, Device-Bindung,
+  Produkt, Order-Hash und den weiterhin vorhandenen Aktivierungs-/Kaufdatensatz.
+- Refresh-Tokens duerfen hoechstens sieben Tage abgelaufen sein; ohne aktiven
+  Kaufdatensatz (z. B. nach Refund/Dispute-Revoke) wird kein neues Lease erzeugt.
+- Aktivierungscodes werden nicht als Refresh-Credential an Apps gespeichert.
+- Backend-Gesamttests PASS: Context, Handler, Subscription/WebRTC, E-Mail,
+  Stripe, VLABS Fulfillment und Entitlement Tokens.
+- Keine Runtime Keys, Zahlung, Mail, Deployment oder Live-Aktivierung.

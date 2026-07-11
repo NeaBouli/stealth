@@ -5,7 +5,7 @@ module.exports = function subscriptionHandlers(ctx) {
     activationCodes, walletMappings, fcmTokens, giftCodes,
     getClientId, sendToClient,
     saveActivationCodes, saveWalletMappings, saveGiftCodes,
-    subscriptions, fcm, verifyIfrLock, issueEntitlementToken,
+    subscriptions, fcm, verifyIfrLock, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
   } = ctx;
 
   const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
@@ -103,6 +103,39 @@ module.exports = function subscriptionHandlers(ctx) {
       console.log("[ACTIVATION] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", entry.tier, "by:", myClientId, "slot:", slot + "/" + entry.maxUses);
       saveActivationCodes();
       return ws.send(JSON.stringify(signedActivation(entry, myClientId, { slot, maxSlots: entry.maxUses })));
+    },
+
+    REFRESH_ENTITLEMENT(ws, connId, msg) {
+      const myClientId = getClientId(connId);
+      if (!myClientId || typeof msg.entitlementToken !== "string") {
+        return ws.send(JSON.stringify({ type: "ENTITLEMENT_REFRESH_RESULT", success: false, error: "invalid_entitlement" }));
+      }
+      try {
+        const claims = verifyEntitlementToken(msg.entitlementToken, {
+          expectedSubject: myClientId,
+          expiryGraceSeconds: 7 * 24 * 60 * 60,
+        });
+        const entry = activationCodes.find(candidate => {
+          const devices = Array.isArray(candidate.usedBy) ? candidate.usedBy : (candidate.usedBy ? [candidate.usedBy] : []);
+          const reference = candidate.stripeSessionId || candidate.code;
+          return devices.includes(myClientId)
+            && candidate.productKey === claims.product
+            && entitlementOrderHash(reference) === claims.order;
+        });
+        if (!entry) {
+          return ws.send(JSON.stringify({ type: "ENTITLEMENT_REFRESH_RESULT", success: false, error: "entitlement_revoked" }));
+        }
+        const refreshed = signedActivation(entry, myClientId, {});
+        if (!refreshed.entitlementToken) throw new Error("entitlement_signing_unavailable");
+        return ws.send(JSON.stringify({
+          type: "ENTITLEMENT_REFRESH_RESULT",
+          success: true,
+          entitlementToken: refreshed.entitlementToken,
+        }));
+      } catch (error) {
+        console.warn("[ACTIVATION] Entitlement refresh rejected:", error.message);
+        return ws.send(JSON.stringify({ type: "ENTITLEMENT_REFRESH_RESULT", success: false, error: "invalid_entitlement" }));
+      }
     },
 
     VERIFY_IFR_LOCK(ws, connId, msg) {

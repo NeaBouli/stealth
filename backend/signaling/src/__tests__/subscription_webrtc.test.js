@@ -69,6 +69,11 @@ function buildCtx() {
   const saveGiftCodes = () => {};
   const saveActivationCodes = () => {}; // no-op: prevent writing activation_codes.json during tests
   const issueEntitlementToken = ({ subject, productKey, tier }) => `signed:${subject}:${productKey}:${tier}`;
+  const verifyEntitlementToken = (token, { expectedSubject }) => {
+    if (token !== "valid-refresh-token") throw new Error("invalid token");
+    return { sub: expectedSubject, product: "securechat_pro_lifetime", order: "order-hash" };
+  };
+  const entitlementOrderHash = () => "order-hash";
 
   const getIceServers = () => [{ urls: "stun:stun.l.google.com:19302" }];
   const ADMIN_API_KEY = "test-admin-key";
@@ -91,6 +96,8 @@ function buildCtx() {
     saveGiftCodes,
     saveActivationCodes,
     issueEntitlementToken,
+    verifyEntitlementToken,
+    entitlementOrderHash,
   });
 }
 
@@ -211,6 +218,16 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   const r8 = lastMsg(ws);
   assert(r8.success === true, "re-activation same device → success");
   assert(entry.usedBy.filter(u => u === "alice").length === 1, "alice not duplicated in usedBy");
+
+  ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token" });
+  const refresh = lastMsg(ws);
+  assert(refresh.success === true && refresh.type === "ENTITLEMENT_REFRESH_RESULT", "active purchase refreshes signed entitlement");
+  assert(refresh.entitlementToken === "signed:alice:securechat_pro_lifetime:pro", "refresh returns a new signed lease");
+
+  ctx.activationCodes.splice(ctx.activationCodes.indexOf(entry), 1);
+  ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token" });
+  const revokedRefresh = lastMsg(ws);
+  assert(revokedRefresh.success === false && revokedRefresh.error === "entitlement_revoked", "revoked purchase cannot refresh entitlement");
 
   // Activation code — max devices exceeded
   ctx.activationCodes.push({ code: "FULL-CODE-5678", tier: "basic", maxUses: 1, usedBy: ["bob"], currentUses: 1 });

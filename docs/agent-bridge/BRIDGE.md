@@ -2894,3 +2894,9 @@ Verification:
 
 Follow-up:
 - GitHub Dependabot API after push returned `open_alerts=0`.
+# 2026-07-11 — Signed entitlement lease refresh (Codex)
+
+- `REFRESH_ENTITLEMENT` erneuert nur gueltige, gerätegebundene Ed25519-Leases,
+  deren Kauf-/Aktivierungsdatensatz nach wie vor aktiv ist.
+- Refund/Dispute-Revoke entfernt den Datensatz und blockiert weitere Leases.
+- Backend-Gesamttests PASS; keine Runtime Keys oder Live-Aktivierung.
