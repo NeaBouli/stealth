@@ -18,7 +18,7 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Foreground Service for incoming calls in background -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Full-screen intent for incoming calls while app is in background -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!-- BUG-027: Auto-restart service after Samsung kills it -->
@@ -73,7 +73,7 @@
             android:name="com.securecall.app.net.WebSocketService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="phoneCall" />
+            android:foregroundServiceType="dataSync" />
 
         <activity
             android:name=".MainActivity"

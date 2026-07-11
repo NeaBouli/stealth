@@ -10,6 +10,10 @@
     <!-- api.stealthx.tech leaf + Let's Encrypt R12 intermediate. Rotate before 2026-08-14. -->
     <domain-config>
         <domain includeSubdomains="false">api.stealthx.tech</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/isrg_root_x1" />
+        </trust-anchors>
         <pin-set expiration="2026-08-14">
             <pin digest="SHA-256">1e85xNSEj+dcImOJS0iNkfMZOrZdvJJzzPCqT1/CZDc=</pin>
             <pin digest="SHA-256">kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ=</pin>

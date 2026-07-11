@@ -70,6 +70,16 @@ public class MainActivity extends AppCompatActivity {
         // Security checks at startup
         runSecurityChecks();
 
+        // On a fresh install, hand off to onboarding before starting permission,
+        // service, or dialog flows. Otherwise MainActivity can leak windows while
+        // it immediately finishes after launching OnboardingActivity.
+        SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
+        if (!prefs.getBoolean("onboarding_complete", false)) {
+            startActivity(new Intent(this, OnboardingActivity.class));
+            finish();
+            return;
+        }
+
         // Register FCM token for push notifications
         FcmTokenManager.INSTANCE.ensureTokenRegistered(this);
 
@@ -105,14 +115,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Request phone number permission for server registration
         requestPhoneNumberPermission();
-
-        // Check if onboarding needed
-        SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
-        if (!prefs.getBoolean("onboarding_complete", false)) {
-            startActivity(new Intent(this, OnboardingActivity.class));
-            finish();
-            return;
-        }
 
         setContentView(R.layout.activity_main);
         EdgeToEdgeHelper.applyTopSystemBarPadding(findViewById(R.id.appBarLayout));

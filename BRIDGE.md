@@ -3,6 +3,43 @@
 
 ---
 
+### 2026-07-11 13:43 EEST — CODEX TERMINAL — FIX / QA
+
+**SecureCall Emulator Matrix Unblocked + Android 15/API24 Fixes**
+- Local Android emulator tooling/system images were installed and manual AVDs were created for:
+  - `SecureCall_API24`
+  - `SecureCall_API30`
+  - `SecureCall_API35`
+- API 35 fresh-install smoke exposed two real app issues:
+  - `MainActivity` could leak windows by starting permission/service/dialog work before immediately handing off to onboarding.
+  - Android 15 rejected `WebSocketService` foreground service when declared as `phoneCall`; SecureCall is not the default dialer and lacks the managed-call role required for that FGS type.
+- Fixes applied locally:
+  - `client_android/app/src/main/java/com/securecall/app/MainActivity.java`
+    - Onboarding redirect now happens before FCM, notification, battery, phone-number, and service startup flows.
+  - `client_android/app/src/main/AndroidManifest.xml`
+    - `WebSocketService` now uses `foregroundServiceType="dataSync"`.
+    - Permission changed from `FOREGROUND_SERVICE_PHONE_CALL` to `FOREGROUND_SERVICE_DATA_SYNC`.
+- API 24 fresh-install smoke exposed an older-Android TLS problem:
+  - `SSLHandshakeException` / `Trust anchor for certification path not found` against `api.stealthx.tech`.
+  - Server certificate chain is Let's Encrypt R12 -> ISRG Root X1.
+- API 24 fix applied locally:
+  - `client_android/app/src/main/res/raw/isrg_root_x1.pem` added.
+  - `client_android/app/src/main/res/xml/network_security_config.xml` now includes domain-scoped system + bundled ISRG Root X1 trust anchors for `api.stealthx.tech`, while keeping the existing leaf/R12 pin-set.
+- Verification:
+  - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleFreeRelease --console=plain` -> `BUILD SUCCESSFUL in 7m 44s`.
+  - API 35 fresh-install re-test: onboarding visible; no targeted `WindowLeaked`; no Android 15 FGS `SecurityException`; after prompts, main UI showed `StealthX` / `Connected`; free ad banner did not overlap bottom nav.
+  - API 30 fresh-install re-test: onboarding visible; package metadata verified as Free `1.0.43-free` / `78010009`; targeted crash/security scan clean.
+  - API 24 fresh-install re-test: after onboarding/phone/battery prompts, main UI showed `StealthX` / `Connected`; targeted TLS/security scan had no `SSLHandshakeException`, `Trust anchor`, `CertPathValidator`, `WindowLeaked`, or app `FATAL EXCEPTION`.
+  - QA report updated: `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+- Still open:
+  - Rebuild all final APK/AAB artifacts; existing Desktop artifacts predate these Android 15/API24 fixes.
+  - Install rebuilt variants on S10/S7/Tab and rerun physical smoke.
+  - S7 call/signaling matrix remains blocked until S7 has a validated Internet route or the user approves temporary roaming/mobile-data fallback.
+  - Bluetooth/headset/GSM-interruption tests still need physical accessory/SIM-interruption setup.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
 ### 2026-07-11 10:21 EEST — CODEX TERMINAL — RELEASE
 
 **SecureCall 1.0.42 Build Artifacts**
