@@ -1,5 +1,42 @@
 # Stealth TODO
 
+## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
+
+- [x] Receipt-/Business-Invoice-Daten fuer Custom-ID Checkout serverseitig validieren.
+- [x] Paid sale und Vollrefund/Dispute signiert an den privaten VLABS-Finance-Receiver exportieren.
+- [x] Pending und aktivierte Custom IDs bei Vollrefund/Dispute ueber exakte Checkout-Session widerrufen.
+- [ ] `Gio`: Stripe Webhook um `charge.refunded` und `charge.dispute.created` erweitern, Runtime-Receiver-Secret setzen und Testmode-E2E freigeben.
+- [ ] `Gio/Accountant`: Custom-ID Produkt-/VAT-/Belegmapping und Partial-Refund-Prozess freigeben.
+
+## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
+
+- [x] Authentifizierten/idempotenten RTDN-Empfänger mit Subscriptions-v2-Revalidierung bauen.
+- [x] Hold/Pause/Revoke/Expiry und Vollerstattung serverseitig auf Subscription-/Aktivierungscode-Zugang anwenden.
+- [x] Google-Play-Einmalkauf aus dem unsignierten Gift-Code-Pfad in den signierten Aktivierungsspeicher verschieben.
+- [ ] `Gio`: Pub/Sub Topic/Push-Subscription, OIDC Audience/Service-Account und Play RTDN konfigurieren; danach Testbenachrichtigung und License-Tester-E2E freigeben.
+- [ ] `Gio/Accountant`: Google-Play-Abrechnung/Belegfluss und private Accounting-Weitergabe festlegen.
+
+## 2026-07-12 00:30 EEST — CODEX — PUBLIC SALES CLAIMS / CHECKOUT ROUTING
+
+- [x] Public direct Stripe Payment Link entfernen und Einmalkäufe auf den kanonischen VLABS-Shop routen.
+- [x] Default-off IFR-/Dynamic-Checkout auf Website und Wiki als geplant/launch-gated kennzeichnen.
+- [x] Aktivierungscode-Preis und Rechtsangaben auf öffentlichen Verkaufsseiten konsistent machen.
+- [ ] `Gio`: PR #33 reviewen/mergen und erst nach Testmode-E2E deployen.
+- [ ] `Gio/Accountant`: IFR-Rabatt, Custom-ID-Verkauf und Crypto-Support steuerlich/rechtlich freigeben, bevor die Runtime-Gates aktiviert werden.
+
+## 2026-07-11 23:59 EEST — CODEX — CUSTOM-ID PAYMENT P0 / CRYPTO SUPPORT
+
+- Custom-ID checkout is now fail-closed behind `CUSTOM_ID_STRIPE_CHECKOUT_ENABLED=true`. Direct activation cannot mint an unpaid ID, and a pending token alone cannot activate one.
+- Google Play one-time verification now fails closed without service-account verification, accepts only exact package/product allowlists and reuses an existing code for duplicate purchase tokens. The old substring-tier and development accept-without-verification paths are removed.
+- Google Publisher verification no longer imports the undeclared `googleapis` package; it uses directly declared `google-auth-library` credentials and an encoded Android Publisher REST request. Fresh `npm ci` reports 0 vulnerabilities.
+- WebSocket `SUBSCRIPTION_VERIFY` can no longer persist client-supplied product/token claims. It verifies exact monthly/yearly SKUs with Google Subscriptions v2, checks active/grace/canceled-but-unexpired state plus expiry, then records only the verified tier/expiry. Focused payment tests include the former self-claim rejection.
+- Stripe paid webhook must bind the pending token, normalized Custom ID and exact Checkout Session before activation; unpaid, mismatched and leaked pending tokens fail.
+- Direct ETH/BTC/SOL support is explicitly described as voluntary, without purchase/feature access or implied tax-exempt donation status. Recipient/accounting treatment remains a Gio/accountant gate.
+- Codex owns this payment path. No Stripe request, crypto transfer, invoice, AADE request or deploy was executed.
+- Verification: full signaling suite PASS; Android `:app:processFreeDebugResources` PASS with the repository's required AndroidX flag; `git diff --check` PASS. Changes belong to PR #33.
+
+
+
 ## Payment / Etimologio — Owner Codex (2026-07-11)
 
 **Zuweisung:** Alle Checkboxen in diesem Abschnitt sind Codex-Aufgaben, ausser eine Zeile nennt ausdruecklich `Core-Dev`, `Gio` oder `Accountant`. Der Core-Dev baut keinen parallelen Checkout-/Etimologio-Pfad.
@@ -8,8 +45,11 @@
 
 - [x] VLABS als kanonischen Checkout fuer SecureCall/StealthX festlegen; Legacy-Direktcheckout default-off.
 - [x] Signiertes/idempotentes SecureCall-Fulfillment und Vollrefund-Revoke lokal vorbereiten.
+- [x] Aktuellen `origin/main` Payment-P0 haerten: VLABS-Fulfillment/Revoke, Legacy-Checkout default-off, paid-only Webhook, Dispute-Revoke und redigierte Logs/Debugausgaben.
+- [x] Ed25519-Entitlement-Ausstellung fuer SecureChat/Chameleon/Suite implementieren: 30-Tage-Token, Client-/Produkt-/Tier-Bindung, gehashte Order-Referenz, kein Code-Echo.
 - [x] Produktseiten mit Preis-, Digitalleistungs-, Widerrufs- und Rechtehinweisen angleichen.
 - [ ] Runtime-Secrets fuer VLABS -> SecureCall Fulfillment/Revocation in den jeweiligen privaten Deployments setzen; keine Werte in Git/Bridge.
+- [ ] Runtime-Ed25519-Keypair sicher erzeugen/setzen und Public Key in Release-Builds geben; keine Private Keys in Git/App.
 - [ ] Stripe-Testmode E2E: Checkout -> paid webhook -> genau eine Aktivierung -> interne Invoice/Etimologio-Draft; Refund -> Revoke/Accounting Review.
 - [ ] Accountant Mapping fuer SecureCall Pro/Premium und Suite freigeben; Provider-Demo danach separat testen.
 - [ ] Gio Launch-/Deployment-Freigabe; erst danach Waren in VLABS von Coming Soon auf kaufbar stellen.

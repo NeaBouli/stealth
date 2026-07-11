@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "NODE_ENV=development node src/server.js",
-    "test": "node src/__tests__/context.smoke.js && node src/__tests__/handlers.test.js && node src/__tests__/subscription_webrtc.test.js && node src/__tests__/email_handler.test.js && node src/__tests__/stripe_handler.test.js"
+    "test": "node src/__tests__/context.smoke.js && node src/__tests__/handlers.test.js && node src/__tests__/subscription_webrtc.test.js && node src/__tests__/email_handler.test.js && node src/__tests__/stripe_handler.test.js && node src/__tests__/custom_ids_payment.test.js && node src/__tests__/vlabs_finance_export.test.js && node src/__tests__/google_play_billing.test.js && node src/__tests__/google_play_rtdn.test.js && node src/__tests__/subscriptions_payment.test.js && node src/__tests__/vlabs_fulfillment.test.js && node src/__tests__/entitlement_tokens.test.js",
+    "test:payments": "node src/__tests__/stripe_handler.test.js && node src/__tests__/custom_ids_payment.test.js && node src/__tests__/vlabs_finance_export.test.js && node src/__tests__/google_play_billing.test.js && node src/__tests__/google_play_rtdn.test.js && node src/__tests__/subscriptions_payment.test.js && node src/__tests__/vlabs_fulfillment.test.js && node src/__tests__/entitlement_tokens.test.js"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -24,6 +25,7 @@
     "ethers": "^6.16.0",
     "express": "^4.19.0",
     "firebase-admin": "^13.10.0",
+    "google-auth-library": "^10.6.2",
     "resend": "^6.10.0",
     "stripe": "^22.0.0",
     "ws": "^8.21.0"

@@ -58,7 +58,7 @@ function buildCtx() {
   };
   const mockPkd = { registerKey: () => ({ keyId: "k1", publicKey: "pk", created: 0 }), getKey: () => null };
   const mockSubscriptions = {
-    verifySubscription: () => ({ tier: "pro", expiresAt: 9999999999 }),
+    recordVerifiedSubscription: (_clientId, _token, _productId, tier, expiresAt) => ({ tier, expiresAt }),
     getSubscription: () => null,
   };
   const mockCustomIds = { resolve: () => null };
@@ -68,6 +68,12 @@ function buildCtx() {
   const giftCodes = new Map();
   const saveGiftCodes = () => {};
   const saveActivationCodes = () => {}; // no-op: prevent writing activation_codes.json during tests
+  const issueEntitlementToken = ({ subject, productKey, tier }) => `signed:${subject}:${productKey}:${tier}`;
+  const verifyEntitlementToken = (token, { expectedSubject }) => {
+    if (token !== "valid-refresh-token") throw new Error("invalid token");
+    return { sub: expectedSubject, product: "securechat_pro_lifetime", order: "order-hash" };
+  };
+  const entitlementOrderHash = () => "order-hash";
 
   const getIceServers = () => [{ urls: "stun:stun.l.google.com:19302" }];
   const ADMIN_API_KEY = "test-admin-key";
@@ -89,6 +95,10 @@ function buildCtx() {
     giftCodes,
     saveGiftCodes,
     saveActivationCodes,
+    issueEntitlementToken,
+    verifyEntitlementToken,
+    entitlementOrderHash,
+    verifyPlaySubscription: () => ({ tier: "pro", expiresAt: 9999999999999 }),
   });
 }
 
@@ -104,7 +114,7 @@ console.log("\n[Suite] SUBSCRIPTION_VERIFY handler");
 
   // Not registered
   ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: null, ip: "1.1.1.1" });
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok", productId: "pro" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok", productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
   assert(lastMsg(ws).error === "not_registered", "unregistered → not_registered");
 
   // Register
@@ -112,19 +122,19 @@ console.log("\n[Suite] SUBSCRIPTION_VERIFY handler");
   ctx.clientIds.set("alice", connId);
 
   // Missing purchaseToken
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { productId: "pro" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
   assert(lastMsg(ws).type === "ERROR", "missing purchaseToken → ERROR");
 
   // Missing productId
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok", packageName: "com.securecall.app.free" });
   assert(lastMsg(ws).type === "ERROR", "missing productId → ERROR");
 
   // Valid → mock returns tier=pro
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok123", productId: "pro_monthly" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok123", productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
   const ack = lastMsg(ws);
   assert(ack.type === "SUBSCRIPTION_VERIFY_ACK", "valid → SUBSCRIPTION_VERIFY_ACK");
   assert(ack.tier === "pro", "tier from mock subscription service");
-  assert(ack.expiresAt === 9999999999, "expiresAt forwarded");
+  assert(ack.expiresAt === 9999999999999, "expiresAt forwarded");
 }
 
 // ==========================================
@@ -186,11 +196,21 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   assert(r6.success === false && r6.error === "expired", "expired gift code → expired");
 
   // Activation code — valid first use
-  ctx.activationCodes.push({ code: "TEAM-ABCD-1234", tier: "pro", maxUses: 3, usedBy: [], currentUses: 0 });
+  ctx.activationCodes.push({
+    code: "TEAM-ABCD-1234",
+    tier: "pro",
+    maxUses: 3,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "securechat_pro_lifetime",
+    stripeSessionId: "cs_test_securechat",
+  });
   ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "TEAM-ABCD-1234" });
   const r7 = lastMsg(ws);
   assert(r7.success === true && r7.tier === "pro", "activation code first use → success");
   assert(r7.slot === 1 && r7.maxSlots === 3, "slot=1, maxSlots=3");
+  assert(r7.entitlementToken === "signed:alice:securechat_pro_lifetime:pro", "signed entitlement returned without activation code");
+  assert(!Object.prototype.hasOwnProperty.call(r7, "code"), "activation code is not echoed back");
   const entry = ctx.activationCodes.find(c => c.code === "TEAM-ABCD-1234");
   assert(entry.usedBy.includes("alice"), "alice added to usedBy");
 
@@ -199,6 +219,16 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   const r8 = lastMsg(ws);
   assert(r8.success === true, "re-activation same device → success");
   assert(entry.usedBy.filter(u => u === "alice").length === 1, "alice not duplicated in usedBy");
+
+  ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token" });
+  const refresh = lastMsg(ws);
+  assert(refresh.success === true && refresh.type === "ENTITLEMENT_REFRESH_RESULT", "active purchase refreshes signed entitlement");
+  assert(refresh.entitlementToken === "signed:alice:securechat_pro_lifetime:pro", "refresh returns a new signed lease");
+
+  ctx.activationCodes.splice(ctx.activationCodes.indexOf(entry), 1);
+  ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token" });
+  const revokedRefresh = lastMsg(ws);
+  assert(revokedRefresh.success === false && revokedRefresh.error === "entitlement_revoked", "revoked purchase cannot refresh entitlement");
 
   // Activation code — max devices exceeded
   ctx.activationCodes.push({ code: "FULL-CODE-5678", tier: "basic", maxUses: 1, usedBy: ["bob"], currentUses: 1 });

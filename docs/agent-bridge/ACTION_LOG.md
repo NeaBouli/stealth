@@ -1,5 +1,58 @@
 # Stealth Action Log
 
+## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
+
+- Added B2C/B2B billing intake, private signed VLABS invoice/adjustment export and exact Checkout-Session refund/dispute revocation for Custom IDs.
+- Corrected public Custom-ID currency and opaque-token claims. Password hashes never enter Stripe or the accounting export.
+- Full and focused payment tests PASS; no external request or deployment was made.
+
+## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
+
+- Implemented authenticated, idempotent Google Play RTDN processing with Google OIDC identity checks and Play API subscription revalidation.
+- Full voided purchases revoke matching subscriptions and one-time activation codes. Terminal subscription states remove access; active lifecycle updates only refresh already registered purchase tokens.
+- Google Play one-time codes now use the signed activation registry rather than the unsigned gift-code shortcut.
+- Full signaling tests and focused payment tests PASS. No external request or deployment was made; production Pub/Sub and Play Console configuration remain external gates.
+
+## 2026-07-12 00:30 EEST — CODEX — PUBLIC SALES CLAIMS / CHECKOUT ROUTING
+
+- Removed the public direct Stripe Payment Link from the SecureCall activation-code card. One-time SecureCall products now route through the canonical VLABS shop; no payment provider URL is embedded in the public page.
+- The website no longer presents the default-off IFR/dynamic Stripe route as active. IFR checkout is consistently marked planned/launch-gated, and active controls were removed from the main sales page.
+- Public product schema, pricing copy, FAQ, terms and disclaimer now use the VLABS 25 EUR activation-code catalog price and avoid unconditional future-update or no-refund claims.
+- Google Play subscriptions remain in-app; backend purchase and subscription verification stays server-side and fail-closed.
+- No deploy, Stripe request, wallet request, invoice or AADE request was executed. Changes are part of PR #33.
+
+## 2026-07-11 23:59 EEST — CODEX — CUSTOM-ID PAYMENT P0 / CRYPTO SUPPORT
+
+- Custom-ID checkout is now fail-closed behind `CUSTOM_ID_STRIPE_CHECKOUT_ENABLED=true`. Direct activation cannot mint an unpaid ID, and a pending token alone cannot activate one.
+- Google Play one-time verification now fails closed without service-account verification, accepts only exact package/product allowlists and reuses an existing code for duplicate purchase tokens. The old substring-tier and development accept-without-verification paths are removed.
+- Google Publisher verification no longer imports the undeclared `googleapis` package; it uses directly declared `google-auth-library` credentials and an encoded Android Publisher REST request. Fresh `npm ci` reports 0 vulnerabilities.
+- WebSocket `SUBSCRIPTION_VERIFY` can no longer persist client-supplied product/token claims. It verifies exact monthly/yearly SKUs with Google Subscriptions v2, checks active/grace/canceled-but-unexpired state plus expiry, then records only the verified tier/expiry. Focused payment tests include the former self-claim rejection.
+- Stripe paid webhook must bind the pending token, normalized Custom ID and exact Checkout Session before activation; unpaid, mismatched and leaked pending tokens fail.
+- Direct ETH/BTC/SOL support is explicitly described as voluntary, without purchase/feature access or implied tax-exempt donation status. Recipient/accounting treatment remains a Gio/accountant gate.
+- Codex owns this payment path. No Stripe request, crypto transfer, invoice, AADE request or deploy was executed.
+- Verification: full signaling suite PASS; Android `:app:processFreeDebugResources` PASS with the repository's required AndroidX flag; `git diff --check` PASS. Changes belong to PR #33.
+
+
+
+## 2026-07-11 — Server-signierter Entitlement-Vertrag
+
+- Neue Ed25519-Tokenausstellung fuer bezahlte Aktivierungscodes: Audience, Client-ID, Produkt, Tier, Ausgabe/Ablauf und gehashte Order-Referenz werden kanonisch signiert; TTL 30 Tage.
+- Private Signierung ist Runtime-only ueber `ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM`. Ohne Key wird kein Token ausgestellt; kein Fallback-Secret im Repo.
+- Activation-Response gibt keinen Aktivierungscode mehr zurueck. Sold-Code-Registry bewahrt Produkt-/Order-Kontext nur intern fuer Tokenbindung und Revoke.
+- SecureChat-Client-Gegenstelle liegt auf Branch `codex-payment-entitlements-20260711` und verifiziert Ed25519 vor `TierGate`-Update.
+- Verifikation: kompletter Backend-Testlauf PASS, Subscription/WebRTC 74/74, neue Token-Kryptotests PASS, Syntax- und Diff-Checks PASS.
+- Kein Key erzeugt/committed, kein Deploy, keine Zahlung, E-Mail oder externe Anfrage.
+
+## 2026-07-11 — Codex Payment-P0 auf aktuellem Remote-Stand
+
+- Gegen `origin/main` neu aufgebaut: signiertes VLABS-Fulfillment fuer SecureCall Pro/Premium mit 5-Minuten-Replay-Gate, Produkt-Allowlist, Session-Idempotenz, persistenter E-Mail-Zustellung und signiertem Revoke.
+- Revoke akzeptiert ausschliesslich `stripe_full_refund` und `stripe_dispute`; widerrufene Codes werden aus Laufzeit- und Neustart-Registry entfernt.
+- Direkter und dynamischer Legacy-Checkout sowie IFR-Discount-Challenge sind ohne explizites `LEGACY_STRIPE_CHECKOUT_ENABLED=true` geschlossen. VLABS bleibt kanonischer Verkaufseinstieg.
+- Legacy-Webhook akzeptiert nur bezahlte Completed-/Async-Success-Sessions. Payment-Logs und Admin-Debug geben keine vollstaendigen Aktivierungscodes, E-Mails, Stripe-IDs oder Secret-Praefixe aus.
+- Verifikation: `npm ci` mit 0 Vulnerabilities; kompletter `npm test` PASS (Context 6, Handler 45, Subscription/WebRTC 72, E-Mail, Stripe, VLABS-Fulfillment); Syntaxcheck und `git diff --check` PASS.
+- Keine Zahlung, E-Mail, externe Fulfillment-/Revoke-Anfrage, Rechnung, Provider-/AADE-Anfrage oder Deployment ausgefuehrt.
+- Verbleibendes Gate: Runtime-Secrets, Stripe-Testmode E2E, Accountant-/Provider-Mapping und Gio-Launch-/Deployfreigabe.
+
 ## 2026-07-11 — Codex Payment-Ownership dokumentiert
 
 - Gio hat Codex als verantwortlichen Agenten fuer Stripe, Zahlung, Fulfillment, Refund und Etimologio/myDATA von SecureCall/StealthX eingesetzt.

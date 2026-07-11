@@ -1,4 +1,41 @@
 # BRIDGE — stealth
+
+## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
+
+- Custom-ID checkout now validates receipt versus business invoice, billing country, email and company AFM/VAT fields before creating Stripe Checkout. Billing data is attached only to the signed payment session; passwords remain server-only.
+- Confirmed Custom-ID sales and full-refund/dispute adjustments can be HMAC-exported to the private VLABS finance receiver. Export is default-off without runtime URL/secret and webhook processing retries when an enabled receiver fails.
+- Full Stripe refunds/disputes revoke both pending and activated Custom IDs by exact Checkout Session binding. Partial refunds remain review-only and do not incorrectly delete the full ID.
+- Public Custom-ID pricing is consistently EUR 1/2/5, and the technical copy now correctly describes the opaque one-time activation token instead of claiming a JWT.
+- Full signaling suite and focused payment suite PASS. No Stripe/VLABS request, payment, invoice, AADE action or deploy was executed; changes are in PR #33.
+
+## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
+
+- Added authenticated Google Play RTDN push handling at `/billing/google-play-rtdn`: Google OIDC signature/audience/email checks, package allowlist, bounded payload and persistent Pub/Sub message-id idempotency.
+- Subscription lifecycle notifications are revalidated with Google Play Subscriptions v2. Hold, pause, revoke, expiry and canceled-pending states remove matching server access; renewal/grace/cancel-with-future-expiry refresh only already known purchase tokens.
+- Full voided purchases revoke matching subscriptions and one-time activation codes. Partial quantity refunds are acknowledged without incorrectly revoking the whole entitlement.
+- Google Play one-time purchases now enter the signed activation-code registry instead of the unsigned gift-code shortcut, so refund revocation and signed lease refresh apply.
+- Full signaling suite and focused payment suite PASS; no Google, Stripe, invoice, AADE or deploy request was executed. Runtime Pub/Sub/Play configuration remains a Gio gate in PR #33.
+
+## 2026-07-12 00:30 EEST — CODEX — PUBLIC SALES CLAIMS / CHECKOUT ROUTING
+
+- Removed the public direct Stripe Payment Link from the SecureCall activation-code card. One-time SecureCall products now route through the canonical VLABS shop; no payment provider URL is embedded in the public page.
+- The website no longer presents the default-off IFR/dynamic Stripe route as active. IFR checkout is consistently marked planned/launch-gated, and active controls were removed from the main sales page.
+- Public product schema, pricing copy, FAQ, terms and disclaimer now use the VLABS 25 EUR activation-code catalog price and avoid unconditional future-update or no-refund claims.
+- Google Play subscriptions remain in-app; backend purchase and subscription verification stays server-side and fail-closed.
+- No deploy, Stripe request, wallet request, invoice or AADE request was executed. Changes are part of PR #33.
+
+## 2026-07-11 23:59 EEST — CODEX — CUSTOM-ID PAYMENT P0 / CRYPTO SUPPORT
+
+- Custom-ID checkout is now fail-closed behind `CUSTOM_ID_STRIPE_CHECKOUT_ENABLED=true`. Direct activation cannot mint an unpaid ID, and a pending token alone cannot activate one.
+- Google Play one-time verification now fails closed without service-account verification, accepts only exact package/product allowlists and reuses an existing code for duplicate purchase tokens. The old substring-tier and development accept-without-verification paths are removed.
+- Google Publisher verification no longer imports the undeclared `googleapis` package; it uses directly declared `google-auth-library` credentials and an encoded Android Publisher REST request. Fresh `npm ci` reports 0 vulnerabilities.
+- WebSocket `SUBSCRIPTION_VERIFY` can no longer persist client-supplied product/token claims. It verifies exact monthly/yearly SKUs with Google Subscriptions v2, checks active/grace/canceled-but-unexpired state plus expiry, then records only the verified tier/expiry. Focused payment tests include the former self-claim rejection.
+- Stripe paid webhook must bind the pending token, normalized Custom ID and exact Checkout Session before activation; unpaid, mismatched and leaked pending tokens fail.
+- Direct ETH/BTC/SOL support is explicitly described as voluntary, without purchase/feature access or implied tax-exempt donation status. Recipient/accounting treatment remains a Gio/accountant gate.
+- Codex owns this payment path. No Stripe request, crypto transfer, invoice, AADE request or deploy was executed.
+- Verification: full signaling suite PASS; Android `:app:processFreeDebugResources` PASS with the repository's required AndroidX flag; `git diff --check` PASS. Changes belong to PR #33.
+
+
 # CC ↔ Codex ↔ Gio Kommunikationskanal
 
 ---
@@ -5206,3 +5243,13 @@ Rules for all dev agents:
 - Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
 
 ---
+# 2026-07-11 — Signed entitlement lease refresh (Codex)
+
+- Neuer WS-Befehl `REFRESH_ENTITLEMENT`: prueft Ed25519-Signatur, Device-Bindung,
+  Produkt, Order-Hash und den weiterhin vorhandenen Aktivierungs-/Kaufdatensatz.
+- Refresh-Tokens duerfen hoechstens sieben Tage abgelaufen sein; ohne aktiven
+  Kaufdatensatz (z. B. nach Refund/Dispute-Revoke) wird kein neues Lease erzeugt.
+- Aktivierungscodes werden nicht als Refresh-Credential an Apps gespeichert.
+- Backend-Gesamttests PASS: Context, Handler, Subscription/WebRTC, E-Mail,
+  Stripe, VLABS Fulfillment und Entitlement Tokens.
+- Keine Runtime Keys, Zahlung, Mail, Deployment oder Live-Aktivierung.

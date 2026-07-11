@@ -37,6 +37,7 @@ process.env.PENDING_FILE      = path.join(DATA_DIR, "pending_activations.json");
 process.env.GIFT_CODES_FILE          = path.join(DATA_DIR, "gift_codes.json");
 process.env.STRIPE_PROCESSED_FILE   = path.join(DATA_DIR, "stripe_processed_events.json");
 process.env.SOLD_CODES_FILE         = path.join(DATA_DIR, "sold_codes.json");
+process.env.GOOGLE_PLAY_RTDN_FILE   = process.env.GOOGLE_PLAY_RTDN_FILE || path.join(DATA_DIR, "google_play_rtdn.json");
 
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
@@ -63,6 +64,7 @@ const { verifyIfrLock }                                             = require(".
 const { buildContext, wireWs }                                      = require("./context");
 const { writeJsonAtomic }                                           = require("./utils/json_store");
 const { sanitize: sanitizeUtil }                                    = require("./utils/sanitize");
+const { issueEntitlementToken, verifyEntitlementToken, orderHash: entitlementOrderHash } = require("./payments/entitlement_tokens");
 
 // Hoisted so HTTP route handlers (defined below) can call ctx.sendToClient
 // after buildContext() runs at startup — before any request arrives.
@@ -487,6 +489,14 @@ function saveGiftCodes() {
   }
 }
 
+require("./payments/google_play_rtdn").installGooglePlayRtdnRoute(app, {
+  subscriptions,
+  activationCodes,
+  saveActivationCodes,
+  giftCodes,
+  saveGiftCodes
+});
+
 app.post("/admin/gift", requireAdmin, (req, res) => {
   const { tier, note } = req.body;
   if (!tier || !["pro", "premium"].includes(tier.toLowerCase())) {
@@ -591,30 +601,33 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
     return res.status(400).json({ error: "missing fields: purchase_token, product_id, package_name" });
   }
 
-  // Determine tier from product_id
-  let tier = "premium";
-  if (product_id.includes("pro") && !product_id.includes("premium")) {
-    tier = "pro";
-  }
+  const { findCodeByPurchaseToken, resolveOneTimeProduct } = require("./payments/google_play_billing");
+  const product = resolveOneTimeProduct(package_name, product_id);
+  if (!product) return res.status(400).json({ error: "unsupported_package_or_product" });
+  const tier = product.tier;
 
   // Google Play Developer API verification
   // Requires GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 env var (base64-encoded JSON key)
   const serviceAccountB64 = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64;
-  if (serviceAccountB64) {
-    try {
-      const { google } = require("googleapis");
+  if (!serviceAccountB64) {
+    return res.status(503).json({ error: "google_play_verification_not_configured" });
+  }
+  try {
+      const { GoogleAuth } = require("google-auth-library");
       const keyJson = JSON.parse(Buffer.from(serviceAccountB64, "base64").toString("utf8"));
-      const auth = new google.auth.GoogleAuth({
+      const auth = new GoogleAuth({
         credentials: keyJson,
         scopes: ["https://www.googleapis.com/auth/androidpublisher"]
       });
-      const androidpublisher = google.androidpublisher({ version: "v3", auth });
+      const client = await auth.getClient();
 
       // For one-time products (activation codes + lifetime), use products.get
-      const result = await androidpublisher.purchases.products.get({
-        packageName: package_name,
-        productId: product_id,
-        token: purchase_token
+      const endpoint = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
+        + `${encodeURIComponent(package_name)}/purchases/products/${encodeURIComponent(product_id)}`
+        + `/tokens/${encodeURIComponent(purchase_token)}`;
+      const result = await client.request({
+        url: endpoint,
+        method: "GET"
       });
 
       if (result.data.purchaseState !== 0) {
@@ -622,30 +635,35 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
       }
 
       console.log("[BILLING] Purchase verified via Google API:", product_id, "state:", result.data.purchaseState);
-    } catch (e) {
-      console.error("[BILLING] Google API verification failed:", e.message);
-      return res.status(500).json({ error: "verification_failed", detail: e.message });
-    }
-  } else {
-    // No service account configured — accept in development, log warning
-    console.warn("[BILLING] No GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 set — skipping verification (dev mode)");
+  } catch (e) {
+    console.error("[BILLING] Google API verification failed:", e.message);
+    return res.status(502).json({ error: "verification_failed" });
+  }
+
+  const existing = findCodeByPurchaseToken(activationCodes, purchase_token)
+    || findCodeByPurchaseToken(giftCodes, purchase_token);
+  if (existing) {
+    return res.json({ code: existing.code, tier: existing.record.tier, expires: existing.record.expires, product_id });
   }
 
   // Generate activation code
-  const code = "PREM-" + crypto.randomBytes(4).toString("hex").toUpperCase();
+  const code = `${tier === "pro" ? "PRO" : "PREM"}-` + crypto.randomBytes(4).toString("hex").toUpperCase();
   const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year to redeem
 
-  giftCodes.set(code, {
+  activationCodes.push({
+    code,
     tier,
+    productKey: product_id,
     note: `Purchased via Google Play (${product_id})`,
-    created: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     expires: expires.toISOString(),
-    used: false,
-    usedBy: null,
+    maxUses: 2,
+    currentUses: 0,
+    usedBy: [],
     purchaseToken: purchase_token
   });
 
-  saveGiftCodes();
+  saveActivationCodes();
   console.log("[BILLING] Activation code generated:", code.substring(0, 4) + "****", "tier:", tier, "product:", product_id);
 
   res.json({
@@ -910,6 +928,14 @@ try {
   console.warn("[STRIPE] Could not load stripe_handler:", e.message);
 }
 
+// Signed fulfillment/revocation boundary used by the private VLABS checkout.
+try {
+  const { setupVlabsFulfillmentRoute } = require('./payments/vlabs_fulfillment');
+  setupVlabsFulfillmentRoute(app, activationCodes);
+} catch (e) {
+  console.warn("[VLABS-FULFILLMENT] Could not load route:", e.message);
+}
+
 // --- Custom Call ID API ---
 try {
   customIds.setupRoutes(app, requireAdmin);
@@ -942,6 +968,9 @@ app.post('/admin/reset-licenses', requireAdmin, (req, res) => {
 });
 
 app.post('/stripe/ifr-discount-challenge', checkoutRateLimit, (req, res) => {
+  if (process.env.LEGACY_STRIPE_CHECKOUT_ENABLED !== 'true') {
+    return res.status(410).json({ error: 'checkout_moved_to_vlabs' });
+  }
   const tier = (req.body?.tier || '').trim();
   const walletAddress = (req.body?.walletAddress || '').trim();
   if (!tier || !licenses.LICENSES[tier]) {
@@ -988,6 +1017,9 @@ function checkoutRateLimit(req, res, next) {
 }
 
 app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) => {
+  if (process.env.LEGACY_STRIPE_CHECKOUT_ENABLED !== 'true') {
+    return res.status(410).json({ error: 'checkout_moved_to_vlabs' });
+  }
   const { tier } = req.body;
   if (!tier || !licenses.LICENSES[tier]) {
     return res.status(400).json({ error: 'Invalid tier' });
@@ -1112,6 +1144,8 @@ ctx = buildContext({
   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
   rateLimit, hb,
   giftCodes, saveGiftCodes,
+  issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
+  verifyPlaySubscription: require("./payments/google_play_billing").verifyPlaySubscription,
 });
 wireWs(wss, ctx);
 

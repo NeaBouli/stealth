@@ -195,6 +195,18 @@ function saveProcessedEvents() {
 
 loadProcessedEvents();
 
+function isPaidCheckoutEvent(event) {
+  if (!event || !["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
+    return false;
+  }
+  const session = event.data?.object;
+  return Boolean(session && typeof session.id === "string" && session.id.startsWith("cs_") && session.payment_status === "paid");
+}
+
+function maskStripeId(value) {
+  return typeof value === "string" && value.length >= 8 ? `${value.slice(0, 8)}...` : "***";
+}
+
 function resolveProductEmailOptions(productKey) {
   if (productKey?.startsWith("securechat_")) {
     return { productName: "SecureChat", productUrl: "https://securechat.stealthx.tech/" };
@@ -210,7 +222,7 @@ function resolveProductEmailOptions(productKey) {
 
 async function handleWebhook(event, stripe, activationCodesRef) {
   console.log("[STRIPE] === WEBHOOK RECEIVED ===");
-  console.log("[STRIPE] Event type:", event.type, "id:", event.id);
+  console.log("[STRIPE] Event type:", event.type, "id:", maskStripeId(event.id));
   console.log("[STRIPE] RESEND_API_KEY set:", !!process.env.RESEND_API_KEY);
 
   // Idempotency guard — Stripe retries on failure, must not double-process.
@@ -219,14 +231,44 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     return { alreadyProcessed: true, eventId: event.id };
   }
 
-  if (event.type !== "checkout.session.completed") {
+  if (["charge.refunded", "charge.dispute.created"].includes(event.type)) {
+    const object = event.data?.object || {};
+    const isFullRefund = event.type === "charge.dispute.created"
+      || (Number.isSafeInteger(object.amount) && object.amount > 0 && object.amount_refunded >= object.amount);
+    if (!isFullRefund) return { ignored: true, reason: "partial_refund_requires_review" };
+    const paymentIntent = typeof object.payment_intent === "string" ? object.payment_intent : object.payment_intent?.id;
+    if (!paymentIntent) throw new Error("missing_payment_intent");
+    const sessions = await stripe.checkout.sessions.list({ payment_intent: paymentIntent, limit: 10 });
+    const session = sessions.data?.find(candidate => candidate.metadata?.type === "custom_id");
+    if (!session) return { ignored: true, reason: "not_custom_id_payment" };
+    const revoked = require("../custom_ids").revokeByStripeSession(session.id);
+    const { buildRecord, exportFinanceRecord } = require("./vlabs_finance_export");
+    await exportFinanceRecord(buildRecord(
+      { ...session, payment_status: "refunded" },
+      session.metadata?.product || "custom_id",
+      "adjustment",
+      event.type === "charge.dispute.created" ? "stripe_dispute" : "stripe_full_refund"
+    ));
+    if (event.id) {
+      processedEvents.set(event.id, Date.now());
+      saveProcessedEvents();
+    }
+    return { revoked, tier: "custom_id", productKey: session.metadata?.product || "custom_id" };
+  }
+
+  if (!["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
     console.log("[STRIPE] Unhandled event type:", event.type);
     return null;
   }
 
+  if (!isPaidCheckoutEvent(event)) {
+    console.warn("[STRIPE] Ignoring unpaid or malformed checkout event:", event.id);
+    return { ignored: true, reason: "checkout_not_paid" };
+  }
+
   const session = event.data.object;
   const email = session.customer_email || session.customer_details?.email || null;
-  console.log("[STRIPE] Session id:", session.id, "email:", email ? email.substring(0, 3) + "***" : "none");
+  console.log("[STRIPE] Session id:", maskStripeId(session.id), "email:", email ? email.substring(0, 3) + "***" : "none");
 
   // 1. Resolve tier + productKey — first from metadata (created via API), then from line_items (Payment Links)
   let tier = session.metadata?.tier;
@@ -237,7 +279,7 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     try {
       const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 5 });
       const priceId = lineItems?.data?.[0]?.price?.id;
-      console.log("[STRIPE] Resolved priceId from line_items:", priceId);
+      console.log("[STRIPE] Resolved priceId from line_items:", maskStripeId(priceId));
       const resolved = resolveTierFromPriceId(priceId);
       if (resolved) {
         tier = resolved.tier;
@@ -270,7 +312,13 @@ async function handleWebhook(event, stripe, activationCodesRef) {
 
   // 2. Custom ID purchases are handled separately (no activation code)
   if (tier === "custom_id") {
-    console.log("[STRIPE] Custom ID purchase — handled by custom_ids.js flow");
+    const pendingToken = session.metadata?.pending_token;
+    const customId = session.metadata?.custom_id;
+    const markedPaid = require("../custom_ids").markPendingPaid(pendingToken, customId, session.id);
+    if (!markedPaid) throw new Error("custom_id_payment_binding_failed");
+    const { buildRecord, exportFinanceRecord } = require("./vlabs_finance_export");
+    await exportFinanceRecord(buildRecord(session, productKey));
+    console.log("[STRIPE] Custom ID payment confirmed for activation");
     if (event.id) {
       processedEvents.set(event.id, Date.now());
       saveProcessedEvents();
@@ -396,13 +444,16 @@ function setupRoutes(app, activationCodesRef) {
     next();
   }
   app.post("/stripe/create-checkout", checkoutRL, async (req, res) => {
+    if (process.env.LEGACY_STRIPE_CHECKOUT_ENABLED !== "true") {
+      return res.status(410).json({ error: "checkout_moved_to_vlabs" });
+    }
     try {
       const { product, email } = req.body;
       const session = await createCheckoutSession(stripe, product || "premium_lifetime", email);
       res.json({ url: session.url, sessionId: session.id });
     } catch (err) {
       console.error("[STRIPE] Checkout error:", err.message);
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: "checkout_failed" });
     }
   });
 
@@ -443,9 +494,9 @@ function setupRoutes(app, activationCodesRef) {
 
     // Return debug info about env vars
     const debug = {
-      RESEND_API_KEY: process.env.RESEND_API_KEY ? `set (${process.env.RESEND_API_KEY.substring(0, 10)}...)` : "NOT SET",
-      BREVO_API_KEY: process.env.BREVO_API_KEY ? `set (${process.env.BREVO_API_KEY.substring(0, 12)}...)` : "NOT SET",
-      BREVO_SMTP_USER: process.env.BREVO_SMTP_USER || "NOT SET"
+      resendConfigured: Boolean(process.env.RESEND_API_KEY),
+      brevoConfigured: Boolean(process.env.BREVO_API_KEY),
+      brevoSmtpConfigured: Boolean(process.env.BREVO_SMTP_USER)
     };
 
     const errors = [];
@@ -491,4 +542,4 @@ function setupRoutes(app, activationCodesRef) {
   console.log("[STRIPE] Routes enabled: POST /stripe/create-checkout, POST /stripe/webhook, POST /stripe/test-email");
 }
 
-module.exports = { createCheckoutSession, handleWebhook, generateActivationCode, setupRoutes, PRODUCTS };
+module.exports = { createCheckoutSession, handleWebhook, generateActivationCode, isPaidCheckoutEvent, maskStripeId, setupRoutes, PRODUCTS };

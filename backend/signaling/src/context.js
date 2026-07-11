@@ -103,6 +103,8 @@ function buildContext(externalDeps) {
     CLIENT_ID_REGEX,
     saveActivationCodes: saveActivationCodesOverride,
     verifyIfrLock: verifyIfrLockOverride,
+    issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
+    verifyPlaySubscription,
     saveWalletMappings: saveWalletMappingsOverride,
   } = externalDeps;
 
@@ -136,6 +138,8 @@ function buildContext(externalDeps) {
     getClientIp, requireAdmin, corsMiddleware,
     // Business logic
     verifyIfrLock: verifyIfrLockOverride || verifyIfrLock,
+    issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
+    verifyPlaySubscription,
     // External services
     pkd, subscriptions, fcm, customIds, licenses,
     getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS,

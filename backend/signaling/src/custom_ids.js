@@ -6,7 +6,7 @@
  * DeviceIds remain cleartext (random strings, needed for call routing).
  * Passwords use PBKDF2-SHA512 with per-record salt (100k iterations).
  *
- * Pricing: 10+ chars = $1, 5-9 chars = $2, 3-4 chars = $5, 1-2 chars = reserved
+ * Pricing: 10+ chars = EUR 1, 5-9 chars = EUR 2, 3-4 chars = EUR 5, 1-2 chars = reserved
  */
 
 const fs = require("fs");
@@ -20,7 +20,7 @@ const PENDING_TTL_MS = 60 * 60 * 1000; // 1 hour — Stripe redirect happens imm
 const ID_REGEX = /^[a-z0-9][a-z0-9-]{0,28}[a-z0-9]$|^[a-z0-9]$/;
 
 let customIds = {};
-// token -> { customId, passwordHash, passwordSalt, createdAt }
+// token -> { customId, passwordHash, passwordSalt, createdAt, stripeSessionId, paidAt }
 const pendingActivations = new Map();
 
 // ─── HMAC / Pepper ──────────────────────────────────────────
@@ -102,6 +102,36 @@ function savePendingActivations() {
   }
 }
 
+function markPendingPaid(token, customId, stripeSessionId) {
+  const pending = pendingActivations.get(token);
+  const normalized = String(customId || "").toLowerCase().trim();
+  if (!pending || !stripeSessionId || !stripeSessionId.startsWith("cs_")) return false;
+  if (pending.customId !== normalized || pending.stripeSessionId !== stripeSessionId) return false;
+  if (Date.now() - pending.createdAt > PENDING_TTL_MS) return false;
+  pending.paidAt = pending.paidAt || new Date().toISOString();
+  savePendingActivations();
+  return true;
+}
+
+function revokeByStripeSession(stripeSessionId) {
+  if (!stripeSessionId || !stripeSessionId.startsWith("cs_")) return { revokedIds: 0, revokedPending: 0 };
+  let revokedIds = 0;
+  let revokedPending = 0;
+  for (const [key, entry] of Object.entries(customIds)) {
+    if (entry?.stripeSessionId !== stripeSessionId) continue;
+    delete customIds[key];
+    revokedIds += 1;
+  }
+  for (const [token, entry] of pendingActivations) {
+    if (entry?.stripeSessionId !== stripeSessionId) continue;
+    pendingActivations.delete(token);
+    revokedPending += 1;
+  }
+  if (revokedIds > 0) saveIds();
+  if (revokedPending > 0) savePendingActivations();
+  return { revokedIds, revokedPending };
+}
+
 /**
  * Auto-migrate cleartext keys to HMAC keys on startup.
  * Cleartext keys match ID_REGEX; HMAC keys are 64-char hex.
@@ -152,9 +182,9 @@ function verifyPassword(password, storedHash, storedSalt) {
 function getPrice(id) {
   const len = id.length;
   if (len <= 2) return null; // reserved
-  if (len <= 4) return 500;  // $5.00
-  if (len <= 9) return 200;  // $2.00
-  return 100;                // $1.00
+  if (len <= 4) return 500;  // EUR 5.00
+  if (len <= 9) return 200;  // EUR 2.00
+  return 100;                // EUR 1.00
 }
 
 // ─── Core functions ─────────────────────────────────────────
@@ -176,32 +206,15 @@ function activate(id, deviceId, password) {
 
   const key = idToKey(normalized);
   const existing = customIds[key];
-  if (existing) {
-    // Already owned — check password for re-activation or transfer
-    if (!verifyPassword(password, existing.passwordHash, existing.passwordSalt)) {
-      return { success: false, error: "wrong_password" };
-    }
-    // Transfer to new device
-    existing.deviceId = deviceId;
-    existing.lastTransfer = new Date().toISOString();
-    saveIds();
-    console.log(`[CUSTOM-ID] Transfer: ${key.substring(0, 12)}... -> ${deviceId}`);
-    return { success: true, transferred: true };
+  if (!existing) return { success: false, error: "purchase_required" };
+  if (!verifyPassword(password, existing.passwordHash, existing.passwordSalt)) {
+    return { success: false, error: "wrong_password" };
   }
-
-  // New registration
-  const { hash, salt } = hashPassword(password);
-  customIds[key] = {
-    deviceId,
-    passwordHash: hash,
-    passwordSalt: salt,
-    idLength: normalized.length,
-    purchasedAt: new Date().toISOString(),
-    tier: "premium_only"
-  };
+  existing.deviceId = deviceId;
+  existing.lastTransfer = new Date().toISOString();
   saveIds();
-  console.log(`[CUSTOM-ID] Registered: ${key.substring(0, 12)}... -> ${deviceId}`);
-  return { success: true, transferred: false };
+  console.log(`[CUSTOM-ID] Transfer: ${key.substring(0, 12)}... -> ${deviceId}`);
+  return { success: true, transferred: true };
 }
 
 /**
@@ -261,18 +274,33 @@ function setupRoutes(app, requireAdmin) {
   };
 
   app.post("/custom-id/purchase", customIdRateLimit, async (req, res) => {
+    if (process.env.CUSTOM_ID_STRIPE_CHECKOUT_ENABLED !== "true") {
+      return res.status(410).json({ error: "custom_id_checkout_disabled" });
+    }
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) return res.status(503).json({ error: "payments_disabled" });
 
     const { id, password } = req.body;
+    const docType = req.body.docType === "invoice" ? "invoice" : "receipt";
+    const billingCountry = String(req.body.billingCountry || "").trim().toUpperCase();
+    const companyName = String(req.body.companyName || "").trim();
+    const taxId = String(req.body.taxId || "").trim().toUpperCase();
+    const customerEmail = String(req.body.customerEmail || "").trim().toLowerCase();
     if (!id || !password) return res.status(400).json({ error: "missing_fields" });
     if (password.length < 8) return res.status(400).json({ error: "password_too_short" });
+    if (!/^[A-Z]{2}$/.test(billingCountry) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+      return res.status(400).json({ error: "invalid_billing_details" });
+    }
+    if (docType === "invoice" && (!companyName || companyName.length > 120 || !/^[A-Z0-9-]{5,24}$/.test(taxId))) {
+      return res.status(400).json({ error: "invalid_business_details" });
+    }
 
     const check = isAvailable(id);
     if (!check.available) return res.status(400).json(check);
 
     const priceId = PRICE_IDS[check.price];
     if (!priceId) return res.status(400).json({ error: "invalid_price" });
+    const productKey = check.price === 500 ? "custom_id_ultra" : check.price === 200 ? "custom_id_short" : "custom_id_standard";
 
     try {
       const stripe = require("stripe")(secretKey);
@@ -290,9 +318,10 @@ function setupRoutes(app, requireAdmin) {
         customId: check.id,
         passwordHash,
         passwordSalt,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        stripeSessionId: null,
+        paidAt: null
       });
-      savePendingActivations();
 
       const session = await stripe.checkout.sessions.create({
         line_items: [{ price: priceId, quantity: 1 }],
@@ -301,13 +330,25 @@ function setupRoutes(app, requireAdmin) {
         cancel_url: "https://stealthx.tech/wiki/custom-id.html",
         metadata: {
           type: "custom_id",
+          tier: "custom_id",
+          product: productKey,
           custom_id: check.id,
-          pending_token: pendingToken
+          pending_token: pendingToken,
+          doc_type: docType,
+          billing_country: billingCountry,
+          company_name: docType === "invoice" ? companyName : "",
+          tax_id: docType === "invoice" ? taxId : "",
+          customer_email: customerEmail
         },
+        customer_email: customerEmail,
         payment_method_types: ["card", "klarna", "link"]
       });
 
-      console.log(`[CUSTOM-ID] Purchase session created ($${check.price / 100})`);
+      const pending = pendingActivations.get(pendingToken);
+      pending.stripeSessionId = session.id;
+      savePendingActivations();
+
+      console.log(`[CUSTOM-ID] Purchase session created (EUR ${check.price / 100})`);
       res.json({ url: session.url, sessionId: session.id });
     } catch (err) {
       console.error("[CUSTOM-ID] Stripe error:", err.message);
@@ -358,6 +399,10 @@ function setupRoutes(app, requireAdmin) {
       savePendingActivations();
       return res.status(400).json({ error: "token_expired" });
     }
+    if (!pending.paidAt || !pending.stripeSessionId) {
+      console.warn("[CUSTOM-ID] activate-token rejected: Stripe payment not confirmed");
+      return res.status(402).json({ error: "payment_not_confirmed" });
+    }
 
     // Register the ID with the device + persist the password hash so the owner
     // can later transfer / re-claim via /custom-id/activate (password-based flow).
@@ -368,6 +413,7 @@ function setupRoutes(app, requireAdmin) {
         purchasedAt: new Date().toISOString(),
         tier: "premium_only",
         activationToken: token,
+        stripeSessionId: pending.stripeSessionId,
         passwordHash: pending.passwordHash,
         passwordSalt: pending.passwordSalt
       };
@@ -417,4 +463,4 @@ function setupRoutes(app, requireAdmin) {
 loadIds();
 loadPendingActivations();
 
-module.exports = { isAvailable, activate, getPrice, resolve, setupRoutes };
+module.exports = { isAvailable, activate, getPrice, resolve, markPendingPaid, revokeByStripeSession, setupRoutes };
