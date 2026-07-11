@@ -17,6 +17,20 @@ const { readFileSync, existsSync } = require("fs");
 const SOLD_FILE = process.env.SOLD_CODES_FILE ||
   path.join(__dirname, "..", "..", "data", "sold_codes.json");
 
+function maskCode(value) {
+  return typeof value === "string" && value.length >= 4 ? `${value.slice(0, 4)}****` : "****";
+}
+
+function maskEmail(value) {
+  if (typeof value !== "string" || !value.includes("@")) return "***";
+  const [local, domain] = value.split("@");
+  return `${local.slice(0, 2)}***@${domain}`;
+}
+
+function maskStripeId(value) {
+  return typeof value === "string" && value.length >= 8 ? `${value.slice(0, 8)}...` : "***";
+}
+
 function load() {
   try {
     if (existsSync(SOLD_FILE)) {
@@ -70,7 +84,7 @@ function recordSale({ code, tier, email, stripeSessionId, productKey, activation
     const existingEntry = existing.find(c => c.stripeSessionId === stripeSessionId);
     if (existingEntry) {
       mergeIntoActivationCodes(existingEntry, activationCodesRef);
-      console.log(`[SOLD-CODES] Existing sale reused for Stripe session: ${stripeSessionId}`);
+      console.log(`[SOLD-CODES] Existing sale reused for Stripe session: ${maskStripeId(stripeSessionId)}`);
       return existingEntry;
     }
   }
@@ -103,7 +117,7 @@ function recordSale({ code, tier, email, stripeSessionId, productKey, activation
   // is immediately usable by the ACTIVATE_CODE handler without restart.
   mergeIntoActivationCodes(entry, activationCodesRef);
 
-  console.log(`[SOLD-CODES] Recorded: ${code} (${tier}) -> ${email}`);
+  console.log(`[SOLD-CODES] Recorded: ${maskCode(code)} (${tier}) -> ${maskEmail(email)}`);
   return entry;
 }
 
@@ -133,7 +147,7 @@ function updateEmailDelivery(stripeSessionId, delivery) {
  * (code, tier, maxUses, currentUses, usedBy) for initial merge at startup.
  */
 function loadAsActivationCodes() {
-  return load().map(c => ({
+  return load().filter(c => !c.revoked).map(c => ({
     code: c.code,
     tier: c.tier,
     maxUses: c.maxUses || 2,
@@ -142,4 +156,23 @@ function loadAsActivationCodes() {
   }));
 }
 
-module.exports = { load, save, recordSale, updateEmailDelivery, loadAsActivationCodes };
+function revokeByStripeSession(stripeSessionId, activationCodesRef) {
+  const existing = load();
+  const entry = existing.find(item => item.stripeSessionId === stripeSessionId);
+  if (!entry) return { found: false, duplicate: false };
+  if (entry.revoked) return { found: true, duplicate: true };
+
+  entry.revoked = true;
+  entry.revokedAt = new Date().toISOString();
+  save(existing);
+  if (Array.isArray(activationCodesRef)) {
+    const index = activationCodesRef.findIndex(item => item.code === entry.code);
+    if (index >= 0) activationCodesRef.splice(index, 1);
+  }
+  return { found: true, duplicate: false };
+}
+
+module.exports = {
+  load, save, recordSale, updateEmailDelivery, revokeByStripeSession, loadAsActivationCodes,
+  maskCode, maskEmail, maskStripeId,
+};

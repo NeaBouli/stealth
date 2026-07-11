@@ -1,5 +1,12 @@
 # Stealth Project State
 
+## 2026-07-11 — Payment-P0 auf `origin/main` implementiert
+
+- Der aktuelle Remote-Stand besitzt nun die zuvor nur lokal vorbereitete signierte VLABS-Fulfillment-/Revocation-Grenze.
+- Checkout-Bypass geschlossen: Legacy-/Dynamic-Checkout und IFR-Discount-Challenge sind default-off; Webhook ist fail-closed und paid-only.
+- Vollrefund und Stripe-Dispute widerrufen die Aktivierung idempotent; Payment-Auditlogs sind redigiert.
+- Vollstaendiger Signaling-Testlauf PASS und npm Audit 0. Kein Production-Deploy oder Live-Checkout.
+
 ## 2026-07-11 — Payment-/Etimologio-Ownership und VLABS-Verkaufsvorbereitung
 
 - Repository Owner: Codex ist durch Gio fuer das gesamte oeffentliche SecureCall/StealthX-Repository verantwortlich, einschliesslich Produktcode, Security-Integration, Tests, Website, Payment und Etimologio/myDATA.

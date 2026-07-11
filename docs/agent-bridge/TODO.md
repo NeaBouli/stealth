@@ -8,6 +8,7 @@
 
 - [x] VLABS als kanonischen Checkout fuer SecureCall/StealthX festlegen; Legacy-Direktcheckout default-off.
 - [x] Signiertes/idempotentes SecureCall-Fulfillment und Vollrefund-Revoke lokal vorbereiten.
+- [x] Aktuellen `origin/main` Payment-P0 haerten: VLABS-Fulfillment/Revoke, Legacy-Checkout default-off, paid-only Webhook, Dispute-Revoke und redigierte Logs/Debugausgaben.
 - [x] Produktseiten mit Preis-, Digitalleistungs-, Widerrufs- und Rechtehinweisen angleichen.
 - [ ] Runtime-Secrets fuer VLABS -> SecureCall Fulfillment/Revocation in den jeweiligen privaten Deployments setzen; keine Werte in Git/Bridge.
 - [ ] Stripe-Testmode E2E: Checkout -> paid webhook -> genau eine Aktivierung -> interne Invoice/Etimologio-Draft; Refund -> Revoke/Accounting Review.

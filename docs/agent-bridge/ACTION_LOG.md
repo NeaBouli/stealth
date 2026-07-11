@@ -1,5 +1,15 @@
 # Stealth Action Log
 
+## 2026-07-11 — Codex Payment-P0 auf aktuellem Remote-Stand
+
+- Gegen `origin/main` neu aufgebaut: signiertes VLABS-Fulfillment fuer SecureCall Pro/Premium mit 5-Minuten-Replay-Gate, Produkt-Allowlist, Session-Idempotenz, persistenter E-Mail-Zustellung und signiertem Revoke.
+- Revoke akzeptiert ausschliesslich `stripe_full_refund` und `stripe_dispute`; widerrufene Codes werden aus Laufzeit- und Neustart-Registry entfernt.
+- Direkter und dynamischer Legacy-Checkout sowie IFR-Discount-Challenge sind ohne explizites `LEGACY_STRIPE_CHECKOUT_ENABLED=true` geschlossen. VLABS bleibt kanonischer Verkaufseinstieg.
+- Legacy-Webhook akzeptiert nur bezahlte Completed-/Async-Success-Sessions. Payment-Logs und Admin-Debug geben keine vollstaendigen Aktivierungscodes, E-Mails, Stripe-IDs oder Secret-Praefixe aus.
+- Verifikation: `npm ci` mit 0 Vulnerabilities; kompletter `npm test` PASS (Context 6, Handler 45, Subscription/WebRTC 72, E-Mail, Stripe, VLABS-Fulfillment); Syntaxcheck und `git diff --check` PASS.
+- Keine Zahlung, E-Mail, externe Fulfillment-/Revoke-Anfrage, Rechnung, Provider-/AADE-Anfrage oder Deployment ausgefuehrt.
+- Verbleibendes Gate: Runtime-Secrets, Stripe-Testmode E2E, Accountant-/Provider-Mapping und Gio-Launch-/Deployfreigabe.
+
 ## 2026-07-11 — Codex Payment-Ownership dokumentiert
 
 - Gio hat Codex als verantwortlichen Agenten fuer Stripe, Zahlung, Fulfillment, Refund und Etimologio/myDATA von SecureCall/StealthX eingesetzt.

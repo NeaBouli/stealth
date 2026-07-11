@@ -910,6 +910,14 @@ try {
   console.warn("[STRIPE] Could not load stripe_handler:", e.message);
 }
 
+// Signed fulfillment/revocation boundary used by the private VLABS checkout.
+try {
+  const { setupVlabsFulfillmentRoute } = require('./payments/vlabs_fulfillment');
+  setupVlabsFulfillmentRoute(app, activationCodes);
+} catch (e) {
+  console.warn("[VLABS-FULFILLMENT] Could not load route:", e.message);
+}
+
 // --- Custom Call ID API ---
 try {
   customIds.setupRoutes(app, requireAdmin);
@@ -942,6 +950,9 @@ app.post('/admin/reset-licenses', requireAdmin, (req, res) => {
 });
 
 app.post('/stripe/ifr-discount-challenge', checkoutRateLimit, (req, res) => {
+  if (process.env.LEGACY_STRIPE_CHECKOUT_ENABLED !== 'true') {
+    return res.status(410).json({ error: 'checkout_moved_to_vlabs' });
+  }
   const tier = (req.body?.tier || '').trim();
   const walletAddress = (req.body?.walletAddress || '').trim();
   if (!tier || !licenses.LICENSES[tier]) {
@@ -988,6 +999,9 @@ function checkoutRateLimit(req, res, next) {
 }
 
 app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) => {
+  if (process.env.LEGACY_STRIPE_CHECKOUT_ENABLED !== 'true') {
+    return res.status(410).json({ error: 'checkout_moved_to_vlabs' });
+  }
   const { tier } = req.body;
   if (!tier || !licenses.LICENSES[tier]) {
     return res.status(400).json({ error: 'Invalid tier' });

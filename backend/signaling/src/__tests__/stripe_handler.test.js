@@ -14,12 +14,23 @@ delete process.env.RESEND_API_KEY;
 
 const {
   generateActivationCode,
-  handleWebhook
+  handleWebhook,
+  isPaidCheckoutEvent,
+  maskStripeId
 } = require("../payments/stripe_handler");
 
 assert.ok(generateActivationCode("premium").startsWith("PREM-"), "premium code uses PREM prefix");
 assert.ok(generateActivationCode("pro").startsWith("PRO-"), "pro code uses PRO prefix");
 assert.ok(generateActivationCode("elite").startsWith("ELIT-"), "elite code uses ELIT prefix");
+assert.strictEqual(maskStripeId("cs_test_sensitive"), "cs_test_...", "Stripe IDs are masked in logs");
+assert.strictEqual(isPaidCheckoutEvent({
+  type: "checkout.session.completed",
+  data: { object: { id: "cs_test_paid", payment_status: "paid" } }
+}), true, "paid completed checkout is accepted");
+assert.strictEqual(isPaidCheckoutEvent({
+  type: "checkout.session.completed",
+  data: { object: { id: "cs_test_unpaid", payment_status: "unpaid" } }
+}), false, "unpaid completed checkout is rejected");
 
 async function runDynamicLifetimeWebhookTest() {
   const activationCodes = [];
@@ -37,6 +48,7 @@ async function runDynamicLifetimeWebhookTest() {
     data: {
       object: {
         id: "cs_dynamic_premium_test",
+        payment_status: "paid",
         metadata: {
           type: "lifetime_dynamic",
           tier: "premium",
@@ -69,6 +81,7 @@ async function runProductLifetimeWebhookTest() {
     data: {
       object: {
         id: "cs_securechat_elite_test",
+        payment_status: "paid",
         metadata: {
           type: "lifetime_dynamic",
           tier: "elite",
@@ -100,6 +113,7 @@ async function runEmailDeliveryStatusTest() {
     data: {
       object: {
         id: "cs_email_delivery_failed_test",
+        payment_status: "paid",
         customer_email: "buyer@example.com",
         metadata: {
           tier: "pro",
