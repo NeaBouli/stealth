@@ -1,5 +1,11 @@
 # BRIDGE — stealth / agent-bridge
 
+## Public Payment Data Boundary
+
+- Operational payment/Etimologio details live only in the private `NeaBouli/vlabs` finance control center.
+- No tax/personal identifiers, secrets, provider/account IDs, customer/invoice data, MARK/UID values or runtime values may be copied into this public repository.
+- Keep public entries limited to the private reference, ownership, generic status and production-disabled state.
+
 ## 2026-07-11 — CODEX — PAYMENT PR MERGED
 
 - Payment PR #33 was squash-merged to `main` as `c7cdd27`.
