@@ -49,50 +49,16 @@ function saveSubscriptions() {
   }
 }
 
-// ─── Tier + Expiry Logic ────────────────────────────────────
-
-/**
- * Derives the subscription tier from a productId string.
- * - Contains 'premium' -> 'PREMIUM'
- * - Contains 'pro'     -> 'PRO'
- * - Otherwise          -> 'FREE'
- */
-function deriveTier(productId) {
-  const lower = productId.toLowerCase();
-  if (lower.includes("premium")) return "PREMIUM";
-  if (lower.includes("pro")) return "PRO";
-  return "FREE";
-}
-
-/**
- * Calculates expiry date based on productId billing period.
- * - Contains 'lifetime' -> 100 years (effectively never)
- * - Contains 'yearly'   -> 365 days from now
- * - Contains 'monthly'  -> 30 days from now (default)
- */
-function calculateExpiry(productId) {
-  const lower = productId.toLowerCase();
-  const now = Date.now();
-  const DAY = 24 * 60 * 60 * 1000;
-  if (lower.includes("lifetime") || lower.includes("activation_code")) {
-    return now + 100 * 365 * DAY; // ~100 years
-  }
-  if (lower.includes("yearly")) {
-    return now + 365 * DAY;
-  }
-  // Default to monthly (30 days)
-  return now + 30 * DAY;
-}
-
 // ─── Core Functions ─────────────────────────────────────────
 
 /**
  * Verifies (stores/updates) a subscription for the given clientId.
  * Returns { tier, expiresAt }.
  */
-function verifySubscription(clientId, purchaseToken, productId) {
-  const tier = deriveTier(productId);
-  const expiresAt = calculateExpiry(productId);
+function recordVerifiedSubscription(clientId, purchaseToken, productId, tier, expiresAt) {
+  if (!clientId || !purchaseToken || !productId || !["pro", "premium"].includes(tier) || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    throw new Error("invalid_verified_subscription");
+  }
   const now = Date.now();
 
   const entry = {
@@ -107,6 +73,10 @@ function verifySubscription(clientId, purchaseToken, productId) {
   subscriptions.set(clientId, entry);
   saveSubscriptions();
   return { tier, expiresAt };
+}
+
+function verifySubscription() {
+  throw new Error("external_google_play_verification_required");
 }
 
 /**
@@ -143,6 +113,7 @@ loadSubscriptions();
 
 module.exports = {
   verifySubscription,
+  recordVerifiedSubscription,
   getSubscription,
   expireSubscription,
   getTier

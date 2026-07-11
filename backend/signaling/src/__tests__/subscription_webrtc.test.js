@@ -58,7 +58,7 @@ function buildCtx() {
   };
   const mockPkd = { registerKey: () => ({ keyId: "k1", publicKey: "pk", created: 0 }), getKey: () => null };
   const mockSubscriptions = {
-    verifySubscription: () => ({ tier: "pro", expiresAt: 9999999999 }),
+    recordVerifiedSubscription: (_clientId, _token, _productId, tier, expiresAt) => ({ tier, expiresAt }),
     getSubscription: () => null,
   };
   const mockCustomIds = { resolve: () => null };
@@ -98,6 +98,7 @@ function buildCtx() {
     issueEntitlementToken,
     verifyEntitlementToken,
     entitlementOrderHash,
+    verifyPlaySubscription: () => ({ tier: "pro", expiresAt: 9999999999999 }),
   });
 }
 
@@ -113,7 +114,7 @@ console.log("\n[Suite] SUBSCRIPTION_VERIFY handler");
 
   // Not registered
   ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: null, ip: "1.1.1.1" });
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok", productId: "pro" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok", productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
   assert(lastMsg(ws).error === "not_registered", "unregistered → not_registered");
 
   // Register
@@ -121,19 +122,19 @@ console.log("\n[Suite] SUBSCRIPTION_VERIFY handler");
   ctx.clientIds.set("alice", connId);
 
   // Missing purchaseToken
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { productId: "pro" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
   assert(lastMsg(ws).type === "ERROR", "missing purchaseToken → ERROR");
 
   // Missing productId
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok", packageName: "com.securecall.app.free" });
   assert(lastMsg(ws).type === "ERROR", "missing productId → ERROR");
 
   // Valid → mock returns tier=pro
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok123", productId: "pro_monthly" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok123", productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
   const ack = lastMsg(ws);
   assert(ack.type === "SUBSCRIPTION_VERIFY_ACK", "valid → SUBSCRIPTION_VERIFY_ACK");
   assert(ack.tier === "pro", "tier from mock subscription service");
-  assert(ack.expiresAt === 9999999999, "expiresAt forwarded");
+  assert(ack.expiresAt === 9999999999999, "expiresAt forwarded");
 }
 
 // ==========================================

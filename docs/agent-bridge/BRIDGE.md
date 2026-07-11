@@ -5,6 +5,7 @@
 - Custom-ID checkout is now fail-closed behind `CUSTOM_ID_STRIPE_CHECKOUT_ENABLED=true`. Direct activation cannot mint an unpaid ID, and a pending token alone cannot activate one.
 - Google Play one-time verification now fails closed without service-account verification, accepts only exact package/product allowlists and reuses an existing code for duplicate purchase tokens. The old substring-tier and development accept-without-verification paths are removed.
 - Google Publisher verification no longer imports the undeclared `googleapis` package; it uses directly declared `google-auth-library` credentials and an encoded Android Publisher REST request. Fresh `npm ci` reports 0 vulnerabilities.
+- WebSocket `SUBSCRIPTION_VERIFY` can no longer persist client-supplied product/token claims. It verifies exact monthly/yearly SKUs with Google Subscriptions v2, checks active/grace/canceled-but-unexpired state plus expiry, then records only the verified tier/expiry. Focused payment tests include the former self-claim rejection.
 - Stripe paid webhook must bind the pending token, normalized Custom ID and exact Checkout Session before activation; unpaid, mismatched and leaked pending tokens fail.
 - Direct ETH/BTC/SOL support is explicitly described as voluntary, without purchase/feature access or implied tax-exempt donation status. Recipient/accounting treatment remains a Gio/accountant gate.
 - Codex owns this payment path. No Stripe request, crypto transfer, invoice, AADE request or deploy was executed.

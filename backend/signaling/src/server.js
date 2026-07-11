@@ -1132,6 +1132,7 @@ ctx = buildContext({
   rateLimit, hb,
   giftCodes, saveGiftCodes,
   issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
+  verifyPlaySubscription: require("./payments/google_play_billing").verifyPlaySubscription,
 });
 wireWs(wss, ctx);
 

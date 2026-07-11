@@ -5,7 +5,7 @@ module.exports = function subscriptionHandlers(ctx) {
     activationCodes, walletMappings, fcmTokens, giftCodes,
     getClientId, sendToClient,
     saveActivationCodes, saveWalletMappings, saveGiftCodes,
-    subscriptions, fcm, verifyIfrLock, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
+    subscriptions, fcm, verifyIfrLock, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash, verifyPlaySubscription,
   } = ctx;
 
   const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
@@ -40,14 +40,29 @@ module.exports = function subscriptionHandlers(ctx) {
         ws.send(JSON.stringify({ type: "ERROR", error: "not_registered" }));
         return;
       }
-      const { purchaseToken, productId } = msg;
-      if (!purchaseToken || !productId) {
-        ws.send(JSON.stringify({ type: "ERROR", message: "Missing purchaseToken or productId" }));
+      const { purchaseToken, productId, packageName } = msg;
+      if (!purchaseToken || !productId || !packageName || typeof verifyPlaySubscription !== "function") {
+        ws.send(JSON.stringify({ type: "ERROR", error: "invalid_subscription_verification_request" }));
         return;
       }
-      const result = subscriptions.verifySubscription(myClientId, purchaseToken, productId);
-      ws.send(JSON.stringify({ type: "SUBSCRIPTION_VERIFY_ACK", tier: result.tier, expiresAt: result.expiresAt }));
-      console.log(`[SUBSCRIPTION] Verified: ${myClientId}, tier=${result.tier}, product=${productId}`);
+      const complete = result => {
+        const stored = subscriptions.recordVerifiedSubscription(
+          myClientId, purchaseToken, productId, result.tier, result.expiresAt
+        );
+        ws.send(JSON.stringify({ type: "SUBSCRIPTION_VERIFY_ACK", tier: stored.tier, expiresAt: stored.expiresAt }));
+        console.log(`[SUBSCRIPTION] Verified: ${myClientId}, tier=${stored.tier}, product=${productId}`);
+      };
+      const reject = error => {
+        console.warn("[SUBSCRIPTION] Google Play verification rejected:", error.message);
+        ws.send(JSON.stringify({ type: "ERROR", error: "subscription_verification_failed" }));
+      };
+      try {
+        const verification = verifyPlaySubscription(packageName, productId, purchaseToken);
+        if (verification && typeof verification.then === "function") verification.then(complete).catch(reject);
+        else complete(verification);
+      } catch (error) {
+        reject(error);
+      }
     },
 
     ACTIVATE_CODE(ws, connId, msg) {
