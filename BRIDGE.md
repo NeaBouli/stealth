@@ -36,6 +36,7 @@
 - `cd client_android && ./gradlew --no-daemon --max-workers=1 -Pinternal assembleFreeRelease assembleProRelease assemblePremiumRelease` passed:
   - `BUILD SUCCESSFUL in 7m 6s`
 - Post-build installs succeeded on S10, S7, and Tab S4.
+- Committed and pushed: `a7cff75` `fix: stabilize SecureCall speaker audio route`.
 
 **Open Next**
 - Fix or change S7 network/VPN/Wi-Fi before meaningful S7 call QA.
