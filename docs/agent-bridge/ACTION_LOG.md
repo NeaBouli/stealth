@@ -1,5 +1,12 @@
 # Stealth Action Log
 
+## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
+
+- Implemented authenticated, idempotent Google Play RTDN processing with Google OIDC identity checks and Play API subscription revalidation.
+- Full voided purchases revoke matching subscriptions and one-time activation codes. Terminal subscription states remove access; active lifecycle updates only refresh already registered purchase tokens.
+- Google Play one-time codes now use the signed activation registry rather than the unsigned gift-code shortcut.
+- Full signaling tests and focused payment tests PASS. No external request or deployment was made; production Pub/Sub and Play Console configuration remain external gates.
+
 ## 2026-07-12 00:30 EEST — CODEX — PUBLIC SALES CLAIMS / CHECKOUT ROUTING
 
 - Removed the public direct Stripe Payment Link from the SecureCall activation-code card. One-time SecureCall products now route through the canonical VLABS shop; no payment provider URL is embedded in the public page.

@@ -96,6 +96,31 @@ function expireSubscription(clientId) {
   return deleted;
 }
 
+function expireByPurchaseToken(purchaseToken) {
+  let expired = 0;
+  for (const [clientId, entry] of subscriptions) {
+    if (entry.purchaseToken !== purchaseToken) continue;
+    subscriptions.delete(clientId);
+    expired += 1;
+  }
+  if (expired > 0) saveSubscriptions();
+  return expired;
+}
+
+function refreshByPurchaseToken(purchaseToken, productId, tier, expiresAt) {
+  if (!purchaseToken || !productId || !["pro", "premium"].includes(tier) || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    throw new Error("invalid_verified_subscription");
+  }
+  let refreshed = 0;
+  for (const [clientId, entry] of subscriptions) {
+    if (entry.purchaseToken !== purchaseToken) continue;
+    subscriptions.set(clientId, { ...entry, productId, tier, expiresAt, verifiedAt: Date.now() });
+    refreshed += 1;
+  }
+  if (refreshed > 0) saveSubscriptions();
+  return refreshed;
+}
+
 /**
  * Returns the tier string for a clientId, or 'FREE' if no subscription
  * exists or if the subscription has expired.
@@ -116,5 +141,7 @@ module.exports = {
   recordVerifiedSubscription,
   getSubscription,
   expireSubscription,
+  expireByPurchaseToken,
+  refreshByPurchaseToken,
   getTier
 };

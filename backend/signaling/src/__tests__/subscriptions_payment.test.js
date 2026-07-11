@@ -18,6 +18,13 @@ assert.deepStrictEqual(
   { tier: "pro", expiresAt }
 );
 assert.strictEqual(subscriptions.getTier("device"), "pro");
+assert.strictEqual(
+  subscriptions.refreshByPurchaseToken("token", "securecall_premium_monthly", "premium", expiresAt + 1000),
+  1
+);
+assert.strictEqual(subscriptions.getTier("device"), "premium");
+assert.strictEqual(subscriptions.expireByPurchaseToken("token"), 1);
+assert.strictEqual(subscriptions.getTier("device"), "FREE");
 assert.throws(
   () => subscriptions.recordVerifiedSubscription("device", "token", "fake", "admin", expiresAt),
   /invalid_verified_subscription/

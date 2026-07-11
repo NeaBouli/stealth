@@ -40,8 +40,8 @@
 
 7. **securecall_premium_activation_code**
    - Type: One-time product (managed/non-consumable)
-   - Price: €49.00
-   - Description: "Premium activation code — use yourself or gift to anyone"
+   - Price: €25.00
+   - Description: "Premium activation code for supported SecureCall versions"
 
 ## Service Account for Purchase Verification
 
@@ -54,6 +54,17 @@
 7. Download JSON key file
 8. Base64 encode: `base64 -i service-account-key.json | tr -d '\n'`
 9. Set in Railway: `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64=<base64 string>`
+
+## Real-Time Developer Notifications
+
+1. In Play Console, select the app and configure a Google Cloud Pub/Sub topic for real-time developer notifications, including one-time products.
+2. Create a push subscription for `https://<signaling-host>/billing/google-play-rtdn` and enable authenticated push.
+3. Configure a dedicated push-auth service account and grant the Pub/Sub service agent permission to create OIDC tokens for it.
+4. Set the exact push endpoint (or chosen audience override) as `GOOGLE_PLAY_RTDN_AUDIENCE`.
+5. Set the push-auth service account email as `GOOGLE_PLAY_RTDN_SERVICE_ACCOUNT_EMAIL`.
+6. Send a Play Console test notification before release. The endpoint must return HTTP 204.
+
+The endpoint verifies the Google-signed OIDC token, audience, service-account email, package allowlist and Pub/Sub message ID. It then calls the Google Play Developer API for subscription state. Notifications alone never grant access. Full voided-purchase notifications revoke matching subscriptions and activation codes.
 
 ## Backend Endpoint
 
@@ -89,6 +100,7 @@ Response:
 
 - Billing library version: 8.2.1 (`billing`)
 - Only the FREE flavor includes billing (Pro/Premium are pre-activated)
-- Activation codes are stored server-side in the giftCodes map
+- Purchased activation codes are stored in the signed activation-code registry so refunds can revoke them
 - Codes are redeemed via WebSocket `ACTIVATE_CODE` message
-- Without `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64`, verification is skipped (dev mode)
+- Without `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64`, purchase and subscription verification fail closed
+- Without the RTDN audience and service-account email, the RTDN endpoint returns HTTP 503

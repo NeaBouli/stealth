@@ -38,10 +38,17 @@ function parseSubscriptionPurchase(value, expectedProductId, now = Date.now()) {
   return { expiresAt, tier: SUBSCRIPTION_PRODUCTS[expectedProductId] || null };
 }
 
-async function verifyPlaySubscription(packageName, productId, purchaseToken) {
-  if (!allowedPackages().has(packageName) || !SUBSCRIPTION_PRODUCTS[productId]) {
-    throw new Error("unsupported_package_or_product");
+function parseSubscriptionToken(value, now = Date.now()) {
+  if (!value || !Array.isArray(value.lineItems)) return null;
+  for (const line of value.lineItems) {
+    if (!SUBSCRIPTION_PRODUCTS[line?.productId]) continue;
+    const parsed = parseSubscriptionPurchase(value, line.productId, now);
+    if (parsed?.tier) return { ...parsed, productId: line.productId };
   }
+  return null;
+}
+
+async function publisherClient() {
   const encoded = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64;
   if (!encoded) throw new Error("google_play_verification_not_configured");
   const { GoogleAuth } = require("google-auth-library");
@@ -50,7 +57,14 @@ async function verifyPlaySubscription(packageName, productId, purchaseToken) {
     credentials,
     scopes: ["https://www.googleapis.com/auth/androidpublisher"]
   });
-  const client = await auth.getClient();
+  return auth.getClient();
+}
+
+async function verifyPlaySubscription(packageName, productId, purchaseToken) {
+  if (!allowedPackages().has(packageName) || !SUBSCRIPTION_PRODUCTS[productId]) {
+    throw new Error("unsupported_package_or_product");
+  }
+  const client = await publisherClient();
   const endpoint = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
     + `${encodeURIComponent(packageName)}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`;
   const response = await client.request({ url: endpoint, method: "GET" });
@@ -59,7 +73,22 @@ async function verifyPlaySubscription(packageName, productId, purchaseToken) {
   return result;
 }
 
+async function verifyPlaySubscriptionToken(packageName, purchaseToken) {
+  if (!allowedPackages().has(packageName)) throw new Error("unsupported_package");
+  const client = await publisherClient();
+  const endpoint = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
+    + `${encodeURIComponent(packageName)}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`;
+  const response = await client.request({ url: endpoint, method: "GET" });
+  const result = parseSubscriptionToken(response.data);
+  if (!result?.tier) throw new Error("subscription_not_active");
+  return result;
+}
+
 function findCodeByPurchaseToken(giftCodes, purchaseToken) {
+  if (Array.isArray(giftCodes)) {
+    const record = giftCodes.find(candidate => candidate?.purchaseToken === purchaseToken);
+    return record ? { code: record.code, record } : null;
+  }
   for (const [code, record] of giftCodes.entries()) {
     if (record && record.purchaseToken === purchaseToken) return { code, record };
   }
@@ -71,6 +100,8 @@ module.exports = {
   SUBSCRIPTION_PRODUCTS,
   findCodeByPurchaseToken,
   parseSubscriptionPurchase,
+  parseSubscriptionToken,
   resolveOneTimeProduct,
-  verifyPlaySubscription
+  verifyPlaySubscription,
+  verifyPlaySubscriptionToken
 };

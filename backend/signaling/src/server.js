@@ -37,6 +37,7 @@ process.env.PENDING_FILE      = path.join(DATA_DIR, "pending_activations.json");
 process.env.GIFT_CODES_FILE          = path.join(DATA_DIR, "gift_codes.json");
 process.env.STRIPE_PROCESSED_FILE   = path.join(DATA_DIR, "stripe_processed_events.json");
 process.env.SOLD_CODES_FILE         = path.join(DATA_DIR, "sold_codes.json");
+process.env.GOOGLE_PLAY_RTDN_FILE   = process.env.GOOGLE_PLAY_RTDN_FILE || path.join(DATA_DIR, "google_play_rtdn.json");
 
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
@@ -488,6 +489,14 @@ function saveGiftCodes() {
   }
 }
 
+require("./payments/google_play_rtdn").installGooglePlayRtdnRoute(app, {
+  subscriptions,
+  activationCodes,
+  saveActivationCodes,
+  giftCodes,
+  saveGiftCodes
+});
+
 app.post("/admin/gift", requireAdmin, (req, res) => {
   const { tier, note } = req.body;
   if (!tier || !["pro", "premium"].includes(tier.toLowerCase())) {
@@ -631,7 +640,8 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
     return res.status(502).json({ error: "verification_failed" });
   }
 
-  const existing = findCodeByPurchaseToken(giftCodes, purchase_token);
+  const existing = findCodeByPurchaseToken(activationCodes, purchase_token)
+    || findCodeByPurchaseToken(giftCodes, purchase_token);
   if (existing) {
     return res.json({ code: existing.code, tier: existing.record.tier, expires: existing.record.expires, product_id });
   }
@@ -640,17 +650,20 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
   const code = `${tier === "pro" ? "PRO" : "PREM"}-` + crypto.randomBytes(4).toString("hex").toUpperCase();
   const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year to redeem
 
-  giftCodes.set(code, {
+  activationCodes.push({
+    code,
     tier,
+    productKey: product_id,
     note: `Purchased via Google Play (${product_id})`,
-    created: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     expires: expires.toISOString(),
-    used: false,
-    usedBy: null,
+    maxUses: 2,
+    currentUses: 0,
+    usedBy: [],
     purchaseToken: purchase_token
   });
 
-  saveGiftCodes();
+  saveActivationCodes();
   console.log("[BILLING] Activation code generated:", code.substring(0, 4) + "****", "tier:", tier, "product:", product_id);
 
   res.json({

@@ -1,5 +1,11 @@
 # Stealth Project State
 
+## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
+
+- Google Play purchase verification, subscription lifecycle and full-refund revocation are now technically prepared and fail-closed in PR #33.
+- RTDN cannot grant new access from a notification alone; it verifies Google Pub/Sub identity and revalidates subscriptions through the Publisher API.
+- Remaining Google Play gates are Play Console/Pub/Sub runtime setup, test notification, licensed test purchases, accountant treatment and production approval.
+
 ## 2026-07-12 00:30 EEST — CODEX — PUBLIC SALES CLAIMS / CHECKOUT ROUTING
 
 - SecureCall one-time sales route through the canonical VLABS shop. The former public direct Stripe Payment Link is removed.

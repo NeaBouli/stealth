@@ -1,5 +1,13 @@
 # BRIDGE — stealth
 
+## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
+
+- Added authenticated Google Play RTDN push handling at `/billing/google-play-rtdn`: Google OIDC signature/audience/email checks, package allowlist, bounded payload and persistent Pub/Sub message-id idempotency.
+- Subscription lifecycle notifications are revalidated with Google Play Subscriptions v2. Hold, pause, revoke, expiry and canceled-pending states remove matching server access; renewal/grace/cancel-with-future-expiry refresh only already known purchase tokens.
+- Full voided purchases revoke matching subscriptions and one-time activation codes. Partial quantity refunds are acknowledged without incorrectly revoking the whole entitlement.
+- Google Play one-time purchases now enter the signed activation-code registry instead of the unsigned gift-code shortcut, so refund revocation and signed lease refresh apply.
+- Full signaling suite and focused payment suite PASS; no Google, Stripe, invoice, AADE or deploy request was executed. Runtime Pub/Sub/Play configuration remains a Gio gate in PR #33.
+
 ## 2026-07-12 00:30 EEST — CODEX — PUBLIC SALES CLAIMS / CHECKOUT ROUTING
 
 - Removed the public direct Stripe Payment Link from the SecureCall activation-code card. One-time SecureCall products now route through the canonical VLABS shop; no payment provider URL is embedded in the public page.

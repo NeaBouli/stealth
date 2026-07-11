@@ -1,5 +1,13 @@
 # Stealth TODO
 
+## 2026-07-12 01:10 EEST — CODEX — GOOGLE PLAY RTDN / REFUND REVOKE
+
+- [x] Authentifizierten/idempotenten RTDN-Empfänger mit Subscriptions-v2-Revalidierung bauen.
+- [x] Hold/Pause/Revoke/Expiry und Vollerstattung serverseitig auf Subscription-/Aktivierungscode-Zugang anwenden.
+- [x] Google-Play-Einmalkauf aus dem unsignierten Gift-Code-Pfad in den signierten Aktivierungsspeicher verschieben.
+- [ ] `Gio`: Pub/Sub Topic/Push-Subscription, OIDC Audience/Service-Account und Play RTDN konfigurieren; danach Testbenachrichtigung und License-Tester-E2E freigeben.
+- [ ] `Gio/Accountant`: Google-Play-Abrechnung/Belegfluss und private Accounting-Weitergabe festlegen.
+
 ## 2026-07-12 00:30 EEST — CODEX — PUBLIC SALES CLAIMS / CHECKOUT ROUTING
 
 - [x] Public direct Stripe Payment Link entfernen und Einmalkäufe auf den kanonischen VLABS-Shop routen.
