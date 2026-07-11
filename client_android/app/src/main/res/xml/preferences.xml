@@ -268,6 +268,11 @@
     <com.securecall.app.ui.CollapsiblePreferenceCategory
         android:title="Support Development">
         <Preference
+            android:title="Voluntary crypto support"
+            android:summary="No purchase, feature access or tax-exempt donation status is promised. Transfers require recipient/accounting review."
+            android:selectable="false"
+            android:icon="@drawable/ic_settings" />
+        <Preference
             android:key="pref_donate_eth"
             android:title="ETH"
             android:summary="0xA0860f...2b275"

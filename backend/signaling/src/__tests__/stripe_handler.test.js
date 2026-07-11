@@ -132,9 +132,27 @@ async function runEmailDeliveryStatusTest() {
   assert.strictEqual(stored.emailDelivery.attempts, 1, "email delivery attempt count is persisted");
 }
 
+async function runCustomIdBindingFailureTest() {
+  const stripe = { checkout: { sessions: { listLineItems: async () => ({ data: [] }) } } };
+  await assert.rejects(
+    handleWebhook({
+      id: "evt_custom_id_unbound_test",
+      type: "checkout.session.completed",
+      data: { object: {
+        id: "cs_custom_id_unbound_test",
+        payment_status: "paid",
+        metadata: { tier: "custom_id", product: "custom_id_standard", custom_id: "example", pending_token: "unknown" }
+      } }
+    }, stripe, []),
+    /custom_id_payment_binding_failed/,
+    "custom ID webhook rejects a payment that is not bound to the pending checkout"
+  );
+}
+
 runDynamicLifetimeWebhookTest()
   .then(runProductLifetimeWebhookTest)
   .then(runEmailDeliveryStatusTest)
+  .then(runCustomIdBindingFailureTest)
   .then(() => console.log("stripe_handler.test.js ok"))
   .catch((err) => {
     console.error(err);

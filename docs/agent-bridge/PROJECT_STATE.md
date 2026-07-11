@@ -1,5 +1,15 @@
 # Stealth Project State
 
+## 2026-07-11 23:59 EEST — CODEX — CUSTOM-ID PAYMENT P0 / CRYPTO SUPPORT
+
+- Custom-ID checkout is now fail-closed behind `CUSTOM_ID_STRIPE_CHECKOUT_ENABLED=true`. Direct activation cannot mint an unpaid ID, and a pending token alone cannot activate one.
+- Stripe paid webhook must bind the pending token, normalized Custom ID and exact Checkout Session before activation; unpaid, mismatched and leaked pending tokens fail.
+- Direct ETH/BTC/SOL support is explicitly described as voluntary, without purchase/feature access or implied tax-exempt donation status. Recipient/accounting treatment remains a Gio/accountant gate.
+- Codex owns this payment path. No Stripe request, crypto transfer, invoice, AADE request or deploy was executed.
+- Verification: full signaling suite PASS; Android `:app:processFreeDebugResources` PASS with the repository's required AndroidX flag; `git diff --check` PASS. Changes belong to PR #33.
+
+
+
 ## 2026-07-11 — Ed25519-Entitlement-Vertrag lokal fertig
 
 - StealthX Signaling kann geräte- und produktgebundene 30-Tage-Entitlements fuer SecureChat, Chameleon, Suite und SecureCall ausstellen.

@@ -287,7 +287,11 @@ async function handleWebhook(event, stripe, activationCodesRef) {
 
   // 2. Custom ID purchases are handled separately (no activation code)
   if (tier === "custom_id") {
-    console.log("[STRIPE] Custom ID purchase — handled by custom_ids.js flow");
+    const pendingToken = session.metadata?.pending_token;
+    const customId = session.metadata?.custom_id;
+    const markedPaid = require("../custom_ids").markPendingPaid(pendingToken, customId, session.id);
+    if (!markedPaid) throw new Error("custom_id_payment_binding_failed");
+    console.log("[STRIPE] Custom ID payment confirmed for activation");
     if (event.id) {
       processedEvents.set(event.id, Date.now());
       saveProcessedEvents();
