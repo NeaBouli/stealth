@@ -4233,6 +4233,27 @@ Rules for all dev agents:
 
 ---
 
+### 2026-07-11 03:08 EEST — CODEX TERMINAL — QA PLAN
+
+**SecureCall Three-Device Audit And Emulation Protocol**
+- Created `docs/qa/SECURECALL_THREE_DEVICE_AUDIT_PROTOCOL_2026-07-11.md`.
+- Purpose: stop ad hoc SecureCall debugging before the next device session by forcing a repeatable PASS / FAIL / BLOCKED / N/A result for every relevant coded behavior.
+- Defines the physical matrix for tonight:
+  - S10 `RF8N313QMFL` as Premium primary regression device.
+  - S7 `ce10160adc00152604` as Pro older-device comparison.
+  - Tab S4 `ce12182c68644439037e` as Free/tablet behavior device.
+- Defines emulator coverage for API 24, API 30, API 35 phone, and API 35 tablet.
+- Includes artifact capture, logcat/dumpsys commands, release install matrix, functional passes A-K, settings exhaustive pass, tier behavior, security/privacy checks, and release hard-stop rules.
+- Current high-risk focus called out explicitly: S10 audio routing/ringback/speaker behavior, confirm-phone prompt persistence, settings bottom overlap, background service reasoning, and already-used Play versionCodes.
+
+**Verification**
+- Protocol reviewed locally after creation.
+
+**Remaining Local Dirt**
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched and must not be staged with this QA protocol.
+
+---
+
 ### 2026-07-08 21:56 EEST — CODEX TERMINAL — DECISION
 
 **Duplicate Claude-Code-Terminal Bridge Blocks**
