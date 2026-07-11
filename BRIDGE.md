@@ -141,6 +141,54 @@
 
 ---
 
+### 2026-07-11 12:36 EEST — CODEX TERMINAL — FIX / QA STATUS
+
+**SecureCall Three-Device QA: Backend 429 Blocker Fixed + S10/Tab Call Smoke Reverified**
+- Continued the full SecureCall device QA after the rebuilt `1.0.43` artifacts were installed.
+- Initial blocker:
+  - S10 Premium showed `● Disconnected`.
+  - S10 network itself was healthy.
+  - S10 log showed WebSocket upgrade failure:
+    - `Expected HTTP 101 response but was '429 Too Many Requests'`
+    - `429 rate-limit from server — backing off 5 minutes`
+  - A fresh local Node WebSocket handshake to `wss://api.stealthx.tech/signal` also returned:
+    - `HTTP/1.1 429 Too Many Requests`
+    - body: `Too many connections from this IP`
+- Root cause:
+  - Backend heartbeat timeout cleanup could delete dead clients from `clients` without keeping `ipConnections` authoritative.
+  - `verifyClient` enforced the per-IP limit using the stale `ipConnections` bucket, so real low client counts could still be rejected as "too many connections".
+- Fix applied:
+  - `backend/signaling/src/server.js`
+  - Added `reconcileIpConnections()` and call it before WebSocket per-IP enforcement.
+  - `/status/live` now reconciles and exposes `ipConnectionBuckets` for future diagnosis.
+- Verification:
+  - `node --check backend/signaling/src/server.js` passed.
+  - `npm test` in `backend/signaling` passed.
+  - Deployed to Hetzner `/opt/stealthx/signaling/src/server.js` after creating a timestamped server-side backup.
+  - `pm2 reload ecosystem.config.js --update-env` succeeded; PM2 `signaling` stayed online.
+  - Fresh local `wss://api.stealthx.tech/signal` smoke opened successfully after deploy.
+  - S10 Premium relaunch: UI showed `● Connected`.
+  - Tab S4 Free relaunch: UI showed `● Connected`; ad banner remained above bottom nav.
+- Post-fix call smoke:
+  - S10 Premium dialed Tab S4 Secure ID `android-a53fc22d`.
+  - Tab S4 showed `Incoming Secure Call` from Secure ID `android-158f3691`.
+  - After accepting on Tab S4, both devices showed `Anruf aktiv`, running timer, and E2E encryption indicator.
+  - End call returned S10 and Tab S4 to connected app UI; Tab's expected Save Contact prompt was dismissed with `Skip`.
+- S7 status:
+  - Still blocked by device/network DNS state, separate from the fixed backend 429.
+  - S7 Pro launches but shows `● Disconnected`.
+  - `ping api.stealthx.tech` returns `unknown host`.
+  - App log: `Unable to resolve host "api.stealthx.tech": No address associated with hostname`.
+- QA report updated:
+  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+- Still open:
+  - S7 network/DNS must be fixed before S7 call/signaling QA can be completed.
+  - Fresh-install phone-confirm test requires explicit approval to clear app data.
+  - Emulator API matrix remains blocked by missing local emulator tooling/system images.
+  - Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
 ## 2026-06-14 [CODEX]
 ### TYPE: DIAGNOSE
 ### STATUS: BUG-1/BUG-2 REAL-DEVICE RETEST ABGESCHLOSSEN
