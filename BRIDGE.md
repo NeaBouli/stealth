@@ -3,6 +3,43 @@
 
 ---
 
+### 2026-07-11 10:21 EEST — CODEX TERMINAL — RELEASE
+
+**SecureCall 1.0.42 Build Artifacts**
+- User requested the new AAB/APK files in `/Users/gio/Desktop/aab apk/`.
+- Bumped SecureCall Android version in `client_android/app/build.gradle`:
+  - Base `versionCode`: `78`
+  - Base `versionName`: `1.0.42`
+  - Universal APK override: `78009`
+- Built with:
+  - `cd client_android && ./gradlew --no-daemon --max-workers=1 -Pinternal assembleFreeRelease assembleProRelease assemblePremiumRelease bundleFreeRelease`
+  - Result: `BUILD SUCCESSFUL in 8m 34s`
+- Copied artifacts to `/Users/gio/Desktop/aab apk/`:
+  - `SecureCall-Free-v1.0.42-vc78.aab` — Google Play Free AAB, 37 MB
+  - `SecureCall-Free-v1.0.42-universal-vc78009.apk` — 63 MB
+  - `SecureCall-Pro-v1.0.42-universal-vc78009.apk` — 61 MB
+  - `SecureCall-Premium-v1.0.42-universal-vc78009.apk` — 61 MB
+  - `SecureCall-v1.0.42-release-notes.txt`
+- Verified APK metadata with `/Users/gio/Library/Android/sdk/build-tools/35.0.0/aapt dump badging`:
+  - Free: `com.securecall.app.free`, `versionCode=78009`, `versionName=1.0.42-free`, `targetSdkVersion=35`
+  - Pro: `com.securecall.app.pro`, `versionCode=78009`, `versionName=1.0.42-pro`, `targetSdkVersion=35`
+  - Premium: `com.securecall.app.premium`, `versionCode=78009`, `versionName=1.0.42-premium`, `targetSdkVersion=35`
+
+**QA Scope Reminder**
+- The full all-feature matrix is not complete yet.
+- Completed and verified before artifact build:
+  - S10 Premium → Tab S4 Free real SecureCall flow.
+  - Incoming call screen on Tab S4.
+  - Active call state/timers/encryption UI on both devices.
+  - S10 speaker route ON/OFF with `dumpsys audio` showing `speaker` then `earpiece`.
+  - S7 Pro starts service but remains blocked by Wi-Fi/network validation and `api.stealthx.tech:443` timeout.
+
+**Open Next**
+- Install/test the new `1.0.42` artifacts on devices if desired; the current artifact build was copied for upload/download packaging.
+- Continue the broader feature matrix once S7 network is fixed.
+
+---
+
 ### 2026-07-11 09:44 EEST — CODEX TERMINAL — FIX / STATUS
 
 **SecureCall Device QA: S10 Audio Route Fix**
