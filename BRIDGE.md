@@ -4254,6 +4254,50 @@ Rules for all dev agents:
 
 ---
 
+### 2026-07-11 08:45 EEST — CODEX TERMINAL — FIX
+
+**SecureCall Device QA Blocker: Signaling WS 429**
+- Started the three-device SecureCall QA session from `docs/qa/SECURECALL_THREE_DEVICE_AUDIT_PROTOCOL_2026-07-11.md`.
+- Built current SecureCall release APKs with `./gradlew --no-daemon --max-workers=1 -Pinternal assembleFreeRelease assembleProRelease assemblePremiumRelease` — build successful.
+- Installed target matrix:
+  - S10 `RF8N313QMFL`: `com.securecall.app.premium`
+  - S7 `ce10160adc00152604`: `com.securecall.app.pro`
+  - Tab S4 `ce12182c68644439037e`: `com.securecall.app.free`
+- QA artifact folder: `/Users/gio/Desktop/securecall-qa-20260711-082933`.
+- Device findings:
+  - S10 can ping `api.stealthx.tech`, but app stayed `Disconnected`.
+  - S10 manual reconnect produced WebSocket upgrade failure: `429 Too Many Requests`.
+  - Fresh local Node WS handshake to `wss://api.stealthx.tech/signal` also returned `429 Too Many Requests`.
+  - `/status/live` showed `connectedClients: 0`, so this was not a full active-connection pool; the WS attempt limiter was blocking before connection establishment.
+  - S7 reached Pro main flow but its current Wi-Fi could not ping `api.stealthx.tech` (`100% packet loss`), so real call QA on S7 is blocked until network is fixed.
+  - Tab S4 Free launched and showed the background-battery dialog; choosing `LATER` correctly returned to the main screen.
+- Backend fix in `backend/signaling/src/server.js`:
+  - Added bounded env parsing for WS guard values.
+  - Raised enforced minimums for mobile/NAT-friendly signaling:
+    - `MAX_CONNS_PER_IP >= 80`
+    - `WS_ATTEMPT_WINDOW_MS >= 60000`
+    - `MAX_WS_ATTEMPTS_PER_IP >= 2000`
+  - Added active WS limit values to public `/status/live` output for future device QA visibility.
+
+**Verification**
+- `npm test` in `backend/signaling` passed:
+  - `context.smoke`
+  - `handlers.test`
+  - `subscription_webrtc.test`
+  - `email_handler.test`
+  - `stripe_handler.test`
+- `git diff --check -- backend/signaling/src/server.js` passed.
+
+**Next**
+- After push/deploy propagation, verify `https://api.stealthx.tech/status/live` reports the new `wsLimits`.
+- Then retest a single WS handshake before relaunching all three apps.
+- Do not continue call/audio QA until WS connects and S7 has working network reachability.
+
+**Remaining Local Dirt**
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
 ### 2026-07-08 21:56 EEST — CODEX TERMINAL — DECISION
 
 **Duplicate Claude-Code-Terminal Bridge Blocks**

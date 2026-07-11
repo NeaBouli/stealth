@@ -110,9 +110,14 @@ function getIceServers(userId) {
 // --- Security Configuration ---
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || null;
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").filter(Boolean);
-const MAX_CONNS_PER_IP = parseInt(process.env.MAX_CONNS_PER_IP || "40", 10);
-const WS_ATTEMPT_WINDOW_MS = parseInt(process.env.WS_ATTEMPT_WINDOW_MS || "60000", 10);
-const MAX_WS_ATTEMPTS_PER_IP = parseInt(process.env.MAX_WS_ATTEMPTS_PER_IP || "240", 10);
+function envIntAtLeast(name, fallback, minimum) {
+  const parsed = parseInt(process.env[name] || String(fallback), 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(parsed, minimum);
+}
+const MAX_CONNS_PER_IP = envIntAtLeast("MAX_CONNS_PER_IP", 80, 80);
+const WS_ATTEMPT_WINDOW_MS = envIntAtLeast("WS_ATTEMPT_WINDOW_MS", 60000, 60000);
+const MAX_WS_ATTEMPTS_PER_IP = envIntAtLeast("MAX_WS_ATTEMPTS_PER_IP", 2000, 2000);
 const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 
 // --- App Setup ---
@@ -392,6 +397,11 @@ app.get("/status/live", (req, res) => {
     connectedClients: clients ? clients.size : 0,
     registeredIds: clientIds ? clientIds.size : 0,
     fcmTokens: fcmTokens ? fcmTokens.size : 0,
+    wsLimits: {
+      maxConnectionsPerIp: MAX_CONNS_PER_IP,
+      maxAttemptsPerIp: MAX_WS_ATTEMPTS_PER_IP,
+      attemptWindowMs: WS_ATTEMPT_WINDOW_MS
+    },
     timestamp: new Date().toISOString()
   });
 });
