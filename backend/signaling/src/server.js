@@ -604,19 +604,21 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
     return res.status(503).json({ error: "google_play_verification_not_configured" });
   }
   try {
-      const { google } = require("googleapis");
+      const { GoogleAuth } = require("google-auth-library");
       const keyJson = JSON.parse(Buffer.from(serviceAccountB64, "base64").toString("utf8"));
-      const auth = new google.auth.GoogleAuth({
+      const auth = new GoogleAuth({
         credentials: keyJson,
         scopes: ["https://www.googleapis.com/auth/androidpublisher"]
       });
-      const androidpublisher = google.androidpublisher({ version: "v3", auth });
+      const client = await auth.getClient();
 
       // For one-time products (activation codes + lifetime), use products.get
-      const result = await androidpublisher.purchases.products.get({
-        packageName: package_name,
-        productId: product_id,
-        token: purchase_token
+      const endpoint = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
+        + `${encodeURIComponent(package_name)}/purchases/products/${encodeURIComponent(product_id)}`
+        + `/tokens/${encodeURIComponent(purchase_token)}`;
+      const result = await client.request({
+        url: endpoint,
+        method: "GET"
       });
 
       if (result.data.purchaseState !== 0) {
