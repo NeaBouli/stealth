@@ -4544,6 +4544,40 @@ Rules for all dev agents:
   - stealth `docs/agent-bridge/*`
   - securechat `BRIDGE.md`
   - chameleon `BRIDGE.md`
+### 2026-07-11 11:06 EEST — CODEX TERMINAL — INSTALL / STATUS
+
+**SecureCall 1.0.42 Final Universal APKs Installed From Desktop Artifacts**
+- Installed the newly rebuilt Desktop APKs after commit `56727eb`:
+  - S10 `RF8N313QMFL`:
+    - Installed `/Users/gio/Desktop/aab apk/SecureCall-Premium-v1.0.42-universal-vc78009.apk`
+    - Result: `Success`
+    - Package verified: `com.securecall.app.premium`, `versionCode=78009`, `versionName=1.0.42-premium`
+    - Launch verified: focused `com.securecall.app.premium/com.securecall.app.MainActivity`
+  - Tab S4 `ce12182c68644439037e`:
+    - Installed `/Users/gio/Desktop/aab apk/SecureCall-Free-v1.0.42-universal-vc78009.apk`
+    - Result: `Success`
+    - Package verified: `com.securecall.app.free`, `versionCode=78009`, `versionName=1.0.42-free`
+    - Launch delivered to `com.securecall.app.free/com.securecall.app.MainActivity`
+  - S7 `ce10160adc00152604`:
+    - Installed `/Users/gio/Desktop/aab apk/SecureCall-Pro-v1.0.42-universal-vc78009.apk`
+    - Result: `Success`
+    - Package verified: `com.securecall.app.pro`, `versionCode=78009`, `versionName=1.0.42-pro`
+    - Launch is blocked by Android Package Installer permission UI / StatusBar focus, matching earlier S7 device-state blocker.
+
+**Current Release Artifact Location**
+- `/Users/gio/Desktop/aab apk/SecureCall-LATEST.aab`
+- `/Users/gio/Desktop/aab apk/SecureCall-Free-LATEST.apk`
+- `/Users/gio/Desktop/aab apk/SecureCall-Pro-LATEST.apk`
+- `/Users/gio/Desktop/aab apk/SecureCall-Premium-LATEST.apk`
+- `/Users/gio/Desktop/aab apk/SecureCall-v1.0.42-release-notes.txt`
+
+**Remaining Blockers**
+- S7 cannot be marked green until device display/permission UI and network validation are stable.
+- Emulator/fresh-install/accessory interruption matrix remains open.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
 ### 2026-07-11 11:03 EEST — CODEX TERMINAL — BUILD / RELEASE ARTIFACTS
 
 **SecureCall 1.0.42 Artifacts Rebuilt After Banner Fix**
