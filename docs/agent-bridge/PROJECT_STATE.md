@@ -1,5 +1,13 @@
 # Stealth Project State
 
+## 2026-07-12 02:07 EEST — CODEX — CLIENT READINESS AUDIT
+
+- Backend, payment handling, Rust crypto tests and the Android Free Debug build are reproducible from isolated checkouts.
+- The Android build no longer depends on an ignored local project-property file; unit tests, lint and APK assembly pass.
+- The production call path is the `WebSocketService` Opus/jitter pipeline. Historical experimental/stub-named classes remain technical debt and are not counted as release evidence.
+- Remaining client release evidence: physical two-device encrypted call, incoming background call, reconnect/network-change matrix, billing test purchases/refunds and localization completion.
+- Production sales and provider gates remain disabled; private operational status is maintained in VLABS.
+
 ## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
 
 - Custom-ID technical sell path now includes billing intake, paid binding, private signed accounting export and full-refund/dispute revocation.

@@ -6,6 +6,14 @@
 - No tax/personal identifiers, secrets, provider/account IDs, customer/invoice data, MARK/UID values or runtime values may be copied into this public repository.
 - Keep public entries limited to the private reference, ownership, generic status and production-disabled state.
 
+## 2026-07-12 02:07 EEST — CODEX — CLEAN-MACHINE CLIENT READINESS
+
+- Current `main` was tested in an isolated checkout. Fresh signaling/payment tests and npm high-severity audit pass.
+- Versioned the generic Android project properties required by a foreign machine. Free Debug unit tests, lint and APK assembly now pass from the clean checkout.
+- Fixed the invalid VPN permission declaration and the platform-derived audio-mode lint contract. Rust received documentation/default-trait fixes only; 28 unit tests, 6 E2E tests and strict Clippy pass.
+- Active calling uses the main WebSocket/Opus/jitter path. Physical two-device calls, background/reconnect behavior, billing E2E and complete localization are still release gates.
+- No external request, payment, invoice, deployment or device installation was made. Private finance details remain in VLABS only.
+
 ## 2026-07-11 — CODEX — PAYMENT PR MERGED
 
 - Payment PR #33 was squash-merged to `main` as `c7cdd27`.

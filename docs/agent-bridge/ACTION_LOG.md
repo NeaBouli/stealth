@@ -1,5 +1,13 @@
 # Stealth Action Log
 
+## 2026-07-12 02:07 EEST — CODEX — CLEAN-MACHINE CLIENT READINESS
+
+- Reproduced and fixed the missing clean-checkout Android project configuration.
+- Cleared the two functional Android lint errors without adding a lint baseline; incomplete German translations remain warnings with English fallback.
+- Added non-behavioral Rust FFI safety documentation and `ReplayDetector::default()`; strict Rust tests/Clippy pass.
+- Verification: Android Free Debug unit tests, lint and APK assembly PASS; Rust 28 unit + 6 E2E PASS; signaling and payment tests PASS; npm high-severity audit reports 0 findings.
+- No live or test purchase, external finance/provider request, deployment or device action occurred.
+
 ## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
 
 - Added B2C/B2B billing intake, private signed VLABS invoice/adjustment export and exact Checkout-Session refund/dispute revocation for Custom IDs.
