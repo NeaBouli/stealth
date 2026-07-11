@@ -5031,3 +5031,38 @@ Rules for all dev agents:
   - Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
 
 ---
+
+### 2026-07-11 12:42 EEST — CODEX TERMINAL — STATUS / QA
+
+**SecureCall Three-Device QA Continuation — S7 Offline Settings Matrix Closed**
+- Re-synced from current worktree and devices after `dec2776`.
+- Devices visible by ADB:
+  - S10 `RF8N313QMFL`
+  - S7 `ce10160adc00152604`
+  - Tab S4 `ce12182c68644439037e`
+- Installed versions reverified:
+  - S10 Premium: `com.securecall.app.premium`, `1.0.43-premium`, `78010009`, targetSdk 35.
+  - S7 Pro: `com.securecall.app.pro`, `1.0.43-pro`, `78010009`, targetSdk 35.
+  - Tab S4 Free: `com.securecall.app.free`, `1.0.43-free`, `78010009`, targetSdk 35.
+- Current UI state:
+  - S10 Premium focused in `MainActivity` and shows `● Connected`.
+  - Tab S4 Free focused in `MainActivity` and shows `● Connected`.
+  - S7 Pro focused in `MainActivity` and shows `● Disconnected`.
+- S7 network recheck:
+  - Wi-Fi `GL-MT300N-V2-5df`, IP `192.168.8.187`, DNS/gateway `192.168.8.1`.
+  - Wi-Fi is connected but `lastValidated=false`.
+  - Gateway ping succeeds; pings to `8.8.8.8`, `1.1.1.1`, `135.181.254.229`, and `api.stealthx.tech` fail with 100% packet loss.
+  - App log still shows `SocketTimeoutException` connecting to `api.stealthx.tech/135.181.254.229:443`.
+  - `mobile_data=1`, `data_roaming=0`, and SIM is roaming, so mobile fallback remains unavailable without user approval.
+- Matrix progress:
+  - S7 `READ_CONTACTS` is granted and Settings can now be inspected offline.
+  - S7 Settings XML scan found no `ifr`, `wallet`, `token`, `metamask`, `unlock`, `discount`, or `stripe` text.
+  - QA report updated: S7 `Settings no IFR/Wallet text` moved from `BLOCKED` to `PASS`.
+- Still open:
+  - S7 connection/call matrix requires a validated Internet path or explicit approval for temporary roaming/mobile-data testing.
+  - Fresh-install phone-confirm validation requires explicit approval to clear app data.
+  - Emulator API matrix remains blocked by missing emulator tooling/system images.
+  - Bluetooth/headset/GSM interruption tests still require accessories/SIM-interruption setup.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
