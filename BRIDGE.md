@@ -3,6 +3,62 @@
 
 ---
 
+### 2026-07-11 14:52 EEST — CODEX TERMINAL — FIX / RELEASE / QA
+
+**SecureCall 1.0.45 Free Incoming-Call Ad Guard + Artifacts**
+- During the continued three-device QA, a real Free-tier incoming-call blocker was found on Tab S4:
+  - Tab Free had an active AdMob/banner click path while call UI was being exercised.
+  - A tap intended for incoming-call handling opened Google Play from an ad path instead of staying safely in SecureCall.
+- Fix applied:
+  - `client_android/app/src/main/java/com/securecall/app/IncomingCallActivity.kt`
+    - Calls `AdMobManager.pauseForCall()` as soon as incoming-call UI is created.
+    - Resumes ads only when the incoming call is not accepted.
+  - `client_android/app/src/free/java/com/securecall/app/ads/AdMobManager.kt`
+    - Tracks the current banner container weakly.
+    - Suppresses `loadBanner()` while call UI is active.
+    - Destroys/hides any existing banner immediately from `pauseForCall()`.
+- Version bumped:
+  - `client_android/app/build.gradle`
+  - `versionCode 78012`
+  - `versionName 1.0.45`
+  - Universal APK override now produces `versionCode 78012009`.
+- Build:
+  - `cd /Users/gio/Desktop/repos/stealth/client_android`
+  - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleRelease bundleRelease --console=plain`
+  - Result: `BUILD SUCCESSFUL in 10m 35s`
+  - `verifyNoAppIfrWalletCode` ran.
+- Desktop artifacts refreshed in `/Users/gio/Desktop/aab apk/`:
+  - `SecureCall-LATEST.aab`
+  - `SecureCall-Free-v1.0.45-vc78012.aab`
+  - `SecureCall-Pro-v1.0.45-vc78012.aab`
+  - `SecureCall-Premium-v1.0.45-vc78012.aab`
+  - `SecureCall-Free-LATEST.apk`
+  - `SecureCall-Pro-LATEST.apk`
+  - `SecureCall-Premium-LATEST.apk`
+  - `SecureCall-v1.0.45-release-notes.txt`
+- APK metadata verified with `aapt`:
+  - Free: `com.securecall.app.free`, `versionCode=78012009`, `versionName=1.0.45-free`, `minSdk=24`, `targetSdk=35`.
+  - Pro: `com.securecall.app.pro`, `versionCode=78012009`, `versionName=1.0.45-pro`, `minSdk=24`, `targetSdk=35`.
+  - Premium: `com.securecall.app.premium`, `versionCode=78012009`, `versionName=1.0.45-premium`, `minSdk=24`, `targetSdk=35`.
+- SHA-256:
+  - `SecureCall-LATEST.aab`: `c1be2c7f2edc3729da08c6b98922add17dfe2aa405aa24b0abccbbb9f8df6c78`
+  - `SecureCall-Free-LATEST.apk`: `f56b03009c4746b63a06170d7fda455273e1ff85f6844faa2294cb9dd4ba0ef9`
+  - `SecureCall-Pro-LATEST.apk`: `adea8060484a123f973a634cce0601a9678185fd135942482cabddaa0c497826`
+  - `SecureCall-Premium-LATEST.apk`: `f4b8fffa1c6512dd0acb1c3f8b1d0e99c804ebe56e541f9b96df2f017a86d5d2`
+- Physical install smoke:
+  - S10 `RF8N313QMFL`: Premium `1.0.45-premium` / `78012009`, UI showed `StealthX` / `Connected`.
+  - S7 `ce10160adc00152604`: Pro `1.0.45-pro` / `78012009`, UI showed `StealthX` / `Disconnected`; same known S7 network route/gateway blocker.
+  - Tab S4 `ce12182c68644439037e`: Free `1.0.45-free` / `78012009`, UI showed `StealthX` / `Connected`.
+- QA report updated:
+  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+- Remaining gaps / next actions:
+  - Clean manual or coordinate-stable S10 -> Tab incoming-call accept retest is still required for the new 1.0.45 Free-Ad pause fix; automated retest attempts were rejected as evidence because S10 repeatedly left SecureCall and landed in Samsung launcher/app drawer before the call tap.
+  - S7 call/signaling/call-matrix remains blocked until S7 has validated Internet or the user approves temporary roaming/mobile-data fallback.
+  - Bluetooth/headset/GSM-interruption tests still need accessory/SIM-interruption setup.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
 ### 2026-07-11 13:58 EEST — CODEX TERMINAL — RELEASE / STATUS
 
 **SecureCall 1.0.44 Rebuilt After Android API Fixes**

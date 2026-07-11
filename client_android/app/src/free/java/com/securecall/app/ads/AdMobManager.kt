@@ -14,6 +14,7 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import java.lang.ref.WeakReference
 
 /**
  * AdMob integration for FREE flavor only.
@@ -32,6 +33,7 @@ object AdMobManager {
     private const val INTERSTITIAL_ID = "ca-app-pub-4336336811005394/4739986746"
 
     private var interstitialAd: InterstitialAd? = null
+    private var bannerContainerRef: WeakReference<FrameLayout>? = null
     private var callCount = 0
     private const val INTERSTITIAL_INTERVAL = 3
 
@@ -58,13 +60,26 @@ object AdMobManager {
      */
     fun loadBanner(activity: Activity, container: FrameLayout) {
         try {
+            bannerContainerRef = WeakReference(container)
+            if (isCallActive) {
+                destroyBanner(container)
+                container.visibility = View.GONE
+                Log.d(TAG, "Banner suppressed while call UI is active")
+                return
+            }
             val adView = AdView(activity).apply {
                 setAdSize(AdSize.BANNER)
                 adUnitId = BANNER_ID
                 adListener = object : AdListener() {
                     override fun onAdLoaded() {
                         Log.d(TAG, "Banner loaded")
-                        container.visibility = View.VISIBLE
+                        if (isCallActive) {
+                            destroy()
+                            container.removeAllViews()
+                            container.visibility = View.GONE
+                        } else {
+                            container.visibility = View.VISIBLE
+                        }
                     }
                     override fun onAdFailedToLoad(error: LoadAdError) {
                         Log.w(TAG, "Banner failed: ${error.message}")
@@ -140,6 +155,10 @@ object AdMobManager {
 
     fun pauseForCall() {
         isCallActive = true
+        bannerContainerRef?.get()?.let { container ->
+            destroyBanner(container)
+            container.visibility = View.GONE
+        }
         Log.d(TAG, "Ads paused for active call")
     }
 

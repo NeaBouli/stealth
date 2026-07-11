@@ -76,6 +76,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
         // FLAG_SECURE: prevent screenshots of incoming call screen
         com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this)
+        com.securecall.app.ads.AdMobManager.pauseForCall()
 
         // Show over lock screen and wake device for incoming calls
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -400,6 +401,7 @@ class IncomingCallActivity : AppCompatActivity() {
         // Only clear callback if we didn't accept — CallActivity sets its own onCallEnded
         if (!accepted) {
             com.securecall.app.net.WebSocketService.instance?.setOnCallEnded(null)
+            com.securecall.app.ads.AdMobManager.resumeAfterCall()
         }
         super.onDestroy()
     }
