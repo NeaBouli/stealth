@@ -3,6 +3,47 @@
 
 ---
 
+### 2026-07-11 09:44 EEST — CODEX TERMINAL — FIX / STATUS
+
+**SecureCall Device QA: S10 Audio Route Fix**
+- Continued the three-device SecureCall QA run from `/Users/gio/Desktop/securecall-qa-20260711-082933`.
+- Built and installed the target release APKs after the audio fix:
+  - S10 `RF8N313QMFL`: `com.securecall.app.premium` `1.0.41-premium` / `versionCode=77009`
+  - S7 `ce10160adc00152604`: `com.securecall.app.pro` `1.0.41-pro` / `versionCode=77009`
+  - Tab S4 `ce12182c68644439037e`: `com.securecall.app.free` `1.0.41-free` / `versionCode=77009`
+- Real S10 Premium → Tab S4 Free SecureCall flow verified:
+  - Both apps launched with toolbar `● Connected`.
+  - S10 called Tab S4 by direct SecureCall ID `android-a53fc22d`.
+  - Tab S4 received `Incoming Secure Call` from S10 Secure ID `android-158f3691`.
+  - After accept, both devices showed `Anruf aktiv`, running call timers, and E2E encryption UI.
+- Fixed S10 speaker/ringback audio behavior in `client_android/app/src/main/java/com/securecall/app/CallActivity.java`:
+  - Removed forced max `STREAM_VOICE_CALL` volume during call setup; existing user voice-call volume is preserved.
+  - Added explicit communication routing through `AudioManager.setCommunicationDevice(...)` on Android 12+ with `setSpeakerphoneOn(...)` fallback.
+  - Speaker button now syncs to actual audio route and exposes clear UI state:
+    - `content-desc="Lautsprecher an"` + `selected=true`
+    - `content-desc="Lautsprecher aus"` + `selected=false`
+  - Verified on S10 with active call:
+    - Speaker ON: `dumpsys audio` showed communication route/device `speaker`.
+    - Speaker OFF: `dumpsys audio` showed communication route/device `earpiece`.
+- S7 Pro remains blocked by device network/routing, not by app code:
+  - Service starts and foreground notification appears.
+  - Current Wi-Fi is `GL-MT300N-V2-5df`.
+  - Connectivity shows Wi-Fi connected but `lastValidated=false`.
+  - WebSocket still fails with `SocketTimeoutException` to `api.stealthx.tech/135.181.254.229:443` from `192.168.8.187`.
+
+**Verification**
+- `git diff --check -- client_android/app/src/main/java/com/securecall/app/CallActivity.java` passed.
+- `cd client_android && ./gradlew --no-daemon --max-workers=1 -Pinternal assembleFreeRelease assembleProRelease assemblePremiumRelease` passed:
+  - `BUILD SUCCESSFUL in 7m 6s`
+- Post-build installs succeeded on S10, S7, and Tab S4.
+
+**Open Next**
+- Fix or change S7 network/VPN/Wi-Fi before meaningful S7 call QA.
+- Continue broader SecureCall feature matrix after S7 has a validated path to `api.stealthx.tech:443`.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
 ## 2026-06-14 [CODEX]
 ### TYPE: DIAGNOSE
 ### STATUS: BUG-1/BUG-2 REAL-DEVICE RETEST ABGESCHLOSSEN

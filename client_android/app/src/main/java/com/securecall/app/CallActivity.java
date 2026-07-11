@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Bundle;
@@ -87,6 +88,7 @@ public class CallActivity extends AppCompatActivity {
     private TextView securityWarningBanner;
     private Runnable warningBannerHideRunnable;
     private FloatingActionButton fabEndCall;
+    private FloatingActionButton fabSpeaker;
     private SecureCallMonitor.SecurityStatus lastSecurityStatus;
     private final java.util.Set<SecureCallMonitor.ThreatType> shownThreatTypes = new java.util.HashSet<>();
 
@@ -140,7 +142,7 @@ public class CallActivity extends AppCompatActivity {
         Chronometer callTimer = findViewById(R.id.callTimer);
         FloatingActionButton fabMute = findViewById(R.id.fabMute);
         fabEndCall = findViewById(R.id.fabEndCall);
-        FloatingActionButton fabSpeaker = findViewById(R.id.fabSpeaker);
+        fabSpeaker = findViewById(R.id.fabSpeaker);
 
         // Security status views
         securityStatusIcon = findViewById(R.id.securityStatusIcon);
@@ -303,23 +305,7 @@ public class CallActivity extends AppCompatActivity {
 
         // Speaker toggle
         fabSpeaker.setOnClickListener(v -> {
-            isSpeaker = !isSpeaker;
-            AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-            if (audioManager != null) {
-                audioManager.setSpeakerphoneOn(isSpeaker);
-                // Verify the change actually took effect
-                boolean actual = audioManager.isSpeakerphoneOn();
-                Log.d(TAG, "Speaker toggle: requested=" + isSpeaker
-                        + ", actual=" + actual
-                        + ", mode=" + audioManager.getMode());
-                // Sync UI to actual state (not requested) in case system refused
-                isSpeaker = actual;
-            }
-            fabSpeaker.setBackgroundTintList(
-                    ColorStateList.valueOf(
-                            getResources().getColor(
-                                    isSpeaker ? R.color.stealthx_blue_dark : R.color.stealthx_gray,
-                                    getTheme())));
+            setSpeakerRoute(!isSpeaker);
         });
     }
 
@@ -535,12 +521,11 @@ public class CallActivity extends AppCompatActivity {
         savedStreamVolume = am.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
         // Set communication mode — routes audio through earpiece
         am.setMode(AudioManager.MODE_IN_COMMUNICATION);
-        // Set voice call volume to max
-        int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
-        am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, maxVol, 0);
-        Log.d(TAG, "Audio configured: MODE_IN_COMMUNICATION, volume=" + maxVol + "/" + maxVol);
+        setSpeakerRoute(false);
+        Log.d(TAG, "Audio configured: MODE_IN_COMMUNICATION, preserved voice-call volume="
+                + am.getStreamVolume(AudioManager.STREAM_VOICE_CALL));
         com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(this, "AUDIO",
-                "Mode=IN_COMMUNICATION, volume=" + maxVol + "/" + maxVol);
+                "Mode=IN_COMMUNICATION, speaker=false");
     }
 
     /** BUG-039: Prepare audio BEFORE ICE connects — reduces latency. */
@@ -553,18 +538,80 @@ public class CallActivity extends AppCompatActivity {
             savedStreamVolume = am.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
         }
         am.setMode(AudioManager.MODE_IN_COMMUNICATION);
-        int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
-        am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, maxVol, 0);
-        Log.d(TAG, "Audio pre-configured for call (BUG-039), saved original mode=" + savedAudioMode);
+        setSpeakerRoute(false);
+        Log.d(TAG, "Audio pre-configured for call (BUG-039), saved original mode=" + savedAudioMode
+                + ", preserved voice-call volume=" + am.getStreamVolume(AudioManager.STREAM_VOICE_CALL));
     }
 
     private void restoreCallAudio() {
         audioConfigured = false; // BUG-038: reset guard
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
         if (am == null) return;
+        setSpeakerRoute(false);
         if (savedAudioMode >= 0) am.setMode(savedAudioMode);
         if (savedStreamVolume >= 0) am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, savedStreamVolume, 0);
         Log.d(TAG, "Audio restored to previous mode");
+    }
+
+    private void setSpeakerRoute(boolean enabled) {
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (am == null) {
+            isSpeaker = false;
+            updateSpeakerButton();
+            return;
+        }
+
+        am.setMode(AudioManager.MODE_IN_COMMUNICATION);
+        boolean applied = false;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            AudioDeviceInfo targetDevice = null;
+            for (AudioDeviceInfo device : am.getAvailableCommunicationDevices()) {
+                int type = device.getType();
+                if (enabled && type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
+                    targetDevice = device;
+                    break;
+                }
+                if (!enabled && type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
+                    targetDevice = device;
+                    break;
+                }
+            }
+            if (targetDevice != null) {
+                applied = am.setCommunicationDevice(targetDevice);
+            } else if (!enabled) {
+                am.clearCommunicationDevice();
+                applied = true;
+            }
+        }
+
+        am.setSpeakerphoneOn(enabled);
+
+        boolean actual = am.isSpeakerphoneOn();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            AudioDeviceInfo current = am.getCommunicationDevice();
+            if (current != null) {
+                actual = current.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
+            }
+        }
+
+        isSpeaker = actual;
+        updateSpeakerButton();
+        Log.d(TAG, "Speaker route: requested=" + enabled
+                + ", applied=" + applied
+                + ", actual=" + actual
+                + ", mode=" + am.getMode());
+    }
+
+    private void updateSpeakerButton() {
+        if (fabSpeaker == null) return;
+        fabSpeaker.setSelected(isSpeaker);
+        fabSpeaker.setContentDescription(isSpeaker ? "Lautsprecher an" : "Lautsprecher aus");
+        fabSpeaker.setBackgroundTintList(
+                ColorStateList.valueOf(
+                        getResources().getColor(
+                                isSpeaker ? R.color.stealthx_blue_dark : R.color.stealthx_gray,
+                                getTheme())));
     }
 
     /**
