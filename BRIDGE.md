@@ -1,5 +1,11 @@
 # BRIDGE — stealth
 
+## Public Payment Data Boundary
+
+- This repository is public. Private payment, tax, provider and deployment operations are maintained only in `NeaBouli/vlabs` under `docs/finance-integrations/projects/securecall.md` and `stealthx-suite.md`.
+- Never publish tax/personal identifiers, API/webhook/signing keys, wallet recipient ownership, provider/account IDs, customer/invoice data, MARK/UID values or runtime values here.
+- This public Bridge may contain only a private-control-center reference, ownership, generic implementation status and the production-disabled state.
+
 ## 2026-07-11 — CODEX — PAYMENT PR MERGED
 
 - Payment PR #33 was squash-merged to `main` as `c7cdd27`.
