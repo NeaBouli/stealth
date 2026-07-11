@@ -4998,3 +4998,36 @@ Rules for all dev agents:
 - Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
 
 ---
+
+### 2026-07-11 12:37 EEST — CODEX TERMINAL — STATUS / BLOCKER
+
+**SecureCall Three-Device QA — S7 Network Blocker Confirmed After Backend Fix**
+- Latest pushed backend fix:
+  - `286410c` `fix: reconcile signaling IP connection buckets`
+- Backend status:
+  - The stale `ipConnections` / WebSocket `429 Too Many Requests` issue was fixed and deployed to Hetzner.
+  - Local WebSocket smoke to `wss://api.stealthx.tech/signal` opened successfully after deployment.
+  - S10 Premium and Tab S4 Free both relaunched to `● Connected`.
+- Post-fix device smoke:
+  - S10 Premium called Tab S4 Free successfully.
+  - Tab S4 showed `Incoming Secure Call`, accepted, and both devices showed `Anruf aktiv` with E2E indicator and running timer.
+  - Ending the call returned both devices to connected SecureCall UI; Tab showed the expected Save Contact prompt.
+- Current S7 state:
+  - S7 Pro is ADB-visible and launches `com.securecall.app.pro`.
+  - Installed version is `1.0.43-pro` / `78010009`.
+  - SecureCall UI still shows `● Disconnected`.
+  - App log now resolves `api.stealthx.tech` to `135.181.254.229`, but TCP connect to `:443` times out.
+  - S7 can ping local gateway `192.168.8.1`, but external pings to `8.8.8.8`, `1.1.1.1`, and `135.181.254.229` show 100% packet loss.
+  - Wi-Fi SSID is `GL-MT300N-V2-5df`, IP `192.168.8.187`, gateway/DNS `192.168.8.1`.
+  - `mobile_data=1`, but `data_roaming=0` and the SIM is roaming, so mobile-data fallback is unavailable without explicit user approval.
+- Conclusion:
+  - S7 is currently blocked by device/network routing or gateway Internet reachability, not by SecureCall code and not by the already-fixed backend 429 condition.
+- Open next:
+  - Put S7 on a confirmed working Wi-Fi or explicitly allow temporary roaming/mobile-data testing, then rerun S7 Pro connect and S7↔S10/Tab call matrix.
+  - Fresh-install phone-confirm validation still requires explicit approval to clear app data.
+  - Emulator API matrix remains blocked by missing local emulator tooling/system images.
+- Notes:
+  - Current Desktop SecureCall artifacts remain valid; no Android rebuild is required for the backend-only 429 fix.
+  - Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
