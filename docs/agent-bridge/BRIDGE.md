@@ -1,5 +1,11 @@
 # BRIDGE — stealth / agent-bridge
 
+## 2026-07-11 — CODEX — PAYMENT PR MERGED
+
+- Payment PR #33 was squash-merged to `main` as `c7cdd27`.
+- Codex remains payment/Etimologio owner; no deployment or production activation occurred.
+- Next gates: runtime/Pub-Sub/webhook configuration, Stripe/Google test-mode E2E and accountant/provider approval.
+
 ## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
 
 - Custom-ID checkout now validates receipt versus business invoice, billing country, email and company AFM/VAT fields before creating Stripe Checkout. Billing data is attached only to the signed payment session; passwords remain server-only.

@@ -1,5 +1,11 @@
 # BRIDGE — stealth
 
+## 2026-07-11 — CODEX — PAYMENT PR MERGED
+
+- Payment PR #33 was squash-merged to `main` as `c7cdd27`.
+- Codex remains responsible for the complete public repository and all SecureCall/StealthX payment, Google Play, entitlement, Custom-ID and Etimologio paths.
+- No deployment, runtime-secret change, live payment, Google Play transaction, invoice, provider or AADE request occurred. Next gates are runtime/Pub-Sub/webhook configuration and test-mode E2E.
+
 ## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
 
 - Custom-ID checkout now validates receipt versus business invoice, billing country, email and company AFM/VAT fields before creating Stripe Checkout. Billing data is attached only to the signed payment session; passwords remain server-only.
