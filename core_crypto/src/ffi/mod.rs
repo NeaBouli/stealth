@@ -24,6 +24,15 @@ pub extern "C" fn core_crypto_init() -> i32 {
 }
 
 /// Verschluesselt einen Buffer via XChaCha20-Poly1305.
+///
+/// # Safety
+///
+/// `key_ptr` muss fuer 32 Bytes und `in_ptr` fuer `in_len` Bytes lesbar sein.
+/// `out_len` muss auf einen les- und schreibbaren `usize` zeigen, dessen
+/// Eingangswert die Kapazitaet des von `out_ptr` referenzierten, beschreibbaren
+/// Puffers angibt. Eingabe- und Ausgabepuffer duerfen sich nicht ueberlappen.
+/// Alle Zeiger muessen fuer die Dauer des Aufrufs gueltig und korrekt
+/// ausgerichtet sein.
 #[no_mangle]
 pub unsafe extern "C" fn core_crypto_encrypt(
     key_ptr: *const u8,
@@ -59,6 +68,15 @@ pub unsafe extern "C" fn core_crypto_encrypt(
 }
 
 /// Entschluesselt einen Buffer via XChaCha20-Poly1305.
+///
+/// # Safety
+///
+/// `key_ptr` muss fuer 32 Bytes und `in_ptr` fuer `in_len` Bytes lesbar sein.
+/// `out_len` muss auf einen les- und schreibbaren `usize` zeigen, dessen
+/// Eingangswert die Kapazitaet des von `out_ptr` referenzierten, beschreibbaren
+/// Puffers angibt. Eingabe- und Ausgabepuffer duerfen sich nicht ueberlappen.
+/// Alle Zeiger muessen fuer die Dauer des Aufrufs gueltig und korrekt
+/// ausgerichtet sein.
 #[no_mangle]
 pub unsafe extern "C" fn core_crypto_decrypt(
     key_ptr: *const u8,
@@ -94,6 +112,12 @@ pub unsafe extern "C" fn core_crypto_decrypt(
 }
 
 /// Ueberschreibt einen Buffer sicher mit Nullen.
+///
+/// # Safety
+///
+/// Wenn `ptr` nicht null ist, muss er auf einen fuer `len` Bytes gueltigen und
+/// beschreibbaren Puffer zeigen. Der Puffer darf waehrend des Aufrufs nicht
+/// anderweitig referenziert werden.
 #[no_mangle]
 pub unsafe extern "C" fn core_crypto_zeroize(ptr: *mut u8, len: usize) {
     if ptr.is_null() {

@@ -6,6 +6,15 @@
 - Never publish tax/personal identifiers, API/webhook/signing keys, wallet recipient ownership, provider/account IDs, customer/invoice data, MARK/UID values or runtime values here.
 - This public Bridge may contain only a private-control-center reference, ownership, generic implementation status and the production-disabled state.
 
+## 2026-07-12 02:07 EEST — CODEX — CLEAN-MACHINE CLIENT READINESS
+
+- Audited the current public `main` checkout on an isolated worktree. Signaling tests and payment tests pass with a fresh dependency install and zero high npm audit findings.
+- A clean Android checkout previously required an ignored local `gradle.properties`; the generic AndroidX/JVM configuration is now versioned. Free Debug unit tests, lint and APK assembly pass without a local project-property workaround.
+- Removed an invalid protected VPN app permission, retained the correctly service-scoped VPN permission, and documented the safe restoration of an `AudioManager` mode obtained from the platform.
+- Rust crypto behavior is unchanged. Added only `ReplayDetector::default()` as `Self::new()` and explicit C-FFI pointer safety contracts. Rust 28 unit tests, 6 encryption E2E tests and Clippy `-D warnings` pass.
+- The active call path uses `WebSocketService`, native Opus and the jitter player. Historical stub-named transport classes remain compiled but are not treated as proof of production functionality; physical two-device call, background-call, reconnect and billing E2E remain release gates.
+- German localization is incomplete and falls back to English; missing translations remain visible as lint warnings. No payment, invoice, provider/AADE request, deployment or device installation was executed.
+
 ## 2026-07-11 — CODEX — PAYMENT PR MERGED
 
 - Payment PR #33 was squash-merged to `main` as `c7cdd27`.

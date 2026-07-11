@@ -1,6 +1,7 @@
 package com.securecall.app;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
@@ -543,6 +544,7 @@ public class CallActivity extends AppCompatActivity {
                 + ", preserved voice-call volume=" + am.getStreamVolume(AudioManager.STREAM_VOICE_CALL));
     }
 
+    @SuppressLint("WrongConstant") // savedAudioMode is read from AudioManager.getMode().
     private void restoreCallAudio() {
         audioConfigured = false; // BUG-038: reset guard
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);

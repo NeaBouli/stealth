@@ -1,5 +1,18 @@
 # Stealth TODO
 
+## 2026-07-12 02:07 EEST — CODEX — CLIENT READINESS / FOREIGN-MACHINE TEST
+
+- [x] Fresh backend dependency install, full signaling/payment tests and high-severity npm audit.
+- [x] Fresh Rust build: 28 unit tests, 6 encryption E2E tests and Clippy `-D warnings`.
+- [x] Version generic AndroidX/JVM project properties required by a clean checkout.
+- [x] Android Free Debug unit tests, lint and APK assembly on isolated worktree.
+- [x] Remove invalid protected VPN app permission; preserve service-scoped VPN permission.
+- [x] Keep missing locale coverage visible as lint warnings instead of hiding findings in a baseline.
+- [ ] `Codex + Gio device access`: physical two-device encrypted audio call, accept/decline, background incoming call, reconnect and network-change matrix.
+- [ ] `Codex`: complete or deliberately scope German localization; English fallback currently remains active.
+- [ ] `Codex`: remove or quarantine dormant experimental/stub-named transport code after physical-call regression coverage proves it is unused.
+- [ ] `Gio external gate`: Google Play license-test purchase, renewal/cancel/refund/RTDN and Stripe test-mode activation/refund E2E.
+
 ## 2026-07-12 02:00 EEST — CODEX — CUSTOM-ID BILLING / ACCOUNTING / REFUND
 
 - [x] Receipt-/Business-Invoice-Daten fuer Custom-ID Checkout serverseitig validieren.

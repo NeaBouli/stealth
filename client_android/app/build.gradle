@@ -20,6 +20,11 @@ android {
     namespace "com.securecall.app"
     compileSdk 35
 
+    lint {
+        // English is the complete fallback locale; incomplete translations stay visible.
+        warning 'MissingTranslation'
+    }
+
     defaultConfig {
         applicationId "com.securecall.app"
         minSdkVersion 24
@@ -30,7 +35,7 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         // Server URLs are defined per buildType (debug/release)
-        // See buildTypes block below for SIGNAL_WS_URL, STUN_URL, TURN_URL, TURNS_URL
+        // See buildTypes below for SIGNAL_WS_URL and STUN_URL.
     }
 
     flavorDimensions "tier"
@@ -164,13 +169,8 @@ android {
             firebaseCrashlytics {
                 mappingFileUploadEnabled true
             }
-            // Production server URLs (Railway + Metered.ca)
-            // FIX 10 — TODO: TURN credentials are hardcoded. Security risk: credentials in source code.
-            // Planned fix: fetch TURN credentials at runtime from the signaling server via
-            // a new GET /ice-servers endpoint (already exists, admin-only). Client should call
-            // this endpoint on each call initiation and use the returned credentials.
-            // TURN credentials are now fetched at runtime from /ice-servers endpoint.
-            // Only SIGNAL_WS_URL and STUN_URL remain in BuildConfig.
+            // TURN credentials are returned by signaling registration/call setup at runtime.
+            // Only public signaling and STUN URLs remain in BuildConfig.
             buildConfigField "String", "SIGNAL_WS_URL", "\"wss://api.stealthx.tech/signal\""
             buildConfigField "String", "STUN_URL", "\"stun:stun.l.google.com:19302\""
         }

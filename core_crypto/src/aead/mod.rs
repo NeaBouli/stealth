@@ -145,6 +145,12 @@ impl ReplayDetector {
     }
 }
 
+impl Default for ReplayDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

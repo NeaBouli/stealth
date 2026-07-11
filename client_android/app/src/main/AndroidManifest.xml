@@ -10,8 +10,6 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- Für VpnService -->
-    <uses-permission android:name="android.permission.BIND_VPN_SERVICE" />
     <!-- FCM Push Notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Phone Contacts -->
