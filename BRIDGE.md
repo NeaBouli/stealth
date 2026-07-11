@@ -4824,3 +4824,41 @@ Rules for all dev agents:
 - Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
 
 ---
+
+### 2026-07-11 11:45 EEST — CODEX TERMINAL — FIX / QA STATUS
+
+**SecureCall Phone Confirm Loop Guard**
+- Continued active SecureCall full QA follow-up after S7/emulator blocker documentation.
+- User-reported issue:
+  - On S10, `Confirm Your Phone Number` could appear again after entering and confirming a number.
+  - `Skip` suppressed the prompt, but Confirm was not reliably acting as a one-shot path.
+- Code inspected:
+  - `client_android/app/src/main/java/com/securecall/app/MainActivity.java`
+- Root-cause risk found:
+  - `requestPhoneNumberPermission()` schedules `checkAndPromptPhoneNumber()` during startup/permission/lifecycle flow.
+  - The prompt was marked complete only inside the Confirm/Skip button handlers.
+  - Duplicate delayed startup checks or Activity lifecycle churn could therefore present another dialog before the confirmed state was observed.
+- Fix applied locally:
+  - Mark `phone_number_prompt_completed=true` before showing the prompt, making the prompt one-shot per app data state.
+  - Confirm now preserves raw input if phone-number normalization fails.
+  - Confirm now falls back to `apply()` if synchronous `commit()` returns false.
+- QA report updated:
+  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+
+**Build Status**
+- First full release rebuild reached Java compile for the changed code, then stalled in `lintVitalAnalyzePremiumRelease`; aborted after no progress.
+- Second rebuild with lint analyze tasks skipped reached Free release R8/minify and then stalled; aborted after no progress.
+- Gradle daemon/processes were stopped afterward.
+- Current status:
+  - Code fix is present locally.
+  - New final AAB/APK artifacts have NOT been regenerated after this phone-confirm fix.
+  - Existing `/Users/gio/Desktop/aab apk/` artifacts still represent the prior `1.0.43` build before this local phone-confirm fix.
+
+**Open Next**
+- Restart Gradle/host build cleanly and regenerate Store/Desktop artifacts after the phone-confirm fix.
+- Install rebuilt Premium APK on S10 and run a destructive/fresh-install phone-confirm test only after user approval to clear app data.
+- S7 call/signaling QA remains blocked by device/network TCP-443 reachability.
+- Emulator matrix remains blocked because local emulator tooling/system images are missing.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---

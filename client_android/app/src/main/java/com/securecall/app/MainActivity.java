@@ -682,6 +682,7 @@ public class MainActivity extends AppCompatActivity {
             // First launch — show confirm dialog with SIM suggestion
             if (isFinishing() || isDestroyed()) return;
             if (phoneNumberDialog != null && phoneNumberDialog.isShowing()) return;
+            prefs.edit().putBoolean("phone_number_prompt_completed", true).apply();
             String simSuggestion = readSimNumber();
             promptForPhoneNumber(prefs, simSuggestion);
         }, 3000);
@@ -730,16 +731,30 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("Confirm", (d, w) -> {
                     String number = input.getText().toString().trim();
                     if (!number.isEmpty()) {
-                        // Normalize phone number before saving (BUG-025)
-                        String normalized = com.securecall.app.data.PhoneUtils.INSTANCE.normalize(number, MainActivity.this);
-                        String confirmed = normalized == null ? "" : normalized.trim();
-                        if (confirmed.isEmpty()) confirmed = number;
+                        String confirmed = number;
+                        try {
+                            // Normalize phone number before saving (BUG-025)
+                            String normalized = com.securecall.app.data.PhoneUtils.INSTANCE.normalize(number, MainActivity.this);
+                            if (normalized != null && !normalized.trim().isEmpty()) {
+                                confirmed = normalized.trim();
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Phone number normalization failed; storing raw input", e);
+                        }
                         boolean saved = prefs.edit()
                                 .putString("manual_phone_number", number)
                                 .putString("confirmed_phone_number", confirmed)
                                 .putBoolean("phone_number_skipped", false)
                                 .putBoolean("phone_number_prompt_completed", true)
                                 .commit();
+                        if (!saved) {
+                            prefs.edit()
+                                    .putString("manual_phone_number", number)
+                                    .putString("confirmed_phone_number", confirmed)
+                                    .putBoolean("phone_number_skipped", false)
+                                    .putBoolean("phone_number_prompt_completed", true)
+                                    .apply();
+                        }
                         Log.d(TAG, "Phone number confirmed: " + number + " -> stored: " + confirmed + " saved=" + saved);
                         com.securecall.app.net.WebSocketService ws =
                                 com.securecall.app.net.WebSocketService.Companion.getInstance();
