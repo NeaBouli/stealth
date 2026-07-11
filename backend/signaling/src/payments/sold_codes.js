@@ -63,7 +63,9 @@ function mergeIntoActivationCodes(entry, activationCodesRef) {
     tier: entry.tier,
     maxUses: entry.maxUses,
     currentUses: entry.currentUses,
-    usedBy: entry.usedBy
+    usedBy: entry.usedBy,
+    productKey: entry.productKey || null,
+    stripeSessionId: entry.stripeSessionId || null
   });
 }
 
@@ -152,7 +154,9 @@ function loadAsActivationCodes() {
     tier: c.tier,
     maxUses: c.maxUses || 2,
     currentUses: c.currentUses || 0,
-    usedBy: Array.isArray(c.usedBy) ? c.usedBy : []
+    usedBy: Array.isArray(c.usedBy) ? c.usedBy : [],
+    productKey: c.productKey || null,
+    stripeSessionId: c.stripeSessionId || null
   }));
 }
 

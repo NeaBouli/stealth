@@ -9,8 +9,10 @@
 - [x] VLABS als kanonischen Checkout fuer SecureCall/StealthX festlegen; Legacy-Direktcheckout default-off.
 - [x] Signiertes/idempotentes SecureCall-Fulfillment und Vollrefund-Revoke lokal vorbereiten.
 - [x] Aktuellen `origin/main` Payment-P0 haerten: VLABS-Fulfillment/Revoke, Legacy-Checkout default-off, paid-only Webhook, Dispute-Revoke und redigierte Logs/Debugausgaben.
+- [x] Ed25519-Entitlement-Ausstellung fuer SecureChat/Chameleon/Suite implementieren: 30-Tage-Token, Client-/Produkt-/Tier-Bindung, gehashte Order-Referenz, kein Code-Echo.
 - [x] Produktseiten mit Preis-, Digitalleistungs-, Widerrufs- und Rechtehinweisen angleichen.
 - [ ] Runtime-Secrets fuer VLABS -> SecureCall Fulfillment/Revocation in den jeweiligen privaten Deployments setzen; keine Werte in Git/Bridge.
+- [ ] Runtime-Ed25519-Keypair sicher erzeugen/setzen und Public Key in Release-Builds geben; keine Private Keys in Git/App.
 - [ ] Stripe-Testmode E2E: Checkout -> paid webhook -> genau eine Aktivierung -> interne Invoice/Etimologio-Draft; Refund -> Revoke/Accounting Review.
 - [ ] Accountant Mapping fuer SecureCall Pro/Premium und Suite freigeben; Provider-Demo danach separat testen.
 - [ ] Gio Launch-/Deployment-Freigabe; erst danach Waren in VLABS von Coming Soon auf kaufbar stellen.

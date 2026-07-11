@@ -1,5 +1,14 @@
 # Stealth Action Log
 
+## 2026-07-11 — Server-signierter Entitlement-Vertrag
+
+- Neue Ed25519-Tokenausstellung fuer bezahlte Aktivierungscodes: Audience, Client-ID, Produkt, Tier, Ausgabe/Ablauf und gehashte Order-Referenz werden kanonisch signiert; TTL 30 Tage.
+- Private Signierung ist Runtime-only ueber `ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM`. Ohne Key wird kein Token ausgestellt; kein Fallback-Secret im Repo.
+- Activation-Response gibt keinen Aktivierungscode mehr zurueck. Sold-Code-Registry bewahrt Produkt-/Order-Kontext nur intern fuer Tokenbindung und Revoke.
+- SecureChat-Client-Gegenstelle liegt auf Branch `codex-payment-entitlements-20260711` und verifiziert Ed25519 vor `TierGate`-Update.
+- Verifikation: kompletter Backend-Testlauf PASS, Subscription/WebRTC 74/74, neue Token-Kryptotests PASS, Syntax- und Diff-Checks PASS.
+- Kein Key erzeugt/committed, kein Deploy, keine Zahlung, E-Mail oder externe Anfrage.
+
 ## 2026-07-11 — Codex Payment-P0 auf aktuellem Remote-Stand
 
 - Gegen `origin/main` neu aufgebaut: signiertes VLABS-Fulfillment fuer SecureCall Pro/Premium mit 5-Minuten-Replay-Gate, Produkt-Allowlist, Session-Idempotenz, persistenter E-Mail-Zustellung und signiertem Revoke.

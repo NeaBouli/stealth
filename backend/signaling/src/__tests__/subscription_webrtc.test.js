@@ -68,6 +68,7 @@ function buildCtx() {
   const giftCodes = new Map();
   const saveGiftCodes = () => {};
   const saveActivationCodes = () => {}; // no-op: prevent writing activation_codes.json during tests
+  const issueEntitlementToken = ({ subject, productKey, tier }) => `signed:${subject}:${productKey}:${tier}`;
 
   const getIceServers = () => [{ urls: "stun:stun.l.google.com:19302" }];
   const ADMIN_API_KEY = "test-admin-key";
@@ -89,6 +90,7 @@ function buildCtx() {
     giftCodes,
     saveGiftCodes,
     saveActivationCodes,
+    issueEntitlementToken,
   });
 }
 
@@ -186,11 +188,21 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   assert(r6.success === false && r6.error === "expired", "expired gift code → expired");
 
   // Activation code — valid first use
-  ctx.activationCodes.push({ code: "TEAM-ABCD-1234", tier: "pro", maxUses: 3, usedBy: [], currentUses: 0 });
+  ctx.activationCodes.push({
+    code: "TEAM-ABCD-1234",
+    tier: "pro",
+    maxUses: 3,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "securechat_pro_lifetime",
+    stripeSessionId: "cs_test_securechat",
+  });
   ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "TEAM-ABCD-1234" });
   const r7 = lastMsg(ws);
   assert(r7.success === true && r7.tier === "pro", "activation code first use → success");
   assert(r7.slot === 1 && r7.maxSlots === 3, "slot=1, maxSlots=3");
+  assert(r7.entitlementToken === "signed:alice:securechat_pro_lifetime:pro", "signed entitlement returned without activation code");
+  assert(!Object.prototype.hasOwnProperty.call(r7, "code"), "activation code is not echoed back");
   const entry = ctx.activationCodes.find(c => c.code === "TEAM-ABCD-1234");
   assert(entry.usedBy.includes("alice"), "alice added to usedBy");
 

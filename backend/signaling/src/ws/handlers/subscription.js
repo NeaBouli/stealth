@@ -5,10 +5,33 @@ module.exports = function subscriptionHandlers(ctx) {
     activationCodes, walletMappings, fcmTokens, giftCodes,
     getClientId, sendToClient,
     saveActivationCodes, saveWalletMappings, saveGiftCodes,
-    subscriptions, fcm, verifyIfrLock,
+    subscriptions, fcm, verifyIfrLock, issueEntitlementToken,
   } = ctx;
 
   const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
+
+  function signedActivation(entry, clientId, extra) {
+    let entitlementToken = null;
+    try {
+      entitlementToken = typeof issueEntitlementToken === "function"
+        ? issueEntitlementToken({
+            subject: clientId,
+            productKey: entry.productKey || "securecall_activation",
+            tier: entry.tier,
+            externalOrderId: entry.stripeSessionId || entry.code,
+          })
+        : null;
+    } catch (error) {
+      console.error("[ACTIVATION] Entitlement signing failed:", error.message);
+    }
+    return {
+      type: "ACTIVATE_CODE_RESULT",
+      success: true,
+      tier: entry.tier,
+      ...extra,
+      ...(entitlementToken ? { entitlementToken } : {}),
+    };
+  }
 
   return {
     SUBSCRIPTION_VERIFY(ws, connId, msg) {
@@ -62,7 +85,10 @@ module.exports = function subscriptionHandlers(ctx) {
 
       if (devices.includes(myClientId)) {
         console.log("[ACTIVATION] Code re-activated:", code.substring(0, 4) + "****", "by:", myClientId);
-        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: true, tier: entry.tier, code, slot: devices.indexOf(myClientId) + 1, maxSlots: entry.maxUses }));
+        return ws.send(JSON.stringify(signedActivation(entry, myClientId, {
+          slot: devices.indexOf(myClientId) + 1,
+          maxSlots: entry.maxUses,
+        })));
       }
 
       if (devices.length >= entry.maxUses) {
@@ -76,7 +102,7 @@ module.exports = function subscriptionHandlers(ctx) {
       const slot = devices.length;
       console.log("[ACTIVATION] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", entry.tier, "by:", myClientId, "slot:", slot + "/" + entry.maxUses);
       saveActivationCodes();
-      return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: true, tier: entry.tier, code, slot, maxSlots: entry.maxUses }));
+      return ws.send(JSON.stringify(signedActivation(entry, myClientId, { slot, maxSlots: entry.maxUses })));
     },
 
     VERIFY_IFR_LOCK(ws, connId, msg) {

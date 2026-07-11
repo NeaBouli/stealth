@@ -103,6 +103,7 @@ function buildContext(externalDeps) {
     CLIENT_ID_REGEX,
     saveActivationCodes: saveActivationCodesOverride,
     verifyIfrLock: verifyIfrLockOverride,
+    issueEntitlementToken,
     saveWalletMappings: saveWalletMappingsOverride,
   } = externalDeps;
 
@@ -136,6 +137,7 @@ function buildContext(externalDeps) {
     getClientIp, requireAdmin, corsMiddleware,
     // Business logic
     verifyIfrLock: verifyIfrLockOverride || verifyIfrLock,
+    issueEntitlementToken,
     // External services
     pkd, subscriptions, fcm, customIds, licenses,
     getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS,

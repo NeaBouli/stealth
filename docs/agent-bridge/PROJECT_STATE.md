@@ -1,5 +1,12 @@
 # Stealth Project State
 
+## 2026-07-11 — Ed25519-Entitlement-Vertrag lokal fertig
+
+- StealthX Signaling kann geräte- und produktgebundene 30-Tage-Entitlements fuer SecureChat, Chameleon, Suite und SecureCall ausstellen.
+- Token signiert nur mit Runtime-Private-Key; Order-ID erscheint nur gehasht. Ohne Key kein Token.
+- SecureChat-Verifier ist separat implementiert und fail-closed. Chameleon-Gegenstelle folgt ueber denselben Vertrag.
+- Externes Gate: Runtime-Keypair/Public-Key-Buildkonfiguration und Testmode-E2E vor jeder Freischaltung.
+
 ## 2026-07-11 — Payment-P0 auf `origin/main` implementiert
 
 - Der aktuelle Remote-Stand besitzt nun die zuvor nur lokal vorbereitete signierte VLABS-Fulfillment-/Revocation-Grenze.
