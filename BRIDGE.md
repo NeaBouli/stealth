@@ -80,6 +80,65 @@
 - Continue broader SecureCall feature matrix after S7 has a validated path to `api.stealthx.tech:443`.
 - Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
 
+### 2026-07-11 12:08 EEST — CODEX TERMINAL — RELEASE / QA STATUS
+
+**SecureCall 1.0.43 Rebuilt After Phone Confirm Fix**
+- Packaged commit:
+  - `4820d02` `fix: make phone number prompt one-shot`
+- Build command:
+  - `cd /Users/gio/Desktop/repos/stealth/client_android`
+  - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleRelease bundleRelease --console=plain`
+- Result:
+  - `BUILD SUCCESSFUL in 20m 27s`
+  - `verifyNoAppIfrWalletCode` ran during the build.
+
+**Desktop Artifacts Refreshed**
+- Folder:
+  - `/Users/gio/Desktop/aab apk/`
+- Current upload candidate:
+  - `SecureCall-LATEST.aab` — refreshed at 12:08 EEST, alias of Free AAB.
+- AABs:
+  - `SecureCall-Free-v1.0.43-vc78010.aab` — 37M
+  - `SecureCall-Pro-v1.0.43-vc78010.aab` — 33M
+  - `SecureCall-Premium-v1.0.43-vc78010.aab` — 33M
+- Universal APKs:
+  - `SecureCall-Free-LATEST.apk` / `SecureCall-Free-v1.0.43-universal-vc78010009.apk` — 63M
+  - `SecureCall-Pro-LATEST.apk` / `SecureCall-Pro-v1.0.43-universal-vc78010009.apk` — 61M
+  - `SecureCall-Premium-LATEST.apk` / `SecureCall-Premium-v1.0.43-universal-vc78010009.apk` — 61M
+- Release notes updated:
+  - `SecureCall-v1.0.43-release-notes.txt`
+
+**Artifact Verification**
+- `aapt dump badging` verified APK metadata:
+  - Free: `com.securecall.app.free`, `versionCode=78010009`, `versionName=1.0.43-free`, `targetSdkVersion=35`
+  - Pro: `com.securecall.app.pro`, `versionCode=78010009`, `versionName=1.0.43-pro`, `targetSdkVersion=35`
+  - Premium: `com.securecall.app.premium`, `versionCode=78010009`, `versionName=1.0.43-premium`, `targetSdkVersion=35`
+- AAB archive checks confirmed `BundleConfig.pb` and `base/manifest/AndroidManifest.xml`.
+- SHA-256:
+  - `SecureCall-LATEST.aab`: `a20437f9f45b9bd93f7c7dc618480c13ff01c880a45c582e6aeac3c25bb8b067`
+  - `SecureCall-Free-LATEST.apk`: `262fbfd44e75605a403007cd45739d9cea565514b4485bf725fbbbc27842a44a`
+  - `SecureCall-Pro-LATEST.apk`: `595956e012f11a3483d119cb7ec715140bc2e8747aeda52839a4c4b69b8625aa`
+  - `SecureCall-Premium-LATEST.apk`: `8891b11afabd108c8ddb1941a032d23c5750b49f0b0126d197c4cd6bf0744620`
+
+**S10 Non-Destructive Verification**
+- Device:
+  - S10 `RF8N313QMFL`
+- Installed:
+  - `/Users/gio/Desktop/aab apk/SecureCall-Premium-LATEST.apk`
+- Result:
+  - `adb install -r` succeeded.
+  - Package verified: `versionCode=78010009`, `versionName=1.0.43-premium`.
+  - Launch focus verified on `com.securecall.app.premium/com.securecall.app.MainActivity`.
+  - UI dump showed `StealthX` / Calls screen and no visible `Confirm Your Phone Number` dialog.
+- Note:
+  - This is not a destructive fresh-install proof; installed app data was preserved intentionally.
+
+**Still Open**
+- Fresh-install/onboarding/phone-confirm destructive test needs explicit approval to clear app data.
+- S7 call/signaling QA remains blocked by device/network TCP-443 reachability.
+- Emulator matrix remains blocked until Android emulator tooling/system images are installed.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
 ---
 
 ## 2026-06-14 [CODEX]
@@ -4859,6 +4918,35 @@ Rules for all dev agents:
 - Install rebuilt Premium APK on S10 and run a destructive/fresh-install phone-confirm test only after user approval to clear app data.
 - S7 call/signaling QA remains blocked by device/network TCP-443 reachability.
 - Emulator matrix remains blocked because local emulator tooling/system images are missing.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
+### 2026-07-11 12:12 EEST — CODEX TERMINAL — TAIL STATUS
+
+**Current SecureCall State For Next Agent**
+- Latest pushed code commit:
+  - `4820d02` `fix: make phone number prompt one-shot`
+- Latest release build:
+  - `BUILD SUCCESSFUL in 20m 27s`
+  - Build included `verifyNoAppIfrWalletCode`.
+- Desktop artifacts refreshed after the phone-confirm fix:
+  - `/Users/gio/Desktop/aab apk/SecureCall-LATEST.aab`
+  - `/Users/gio/Desktop/aab apk/SecureCall-Free-LATEST.apk`
+  - `/Users/gio/Desktop/aab apk/SecureCall-Pro-LATEST.apk`
+  - `/Users/gio/Desktop/aab apk/SecureCall-Premium-LATEST.apk`
+- Current APK metadata:
+  - Free: `com.securecall.app.free`, `versionCode=78010009`, `versionName=1.0.43-free`
+  - Pro: `com.securecall.app.pro`, `versionCode=78010009`, `versionName=1.0.43-pro`
+  - Premium: `com.securecall.app.premium`, `versionCode=78010009`, `versionName=1.0.43-premium`
+- S10 non-destructive verification:
+  - Installed `SecureCall-Premium-LATEST.apk` successfully.
+  - App launches to `com.securecall.app.premium/com.securecall.app.MainActivity`.
+  - UI dump showed `StealthX` Calls screen and no visible phone-confirm dialog.
+- Still open:
+  - Fresh-install phone-confirm test requires user approval to clear app data.
+  - S7 call/signaling QA is blocked by device/network TCP-443 reachability.
+  - Emulator matrix is blocked by missing local emulator tooling/system images.
 - Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
 
 ---
