@@ -3,6 +3,53 @@
 
 ---
 
+### 2026-07-11 13:58 EEST — CODEX TERMINAL — RELEASE / STATUS
+
+**SecureCall 1.0.44 Rebuilt After Android API Fixes**
+- Version bumped:
+  - `client_android/app/build.gradle`
+  - `versionCode 78011`
+  - `versionName 1.0.44`
+  - Universal APK override now produces `versionCode 78011009`.
+- Full release build:
+  - `cd /Users/gio/Desktop/repos/stealth/client_android`
+  - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleRelease bundleRelease --console=plain`
+  - Result: `BUILD SUCCESSFUL in 13m 28s`
+  - `verifyNoAppIfrWalletCode` ran.
+- Desktop artifacts refreshed in `/Users/gio/Desktop/aab apk/`:
+  - `SecureCall-LATEST.aab`
+  - `SecureCall-Free-v1.0.44-vc78011.aab`
+  - `SecureCall-Pro-v1.0.44-vc78011.aab`
+  - `SecureCall-Premium-v1.0.44-vc78011.aab`
+  - `SecureCall-Free-LATEST.apk`
+  - `SecureCall-Pro-LATEST.apk`
+  - `SecureCall-Premium-LATEST.apk`
+  - `SecureCall-v1.0.44-release-notes.txt`
+- APK metadata verified with `aapt`:
+  - Free: `com.securecall.app.free`, `versionCode=78011009`, `versionName=1.0.44-free`, `minSdk=24`, `targetSdk=35`.
+  - Pro: `com.securecall.app.pro`, `versionCode=78011009`, `versionName=1.0.44-pro`, `minSdk=24`, `targetSdk=35`.
+  - Premium: `com.securecall.app.premium`, `versionCode=78011009`, `versionName=1.0.44-premium`, `minSdk=24`, `targetSdk=35`.
+- SHA-256:
+  - `SecureCall-LATEST.aab`: `8e586e7a756c23917c2959f7373d98bb360e6a6549bb662a2033ac33317d1ca3`
+  - `SecureCall-Free-LATEST.apk`: `cf9d8e755203bf9a723b071efea25fdb42b31af901e87b6a8e065f278a1c3a57`
+  - `SecureCall-Pro-LATEST.apk`: `0499f9f0db50ecee2c3408c6669bb938afab2bca88f498f60684ac93e53be02e`
+  - `SecureCall-Premium-LATEST.apk`: `4061668948c29f449752116b3e5f478ec4f5338dd4d245a2f0e710a88a72c582`
+- Physical install smoke:
+  - S10 `RF8N313QMFL`: Premium `1.0.44-premium` / `78011009`, focused in `MainActivity`, UI showed `StealthX` / `Connected`.
+  - S7 `ce10160adc00152604`: Pro `1.0.44-pro` / `78011009`, focused in `MainActivity`, UI still showed `Disconnected` due the already documented S7 network route/gateway blocker.
+  - Tab S4 `ce12182c68644439037e`: Free `1.0.44-free` / `78011009`, focused in `MainActivity`, UI showed `StealthX` / `Connected`.
+- QA report updated:
+  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+- Commit context:
+  - Previous pushed API hardening commit: `cd0a7d3 fix: harden SecureCall startup across Android APIs`.
+  - This entry documents the subsequent 1.0.44 version bump, rebuild, Desktop artifact refresh, and physical install smoke.
+- Still open:
+  - S7 call/signaling/call-matrix remains blocked until the S7 has validated Internet or the user approves temporary roaming/mobile-data fallback.
+  - Bluetooth/headset/GSM-interruption tests still need accessory/SIM-interruption setup.
+  - Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
 ### 2026-07-11 13:43 EEST — CODEX TERMINAL — FIX / QA
 
 **SecureCall Emulator Matrix Unblocked + Android 15/API24 Fixes**
