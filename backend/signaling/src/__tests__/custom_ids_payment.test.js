@@ -21,7 +21,7 @@ fs.writeFileSync(process.env.PENDING_FILE, JSON.stringify({
   }
 }));
 
-const { activate, markPendingPaid, revokeByStripeSession } = require("../custom_ids");
+const { activate, markPendingPaid, revokeByStripeSession, setupRoutes } = require("../custom_ids");
 
 assert.deepStrictEqual(
   activate("free-id", "device-a", "password123"),
@@ -43,6 +43,28 @@ assert.strictEqual(fs.statSync(process.env.PENDING_FILE).mode & 0o777, 0o600, "p
 assert.deepStrictEqual(revokeByStripeSession("invalid"), { revokedIds: 0, revokedPending: 0 });
 assert.deepStrictEqual(revokeByStripeSession("cs_test_refund"), { revokedIds: 1, revokedPending: 0 });
 assert.deepStrictEqual(JSON.parse(fs.readFileSync(process.env.IDS_FILE, "utf8")), {});
+
+const postRoutes = new Map();
+setupRoutes({
+  get() {},
+  post(route, ...handlers) { postRoutes.set(route, handlers); }
+});
+const activateTokenHandlers = postRoutes.get("/custom-id/activate-token");
+assert.strictEqual(activateTokenHandlers.length, 2, "token activation must include rate limiting middleware");
+let allowedAttempts = 0;
+const rateLimitResponse = {
+  statusCode: 200,
+  body: null,
+  status(code) { this.statusCode = code; return this; },
+  json(value) { this.body = value; return this; }
+};
+for (let attempt = 0; attempt < 5; attempt += 1) {
+  activateTokenHandlers[0]({ ip: "127.0.0.1" }, rateLimitResponse, () => { allowedAttempts += 1; });
+}
+activateTokenHandlers[0]({ ip: "127.0.0.1" }, rateLimitResponse, () => { allowedAttempts += 1; });
+assert.strictEqual(allowedAttempts, 5);
+assert.strictEqual(rateLimitResponse.statusCode, 429);
+assert.strictEqual(rateLimitResponse.body.error, "rate_limited");
 
 fs.rmSync(testDir, { recursive: true, force: true });
 console.log("custom_ids_payment.test.js ok");

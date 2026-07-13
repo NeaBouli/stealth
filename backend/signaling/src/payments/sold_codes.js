@@ -2,7 +2,7 @@
  * Sold Activation Codes Store
  *
  * Persists codes generated from Stripe purchases to data/sold_codes.json.
- * Each entry includes buyer email + Stripe session ID for audit trail.
+ * Entries contain technical payment and delivery state, never buyer email.
  *
  * Integration: server.js loads sold codes on startup and merges them into
  * the main `activationCodes` array used by the ACTIVATE_CODE WebSocket handler.
@@ -42,7 +42,13 @@ function load() {
         const { email: _legacyEmail, ...piiFreeEntry } = entry;
         return piiFreeEntry;
       });
-      if (hadLegacyEmail) save(codes);
+      if (hadLegacyEmail) {
+        try {
+          save(codes);
+        } catch (migrationError) {
+          console.error("[SOLD-CODES] Legacy email migration write failed:", migrationError.message);
+        }
+      }
       console.log(`[SOLD-CODES] Loaded ${codes.length} sold codes from ${SOLD_FILE}`);
       return codes;
     }

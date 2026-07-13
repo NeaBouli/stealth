@@ -69,7 +69,12 @@ function readConfig() {
   if (!rawUrl && !allowedHost && !secret) return null;
   if (!rawUrl || !allowedHost || secret.length < 32) throw new Error("finance_export_invalid_config");
 
-  const url = new URL(rawUrl);
+  let url;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new Error("finance_export_invalid_config");
+  }
   if (url.protocol !== "https:" || url.hostname.toLowerCase() !== allowedHost
       || url.pathname !== "/api/finance/ingest" || url.port || url.username || url.password
       || url.search || url.hash) {

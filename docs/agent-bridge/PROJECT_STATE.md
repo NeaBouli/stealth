@@ -1,5 +1,12 @@
 # Stealth Project State
 
+## 2026-07-13 — Payment review follow-up
+
+- Re-fulfillment after revoke is fail-closed; activation email and entitlement cannot be recreated from the same revoked order.
+- Signed fulfillment/revoke and Custom-ID ownership endpoints are rate-limited. The internal limiter has bounded keys and counts failed as well as successful signature attempts.
+- Sold-code privacy migration preserves loaded records when its cleanup write fails; malformed finance receiver URLs expose only the canonical configuration error.
+- Production remains disabled pending independent review, runtime keys, test transactions, device checks and external approvals.
+
 ## 2026-07-13 — Cross-product fulfillment and privacy hardening
 
 - Individual SecureChat/Chameleon Pro and Elite VLABS products now map to exact product, audience, tier and product-specific activation delivery. The Suite remains fail-closed.

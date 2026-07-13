@@ -7,6 +7,9 @@ const soldCodes = require("./sold_codes");
 const { sendActivationCode } = require("./email_handler");
 
 const MAX_CLOCK_SKEW_SECONDS = 300;
+const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+const RATE_LIMIT_MAX_ATTEMPTS = 60;
+const RATE_LIMIT_MAX_KEYS = 1024;
 const inFlightOrders = new Set();
 
 const PRODUCTS = Object.freeze({
@@ -77,12 +80,47 @@ function authenticateRequest(req, secret) {
   return verifySignature(secret, timestamp, JSON.stringify(req.body || {}), signature);
 }
 
+function createRequestRateLimiter(options = {}) {
+  const maxAttempts = options.maxAttempts || RATE_LIMIT_MAX_ATTEMPTS;
+  const windowMs = options.windowMs || RATE_LIMIT_WINDOW_MS;
+  const maxKeys = options.maxKeys || RATE_LIMIT_MAX_KEYS;
+  const now = options.now || Date.now;
+  const attempts = new Map();
+
+  return (req, route) => {
+    const currentTime = now();
+    const address = req.ip || req.socket?.remoteAddress || req.connection?.remoteAddress || "unknown";
+    const key = `${route}:${address}`;
+    let entry = attempts.get(key);
+    if (!entry || currentTime - entry.windowStartedAt >= windowMs) {
+      if (!entry && attempts.size >= maxKeys) {
+        for (const [storedKey, storedEntry] of attempts) {
+          if (currentTime - storedEntry.windowStartedAt >= windowMs) attempts.delete(storedKey);
+        }
+        if (attempts.size >= maxKeys) return false;
+      }
+      entry = { count: 0, windowStartedAt: currentTime };
+      attempts.set(key, entry);
+    }
+    if (entry.count >= maxAttempts) return false;
+    entry.count += 1;
+    return true;
+  };
+}
+
+function rejectRateLimited(res) {
+  if (typeof res.set === "function") res.set("Retry-After", String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)));
+  return res.status(429).json({ ok: false, error: "rate_limited" });
+}
+
 function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
   const sendActivationCodeImpl = deps.sendActivationCode || sendActivationCode;
   const generateActivationCodeImpl = deps.generateActivationCode || generateActivationCode;
+  const rateLimitRequest = deps.rateLimitRequest || createRequestRateLimiter();
   app.post("/internal/vlabs/fulfill", async (req, res) => {
     const secret = process.env.VLABS_FULFILLMENT_SECRET;
     if (!secret || secret.length < 32) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
+    if (!rateLimitRequest(req, "fulfill")) return rejectRateLimited(res);
     if (!authenticateRequest(req, secret)) {
       return res.status(401).json({ ok: false, error: "Invalid fulfillment signature" });
     }
@@ -104,6 +142,9 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
     }
     if (orders[externalOrderId]?.status === "FULFILLED") {
       return res.json({ ok: true, duplicate: true, productId });
+    }
+    if (orders[externalOrderId]?.status === "REVOKED") {
+      return res.status(409).json({ ok: false, error: "Order has been revoked" });
     }
     if (inFlightOrders.has(externalOrderId)) {
       return res.status(409).json({ ok: false, error: "Order fulfillment is already in progress" });
@@ -163,6 +204,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
   app.post("/internal/vlabs/revoke", (req, res) => {
     const secret = process.env.VLABS_FULFILLMENT_SECRET;
     if (!secret || secret.length < 32) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
+    if (!rateLimitRequest(req, "revoke")) return rejectRateLimited(res);
     if (!authenticateRequest(req, secret)) {
       return res.status(401).json({ ok: false, error: "Invalid fulfillment signature" });
     }
@@ -187,4 +229,4 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
   });
 }
 
-module.exports = { setupVlabsFulfillmentRoute, verifySignature, isRevocationReason, PRODUCTS };
+module.exports = { setupVlabsFulfillmentRoute, verifySignature, isRevocationReason, createRequestRateLimiter, PRODUCTS };

@@ -383,7 +383,7 @@ function setupRoutes(app, requireAdmin) {
   // password hash into the ID record so subsequent transfers via /custom-id/activate
   // can verify ownership. Previously any caller could mint any free custom ID by
   // supplying an arbitrary token string.
-  app.post("/custom-id/activate-token", (req, res) => {
+  app.post("/custom-id/activate-token", customIdRateLimit, (req, res) => {
     const { id, deviceId, token } = req.body;
     if (!id || !deviceId || !token) {
       return res.status(400).json({ error: "missing_fields" });

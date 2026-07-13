@@ -15,6 +15,7 @@ const {
   setupVlabsFulfillmentRoute,
   verifySignature,
   isRevocationReason,
+  createRequestRateLimiter,
   PRODUCTS,
 } = require("../payments/vlabs_fulfillment");
 const soldCodes = require("../payments/sold_codes");
@@ -63,6 +64,15 @@ async function run() {
   assert.strictEqual(isRevocationReason("stripe_full_refund"), true);
   assert.strictEqual(isRevocationReason("stripe_dispute"), true);
   assert.strictEqual(isRevocationReason("partial_refund"), false);
+  let limiterTime = 1000;
+  const limiter = createRequestRateLimiter({ maxAttempts: 2, windowMs: 100, now: () => limiterTime });
+  const limiterRequest = { ip: "127.0.0.1" };
+  assert.strictEqual(limiter(limiterRequest, "fulfill"), true);
+  assert.strictEqual(limiter(limiterRequest, "fulfill"), true);
+  assert.strictEqual(limiter(limiterRequest, "fulfill"), false);
+  assert.strictEqual(limiter(limiterRequest, "revoke"), true, "routes have separate limits");
+  limiterTime += 101;
+  assert.strictEqual(limiter(limiterRequest, "fulfill"), true, "expired windows reset");
 
   const routes = new Map();
   const delivered = [];
@@ -116,6 +126,14 @@ async function run() {
   await routes.get("/internal/vlabs/revoke")(signedRequest(revokeBody), revoked);
   assert.strictEqual(revoked.body.revoked, true);
   assert.strictEqual(activationCodes.some(entry => entry.stripeSessionId === revokeBody.externalOrderId), false);
+  const fulfillAfterRevoke = response();
+  await routes.get("/internal/vlabs/fulfill")(signedRequest({
+    ...revokeBody,
+    customerEmail: "transient@example.invalid"
+  }), fulfillAfterRevoke);
+  assert.strictEqual(fulfillAfterRevoke.statusCode, 409);
+  assert.strictEqual(fulfillAfterRevoke.body.error, "Order has been revoked");
+  assert.strictEqual(delivered.length, products.length, "revoked orders must not resend activation email");
   const duplicateRevoke = response();
   await routes.get("/internal/vlabs/revoke")(signedRequest(revokeBody), duplicateRevoke);
   assert.strictEqual(duplicateRevoke.body.duplicate, true);
@@ -123,6 +141,11 @@ async function run() {
   fs.writeFileSync(process.env.SOLD_CODES_FILE, JSON.stringify({
     codes: [{ code: "PRO-OLD-TEST-TEST", tier: "pro", email: "legacy@example.invalid" }]
   }), { mode: 0o644 });
+  fs.chmodSync(directory, 0o500);
+  const loadedDespiteMigrationFailure = soldCodes.load();
+  fs.chmodSync(directory, 0o700);
+  assert.strictEqual(loadedDespiteMigrationFailure.length, 1);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(loadedDespiteMigrationFailure[0], "email"), false);
   const migrated = soldCodes.load();
   assert.strictEqual(Object.prototype.hasOwnProperty.call(migrated[0], "email"), false);
   const migratedFile = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"));

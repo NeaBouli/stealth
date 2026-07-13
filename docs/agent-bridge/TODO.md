@@ -1,5 +1,13 @@
 # Stealth TODO
 
+## 2026-07-13 — Payment review follow-up
+
+- [x] Re-fulfillment widerrufener Orders blockieren und Revoke-Regression testen.
+- [x] Fulfill/Revoke sowie Custom-ID-Tokenaktivierung rate-limiten.
+- [x] Legacy-Migrations-Schreibfehler ohne Verlust des geladenen Bestands behandeln.
+- [x] Finance-Configfehler normalisieren und Kind/Event/Product-Negativtests ergaenzen.
+- [ ] Unabhaengige PR-Freigabe; keine Production-Aktivierung oder Runtime-Werte in diesem oeffentlichen Repo.
+
 ## 2026-07-12 02:07 EEST — CODEX — CLIENT READINESS / FOREIGN-MACHINE TEST
 
 - [x] Fresh backend dependency install, full signaling/payment tests and high-severity npm audit.

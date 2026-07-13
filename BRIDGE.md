@@ -6,6 +6,13 @@
 - Never publish tax/personal identifiers, API/webhook/signing keys, wallet recipient ownership, provider/account IDs, customer/invoice data, MARK/UID values or runtime values here.
 - This public Bridge may contain only a private-control-center reference, ownership, generic implementation status and the production-disabled state.
 
+## 2026-07-13 [Codex] — Payment review follow-up
+
+- Revoked VLABS orders can no longer transition back to fulfilled or resend an activation email.
+- Fulfillment and revocation attempts are bounded by a fixed-window, bounded-key rate limiter before signature verification; Custom-ID token activation now uses its existing ownership-endpoint limiter.
+- A failed legacy privacy-migration write no longer discards the successfully loaded sold-code registry. Finance configuration errors are normalized and product/event boundaries have negative tests.
+- Focused payment tests pass. Runtime values remain private; Production stays disabled and no payment, entitlement activation, provider request or deployment was performed.
+
 ## 2026-07-13 [Codex] — Cross-product fulfillment and privacy
 
 - The signed VLABS fulfillment boundary now recognizes the four individual SecureChat and Chameleon Pro/Elite products in addition to SecureCall. The Suite remains intentionally unsupported until allocation and partial-refund rules are approved.

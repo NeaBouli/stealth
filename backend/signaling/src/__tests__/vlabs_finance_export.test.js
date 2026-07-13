@@ -75,6 +75,13 @@ async function run() {
 
   assert.throws(() => buildRecord({ ...session, amount_total: 0 }, "custom_id_ultra"), /invalid_amount/);
   assert.throws(() => buildRecord({ ...session, currency: "" }, "custom_id_ultra"), /invalid_currency/);
+  assert.throws(() => buildRecord(session, "Custom ID"), /invalid_product/);
+  assert.throws(() => buildRecord(session, "custom_id_ultra", "sale"), /invalid_kind/);
+  assert.throws(() => buildRecord(session, "custom_id_ultra", "invoice", "checkout.session.completed"), /invalid_event_type/);
+  process.env.VLABS_FINANCE_INGEST_URL = "not a url";
+  await assert.rejects(exportFinanceRecord(record, async () => {
+    throw new Error("must not call");
+  }), /finance_export_invalid_config/);
 
   delete process.env.VLABS_FINANCE_INGEST_URL;
   delete process.env.VLABS_FINANCE_INGEST_ALLOWED_HOST;
