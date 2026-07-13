@@ -10,8 +10,24 @@ const MAX_CLOCK_SKEW_SECONDS = 300;
 const inFlightOrders = new Set();
 
 const PRODUCTS = Object.freeze({
-  "stealthx-securecall-pro-lifetime": { tier: "pro", productKey: "vlabs_securecall_pro_lifetime" },
-  "stealthx-securecall-premium-lifetime": { tier: "premium", productKey: "vlabs_securecall_premium_lifetime" },
+  "stealthx-securecall-pro-lifetime": {
+    tier: "pro", productKey: "vlabs_securecall_pro_lifetime", productName: "SecureCall", productUrl: "https://stealthx.tech/download.html"
+  },
+  "stealthx-securecall-premium-lifetime": {
+    tier: "premium", productKey: "vlabs_securecall_premium_lifetime", productName: "SecureCall", productUrl: "https://stealthx.tech/download.html"
+  },
+  "stealthx-securechat-pro-lifetime": {
+    tier: "pro", productKey: "securechat_pro_lifetime", productName: "SecureChat", productUrl: "https://securechat.stealthx.tech/"
+  },
+  "stealthx-securechat-elite-lifetime": {
+    tier: "elite", productKey: "securechat_elite_lifetime", productName: "SecureChat", productUrl: "https://securechat.stealthx.tech/"
+  },
+  "stealthx-chameleon-pro-lifetime": {
+    tier: "pro", productKey: "chameleon_pro_lifetime", productName: "Chameleon", productUrl: "https://chameleon.stealthx.tech/"
+  },
+  "stealthx-chameleon-elite-lifetime": {
+    tier: "elite", productKey: "chameleon_elite_lifetime", productName: "Chameleon", productUrl: "https://chameleon.stealthx.tech/"
+  },
 });
 const REVOCATION_REASONS = new Set(["stripe_full_refund", "stripe_dispute"]);
 
@@ -41,6 +57,7 @@ function validString(value, maxLength) {
 }
 
 function verifySignature(secret, timestamp, rawBody, receivedSignature) {
+  if (typeof secret !== "string" || secret.length < 32) return false;
   if (!/^\d{10}$/.test(timestamp) || !/^[a-f0-9]{64}$/i.test(receivedSignature)) return false;
   const age = Math.abs(Math.floor(Date.now() / 1000) - Number(timestamp));
   if (age > MAX_CLOCK_SKEW_SECONDS) return false;
@@ -60,10 +77,12 @@ function authenticateRequest(req, secret) {
   return verifySignature(secret, timestamp, JSON.stringify(req.body || {}), signature);
 }
 
-function setupVlabsFulfillmentRoute(app, activationCodesRef) {
+function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
+  const sendActivationCodeImpl = deps.sendActivationCode || sendActivationCode;
+  const generateActivationCodeImpl = deps.generateActivationCode || generateActivationCode;
   app.post("/internal/vlabs/fulfill", async (req, res) => {
     const secret = process.env.VLABS_FULFILLMENT_SECRET;
-    if (!secret) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
+    if (!secret || secret.length < 32) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
     if (!authenticateRequest(req, secret)) {
       return res.status(401).json({ ok: false, error: "Invalid fulfillment signature" });
     }
@@ -96,9 +115,8 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef) {
       let order = orders[externalOrderId];
       if (!order) {
         const recorded = soldCodes.recordSale({
-          code: generateActivationCode(product.tier),
+          code: generateActivationCodeImpl(product.tier),
           tier: product.tier,
-          email: customerEmail,
           stripeSessionId: externalOrderId,
           productKey: product.productKey,
           activationCodesRef,
@@ -114,10 +132,10 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef) {
         saveOrders(orders);
       }
 
-      const emailSent = await sendActivationCode(customerEmail, order.code, product.tier, {
+      const emailSent = await sendActivationCodeImpl(customerEmail, order.code, product.tier, {
         productKey: product.productKey,
-        productName: "SecureCall",
-        productUrl: "https://stealthx.tech/download.html",
+        productName: product.productName,
+        productUrl: product.productUrl,
       });
       if (!emailSent) throw new Error("Activation email was not accepted by a delivery provider");
       soldCodes.updateEmailDelivery(externalOrderId, {
@@ -144,7 +162,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef) {
 
   app.post("/internal/vlabs/revoke", (req, res) => {
     const secret = process.env.VLABS_FULFILLMENT_SECRET;
-    if (!secret) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
+    if (!secret || secret.length < 32) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
     if (!authenticateRequest(req, secret)) {
       return res.status(401).json({ ok: false, error: "Invalid fulfillment signature" });
     }

@@ -10,6 +10,7 @@ process.env.SOLD_CODES_FILE = path.join(testDir, "sold_codes.json");
 process.env.STRIPE_PROCESSED_FILE = path.join(testDir, "stripe_processed_events.json");
 process.env.LICENSES_FILE = path.join(testDir, "licenses.json");
 process.env.IDS_FILE = path.join(testDir, "custom_ids.json");
+process.env.ID_HASH_PEPPER = "test-custom-id-pepper-32-characters-minimum";
 process.env.PENDING_FILE = path.join(testDir, "pending_activations.json");
 fs.writeFileSync(process.env.IDS_FILE, "{}");
 fs.writeFileSync(process.env.PENDING_FILE, JSON.stringify({

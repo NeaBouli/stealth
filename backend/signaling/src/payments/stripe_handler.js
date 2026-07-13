@@ -337,7 +337,6 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     soldCodeEntry = soldCodes.recordSale({
       code,
       tier,
-      email: email || "unknown",
       stripeSessionId: session.id,
       productKey,
       activationCodesRef

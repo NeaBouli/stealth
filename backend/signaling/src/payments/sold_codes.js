@@ -35,7 +35,14 @@ function load() {
   try {
     if (existsSync(SOLD_FILE)) {
       const data = JSON.parse(readFileSync(SOLD_FILE, "utf8"));
-      const codes = Array.isArray(data.codes) ? data.codes : [];
+      const rawCodes = Array.isArray(data.codes) ? data.codes : [];
+      const hadLegacyEmail = rawCodes.some(entry => entry && Object.prototype.hasOwnProperty.call(entry, "email"));
+      const codes = rawCodes.map(entry => {
+        if (!entry || typeof entry !== "object") return entry;
+        const { email: _legacyEmail, ...piiFreeEntry } = entry;
+        return piiFreeEntry;
+      });
+      if (hadLegacyEmail) save(codes);
       console.log(`[SOLD-CODES] Loaded ${codes.length} sold codes from ${SOLD_FILE}`);
       return codes;
     }
@@ -74,13 +81,12 @@ function mergeIntoActivationCodes(entry, activationCodesRef) {
  * @param {Object} params
  * @param {string} params.code - Activation code (e.g. "PREM-XXXX-XXXX-XXXX")
  * @param {string} params.tier - "pro" or "premium"
- * @param {string} params.email - Buyer email
  * @param {string} params.stripeSessionId - Stripe checkout session ID
  * @param {string} [params.productKey] - pro_monthly / premium_monthly / premium_lifetime
  * @param {Array}  [params.activationCodesRef] - Live reference to server.js activationCodes array
  * @returns {Object} The stored entry (also in activationCodes format)
  */
-function recordSale({ code, tier, email, stripeSessionId, productKey, activationCodesRef }) {
+function recordSale({ code, tier, stripeSessionId, productKey, activationCodesRef }) {
   const existing = load();
   if (stripeSessionId) {
     const existingEntry = existing.find(c => c.stripeSessionId === stripeSessionId);
@@ -97,8 +103,7 @@ function recordSale({ code, tier, email, stripeSessionId, productKey, activation
     maxUses: 2,
     currentUses: 0,
     usedBy: [],
-    // Metadata (ignored by ACTIVATE_CODE handler, used for audit)
-    email,
+    // Technical payment metadata only. Customer email remains transient in the delivery call.
     stripeSessionId: stripeSessionId || null,
     productKey: productKey || null,
     createdAt: new Date().toISOString(),
@@ -119,7 +124,7 @@ function recordSale({ code, tier, email, stripeSessionId, productKey, activation
   // is immediately usable by the ACTIVATE_CODE handler without restart.
   mergeIntoActivationCodes(entry, activationCodesRef);
 
-  console.log(`[SOLD-CODES] Recorded: ${maskCode(code)} (${tier}) -> ${maskEmail(email)}`);
+  console.log(`[SOLD-CODES] Recorded: ${maskCode(code)} (${tier})`);
   return entry;
 }
 

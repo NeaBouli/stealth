@@ -5,14 +5,15 @@ const path = require("path");
 
 function writeJsonAtomic(targetFile, data) {
   ensureDir(targetFile);
-  const tmp = targetFile + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf8");
+  const tmp = `${targetFile}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), { encoding: "utf8", mode: 0o600, flag: "w" });
   fs.renameSync(tmp, targetFile);
+  fs.chmodSync(targetFile, 0o600);
 }
 
 function ensureDir(filePath) {
   const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
 }
 
 function readJsonFile(filePath, defaultValue) {

@@ -26,17 +26,18 @@ const pendingActivations = new Map();
 // ─── HMAC / Pepper ──────────────────────────────────────────
 
 function getPepper() {
-  return process.env.ID_HASH_PEPPER || null;
+  const pepper = process.env.ID_HASH_PEPPER;
+  return typeof pepper === "string" && pepper.length >= 32 ? pepper : null;
 }
 
 /**
  * Convert a cleartext custom ID to a storage key.
  * With pepper: HMAC-SHA256(pepper, normalizedId) → 64-char hex.
- * Without pepper (local dev): passthrough cleartext.
+ * Without a strong pepper the custom-ID feature fails closed.
  */
 function idToKey(normalizedId) {
   const pepper = getPepper();
-  if (!pepper) return normalizedId;
+  if (!pepper) return null;
   return crypto.createHmac("sha256", pepper).update(normalizedId).digest("hex");
 }
 
@@ -50,6 +51,11 @@ function isHmacKey(key) {
 // ─── Persistence ────────────────────────────────────────────
 
 function loadIds() {
+  if (!getPepper()) {
+    customIds = {};
+    console.warn("[CUSTOM-ID] ID_HASH_PEPPER missing or too short — custom IDs disabled");
+    return;
+  }
   try {
     customIds = JSON.parse(fs.readFileSync(IDS_FILE, "utf8"));
     console.log(`[CUSTOM-ID] Loaded ${Object.keys(customIds).length} custom IDs`);
@@ -71,18 +77,28 @@ function saveIds() {
 // Replaces the broken flow that put password_hash in Stripe metadata.
 // Tokens are opaque random bytes; the password hash stays server-side.
 function loadPendingActivations() {
+  if (!getPepper()) {
+    console.warn("[CUSTOM-ID] Pending activations disabled without a strong ID_HASH_PEPPER");
+    return;
+  }
   try {
     if (!fs.existsSync(PENDING_FILE)) return;
     const raw = JSON.parse(fs.readFileSync(PENDING_FILE, "utf8"));
     const now = Date.now();
     let pruned = 0;
+    let migrated = false;
     for (const [token, entry] of Object.entries(raw || {})) {
-      if (entry && typeof entry.createdAt === "number" && now - entry.createdAt < PENDING_TTL_MS) {
-        pendingActivations.set(token, entry);
+      const legacyId = typeof entry?.customId === "string" ? entry.customId.toLowerCase().trim() : null;
+      const customIdKey = typeof entry?.customIdKey === "string" ? entry.customIdKey : (legacyId ? idToKey(legacyId) : null);
+      if (entry && isHmacKey(customIdKey) && typeof entry.createdAt === "number" && now - entry.createdAt < PENDING_TTL_MS) {
+        const { customId: _legacyCustomId, ...rest } = entry;
+        pendingActivations.set(token, { ...rest, customIdKey, idLength: entry.idLength || legacyId?.length || null });
+        if (legacyId) migrated = true;
       } else {
         pruned++;
       }
     }
+    if (migrated) savePendingActivations();
     console.log(`[CUSTOM-ID] Loaded ${pendingActivations.size} pending activations (pruned ${pruned} stale)`);
   } catch (e) {
     console.warn("[CUSTOM-ID] Could not load pending activations:", e.message);
@@ -106,7 +122,8 @@ function markPendingPaid(token, customId, stripeSessionId) {
   const pending = pendingActivations.get(token);
   const normalized = String(customId || "").toLowerCase().trim();
   if (!pending || !stripeSessionId || !stripeSessionId.startsWith("cs_")) return false;
-  if (pending.customId !== normalized || pending.stripeSessionId !== stripeSessionId) return false;
+  const key = idToKey(normalized);
+  if (!key || pending.customIdKey !== key || pending.stripeSessionId !== stripeSessionId) return false;
   if (Date.now() - pending.createdAt > PENDING_TTL_MS) return false;
   pending.paidAt = pending.paidAt || new Date().toISOString();
   savePendingActivations();
@@ -140,7 +157,7 @@ function revokeByStripeSession(stripeSessionId) {
 function migrateToHmac() {
   const pepper = getPepper();
   if (!pepper) {
-    console.warn("[CUSTOM-ID] ID_HASH_PEPPER not set — IDs stored in cleartext (set env var for production)");
+    console.warn("[CUSTOM-ID] ID_HASH_PEPPER missing or too short — migration skipped and feature disabled");
     return;
   }
 
@@ -194,6 +211,7 @@ function isAvailable(id) {
   if (!ID_REGEX.test(normalized)) return { available: false, error: "invalid_format" };
   if (normalized.length <= 2) return { available: false, error: "reserved" };
   const key = idToKey(normalized);
+  if (!key) return { available: false, error: "privacy_not_configured" };
   if (customIds[key]) return { available: false, error: "taken" };
   const price = getPrice(normalized);
   return { available: true, price, id: normalized };
@@ -205,6 +223,7 @@ function activate(id, deviceId, password) {
   if (normalized.length <= 2) return { success: false, error: "reserved" };
 
   const key = idToKey(normalized);
+  if (!key) return { success: false, error: "privacy_not_configured" };
   const existing = customIds[key];
   if (!existing) return { success: false, error: "purchase_required" };
   if (!verifyPassword(password, existing.passwordHash, existing.passwordSalt)) {
@@ -225,6 +244,7 @@ function resolve(id) {
   if (!id) return null;
   const normalized = id.toLowerCase().trim();
   const key = idToKey(normalized);
+  if (!key) return null;
   const entry = customIds[key];
   return (entry && entry.deviceId) ? entry.deviceId : null;
 }
@@ -277,6 +297,7 @@ function setupRoutes(app, requireAdmin) {
     if (process.env.CUSTOM_ID_STRIPE_CHECKOUT_ENABLED !== "true") {
       return res.status(410).json({ error: "custom_id_checkout_disabled" });
     }
+    if (!getPepper()) return res.status(503).json({ error: "custom_id_privacy_not_configured" });
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) return res.status(503).json({ error: "payments_disabled" });
 
@@ -315,7 +336,8 @@ function setupRoutes(app, requireAdmin) {
       const pendingToken = crypto.randomBytes(32).toString("hex");
       const { hash: passwordHash, salt: passwordSalt } = hashPassword(password);
       pendingActivations.set(pendingToken, {
-        customId: check.id,
+        customIdKey: idToKey(check.id),
+        idLength: check.id.length,
         passwordHash,
         passwordSalt,
         createdAt: Date.now(),
@@ -369,6 +391,7 @@ function setupRoutes(app, requireAdmin) {
 
     const normalized = id.toLowerCase().trim();
     const key = idToKey(normalized);
+    if (!key) return res.status(503).json({ error: "custom_id_privacy_not_configured" });
 
     // Check if this ID was already activated (token already used)
     if (customIds[key] && customIds[key].deviceId) {
@@ -390,7 +413,7 @@ function setupRoutes(app, requireAdmin) {
       console.warn("[CUSTOM-ID] activate-token rejected: unknown token (possibly replayed or expired)");
       return res.status(400).json({ error: "invalid_or_expired_token" });
     }
-    if (pending.customId !== normalized) {
+    if (pending.customIdKey !== key) {
       console.warn("[CUSTOM-ID] activate-token rejected: token/id mismatch");
       return res.status(400).json({ error: "token_id_mismatch" });
     }

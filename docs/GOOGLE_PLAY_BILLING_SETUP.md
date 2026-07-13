@@ -66,7 +66,14 @@
 
 The endpoint verifies the Google-signed OIDC token, audience, service-account email, package allowlist and Pub/Sub message ID. It then calls the Google Play Developer API for subscription state. Notifications alone never grant access. Full voided-purchase notifications revoke matching subscriptions and activation codes.
 
-For private accounting handoff, configure `VLABS_FINANCE_INGEST_URL` and `VLABS_FINANCE_INGEST_SECRET` only in the runtime environment. The shared secret must match the private VLABS `FINANCE_INGEST_SECURECALL_SECRET`; never place either value in this public repository.
+For private accounting handoff, configure `VLABS_FINANCE_INGEST_URL`,
+`VLABS_FINANCE_INGEST_ALLOWED_HOST` and `VLABS_FINANCE_INGEST_SECRET` only in
+the runtime environment. The URL must be HTTPS with exact path
+`/api/finance/ingest`; the shared secret requires at least 32 characters and
+must match the private VLABS receiver. Never place values in this public
+repository. Exported records contain only bounded sale/reversal intent and
+hashed processor references, never email, company name, tax ID or raw Stripe
+identifiers.
 
 ## Backend Endpoint
 

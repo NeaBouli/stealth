@@ -6,6 +6,14 @@
 - Never publish tax/personal identifiers, API/webhook/signing keys, wallet recipient ownership, provider/account IDs, customer/invoice data, MARK/UID values or runtime values here.
 - This public Bridge may contain only a private-control-center reference, ownership, generic implementation status and the production-disabled state.
 
+## 2026-07-13 [Codex] — Cross-product fulfillment and privacy
+
+- The signed VLABS fulfillment boundary now recognizes the four individual SecureChat and Chameleon Pro/Elite products in addition to SecureCall. The Suite remains intentionally unsupported until allocation and partial-refund rules are approved.
+- Product-specific activation delivery, duplicate handling, full-refund/dispute revoke and canonical Node-to-Android entitlement vectors pass locally.
+- Customer email is transient during delivery and is not retained in the sold-code registry. Legacy email fields are removed on load; activation/order registries use private atomic writes.
+- Private finance handoff contains bounded intent plus hashed processor references only and requires exact HTTPS host/path, HMAC and receiver acknowledgement.
+- Runtime values and operational records remain private. Production stays disabled; no payment, entitlement activation, provider request or deployment was performed.
+
 ## 2026-07-12 02:07 EEST — CODEX — CLEAN-MACHINE CLIENT READINESS
 
 - Audited the current public `main` checkout on an isolated worktree. Signaling tests and payment tests pass with a fresh dependency install and zero high npm audit findings.

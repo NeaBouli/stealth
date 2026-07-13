@@ -1,5 +1,12 @@
 # Stealth Project State
 
+## 2026-07-13 — Cross-product fulfillment and privacy hardening
+
+- Individual SecureChat/Chameleon Pro and Elite VLABS products now map to exact product, audience, tier and product-specific activation delivery. The Suite remains fail-closed.
+- Sold-code persistence retains no customer email; legacy fields migrate out, custom IDs fail closed without a strong HMAC pepper, and JSON registries use private atomic writes.
+- Finance export is PII-free, hashes processor references and requires an exact signed receiver ACK. Canonical server-generated token vectors pass both Android client verifiers.
+- Production remains disabled pending runtime keys, test-mode payment E2E, physical-device checks and external approvals.
+
 ## 2026-07-12 02:07 EEST — CODEX — CLIENT READINESS AUDIT
 
 - Backend, payment handling, Rust crypto tests and the Android Free Debug build are reproducible from isolated checkouts.
