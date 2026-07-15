@@ -61,6 +61,36 @@
 
 ---
 
+### 2026-07-15 20:10 EEST — CODEX TERMINAL — CONFIG / WORKFLOW
+
+**Codex Subagent Role Split Added**
+- User requested a durable role split so the main GPT-5.6 agent can keep architecture, security, release judgment, and final verification while delegating small bounded work to faster subagents.
+- Official Codex manual was refreshed locally with `/Users/gio/.codex/skills/.system/openai-docs/scripts/fetch-codex-manual.mjs`; status: local manual current.
+- Added project-scoped Codex configuration:
+  - `.codex/config.toml`
+    - `[agents] max_threads = 6`
+    - `[agents] max_depth = 1`
+  - `.codex/agents/spark-worker.toml`
+    - `spark_worker` uses `gpt-5.3-codex-spark`, `model_reasoning_effort = "medium"`, `sandbox_mode = "workspace-write"`.
+    - Scope: small patches, UI fixes, targeted file searches, focused local checks.
+    - Must escalate architecture, security, release, pricing, legal/tax, unclear requirements, and cross-repo decisions back to the main agent.
+  - `.codex/agents/terra-analyst.toml`
+    - `terra_analyst` uses `gpt-5.6-terra`, `model_reasoning_effort = "medium"`, `sandbox_mode = "workspace-write"`.
+    - Scope: read-heavy repository exploration, log triage, test-output analysis, and larger code summaries.
+  - `AGENTS.md`
+    - Documents the repo-local role split and reinforces Bridge discipline, context isolation, and the rule not to overwrite unrelated dirty `docs/agent-bridge/*` files.
+- Verification:
+  - `python3` `tomllib.load(...)` parsed all three TOML files successfully.
+  - `git diff --check -- .codex/config.toml .codex/agents/spark-worker.toml .codex/agents/terra-analyst.toml AGENTS.md` passed.
+- Risk:
+  - Low. This changes Codex workflow configuration only; no app/runtime code, secrets, build artifacts, production config, or Android release metadata changed.
+- Open next:
+  - In future Stealth tasks, main agent should delegate only bounded independent work to `spark_worker` or `terra_analyst`, then review and verify results in the main thread.
+  - Project `.codex/` config loads only when the Stealth repo is trusted in Codex.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
+
+---
+
 ### 2026-07-11 14:52 EEST — CODEX TERMINAL — FIX / RELEASE / QA
 
 **SecureCall 1.0.45 Free Incoming-Call Ad Guard + Artifacts**
