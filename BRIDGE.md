@@ -6,6 +6,12 @@
 - Never publish tax/personal identifiers, API/webhook/signing keys, wallet recipient ownership, provider/account IDs, customer/invoice data, MARK/UID values or runtime values here.
 - This public Bridge may contain only a private-control-center reference, ownership, generic implementation status and the production-disabled state.
 
+## 2026-07-16 [Codex] — Payment PR base refresh
+
+- Codex remains owner of the StealthX payment, fulfillment and entitlement boundary; detailed runtime/provider operations remain only in private VLABS.
+- PR #37 was refreshed against the current `main` without changing cryptographic algorithms, key material or the default-off production posture.
+- No payment, entitlement activation, provider/AADE request, runtime change or deployment was performed.
+
 ## 2026-07-13 [Codex] — Payment review follow-up
 
 - Revoked VLABS orders can no longer transition back to fulfilled or resend an activation email.
@@ -73,6 +79,36 @@
 
 
 # CC ↔ Codex ↔ Gio Kommunikationskanal
+
+---
+
+### 2026-07-15 20:10 EEST — CODEX TERMINAL — CONFIG / WORKFLOW
+
+**Codex Subagent Role Split Added**
+- User requested a durable role split so the main GPT-5.6 agent can keep architecture, security, release judgment, and final verification while delegating small bounded work to faster subagents.
+- Official Codex manual was refreshed locally with `/Users/gio/.codex/skills/.system/openai-docs/scripts/fetch-codex-manual.mjs`; status: local manual current.
+- Added project-scoped Codex configuration:
+  - `.codex/config.toml`
+    - `[agents] max_threads = 6`
+    - `[agents] max_depth = 1`
+  - `.codex/agents/spark-worker.toml`
+    - `spark_worker` uses `gpt-5.3-codex-spark`, `model_reasoning_effort = "medium"`, `sandbox_mode = "workspace-write"`.
+    - Scope: small patches, UI fixes, targeted file searches, focused local checks.
+    - Must escalate architecture, security, release, pricing, legal/tax, unclear requirements, and cross-repo decisions back to the main agent.
+  - `.codex/agents/terra-analyst.toml`
+    - `terra_analyst` uses `gpt-5.6-terra`, `model_reasoning_effort = "medium"`, `sandbox_mode = "workspace-write"`.
+    - Scope: read-heavy repository exploration, log triage, test-output analysis, and larger code summaries.
+  - `AGENTS.md`
+    - Documents the repo-local role split and reinforces Bridge discipline, context isolation, and the rule not to overwrite unrelated dirty `docs/agent-bridge/*` files.
+- Verification:
+  - `python3` `tomllib.load(...)` parsed all three TOML files successfully.
+  - `git diff --check -- .codex/config.toml .codex/agents/spark-worker.toml .codex/agents/terra-analyst.toml AGENTS.md` passed.
+- Risk:
+  - Low. This changes Codex workflow configuration only; no app/runtime code, secrets, build artifacts, production config, or Android release metadata changed.
+- Open next:
+  - In future Stealth tasks, main agent should delegate only bounded independent work to `spark_worker` or `terra_analyst`, then review and verify results in the main thread.
+  - Project `.codex/` config loads only when the Stealth repo is trusted in Codex.
+- Existing unrelated dirty `docs/agent-bridge/*` files remain untouched.
 
 ---
 
