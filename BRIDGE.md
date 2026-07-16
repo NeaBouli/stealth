@@ -6,6 +6,11 @@
 - Never publish tax/personal identifiers, API/webhook/signing keys, wallet recipient ownership, provider/account IDs, customer/invoice data, MARK/UID values or runtime values here.
 - This public Bridge may contain only a private-control-center reference, ownership, generic implementation status and the production-disabled state.
 
+## 2026-07-17 — CODEX — RUNTIME DEPENDENCY HOTFIX
+
+- The signaling lockfile now forces the patched `websocket-driver` runtime parser version independently of the still-review-gated payment branch.
+- Dependency audit and the full signaling suite must pass before merge. No payment path, runtime value, provider object or deployment is changed by this hotfix.
+
 ## 2026-07-12 02:07 EEST — CODEX — CLEAN-MACHINE CLIENT READINESS
 
 - Audited the current public `main` checkout on an isolated worktree. Signaling tests and payment tests pass with a fresh dependency install and zero high npm audit findings.

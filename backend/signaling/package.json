@@ -18,7 +18,8 @@
     "uuid": ">=11.1.1",
     "@grpc/grpc-js": "^1.14.4",
     "form-data": "^2.5.6",
-    "protobufjs": "^7.6.3"
+    "protobufjs": "^7.6.3",
+    "websocket-driver": "0.7.5"
   },
   "dependencies": {
     "@getbrevo/brevo": "^5.0.3",
