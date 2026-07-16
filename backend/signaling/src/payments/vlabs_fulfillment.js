@@ -11,8 +11,6 @@ const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const RATE_LIMIT_MAX_ATTEMPTS = 60;
 const RATE_LIMIT_MAX_KEYS = 1024;
 const PAYMENT_TOMBSTONES_KEY = "__paymentTombstones";
-const REGISTRY_LOCK_STALE_MS = 5 * 60 * 1000;
-const REGISTRY_LOCK_HEARTBEAT_MS = 30 * 1000;
 
 const PRODUCTS = Object.freeze({
   "stealthx-securecall-pro-lifetime": {
@@ -79,46 +77,20 @@ function findOrderOwner(orders, field, value, exceptOrderId) {
 function acquireRegistryLock() {
   const lockFile = `${ordersFile()}.lock`;
   fs.mkdirSync(path.dirname(lockFile), { recursive: true, mode: 0o700 });
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      const descriptor = fs.openSync(lockFile, "wx", 0o600);
-      const ownerToken = crypto.randomBytes(16).toString("hex");
-      fs.writeFileSync(descriptor, `${process.pid}:${ownerToken}\n`, "utf8");
-      const heartbeat = setInterval(() => {
-        try {
-          const now = new Date();
-          fs.futimesSync(descriptor, now, now);
-        } catch {
-          // A failed heartbeat leaves the lock fail-closed until its stale window expires.
-        }
-      }, REGISTRY_LOCK_HEARTBEAT_MS);
-      heartbeat.unref();
-      return { descriptor, heartbeat, lockFile, ownerToken };
-    } catch (error) {
-      if (error.code !== "EEXIST") throw error;
-      let stale = false;
-      try {
-        stale = Date.now() - fs.statSync(lockFile).mtimeMs > REGISTRY_LOCK_STALE_MS;
-      } catch (statError) {
-        if (statError.code === "ENOENT") continue;
-        throw statError;
-      }
-      if (!stale || attempt > 0) return null;
-      const quarantine = `${lockFile}.stale-${process.pid}-${crypto.randomBytes(6).toString("hex")}`;
-      try {
-        fs.renameSync(lockFile, quarantine);
-        fs.unlinkSync(quarantine);
-      } catch (recoveryError) {
-        if (recoveryError.code !== "ENOENT") return null;
-      }
-    }
+  try {
+    const descriptor = fs.openSync(lockFile, "wx", 0o600);
+    const ownerToken = crypto.randomBytes(16).toString("hex");
+    fs.writeFileSync(descriptor, `${process.pid}:${ownerToken}\n`, "utf8");
+    return { descriptor, lockFile, ownerToken };
+  } catch (error) {
+    // Never reclaim automatically. Recovery is allowed only with every writer stopped.
+    if (error.code === "EEXIST") return null;
+    throw error;
   }
-  return null;
 }
 
 function releaseRegistryLock(lock) {
   if (!lock) return;
-  clearInterval(lock.heartbeat);
   try {
     fs.closeSync(lock.descriptor);
   } finally {
@@ -133,8 +105,14 @@ function releaseRegistryLock(lock) {
 
 function assertRegistryLockOwned(lock) {
   try {
+    const descriptorStat = fs.fstatSync(lock.descriptor);
+    const pathStat = fs.statSync(lock.lockFile);
     const owner = fs.readFileSync(lock.lockFile, "utf8").trim();
-    if (owner.endsWith(`:${lock.ownerToken}`)) return;
+    if (
+      descriptorStat.dev === pathStat.dev
+      && descriptorStat.ino === pathStat.ino
+      && owner.endsWith(`:${lock.ownerToken}`)
+    ) return;
   } catch {
     // Missing or unreadable ownership state is a lost lease.
   }

@@ -3,6 +3,7 @@
 ## 2026-07-16 — Codex central entitlement hardening
 
 - Closed paid-issuance, out-of-order reversal and activation-persistence failure paths fail-closed.
+- Serialized all file-backed entitlement mutations without automatic lock takeover and added a mandatory single-replica start guard; full signaling tests and dependency audit pass.
 - Detailed provider operations remain in private VLABS; no secrets, customer data, external request or deployment.
 
 ## 2026-07-12 02:07 EEST — CODEX — CLEAN-MACHINE CLIENT READINESS

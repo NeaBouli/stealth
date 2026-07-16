@@ -185,6 +185,13 @@ async function run() {
   const duplicateRevoke = response();
   await routes.get("/internal/vlabs/revoke")(signedRequest(revokeBody), duplicateRevoke);
   assert.strictEqual(duplicateRevoke.body.duplicate, true);
+  assert.throws(() => soldCodes.recordSale({
+    code: "PRO-REVOKED-REUSE-TEST",
+    tier: "pro",
+    stripeSessionId: revokeBody.externalOrderId,
+    productKey: "securechat_pro_lifetime",
+    activationCodesRef: activationCodes,
+  }), /payment_reversed/, "a revoked stored entry cannot be merged back into live activations");
 
   const mismatchedRevoke = response();
   await routes.get("/internal/vlabs/revoke")(signedRequest({
@@ -281,31 +288,24 @@ async function run() {
   fs.writeFileSync(staleLockPath, "stale\n", { mode: 0o600 });
   const staleTime = new Date(Date.now() - 10 * 60 * 1000);
   fs.utimesSync(staleLockPath, staleTime, staleTime);
-  const recoveredLock = response();
+  const blockedByAbandonedLock = response();
   await routes.get("/internal/vlabs/fulfill")(signedRequest(paidBody(
     "cs_test_stale_lock_recovery",
     "stealthx-chameleon-elite-lifetime",
-  )), recoveredLock);
-  assert.strictEqual(recoveredLock.body.fulfilled, true, "expired registry lock is recovered conservatively");
-  assert.strictEqual(fs.existsSync(staleLockPath), false);
+  )), blockedByAbandonedLock);
+  assert.strictEqual(blockedByAbandonedLock.statusCode, 409);
+  assert.strictEqual(blockedByAbandonedLock.body.error, "Order registry is busy");
+  assert.strictEqual(fs.existsSync(staleLockPath), true, "abandoned locks are never reclaimed automatically");
+  fs.unlinkSync(staleLockPath);
 
   const oldOwnerRoutes = new Map();
-  const newOwnerRoutes = new Map();
   let releaseOldOwner;
-  let releaseNewOwner;
   let oldOwnerStarted;
-  let newOwnerStarted;
   const oldOwnerReady = new Promise(resolve => { oldOwnerStarted = resolve; });
-  const newOwnerReady = new Promise(resolve => { newOwnerStarted = resolve; });
   const oldOwnerDelivery = new Promise(resolve => { releaseOldOwner = resolve; });
-  const newOwnerDelivery = new Promise(resolve => { releaseNewOwner = resolve; });
   setupVlabsFulfillmentRoute({ post: (route, handler) => oldOwnerRoutes.set(route, handler) }, activationCodes, {
     generateActivationCode: tier => `${String(tier).toUpperCase()}-OLD-LEASE-${++codeCounter}`,
     sendActivationCode: async () => { oldOwnerStarted(); await oldOwnerDelivery; return true; },
-  });
-  setupVlabsFulfillmentRoute({ post: (route, handler) => newOwnerRoutes.set(route, handler) }, activationCodes, {
-    generateActivationCode: tier => `${String(tier).toUpperCase()}-NEW-LEASE-${++codeCounter}`,
-    sendActivationCode: async () => { newOwnerStarted(); await newOwnerDelivery; return true; },
   });
   const oldOwnerResponse = response();
   const oldOwnerPromise = oldOwnerRoutes.get("/internal/vlabs/fulfill")(
@@ -313,21 +313,41 @@ async function run() {
     oldOwnerResponse,
   );
   await oldOwnerReady;
-  fs.utimesSync(staleLockPath, staleTime, staleTime);
-  const newOwnerResponse = response();
-  const newOwnerPromise = newOwnerRoutes.get("/internal/vlabs/fulfill")(
-    signedRequest(paidBody("cs_test_new_lease_owner", "stealthx-chameleon-elite-lifetime")),
-    newOwnerResponse,
-  );
-  await newOwnerReady;
+  const displacedLock = `${staleLockPath}.displaced`;
+  fs.renameSync(staleLockPath, displacedLock);
+  fs.writeFileSync(staleLockPath, "replacement-owner\n", { mode: 0o600 });
   releaseOldOwner();
   await oldOwnerPromise;
-  assert.strictEqual(oldOwnerResponse.statusCode, 503, "reclaimed old owner cannot commit after losing its lease");
-  assert.strictEqual(fs.existsSync(staleLockPath), true, "old owner cannot remove the new owner's lock");
-  releaseNewOwner();
-  await newOwnerPromise;
-  assert.strictEqual(newOwnerResponse.body.fulfilled, true);
-  assert.strictEqual(fs.existsSync(staleLockPath), false);
+  assert.strictEqual(oldOwnerResponse.statusCode, 503, "a displaced owner cannot commit after losing its lock inode");
+  assert.strictEqual(fs.existsSync(staleLockPath), true, "a displaced owner cannot remove a replacement lock");
+  fs.unlinkSync(staleLockPath);
+  fs.unlinkSync(displacedLock);
+
+  const soldStoreLock = `${process.env.SOLD_CODES_FILE}.lock`;
+  fs.writeFileSync(soldStoreLock, "abandoned\n", { mode: 0o600 });
+  assert.throws(() => soldCodes.recordSale({
+    code: "PRO-LOCK-BUSY-TEST",
+    tier: "pro",
+    stripeSessionId: "cs_test_store_lock_busy",
+    productKey: "securechat_pro_lifetime",
+    activationCodesRef: activationCodes,
+  }), /sold_code_store_busy/);
+  assert.strictEqual(fs.existsSync(soldStoreLock), true, "sold-code locks are never reclaimed automatically");
+  fs.unlinkSync(soldStoreLock);
+
+  soldCodes.revokeByStripeSession("cs_test_refund_race", activationCodes, {
+    paymentIntent: "pi_test_refund_race",
+    productKey: "securechat_pro_lifetime",
+    eventId: "evt_test_refund_race",
+    reason: "stripe_full_refund",
+  });
+  assert.throws(() => soldCodes.recordSale({
+    code: "PRO-LATE-SALE-TEST",
+    tier: "pro",
+    stripeSessionId: "cs_test_refund_race",
+    productKey: "securechat_pro_lifetime",
+    activationCodesRef: activationCodes,
+  }), /payment_reversed/, "a persisted reversal blocks every later sale write");
 
   fs.writeFileSync(process.env.SOLD_CODES_FILE, JSON.stringify({
     codes: [{ code: "PRO-OLD-TEST-TEST", tier: "pro", email: "legacy@example.invalid" }]

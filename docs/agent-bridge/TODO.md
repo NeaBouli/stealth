@@ -4,8 +4,9 @@
 
 - [x] Harden shared entitlement issuance, reversal ordering and activation persistence.
 - [x] Add regressions for reversed-before-fulfillment and conflicting event identities.
+- [x] Enforce fail-closed file-store serialization and an explicit single-replica server-start contract.
 - [ ] Complete private VLABS runtime configuration and controlled test-mode E2E.
-- [ ] Confirm one durable writer/shared persistence boundary for the production fulfillment registry.
+- [ ] Confirm the private runtime actually runs one replica and record stopped-services recovery evidence before activation.
 
 ## 2026-07-13 — Payment review follow-up
 

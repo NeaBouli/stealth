@@ -3,7 +3,7 @@
 ## 2026-07-16 — Central entitlement boundary hardened
 
 - Paid entitlement issuance, reversal ordering and activation persistence now fail closed under the central VLABS contract.
-- Production remains gated on private runtime configuration, durable single-writer storage and controlled test-mode E2E.
+- Cross-process file mutations reject concurrent or abandoned locks, and server startup requires an explicit one-replica contract. Production remains gated on private runtime verification and controlled test-mode E2E.
 
 ## 2026-07-13 — Payment review follow-up
 

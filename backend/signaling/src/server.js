@@ -4,8 +4,11 @@ const WebSocket = require("ws");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { assertSingleWriterRuntime } = require("./services/single_writer_guard");
 
 const { ethers } = require("ethers");
+
+assertSingleWriterRuntime();
 
 // Resolve writable data dir — Railway volumes mount as root, overriding Dockerfile chown.
 // Falls back to /tmp/stealthx-data when the preferred path is not writable.

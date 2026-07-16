@@ -3,6 +3,7 @@
 ## 2026-07-16 — Central entitlement hardening (Codex)
 
 - The shared entitlement boundary now fails closed on conflicting or reversed payment state and non-durable activation updates.
+- File-backed entitlement state now rejects concurrent writers and every server start requires an explicit single-replica contract; abandoned locks are never recovered automatically while a writer may still be active.
 - Operational payment/provider details remain only in the private VLABS operator repository. No credentials or customer data belong here.
 - Local verification passed. No purchase, invoice, provider request, runtime activation or deployment was performed.
 
