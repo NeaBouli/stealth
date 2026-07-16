@@ -6,6 +6,11 @@
 - Never publish tax/personal identifiers, API/webhook/signing keys, wallet recipient ownership, provider/account IDs, customer/invoice data, MARK/UID values or runtime values here.
 - This public Bridge may contain only a private-control-center reference, ownership, generic implementation status and the production-disabled state.
 
+## 2026-07-17 — CODEX — PUBLIC CREDENTIAL BOUNDARY
+
+- A legacy rollout helper no longer contains deployment access or runtime identifiers and now fails closed unless all values are supplied by the private operator environment.
+- Rotation and any operational follow-up are tracked only in the private VLABS control center. No value, provider object identifier, runtime mutation or deployment belongs in this public Bridge.
+
 ## 2026-07-12 02:07 EEST — CODEX — CLEAN-MACHINE CLIENT READINESS
 
 - Audited the current public `main` checkout on an isolated worktree. Signaling tests and payment tests pass with a fresh dependency install and zero high npm audit findings.

@@ -1,5 +1,10 @@
 # Stealth Project State
 
+## 2026-07-17 — Public credential boundary restored
+
+- The legacy rollout monitor now requires private operator-supplied deployment credentials and identifiers; no value remains in the current public tree.
+- Rotation and runtime evidence remain private VLABS operator tasks. No deployment or provider mutation was performed by this code change.
+
 ## 2026-07-12 02:07 EEST — CODEX — CLIENT READINESS AUDIT
 
 - Backend, payment handling, Rust crypto tests and the Android Free Debug build are reproducible from isolated checkouts.
