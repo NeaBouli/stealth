@@ -47,6 +47,7 @@ securecall-free-v1.0.27-vC48-x86_64.apk
 Wrong naming = auto-update silently fails (no matching asset found).
 
 ## Current Status
-- SecureCall: Stage 2 (Closed Alpha — v1.0.27, vC49 on Play Console, production pending)
-- SecureChat: Stage 1 (In development)
-- Chameleon: Stage 1 (v0.1.0-alpha)
+- SecureCall: Stage 3 candidate. Public Google Play listing is live for `com.securecall.app.free`; release-clearance still requires the 1.0.45 S10 -> Tab S4 Free incoming-accept retest, S7 network resolution or documented external blocker, and final device-matrix sign-off.
+- SecureChat: Stage 1/2 boundary. Public APK/AAB artifacts exist and the Android app is wallet/IFR-free, but full device/function QA and fresh release artifacts are still required before Play production.
+- Chameleon: Stage 1/2 boundary. Public APK/AAB artifacts exist and the Android app is wallet/IFR-free, but full device/function QA and fresh release artifacts are still required before Play production.
+- Suite sales: launch-gated until Stripe runtime key rotation, webhook/test checkout, activation email, and AADE/myDATA/e-timologio transfer are verified through the private VLABS finance control center.
