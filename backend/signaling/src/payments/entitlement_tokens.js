@@ -19,6 +19,20 @@ function audienceForProduct(productKey) {
   return "securecall";
 }
 
+function expectedTierForProduct(productKey) {
+  const value = String(productKey || "").toLowerCase();
+  if (value === "securechat_pro_lifetime" || value === "chameleon_pro_lifetime") return "PRO";
+  if (value === "securechat_elite_lifetime" || value === "chameleon_elite_lifetime") return "ELITE";
+  if (value === "vlabs_securecall_pro_lifetime" || value === "pro_lifetime" || value === "pro_monthly") return "PRO";
+  if (
+    value === "vlabs_securecall_premium_lifetime"
+    || value === "premium_lifetime"
+    || value === "premium_monthly"
+  ) return "PREMIUM";
+  if (value === "stealthx_suite_lifetime") return "ELITE";
+  return null;
+}
+
 function validClaim(value, maxLength) {
   return typeof value === "string" && value.length > 0 && value.length <= maxLength && /^[a-zA-Z0-9_.:-]+$/.test(value);
 }
@@ -29,8 +43,12 @@ function issueEntitlementToken({ subject, productKey, tier, externalOrderId, now
 
   const audience = audienceForProduct(productKey);
   const normalizedTier = String(tier || "").toUpperCase();
+  const expectedTier = expectedTierForProduct(productKey);
   if (!validClaim(subject, 160) || !validClaim(productKey, 120) || !["PRO", "PREMIUM", "ELITE"].includes(normalizedTier)) {
     throw new Error("Invalid entitlement claims");
+  }
+  if ((audience !== "securecall" || expectedTier) && expectedTier !== normalizedTier) {
+    throw new Error("Entitlement product and tier mismatch");
   }
   const hashedOrder = orderHash(externalOrderId);
   const expiresAt = nowSeconds + TOKEN_TTL_SECONDS;
@@ -76,6 +94,10 @@ function verifyEntitlementToken(token, { expectedSubject, nowSeconds = Math.floo
   if (!validClaim(claims.aud, 40) || !validClaim(claims.product, 120) || !["PRO", "PREMIUM", "ELITE"].includes(claims.tier)) {
     throw new Error("Invalid entitlement claims");
   }
+  const expectedTier = expectedTierForProduct(claims.product);
+  if (audienceForProduct(claims.product) !== claims.aud || (claims.aud !== "securecall" || expectedTier) && expectedTier !== claims.tier) {
+    throw new Error("Entitlement product and tier mismatch");
+  }
   if (!Number.isSafeInteger(issuedAt) || !Number.isSafeInteger(expiresAt) || expiresAt <= issuedAt || expiresAt - issuedAt > TOKEN_TTL_SECONDS) {
     throw new Error("Invalid entitlement lifetime");
   }
@@ -85,4 +107,11 @@ function verifyEntitlementToken(token, { expectedSubject, nowSeconds = Math.floo
   return { ...claims, issuedAt, expiresAt };
 }
 
-module.exports = { issueEntitlementToken, verifyEntitlementToken, audienceForProduct, orderHash, TOKEN_TTL_SECONDS };
+module.exports = {
+  issueEntitlementToken,
+  verifyEntitlementToken,
+  audienceForProduct,
+  expectedTierForProduct,
+  orderHash,
+  TOKEN_TTL_SECONDS,
+};

@@ -10,26 +10,28 @@ const MAX_CLOCK_SKEW_SECONDS = 300;
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const RATE_LIMIT_MAX_ATTEMPTS = 60;
 const RATE_LIMIT_MAX_KEYS = 1024;
-const inFlightOrders = new Set();
+const PAYMENT_TOMBSTONES_KEY = "__paymentTombstones";
+const REGISTRY_LOCK_STALE_MS = 5 * 60 * 1000;
+const REGISTRY_LOCK_HEARTBEAT_MS = 30 * 1000;
 
 const PRODUCTS = Object.freeze({
   "stealthx-securecall-pro-lifetime": {
-    tier: "pro", productKey: "vlabs_securecall_pro_lifetime", productName: "SecureCall", productUrl: "https://stealthx.tech/download.html"
+    tier: "pro", amount: 1500, currency: "eur", productKey: "vlabs_securecall_pro_lifetime", productName: "SecureCall", productUrl: "https://stealthx.tech/download.html"
   },
   "stealthx-securecall-premium-lifetime": {
-    tier: "premium", productKey: "vlabs_securecall_premium_lifetime", productName: "SecureCall", productUrl: "https://stealthx.tech/download.html"
+    tier: "premium", amount: 2500, currency: "eur", productKey: "vlabs_securecall_premium_lifetime", productName: "SecureCall", productUrl: "https://stealthx.tech/download.html"
   },
   "stealthx-securechat-pro-lifetime": {
-    tier: "pro", productKey: "securechat_pro_lifetime", productName: "SecureChat", productUrl: "https://securechat.stealthx.tech/"
+    tier: "pro", amount: 900, currency: "eur", productKey: "securechat_pro_lifetime", productName: "SecureChat", productUrl: "https://securechat.stealthx.tech/"
   },
   "stealthx-securechat-elite-lifetime": {
-    tier: "elite", productKey: "securechat_elite_lifetime", productName: "SecureChat", productUrl: "https://securechat.stealthx.tech/"
+    tier: "elite", amount: 1900, currency: "eur", productKey: "securechat_elite_lifetime", productName: "SecureChat", productUrl: "https://securechat.stealthx.tech/"
   },
   "stealthx-chameleon-pro-lifetime": {
-    tier: "pro", productKey: "chameleon_pro_lifetime", productName: "Chameleon", productUrl: "https://chameleon.stealthx.tech/"
+    tier: "pro", amount: 900, currency: "eur", productKey: "chameleon_pro_lifetime", productName: "Chameleon", productUrl: "https://chameleon.stealthx.tech/"
   },
   "stealthx-chameleon-elite-lifetime": {
-    tier: "elite", productKey: "chameleon_elite_lifetime", productName: "Chameleon", productUrl: "https://chameleon.stealthx.tech/"
+    tier: "elite", amount: 1900, currency: "eur", productKey: "chameleon_elite_lifetime", productName: "Chameleon", productUrl: "https://chameleon.stealthx.tech/"
   },
 });
 const REVOCATION_REASONS = new Set(["stripe_full_refund", "stripe_dispute"]);
@@ -53,6 +55,95 @@ function loadOrders() {
 
 function saveOrders(orders) {
   writeJsonAtomic(ordersFile(), orders);
+}
+
+function hashReference(value) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function paymentTombstones(orders) {
+  const value = orders[PAYMENT_TOMBSTONES_KEY];
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function findOrderOwner(orders, field, value, exceptOrderId) {
+  return Object.entries(orders).find(([orderId, order]) => (
+    orderId !== PAYMENT_TOMBSTONES_KEY
+    && orderId !== exceptOrderId
+    && order
+    && typeof order === "object"
+    && order[field] === value
+  ));
+}
+
+function acquireRegistryLock() {
+  const lockFile = `${ordersFile()}.lock`;
+  fs.mkdirSync(path.dirname(lockFile), { recursive: true, mode: 0o700 });
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const descriptor = fs.openSync(lockFile, "wx", 0o600);
+      const ownerToken = crypto.randomBytes(16).toString("hex");
+      fs.writeFileSync(descriptor, `${process.pid}:${ownerToken}\n`, "utf8");
+      const heartbeat = setInterval(() => {
+        try {
+          const now = new Date();
+          fs.futimesSync(descriptor, now, now);
+        } catch {
+          // A failed heartbeat leaves the lock fail-closed until its stale window expires.
+        }
+      }, REGISTRY_LOCK_HEARTBEAT_MS);
+      heartbeat.unref();
+      return { descriptor, heartbeat, lockFile, ownerToken };
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      let stale = false;
+      try {
+        stale = Date.now() - fs.statSync(lockFile).mtimeMs > REGISTRY_LOCK_STALE_MS;
+      } catch (statError) {
+        if (statError.code === "ENOENT") continue;
+        throw statError;
+      }
+      if (!stale || attempt > 0) return null;
+      const quarantine = `${lockFile}.stale-${process.pid}-${crypto.randomBytes(6).toString("hex")}`;
+      try {
+        fs.renameSync(lockFile, quarantine);
+        fs.unlinkSync(quarantine);
+      } catch (recoveryError) {
+        if (recoveryError.code !== "ENOENT") return null;
+      }
+    }
+  }
+  return null;
+}
+
+function releaseRegistryLock(lock) {
+  if (!lock) return;
+  clearInterval(lock.heartbeat);
+  try {
+    fs.closeSync(lock.descriptor);
+  } finally {
+    try {
+      const owner = fs.readFileSync(lock.lockFile, "utf8").trim();
+      if (owner.endsWith(`:${lock.ownerToken}`)) fs.unlinkSync(lock.lockFile);
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+}
+
+function assertRegistryLockOwned(lock) {
+  try {
+    const owner = fs.readFileSync(lock.lockFile, "utf8").trim();
+    if (owner.endsWith(`:${lock.ownerToken}`)) return;
+  } catch {
+    // Missing or unreadable ownership state is a lost lease.
+  }
+  throw new Error("Order registry lease lost");
+}
+
+function saveOrdersLocked(lock, orders) {
+  assertRegistryLockOwned(lock);
+  saveOrders(orders);
 }
 
 function validString(value, maxLength) {
@@ -125,7 +216,17 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
       return res.status(401).json({ ok: false, error: "Invalid fulfillment signature" });
     }
 
-    const { externalOrderId, productId, customerEmail } = req.body || {};
+    const {
+      externalOrderId,
+      productId,
+      customerEmail,
+      paymentProvider,
+      paymentStatus,
+      paymentEventId,
+      paymentReference,
+      amount,
+      currency,
+    } = req.body || {};
     if (!validString(externalOrderId, 128) || !/^cs_[a-zA-Z0-9_]+$/.test(externalOrderId)) {
       return res.status(400).json({ ok: false, error: "Invalid external order ID" });
     }
@@ -135,24 +236,60 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
     if (!validString(customerEmail, 254) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
       return res.status(400).json({ ok: false, error: "Invalid customer email" });
     }
+    const product = PRODUCTS[productId];
+    if (
+      paymentProvider !== "stripe"
+      || paymentStatus !== "paid"
+      || !validString(paymentEventId, 128)
+      || !/^evt_[a-zA-Z0-9_]+$/.test(paymentEventId)
+      || !validString(paymentReference, 128)
+      || !/^pi_[a-zA-Z0-9_]+$/.test(paymentReference)
+      || !Number.isSafeInteger(amount)
+      || amount !== product.amount
+      || String(currency || "").toLowerCase() !== product.currency
+    ) {
+      return res.status(409).json({ ok: false, error: "Paid order proof mismatch" });
+    }
 
-    const orders = loadOrders();
-    if (orders[externalOrderId] && orders[externalOrderId].productId !== productId) {
-      return res.status(409).json({ ok: false, error: "Order product mismatch" });
-    }
-    if (orders[externalOrderId]?.status === "FULFILLED") {
-      return res.json({ ok: true, duplicate: true, productId });
-    }
-    if (orders[externalOrderId]?.status === "REVOKED") {
-      return res.status(409).json({ ok: false, error: "Order has been revoked" });
-    }
-    if (inFlightOrders.has(externalOrderId)) {
-      return res.status(409).json({ ok: false, error: "Order fulfillment is already in progress" });
-    }
+    const lock = acquireRegistryLock();
+    if (!lock) return res.status(409).json({ ok: false, error: "Order registry is busy" });
 
-    inFlightOrders.add(externalOrderId);
     try {
-      const product = PRODUCTS[productId];
+      const orders = loadOrders();
+      const paymentEventHash = hashReference(paymentEventId);
+      const paymentReferenceHash = hashReference(paymentReference);
+      const tombstone = paymentTombstones(orders)[paymentReferenceHash];
+      if (tombstone) {
+        return res.status(409).json({ ok: false, error: "Payment was reversed" });
+      }
+      if (findOrderOwner(orders, "paymentReferenceHash", paymentReferenceHash, externalOrderId)) {
+        return res.status(409).json({ ok: false, error: "Payment is already bound to another order" });
+      }
+      if (findOrderOwner(orders, "paymentEventHash", paymentEventHash, externalOrderId)) {
+        return res.status(409).json({ ok: false, error: "Payment event is already bound to another order" });
+      }
+      if (orders[externalOrderId] && orders[externalOrderId].productId !== productId) {
+        return res.status(409).json({ ok: false, error: "Order product mismatch" });
+      }
+      if (
+        orders[externalOrderId]?.paymentReferenceHash
+        && orders[externalOrderId].paymentReferenceHash !== paymentReferenceHash
+      ) {
+        return res.status(409).json({ ok: false, error: "Order payment mismatch" });
+      }
+      if (
+        orders[externalOrderId]?.paymentEventHash
+        && orders[externalOrderId].paymentEventHash !== paymentEventHash
+      ) {
+        return res.status(409).json({ ok: false, error: "Order payment event mismatch" });
+      }
+      if (orders[externalOrderId]?.status === "FULFILLED") {
+        return res.json({ ok: true, duplicate: true, productId });
+      }
+      if (orders[externalOrderId]?.status === "REVOKED") {
+        return res.status(409).json({ ok: false, error: "Order has been revoked" });
+      }
+
       let order = orders[externalOrderId];
       if (!order) {
         const recorded = soldCodes.recordSale({
@@ -166,11 +303,29 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
           productId,
           tier: product.tier,
           code: recorded.code,
+          paymentProvider,
+          paymentStatus,
+          paymentEventHash,
+          paymentReferenceHash,
+          amount,
+          currency: product.currency,
           status: "PENDING_EMAIL",
           createdAt: new Date().toISOString(),
         };
         orders[externalOrderId] = order;
-        saveOrders(orders);
+        saveOrdersLocked(lock, orders);
+      } else if (!order.paymentReferenceHash) {
+        order = {
+          ...order,
+          paymentProvider,
+          paymentStatus,
+          paymentEventHash,
+          paymentReferenceHash,
+          amount,
+          currency: product.currency,
+        };
+        orders[externalOrderId] = order;
+        saveOrdersLocked(lock, orders);
       }
 
       const emailSent = await sendActivationCodeImpl(customerEmail, order.code, product.tier, {
@@ -179,6 +334,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
         productUrl: product.productUrl,
       });
       if (!emailSent) throw new Error("Activation email was not accepted by a delivery provider");
+      assertRegistryLockOwned(lock);
       soldCodes.updateEmailDelivery(externalOrderId, {
         status: "delivered",
         attempts: 1,
@@ -191,13 +347,13 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
         fulfilledAt: new Date().toISOString(),
         emailSent: true,
       };
-      saveOrders(orders);
+      saveOrdersLocked(lock, orders);
       return res.json({ ok: true, fulfilled: true, productId });
     } catch (error) {
       console.error("[VLABS-FULFILLMENT] Order failed:", soldCodes.maskStripeId(externalOrderId), error.message);
       return res.status(503).json({ ok: false, error: "Fulfillment failed" });
     } finally {
-      inFlightOrders.delete(externalOrderId);
+      releaseRegistryLock(lock);
     }
   });
 
@@ -209,24 +365,94 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
       return res.status(401).json({ ok: false, error: "Invalid fulfillment signature" });
     }
 
-    const { externalOrderId, productId, reason } = req.body || {};
-    if (!validString(externalOrderId, 128) || !validString(productId, 100) || !isRevocationReason(reason)) {
+    const { externalOrderId, productId, reason, paymentProvider, adjustmentEventId, paymentReference } = req.body || {};
+    if (
+      (externalOrderId !== undefined && (!validString(externalOrderId, 128) || !/^cs_[a-zA-Z0-9_]+$/.test(externalOrderId)))
+      || !validString(productId, 100)
+      || !PRODUCTS[productId]
+      || !isRevocationReason(reason)
+      || paymentProvider !== "stripe"
+      || !validString(adjustmentEventId, 128)
+      || !/^evt_[a-zA-Z0-9_]+$/.test(adjustmentEventId)
+      || !validString(paymentReference, 128)
+      || !/^pi_[a-zA-Z0-9_]+$/.test(paymentReference)
+    ) {
       return res.status(400).json({ ok: false, error: "Invalid revocation request" });
     }
 
-    const orders = loadOrders();
-    const order = orders[externalOrderId];
-    if (!order || order.productId !== productId) {
-      return res.status(404).json({ ok: false, error: "Fulfilled order not found" });
-    }
-    if (order.status === "REVOKED") return res.json({ ok: true, duplicate: true, productId });
+    const lock = acquireRegistryLock();
+    if (!lock) return res.status(409).json({ ok: false, error: "Order registry is busy" });
+    try {
+      const orders = loadOrders();
+      const paymentReferenceHash = hashReference(paymentReference);
+      const tombstones = paymentTombstones(orders);
+      const existingTombstone = tombstones[paymentReferenceHash];
+      if (existingTombstone && existingTombstone.productId !== productId) {
+        return res.status(409).json({ ok: false, error: "Reversal product mismatch" });
+      }
+      let resolvedOrderId = externalOrderId;
+      let order = resolvedOrderId ? orders[resolvedOrderId] : undefined;
+      if (!order) {
+        const paymentOwner = findOrderOwner(orders, "paymentReferenceHash", paymentReferenceHash);
+        if (paymentOwner) {
+          [resolvedOrderId, order] = paymentOwner;
+        }
+      }
+      if (order && order.productId !== productId) {
+        return res.status(409).json({ ok: false, error: "Order product mismatch" });
+      }
+      if (!order) {
+        if (existingTombstone) return res.json({ ok: true, duplicate: true, productId });
+        tombstones[paymentReferenceHash] = {
+          productId,
+          reason,
+          adjustmentEventHash: hashReference(adjustmentEventId),
+          reversedAt: new Date().toISOString(),
+        };
+        orders[PAYMENT_TOMBSTONES_KEY] = tombstones;
+        saveOrdersLocked(lock, orders);
+        return res.json({ ok: true, revoked: true, productId });
+      }
+      if (
+        !order.paymentReferenceHash
+        || order.paymentReferenceHash !== paymentReferenceHash
+      ) {
+        return res.status(409).json({ ok: false, error: "Order payment mismatch" });
+      }
+      if (order.status === "REVOKED" || existingTombstone) {
+        return res.json({ ok: true, duplicate: true, productId });
+      }
 
-    const result = soldCodes.revokeByStripeSession(externalOrderId, activationCodesRef);
-    if (!result.found) return res.status(409).json({ ok: false, error: "Activation code not found" });
-    orders[externalOrderId] = { ...order, status: "REVOKED", revokedAt: new Date().toISOString(), revokeReason: reason };
-    saveOrders(orders);
-    return res.json({ ok: true, revoked: true, productId });
+      assertRegistryLockOwned(lock);
+      const result = soldCodes.revokeByStripeSession(resolvedOrderId, activationCodesRef);
+      if (!result.found) return res.status(409).json({ ok: false, error: "Activation code not found" });
+      orders[resolvedOrderId] = {
+        ...order,
+        status: "REVOKED",
+        revokedAt: new Date().toISOString(),
+        revokeReason: reason,
+        adjustmentEventHash: hashReference(adjustmentEventId),
+      };
+      tombstones[paymentReferenceHash] = {
+        productId,
+        reason,
+        adjustmentEventHash: hashReference(adjustmentEventId),
+        reversedAt: orders[resolvedOrderId].revokedAt,
+      };
+      orders[PAYMENT_TOMBSTONES_KEY] = tombstones;
+      saveOrdersLocked(lock, orders);
+      return res.json({ ok: true, revoked: true, productId });
+    } finally {
+      releaseRegistryLock(lock);
+    }
   });
 }
 
-module.exports = { setupVlabsFulfillmentRoute, verifySignature, isRevocationReason, createRequestRateLimiter, PRODUCTS };
+module.exports = {
+  setupVlabsFulfillmentRoute,
+  verifySignature,
+  isRevocationReason,
+  createRequestRateLimiter,
+  hashReference,
+  PRODUCTS,
+};

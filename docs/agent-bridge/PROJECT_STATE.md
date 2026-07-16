@@ -1,5 +1,10 @@
 # Stealth Project State
 
+## 2026-07-16 — Central entitlement boundary hardened
+
+- Paid entitlement issuance, reversal ordering and activation persistence now fail closed under the central VLABS contract.
+- Production remains gated on private runtime configuration, durable single-writer storage and controlled test-mode E2E.
+
 ## 2026-07-13 — Payment review follow-up
 
 - Re-fulfillment after revoke is fail-closed; activation email and entitlement cannot be recreated from the same revoked order.

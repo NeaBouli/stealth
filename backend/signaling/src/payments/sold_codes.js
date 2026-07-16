@@ -11,11 +11,28 @@
  */
 
 const path = require("path");
+const crypto = require("crypto");
 const { writeJsonAtomic } = require("../utils/json_store");
 const { readFileSync, existsSync } = require("fs");
 
 const SOLD_FILE = process.env.SOLD_CODES_FILE ||
   path.join(__dirname, "..", "..", "data", "sold_codes.json");
+
+function hashReference(value) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function loadReversals() {
+  if (!existsSync(SOLD_FILE)) return [];
+  const data = JSON.parse(readFileSync(SOLD_FILE, "utf8"));
+  if (!data || typeof data !== "object") throw new Error("Invalid sold-code store");
+  return Array.isArray(data.reversals) ? data.reversals : [];
+}
+
+function isReversed(stripeSessionId) {
+  if (!stripeSessionId) return false;
+  return loadReversals().some(entry => entry.stripeSessionId === stripeSessionId);
+}
 
 function maskCode(value) {
   return typeof value === "string" && value.length >= 4 ? `${value.slice(0, 4)}****` : "****";
@@ -58,9 +75,9 @@ function load() {
   return [];
 }
 
-function save(codes) {
+function save(codes, reversals = loadReversals()) {
   try {
-    writeJsonAtomic(SOLD_FILE, { codes });
+    writeJsonAtomic(SOLD_FILE, { codes, reversals });
   } catch (e) {
     console.error("[SOLD-CODES] Save failed:", e.message);
     throw e;
@@ -93,6 +110,7 @@ function mergeIntoActivationCodes(entry, activationCodesRef) {
  * @returns {Object} The stored entry (also in activationCodes format)
  */
 function recordSale({ code, tier, stripeSessionId, productKey, activationCodesRef }) {
+  if (stripeSessionId && isReversed(stripeSessionId)) throw new Error("payment_reversed");
   const existing = load();
   if (stripeSessionId) {
     const existingEntry = existing.find(c => c.stripeSessionId === stripeSessionId);
@@ -171,15 +189,42 @@ function loadAsActivationCodes() {
   }));
 }
 
-function revokeByStripeSession(stripeSessionId, activationCodesRef) {
+function findByStripeSession(stripeSessionId) {
+  if (!stripeSessionId) return null;
+  return load().find(entry => entry && entry.stripeSessionId === stripeSessionId) || null;
+}
+
+function revokeByStripeSession(stripeSessionId, activationCodesRef, reversalData) {
   const existing = load();
+  const reversals = loadReversals();
   const entry = existing.find(item => item.stripeSessionId === stripeSessionId);
-  if (!entry) return { found: false, duplicate: false };
-  if (entry.revoked) return { found: true, duplicate: true };
+  let reversalDuplicate = false;
+  if (reversalData) {
+    const prior = reversals.find(item => item.stripeSessionId === stripeSessionId);
+    reversalDuplicate = Boolean(prior);
+    if (!prior) {
+      reversals.push({
+        stripeSessionId,
+        paymentIntentHash: hashReference(reversalData.paymentIntent),
+        productKey: reversalData.productKey || null,
+        eventHash: hashReference(reversalData.eventId),
+        reason: reversalData.reason,
+        reversedAt: new Date().toISOString(),
+      });
+    }
+  }
+  if (!entry) {
+    if (reversalData && !reversalDuplicate) save(existing, reversals);
+    return { found: false, duplicate: reversalDuplicate, tombstoned: Boolean(reversalData) };
+  }
+  if (entry.revoked) {
+    if (reversalData && !reversalDuplicate) save(existing, reversals);
+    return { found: true, duplicate: true };
+  }
 
   entry.revoked = true;
   entry.revokedAt = new Date().toISOString();
-  save(existing);
+  save(existing, reversals);
   if (Array.isArray(activationCodesRef)) {
     const index = activationCodesRef.findIndex(item => item.code === entry.code);
     if (index >= 0) activationCodesRef.splice(index, 1);
@@ -189,5 +234,6 @@ function revokeByStripeSession(stripeSessionId, activationCodesRef) {
 
 module.exports = {
   load, save, recordSale, updateEmailDelivery, revokeByStripeSession, loadAsActivationCodes,
+  findByStripeSession, isReversed,
   maskCode, maskEmail, maskStripeId,
 };

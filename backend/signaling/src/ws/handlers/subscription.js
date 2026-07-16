@@ -11,26 +11,30 @@ module.exports = function subscriptionHandlers(ctx) {
   const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
 
   function signedActivation(entry, clientId, extra) {
-    let entitlementToken = null;
     try {
-      entitlementToken = typeof issueEntitlementToken === "function"
-        ? issueEntitlementToken({
-            subject: clientId,
-            productKey: entry.productKey || "securecall_activation",
-            tier: entry.tier,
-            externalOrderId: entry.stripeSessionId || entry.code,
-          })
-        : null;
+      if (typeof issueEntitlementToken !== "function") throw new Error("entitlement_signing_unavailable");
+      const entitlementToken = issueEntitlementToken({
+        subject: clientId,
+        productKey: entry.productKey || "securecall_activation",
+        tier: entry.tier,
+        externalOrderId: entry.stripeSessionId || entry.code,
+      });
+      if (!entitlementToken) throw new Error("entitlement_signing_unavailable");
+      return {
+        type: "ACTIVATE_CODE_RESULT",
+        success: true,
+        tier: entry.tier,
+        ...extra,
+        entitlementToken,
+      };
     } catch (error) {
       console.error("[ACTIVATION] Entitlement signing failed:", error.message);
+      return {
+        type: "ACTIVATE_CODE_RESULT",
+        success: false,
+        error: "entitlement_signing_unavailable",
+      };
     }
-    return {
-      type: "ACTIVATE_CODE_RESULT",
-      success: true,
-      tier: entry.tier,
-      ...extra,
-      ...(entitlementToken ? { entitlementToken } : {}),
-    };
   }
 
   return {
@@ -111,13 +115,27 @@ module.exports = function subscriptionHandlers(ctx) {
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "max_devices", message: `Code already used on ${entry.maxUses} devices` }));
       }
 
+      const slot = devices.length + 1;
+      const activation = signedActivation(entry, myClientId, { slot, maxSlots: entry.maxUses });
+      if (!activation.success) return ws.send(JSON.stringify(activation));
+
       devices.push(myClientId);
       entry.usedBy = devices;
       entry.currentUses = devices.length;
-      const slot = devices.length;
       console.log("[ACTIVATION] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", entry.tier, "by:", myClientId, "slot:", slot + "/" + entry.maxUses);
-      saveActivationCodes();
-      return ws.send(JSON.stringify(signedActivation(entry, myClientId, { slot, maxSlots: entry.maxUses })));
+      try {
+        saveActivationCodes({ throwOnError: true });
+      } catch {
+        devices.pop();
+        entry.usedBy = devices;
+        entry.currentUses = devices.length;
+        return ws.send(JSON.stringify({
+          type: "ACTIVATE_CODE_RESULT",
+          success: false,
+          error: "activation_persistence_unavailable",
+        }));
+      }
+      return ws.send(JSON.stringify(activation));
     },
 
     REFRESH_ENTITLEMENT(ws, connId, msg) {

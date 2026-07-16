@@ -58,11 +58,12 @@ function loadActivationCodes() {
   activationCodes.splice(0, activationCodes.length, ...loaded);
 }
 
-function saveActivationCodes() {
+function saveActivationCodes(options = {}) {
   try {
     writeJsonAtomic(CODES_FILE, { codes: activationCodes });
   } catch (e) {
     console.error("[ACTIVATION] Failed to save activation_codes.json:", e.message);
+    if (options.throwOnError) throw e;
   }
 }
 

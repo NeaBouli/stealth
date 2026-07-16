@@ -1,5 +1,12 @@
 # Stealth TODO
 
+## 2026-07-16 — Central payment integration
+
+- [x] Harden shared entitlement issuance, reversal ordering and activation persistence.
+- [x] Add regressions for reversed-before-fulfillment and conflicting event identities.
+- [ ] Complete private VLABS runtime configuration and controlled test-mode E2E.
+- [ ] Confirm one durable writer/shared persistence boundary for the production fulfillment registry.
+
 ## 2026-07-13 — Payment review follow-up
 
 - [x] Re-fulfillment widerrufener Orders blockieren und Revoke-Regression testen.

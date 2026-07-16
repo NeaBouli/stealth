@@ -199,11 +199,93 @@ async function runCustomIdFinanceAndRefundTest() {
   assert.strictEqual(refunded.revoked.revokedPending, 1, "full refund removes pending Custom ID activation");
 }
 
+async function runActivationCodeRefundTest() {
+  const activationCodes = [];
+  const soldCodes = require("../payments/sold_codes");
+  soldCodes.recordSale({
+    code: "PRO-REFUND-TEST-01",
+    tier: "pro",
+    stripeSessionId: "cs_activation_refund_test",
+    productKey: "securechat_pro_lifetime",
+    activationCodesRef: activationCodes,
+  });
+  const stripe = { checkout: { sessions: {
+    list: async () => ({ data: [{
+      id: "cs_activation_refund_test",
+      amount_total: 900,
+      currency: "eur",
+      payment_status: "paid",
+      metadata: { type: "lifetime_dynamic", tier: "pro", product: "securechat_pro_lifetime", doc_type: "receipt", billing_country: "GR" },
+    }] }),
+    listLineItems: async () => ({ data: [] }),
+  } } };
+
+  const refunded = await handleWebhook({
+    id: "evt_activation_refund_test",
+    type: "charge.refunded",
+    data: { object: { amount: 900, amount_refunded: 900, payment_intent: "pi_activation_refund" } },
+  }, stripe, activationCodes);
+
+  assert.strictEqual(refunded.productKey, "securechat_pro_lifetime");
+  assert.strictEqual(refunded.revoked.found, true, "full refund revokes a direct activation-code entitlement");
+  assert.strictEqual(activationCodes.some(entry => entry.stripeSessionId === "cs_activation_refund_test"), false);
+  assert.strictEqual(soldCodes.findByStripeSession("cs_activation_refund_test").revoked, true);
+
+  const lateCheckout = await handleWebhook({
+    id: "evt_activation_late_checkout_test",
+    type: "checkout.session.async_payment_succeeded",
+    data: { object: (await stripe.checkout.sessions.list()).data[0] },
+  }, stripe, activationCodes);
+  assert.strictEqual(lateCheckout.reason, "payment_reversed", "later checkout event cannot restore a revoked code");
+  assert.strictEqual(activationCodes.some(entry => entry.stripeSessionId === "cs_activation_refund_test"), false);
+}
+
+async function runRefundBeforeCheckoutTest() {
+  const activationCodes = [];
+  const session = {
+    id: "cs_refund_before_checkout_test",
+    amount_total: 900,
+    currency: "eur",
+    payment_status: "paid",
+    metadata: {
+      type: "lifetime_dynamic",
+      tier: "pro",
+      product: "securechat_pro_lifetime",
+      licenseTier: "securechat_pro_lifetime",
+      doc_type: "receipt",
+      billing_country: "GR",
+    },
+  };
+  const stripe = { checkout: { sessions: {
+    list: async () => ({ data: [session] }),
+    listLineItems: async () => ({ data: [] }),
+  } } };
+
+  const refunded = await handleWebhook({
+    id: "evt_refund_before_checkout_test",
+    type: "charge.refunded",
+    data: { object: { amount: 900, amount_refunded: 900, payment_intent: "pi_refund_before_checkout_test" } },
+  }, stripe, activationCodes);
+  assert.strictEqual(refunded.revoked.tombstoned, true, "refund before checkout fulfillment creates a tombstone");
+
+  const completed = await handleWebhook({
+    id: "evt_late_checkout_after_refund_test",
+    type: "checkout.session.completed",
+    data: { object: session },
+  }, stripe, activationCodes);
+  assert.strictEqual(completed.reason, "payment_reversed", "late checkout cannot fulfill a reversed payment");
+  assert.strictEqual(activationCodes.length, 0, "reversed payment never creates an activation code");
+  const storedReversal = fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8");
+  assert.strictEqual(storedReversal.includes("pi_refund_before_checkout_test"), false, "payment intent is stored only as a hash");
+}
+
 runDynamicLifetimeWebhookTest()
   .then(runProductLifetimeWebhookTest)
   .then(runEmailDeliveryStatusTest)
   .then(runCustomIdBindingFailureTest)
   .then(runCustomIdFinanceAndRefundTest)
+  .then(runActivationCodeRefundTest)
+  .then(runRefundBeforeCheckoutTest)
   .then(() => console.log("stripe_handler.test.js ok"))
   .catch((err) => {
     console.error(err);

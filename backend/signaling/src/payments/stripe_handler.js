@@ -220,6 +220,25 @@ function resolveProductEmailOptions(productKey) {
   return { productName: "SecureCall", productUrl: "https://stealthx.tech/download.html" };
 }
 
+const DIRECT_ENTITLEMENT_PRODUCTS = new Set([
+  "pro_lifetime",
+  "premium_lifetime",
+  "securechat_pro_lifetime",
+  "securechat_elite_lifetime",
+  "chameleon_pro_lifetime",
+  "chameleon_elite_lifetime",
+  "stealthx_suite_lifetime",
+]);
+
+function isDirectEntitlementSession(session) {
+  return Boolean(
+    session
+    && typeof session.id === "string"
+    && DIRECT_ENTITLEMENT_PRODUCTS.has(session.metadata?.product)
+    && ["pro", "premium", "elite", "pro_lifetime", "premium_lifetime"].includes(session.metadata?.tier)
+  );
+}
+
 async function handleWebhook(event, stripe, activationCodesRef) {
   console.log("[STRIPE] === WEBHOOK RECEIVED ===");
   console.log("[STRIPE] Event type:", event.type, "id:", maskStripeId(event.id));
@@ -239,13 +258,34 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     const paymentIntent = typeof object.payment_intent === "string" ? object.payment_intent : object.payment_intent?.id;
     if (!paymentIntent) throw new Error("missing_payment_intent");
     const sessions = await stripe.checkout.sessions.list({ payment_intent: paymentIntent, limit: 10 });
-    const session = sessions.data?.find(candidate => candidate.metadata?.type === "custom_id");
-    if (!session) return { ignored: true, reason: "not_custom_id_payment" };
-    const revoked = require("../custom_ids").revokeByStripeSession(session.id);
+    const soldCodes = require("./sold_codes");
+    const session = sessions.data?.find(candidate => (
+      candidate.metadata?.type === "custom_id"
+      || soldCodes.findByStripeSession(candidate.id)
+      || isDirectEntitlementSession(candidate)
+    ));
+    if (!session) return { ignored: true, reason: "payment_has_no_local_entitlement" };
+    const isCustomId = session.metadata?.type === "custom_id";
+    const soldCode = isCustomId ? null : soldCodes.findByStripeSession(session.id);
+    let revoked;
+    if (isCustomId) {
+      revoked = require("../custom_ids").revokeByStripeSession(session.id);
+    } else {
+      revoked = soldCodes.revokeByStripeSession(session.id, activationCodesRef, {
+        paymentIntent,
+        productKey: session.metadata?.product,
+        eventId: event.id,
+        reason: event.type === "charge.dispute.created" ? "stripe_dispute" : "stripe_full_refund",
+      });
+      if (soldCode && !revoked.found) throw new Error("activation_code_revocation_failed");
+    }
+    const productKey = isCustomId
+      ? session.metadata?.product || "custom_id"
+      : soldCode?.productKey || "activation_code";
     const { buildRecord, exportFinanceRecord } = require("./vlabs_finance_export");
     await exportFinanceRecord(buildRecord(
       { ...session, payment_status: "refunded" },
-      session.metadata?.product || "custom_id",
+      productKey,
       "adjustment",
       event.type === "charge.dispute.created" ? "stripe_dispute" : "stripe_full_refund"
     ));
@@ -253,7 +293,7 @@ async function handleWebhook(event, stripe, activationCodesRef) {
       processedEvents.set(event.id, Date.now());
       saveProcessedEvents();
     }
-    return { revoked, tier: "custom_id", productKey: session.metadata?.product || "custom_id" };
+    return { revoked, tier: isCustomId ? "custom_id" : soldCode?.tier, productKey };
   }
 
   if (!["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
@@ -326,6 +366,15 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     return { tier, productKey, email };
   }
 
+  const soldCodes = require("./sold_codes");
+  if (soldCodes.isReversed(session.id)) {
+    if (event.id) {
+      processedEvents.set(event.id, Date.now());
+      saveProcessedEvents();
+    }
+    return { ignored: true, reason: "payment_reversed" };
+  }
+
   // 3. Generate unique activation code
   const code = generateActivationCode(tier);
   console.log("[STRIPE] Activation code generated:", code.substring(0, 4) + "****", "tier:", tier);
@@ -333,7 +382,6 @@ async function handleWebhook(event, stripe, activationCodesRef) {
   // 4. Record sale + inject into activationCodes array (so ACTIVATE_CODE handler finds it)
   let soldCodeEntry;
   try {
-    const soldCodes = require("./sold_codes");
     soldCodeEntry = soldCodes.recordSale({
       code,
       tier,

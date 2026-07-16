@@ -48,7 +48,7 @@ function lastMsg(ws) {
   return ws.messages[ws.messages.length - 1];
 }
 
-function buildCtx() {
+function buildCtx(overrides = {}) {
   const { buildContext } = require("../context");
 
   const mockFcm = {
@@ -67,8 +67,9 @@ function buildCtx() {
   const mockHb = { start: () => {}, updateClient: () => {}, stop: () => {} };
   const giftCodes = new Map();
   const saveGiftCodes = () => {};
-  const saveActivationCodes = () => {}; // no-op: prevent writing activation_codes.json during tests
-  const issueEntitlementToken = ({ subject, productKey, tier }) => `signed:${subject}:${productKey}:${tier}`;
+  const saveActivationCodes = overrides.saveActivationCodes || (() => {}); // no-op: prevent test writes
+  const issueEntitlementToken = overrides.issueEntitlementToken
+    || (({ subject, productKey, tier }) => `signed:${subject}:${productKey}:${tier}`);
   const verifyEntitlementToken = (token, { expectedSubject }) => {
     if (token !== "valid-refresh-token") throw new Error("invalid token");
     return { sub: expectedSubject, product: "securechat_pro_lifetime", order: "order-hash" };
@@ -235,6 +236,48 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "FULL-CODE-5678" });
   const r9 = lastMsg(ws);
   assert(r9.success === false && r9.error === "max_devices", "full code → max_devices");
+
+  clearState();
+  const unsignedCtx = buildCtx({ issueEntitlementToken: () => null });
+  const unsignedWs = mockWs();
+  const unsignedConnId = "conn-no-signer";
+  unsignedCtx.clients.set(unsignedConnId, { ws: unsignedWs, lastSeen: Date.now(), clientId: "charlie", ip: "1.1.1.2" });
+  unsignedCtx.clientIds.set("charlie", unsignedConnId);
+  unsignedCtx.activationCodes.push({
+    code: "SIGN-FAIL-0001",
+    tier: "pro",
+    maxUses: 2,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "securechat_pro_lifetime",
+    stripeSessionId: "cs_test_signing_failure",
+  });
+  unsignedCtx.handlers.ACTIVATE_CODE(unsignedWs, unsignedConnId, { code: "SIGN-FAIL-0001" });
+  const signingFailure = lastMsg(unsignedWs);
+  assert(signingFailure.success === false && signingFailure.error === "entitlement_signing_unavailable", "missing signer fails activation closed");
+  const unsignedEntry = unsignedCtx.activationCodes.find(item => item.code === "SIGN-FAIL-0001");
+  assert(unsignedEntry.usedBy.length === 0 && unsignedEntry.currentUses === 0, "signing failure does not consume a device slot");
+
+  clearState();
+  const persistenceCtx = buildCtx({ saveActivationCodes: () => { throw new Error("disk unavailable"); } });
+  const persistenceWs = mockWs();
+  const persistenceConnId = "conn-persistence-failure";
+  persistenceCtx.clients.set(persistenceConnId, { ws: persistenceWs, lastSeen: Date.now(), clientId: "dana", ip: "1.1.1.3" });
+  persistenceCtx.clientIds.set("dana", persistenceConnId);
+  persistenceCtx.activationCodes.push({
+    code: "SAVE-FAIL-0001",
+    tier: "pro",
+    maxUses: 2,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "securechat_pro_lifetime",
+    stripeSessionId: "cs_test_persistence_failure",
+  });
+  persistenceCtx.handlers.ACTIVATE_CODE(persistenceWs, persistenceConnId, { code: "SAVE-FAIL-0001" });
+  const persistenceFailure = lastMsg(persistenceWs);
+  assert(persistenceFailure.success === false && persistenceFailure.error === "activation_persistence_unavailable", "failed slot persistence fails activation closed");
+  const persistenceEntry = persistenceCtx.activationCodes.find(item => item.code === "SAVE-FAIL-0001");
+  assert(persistenceEntry.usedBy.length === 0 && persistenceEntry.currentUses === 0, "failed slot persistence rolls back the device slot");
 }
 
 // ==========================================

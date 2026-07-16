@@ -1,5 +1,10 @@
 # Stealth Action Log
 
+## 2026-07-16 — Codex central entitlement hardening
+
+- Closed paid-issuance, out-of-order reversal and activation-persistence failure paths fail-closed.
+- Detailed provider operations remain in private VLABS; no secrets, customer data, external request or deployment.
+
 ## 2026-07-12 02:07 EEST — CODEX — CLEAN-MACHINE CLIENT READINESS
 
 - Reproduced and fixed the missing clean-checkout Android project configuration.
