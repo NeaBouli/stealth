@@ -5,6 +5,11 @@
 - The legacy rollout monitor now requires private operator-supplied deployment credentials and identifiers; no value remains in the current public tree.
 - Rotation and runtime evidence remain private VLABS operator tasks. No deployment or provider mutation was performed by this code change.
 
+## 2026-07-17 — Signaling parser security hotfix isolated
+
+- The patched `websocket-driver` release is isolated from the pending payment feature PR so the critical runtime advisory can be removed from `main` without merging unrelated behavior.
+- Production runtime and payment gates remain unchanged; no deployment was performed.
+
 ## 2026-07-12 02:07 EEST — CODEX — CLIENT READINESS AUDIT
 
 - Backend, payment handling, Rust crypto tests and the Android Free Debug build are reproducible from isolated checkouts.
