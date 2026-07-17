@@ -1,6 +1,6 @@
 # StealthX v1 Release Scope
 
-Last updated: 2026-06-11
+Last updated: 2026-07-16
 
 This document defines what must be complete for the first public/live release and what is intentionally deferred to v1.1 or later. The goal is to avoid treating roadmap or "SOON" items as hidden release blockers.
 
@@ -8,7 +8,7 @@ This document defines what must be complete for the first public/live release an
 
 ### SecureCall
 
-Status: complete pending final operational checks.
+Status: Stage 3 candidate pending final operational checks.
 
 Required for v1:
 - Encrypted call setup through the production signaling backend.
@@ -22,10 +22,12 @@ Required for v1:
 
 Known v1 blocker:
 - BUG-029 WireGuard call retest requires a valid WireGuard profile on device.
+- SecureCall 1.0.45 Free incoming-call ad pause still needs a clean S10 -> Tab S4 accept retest.
+- S7 remains an external call-matrix blocker until it has validated Internet or an approved mobile-data/roaming fallback.
 
 ### SecureChat Core
 
-Status: complete for v1 core.
+Status: complete for v1 core, pending full device/function QA and fresh final artifacts.
 
 Required for v1:
 - Local identity creation and persistence.
@@ -40,7 +42,7 @@ Deferred items must remain visibly marked as SOON or unavailable.
 
 ### Chameleon Core
 
-Status: complete for v1 core.
+Status: complete for v1 core, pending full device/function QA and fresh final artifacts.
 
 Required for v1:
 - Accessibility service entry point.
@@ -54,7 +56,7 @@ Deferred items must remain visibly marked as SOON or unavailable.
 
 ### Payments
 
-Status: code complete, externally blocked by Stripe key rotation.
+Status: code complete, externally blocked by Stripe key rotation and finance-provider launch gates.
 
 Required for v1:
 - Public product pages call `https://api.stealthx.tech/stripe/create-dynamic-checkout`.
@@ -65,6 +67,8 @@ Required for v1:
 
 Current blocker:
 - The configured live Stripe secret key is expired. Rotate the key in Stripe and update Hetzner before going live.
+- AADE/myDATA/e-timologio transfer must be verified in the private VLABS finance control center before production sales are treated as final.
+- Public pages must not present IFR/wallet discount checkout as active while these gates remain open.
 
 ## v1.1 / SOON
 

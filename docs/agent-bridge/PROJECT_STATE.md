@@ -1,5 +1,15 @@
 # Stealth Project State
 
+## 2026-07-17 — Public credential boundary restored
+
+- The legacy rollout monitor now requires private operator-supplied deployment credentials and identifiers; no value remains in the current public tree.
+- Rotation and runtime evidence remain private VLABS operator tasks. No deployment or provider mutation was performed by this code change.
+
+## 2026-07-17 — Signaling parser security hotfix isolated
+
+- The patched `websocket-driver` release is isolated from the pending payment feature PR so the critical runtime advisory can be removed from `main` without merging unrelated behavior.
+- Production runtime and payment gates remain unchanged; no deployment was performed.
+
 ## 2026-07-17 — Google Play verification path ready for review
 
 - The Android paid-tier flow now waits for exact server-confirmed Google verification; stale or mismatched product acknowledgements fail closed.

@@ -21,6 +21,16 @@
 - Never publish tax/personal identifiers, API/webhook/signing keys, wallet recipient ownership, provider/account IDs, customer/invoice data, MARK/UID values or runtime values here.
 - This public Bridge may contain only a private-control-center reference, ownership, generic implementation status and the production-disabled state.
 
+## 2026-07-17 — CODEX — PUBLIC CREDENTIAL BOUNDARY
+
+- A legacy rollout helper no longer contains deployment access or runtime identifiers and now fails closed unless all values are supplied by the private operator environment.
+- Rotation and any operational follow-up are tracked only in the private VLABS control center. No value, provider object identifier, runtime mutation or deployment belongs in this public Bridge.
+
+## 2026-07-17 — CODEX — RUNTIME DEPENDENCY HOTFIX
+
+- The signaling lockfile now forces the patched `websocket-driver` runtime parser version independently of the still-review-gated payment branch.
+- Dependency audit and the full signaling suite must pass before merge. No payment path, runtime value, provider object or deployment is changed by this hotfix.
+
 ## 2026-07-16 [Codex] — Payment PR base refresh
 
 - Codex remains owner of the StealthX payment, fulfillment and entitlement boundary; detailed runtime/provider operations remain only in private VLABS.

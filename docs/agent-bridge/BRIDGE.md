@@ -2951,9 +2951,83 @@ Verification:
 
 Follow-up:
 - GitHub Dependabot API after push returned `open_alerts=0`.
+
 # 2026-07-11 — Signed entitlement lease refresh (Codex)
 
 - `REFRESH_ENTITLEMENT` erneuert nur gueltige, gerätegebundene Ed25519-Leases,
   deren Kauf-/Aktivierungsdatensatz nach wie vor aktiv ist.
 - Refund/Dispute-Revoke entfernt den Datensatz und blockiert weitere Leases.
 - Backend-Gesamttests PASS; keine Runtime Keys oder Live-Aktivierung.
+
+<!-- CODEX_CLAUDE_CODE_TERMINAL_BRIDGE_V1 -->
+## Codex -> Claude Code Terminal Bridge
+
+Status: configured on 2026-07-07. Codex must call Claude Code through the local terminal wrapper, not through the Anthropic API.
+
+Use this probe:
+
+```bash
+env -u LC_ALL claude-code-terminal --probe
+```
+
+Expected output:
+
+```text
+claude-code-terminal-ok
+```
+
+Send prompts to Claude Code with:
+
+```bash
+env -u LC_ALL claude-code-terminal "PROMPT_TEXT"
+```
+
+or via stdin:
+
+```bash
+printf '%s\n' "PROMPT_TEXT" | env -u LC_ALL claude-code-terminal
+```
+
+Rules for all dev agents:
+
+- Do not use the Anthropic API, Anthropic SDK, `ANTHROPIC_API_KEY`, or direct HTTP calls for Codex -> Claude Code handoff.
+- Do not use `claude --bare`; bare mode does not read the local claude.ai OAuth/keychain session and will report not logged in.
+- Do not use `cc` for Claude Code; on this machine `cc` is the C compiler.
+- The Claude Code CLI command is `claude`; the stable wrapper is `/Users/gio/.local/bin/claude-code-terminal`.
+- If a probe returns `401 Invalid authentication credentials`, the integration is using the wrong path: API instead of terminal.
+- Keep secrets, tokens, passwords, private keys, and keychain material out of bridge files.
+<!-- /CODEX_CLAUDE_CODE_TERMINAL_BRIDGE_V1 -->
+
+## 2026-07-16 21:18 EEST - CODEX TERMINAL RELEASE-GAP CLEANUP
+
+Type: STATUS/FIX
+
+Scope:
+- Public SecureCall website/release documentation.
+- Public SecureChat and Chameleon sales/wiki/SEO surfaces.
+- No Play Console, Stripe, AADE/myDATA/e-timologio, secret, server, or device mutation.
+
+Changed:
+- `website/index.html`: SecureCall public status now says Google Play live, current copy references the 1.0.45 line, and IFR holder discount is marked launch-gated instead of active.
+- `website/llms.txt`: public crawler facts now state Play listing live, no in-app wallet unlock, and launch-gated website IFR checkout.
+- `docs/RELEASE_PROCESS.md` and `docs/RELEASE_V1_SCOPE.md`: release status updated for SecureCall, SecureChat, Chameleon, Stripe, and AADE/myDATA launch gates.
+- `docs/RELEASE_OPEN_ITEMS_2026-07-16.md`: added current open-item split for SecureCall device retest, SecureChat/Chameleon QA, Play/Search Console, and VLABS finance gates.
+
+External checks:
+- `https://play.google.com/store/apps/details?id=com.securecall.app.free` -> HTTP 200.
+- `https://stealthx.tech/` -> HTTP 200.
+- `https://securechat.stealthx.tech/faq.html` -> HTTP 200.
+- `https://chameleon.stealthx.tech/` -> HTTP 200.
+
+Verification:
+- `git diff --check` passed in `stealth`, `securechat`, and `chameleon`.
+- Python `HTMLParser` parsed edited public HTML pages.
+- Python XML parser loaded `stealth`, `securechat`, and `chameleon` sitemaps.
+- Targeted stale-copy scan found no remaining active "Connect Wallet"/"50% Checkout"/Play-review/v1.0.41 public sales claims except planned/launch-gated manual rows.
+
+Open next steps:
+- SecureCall 1.0.45 S10 -> Tab S4 Free incoming-accept retest.
+- S7 network blocker resolution or explicit external-blocker sign-off.
+- SecureChat and Chameleon full device/function QA before fresh AAB/APK builds.
+- VLABS: Stripe runtime key, checkout/webhook/email, AADE/myDATA/e-timologio end-to-end finance transfer.
+- Google Search Console sitemap resubmission/indexing after public deployment.
