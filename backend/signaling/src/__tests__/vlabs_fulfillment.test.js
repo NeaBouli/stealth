@@ -388,11 +388,45 @@ async function run() {
   assert.strictEqual(driftOrders[driftOrderId].status, "REVOKED");
   assert.strictEqual(soldCodes.isReversed(driftOrderId), true, "store drift persists the sold-store reversal tombstone");
 
+  const originalUnlinkSync = fs.unlinkSync;
+  let cleanupFailureInjected = false;
+  fs.unlinkSync = target => {
+    if (!cleanupFailureInjected && target === soldStoreLock) {
+      cleanupFailureInjected = true;
+      const error = new Error("simulated lock cleanup failure");
+      error.code = "EACCES";
+      throw error;
+    }
+    return originalUnlinkSync(target);
+  };
+  let committedSale;
+  try {
+    committedSale = soldCodes.recordSale({
+      code: "PRO-LOCK-CLEANUP-TEST",
+      tier: "pro",
+      stripeSessionId: "cs_test_lock_cleanup_failure",
+      productKey: "securechat_pro_lifetime",
+      activationCodesRef: activationCodes,
+    });
+  } finally {
+    fs.unlinkSync = originalUnlinkSync;
+  }
+  assert.strictEqual(cleanupFailureInjected, true);
+  assert.strictEqual(committedSale.stripeSessionId, "cs_test_lock_cleanup_failure");
+  assert.strictEqual(fs.existsSync(soldStoreLock), true, "failed cleanup leaves the store fail-closed");
+  fs.unlinkSync(soldStoreLock);
+
   fs.writeFileSync(process.env.SOLD_CODES_FILE, JSON.stringify({
     codes: [{ code: "PRO-OLD-TEST-TEST", tier: "pro", email: "legacy@example.invalid" }]
   }), { mode: 0o644 });
   fs.writeFileSync(soldStoreLock, "migration-blocked\n", { mode: 0o600 });
   const loadedDespiteMigrationFailure = soldCodes.load();
+  const stillLegacy = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"));
+  assert.strictEqual(
+    Object.prototype.hasOwnProperty.call(stillLegacy.codes[0], "email"),
+    true,
+    "failed migration leaves the source file unchanged until a later successful retry",
+  );
   fs.unlinkSync(soldStoreLock);
   assert.strictEqual(loadedDespiteMigrationFailure.length, 1);
   assert.strictEqual(Object.prototype.hasOwnProperty.call(loadedDespiteMigrationFailure[0], "email"), false);
