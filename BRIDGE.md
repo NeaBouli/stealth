@@ -1,5 +1,13 @@
 # BRIDGE — stealth
 
+## 2026-07-17 — Google Play purchase boundary corrected (Codex)
+
+- PR #37 now aligns the Android client with the active Play subscription catalog and grants no local paid tier before server-side Google verification succeeds.
+- One-time purchases no longer depend on a client-side admin credential. They use the registered signaling session, exact package/product binding, idempotent code issuance and fail-closed persistence.
+- Purchase tokens, activation codes and provider errors are redacted from client/server logs. Expired activation codes cannot be redeemed.
+- Full signaling and payment suites, npm audit, Android Free unit tests and APK assembly pass. No Play Console setting, purchase, notification, runtime secret, deployment or provider request was changed.
+- Detailed account/catalog/runtime findings remain only in the private VLABS operator repository. External gates remain independent PR approval, runtime configuration, licensed test transactions and controlled deployment.
+
 ## 2026-07-16 — Central entitlement hardening (Codex)
 
 - The shared entitlement boundary now fails closed on conflicting or reversed payment state and non-durable activation updates.

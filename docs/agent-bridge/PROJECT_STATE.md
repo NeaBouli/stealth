@@ -1,5 +1,13 @@
 # Stealth Project State
 
+## 2026-07-17 — Google Play verification path ready for review
+
+- The Android paid-tier flow now waits for exact server-confirmed Google verification; stale or mismatched product acknowledgements fail closed.
+- One-time purchase verification is authenticated through the registered signaling connection and never embeds an admin credential in the app.
+- Duplicate purchase delivery is idempotent, persistence failure rolls back issuance, expired codes are rejected and payment-sensitive logs are redacted.
+- PR #37 contains the change. Backend/payment suites, dependency audit and the Android Free test/build pass locally. Production remains disabled pending private runtime setup, licensed test transactions and independent approval.
+- Provider/account/catalog details remain in private VLABS only; no Console mutation, purchase, notification or deployment occurred.
+
 ## 2026-07-16 — Central entitlement boundary hardened
 
 - Paid entitlement issuance, reversal ordering and activation persistence now fail closed under the central VLABS contract.
