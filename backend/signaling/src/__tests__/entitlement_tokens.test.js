@@ -19,6 +19,8 @@ assert.strictEqual(audienceForProduct("stealthx_suite_lifetime"), "stealthx-suit
 assert.strictEqual(audienceForProduct("securecall_pro_lifetime"), "securecall");
 assert.strictEqual(expectedTierForProduct("securechat_pro_lifetime"), "PRO");
 assert.strictEqual(expectedTierForProduct("securechat_elite_lifetime"), "ELITE");
+assert.strictEqual(expectedTierForProduct("securecall_pro_lifetime"), "PRO");
+assert.strictEqual(expectedTierForProduct("securecall_premium_lifetime"), "PREMIUM");
 assert.throws(() => issueEntitlementToken({
   subject: "sx_test_device",
   productKey: "securechat_pro_lifetime",
@@ -50,6 +52,27 @@ assert.strictEqual(
 const verified = verifyEntitlementToken(token, { expectedSubject: "sx_test_device", nowSeconds: now + 60 });
 assert.strictEqual(verified.product, "securechat_pro_lifetime");
 assert.strictEqual(verified.order, orderHash("cs_test_secret_order"));
+const mismatchedPayload = payload.replace("tier=PRO", "tier=ELITE");
+const mismatchedEncodedPayload = Buffer.from(mismatchedPayload, "utf8").toString("base64url");
+const mismatchedSignature = crypto.sign(null, Buffer.from(mismatchedEncodedPayload, "utf8"), privateKey).toString("base64url");
+assert.throws(() => verifyEntitlementToken(`${mismatchedEncodedPayload}.${mismatchedSignature}`, {
+  expectedSubject: "sx_test_device",
+  nowSeconds: now + 60,
+}), /product and tier mismatch/, "verifier rejects a validly signed mismatched product tier");
+assert.throws(() => issueEntitlementToken({
+  subject: "sx_test_device",
+  productKey: "unknown_securecall_product",
+  tier: "pro",
+  externalOrderId: "cs_test_unknown_product",
+  nowSeconds: now,
+}), /product and tier mismatch/, "unknown SecureCall products fail closed");
+assert.doesNotThrow(() => issueEntitlementToken({
+  subject: "sx_test_device",
+  productKey: "securecall_activation",
+  tier: "pro",
+  externalOrderId: "legacy_activation_code",
+  nowSeconds: now,
+}), "the explicit legacy activation product remains supported");
 assert.throws(() => verifyEntitlementToken(token, { expectedSubject: "copied_device", nowSeconds: now + 60 }));
 assert.doesNotThrow(() => verifyEntitlementToken(token, {
   expectedSubject: "sx_test_device",

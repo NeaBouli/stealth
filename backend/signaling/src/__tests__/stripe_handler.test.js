@@ -267,6 +267,7 @@ async function runRefundBeforeCheckoutTest() {
     data: { object: { amount: 900, amount_refunded: 900, payment_intent: "pi_refund_before_checkout_test" } },
   }, stripe, activationCodes);
   assert.strictEqual(refunded.revoked.tombstoned, true, "refund before checkout fulfillment creates a tombstone");
+  assert.strictEqual(refunded.productKey, "securechat_pro_lifetime", "refund before checkout keeps the direct entitlement product");
 
   const completed = await handleWebhook({
     id: "evt_late_checkout_after_refund_test",

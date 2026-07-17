@@ -52,13 +52,14 @@ function assertStoreLockOwned(lock) {
 function releaseStoreLock(lock) {
   try {
     fs.closeSync(lock.descriptor);
-  } finally {
-    try {
-      const owner = fs.readFileSync(SOLD_LOCK_FILE, "utf8").trim();
-      if (owner.endsWith(`:${lock.ownerToken}`)) fs.unlinkSync(SOLD_LOCK_FILE);
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
-    }
+  } catch (error) {
+    console.error("[SOLD-CODES] Failed to close store lock:", error.message);
+  }
+  try {
+    const owner = fs.readFileSync(SOLD_LOCK_FILE, "utf8").trim();
+    if (owner.endsWith(`:${lock.ownerToken}`)) fs.unlinkSync(SOLD_LOCK_FILE);
+  } catch (error) {
+    if (error.code !== "ENOENT") console.error("[SOLD-CODES] Failed to release store lock:", error.message);
   }
 }
 
@@ -198,6 +199,9 @@ function recordSale({ code, tier, stripeSessionId, productKey, activationCodesRe
       entry = existing.find(c => c.stripeSessionId === stripeSessionId);
       if (entry) {
         if (entry.revoked) throw new Error("payment_reversed");
+        if (entry.tier !== tier || (entry.productKey || null) !== (productKey || null)) {
+          throw new Error("sale_binding_mismatch");
+        }
         reused = true;
         return;
       }

@@ -82,6 +82,7 @@
 - [ ] Runtime-Secrets fuer VLABS -> SecureCall Fulfillment/Revocation in den jeweiligen privaten Deployments setzen; keine Werte in Git/Bridge.
 - [ ] Runtime-Ed25519-Keypair sicher erzeugen/setzen und Public Key in Release-Builds geben; keine Private Keys in Git/App.
 - [x] Offline-Keygen und Provisionierungs-Runbook bereitstellen: absolute externe Pfade, privater Parent, `0600` Private Key, separater Public Key, Signatur-Selbsttest und kein Ueberschreiben/Secret-Output.
+- [x] Inkrementelles Payment-/Security-Review schliessen: Key-Cleanup, exakte Produkt-/Tier-/Session-Bindung, Refund-vor-Checkout, Store-Drift-Revoke, Atomic-Write, IDENTIFY und Aktivierungslog-Privacy.
 - [ ] Stripe-Testmode E2E: Checkout -> paid webhook -> genau eine Aktivierung -> interne Invoice/Etimologio-Draft; Refund -> Revoke/Accounting Review.
 - [ ] Accountant Mapping fuer SecureCall Pro/Premium und Suite freigeben; Provider-Demo danach separat testen.
 - [ ] Gio Launch-/Deployment-Freigabe; erst danach Waren in VLABS von Coming Soon auf kaufbar stellen.

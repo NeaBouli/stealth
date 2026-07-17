@@ -147,6 +147,8 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   const ctx = buildCtx();
   const ws = mockWs();
   const connId = "conn-ac";
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "NOPE-1111-XXXX" });
+  assert(lastMsg(ws).error === "not_registered", "unregistered activation -> not_registered");
   ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: "alice", ip: "1.1.1.1" });
   ctx.clientIds.set("alice", connId);
 
@@ -259,7 +261,11 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   assert(unsignedEntry.usedBy.length === 0 && unsignedEntry.currentUses === 0, "signing failure does not consume a device slot");
 
   clearState();
-  const persistenceCtx = buildCtx({ saveActivationCodes: () => { throw new Error("disk unavailable"); } });
+  let persistenceOptions;
+  const persistenceCtx = buildCtx({ saveActivationCodes: options => {
+    persistenceOptions = options;
+    throw new Error("disk unavailable");
+  } });
   const persistenceWs = mockWs();
   const persistenceConnId = "conn-persistence-failure";
   persistenceCtx.clients.set(persistenceConnId, { ws: persistenceWs, lastSeen: Date.now(), clientId: "dana", ip: "1.1.1.3" });
@@ -274,6 +280,7 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
     stripeSessionId: "cs_test_persistence_failure",
   });
   persistenceCtx.handlers.ACTIVATE_CODE(persistenceWs, persistenceConnId, { code: "SAVE-FAIL-0001" });
+  assert(persistenceOptions?.throwOnError === true, "activation persistence requests fail-closed error propagation");
   const persistenceFailure = lastMsg(persistenceWs);
   assert(persistenceFailure.success === false && persistenceFailure.error === "activation_persistence_unavailable", "failed slot persistence fails activation closed");
   const persistenceEntry = persistenceCtx.activationCodes.find(item => item.code === "SAVE-FAIL-0001");

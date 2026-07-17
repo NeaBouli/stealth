@@ -58,11 +58,19 @@ function writeExclusive(file, value, mode) {
     fs.writeFileSync(descriptor, value, { encoding: "utf8" });
     fs.fsyncSync(descriptor);
     fs.chmodSync(file, mode);
+    fs.closeSync(descriptor);
+    descriptor = undefined;
   } catch (error) {
+    if (descriptor !== undefined) {
+      try {
+        fs.closeSync(descriptor);
+      } catch {
+        // The output is removed below even when descriptor cleanup also fails.
+      }
+      descriptor = undefined;
+    }
     if (created) fs.rmSync(file, { force: true });
     throw error;
-  } finally {
-    if (descriptor !== undefined) fs.closeSync(descriptor);
   }
 }
 

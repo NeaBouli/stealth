@@ -349,12 +349,51 @@ async function run() {
     activationCodesRef: activationCodes,
   }), /payment_reversed/, "a persisted reversal blocks every later sale write");
 
+  soldCodes.recordSale({
+    code: "PRO-BINDING-TEST-01",
+    tier: "pro",
+    stripeSessionId: "cs_test_sale_binding",
+    productKey: "securechat_pro_lifetime",
+    activationCodesRef: activationCodes,
+  });
+  assert.throws(() => soldCodes.recordSale({
+    code: "ELIT-BINDING-TEST-02",
+    tier: "elite",
+    stripeSessionId: "cs_test_sale_binding",
+    productKey: "securechat_elite_lifetime",
+    activationCodesRef: activationCodes,
+  }), /sale_binding_mismatch/, "a Stripe session cannot be reused for another product or tier");
+
+  const driftOrderId = "cs_test_missing_sold_record";
+  const driftProductId = "stealthx-chameleon-elite-lifetime";
+  const driftPaidBody = paidBody(driftOrderId, driftProductId);
+  const driftFulfilled = response();
+  await routes.get("/internal/vlabs/fulfill")(signedRequest(driftPaidBody), driftFulfilled);
+  assert.strictEqual(driftFulfilled.body.fulfilled, true);
+  const driftStore = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"));
+  driftStore.codes = driftStore.codes.filter(item => item.stripeSessionId !== driftOrderId);
+  fs.writeFileSync(process.env.SOLD_CODES_FILE, JSON.stringify(driftStore), { mode: 0o600 });
+  const driftRevoked = response();
+  await routes.get("/internal/vlabs/revoke")(signedRequest({
+    externalOrderId: driftOrderId,
+    productId: driftProductId,
+    reason: "stripe_dispute",
+    paymentProvider: "stripe",
+    adjustmentEventId: "evt_test_missing_sold_record",
+    paymentReference: driftPaidBody.paymentReference,
+  }), driftRevoked);
+  assert.strictEqual(driftRevoked.body.revoked, true, "store drift still persists a fail-closed revocation");
+  assert.strictEqual(activationCodes.some(item => item.stripeSessionId === driftOrderId), false, "store drift removes any live activation");
+  const driftOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+  assert.strictEqual(driftOrders[driftOrderId].status, "REVOKED");
+  assert.strictEqual(soldCodes.isReversed(driftOrderId), true, "store drift persists the sold-store reversal tombstone");
+
   fs.writeFileSync(process.env.SOLD_CODES_FILE, JSON.stringify({
     codes: [{ code: "PRO-OLD-TEST-TEST", tier: "pro", email: "legacy@example.invalid" }]
   }), { mode: 0o644 });
-  fs.chmodSync(directory, 0o500);
+  fs.writeFileSync(soldStoreLock, "migration-blocked\n", { mode: 0o600 });
   const loadedDespiteMigrationFailure = soldCodes.load();
-  fs.chmodSync(directory, 0o700);
+  fs.unlinkSync(soldStoreLock);
   assert.strictEqual(loadedDespiteMigrationFailure.length, 1);
   assert.strictEqual(Object.prototype.hasOwnProperty.call(loadedDespiteMigrationFailure[0], "email"), false);
   const migrated = soldCodes.load();

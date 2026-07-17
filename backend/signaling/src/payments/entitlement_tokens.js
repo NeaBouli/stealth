@@ -23,14 +23,24 @@ function expectedTierForProduct(productKey) {
   const value = String(productKey || "").toLowerCase();
   if (value === "securechat_pro_lifetime" || value === "chameleon_pro_lifetime") return "PRO";
   if (value === "securechat_elite_lifetime" || value === "chameleon_elite_lifetime") return "ELITE";
-  if (value === "vlabs_securecall_pro_lifetime" || value === "pro_lifetime" || value === "pro_monthly") return "PRO";
+  if (
+    value === "vlabs_securecall_pro_lifetime"
+    || value === "securecall_pro_lifetime"
+    || value === "pro_lifetime"
+    || value === "pro_monthly"
+  ) return "PRO";
   if (
     value === "vlabs_securecall_premium_lifetime"
+    || value === "securecall_premium_lifetime"
     || value === "premium_lifetime"
     || value === "premium_monthly"
   ) return "PREMIUM";
   if (value === "stealthx_suite_lifetime") return "ELITE";
   return null;
+}
+
+function allowsLegacyTier(productKey) {
+  return String(productKey || "").toLowerCase() === "securecall_activation";
 }
 
 function validClaim(value, maxLength) {
@@ -47,7 +57,7 @@ function issueEntitlementToken({ subject, productKey, tier, externalOrderId, now
   if (!validClaim(subject, 160) || !validClaim(productKey, 120) || !["PRO", "PREMIUM", "ELITE"].includes(normalizedTier)) {
     throw new Error("Invalid entitlement claims");
   }
-  if ((audience !== "securecall" || expectedTier) && expectedTier !== normalizedTier) {
+  if ((!expectedTier && !allowsLegacyTier(productKey)) || (expectedTier && expectedTier !== normalizedTier)) {
     throw new Error("Entitlement product and tier mismatch");
   }
   const hashedOrder = orderHash(externalOrderId);
@@ -95,7 +105,11 @@ function verifyEntitlementToken(token, { expectedSubject, nowSeconds = Math.floo
     throw new Error("Invalid entitlement claims");
   }
   const expectedTier = expectedTierForProduct(claims.product);
-  if (audienceForProduct(claims.product) !== claims.aud || (claims.aud !== "securecall" || expectedTier) && expectedTier !== claims.tier) {
+  if (
+    audienceForProduct(claims.product) !== claims.aud
+    || (!expectedTier && !allowsLegacyTier(claims.product))
+    || (expectedTier && expectedTier !== claims.tier)
+  ) {
     throw new Error("Entitlement product and tier mismatch");
   }
   if (!Number.isSafeInteger(issuedAt) || !Number.isSafeInteger(expiresAt) || expiresAt <= issuedAt || expiresAt - issuedAt > TOKEN_TTL_SECONDS) {

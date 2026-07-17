@@ -281,7 +281,7 @@ async function handleWebhook(event, stripe, activationCodesRef) {
     }
     const productKey = isCustomId
       ? session.metadata?.product || "custom_id"
-      : soldCode?.productKey || "activation_code";
+      : soldCode?.productKey || session.metadata?.product || "activation_code";
     const { buildRecord, exportFinanceRecord } = require("./vlabs_finance_export");
     await exportFinanceRecord(buildRecord(
       { ...session, payment_status: "refunded" },

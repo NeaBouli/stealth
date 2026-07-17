@@ -54,7 +54,7 @@ module.exports = function subscriptionHandlers(ctx) {
           myClientId, purchaseToken, productId, result.tier, result.expiresAt
         );
         ws.send(JSON.stringify({ type: "SUBSCRIPTION_VERIFY_ACK", tier: stored.tier, expiresAt: stored.expiresAt }));
-        console.log(`[SUBSCRIPTION] Verified: ${myClientId}, tier=${stored.tier}, product=${productId}`);
+        console.log(`[SUBSCRIPTION] Verified tier=${stored.tier}, product=${productId}`);
       };
       const reject = error => {
         console.warn("[SUBSCRIPTION] Google Play verification rejected:", error.message);
@@ -70,6 +70,10 @@ module.exports = function subscriptionHandlers(ctx) {
     },
 
     ACTIVATE_CODE(ws, connId, msg) {
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "not_registered" }));
+      }
       const code = (msg.code || "").trim().toUpperCase();
       if (!code) {
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "missing_code" }));
@@ -87,10 +91,9 @@ module.exports = function subscriptionHandlers(ctx) {
         if (gift.used) return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "already_used" }));
         if (new Date(gift.expires) < new Date()) return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "expired" }));
         gift.used = true;
-        gift.usedBy = getClientId(connId);
+        gift.usedBy = myClientId;
         saveGiftCodes();
-        const myClientId = getClientId(connId);
-        console.log("[GIFT] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", gift.tier, "by:", myClientId);
+        console.log("[GIFT] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", gift.tier);
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: true, tier: gift.tier }));
       }
 
@@ -99,11 +102,10 @@ module.exports = function subscriptionHandlers(ctx) {
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "invalid" }));
       }
 
-      const myClientId = getClientId(connId);
       const devices = Array.isArray(entry.usedBy) ? entry.usedBy : (entry.usedBy ? [entry.usedBy] : []);
 
       if (devices.includes(myClientId)) {
-        console.log("[ACTIVATION] Code re-activated:", code.substring(0, 4) + "****", "by:", myClientId);
+        console.log("[ACTIVATION] Code re-activated:", code.substring(0, 4) + "****");
         return ws.send(JSON.stringify(signedActivation(entry, myClientId, {
           slot: devices.indexOf(myClientId) + 1,
           maxSlots: entry.maxUses,
@@ -111,7 +113,7 @@ module.exports = function subscriptionHandlers(ctx) {
       }
 
       if (devices.length >= entry.maxUses) {
-        console.log("[ACTIVATION] Code exhausted:", code.substring(0, 4) + "****", "devices:", devices.length, "/", entry.maxUses, "attempted:", myClientId);
+        console.log("[ACTIVATION] Code exhausted:", code.substring(0, 4) + "****", "devices:", devices.length, "/", entry.maxUses);
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "max_devices", message: `Code already used on ${entry.maxUses} devices` }));
       }
 
@@ -122,7 +124,7 @@ module.exports = function subscriptionHandlers(ctx) {
       devices.push(myClientId);
       entry.usedBy = devices;
       entry.currentUses = devices.length;
-      console.log("[ACTIVATION] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", entry.tier, "by:", myClientId, "slot:", slot + "/" + entry.maxUses);
+      console.log("[ACTIVATION] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", entry.tier, "slot:", slot + "/" + entry.maxUses);
       try {
         saveActivationCodes({ throwOnError: true });
       } catch {
@@ -183,7 +185,7 @@ module.exports = function subscriptionHandlers(ctx) {
         return ws.send(JSON.stringify({ type: "IFR_LOCK_RESULT", success: false, error: "wallet_bound", boundTo: existing.clientId.substring(0, 8) + "..." }));
       }
 
-      console.log("[IFR] Verifying balance for wallet:", wallet, "client:", myClientId);
+      console.log("[IFR] Verifying configured wallet balance");
 
       verifyIfrLock(wallet).then(result => {
         if (result.success) {
@@ -196,7 +198,7 @@ module.exports = function subscriptionHandlers(ctx) {
             walletMappings.push({ wallet: wallet.toLowerCase(), clientId: myClientId, tier: result.tier, lastVerified: Date.now() });
           }
           saveWalletMappings();
-          console.log("[IFR] Balance verified:", wallet, "->", result.tier, "(", result.balanceAmount || result.lockedAmount, "IFR)");
+          console.log("[IFR] Balance verified for tier:", result.tier);
         }
         // H-07: guard against closed WS after async
         try {
@@ -224,7 +226,7 @@ module.exports = function subscriptionHandlers(ctx) {
         fcm.sendDataMessage(fcmToken, { type: "INVITE_ACCEPTED", newUserSecureId: myClientId, message: myClientId + " joined SecureCall and added you as a contact!" });
       }
       sendToClient(inviterSecureId, { type: "INVITE_ACCEPTED", newUserSecureId: myClientId, message: myClientId + " joined SecureCall!" });
-      console.log("[INVITE] Accepted (WS) from", myClientId, "to", inviterSecureId);
+      console.log("[INVITE] Accepted (WS)");
       return ws.send(JSON.stringify({ type: "INVITE_ACCEPTED_ACK", ok: true }));
     },
   };

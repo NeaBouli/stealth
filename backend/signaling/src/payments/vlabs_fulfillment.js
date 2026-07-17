@@ -93,13 +93,14 @@ function releaseRegistryLock(lock) {
   if (!lock) return;
   try {
     fs.closeSync(lock.descriptor);
-  } finally {
-    try {
-      const owner = fs.readFileSync(lock.lockFile, "utf8").trim();
-      if (owner.endsWith(`:${lock.ownerToken}`)) fs.unlinkSync(lock.lockFile);
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
-    }
+  } catch (error) {
+    console.error("[VLABS-FULFILLMENT] Failed to close registry lock:", error.message);
+  }
+  try {
+    const owner = fs.readFileSync(lock.lockFile, "utf8").trim();
+    if (owner.endsWith(`:${lock.ownerToken}`)) fs.unlinkSync(lock.lockFile);
+  } catch (error) {
+    if (error.code !== "ENOENT") console.error("[VLABS-FULFILLMENT] Failed to release registry lock:", error.message);
   }
 }
 
@@ -402,8 +403,16 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
       }
 
       assertRegistryLockOwned(lock);
-      const result = soldCodes.revokeByStripeSession(resolvedOrderId, activationCodesRef);
-      if (!result.found) return res.status(409).json({ ok: false, error: "Activation code not found" });
+      soldCodes.revokeByStripeSession(resolvedOrderId, activationCodesRef, {
+        paymentIntent: paymentReference,
+        productKey: PRODUCTS[productId].productKey,
+        eventId: adjustmentEventId,
+        reason,
+      });
+      if (Array.isArray(activationCodesRef)) {
+        const liveIndex = activationCodesRef.findIndex(item => item.stripeSessionId === resolvedOrderId);
+        if (liveIndex >= 0) activationCodesRef.splice(liveIndex, 1);
+      }
       orders[resolvedOrderId] = {
         ...order,
         status: "REVOKED",

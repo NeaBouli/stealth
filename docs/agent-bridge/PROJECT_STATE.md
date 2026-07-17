@@ -5,6 +5,7 @@
 - Paid entitlement issuance, reversal ordering and activation persistence now fail closed under the central VLABS contract.
 - Cross-process file mutations reject concurrent or abandoned locks, and server startup requires an explicit one-replica contract. Production remains gated on private runtime verification and controlled test-mode E2E.
 - Offline key provisioning now fails closed outside the public repository and emits only a separate client public key plus public fingerprint; no runtime key has been generated or installed.
+- Incremental review findings for key cleanup, product/tier/session binding, refund/revocation drift, atomic persistence, registration guards and activation-log privacy are remediated with full and focused regression coverage.
 
 ## 2026-07-13 — Payment review follow-up
 

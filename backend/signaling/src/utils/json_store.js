@@ -6,9 +6,15 @@ const path = require("path");
 function writeJsonAtomic(targetFile, data) {
   ensureDir(targetFile);
   const tmp = `${targetFile}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), { encoding: "utf8", mode: 0o600, flag: "w" });
-  fs.renameSync(tmp, targetFile);
-  fs.chmodSync(targetFile, 0o600);
+  let created = false;
+  try {
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), { encoding: "utf8", mode: 0o600, flag: "wx" });
+    created = true;
+    fs.renameSync(tmp, targetFile);
+  } catch (error) {
+    if (created) fs.rmSync(tmp, { force: true });
+    throw error;
+  }
 }
 
 function ensureDir(filePath) {

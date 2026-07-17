@@ -27,6 +27,7 @@ fs.chmodSync(privateDirectory, 0o700);
 fs.chmodSync(publicDirectory, 0o755);
 const privateFile = path.join(privateDirectory, "entitlement-private.pem");
 const publicFile = path.join(publicDirectory, "entitlement-public.txt");
+const unsafePrivate = path.join(repositoryRoot, "entitlement-private-test.pem");
 
 try {
   const output = run(privateFile, publicFile);
@@ -62,7 +63,6 @@ try {
   assert.deepStrictEqual(fs.readFileSync(privateFile), privateBefore, "existing private key must not change");
   assert.deepStrictEqual(fs.readFileSync(publicFile), publicBefore, "existing public key must not change");
 
-  const unsafePrivate = path.join(repositoryRoot, "entitlement-private-test.pem");
   const unsafePublic = path.join(publicDirectory, "unsafe-public.txt");
   const inRepository = spawnSync(process.execPath, [
     script,
@@ -96,6 +96,7 @@ try {
   assert.match(partialFailure.stderr, /Entitlement key generation failed/);
   assert.strictEqual(fs.existsSync(cleanupPrivate), false, "private key must be removed after public write failure");
 } finally {
+  fs.rmSync(unsafePrivate, { force: true });
   fs.rmSync(root, { recursive: true, force: true });
 }
 
