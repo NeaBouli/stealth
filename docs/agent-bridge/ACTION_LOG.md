@@ -4,6 +4,7 @@
 
 - Closed paid-issuance, out-of-order reversal and activation-persistence failure paths fail-closed.
 - Serialized all file-backed entitlement mutations without automatic lock takeover and added a mandatory single-replica start guard; full signaling tests and dependency audit pass.
+- Added offline Ed25519 key provisioning with external-path, private-parent, exclusive-write, permission and sign/verify guards. No key was generated for a runtime and no private material entered Git or output.
 - Detailed provider operations remain in private VLABS; no secrets, customer data, external request or deployment.
 
 ## 2026-07-12 02:07 EEST — CODEX — CLEAN-MACHINE CLIENT READINESS
