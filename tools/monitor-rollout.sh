@@ -8,13 +8,9 @@ set -euo pipefail
 # Load deployment access and identifiers from a private operator environment.
 # Never commit their values to this public repository.
 : "${RAILWAY_TOKEN:?Set RAILWAY_TOKEN in the private operator environment}"
-: "${RAILWAY_PROJECT_ID:?Set RAILWAY_PROJECT_ID in the private operator environment}"
-: "${RAILWAY_SERVICE_ID:?Set RAILWAY_SERVICE_ID in the private operator environment}"
-: "${RAILWAY_ENVIRONMENT_ID:?Set RAILWAY_ENVIRONMENT_ID in the private operator environment}"
-
-PROJECT_ID="$RAILWAY_PROJECT_ID"
-SERVICE_ID="$RAILWAY_SERVICE_ID"
-ENV_ID="$RAILWAY_ENVIRONMENT_ID"
+PROJECT_ID="${RAILWAY_PROJECT_ID:?Set RAILWAY_PROJECT_ID in the private operator environment}"
+SERVICE_ID="${RAILWAY_SERVICE_ID:?Set RAILWAY_SERVICE_ID in the private operator environment}"
+ENV_ID="${RAILWAY_ENVIRONMENT_ID:?Set RAILWAY_ENVIRONMENT_ID in the private operator environment}"
 REPO="NeaBouli/stealth"
 LOG_FILE="docs/monitoring/v1.0.22-rollout-log.md"
 
