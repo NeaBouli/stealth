@@ -99,8 +99,67 @@ function buildCtx(overrides = {}) {
     issueEntitlementToken,
     verifyEntitlementToken,
     entitlementOrderHash,
-    verifyPlaySubscription: () => ({ tier: "pro", expiresAt: 9999999999999 }),
+    verifyPlaySubscription: overrides.verifyPlaySubscription
+      || (() => ({ tier: "pro", expiresAt: 9999999999999 })),
+    verifyPlayOneTimePurchase: overrides.verifyPlayOneTimePurchase
+      || ((packageName, productId) => ({ packageName, productId, tier: "premium" })),
+    issuePlayActivationCode: overrides.issuePlayActivationCode
+      || (({ productId }) => ({
+        code: "PREM-PLAY1234",
+        tier: "premium",
+        expires: "2027-07-17T00:00:00.000Z",
+        productId,
+        duplicate: false,
+      })),
   });
+}
+
+// ==========================================
+// Suite: PLAY_PURCHASE_VERIFY handler
+// ==========================================
+console.log("\n[Suite] PLAY_PURCHASE_VERIFY handler");
+{
+  clearState();
+  const ctx = buildCtx();
+  const ws = mockWs();
+  const connId = "conn-play";
+  ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: null, ip: "1.1.1.1" });
+
+  ctx.handlers.PLAY_PURCHASE_VERIFY(ws, connId, {
+    purchaseToken: "play-token",
+    productId: "securecall_premium_activation_code",
+    packageName: "com.securecall.app.free",
+  });
+  assert(lastMsg(ws).error === "not_registered", "unregistered one-time purchase -> not_registered");
+
+  ctx.clients.get(connId).clientId = "alice";
+  ctx.clientIds.set("alice", connId);
+  ctx.handlers.PLAY_PURCHASE_VERIFY(ws, connId, { purchaseToken: "play-token" });
+  assert(lastMsg(ws).error === "invalid_purchase_verification_request", "incomplete one-time purchase request rejected");
+
+  ctx.handlers.PLAY_PURCHASE_VERIFY(ws, connId, {
+    purchaseToken: "play-token",
+    productId: "securecall_premium_activation_code",
+    packageName: "com.securecall.app.free",
+  });
+  const verified = lastMsg(ws);
+  assert(verified.success === true && verified.type === "PLAY_PURCHASE_VERIFY_RESULT", "verified one-time purchase returns result");
+  assert(verified.code === "PREM-PLAY1234" && verified.tier === "premium", "verified one-time purchase returns issued code and tier");
+
+  const rejectedCtx = buildCtx({
+    verifyPlayOneTimePurchase: () => { throw new Error("google rejected"); },
+  });
+  const rejectedWs = mockWs();
+  const rejectedConn = "conn-play-rejected";
+  rejectedCtx.clients.set(rejectedConn, { ws: rejectedWs, lastSeen: Date.now(), clientId: "bob", ip: "1.1.1.2" });
+  rejectedCtx.clientIds.set("bob", rejectedConn);
+  rejectedCtx.handlers.PLAY_PURCHASE_VERIFY(rejectedWs, rejectedConn, {
+    purchaseToken: "play-token-rejected",
+    productId: "securecall_premium_activation_code",
+    packageName: "com.securecall.app.free",
+  });
+  const rejected = lastMsg(rejectedWs);
+  assert(rejected.success === false && rejected.error === "purchase_verification_failed", "Google rejection returns generic failure");
 }
 
 // ==========================================
@@ -115,7 +174,7 @@ console.log("\n[Suite] SUBSCRIPTION_VERIFY handler");
 
   // Not registered
   ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: null, ip: "1.1.1.1" });
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok", productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok", productId: "pro_monthly", packageName: "com.securecall.app.free" });
   assert(lastMsg(ws).error === "not_registered", "unregistered → not_registered");
 
   // Register
@@ -123,7 +182,7 @@ console.log("\n[Suite] SUBSCRIPTION_VERIFY handler");
   ctx.clientIds.set("alice", connId);
 
   // Missing purchaseToken
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { productId: "pro_monthly", packageName: "com.securecall.app.free" });
   assert(lastMsg(ws).type === "ERROR", "missing purchaseToken → ERROR");
 
   // Missing productId
@@ -131,11 +190,12 @@ console.log("\n[Suite] SUBSCRIPTION_VERIFY handler");
   assert(lastMsg(ws).type === "ERROR", "missing productId → ERROR");
 
   // Valid → mock returns tier=pro
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok123", productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok123", productId: "pro_monthly", packageName: "com.securecall.app.free" });
   const ack = lastMsg(ws);
   assert(ack.type === "SUBSCRIPTION_VERIFY_ACK", "valid → SUBSCRIPTION_VERIFY_ACK");
   assert(ack.tier === "pro", "tier from mock subscription service");
   assert(ack.expiresAt === 9999999999999, "expiresAt forwarded");
+  assert(ack.productId === "pro_monthly", "productId forwarded for client-side binding");
 }
 
 // ==========================================
@@ -197,6 +257,16 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "GIFT-EXP-2026" });
   const r6 = lastMsg(ws);
   assert(r6.success === false && r6.error === "expired", "expired gift code → expired");
+
+  ctx.activationCodes.push({
+    code: "PLAY-EXPIRED-1",
+    tier: "premium",
+    expires: new Date(Date.now() - 1000).toISOString(),
+    maxUses: 2,
+    usedBy: [],
+  });
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "PLAY-EXPIRED-1" });
+  assert(lastMsg(ws).error === "expired", "expired activation code cannot be redeemed");
 
   // Activation code — valid first use
   ctx.activationCodes.push({

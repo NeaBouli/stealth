@@ -62,6 +62,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         progressPremiumSold = findViewById(R.id.progressPremiumSold)
         btnProLifetime = findViewById(R.id.btnProLifetime)
         btnPremiumLifetime = findViewById(R.id.btnPremiumLifetime)
+        setPurchaseButtonsEnabled(emptySet())
 
         updateCurrentTierDisplay()
         updateLifetimePricing()
@@ -151,8 +152,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
             return
         }
 
-        // Lifetime products are INAPP, subscriptions are SUBS
-        if (sku.contains("lifetime")) {
+        if (details.oneTimePurchaseOfferDetails != null) {
             val offerDetails = details.oneTimePurchaseOfferDetails
             if (offerDetails == null) {
                 tvStatus.text = "No offer available"
@@ -180,42 +180,36 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
 
     override fun onProductsLoaded(products: List<ProductDetails>) {
         runOnUiThread {
+            setPurchaseButtonsEnabled(products.map { it.productId }.toSet())
             tvStatus.text = "${products.size} products loaded"
             Log.d(TAG, "Products loaded: ${products.map { it.productId }}")
         }
     }
 
-    override fun onPurchaseCompleted(tier: SubscriptionTier, token: String) {
+    override fun onPurchaseCompleted(tier: SubscriptionTier, token: String, productId: String) {
         runOnUiThread {
-            // Check if this is an activation code purchase
-            val lastProduct = billingManager.getLastPurchasedProductId()
-            if (lastProduct == BuildConfig.SKU_PREMIUM_ACTIVATION_CODE) {
-                // Launch PurchaseResultActivity to show generated code
+            val oneTimeProducts = setOf(
+                BuildConfig.SKU_PRO_LIFETIME,
+                BuildConfig.SKU_PREMIUM_LIFETIME,
+                BuildConfig.SKU_PREMIUM_ACTIVATION_CODE,
+            )
+            if (productId in oneTimeProducts) {
                 val intent = Intent(this, PurchaseResultActivity::class.java).apply {
                     putExtra(PurchaseResultActivity.EXTRA_PURCHASE_TOKEN, token)
-                    putExtra(PurchaseResultActivity.EXTRA_PRODUCT_ID, lastProduct)
+                    putExtra(PurchaseResultActivity.EXTRA_PRODUCT_ID, productId)
                     putExtra(PurchaseResultActivity.EXTRA_PACKAGE_NAME, packageName)
                 }
                 startActivity(intent)
-                tvStatus.text = "Activation code purchased!"
+                tvStatus.text = "Purchase received — verifying with Google Play…"
                 return@runOnUiThread
             }
 
-            // Normal upgrade flow
-            subscriptionManager.updateSubscription(
-                tier = tier,
-                purchaseToken = token,
-                expiresAt = 0L,
-                productId = lastProduct ?: ""
-            )
-
-            FeatureProviderRegistry.set(RuntimeFeatureProvider(this))
-
-            sendVerificationToBackend(token)
-
-            updateCurrentTierDisplay()
-            tvStatus.text = "Upgraded to ${tier.displayName}!"
-            Toast.makeText(this, "Upgraded to ${tier.displayName}!", Toast.LENGTH_LONG).show()
+            if (!subscriptionManager.stageVerification(token, productId)) {
+                tvStatus.text = "Purchase verification could not be prepared"
+                return@runOnUiThread
+            }
+            tvStatus.text = "Purchase received — verifying with Google Play…"
+            sendVerificationToBackend(token, productId)
         }
     }
 
@@ -232,18 +226,39 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         }
     }
 
-    private fun sendVerificationToBackend(purchaseToken: String) {
-        val ws = WebSocketService.instance ?: return
-        val productId = subscriptionManager.getProductId()
-        val json = """
-            {
-              "type": "SUBSCRIPTION_VERIFY",
-              "purchaseToken": "$purchaseToken",
-              "productId": "$productId"
+    private fun sendVerificationToBackend(purchaseToken: String, productId: String) {
+        val ws = WebSocketService.instance
+        if (ws == null || !ws.isRegistered) {
+            subscriptionManager.clearPendingVerification()
+            tvStatus.text = "Purchase received — connect to SecureCall to verify"
+            return
+        }
+        ws.verifySubscriptionPurchase(purchaseToken, productId) { success, tierName, _, error ->
+            runOnUiThread {
+                if (!success) {
+                    subscriptionManager.clearPendingVerification()
+                    tvStatus.text = "Purchase verification failed: $error"
+                    return@runOnUiThread
+                }
+                val verifiedTier = SubscriptionTier.fromName(tierName)
+                FeatureProviderRegistry.set(RuntimeFeatureProvider(this))
+                updateCurrentTierDisplay()
+                tvStatus.text = "Upgraded to ${verifiedTier.displayName}!"
+                Toast.makeText(this, "Upgraded to ${verifiedTier.displayName}!", Toast.LENGTH_LONG).show()
             }
-        """.trimIndent()
-        ws.sendMessage(json)
+        }
         Log.d(TAG, "SUBSCRIPTION_VERIFY sent to backend")
+    }
+
+    private fun setPurchaseButtonsEnabled(availableProducts: Set<String>) {
+        findViewById<Button>(R.id.btnProMonthly).isEnabled = BuildConfig.SKU_PRO_MONTHLY in availableProducts
+        findViewById<Button>(R.id.btnProYearly).isEnabled = BuildConfig.SKU_PRO_YEARLY in availableProducts
+        findViewById<Button>(R.id.btnPremiumMonthly).isEnabled = BuildConfig.SKU_PREMIUM_MONTHLY in availableProducts
+        findViewById<Button>(R.id.btnPremiumYearly).isEnabled = BuildConfig.SKU_PREMIUM_YEARLY in availableProducts
+        btnProLifetime.isEnabled = BuildConfig.SKU_PRO_LIFETIME in availableProducts
+        btnPremiumLifetime.isEnabled = BuildConfig.SKU_PREMIUM_LIFETIME in availableProducts
+        findViewById<Button>(R.id.btnActivationCode).isEnabled =
+            BuildConfig.SKU_PREMIUM_ACTIVATION_CODE in availableProducts
     }
 
     override fun onDestroy() {

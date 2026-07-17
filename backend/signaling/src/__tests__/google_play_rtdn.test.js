@@ -52,7 +52,7 @@ async function run() {
       calls.verify += 1;
       assert.strictEqual(packageName, "com.securecall.app.free");
       assert.strictEqual(token, "sub-token");
-      return { productId: "securecall_pro_monthly", tier: "pro", expiresAt: Date.now() + 86400000 };
+      return { productId: "pro_monthly", tier: "pro", expiresAt: Date.now() + 86400000 };
     }
   });
 

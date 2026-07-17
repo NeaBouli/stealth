@@ -90,6 +90,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private var _onlineStatusCallback: ((Map<String, Boolean>) -> Unit)? = null
     // Activation code callback: returns (success, tier, error)
     private var _activateCodeCallback: ((Boolean, String, String) -> Unit)? = null
+    // Subscription verification callback: server-confirmed state only.
+    private var _subscriptionVerifyCallback: ((Boolean, String, Long, String) -> Unit)? = null
+    // One-time purchase verification callback: success, code, tier, error.
+    private var _playPurchaseVerifyCallback: ((Boolean, String, String, String) -> Unit)? = null
 
     fun getCurrentSessionId(): String? = _currentSessionId
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
@@ -490,7 +494,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             callback(false, "", "not_connected")
             return
         }
-        Log.d("WS_SERVICE", "ACTIVATE_CODE sent: ${code.trim().uppercase()}")
+        Log.d("WS_SERVICE", "ACTIVATE_CODE sent (code redacted)")
         // Timeout: 10 seconds
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
             val pending = _activateCodeCallback
@@ -500,6 +504,68 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 callback(false, "", "timeout")
             }
         }, 10000)
+    }
+
+    fun verifySubscriptionPurchase(
+        purchaseToken: String,
+        productId: String,
+        callback: (success: Boolean, tier: String, expiresAt: Long, error: String) -> Unit
+    ) {
+        if (purchaseToken.isBlank() || productId.isBlank()) {
+            callback(false, "", 0L, "invalid_subscription_verification_request")
+            return
+        }
+        _subscriptionVerifyCallback = callback
+        val json = org.json.JSONObject().apply {
+            put("type", "SUBSCRIPTION_VERIFY")
+            put("purchaseToken", purchaseToken)
+            put("productId", productId)
+            put("packageName", BuildConfig.APPLICATION_ID)
+        }.toString()
+        val sent = client?.send(json) ?: false
+        if (!sent) {
+            _subscriptionVerifyCallback = null
+            callback(false, "", 0L, "not_connected")
+            return
+        }
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            val pending = _subscriptionVerifyCallback
+            if (pending === callback) {
+                _subscriptionVerifyCallback = null
+                callback(false, "", 0L, "timeout")
+            }
+        }, 15000)
+    }
+
+    fun verifyPlayOneTimePurchase(
+        purchaseToken: String,
+        productId: String,
+        callback: (success: Boolean, code: String, tier: String, error: String) -> Unit
+    ) {
+        if (!isRegistered || purchaseToken.isBlank() || productId.isBlank()) {
+            callback(false, "", "", "invalid_purchase_verification_request")
+            return
+        }
+        _playPurchaseVerifyCallback = callback
+        val json = org.json.JSONObject().apply {
+            put("type", "PLAY_PURCHASE_VERIFY")
+            put("purchaseToken", purchaseToken)
+            put("productId", productId)
+            put("packageName", BuildConfig.APPLICATION_ID)
+        }.toString()
+        val sent = client?.send(json) ?: false
+        if (!sent) {
+            _playPurchaseVerifyCallback = null
+            callback(false, "", "", "not_connected")
+            return
+        }
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            val pending = _playPurchaseVerifyCallback
+            if (pending === callback) {
+                _playPurchaseVerifyCallback = null
+                callback(false, "", "", "timeout")
+            }
+        }, 15000)
     }
 
     // ===================== HeartbeatClient.Listener =====================
@@ -714,7 +780,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onMessage(text: String) {
         if (!text.contains("HEARTBEAT_ACK")) {
-            Log.d("WS_SERVICE", "Message: $text")
+            val type = try { org.json.JSONObject(text).optString("type", "") } catch (_: Throwable) { "" }
+            if (type in setOf("PLAY_PURCHASE_VERIFY_RESULT", "ACTIVATE_CODE_RESULT", "SUBSCRIPTION_VERIFY_ACK")) {
+                Log.d("WS_SERVICE", "Sensitive response received: type=$type")
+            } else {
+                Log.d("WS_SERVICE", "Message: $text")
+            }
         }
         handleIncomingMessageFull(text)
     }
@@ -1137,6 +1208,17 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 handleSubscriptionVerifyAck(obj)
                 return
             }
+            if (obj.optString("type") == "PLAY_PURCHASE_VERIFY_RESULT") {
+                val callback = _playPurchaseVerifyCallback
+                _playPurchaseVerifyCallback = null
+                callback?.invoke(
+                    obj.optBoolean("success", false),
+                    obj.optString("code", ""),
+                    obj.optString("tier", ""),
+                    obj.optString("error", ""),
+                )
+                return
+            }
         } catch (_: Throwable) {}
 
         // Phone lookup result
@@ -1309,6 +1391,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     val error = obj.optString("error", "")
                     val message = obj.optString("message", error)
                     Log.e("WS_SERVICE", "Server error: $error — $message")
+                    if (error == "subscription_verification_failed"
+                        || error == "invalid_subscription_verification_request") {
+                        val callback = _subscriptionVerifyCallback
+                        _subscriptionVerifyCallback = null
+                        callback?.invoke(false, "", 0L, error)
+                        return
+                    }
                     // Ignore session_not_found from stale WebRTC signaling after call teardown.
                     // These arrive when ICE candidates from a previous call hit the server
                     // after the session was already deleted. Don't trigger _onCallError
@@ -1452,13 +1541,25 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         try {
             val tierStr = obj.getString("tier")
             val expiresAt = obj.optLong("expiresAt", 0L)
+            val productId = obj.optString("productId", "")
             val tier = com.securecall.app.billing.SubscriptionTier.fromName(tierStr)
-            Log.d("WS_SERVICE", "SUBSCRIPTION_VERIFY_ACK: tier=$tierStr, expiresAt=$expiresAt")
+            Log.d("WS_SERVICE", "SUBSCRIPTION_VERIFY_ACK: tier=$tierStr, product=$productId, expiresAt=$expiresAt")
 
             val ctx = applicationContext
             val manager = com.securecall.app.billing.SubscriptionManager(ctx)
-            manager.updateFromServerVerification(tier, expiresAt)
+            val confirmed = manager.confirmPendingVerification(tier, expiresAt, productId)
+            val callback = _subscriptionVerifyCallback
+            _subscriptionVerifyCallback = null
+            if (!confirmed) {
+                Log.e("WS_SERVICE", "SUBSCRIPTION_VERIFY_ACK rejected: no matching pending purchase")
+                callback?.invoke(false, "", 0L, "missing_pending_purchase")
+                return
+            }
+            callback?.invoke(true, tier.name, expiresAt, "")
         } catch (t: Throwable) {
+            val callback = _subscriptionVerifyCallback
+            _subscriptionVerifyCallback = null
+            callback?.invoke(false, "", 0L, "invalid_subscription_verification_ack")
             Log.e("WS_SERVICE", "handleSubscriptionVerifyAck() failed", t)
         }
     }

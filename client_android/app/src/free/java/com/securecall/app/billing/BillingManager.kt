@@ -21,7 +21,7 @@ class BillingManager(
 
     interface BillingListener {
         fun onProductsLoaded(products: List<ProductDetails>)
-        fun onPurchaseCompleted(tier: SubscriptionTier, token: String)
+        fun onPurchaseCompleted(tier: SubscriptionTier, token: String, productId: String)
         fun onPurchaseFailed(errorCode: Int, message: String)
         fun onBillingDisconnected()
     }
@@ -230,7 +230,7 @@ class BillingManager(
             }
         }
 
-        listener.onPurchaseCompleted(tier, token)
+        listener.onPurchaseCompleted(tier, token, productId)
     }
 
     fun destroy() {

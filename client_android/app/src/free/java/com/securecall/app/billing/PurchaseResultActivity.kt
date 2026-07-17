@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -14,11 +13,6 @@ import com.securecall.app.R
 import com.securecall.app.config.TierManager
 import com.securecall.app.net.WebSocketService
 import com.securecall.app.ui.EdgeToEdgeHelper
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import java.io.IOException
 
 /**
  * Shown after a successful Google Play purchase of an activation code.
@@ -29,7 +23,6 @@ import java.io.IOException
 class PurchaseResultActivity : AppCompatActivity() {
 
     companion object {
-        private const val TAG = "PurchaseResult"
         const val EXTRA_PURCHASE_TOKEN = "purchase_token"
         const val EXTRA_PRODUCT_ID = "product_id"
         const val EXTRA_PACKAGE_NAME = "package_name"
@@ -37,7 +30,10 @@ class PurchaseResultActivity : AppCompatActivity() {
 
     private lateinit var tvCode: TextView
     private lateinit var tvStatus: TextView
+    private lateinit var btnRetry: Button
     private var activationCode: String? = null
+    private var purchaseToken: String = ""
+    private var productId: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,9 +44,11 @@ class PurchaseResultActivity : AppCompatActivity() {
         tvCode = findViewById(R.id.tvActivationCode)
         tvStatus = findViewById(R.id.tvStatus)
 
-        val purchaseToken = intent.getStringExtra(EXTRA_PURCHASE_TOKEN) ?: ""
-        val productId = intent.getStringExtra(EXTRA_PRODUCT_ID) ?: ""
+        purchaseToken = intent.getStringExtra(EXTRA_PURCHASE_TOKEN) ?: ""
+        productId = intent.getStringExtra(EXTRA_PRODUCT_ID) ?: ""
         val packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME) ?: this.packageName
+        btnRetry = findViewById(R.id.btnRetryVerification)
+        btnRetry.setOnClickListener { verifyPurchase() }
 
         // Copy button
         findViewById<Button>(R.id.btnCopyCode).setOnClickListener {
@@ -77,71 +75,40 @@ class PurchaseResultActivity : AppCompatActivity() {
         }
 
         // Verify purchase with backend
-        if (purchaseToken.isNotEmpty()) {
-            verifyPurchase(purchaseToken, productId, packageName)
+        if (purchaseToken.isNotEmpty() && productId.isNotEmpty() && packageName == this.packageName) {
+            verifyPurchase()
         } else {
-            tvStatus.text = "Error: no purchase token"
+            showVerificationError("Invalid purchase details")
         }
     }
 
-    private fun verifyPurchase(token: String, productId: String, packageName: String) {
+    private fun verifyPurchase() {
         tvStatus.text = "Verifying purchase…"
         tvCode.text = "Loading…"
-
-        val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
-        val serverUrl = prefs.getString("server_base_url", null)
-            ?: com.securecall.app.BuildConfig.SIGNAL_WS_URL
-                .replace("wss://", "https://")
-                .replace("ws://", "http://")
-                .replace("/signal", "")
-        val adminKey = prefs.getString("admin_api_key", null) ?: ""
-
-        val json = JSONObject().apply {
-            put("purchase_token", token)
-            put("product_id", productId)
-            put("package_name", packageName)
+        btnRetry.visibility = android.view.View.GONE
+        val ws = WebSocketService.instance
+        if (ws == null || !ws.isRegistered) {
+            showVerificationError("Connect to SecureCall, then retry")
+            return
         }
-
-        val client = OkHttpClient()
-        val request = Request.Builder()
-            .url("$serverUrl/billing/verify-purchase")
-            .header("X-Admin-Key", adminKey)
-            .post(json.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG, "Verification request failed", e)
-                runOnUiThread {
-                    tvStatus.text = "Verification failed — check connection"
-                    tvCode.text = "—"
+        ws.verifyPlayOneTimePurchase(purchaseToken, productId) { success, code, tier, error ->
+            runOnUiThread {
+                if (!success || code.isBlank()) {
+                    showVerificationError(if (error.isBlank()) "Verification failed" else error)
+                    return@runOnUiThread
                 }
+                activationCode = code
+                tvCode.text = code
+                tvStatus.text = "Code generated — ${tier.uppercase()} tier"
+                btnRetry.visibility = android.view.View.GONE
             }
+        }
+    }
 
-            override fun onResponse(call: Call, response: Response) {
-                val body = response.body?.string() ?: ""
-                runOnUiThread {
-                    try {
-                        val result = JSONObject(body)
-                        if (response.isSuccessful && result.has("code")) {
-                            activationCode = result.getString("code")
-                            tvCode.text = activationCode
-                            tvStatus.text = "Code generated — ${result.optString("tier", "premium").uppercase()} tier"
-                            Log.d(TAG, "Activation code received: $activationCode")
-                        } else {
-                            val error = result.optString("error", "unknown error")
-                            tvStatus.text = "Error: $error"
-                            tvCode.text = "—"
-                            Log.e(TAG, "Verification error: $error")
-                        }
-                    } catch (e: Exception) {
-                        tvStatus.text = "Parse error"
-                        tvCode.text = "—"
-                        Log.e(TAG, "Response parse error", e)
-                    }
-                }
-            }
-        })
+    private fun showVerificationError(message: String) {
+        tvStatus.text = message
+        tvCode.text = "—"
+        btnRetry.visibility = android.view.View.VISIBLE
     }
 
     private fun activateCode(code: String) {
@@ -166,7 +133,7 @@ class PurchaseResultActivity : AppCompatActivity() {
                         Runtime.getRuntime().exit(0)
                     }, 1500)
                 } else {
-                    tvStatus.text = "Activation failed: ${error ?: "unknown"}"
+                    tvStatus.text = "Activation failed: ${error.ifBlank { "unknown" }}"
                 }
             }
         }

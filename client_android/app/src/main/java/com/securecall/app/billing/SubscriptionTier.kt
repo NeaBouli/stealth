@@ -15,7 +15,7 @@ enum class SubscriptionTier(val displayName: String) {
         }
 
         fun fromName(name: String): SubscriptionTier {
-            return values().firstOrNull { it.name == name } ?: FREE
+            return values().firstOrNull { it.name.equals(name.trim(), ignoreCase = true) } ?: FREE
         }
     }
 }

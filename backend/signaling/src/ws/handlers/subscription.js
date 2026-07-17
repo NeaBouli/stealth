@@ -5,7 +5,8 @@ module.exports = function subscriptionHandlers(ctx) {
     activationCodes, walletMappings, fcmTokens, giftCodes,
     getClientId, sendToClient,
     saveActivationCodes, saveWalletMappings, saveGiftCodes,
-    subscriptions, fcm, verifyIfrLock, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash, verifyPlaySubscription,
+    subscriptions, fcm, verifyIfrLock, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
+    verifyPlaySubscription, verifyPlayOneTimePurchase, issuePlayActivationCode,
   } = ctx;
 
   const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
@@ -38,14 +39,84 @@ module.exports = function subscriptionHandlers(ctx) {
   }
 
   return {
+    PLAY_PURCHASE_VERIFY(ws, connId, msg) {
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        return ws.send(JSON.stringify({
+          type: "PLAY_PURCHASE_VERIFY_RESULT",
+          success: false,
+          error: "not_registered",
+        }));
+      }
+      const purchaseToken = typeof msg.purchaseToken === "string" ? msg.purchaseToken.trim() : "";
+      const productId = typeof msg.productId === "string" ? msg.productId.trim() : "";
+      const packageName = typeof msg.packageName === "string" ? msg.packageName.trim() : "";
+      if (!purchaseToken || purchaseToken.length > 4096 || !productId || productId.length > 200
+          || !packageName || packageName.length > 255
+          || typeof verifyPlayOneTimePurchase !== "function"
+          || typeof issuePlayActivationCode !== "function") {
+        return ws.send(JSON.stringify({
+          type: "PLAY_PURCHASE_VERIFY_RESULT",
+          success: false,
+          error: "invalid_purchase_verification_request",
+        }));
+      }
+
+      const complete = verification => {
+        if (!verification || verification.productId !== productId
+            || verification.packageName !== packageName) {
+          throw new Error("purchase_binding_mismatch");
+        }
+        const result = issuePlayActivationCode({
+          activationCodes,
+          giftCodes,
+          saveActivationCodes,
+          purchaseToken,
+          productId,
+          packageName,
+        });
+        ws.send(JSON.stringify({
+          type: "PLAY_PURCHASE_VERIFY_RESULT",
+          success: true,
+          code: result.code,
+          tier: result.tier,
+          expires: result.expires,
+          productId: result.productId,
+          duplicate: result.duplicate,
+        }));
+      };
+      const reject = () => {
+        console.warn("[BILLING] Google Play purchase verification rejected");
+        ws.send(JSON.stringify({
+          type: "PLAY_PURCHASE_VERIFY_RESULT",
+          success: false,
+          error: "purchase_verification_failed",
+        }));
+      };
+      try {
+        const verification = verifyPlayOneTimePurchase(packageName, productId, purchaseToken);
+        if (verification && typeof verification.then === "function") {
+          verification.then(complete).catch(reject);
+        } else {
+          complete(verification);
+        }
+      } catch (error) {
+        reject(error);
+      }
+    },
+
     SUBSCRIPTION_VERIFY(ws, connId, msg) {
       const myClientId = getClientId(connId);
       if (!myClientId) {
         ws.send(JSON.stringify({ type: "ERROR", error: "not_registered" }));
         return;
       }
-      const { purchaseToken, productId, packageName } = msg;
-      if (!purchaseToken || !productId || !packageName || typeof verifyPlaySubscription !== "function") {
+      const purchaseToken = typeof msg.purchaseToken === "string" ? msg.purchaseToken.trim() : "";
+      const productId = typeof msg.productId === "string" ? msg.productId.trim() : "";
+      const packageName = typeof msg.packageName === "string" ? msg.packageName.trim() : "";
+      if (!purchaseToken || purchaseToken.length > 4096 || !productId || productId.length > 200
+          || !packageName || packageName.length > 255
+          || typeof verifyPlaySubscription !== "function") {
         ws.send(JSON.stringify({ type: "ERROR", error: "invalid_subscription_verification_request" }));
         return;
       }
@@ -53,11 +124,16 @@ module.exports = function subscriptionHandlers(ctx) {
         const stored = subscriptions.recordVerifiedSubscription(
           myClientId, purchaseToken, productId, result.tier, result.expiresAt
         );
-        ws.send(JSON.stringify({ type: "SUBSCRIPTION_VERIFY_ACK", tier: stored.tier, expiresAt: stored.expiresAt }));
+        ws.send(JSON.stringify({
+          type: "SUBSCRIPTION_VERIFY_ACK",
+          tier: stored.tier,
+          expiresAt: stored.expiresAt,
+          productId,
+        }));
         console.log(`[SUBSCRIPTION] Verified tier=${stored.tier}, product=${productId}`);
       };
-      const reject = error => {
-        console.warn("[SUBSCRIPTION] Google Play verification rejected:", error.message);
+      const reject = () => {
+        console.warn("[SUBSCRIPTION] Google Play verification rejected");
         ws.send(JSON.stringify({ type: "ERROR", error: "subscription_verification_failed" }));
       };
       try {
@@ -100,6 +176,10 @@ module.exports = function subscriptionHandlers(ctx) {
       if (!entry) {
         console.log("[ACTIVATION] Invalid code attempted:", code.substring(0, 4) + "****");
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "invalid" }));
+      }
+
+      if (entry.expires && Date.parse(entry.expires) < Date.now()) {
+        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "expired" }));
       }
 
       const devices = Array.isArray(entry.usedBy) ? entry.usedBy : (entry.usedBy ? [entry.usedBy] : []);

@@ -26,6 +26,8 @@ class SubscriptionManager(context: Context) {
         private const val KEY_EXPIRES_AT = "expires_at"
         private const val KEY_PRODUCT_ID = "product_id"
         private const val KEY_LAST_VERIFIED_AT = "last_verified_at"
+        private const val KEY_PENDING_PURCHASE_TOKEN = "pending_purchase_token"
+        private const val KEY_PENDING_PRODUCT_ID = "pending_product_id"
 
         private val verifyHttpClient: OkHttpClient by lazy {
             com.securecall.app.net.NetworkManager.buildPinnedClient(connectTimeoutSec = 10, readTimeoutSec = 10)
@@ -71,6 +73,43 @@ class SubscriptionManager(context: Context) {
             .putLong(KEY_LAST_VERIFIED_AT, System.currentTimeMillis())
             .apply()
         Log.d(TAG, "Subscription updated: tier=${tier.name}, productId=$productId")
+    }
+
+    fun stageVerification(purchaseToken: String, productId: String): Boolean {
+        if (purchaseToken.isBlank() || productId.isBlank()) return false
+        return prefs.edit()
+            .putString(KEY_PENDING_PURCHASE_TOKEN, purchaseToken)
+            .putString(KEY_PENDING_PRODUCT_ID, productId)
+            .commit()
+    }
+
+    fun confirmPendingVerification(
+        tier: SubscriptionTier,
+        expiresAt: Long,
+        verifiedProductId: String,
+    ): Boolean {
+        val purchaseToken = prefs.getString(KEY_PENDING_PURCHASE_TOKEN, "") ?: ""
+        val productId = prefs.getString(KEY_PENDING_PRODUCT_ID, "") ?: ""
+        if (tier == SubscriptionTier.FREE || expiresAt <= System.currentTimeMillis()
+            || purchaseToken.isBlank() || productId.isBlank()
+            || productId != verifiedProductId
+            || SubscriptionTier.fromProductId(productId) != tier) return false
+        return prefs.edit()
+            .putString(KEY_TIER, tier.name)
+            .putString(KEY_PURCHASE_TOKEN, purchaseToken)
+            .putLong(KEY_EXPIRES_AT, expiresAt)
+            .putString(KEY_PRODUCT_ID, productId)
+            .putLong(KEY_LAST_VERIFIED_AT, System.currentTimeMillis())
+            .remove(KEY_PENDING_PURCHASE_TOKEN)
+            .remove(KEY_PENDING_PRODUCT_ID)
+            .commit()
+    }
+
+    fun clearPendingVerification() {
+        prefs.edit()
+            .remove(KEY_PENDING_PURCHASE_TOKEN)
+            .remove(KEY_PENDING_PRODUCT_ID)
+            .apply()
     }
 
     fun updateFromServerVerification(tier: SubscriptionTier, expiresAt: Long) {

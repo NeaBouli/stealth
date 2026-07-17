@@ -604,77 +604,31 @@ app.post("/billing/verify-purchase", requireAdmin, async (req, res) => {
     return res.status(400).json({ error: "missing fields: purchase_token, product_id, package_name" });
   }
 
-  const { findCodeByPurchaseToken, resolveOneTimeProduct } = require("./payments/google_play_billing");
-  const product = resolveOneTimeProduct(package_name, product_id);
-  if (!product) return res.status(400).json({ error: "unsupported_package_or_product" });
-  const tier = product.tier;
-
-  // Google Play Developer API verification
-  // Requires GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 env var (base64-encoded JSON key)
-  const serviceAccountB64 = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64;
-  if (!serviceAccountB64) {
-    return res.status(503).json({ error: "google_play_verification_not_configured" });
-  }
+  const {
+    issuePlayActivationCode,
+    verifyPlayOneTimePurchase,
+  } = require("./payments/google_play_billing");
   try {
-      const { GoogleAuth } = require("google-auth-library");
-      const keyJson = JSON.parse(Buffer.from(serviceAccountB64, "base64").toString("utf8"));
-      const auth = new GoogleAuth({
-        credentials: keyJson,
-        scopes: ["https://www.googleapis.com/auth/androidpublisher"]
-      });
-      const client = await auth.getClient();
-
-      // For one-time products (activation codes + lifetime), use products.get
-      const endpoint = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
-        + `${encodeURIComponent(package_name)}/purchases/products/${encodeURIComponent(product_id)}`
-        + `/tokens/${encodeURIComponent(purchase_token)}`;
-      const result = await client.request({
-        url: endpoint,
-        method: "GET"
-      });
-
-      if (result.data.purchaseState !== 0) {
-        return res.status(403).json({ error: "purchase_not_completed", state: result.data.purchaseState });
-      }
-
-      console.log("[BILLING] Purchase verified via Google API:", product_id, "state:", result.data.purchaseState);
+    await verifyPlayOneTimePurchase(package_name, product_id, purchase_token);
+    const result = issuePlayActivationCode({
+      activationCodes,
+      giftCodes,
+      saveActivationCodes,
+      purchaseToken: purchase_token,
+      productId: product_id,
+      packageName: package_name,
+    });
+    return res.json({
+      code: result.code,
+      tier: result.tier,
+      expires: result.expires,
+      product_id: result.productId,
+      duplicate: result.duplicate,
+    });
   } catch (e) {
-    console.error("[BILLING] Google API verification failed:", e.message);
+    console.error("[BILLING] Google API verification failed");
     return res.status(502).json({ error: "verification_failed" });
   }
-
-  const existing = findCodeByPurchaseToken(activationCodes, purchase_token)
-    || findCodeByPurchaseToken(giftCodes, purchase_token);
-  if (existing) {
-    return res.json({ code: existing.code, tier: existing.record.tier, expires: existing.record.expires, product_id });
-  }
-
-  // Generate activation code
-  const code = `${tier === "pro" ? "PRO" : "PREM"}-` + crypto.randomBytes(4).toString("hex").toUpperCase();
-  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year to redeem
-
-  activationCodes.push({
-    code,
-    tier,
-    productKey: product_id,
-    note: `Purchased via Google Play (${product_id})`,
-    createdAt: new Date().toISOString(),
-    expires: expires.toISOString(),
-    maxUses: 2,
-    currentUses: 0,
-    usedBy: [],
-    purchaseToken: purchase_token
-  });
-
-  saveActivationCodes();
-  console.log("[BILLING] Activation code generated:", code.substring(0, 4) + "****", "tier:", tier, "product:", product_id);
-
-  res.json({
-    code,
-    tier,
-    expires: expires.toISOString(),
-    product_id
-  });
 });
 
 // --- SIWE (Sign-In with Ethereum) — cryptographic wallet verification ---
@@ -1142,13 +1096,16 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
 // --- Wire modular WS context (replaces inline wss.on("connection",...) block) ---
 // All Maps/arrays passed here are the same singletons used by HTTP routes above,
 // so HTTP routes and WS handlers share one consistent state — no split-brain.
+const googlePlayBilling = require("./payments/google_play_billing");
 ctx = buildContext({
   pkd, subscriptions, fcm, customIds, licenses,
   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
   rateLimit, hb,
   giftCodes, saveGiftCodes,
   issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
-  verifyPlaySubscription: require("./payments/google_play_billing").verifyPlaySubscription,
+  verifyPlaySubscription: googlePlayBilling.verifyPlaySubscription,
+  verifyPlayOneTimePurchase: googlePlayBilling.verifyPlayOneTimePurchase,
+  issuePlayActivationCode: googlePlayBilling.issuePlayActivationCode,
 });
 wireWs(wss, ctx);
 
