@@ -4,7 +4,14 @@ const crypto = require("crypto");
 const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519");
 process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM = privateKey.export({ type: "pkcs8", format: "pem" });
 
-const { issueEntitlementToken, verifyEntitlementToken, audienceForProduct, orderHash, TOKEN_TTL_SECONDS } = require("../payments/entitlement_tokens");
+const {
+  issueEntitlementToken,
+  verifyEntitlementToken,
+  audienceForProduct,
+  orderHash,
+  signingPrivateKey,
+  TOKEN_TTL_SECONDS,
+} = require("../payments/entitlement_tokens");
 
 assert.strictEqual(audienceForProduct("securechat_pro_lifetime"), "securechat");
 assert.strictEqual(audienceForProduct("chameleon_elite_lifetime"), "chameleon");
@@ -50,6 +57,19 @@ assert.strictEqual(
   false,
 );
 
+const privateKeyPem = process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM;
+delete process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM;
+process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM_BASE64 = Buffer.from(privateKeyPem, "utf8").toString("base64");
+assert.strictEqual(signingPrivateKey(), privateKeyPem);
+assert.ok(issueEntitlementToken({
+  subject: "sx_test_device",
+  productKey: "chameleon_elite_lifetime",
+  tier: "elite",
+  externalOrderId: "google_play_reviewer",
+  nowSeconds: now,
+}), "base64-encoded signing key issues a token");
+
+delete process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM_BASE64;
 delete process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM;
 assert.strictEqual(issueEntitlementToken({
   subject: "sx_test_device",

@@ -3,6 +3,18 @@ const crypto = require("crypto");
 const TOKEN_VERSION = "1";
 const TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 
+function signingPrivateKey() {
+  const encoded = process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM_BASE64;
+  if (encoded) {
+    try {
+      return Buffer.from(encoded, "base64").toString("utf8");
+    } catch {
+      return null;
+    }
+  }
+  return process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM || null;
+}
+
 function base64Url(value) {
   return Buffer.from(value).toString("base64url");
 }
@@ -24,7 +36,7 @@ function validClaim(value, maxLength) {
 }
 
 function issueEntitlementToken({ subject, productKey, tier, externalOrderId, nowSeconds = Math.floor(Date.now() / 1000) }) {
-  const privateKeyPem = process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM;
+  const privateKeyPem = signingPrivateKey();
   if (!privateKeyPem) return null;
 
   const audience = audienceForProduct(productKey);
@@ -51,7 +63,7 @@ function issueEntitlementToken({ subject, productKey, tier, externalOrderId, now
 }
 
 function verifyEntitlementToken(token, { expectedSubject, nowSeconds = Math.floor(Date.now() / 1000), expiryGraceSeconds = 0 } = {}) {
-  const privateKeyPem = process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM;
+  const privateKeyPem = signingPrivateKey();
   if (!privateKeyPem || typeof token !== "string" || token.length > 4096) throw new Error("Invalid entitlement token");
   const parts = token.split(".");
   if (parts.length !== 2 || parts.some(part => !part)) throw new Error("Invalid entitlement token");
@@ -85,4 +97,11 @@ function verifyEntitlementToken(token, { expectedSubject, nowSeconds = Math.floo
   return { ...claims, issuedAt, expiresAt };
 }
 
-module.exports = { issueEntitlementToken, verifyEntitlementToken, audienceForProduct, orderHash, TOKEN_TTL_SECONDS };
+module.exports = {
+  issueEntitlementToken,
+  verifyEntitlementToken,
+  audienceForProduct,
+  orderHash,
+  signingPrivateKey,
+  TOKEN_TTL_SECONDS,
+};
