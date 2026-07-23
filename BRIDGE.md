@@ -61,7 +61,6 @@
 
 ---
 
-
 ### 2026-07-15 20:10 EEST — CODEX TERMINAL — CONFIG / WORKFLOW
 
 **Codex Subagent Role Split Added**
@@ -5343,5 +5342,24 @@ Rules for all dev agents:
   wurden ausgegeben.
 - Play Console bleibt unveraendert. Die Billing-Warnung verschwindet erst, nachdem ein korrekt
   signierter 1.0.46-AAB in allen relevanten aktiven Tracks veroeffentlicht wurde.
+
+---
+
+### 2026-07-23 23:02 EEST — CODEX TERMINAL — CHAMELEON REVIEW ENTITLEMENT / PLAY STATUS
+
+- Der bestehende Stealth-Entitlement-Backendpfad unterstuetzt jetzt den dauerhaften
+  Google-Reviewer-Zugang fuer Chameleon mit serverseitig signierten, erneuerbaren
+  Entitlements. Keine Zugangsdaten oder Secrets in Bridge oder Repository.
+- Backend-Fix fuer die kodierte Signing-Key-Konfiguration ist als Commit `3c2bf36`
+  auf `origin/main`.
+- Google Play verwendet fuer Kontakt und Feedback durchgehend
+  `kaspartisan@proton.me`.
+- Chameleon Closed Alpha `9 (0.1.8-alpha)` wurde mit 14 Aenderungen zur Google-Pruefung
+  eingereicht. Kein Produktions-Rollout.
+- Der alte Chameleon-intern-Test `5 (0.1.4-alpha)` wurde pausiert, weil nur dieser
+  Legacy-Release noch Accessibility-/Location-FGS-Metadaten enthielt und die neue
+  bereinigte Closed-Test-Validierung blockierte.
+- Open next: Google-Pruefung abwarten; VLABS-Shop-/Steuerintegration bleibt getrennt
+  und unveraendert.
 
 ---
