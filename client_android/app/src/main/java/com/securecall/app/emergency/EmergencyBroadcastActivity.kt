@@ -8,6 +8,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.securecall.app.R
 import com.securecall.app.ui.EdgeToEdgeHelper
@@ -36,6 +37,14 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
             finish()
             return
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (template?.dismissable == true) {
+                    finish()
+                }
+            }
+        })
 
         val t = template!!
         val bgColor = when (t.severity) {
@@ -134,13 +143,6 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
         scrollView.addView(layout)
         setContentView(scrollView)
         EdgeToEdgeHelper.applySystemBarPadding(scrollView)
-    }
-
-    override fun onBackPressed() {
-        if (template?.dismissable == true) {
-            super.onBackPressed()
-        }
-        // Block back button for non-dismissable alerts
     }
 
     private fun makeRoundedButton(label: String, color: Int, onClick: () -> Unit): Button {

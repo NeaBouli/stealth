@@ -18,7 +18,7 @@ googleServices {
 
 android {
     namespace "com.securecall.app"
-    compileSdk 35
+    compileSdk 36
 
     lint {
         // English is the complete fallback locale; incomplete translations stay visible.
@@ -28,9 +28,9 @@ android {
     defaultConfig {
         applicationId "com.securecall.app"
         minSdkVersion 24
-        targetSdkVersion 35
-        versionCode 78012
-        versionName "1.0.45"
+        targetSdkVersion 36
+        versionCode 78013
+        versionName "1.0.46"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

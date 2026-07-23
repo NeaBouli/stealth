@@ -61,6 +61,7 @@
 
 ---
 
+
 ### 2026-07-15 20:10 EEST — CODEX TERMINAL — CONFIG / WORKFLOW
 
 **Codex Subagent Role Split Added**
@@ -5304,3 +5305,43 @@ Rules for all dev agents:
 - Backend-Gesamttests PASS: Context, Handler, Subscription/WebRTC, E-Mail,
   Stripe, VLABS Fulfillment und Entitlement Tokens.
 - Keine Runtime Keys, Zahlung, Mail, Deployment oder Live-Aktivierung.
+
+---
+
+### 2026-07-23 09:05 EEST — CODEX TERMINAL — PLAY COMPLIANCE / RELEASE IN PROGRESS
+
+**SecureCall Android 16 + Billing 8 Readiness**
+- Play Console zeigt Produktion `77009 (1.0.41-free)` und internen Release
+  `29 (1.0.12-free)` jeweils mit Ziel-SDK 35.
+- Google verlangt fuer neue App-Updates ab 31.08.2026 Android 16 / Ziel-SDK 36.
+- Der aktive Produktionsrelease loest weiterhin die Billing-Warnung aus; der aktuelle Code nutzt
+  bereits Billing `8.2.1`, dieser Stand ist aber noch nicht bei Google Play veroeffentlicht.
+- In Arbeit: compile/target SDK 36, Version 1.0.46, Entfernung veralteter Systemleisten-
+  Farbparameter, Release-Build und Artefaktpruefung.
+- Keine Play-Veroeffentlichung oder Track-Aenderung in diesem Block. WoizZ bleibt ausserhalb des
+  Scopes.
+
+---
+
+### 2026-07-23 10:10 EEST — CODEX TERMINAL — PLAY COMPLIANCE / FIX / TEST / BLOCKED RELEASE
+
+**SecureCall 1.0.46 Android 16 readiness implemented**
+- `compileSdk` und `targetSdkVersion` auf 36 angehoben; Version auf `78013` / `1.0.46` gesetzt.
+- Android Gradle Plugin von 8.7.3 auf die API-36-kompatible Version 8.11.1 aktualisiert.
+- Veraltete Theme-Parameter fuer Status-/Navigationsleisten entfernt; die zentrale
+  `EdgeToEdgeHelper`-Inset-Behandlung bleibt aktiv.
+- AGP 8.11 fand einen echten Android-16-Blocker in `EmergencyBroadcastActivity`: das alte
+  `onBackPressed()` wurde durch `OnBackPressedDispatcher` ersetzt. Nicht wegklickbare kritische
+  Alarme bleiben blockiert, wegklickbare Alarme schliessen korrekt.
+- Billing bleibt auf `com.android.billingclient:billing:8.2.1` und erfuellt Googles
+  Mindestanforderung 8.0.0.
+- Verifikation: `testFreeDebugUnitTest`, `lintFreeRelease`, `verifyNoAppIfrWalletCode` und
+  `git diff --check` PASS.
+- Der vollstaendige Bundlelauf erreichte nach Unit-Tests, Lint, R8 und Packaging ausschliesslich
+  beim finalen Signieren den Blocker: lokale Signing-Variablen waren in dieser Sitzung nicht
+  gesetzt. Kein signierter 1.0.46-AAB wurde erzeugt oder zu Google Play hochgeladen; keine Secrets
+  wurden ausgegeben.
+- Play Console bleibt unveraendert. Die Billing-Warnung verschwindet erst, nachdem ein korrekt
+  signierter 1.0.46-AAB in allen relevanten aktiven Tracks veroeffentlicht wurde.
+
+---
