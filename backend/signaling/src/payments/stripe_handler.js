@@ -239,7 +239,7 @@ function isDirectEntitlementSession(session) {
   );
 }
 
-async function handleWebhook(event, stripe, activationCodesRef) {
+async function handleWebhook(event, stripe, activationCodesRef, deps = {}) {
   console.log("[STRIPE] === WEBHOOK RECEIVED ===");
   console.log("[STRIPE] Event type:", event.type, "id:", maskStripeId(event.id));
   console.log("[STRIPE] RESEND_API_KEY set:", !!process.env.RESEND_API_KEY);
@@ -277,6 +277,16 @@ async function handleWebhook(event, stripe, activationCodesRef) {
         eventId: event.id,
         reason: event.type === "charge.dispute.created" ? "stripe_dispute" : "stripe_full_refund",
       });
+      if (Array.isArray(activationCodesRef)) {
+        for (let index = activationCodesRef.length - 1; index >= 0; index -= 1) {
+          if (activationCodesRef[index]?.stripeSessionId === session.id) {
+            activationCodesRef.splice(index, 1);
+          }
+        }
+      }
+      if (typeof deps.persistActivationCodes === "function") {
+        deps.persistActivationCodes();
+      }
       if (soldCode && !revoked.found) throw new Error("activation_code_revocation_failed");
     }
     const productKey = isCustomId
@@ -468,7 +478,7 @@ function generateActivationCode(tier) {
  * @param {Object} app  Express app
  * @param {Array}  activationCodesRef  Live reference to server.js activationCodes array
  */
-function setupRoutes(app, activationCodesRef) {
+function setupRoutes(app, activationCodesRef, deps = {}) {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
     console.warn("[STRIPE] STRIPE_SECRET_KEY not set — Stripe routes disabled");
@@ -519,7 +529,7 @@ function setupRoutes(app, activationCodesRef) {
     }
 
     try {
-      const result = await handleWebhook(event, stripe, activationCodesRef);
+      const result = await handleWebhook(event, stripe, activationCodesRef, deps);
       if (result?.code) {
         console.log("[STRIPE] Activation code generated:", result.code.substring(0, 4) + "****", "tier:", result.tier || "unknown");
       }

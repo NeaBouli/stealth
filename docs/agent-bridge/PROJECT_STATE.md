@@ -1,5 +1,21 @@
 # Stealth Project State
 
+## 2026-07-23 — SECURECALL REFUND/RESTART HARDENING
+
+- Active scope: SecureCall. SecureChat and Chameleon remain
+  `STANDBY / IN DEVELOPMENT` and production-disabled.
+- Refund/dispute revocation now persists activation removal and repairs stale
+  activation state on an idempotent retry. Startup treats the sold-code store as
+  authoritative for payment-backed codes and removes them fail-closed when that
+  store is corrupt or no longer contains an active matching sale.
+- Fresh signaling install, full tests, focused payment tests and npm audit pass
+  with zero known vulnerabilities. Android Free unit tests, lint and APK
+  assembly pass; a fresh Android 15 x86_64 AVD completed offline onboarding and
+  all four primary navigation views without an app ANR or fatal exception.
+- Physical two-device calling, background/reconnect behavior, store billing,
+  signing and provider-backed test transactions remain external release gates.
+  No external or production action occurred.
+
 ## 2026-07-17 — Public credential boundary restored
 
 - The legacy rollout monitor now requires private operator-supplied deployment credentials and identifiers; no value remains in the current public tree.

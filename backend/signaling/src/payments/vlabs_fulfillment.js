@@ -186,7 +186,18 @@ function rejectRateLimited(res) {
 function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
   const sendActivationCodeImpl = deps.sendActivationCode || sendActivationCode;
   const generateActivationCodeImpl = deps.generateActivationCode || generateActivationCode;
+  const persistActivationCodes = deps.persistActivationCodes;
   const rateLimitRequest = deps.rateLimitRequest || createRequestRateLimiter();
+
+  function removeAndPersistActivation(orderId) {
+    if (!orderId || !Array.isArray(activationCodesRef)) return;
+    for (let index = activationCodesRef.length - 1; index >= 0; index -= 1) {
+      if (activationCodesRef[index]?.stripeSessionId === orderId) {
+        activationCodesRef.splice(index, 1);
+      }
+    }
+    if (typeof persistActivationCodes === "function") persistActivationCodes();
+  }
   app.post("/internal/vlabs/fulfill", async (req, res) => {
     const secret = process.env.VLABS_FULFILLMENT_SECRET;
     if (!secret || secret.length < 32) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
@@ -381,7 +392,10 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
         return res.status(409).json({ ok: false, error: "Order product mismatch" });
       }
       if (!order) {
-        if (existingTombstone) return res.json({ ok: true, duplicate: true, productId });
+        if (existingTombstone) {
+          removeAndPersistActivation(resolvedOrderId);
+          return res.json({ ok: true, duplicate: true, productId });
+        }
         tombstones[paymentReferenceHash] = {
           productId,
           reason,
@@ -390,6 +404,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
         };
         orders[PAYMENT_TOMBSTONES_KEY] = tombstones;
         saveOrdersLocked(lock, orders);
+        removeAndPersistActivation(resolvedOrderId);
         return res.json({ ok: true, revoked: true, productId });
       }
       if (
@@ -399,6 +414,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
         return res.status(409).json({ ok: false, error: "Order payment mismatch" });
       }
       if (order.status === "REVOKED" || existingTombstone) {
+        removeAndPersistActivation(resolvedOrderId);
         return res.json({ ok: true, duplicate: true, productId });
       }
 
@@ -409,10 +425,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, deps = {}) {
         eventId: adjustmentEventId,
         reason,
       });
-      if (Array.isArray(activationCodesRef)) {
-        const liveIndex = activationCodesRef.findIndex(item => item.stripeSessionId === resolvedOrderId);
-        if (liveIndex >= 0) activationCodesRef.splice(liveIndex, 1);
-      }
+      removeAndPersistActivation(resolvedOrderId);
       orders[resolvedOrderId] = {
         ...order,
         status: "REVOKED",

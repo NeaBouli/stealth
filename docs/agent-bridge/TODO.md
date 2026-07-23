@@ -1,5 +1,20 @@
 # Stealth TODO
 
+## 2026-07-23 — Active completion boundary
+
+- [x] Mark SecureChat and Chameleon `STANDBY / IN DEVELOPMENT`; keep all
+  production and sales gates closed.
+- [x] Prevent a refunded/disputed activation code from returning after a server
+  restart; cover first revoke, duplicate-revoke repair and corrupt-store
+  fail-closed startup.
+- [x] Update compatible signaling dependencies and pass a fresh install, full
+  signaling/payment suites and zero-vulnerability npm audit.
+- [x] Complete Android build and isolated Android 15 x86_64 emulator evidence:
+  unit tests, lint, APK assembly/install, onboarding and all primary views.
+- [ ] Complete physical-device release evidence for SecureCall.
+  Provider/test-purchase, signing and physical call evidence remain external
+  gates.
+
 ## 2026-07-16 — Central payment integration
 
 - [x] Harden shared entitlement issuance, reversal ordering and activation persistence.

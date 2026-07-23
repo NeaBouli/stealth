@@ -1,5 +1,25 @@
 # BRIDGE — stealth
 
+## 2026-07-23 — CODEX — SECURECALL ACTIVE / SUITE STANDBY
+
+- SecureCall remains the only active product-completion scope in this public
+  repository. SecureChat and Chameleon are explicitly `STANDBY / IN
+  DEVELOPMENT`; their existing fail-closed shared entitlement code is retained,
+  but no launch or product expansion is authorized.
+- Closed a restart-safety defect in refund/dispute revocation. Payment-backed
+  activation state is removed from memory and persisted on both first and
+  duplicate revocation. Startup accepts payment-backed codes only while the
+  authoritative sold-code store still marks the matching sale active; corrupt
+  payment state fails closed.
+- Compatible signaling dependencies are updated. Fresh install, full signaling
+  and payment suites pass, and npm audit reports zero known vulnerabilities.
+- Android Free Debug unit tests, lint and APK assembly pass. A fresh Android 15
+  x86_64 AVD installed the split APK and completed an offline UI smoke through
+  onboarding, Calls, Contacts, Dialer and Settings. WebRTC loaded, the process
+  stayed active and no SecureCall ANR or fatal exception occurred.
+- No runtime secret, provider value, customer data, payment, activation,
+  deployment, invoice or finance/AADE request was used.
+
 ## 2026-07-17 — Google Play purchase boundary corrected (Codex)
 
 - PR #37 now aligns the Android client with the active Play subscription catalog and grants no local paid tier before server-side Google verification succeeds.

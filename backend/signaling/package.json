@@ -8,8 +8,8 @@
     "start": "node src/server.js",
     "dev": "NODE_ENV=development SIGNALING_REPLICA_COUNT=1 node src/server.js",
     "entitlement:keygen": "node scripts/generate-entitlement-keypair.mjs",
-    "test": "node src/__tests__/single_writer_guard.test.js && node src/__tests__/json_store_atomic.test.js && node src/__tests__/context.smoke.js && node src/__tests__/handlers.test.js && node src/__tests__/subscription_webrtc.test.js && node src/__tests__/email_handler.test.js && node src/__tests__/stripe_handler.test.js && node src/__tests__/custom_ids_payment.test.js && node src/__tests__/vlabs_finance_export.test.js && node src/__tests__/google_play_billing.test.js && node src/__tests__/google_play_rtdn.test.js && node src/__tests__/subscriptions_payment.test.js && node src/__tests__/vlabs_fulfillment.test.js && node src/__tests__/entitlement_tokens.test.js && node src/__tests__/entitlement_keypair_tool.test.js",
-    "test:payments": "node src/__tests__/json_store_atomic.test.js && node src/__tests__/stripe_handler.test.js && node src/__tests__/custom_ids_payment.test.js && node src/__tests__/vlabs_finance_export.test.js && node src/__tests__/google_play_billing.test.js && node src/__tests__/google_play_rtdn.test.js && node src/__tests__/subscriptions_payment.test.js && node src/__tests__/vlabs_fulfillment.test.js && node src/__tests__/entitlement_tokens.test.js && node src/__tests__/entitlement_keypair_tool.test.js"
+    "test": "node src/__tests__/single_writer_guard.test.js && node src/__tests__/json_store_atomic.test.js && node src/__tests__/activation_store_revocation.test.js && node src/__tests__/context.smoke.js && node src/__tests__/handlers.test.js && node src/__tests__/subscription_webrtc.test.js && node src/__tests__/email_handler.test.js && node src/__tests__/stripe_handler.test.js && node src/__tests__/custom_ids_payment.test.js && node src/__tests__/vlabs_finance_export.test.js && node src/__tests__/google_play_billing.test.js && node src/__tests__/google_play_rtdn.test.js && node src/__tests__/subscriptions_payment.test.js && node src/__tests__/vlabs_fulfillment.test.js && node src/__tests__/entitlement_tokens.test.js && node src/__tests__/entitlement_keypair_tool.test.js",
+    "test:payments": "node src/__tests__/json_store_atomic.test.js && node src/__tests__/activation_store_revocation.test.js && node src/__tests__/stripe_handler.test.js && node src/__tests__/custom_ids_payment.test.js && node src/__tests__/vlabs_finance_export.test.js && node src/__tests__/google_play_billing.test.js && node src/__tests__/google_play_rtdn.test.js && node src/__tests__/subscriptions_payment.test.js && node src/__tests__/vlabs_fulfillment.test.js && node src/__tests__/entitlement_tokens.test.js && node src/__tests__/entitlement_keypair_tool.test.js"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -18,14 +18,15 @@
     "ws": "^8.21.0",
     "uuid": ">=11.1.1",
     "@grpc/grpc-js": "^1.14.4",
+    "body-parser": "1.20.6",
     "form-data": "^2.5.6",
-    "protobufjs": "^7.6.3",
+    "protobufjs": "7.6.5",
     "websocket-driver": "0.7.5"
   },
   "dependencies": {
     "@getbrevo/brevo": "^5.0.3",
     "ethers": "^6.16.0",
-    "express": "^4.19.0",
+    "express": "^4.22.2",
     "firebase-admin": "^13.10.0",
     "google-auth-library": "^10.6.2",
     "resend": "^6.10.0",

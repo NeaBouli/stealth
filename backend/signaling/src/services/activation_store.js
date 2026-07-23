@@ -41,9 +41,19 @@ function loadActivationCodes() {
     }
   }
 
-  // Merge codes from Stripe purchases (sold_codes.json)
+  // sold_codes.json is authoritative for payment-backed activation codes.
   try {
     const sold = require("../payments/sold_codes").loadAsActivationCodes();
+    const activeSoldBySession = new Map(
+      sold
+        .filter(code => code.stripeSessionId)
+        .map(code => [code.stripeSessionId, code]),
+    );
+    loaded = loaded.filter(code => {
+      if (!code?.stripeSessionId && !code?.productKey) return true;
+      const activeSale = activeSoldBySession.get(code.stripeSessionId);
+      return Boolean(activeSale && activeSale.code === code.code);
+    });
     if (sold.length > 0) {
       const existing = new Set(loaded.map(c => c.code));
       const toAdd = sold.filter(c => !existing.has(c.code));
@@ -52,6 +62,7 @@ function loadActivationCodes() {
     }
   } catch (e) {
     console.warn("[ACTIVATION] Could not load sold_codes.json:", e.message);
+    loaded = loaded.filter(code => !code?.stripeSessionId && !code?.productKey);
   }
 
   // Use .splice() to mutate in-place — preserves all stale references to this array

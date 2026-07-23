@@ -880,7 +880,9 @@ app.get("/metrics", requireAdmin, (req, res) => {
 try {
   const stripeHandler = require('./payments/stripe_handler');
   // Pass activationCodes reference so new codes from purchases are usable immediately
-  stripeHandler.setupRoutes(app, activationCodes);
+  stripeHandler.setupRoutes(app, activationCodes, {
+    persistActivationCodes: () => saveActivationCodes({ throwOnError: true }),
+  });
 } catch (e) {
   console.warn("[STRIPE] Could not load stripe_handler:", e.message);
 }
@@ -888,7 +890,9 @@ try {
 // Signed fulfillment/revocation boundary used by the private VLABS checkout.
 try {
   const { setupVlabsFulfillmentRoute } = require('./payments/vlabs_fulfillment');
-  setupVlabsFulfillmentRoute(app, activationCodes);
+  setupVlabsFulfillmentRoute(app, activationCodes, {
+    persistActivationCodes: () => saveActivationCodes({ throwOnError: true }),
+  });
 } catch (e) {
   console.warn("[VLABS-FULFILLMENT] Could not load route:", e.message);
 }

@@ -92,13 +92,17 @@ async function run() {
   const routes = new Map();
   const delivered = [];
   const activationCodes = [];
+  const persistedActivations = [];
   let codeCounter = 0;
   setupVlabsFulfillmentRoute({ post: (route, handler) => routes.set(route, handler) }, activationCodes, {
     generateActivationCode: tier => `${String(tier).toUpperCase()}-TEST-TEST-${++codeCounter}`,
     sendActivationCode: async (email, code, tier, options) => {
       delivered.push({ email, code, tier, options });
       return true;
-    }
+    },
+    persistActivationCodes: () => {
+      persistedActivations.push(JSON.parse(JSON.stringify(activationCodes)));
+    },
   });
 
   const products = [
@@ -183,8 +187,25 @@ async function run() {
   assert.strictEqual(fulfillAfterRevoke.body.error, "Payment was reversed");
   assert.strictEqual(delivered.length, products.length, "revoked orders must not resend activation email");
   const duplicateRevoke = response();
+  activationCodes.push({
+    code: "PRO-STALE-RESTART-TEST",
+    tier: "pro",
+    stripeSessionId: revokeBody.externalOrderId,
+    productKey: "securechat_pro_lifetime",
+  });
+  const persistedBeforeDuplicate = persistedActivations.length;
   await routes.get("/internal/vlabs/revoke")(signedRequest(revokeBody), duplicateRevoke);
   assert.strictEqual(duplicateRevoke.body.duplicate, true);
+  assert.strictEqual(
+    activationCodes.some(entry => entry.stripeSessionId === revokeBody.externalOrderId),
+    false,
+    "duplicate revoke repairs a stale persisted activation after restart",
+  );
+  assert.strictEqual(
+    persistedActivations.length,
+    persistedBeforeDuplicate + 1,
+    "duplicate revoke persists the repaired activation store",
+  );
   assert.throws(() => soldCodes.recordSale({
     code: "PRO-REVOKED-REUSE-TEST",
     tier: "pro",

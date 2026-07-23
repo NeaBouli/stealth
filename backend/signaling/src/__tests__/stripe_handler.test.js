@@ -201,6 +201,12 @@ async function runCustomIdFinanceAndRefundTest() {
 
 async function runActivationCodeRefundTest() {
   const activationCodes = [];
+  let persistedActivations = 0;
+  const deps = {
+    persistActivationCodes: () => {
+      persistedActivations += 1;
+    },
+  };
   const soldCodes = require("../payments/sold_codes");
   soldCodes.recordSale({
     code: "PRO-REFUND-TEST-01",
@@ -224,18 +230,38 @@ async function runActivationCodeRefundTest() {
     id: "evt_activation_refund_test",
     type: "charge.refunded",
     data: { object: { amount: 900, amount_refunded: 900, payment_intent: "pi_activation_refund" } },
-  }, stripe, activationCodes);
+  }, stripe, activationCodes, deps);
 
   assert.strictEqual(refunded.productKey, "securechat_pro_lifetime");
   assert.strictEqual(refunded.revoked.found, true, "full refund revokes a direct activation-code entitlement");
   assert.strictEqual(activationCodes.some(entry => entry.stripeSessionId === "cs_activation_refund_test"), false);
   assert.strictEqual(soldCodes.findByStripeSession("cs_activation_refund_test").revoked, true);
+  assert.strictEqual(persistedActivations, 1, "full refund persists activation-code removal");
+
+  activationCodes.push({
+    code: "PRO-REFUND-TEST-01",
+    tier: "pro",
+    stripeSessionId: "cs_activation_refund_test",
+    productKey: "securechat_pro_lifetime",
+  });
+  const duplicateRefund = await handleWebhook({
+    id: "evt_activation_refund_retry_test",
+    type: "charge.refunded",
+    data: { object: { amount: 900, amount_refunded: 900, payment_intent: "pi_activation_refund" } },
+  }, stripe, activationCodes, deps);
+  assert.strictEqual(duplicateRefund.revoked.duplicate, true);
+  assert.strictEqual(
+    activationCodes.some(entry => entry.stripeSessionId === "cs_activation_refund_test"),
+    false,
+    "refund retry repairs a stale activation loaded after restart",
+  );
+  assert.strictEqual(persistedActivations, 2, "refund retry persists the repaired store");
 
   const lateCheckout = await handleWebhook({
     id: "evt_activation_late_checkout_test",
     type: "checkout.session.async_payment_succeeded",
     data: { object: (await stripe.checkout.sessions.list()).data[0] },
-  }, stripe, activationCodes);
+  }, stripe, activationCodes, deps);
   assert.strictEqual(lateCheckout.reason, "payment_reversed", "later checkout event cannot restore a revoked code");
   assert.strictEqual(activationCodes.some(entry => entry.stripeSessionId === "cs_activation_refund_test"), false);
 }

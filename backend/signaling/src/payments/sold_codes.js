@@ -272,7 +272,7 @@ function updateEmailDelivery(stripeSessionId, delivery) {
  * (code, tier, maxUses, currentUses, usedBy) for initial merge at startup.
  */
 function loadAsActivationCodes() {
-  return load().filter(c => !c.revoked).map(c => ({
+  return sanitizeCodes(readStore().codes).filter(c => !c.revoked).map(c => ({
     code: c.code,
     tier: c.tier,
     maxUses: c.maxUses || 2,
