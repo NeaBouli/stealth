@@ -5364,3 +5364,22 @@ Rules for all dev agents:
   und unveraendert.
 
 ---
+
+### 2026-07-23 23:11 EEST — CODEX TERMINAL — CI VERIFICATION AFTER CHAMELEON PLAY SUBMISSION
+
+- Basic CI fuer Commit `b1f8db0` PASS:
+  `https://github.com/NeaBouli/stealth/actions/runs/29998064346`.
+- Security Audit fuer denselben Commit nicht gruen:
+  `https://github.com/NeaBouli/stealth/actions/runs/29998064333`.
+- Secret Detection und Security Summary PASS. Der Dependency-Audit meldet
+  bestehende npm-Advisories fuer `websocket-driver <=0.7.4` (kritisch),
+  `protobufjs 7.5.0-7.6.4` (moderat) und `body-parser <1.20.6` (niedrig).
+- Keine Dependency-Aenderung in diesem Play-/Chameleon-Arbeitsblock. Die bereits
+  vorhandenen fremden Aenderungen unter `docs/agent-bridge/` bleiben unangetastet.
+- Kontakt- und Feedbackadresse fuer Google Play bleibt `kaspartisan@proton.me`.
+
+Open next:
+- Dependency-Pfade und Upgrade-Kompatibilitaet in einem getrennten,
+  koordinierten Stealth-Arbeitsblock pruefen und beheben.
+
+---
