@@ -5383,3 +5383,51 @@ Open next:
   koordinierten Stealth-Arbeitsblock pruefen und beheben.
 
 ---
+
+### 2026-07-26 14:42 EEST — CODEX TERMINAL — SECURECALL API 35/36 FGS / FCM / QA IN PROGRESS
+
+**Ticket:** `GIO-20260726-003`
+
+- Android-15/16-FGS-Haertung lokal implementiert: API 35+ startet keinen
+  persistenten idle `dataSync`-Dienst nach Boot, Kaltstart oder KeepAlive.
+  Waerend sichtbarer App-Nutzung laeuft der Dienst typisiert als `dataSync`;
+  aktive Calls wechseln nach erteilter Mikrofonberechtigung auf den
+  `microphone`-FGS-Typ. Der Timeout-Pfad beendet den Dienst fail-closed.
+- FCM-Call-Wake ist in Free/Pro/Premium bytegleich verdrahtet. Falls Android
+  den FGS-Start trotz FCM-Ausnahme ablehnt, bleibt die eingehende
+  Call-Benachrichtigung hoerbar und `FLAG_INSISTENT`, bis sie abgebrochen wird.
+- API 35+ deaktiviert die alte Background-Service-Einstellung sichtbar und
+  erklaert den Secure-Push-Pfad. Der Phone-Confirm-Relaunch-Test ist PASS.
+- Vollstaendige lokale Android-Kette PASS:
+  `testFreeDebugUnitTest`, Pro/Premium-Debug-Kotlin-Kompilierung,
+  `lintFreeRelease`, `verifyNoAppIfrWalletCode`, `assembleFreeDebug`;
+  124 Tasks, 105/105 Unit-Tests, 0 Lint-Errors, native Debug-Builds fuer
+  arm64-v8a/armeabi-v7a/x86_64.
+- API-35-AVD mit `1.0.46-free`, target SDK 36: Onboarding, Main, Dialer,
+  Settings und Edge-to-Edge PASS; idle FGS stoppt im Hintergrund. Nach echtem
+  Emulator-Reboot sind weder WebSocketService noch KeepAlive-Alarm vorhanden.
+  Ein synthetischer ADB-FCM-Start ist erwartungsgemaess nicht gleichwertig,
+  da der Shell-UID keine Firebase-Temporary-Allowlist erhaelt.
+- Backend PASS: `npm ci`, vollstaendige Signaling-Tests und
+  `npm audit --audit-level=high` mit 0 Vulnerabilities. Lokaler Lockfile-Fix
+  schliesst die zuvor gemeldeten `body-parser`-, `protobufjs`- und
+  `websocket-driver`-Advisories. Android-Build-Job wurde lokal in Basic CI
+  aufgenommen; kein Push/Remote-Run.
+- Kimi K3 lieferte Implementierungsanalyse und abschliessenden read-only
+  Tiefenreview. Sol korrigierte den entdeckten zu breiten `securecall/`
+  Gitignore-Eintrag und den einmaligen Fallback-Klingelton; danach wurde die
+  komplette Android-Kette erneut erfolgreich ausgefuehrt.
+- Evidenz:
+  `/Users/gio/Desktop/securecall-api35-qa-20260726/SecureCall-API35-QA-Report.md`
+  sowie benachbarte `logs/`, `screenshots/` und `ui/`.
+- Status bleibt **In Progress**: S10 und Tab S4 waren nicht angeschlossen.
+  Nur S7 war sichtbar und wurde wegen paralleler Woizz-Arbeit nicht veraendert.
+  Reale Calls in beide Richtungen, Accept, Speaker, Mute, End, Sleep,
+  Reconnect, echte FCM-Zustellung, Bluetooth/Headset und GSM-Unterbrechung
+  bleiben physisch offen.
+- Signing-Variablen fehlen; kein signiertes 1.0.46-AAB/APK wurde gebaut oder
+  releaseklar erklaert. Keine Play-Aktion, kein Push, kein Deployment.
+- Die vorhandenen fremden Aenderungen unter `docs/agent-bridge/*` und
+  `releases/` blieben unangetastet.
+
+---
