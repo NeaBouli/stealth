@@ -562,6 +562,11 @@ public class MainActivity extends AppCompatActivity {
      */
     @android.annotation.SuppressLint("BatteryLife")
     private void requestBatteryOptimizationExemption() {
+        if (!com.securecall.app.net.ForegroundServicePolicy
+                .shouldRequestBatteryOptimizationExemption(android.os.Build.VERSION.SDK_INT)) {
+            return;
+        }
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
             if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {

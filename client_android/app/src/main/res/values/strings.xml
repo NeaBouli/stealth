@@ -111,6 +111,7 @@
     <string name="pref_background_service">Background Service</string>
     <string name="pref_background_service_summary">Keep connection active for incoming calls when app is minimized or after reboot</string>
     <string name="pref_background_service_summary_push">Not available on Android 15+. Incoming calls are managed by secure push notifications.</string>
+    <string name="pref_battery_optimization_summary_push">Not required on Android 15+. Incoming calls use secure push notifications.</string>
     <string name="notif_channel_background">Background Service</string>
     <string name="notif_channel_background_desc">Keeps SecureCall ready for incoming calls</string>
     <string name="notif_background_title">SecureCall active</string>
