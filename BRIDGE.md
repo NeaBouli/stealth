@@ -5595,3 +5595,14 @@ Open next:
   Publishing oder Deployment.
 
 ---
+
+### 2026-07-26 18:31 EEST — CODEX TERMINAL — SECURECALL AUDIO FIX COMMITTED
+
+**Ticket:** `GIO-20260726-003`
+
+- Lokaler Commit: `5992898 fix: stabilize SecureCall call audio lifecycle`.
+- Verifikation und verbleibende physische Release-Gates stehen im unmittelbar
+  vorherigen 18:28-Eintrag. Kein Push, Publishing, Deployment oder
+  physischer Geraeteeingriff.
+
+---
