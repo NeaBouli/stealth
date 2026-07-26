@@ -5521,3 +5521,31 @@ Open next:
   Release-Artefakte bleiben offen. Kein Push, Play-Publishing oder Deployment.
 
 ---
+
+### 2026-07-26 16:55 EEST — CODEX TERMINAL — SECURECALL PHYSICAL / RELEASE PREFLIGHT RECHECK
+
+**Ticket:** `GIO-20260726-003`
+
+- Erneuter ADB-Recheck: nur S7 `ce10160adc00152604` ist sichtbar. Im
+  Vordergrund laeuft weiterhin
+  `chameleon24.app.elite/com.stealthx.chameleon.MainActivity`; S10
+  `RF8N313QMFL` und Tab S4 `ce12182c68644439037e` fehlen.
+- Wegen der dokumentierten parallelen Arbeit wurde das S7 nicht gestartet,
+  gestoppt, installiert, angetippt oder anderweitig veraendert.
+- Backend-Preflight read-only PASS:
+  `https://api.stealthx.tech/health` lieferte HTTP 200, TLS-Verifikation 0,
+  Status `ok`.
+- Remote `origin/main` bleibt `a4ec47d`. Basic CI fuer diesen SHA ist gruen;
+  Security Audit ist dort nur im Dependency-Audit rot. Der zugehoerige
+  npm-Audit-Fund ist in den lokalen, noch nicht gepushten Commits bereits mit
+  kompletter Backend-Testkette und `npm audit` = 0 behoben. Ein Remote-Beweis
+  entsteht erst nach separat autorisiertem Push.
+- Standard-Keystore-Datei ist vorhanden, aber
+  `SECURECALL_STORE_PASSWORD`/`SECURECALL_KEY_PASSWORD` und weitere
+  Signing-Properties sind in dieser Sitzung nicht gesetzt. Deshalb kann kein
+  korrekt signiertes Release-Artefakt erzeugt oder freigegeben werden.
+- Status bleibt **In Progress**. Physische Matrix, Remote-CI des lokalen
+  Kandidaten und Signing bleiben echte Release-Gates. Kein Push, Publishing,
+  Deployment oder physischer Geraeteeingriff.
+
+---
