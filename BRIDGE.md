@@ -61,7 +61,6 @@
 
 ---
 
-
 ### 2026-07-15 20:10 EEST — CODEX TERMINAL — CONFIG / WORKFLOW
 
 **Codex Subagent Role Split Added**
@@ -5547,5 +5546,52 @@ Open next:
 - Status bleibt **In Progress**. Physische Matrix, Remote-CI des lokalen
   Kandidaten und Signing bleiben echte Release-Gates. Kein Push, Publishing,
   Deployment oder physischer Geraeteeingriff.
+
+---
+
+### 2026-07-26 18:28 EEST — CODEX TERMINAL — SECURECALL CALL-AUDIO LIFECYCLE FIX
+
+**Ticket:** `GIO-20260726-003`
+
+- Das gemeldete Samsung-Lautsprecherproblem wurde statisch durch Sol und
+  unabhaengig durch Kimi K3 untersucht. Root Causes im gemeinsamen
+  Free/Pro/Premium-Pfad: eine zweite Audio-Konfiguration setzte eine fruehe
+  Lautsprecherwahl nach zwei Sekunden zurueck; Android 12+ mischte
+  `setCommunicationDevice` mit dem Legacy-API; Call-Ende stellte wegen
+  ueberschriebenem Save-State `MODE_IN_COMMUNICATION` wieder her; ein
+  verzogerter Callback konnte nach Hangup Capture neu starten; pausierter
+  `AudioRecord` wurde nicht sicher freigegeben.
+- Lokal behoben in `CallActivity`, `AudioCapturePlaceholder`, den
+  CallActivity-Instrumentationstests und EN/DE-Accessibility-Strings:
+  Android 12+ verwendet set/clear communication device, Systemrouting wird
+  beim Ausschalten wieder freigegeben, der urspruengliche Audio-Modus wird
+  idempotent restauriert, Pending Activation wird abgebrochen und geguardet,
+  Mute respektiert Voraktivierung/Permission und Capture-Cleanup ist gegen
+  spaete Reader-Threads abgesichert.
+- FCM akzeptierte Calls konfigurieren Audio nun ebenfalls vor jeder
+  Lautsprecheraktion. Wired-/Bluetooth-Systemrouting wird nicht mehr durch
+  erzwungenes Earpiece ueberschrieben; reale Zubehoerfunktion bleibt dennoch
+  physisch zu pruefen.
+- Finale lokale Android-Kette **PASS**:
+  154 Tasks; 107/107 Unit-Tests; Free/Pro/Premium-Kompilierung;
+  Free-Release-Lint 0 Errors; IFR/Wallet-Guard; Free-Debug alle drei ABIs;
+  Android-Test-APK.
+- API-35-AOSP-Instrumentation final **PASS: `OK (4 tests)`** fuer Launch,
+  Speaker-Auswahl ueber Delayed Activation, Audio-Mode-Restore und
+  Hangup/Pending-Activation. Ein erster Kaltstartversuch endete vor Testbeginn
+  bei ca. 100% CPU-Pressure zusammen mit einem `com.android.phone`-ANR; der
+  unveraenderte Retry nach System-Settling war gruen. Kein falsches PASS.
+- Kimi K3 Abschlussreview: keine High/Critical Findings. Alle sinnvollen
+  Low-Follow-ups (FCM-Mode-Save, trial-unabhaengiger Test, Recorder-Generation
+  und spaete Freigabe, Kommentar/String-Konsistenz) wurden durch Sol
+  eingearbeitet und danach vollstaendig neu verifiziert.
+- Evidenz:
+  `/Users/gio/Desktop/securecall-emulator-matrix-20260726/README.md`.
+  Emulator beendet; nur S7 sichtbar und wegen paralleler Fremdarbeit nicht
+  mutiert.
+- Status bleibt **In Progress**: S10 und Tab S4 fehlen; reale
+  Drei-Geraete-Call-/FCM-/Speaker-/Mute-/Sleep-/Reconnect-/Bluetooth-/
+  Wired-/GSM-Matrix und signierte Release-Artefakte bleiben offen. Kein Push,
+  Publishing oder Deployment.
 
 ---

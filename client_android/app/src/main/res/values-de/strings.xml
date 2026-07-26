@@ -69,9 +69,13 @@
     <!-- Content Descriptions -->
     <string name="cd_caller_avatar">Anrufer-Avatar</string>
     <string name="cd_encrypted">Anruf ist verschl\u00FCsselt</string>
-    <string name="cd_mute">Stummschalten</string>
+    <string name="cd_mute">Mikrofon stummschalten</string>
+    <string name="cd_unmute">Mikrofon einschalten</string>
     <string name="cd_end_call">Anruf beenden</string>
     <string name="cd_speaker">Lautsprecher</string>
+    <string name="cd_speaker_on">Lautsprecher einschalten</string>
+    <string name="cd_speaker_off">Lautsprecher ausschalten</string>
+    <string name="call_speaker_route_unavailable">Lautsprecher ist nicht verf\u00FCgbar</string>
     <string name="cd_settings">Einstellungen \u00F6ffnen</string>
     <string name="cd_add_contact">Neuen Kontakt hinzuf\u00FCgen</string>
     <string name="cd_search">Suchen</string>

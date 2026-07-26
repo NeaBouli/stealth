@@ -9,6 +9,8 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.Log;
@@ -74,6 +76,9 @@ public class CallActivity extends AppCompatActivity {
     // Audio focus — prevent other apps from stealing audio
     private AudioManager audioManager;
     private android.media.AudioFocusRequest audioFocusRequest;
+    private final Handler callHandler = new Handler(Looper.getMainLooper());
+    private Runnable callActivationRunnable;
+    private AudioManager.OnCommunicationDeviceChangedListener communicationDeviceChangedListener;
 
     // Phone state monitoring — detect incoming cell calls
     private android.telephony.TelephonyManager telephonyManager;
@@ -144,6 +149,7 @@ public class CallActivity extends AppCompatActivity {
         FloatingActionButton fabMute = findViewById(R.id.fabMute);
         fabEndCall = findViewById(R.id.fabEndCall);
         fabSpeaker = findViewById(R.id.fabSpeaker);
+        registerCommunicationDeviceListener();
 
         // Security status views
         securityStatusIcon = findViewById(R.id.securityStatusIcon);
@@ -208,6 +214,7 @@ public class CallActivity extends AppCompatActivity {
             if (ws != null && sessionId != null && !sessionId.isEmpty()) {
                 ws.sendCallAccept(sessionId);
             }
+            prepareCallAudio();
             startTransportAndTimer(connectionState, callTimer);
         } else if (isIncoming) {
             // Already accepted from IncomingCallActivity
@@ -290,11 +297,11 @@ public class CallActivity extends AppCompatActivity {
                             getResources().getColor(
                                     isMuted ? R.color.stealthx_red_dark : R.color.stealthx_gray,
                                     getTheme())));
-            fabMute.setContentDescription(getString(isMuted ? R.string.cd_mute : R.string.cd_mute));
+            fabMute.setContentDescription(getString(isMuted ? R.string.cd_unmute : R.string.cd_mute));
             // Mute/unmute audio capture
             if (audioCapture != null) {
-                if (isMuted) audioCapture.stop();
-                else audioCapture.start();
+                if (isMuted) audioCapture.pause();
+                else if (!isPausedForCellCall) audioCapture.resume();
             }
         });
 
@@ -502,7 +509,7 @@ public class CallActivity extends AppCompatActivity {
 
     /**
      * BUG-030: Configure audio manager for voice call.
-     * Sets MODE_IN_COMMUNICATION and raises STREAM_VOICE_CALL to max volume.
+     * Sets MODE_IN_COMMUNICATION while preserving the current voice-call volume.
      */
     private int savedAudioMode = -1;
     private int savedStreamVolume = -1;
@@ -514,44 +521,49 @@ public class CallActivity extends AppCompatActivity {
             Log.w(TAG, "configureCallAudio() already called — skipping duplicate");
             return;
         }
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (am == null) return;
         audioConfigured = true;
-        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
-        if (am == null) return;
         // Save current state for restoration
-        savedAudioMode = am.getMode();
-        savedStreamVolume = am.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
-        // Set communication mode — routes audio through earpiece
-        am.setMode(AudioManager.MODE_IN_COMMUNICATION);
-        setSpeakerRoute(false);
-        Log.d(TAG, "Audio configured: MODE_IN_COMMUNICATION, preserved voice-call volume="
-                + am.getStreamVolume(AudioManager.STREAM_VOICE_CALL));
-        com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(this, "AUDIO",
-                "Mode=IN_COMMUNICATION, speaker=false");
-    }
-
-    /** BUG-039: Prepare audio BEFORE ICE connects — reduces latency. */
-    private void prepareCallAudio() {
-        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
-        if (am == null) return;
-        // Save original mode BEFORE changing it (BUG-069 fix)
         if (savedAudioMode < 0) {
             savedAudioMode = am.getMode();
             savedStreamVolume = am.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
         }
         am.setMode(AudioManager.MODE_IN_COMMUNICATION);
-        setSpeakerRoute(false);
-        Log.d(TAG, "Audio pre-configured for call (BUG-039), saved original mode=" + savedAudioMode
-                + ", preserved voice-call volume=" + am.getStreamVolume(AudioManager.STREAM_VOICE_CALL));
+        Log.d(TAG, "Audio configured: MODE_IN_COMMUNICATION, preserved voice-call volume="
+                + am.getStreamVolume(AudioManager.STREAM_VOICE_CALL));
+        com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(this, "AUDIO",
+                "Mode=IN_COMMUNICATION, speaker=" + isSpeaker);
+    }
+
+    /** BUG-039: Prepare audio BEFORE ICE connects — reduces latency. */
+    private void prepareCallAudio() {
+        configureCallAudio();
+        Log.d(TAG, "Audio pre-configured for call, saved original mode=" + savedAudioMode);
     }
 
     @SuppressLint("WrongConstant") // savedAudioMode is read from AudioManager.getMode().
     private void restoreCallAudio() {
-        audioConfigured = false; // BUG-038: reset guard
+        if (!audioConfigured && savedAudioMode < 0) return;
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
-        if (am == null) return;
-        setSpeakerRoute(false);
-        if (savedAudioMode >= 0) am.setMode(savedAudioMode);
-        if (savedStreamVolume >= 0) am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, savedStreamVolume, 0);
+        if (am == null) {
+            audioConfigured = false;
+            return;
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            am.clearCommunicationDevice();
+        } else {
+            am.setSpeakerphoneOn(false);
+        }
+        if (audioConfigured && savedAudioMode >= 0) am.setMode(savedAudioMode);
+        if (audioConfigured && savedStreamVolume >= 0) {
+            am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, savedStreamVolume, 0);
+        }
+        audioConfigured = false;
+        savedAudioMode = -1;
+        savedStreamVolume = -1;
+        isSpeaker = false;
+        updateSpeakerButton();
         Log.d(TAG, "Audio restored to previous mode");
     }
 
@@ -564,51 +576,90 @@ public class CallActivity extends AppCompatActivity {
         }
 
         am.setMode(AudioManager.MODE_IN_COMMUNICATION);
-        boolean applied = false;
+        boolean applied;
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            AudioDeviceInfo targetDevice = null;
-            for (AudioDeviceInfo device : am.getAvailableCommunicationDevices()) {
-                int type = device.getType();
-                if (enabled && type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
-                    targetDevice = device;
-                    break;
+            if (enabled) {
+                AudioDeviceInfo speaker = null;
+                for (AudioDeviceInfo device : am.getAvailableCommunicationDevices()) {
+                    if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
+                        speaker = device;
+                        break;
+                    }
                 }
-                if (!enabled && type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
-                    targetDevice = device;
-                    break;
-                }
-            }
-            if (targetDevice != null) {
-                applied = am.setCommunicationDevice(targetDevice);
-            } else if (!enabled) {
+                applied = speaker != null && am.setCommunicationDevice(speaker);
+            } else {
                 am.clearCommunicationDevice();
                 applied = true;
             }
-        }
-
-        am.setSpeakerphoneOn(enabled);
-
-        boolean actual = am.isSpeakerphoneOn();
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            AudioDeviceInfo current = am.getCommunicationDevice();
-            if (current != null) {
-                actual = current.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
+            if (applied) {
+                isSpeaker = enabled;
+            } else {
+                refreshSpeakerRoute(am);
+                Toast.makeText(this, R.string.call_speaker_route_unavailable, Toast.LENGTH_SHORT).show();
             }
+        } else {
+            am.setSpeakerphoneOn(enabled);
+            applied = am.isSpeakerphoneOn() == enabled;
+            isSpeaker = am.isSpeakerphoneOn();
         }
 
-        isSpeaker = actual;
         updateSpeakerButton();
         Log.d(TAG, "Speaker route: requested=" + enabled
                 + ", applied=" + applied
-                + ", actual=" + actual
+                + ", actual=" + isSpeaker
                 + ", mode=" + am.getMode());
+    }
+
+    private void registerCommunicationDeviceListener() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) return;
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (am == null || communicationDeviceChangedListener != null) return;
+        communicationDeviceChangedListener = device -> {
+            isSpeaker = device != null
+                    && device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
+            updateSpeakerButton();
+            Log.d(TAG, "Communication device changed: "
+                    + (device != null ? device.getType() : "system default"));
+        };
+        am.addOnCommunicationDeviceChangedListener(
+                ContextCompat.getMainExecutor(this), communicationDeviceChangedListener);
+    }
+
+    private void unregisterCommunicationDeviceListener() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S
+                || communicationDeviceChangedListener == null) {
+            return;
+        }
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (am != null) {
+            am.removeOnCommunicationDeviceChangedListener(communicationDeviceChangedListener);
+        }
+        communicationDeviceChangedListener = null;
+    }
+
+    private void refreshSpeakerRoute(AudioManager am) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            AudioDeviceInfo current = am.getCommunicationDevice();
+            isSpeaker = current != null
+                    && current.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
+        } else {
+            isSpeaker = am.isSpeakerphoneOn();
+        }
+    }
+
+    private void cancelPendingCallActivation() {
+        if (callActivationRunnable != null) {
+            callHandler.removeCallbacks(callActivationRunnable);
+            callActivationRunnable = null;
+        }
     }
 
     private void updateSpeakerButton() {
         if (fabSpeaker == null) return;
         fabSpeaker.setSelected(isSpeaker);
-        fabSpeaker.setContentDescription(isSpeaker ? "Lautsprecher an" : "Lautsprecher aus");
+        fabSpeaker.setContentDescription(getString(
+                isSpeaker ? R.string.cd_speaker_off : R.string.cd_speaker_on));
         fabSpeaker.setBackgroundTintList(
                 ColorStateList.valueOf(
                         getResources().getColor(
@@ -642,9 +693,15 @@ public class CallActivity extends AppCompatActivity {
     }
 
     private void startTransportAndTimer(TextView connectionState, Chronometer callTimer) {
+        cancelPendingCallActivation();
         connectionState.setText(R.string.call_connecting);
         updateCallButton(false);
-        connectionState.postDelayed(() -> {
+        callActivationRunnable = () -> {
+            callActivationRunnable = null;
+            if (isEnding || isFinishing() || isDestroyed()) {
+                Log.d(TAG, "Ignoring delayed call activation after call end");
+                return;
+            }
             isCallActive = true;
             callStartTimeMs = System.currentTimeMillis();
             com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(CallActivity.this, "CALL", "Call active: " + callContactName);
@@ -671,14 +728,15 @@ public class CallActivity extends AppCompatActivity {
 
             // Start audio capture (requires RECORD_AUDIO permission)
             startAudioCaptureWithPermission(connectionState, callTimer);
-        }, 2000);
+        };
+        callHandler.postDelayed(callActivationRunnable, 2000);
     }
 
     private void startAudioCaptureWithPermission(TextView connectionState, Chronometer callTimer) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 == PackageManager.PERMISSION_GRANTED) {
             audioCapture = new AudioCapturePlaceholder();
-            audioCapture.start();
+            if (!isMuted && !isPausedForCellCall) audioCapture.start();
         } else {
             pendingConnectionState = connectionState;
             pendingCallTimer = callTimer;
@@ -702,7 +760,7 @@ public class CallActivity extends AppCompatActivity {
                     ws.setCallActive(true);
                 }
                 audioCapture = new AudioCapturePlaceholder();
-                audioCapture.start();
+                if (!isMuted && !isPausedForCellCall && !isEnding) audioCapture.start();
             } else {
                 Log.w(TAG, "RECORD_AUDIO permission denied");
                 Toast.makeText(this, "Microphone permission required for calls", Toast.LENGTH_LONG).show();
@@ -859,8 +917,8 @@ public class CallActivity extends AppCompatActivity {
     private void endCall() {
         if (isEnding) return;
         isEnding = true;
+        cancelPendingCallActivation();
         stopRingbackTone();
-        restoreCallAudio(); // BUG-030: restore audio mode + volume
         Log.d(TAG, "endCall() — stopping call");
         com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(this, "CALL", "Call ended: " + callContactName);
 
@@ -925,6 +983,7 @@ public class CallActivity extends AppCompatActivity {
             audioCapture.stop();
             audioCapture = null;
         }
+        restoreCallAudio();
         // Stop all audio playback globally
         com.securecall.app.net.WebSocketService wsAudio =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
@@ -1098,6 +1157,7 @@ public class CallActivity extends AppCompatActivity {
             activeInstance = null;
         }
         showingSaveDialog = false;
+        cancelPendingCallActivation();
         stopRingbackTone();
         stopPhoneStateMonitor();
         abandonAudioFocus();
@@ -1114,6 +1174,8 @@ public class CallActivity extends AppCompatActivity {
         if (secureCallMonitor != null) {
             secureCallMonitor.stopMonitoring(this);
         }
+        restoreCallAudio();
+        unregisterCommunicationDeviceListener();
         releaseProximitySensor();
         super.onDestroy();
     }
