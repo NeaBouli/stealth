@@ -5431,3 +5431,46 @@ Open next:
   `releases/` blieben unangetastet.
 
 ---
+
+### 2026-07-26 15:55 EEST — CODEX TERMINAL — SECURECALL EMULATOR MATRIX / S7 READ-ONLY STATUS
+
+**Ticket:** `GIO-20260726-003`
+
+- Die explizite Emulator-Matrix aus
+  `docs/qa/SECURECALL_THREE_DEVICE_AUDIT_PROTOCOL_2026-07-11.md` wurde
+  fortgesetzt.
+- API 24 Phone mit aktuellem Free-Debug `1.0.46-free`, split versionCode
+  `78013003`, target SDK 36: **PASS** fuer frische Installation, Onboarding,
+  Phone-Confirm-Persistenz nach Force-stop/Relaunch, verbundenes Main UI,
+  Free-Banner-Abstand, Settings sowie Legacy-FGS/KeepAlive. Keine
+  SecureCall-ANR/Fatal-Spur.
+- API 30 Phone: APK-Installation, OnboardingActivity, FGS-Start und
+  Signaling-Registrierung gelangen. Das Google-APIs-Systemimage erzeugte
+  danach wiederholt GMS-/QuickSearch-/SystemUI-ANRs; UIAutomator/Screenshot
+  blockierten, und nach Reboot fehlten trotz Boot-Property Package-/Window-
+  Services. Vollstaendige Zelle **BLOCKED (AVD infrastructure)**, nicht PASS.
+- API 35 Tablet-Profil wurde bei `1280x800 @ 160dpi` als `sw800dp`,
+  extra-large, landscape vom ActivityManager bestaetigt. Onboarding rendert
+  korrekt und ohne Systemleistenueberdeckung. Der Ein-vCPU-Host erzeugte
+  jedoch breite CPU-Pressure bis ca. 100% mit gleichzeitigen ANRs in
+  SystemUI, PermissionController, Telefon, GMS, TTS und SecureCall.
+  Main/Settings-Lifecycle bleibt **BLOCKED (AVD infrastructure)**; kein
+  Produktregressions-Fund und kein falsches PASS.
+- Lokale Evidenz:
+  `/Users/gio/Desktop/securecall-emulator-matrix-20260726/README.md`.
+  Transiente TURN-Credentials wurden aus den Evidenzlogs redigiert.
+- Physischer Read-only-Recheck: nur S7 `ce10160adc00152604` sichtbar.
+  Vordergrund-App war Chameleon eines anderen Entwicklers; SecureCall wurde
+  nicht gestartet, gestoppt, installiert oder angetippt.
+- S7-Netzwerkblocker ist inzwischen aufgehoben: Wi-Fi
+  `GL-MT300N-V2-5df` ist `CONNECTED` und `VALIDATED`,
+  `lastValidated=true`. Pro `1.0.45-pro` / `78012009` laeuft mit
+  Foreground-WebSocketService; Notification: `Ready for incoming calls`.
+- Status bleibt **In Progress**: S10 und Tab S4 fehlen, und die reale
+  Drei-Geraete-Call-/FCM-/Audio-/Lifecycle-/Settings-/Zubehoermatrix wurde
+  noch nicht auf dem aktuellen Kandidaten ausgefuehrt. Keine
+  Release-Artefaktfreigabe.
+- Alle Emulatoren wurden beendet und Display-Overrides zurueckgesetzt. Keine
+  physische Geraetemutation, kein Push, Play-Publishing oder Deployment.
+
+---
