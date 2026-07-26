@@ -7,11 +7,14 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import androidx.preference.PreferenceManager
 import com.securecall.app.BuildConfig
 import com.securecall.app.MainActivity
@@ -218,6 +221,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         private const val CHANNEL_ID = "securecall_foreground"
         private const val CHANNEL_INCOMING = "securecall_incoming_call_urgent"
         private const val NOTIFICATION_ID = 1001
+        const val ACTION_FCM_CALL_INVITE = "com.securecall.app.action.FCM_CALL_INVITE"
+        const val EXTRA_FCM_SESSION_ID = "fcm_session_id"
 
         @JvmStatic
         fun isBackgroundServiceEnabled(context: Context): Boolean {
@@ -252,6 +257,14 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Ensure foreground notification is up — Android 8 ANR if not called within 5s of startForegroundService()
         startForegroundWithNotification()
+        if (intent?.action == ACTION_FCM_CALL_INVITE) {
+            val sessionId = intent.getStringExtra(EXTRA_FCM_SESSION_ID).orEmpty()
+            if (sessionId.isNotEmpty()) {
+                setFcmPendingSession(sessionId)
+            }
+            startIncomingRingtone()
+            Log.d("WS_SERVICE", "FCM call wake action handled for session=$sessionId")
+        }
         // Ensure the foreground signaling service keeps the CPU alive while it is running.
         acquireCpuWakeLock()
         return START_STICKY
@@ -260,6 +273,19 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
         Log.d("WS_SERVICE", "App swiped away — scheduling restart")
+        // Android 15+ (API 35): never schedule a dataSync restart. Active calls
+        // keep the current microphone FGS; idle signaling stops and relies on FCM.
+        if (!ForegroundServicePolicy.allowsPersistentIdleSignaling(Build.VERSION.SDK_INT)) {
+            if (hasActiveCall()) {
+                Log.d("WS_SERVICE", "API 35+ active call — keeping current microphone FGS without restart")
+                return
+            }
+            Log.d("WS_SERVICE", "API 35+ idle task removal — stopping signaling without restart")
+            stopSignaling()
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
         if (!isBackgroundServiceEnabled(this)) {
             Log.d("WS_SERVICE", "Background service disabled; stopping after task removal")
             stopSignaling()
@@ -283,6 +309,28 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         } catch (e: Exception) {
             Log.w("WS_SERVICE", "Failed to schedule restart after swipe: ${e.message}")
         }
+    }
+
+    /**
+     * API 35+: the system calls this when a foreground-service type reaches its
+     * time limit (e.g. the ~6h-per-day dataSync budget). While idle we must stop
+     * promptly; an active call is kept alive by re-promoting to microphone-only.
+     */
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        Log.w("WS_SERVICE", "Foreground service timeout (startId=$startId, fgsType=$fgsType)")
+        if (hasActiveCall()) {
+            Log.w("WS_SERVICE", "Active call in progress — re-promoting to microphone-only instead of stopping")
+            if (updateForegroundServiceType(callActive = true)) return
+            Log.e("WS_SERVICE", "Microphone FGS promotion failed during timeout — stopping safely")
+        }
+        com.securecall.app.debug.SecLogManager.logIfEnabled(
+            this,
+            "WS",
+            "Foreground service timeout — stopping signaling"
+        )
+        stopSignaling()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     override fun onDestroy() {
@@ -354,6 +402,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     /** NEA-180: Schedule Doze-tolerant keep-alive via KeepAliveReceiver.
      *  Also keeps the legacy setInexactRepeating as a belt-and-suspenders fallback. */
     private fun scheduleServiceRestart() {
+        // Android 15+ (API 35): restart/keep-alive alarms for the dataSync FGS are not allowed.
+        if (!ForegroundServicePolicy.allowsKeepAlive(Build.VERSION.SDK_INT)) {
+            KeepAliveReceiver.cancel(this)
+            Log.d("WS_SERVICE", "API 35+ — keep-alive alarms not scheduled")
+            return
+        }
         if (!isBackgroundServiceEnabled(this)) {
             KeepAliveReceiver.cancel(this)
             Log.d("WS_SERVICE", "Background service disabled; keep-alive alarms not scheduled")
@@ -813,7 +867,51 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     /** Mark call as active — extends HeartbeatClient staleness threshold. */
     fun setCallActive(active: Boolean) {
         client?.setCallActive(active)
+        updateForegroundServiceType(callActive = active)
         Log.d("WS_SERVICE", "Call active flag set to $active")
+    }
+
+    /**
+     * Android 10+ (API 29): keep the foreground-service type explicit.
+     * Idle signaling runs as `dataSync`; during an active call the service is
+     * promoted to microphone-only (RECORD_AUDIO must be granted) and downgraded
+     * back to `dataSync` when the call ends.
+     */
+    private fun updateForegroundServiceType(callActive: Boolean): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return true
+        if (!foregroundStarted) return false
+        val type = if (callActive) {
+            if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                Log.w("WS_SERVICE", "RECORD_AUDIO not granted — cannot promote FGS to microphone type")
+                return false
+            }
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+        } else {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+        }
+        try {
+            val openIntent = Intent(this, MainActivity::class.java)
+            val pendingIntent = PendingIntent.getActivity(
+                this, 0, openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(getString(R.string.notif_background_title))
+                .setContentText(getString(R.string.notif_background_text))
+                .setSmallIcon(R.drawable.ic_lock)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .setSilent(true)
+                .build()
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, type)
+            Log.d("WS_SERVICE", "FGS type updated: callActive=$callActive")
+            return true
+        } catch (e: SecurityException) {
+            Log.e("WS_SERVICE", "SecurityException updating FGS type (callActive=$callActive)", e)
+        } catch (e: Exception) {
+            Log.e("WS_SERVICE", "Failed to update FGS type (callActive=$callActive)", e)
+        }
+        return false
     }
 
     fun stopAudioPlayback() {
@@ -1515,10 +1613,24 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 .setOngoing(true)
                 .setSilent(true)
                 .build()
-            startForeground(NOTIFICATION_ID, notification)
+            startForegroundAsDataSync(NOTIFICATION_ID, notification)
             foregroundStarted = true
         } catch (e: Exception) {
             Log.e("WS_SERVICE", "ensureForegroundImmediate failed", e)
+        }
+    }
+
+    /**
+     * Starts the foreground service with an explicit `dataSync` type on API 29+
+     * so microphone access can be promoted only while a call is active.
+     * API 24–28 keep the legacy two-arg
+     * startForeground() call (no typed FGS exists there).
+     */
+    private fun startForegroundAsDataSync(id: Int, notification: Notification) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ServiceCompat.startForeground(this, id, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            startForeground(id, notification)
         }
     }
 
