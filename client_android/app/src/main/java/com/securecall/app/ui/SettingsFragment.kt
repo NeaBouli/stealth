@@ -362,6 +362,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
     @android.annotation.SuppressLint("BatteryLife")
     private fun configureBatteryOptimization() {
         val pref = findPreference<Preference>("pref_battery_optimization") ?: return
+        if (!com.securecall.app.net.ForegroundServicePolicy.shouldRequestBatteryOptimizationExemption(
+                android.os.Build.VERSION.SDK_INT
+            )
+        ) {
+            pref.summary = getString(R.string.pref_battery_optimization_summary_push)
+            pref.isEnabled = false
+            return
+        }
+
         val ctx = context ?: return
         val pm = ctx.getSystemService(android.os.PowerManager::class.java) ?: return
         val isIgnoring = pm.isIgnoringBatteryOptimizations(ctx.packageName)

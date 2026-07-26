@@ -5474,3 +5474,50 @@ Open next:
   physische Geraetemutation, kein Push, Play-Publishing oder Deployment.
 
 ---
+
+### 2026-07-26 16:47 EEST — CODEX TERMINAL — SECURECALL AOSP MATRIX / API-35 BATTERY POLICY FIX
+
+**Ticket:** `GIO-20260726-003`
+
+- Die zuvor blockierte API-30-Zelle wurde mit einem frisch installierten,
+  schlanken AOSP-Systemimage erneut ausgefuehrt. Free `1.0.46`, target SDK 36:
+  **PASS** fuer Onboarding, Phone-Confirm-Persistenz, Main, Contacts-
+  Permission, Dialer, Settings, Banner-Abstand sowie Legacy-FGS/KeepAlive.
+  Keine SecureCall-ANR/Fatal-Spur. Google-Play-Services/FCM bleibt bewusst
+  ausserhalb dieser AOSP-Zelle und erfordert ein physisches Geraet.
+- Das AOSP-API-35-Tablet wurde als `sw800dp`, `1280x800 @ 160dpi`, landscape
+  bestaetigt. Main, Settings und Hintergrund-Lifecycle wurden erreichbar.
+- Dabei wurde ein echter Inkonsistenzfund behoben: API 35+ zeigte weiterhin
+  den alten Dialog `Background Connection Required` und bot eine Akku-
+  Ausnahme an, obwohl idle Signaling dort per Secure Push erfolgt.
+- Fix: `MainActivity` ueberspringt den Akku-Ausnahme-Dialog auf API 35+;
+  Settings deaktiviert sowohl `Background Service` als auch
+  `Battery Optimization` mit Push-Erklaerung. API 34 und aelter behalten den
+  Legacy-Pfad. Die zentrale `ForegroundServicePolicy` und Boundary-Tests
+  sichern diese Grenze.
+- Runtime-Verifikation auf dem API-35-Tablet: kein alter Akku-Dialog im
+  gepatchten Flow; beide Settings-Eintraege `enabled=false`; idle
+  `WebSocketService` stoppt nach 15 Sekunden im Hintergrund; kein
+  KeepAlive-Alarm.
+- Das Tablet-AVD bleibt als komplette no-ANR-Zelle **BLOCKED
+  (AVD infrastructure)**: der Ein-vCPU-Host erzeugte weiterhin SystemUI-/
+  Telefon-ANRs und einen SecureCall-Onboarding-Timeout. Die einzelnen
+  UI-/Policy-/Lifecycle-Pruefungen sind belegt, aber kein falsches Gesamt-PASS.
+- Vollstaendige Android-Kette nach dem Fix **PASS**:
+  `testFreeDebugUnitTest`, Pro/Premium-Debug-Kotlin-Kompilierung,
+  `lintFreeRelease`, `verifyNoAppIfrWalletCode`, `assembleFreeDebug`;
+  124 Tasks, 107/107 Unit-Tests, 0 Lint-Errors, drei native ABIs.
+- Evidenz aktualisiert:
+  `/Users/gio/Desktop/securecall-emulator-matrix-20260726/README.md` und
+  `/Users/gio/Desktop/securecall-api35-qa-20260726/SecureCall-API35-QA-Report.md`.
+  Transiente TURN-Credentials wurden redigiert.
+- Kimi K3 war bereits fuer Implementierungsanalyse und abschliessenden
+  Tiefenreview dieses Tasks eingesetzt; dieser kleine QA-Follow-up-Patch wurde
+  von Sol implementiert, diff-geprueft und vollstaendig integriert getestet.
+- Alle Emulatoren beendet, Display-Overrides zurueckgesetzt. Nur S7 ist
+  physisch sichtbar; keine physische Geraetemutation wegen paralleler Arbeit.
+- Status bleibt **In Progress**: S10 und Tab S4 fehlen; reale Drei-Geraete-
+  Call-/FCM-/Audio-/Sleep-/Reconnect-/Zubehoermatrix und signierte
+  Release-Artefakte bleiben offen. Kein Push, Play-Publishing oder Deployment.
+
+---

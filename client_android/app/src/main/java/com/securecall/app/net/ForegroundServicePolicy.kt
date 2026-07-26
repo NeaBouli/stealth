@@ -27,4 +27,12 @@ object ForegroundServicePolicy {
     /** True when scheduling keep-alive / restart alarms is allowed. */
     fun allowsKeepAlive(sdkInt: Int): Boolean =
         sdkInt <= PERSISTENT_IDLE_MAX_SDK
+
+    /**
+     * Battery-optimization exemptions are only useful for the legacy persistent
+     * idle-signaling path. API 35+ relies on secure push while the app is idle.
+     */
+    @JvmStatic
+    fun shouldRequestBatteryOptimizationExemption(sdkInt: Int): Boolean =
+        allowsPersistentIdleSignaling(sdkInt)
 }

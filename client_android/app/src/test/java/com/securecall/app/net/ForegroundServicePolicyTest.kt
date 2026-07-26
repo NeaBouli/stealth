@@ -61,4 +61,14 @@ class ForegroundServicePolicyTest {
         assertTrue(ForegroundServicePolicy.allowsBootStart(24))
         assertTrue(ForegroundServicePolicy.allowsKeepAlive(24))
     }
+
+    @Test
+    fun api34_batteryOptimizationExemptionAllowed() {
+        assertTrue(ForegroundServicePolicy.shouldRequestBatteryOptimizationExemption(34))
+    }
+
+    @Test
+    fun api35_batteryOptimizationExemptionDenied() {
+        assertFalse(ForegroundServicePolicy.shouldRequestBatteryOptimizationExemption(35))
+    }
 }
