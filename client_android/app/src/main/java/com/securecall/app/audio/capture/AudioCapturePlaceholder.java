@@ -23,10 +23,11 @@ public class AudioCapturePlaceholder {
     private static final int FRAME_SAMPLES = 960;
 
     private volatile boolean running = false;
+    private volatile long captureGeneration = 0;
     private Thread thread = null;
     private AudioRecord audioRecord = null;
 
-    public void start() {
+    public synchronized void start() {
         if (running) {
             Log.w(TAG, "start(): already running");
             return;
@@ -63,15 +64,30 @@ public class AudioCapturePlaceholder {
         // Initialize Opus encoder
         OpusEncoder.INSTANCE.init(SAMPLE_RATE, 1);
 
+        try {
+            audioRecord.startRecording();
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "start(): AudioRecord.startRecording() failed", e);
+            audioRecord.release();
+            audioRecord = null;
+            OpusEncoder.INSTANCE.release();
+            return;
+        }
         running = true;
-        audioRecord.startRecording();
+        startCaptureThread(audioRecord, "started");
 
+        Log.d(TAG, "Audio capture STARTED (Opus encoding enabled)");
+    }
+
+    private void startCaptureThread(AudioRecord recorder, String state) {
+        long generation = ++captureGeneration;
         thread = new Thread(() -> {
             Log.d(TAG, "Capture thread started (sr=" + SAMPLE_RATE + ", frame=" + FRAME_SAMPLES + " samples)");
             short[] buffer = new short[FRAME_SAMPLES];
 
-            while (running) {
-                int read = audioRecord.read(buffer, 0, FRAME_SAMPLES);
+            while (running && captureGeneration == generation) {
+                int read = recorder.read(buffer, 0, FRAME_SAMPLES);
+                if (!running || captureGeneration != generation) break;
                 if (read == FRAME_SAMPLES) {
                     byte[] encoded = OpusEncoder.INSTANCE.encode(buffer);
                     if (encoded.length > 0) {
@@ -94,19 +110,18 @@ public class AudioCapturePlaceholder {
             }
 
             Log.d(TAG, "Capture thread stopped");
-        }, "AudioCaptureThread");
+        }, "AudioCaptureThread-" + state);
         thread.start();
-
-        Log.d(TAG, "Audio capture STARTED (Opus encoding enabled)");
     }
 
     /**
      * Lightweight pause — stops recording and capture thread but keeps AudioRecord
      * and OpusEncoder alive for fast resume. Used during cell call interruptions.
      */
-    public void pause() {
+    public synchronized void pause() {
         if (!running) return;
         running = false;
+        captureGeneration++;
 
         try {
             if (audioRecord != null) {
@@ -116,19 +131,23 @@ public class AudioCapturePlaceholder {
             Log.e(TAG, "pause(): AudioRecord.stop() failed", e);
         }
 
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
+        Thread lingeringThread = stopCaptureThread();
+        if (lingeringThread != null) {
+            AudioRecord recorder = audioRecord;
+            audioRecord = null;
+            OpusEncoder.INSTANCE.release();
+            releaseRecorderAfterThread(recorder, lingeringThread);
+            Log.w(TAG, "pause(): capture thread did not stop promptly; recorder will be recreated");
+        } else {
+            Log.d(TAG, "Audio capture PAUSED (AudioRecord + OpusEncoder kept alive)");
         }
-
-        Log.d(TAG, "Audio capture PAUSED (AudioRecord + OpusEncoder kept alive)");
     }
 
     /**
      * Resume from pause — restarts recording on the existing AudioRecord.
      * If AudioRecord was released (full stop), falls back to full start().
      */
-    public void resume() {
+    public synchronized void resume() {
         if (running) return;
         if (audioRecord == null || audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
             Log.w(TAG, "resume(): AudioRecord not available — falling back to full start()");
@@ -136,45 +155,23 @@ public class AudioCapturePlaceholder {
             return;
         }
 
+        try {
+            audioRecord.startRecording();
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "resume(): AudioRecord.startRecording() failed", e);
+            stop();
+            return;
+        }
         running = true;
-        audioRecord.startRecording();
-
-        thread = new Thread(() -> {
-            Log.d(TAG, "Capture thread RESUMED (sr=" + SAMPLE_RATE + ", frame=" + FRAME_SAMPLES + " samples)");
-            short[] buffer = new short[FRAME_SAMPLES];
-
-            while (running) {
-                int read = audioRecord.read(buffer, 0, FRAME_SAMPLES);
-                if (read == FRAME_SAMPLES) {
-                    byte[] encoded = OpusEncoder.INSTANCE.encode(buffer);
-                    if (encoded.length > 0) {
-                        WebSocketService ws = WebSocketService.Companion.getInstance();
-                        if (ws != null) ws.sendBinary(encoded);
-                    }
-                } else if (read > 0) {
-                    short[] padded = new short[FRAME_SAMPLES];
-                    System.arraycopy(buffer, 0, padded, 0, read);
-                    byte[] encoded = OpusEncoder.INSTANCE.encode(padded);
-                    if (encoded.length > 0) {
-                        WebSocketService ws = WebSocketService.Companion.getInstance();
-                        if (ws != null) ws.sendBinary(encoded);
-                    }
-                } else if (read < 0) {
-                    Log.e(TAG, "AudioRecord.read() returned " + read);
-                    break;
-                }
-            }
-
-            Log.d(TAG, "Capture thread stopped");
-        }, "AudioCaptureThread");
-        thread.start();
+        startCaptureThread(audioRecord, "resumed");
 
         Log.d(TAG, "Audio capture RESUMED");
     }
 
-    public void stop() {
-        if (!running) return;
+    public synchronized void stop() {
+        if (!running && audioRecord == null) return;
         running = false;
+        captureGeneration++;
 
         try {
             if (audioRecord != null) {
@@ -184,19 +181,49 @@ public class AudioCapturePlaceholder {
             Log.e(TAG, "stop(): AudioRecord.stop() failed", e);
         }
 
-        if (audioRecord != null) {
-            audioRecord.release();
-            audioRecord = null;
-        }
+        Thread lingeringThread = stopCaptureThread();
 
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
+        if (audioRecord != null) {
+            if (lingeringThread != null) {
+                releaseRecorderAfterThread(audioRecord, lingeringThread);
+            } else {
+                audioRecord.release();
+            }
+            audioRecord = null;
         }
 
         // Release Opus encoder
         OpusEncoder.INSTANCE.release();
 
         Log.d(TAG, "Audio capture STOPPED");
+    }
+
+    private Thread stopCaptureThread() {
+        Thread captureThread = thread;
+        thread = null;
+        if (captureThread == null) return null;
+        captureThread.interrupt();
+        if (captureThread == Thread.currentThread()) return captureThread;
+        try {
+            captureThread.join(250);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        return captureThread.isAlive() ? captureThread : null;
+    }
+
+    private void releaseRecorderAfterThread(AudioRecord recorder, Thread captureThread) {
+        if (recorder == null) return;
+        Thread cleanupThread = new Thread(() -> {
+            try {
+                captureThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                recorder.release();
+            }
+        }, "AudioCaptureCleanup");
+        cleanupThread.setDaemon(true);
+        cleanupThread.start();
     }
 }

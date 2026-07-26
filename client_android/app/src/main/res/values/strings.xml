@@ -134,9 +134,13 @@
     <!-- Content Descriptions (Accessibility) -->
     <string name="cd_caller_avatar">Caller avatar</string>
     <string name="cd_encrypted">Call is encrypted</string>
-    <string name="cd_mute">Toggle mute</string>
+    <string name="cd_mute">Mute microphone</string>
+    <string name="cd_unmute">Unmute microphone</string>
     <string name="cd_end_call">End call</string>
     <string name="cd_speaker">Toggle speaker</string>
+    <string name="cd_speaker_on">Turn speaker on</string>
+    <string name="cd_speaker_off">Turn speaker off</string>
+    <string name="call_speaker_route_unavailable">Speaker is not available</string>
     <string name="cd_settings">Open settings</string>
     <string name="cd_add_contact">Add new contact</string>
     <string name="cd_search">Search</string>
