@@ -66,12 +66,25 @@ class SecureCallMessagingService : FirebaseMessagingService() {
         wl.acquire(60_000L) // 60s max — will be released when call is answered/declined
         Log.d(TAG, "WakeLock acquired for FCM call wakeup")
 
-        // B) Tell WebSocketService about this FCM-delivered session so it doesn't create a
-        //    duplicate IncomingCallActivity when WS reconnects and gets the same CALL_INVITE
-        com.securecall.app.net.WebSocketService.instance?.setFcmPendingSession(sessionId)
-
-        // C) Start ringtone+vibration from service (works even if activity doesn't launch on Android 10+)
-        com.securecall.app.net.WebSocketService.instance?.startIncomingRingtone()
+        // B) Wake signaling first. The explicit action lets a newly-created service
+        //    register the FCM session and own ringtone/vibration before the activity
+        //    is shown; this also works when no persistent service exists on API 35+.
+        val wsIntent = Intent(this, com.securecall.app.net.WebSocketService::class.java).apply {
+            action = com.securecall.app.net.WebSocketService.ACTION_FCM_CALL_INVITE
+            putExtra(com.securecall.app.net.WebSocketService.EXTRA_FCM_SESSION_ID, sessionId)
+        }
+        val signalingStartRequested = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(wsIntent)
+            } else {
+                startService(wsIntent)
+            }
+            Log.d(TAG, "WebSocketService wake requested for CALL_ACCEPT delivery")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start WebSocketService from FCM", e)
+            false
+        }
 
         // D) Start IncomingCallActivity DIRECTLY — no WS needed for ringing
         val intent = Intent(this, com.securecall.app.IncomingCallActivity::class.java).apply {
@@ -94,21 +107,12 @@ class SecureCallMessagingService : FirebaseMessagingService() {
         }
 
         // D) Show full-screen notification as backup (lock screen / DND / Android 10+)
-        showIncomingCallNotification(sessionId, callerName, callerClientId, callerPhone)
+        showIncomingCallNotification(
+            sessionId, callerName, callerClientId, callerPhone,
+            serviceHandlesRingtone = signalingStartRequested
+        )
 
-        // E) Trigger WS reconnect in background so CALL_ACCEPT can be sent when user answers
-        val wsIntent = Intent(this, com.securecall.app.net.WebSocketService::class.java)
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(wsIntent)
-            } else {
-                startService(wsIntent)
-            }
-            Log.d(TAG, "WebSocketService restart triggered for CALL_ACCEPT delivery")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start WebSocketService from FCM", e)
-        }
-        // Also force reconnect if instance already exists but is disconnected
+        // E) Force reconnect if an existing service instance is disconnected.
         com.securecall.app.net.WebSocketService.instance?.let { ws ->
             if (!ws.isConnected) {
                 ws.forceReconnect()
@@ -122,7 +126,13 @@ class SecureCallMessagingService : FirebaseMessagingService() {
         } catch (_: Exception) {}
     }
 
-    private fun showIncomingCallNotification(sessionId: String, callerName: String, callerClientId: String, callerPhone: String) {
+    private fun showIncomingCallNotification(
+        sessionId: String,
+        callerName: String,
+        callerClientId: String,
+        callerPhone: String,
+        serviceHandlesRingtone: Boolean
+    ) {
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         // Create notification channel (API 26+)
@@ -163,13 +173,18 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setSilent(true) // Service handles ringtone — prevent double sound
+            .setSilent(serviceHandlesRingtone)
             .setAutoCancel(true)
             .setOngoing(true)
             .setContentIntent(pendingIntent)
             .setFullScreenIntent(pendingIntent, true)
             .build()
 
+        if (!serviceHandlesRingtone) {
+            // If Android rejects the FGS start, keep the channel sound repeating
+            // until the user opens or dismisses the incoming-call notification.
+            notification.flags = notification.flags or android.app.Notification.FLAG_INSISTENT
+        }
         manager.notify(IncomingCallNotifications.FCM_BACKUP_NOTIFICATION_ID, notification)
     }
 }

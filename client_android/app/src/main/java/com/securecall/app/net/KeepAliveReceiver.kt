@@ -23,6 +23,12 @@ import androidx.core.content.ContextCompat
 class KeepAliveReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        // Android 15+ (API 35): no persistent keep-alive for the dataSync FGS.
+        if (!ForegroundServicePolicy.allowsKeepAlive(Build.VERSION.SDK_INT)) {
+            Log.d("KeepAliveReceiver", "API 35+ — keep-alive not allowed; cancelling")
+            cancel(context)
+            return
+        }
         if (!WebSocketService.isBackgroundServiceEnabled(context)) {
             Log.d("KeepAliveReceiver", "Background service disabled; cancelling keep-alive")
             cancel(context)
@@ -43,6 +49,12 @@ class KeepAliveReceiver : BroadcastReceiver() {
 
         fun scheduleNext(context: Context) {
             try {
+                // Android 15+ (API 35): no persistent keep-alive for the dataSync FGS.
+                if (!ForegroundServicePolicy.allowsKeepAlive(Build.VERSION.SDK_INT)) {
+                    Log.d("KeepAliveReceiver", "API 35+ — keep-alive not allowed; not scheduling")
+                    cancel(context)
+                    return
+                }
                 if (!WebSocketService.isBackgroundServiceEnabled(context)) {
                     Log.d("KeepAliveReceiver", "Background service disabled; not scheduling keep-alive")
                     cancel(context)

@@ -16,6 +16,13 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
             intent.action == "android.intent.action.QUICKBOOT_POWERON" ||
             intent.action == "com.htc.intent.action.QUICKBOOT_POWERON") {
+            // Android 15+ (API 35): boot-starting a persistent dataSync FGS is not
+            // allowed — incoming calls are delivered via FCM secure push instead.
+            if (!ForegroundServicePolicy.allowsBootStart(android.os.Build.VERSION.SDK_INT)) {
+                Log.d("BootReceiver", "API 35+ — skipping WebSocketService boot start, cancelling keep-alive")
+                KeepAliveReceiver.cancel(context)
+                return
+            }
             if (!WebSocketService.isBackgroundServiceEnabled(context)) {
                 Log.d("BootReceiver", "Background service disabled — skipping WebSocketService boot start")
                 KeepAliveReceiver.cancel(context)

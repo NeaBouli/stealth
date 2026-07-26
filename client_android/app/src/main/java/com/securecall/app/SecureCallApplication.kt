@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
+import com.securecall.app.net.ForegroundServicePolicy
 import com.securecall.app.net.WebSocketService
 
 class SecureCallApplication : Application() {
@@ -26,11 +27,18 @@ class SecureCallApplication : Application() {
                 startedActivityCount = (startedActivityCount - 1).coerceAtLeast(0)
                 if (startedActivityCount == 0) {
                     backgroundStopHandler.postDelayed({
+                        // Android 15+ (API 35): persistent idle signaling is not allowed —
+                        // stop the service after backgrounding even if the legacy preference
+                        // is still true. An active call always keeps the service alive.
+                        val persistentIdleAllowed = ForegroundServicePolicy.allowsPersistentIdleSignaling(
+                            android.os.Build.VERSION.SDK_INT
+                        )
                         if (startedActivityCount == 0 &&
-                            !WebSocketService.isBackgroundServiceEnabled(this@SecureCallApplication) &&
+                            (!persistentIdleAllowed ||
+                                !WebSocketService.isBackgroundServiceEnabled(this@SecureCallApplication)) &&
                             !WebSocketService.hasActiveCall()
                         ) {
-                            android.util.Log.d("SecureCallApp", "Background service disabled; stopping WebSocketService after app background")
+                            android.util.Log.d("SecureCallApp", "Background service disabled or not allowed on this API; stopping WebSocketService after app background")
                             stopService(android.content.Intent(this@SecureCallApplication, WebSocketService::class.java))
                         }
                     }, 15_000L)
@@ -48,7 +56,11 @@ class SecureCallApplication : Application() {
         // On Android 8 (Galaxy S7), the 5-second startForeground() timeout starts
         // from this call. The service's onCreate() runs as soon as Application.onCreate()
         // returns, giving it the earliest chance to call startForeground().
-        if (WebSocketService.isBackgroundServiceEnabled(this)) {
+        // Android 15+ (API 35): never auto-start the persistent service on process
+        // launch — incoming calls are delivered via FCM secure push notifications.
+        if (ForegroundServicePolicy.allowsPersistentIdleSignaling(android.os.Build.VERSION.SDK_INT) &&
+            WebSocketService.isBackgroundServiceEnabled(this)
+        ) {
             try {
                 val wsIntent = android.content.Intent(this, WebSocketService::class.java)
                 androidx.core.content.ContextCompat.startForegroundService(this, wsIntent)

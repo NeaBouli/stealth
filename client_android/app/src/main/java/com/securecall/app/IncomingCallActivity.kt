@@ -219,7 +219,20 @@ class IncomingCallActivity : AppCompatActivity() {
         dismissIncomingCallNotification()
         Log.d(TAG, "Accepting call, session=$sessionId, fromFcm=$fromFcm")
 
-        val ws = com.securecall.app.net.WebSocketService.instance
+        var ws = com.securecall.app.net.WebSocketService.instance
+        if (ws == null) {
+            // A high-priority FCM start can still be rejected when Android has
+            // exhausted the dataSync budget. The user gesture puts the app in
+            // foreground and resets that budget, so retry signaling here.
+            try {
+                val serviceIntent = Intent(this, com.securecall.app.net.WebSocketService::class.java)
+                androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent)
+                Log.d(TAG, "WebSocketService start retried from accept gesture")
+            } catch (e: Exception) {
+                Log.e(TAG, "Unable to start WebSocketService from accept gesture", e)
+            }
+            ws = com.securecall.app.net.WebSocketService.instance
+        }
         ws?.killAllAudio()
 
         // CALL_ACCEPT is only valid after the server REGISTERED ack.
