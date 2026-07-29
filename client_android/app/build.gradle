@@ -1,6 +1,12 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
+// App Bundles perform ABI splitting in Google Play. Building APK splits at the
+// same time breaks resource shrinking with AGP 8.11.
+def buildingAppBundle = gradle.startParameter.taskNames.any {
+    it.toLowerCase().contains('bundle')
+}
+
 // Guard: pro and premium flavors are internal-only (testing, not distribution).
 // They are excluded from the build unless -Pinternal is passed on the command line.
 //   Normal:   ./gradlew assembleFreeRelease        → builds
@@ -144,7 +150,7 @@ android {
     // ABI splits for store/internal artifacts plus one universal APK for direct website downloads.
     splits {
         abi {
-            enable true
+            enable !buildingAppBundle
             reset()
             include 'arm64-v8a', 'armeabi-v7a', 'x86_64'
             universalApk true
@@ -291,16 +297,18 @@ android {
 // ABI-specific versionCodes for split APKs and a higher universal APK code.
 // arm64-v8a: base*1000+1, armeabi-v7a: base*1000+2, x86_64: base*1000+3,
 // universal: base*1000+9 so direct-download users can update from any split APK.
-android.applicationVariants.all { variant ->
-    variant.outputs.each { output ->
-        def abi = output.getFilter(com.android.build.OutputFile.ABI)
-        def abiCode = 0
-        if (abi == "arm64-v8a") abiCode = 1
-        else if (abi == "armeabi-v7a") abiCode = 2
-        else if (abi == "x86_64") abiCode = 3
-        else if (abi == null) abiCode = 9
-        if (abiCode > 0) {
-            output.versionCodeOverride = variant.versionCode * 1000 + abiCode
+if (!buildingAppBundle) {
+    android.applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def abi = output.getFilter(com.android.build.OutputFile.ABI)
+            def abiCode = 0
+            if (abi == "arm64-v8a") abiCode = 1
+            else if (abi == "armeabi-v7a") abiCode = 2
+            else if (abi == "x86_64") abiCode = 3
+            else if (abi == null) abiCode = 9
+            if (abiCode > 0) {
+                output.versionCodeOverride = variant.versionCode * 1000 + abiCode
+            }
         }
     }
 }

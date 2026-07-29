@@ -9,25 +9,34 @@ import static org.junit.Assert.assertTrue;
 
 import android.Manifest;
 import android.content.Context;
+import android.os.Build;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.rule.GrantPermissionRule;
 
-import org.junit.Rule;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class MainActivityInstrumentedTest {
 
-    @Rule
-    public GrantPermissionRule permissionRule = GrantPermissionRule.grant(
-            Manifest.permission.READ_PHONE_NUMBERS,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.RECORD_AUDIO
-    );
+    @Before
+    public void grantRuntimePermissions() {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .grantRuntimePermission(context.getPackageName(), Manifest.permission.RECORD_AUDIO);
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .grantRuntimePermission(context.getPackageName(), Manifest.permission.READ_CONTACTS);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .grantRuntimePermission(
+                            context.getPackageName(),
+                            Manifest.permission.POST_NOTIFICATIONS
+                    );
+        }
+    }
 
     private ActivityScenario<MainActivity> launchMainActivity() {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
