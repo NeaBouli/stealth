@@ -56,13 +56,16 @@ class SecurityFeatureTest {
 
     @Test
     fun audioFocusManager_requestsExclusiveFocus() {
-        val manager = AudioFocusManager(context)
-        val result = manager.requestExclusiveFocus()
-        // Should succeed (no other app competing on test device)
-        assertTrue("Should obtain exclusive audio focus", result)
-        assertTrue("hasFocus should return true", manager.hasFocus())
-        manager.abandonFocus()
-        assertFalse("hasFocus should return false after abandon", manager.hasFocus())
+        val scenario = ActivityScenario.launch(SettingsActivity::class.java)
+        scenario.onActivity { activity ->
+            val manager = AudioFocusManager(activity)
+            val result = manager.requestExclusiveFocus()
+            assertTrue("Foreground activity should obtain exclusive audio focus", result)
+            assertTrue("hasFocus should return true", manager.hasFocus())
+            manager.abandonFocus()
+            assertFalse("hasFocus should return false after abandon", manager.hasFocus())
+        }
+        scenario.close()
     }
 
     // ─── ScreenRecordingDetector Tests ──────────────────
