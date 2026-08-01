@@ -23,3 +23,27 @@ jobs:
 
       - name: Run YAML Lint
         run: yamllint .
+
+  signaling-tests:
+    name: Signaling Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend/signaling
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/signaling/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run signaling tests
+        run: npm test

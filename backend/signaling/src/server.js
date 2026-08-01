@@ -57,7 +57,13 @@ const {
 } = state;
 // Store-backed singletons (load from DATA_DIR-aligned paths set above)
 const { fcmTokens, loadFcmTokens, saveFcmTokens }                 = require("./services/fcm_store");
-const { activationCodes, loadActivationCodes, saveActivationCodes } = require("./services/activation_store");
+const {
+  activationCodes,
+  loadActivationCodes,
+  saveActivationCodes,
+  revokeActivationCode,
+} = require("./services/activation_store");
+const { setupActivationAdminRoutes } = require("./services/activation_admin");
 const { walletMappings, loadWalletMappings, saveWalletMappings }   = require("./services/wallet_store");
 const { getClientIp }                                               = require("./middleware/ip");
 const { verifyIfrLock }                                             = require("./services/ifr");
@@ -918,6 +924,8 @@ app.get("/metrics", requireAdmin, (req, res) => {
     fcmTokensStored: fcmTokens.size
   });
 });
+
+setupActivationAdminRoutes(app, requireAdmin, revokeActivationCode);
 
 // --- Stripe Payment Routes (disabled if STRIPE_SECRET_KEY not set) ---
 try {

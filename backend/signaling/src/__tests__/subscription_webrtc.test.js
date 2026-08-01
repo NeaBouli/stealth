@@ -48,7 +48,7 @@ function lastMsg(ws) {
   return ws.messages[ws.messages.length - 1];
 }
 
-function buildCtx() {
+function buildCtx(overrides = {}) {
   const { buildContext } = require("../context");
 
   const mockFcm = {
@@ -67,7 +67,7 @@ function buildCtx() {
   const mockHb = { start: () => {}, updateClient: () => {}, stop: () => {} };
   const giftCodes = new Map();
   const saveGiftCodes = () => {};
-  const saveActivationCodes = () => {}; // no-op: prevent writing activation_codes.json during tests
+  const saveActivationCodes = overrides.saveActivationCodes || (() => true);
   const issueEntitlementToken = ({ subject, productKey, tier }) => `signed:${subject}:${productKey}:${tier}`;
   const verifyEntitlementToken = (token, { expectedSubject }) => {
     if (token !== "valid-refresh-token") throw new Error("invalid token");
@@ -95,8 +95,8 @@ function buildCtx() {
     giftCodes,
     saveGiftCodes,
     saveActivationCodes,
-    issueEntitlementToken,
-    verifyEntitlementToken,
+    issueEntitlementToken: overrides.issueEntitlementToken || issueEntitlementToken,
+    verifyEntitlementToken: overrides.verifyEntitlementToken || verifyEntitlementToken,
     entitlementOrderHash,
     verifyPlaySubscription: () => ({ tier: "pro", expiresAt: 9999999999999 }),
   });
@@ -219,6 +219,107 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   const r8 = lastMsg(ws);
   assert(r8.success === true, "re-activation same device → success");
   assert(entry.usedBy.filter(u => u === "alice").length === 1, "alice not duplicated in usedBy");
+
+  const outageCtx = buildCtx({
+    issueEntitlementToken: () => null,
+    verifyEntitlementToken: () => ({ product: "securechat_elite_lifetime", order: "order-hash" }),
+  });
+  const outageWs = mockWs();
+  const outageConnId = "conn-signing-outage";
+  outageCtx.clients.set(outageConnId, { ws: outageWs, lastSeen: Date.now(), clientId: "reviewer", ip: "1.1.1.2" });
+  outageCtx.clientIds.set("reviewer", outageConnId);
+  outageCtx.activationCodes.push({
+    code: "ELIT-REVIEW-TEST-0001",
+    tier: "elite",
+    maxUses: 25,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "securechat_elite_lifetime",
+  });
+  outageCtx.handlers.ACTIVATE_CODE(outageWs, outageConnId, { code: "ELIT-REVIEW-TEST-0001" });
+  const outageActivation = lastMsg(outageWs);
+  const outageEntry = outageCtx.activationCodes.find(candidate => candidate.code === "ELIT-REVIEW-TEST-0001");
+  assert(outageActivation.success === false && outageActivation.error === "entitlement_temporarily_unavailable", "signed activation outage is retryable");
+  assert(outageEntry.usedBy.length === 0, "signed activation outage does not consume a device slot");
+
+  const persistenceCtx = buildCtx({ saveActivationCodes: () => false });
+  const persistenceWs = mockWs();
+  const persistenceConnId = "conn-persistence-outage";
+  persistenceCtx.clients.set(persistenceConnId, { ws: persistenceWs, lastSeen: Date.now(), clientId: "reviewer-persist", ip: "1.1.1.3" });
+  persistenceCtx.clientIds.set("reviewer-persist", persistenceConnId);
+  persistenceCtx.activationCodes.push({
+    code: "ELIT-PERSIST-TEST-0001",
+    tier: "elite",
+    maxUses: 25,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "securechat_elite_lifetime",
+  });
+  persistenceCtx.handlers.ACTIVATE_CODE(persistenceWs, persistenceConnId, { code: "ELIT-PERSIST-TEST-0001" });
+  const persistenceResult = lastMsg(persistenceWs);
+  const persistenceEntry = persistenceCtx.activationCodes.find(candidate => candidate.code === "ELIT-PERSIST-TEST-0001");
+  assert(persistenceResult.success === false && persistenceResult.error === "entitlement_temporarily_unavailable", "persistence outage fails activation closed");
+  assert(persistenceEntry.usedBy.length === 0, "persistence outage rolls back the device slot");
+
+  outageEntry.usedBy.push("reviewer");
+  outageCtx.handlers.REFRESH_ENTITLEMENT(outageWs, outageConnId, { entitlementToken: "valid-refresh-token" });
+  const outageRefresh = lastMsg(outageWs);
+  assert(outageRefresh.success === false && outageRefresh.error === "entitlement_temporarily_unavailable", "refresh signing outage is retryable");
+
+  const verifyOutage = new Error("Entitlement signing is unavailable");
+  verifyOutage.code = "ENTITLEMENT_SIGNING_UNAVAILABLE";
+  const verifyOutageCtx = buildCtx({ verifyEntitlementToken: () => { throw verifyOutage; } });
+  const verifyOutageWs = mockWs();
+  const verifyOutageConnId = "conn-verify-signing-outage";
+  verifyOutageCtx.clients.set(verifyOutageConnId, { ws: verifyOutageWs, lastSeen: Date.now(), clientId: "reviewer-verify", ip: "1.1.1.4" });
+  verifyOutageCtx.clientIds.set("reviewer-verify", verifyOutageConnId);
+  verifyOutageCtx.handlers.REFRESH_ENTITLEMENT(verifyOutageWs, verifyOutageConnId, { entitlementToken: "valid-refresh-token" });
+  const verifyOutageRefresh = lastMsg(verifyOutageWs);
+  assert(verifyOutageRefresh.success === false && verifyOutageRefresh.error === "entitlement_temporarily_unavailable", "verification signer outage does not revoke a valid client lease");
+
+  outageCtx.activationCodes.push({
+    code: "SUIT-REVIEW-TEST-0001",
+    tier: "elite",
+    maxUses: 25,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "stealthx_suite_lifetime",
+  });
+  outageCtx.handlers.ACTIVATE_CODE(outageWs, outageConnId, { code: "SUIT-REVIEW-TEST-0001" });
+  const suiteOutage = lastMsg(outageWs);
+  assert(suiteOutage.success === false && suiteOutage.error === "entitlement_temporarily_unavailable", "suite entitlement also fails closed without a signer");
+
+  outageCtx.activationCodes.push({
+    code: "UNKN-SECURECALL-TEST-0001",
+    tier: "premium",
+    maxUses: 1,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "securecall_unrecognized",
+  });
+  outageCtx.handlers.ACTIVATE_CODE(outageWs, outageConnId, { code: "UNKN-SECURECALL-TEST-0001" });
+  const unknownSecureCallOutage = lastMsg(outageWs);
+  assert(unknownSecureCallOutage.success === false && unknownSecureCallOutage.error === "entitlement_temporarily_unavailable", "unknown SecureCall product fails closed without a signer");
+
+  outageCtx.activationCodes.push({
+    code: "ELIT-REVOKED-TEST-0001",
+    revoked: true,
+  });
+  outageCtx.handlers.ACTIVATE_CODE(outageWs, outageConnId, { code: "ELIT-REVOKED-TEST-0001" });
+  const revokedActivation = lastMsg(outageWs);
+  assert(revokedActivation.success === false && revokedActivation.error === "entitlement_revoked", "revocation tombstone blocks activation after restart");
+
+  outageCtx.activationCodes.push({
+    code: "LEGACY-PRO-TEST-01",
+    tier: "pro",
+    maxUses: 1,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "securecall_activation",
+  });
+  outageCtx.handlers.ACTIVATE_CODE(outageWs, outageConnId, { code: "LEGACY-PRO-TEST-01" });
+  const legacyActivation = lastMsg(outageWs);
+  assert(legacyActivation.success === true && !legacyActivation.entitlementToken, "legacy SecureCall activation remains compatible without signer");
 
   ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token" });
   const refresh = lastMsg(ws);

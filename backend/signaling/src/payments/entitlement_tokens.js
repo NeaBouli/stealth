@@ -2,6 +2,13 @@ const crypto = require("crypto");
 
 const TOKEN_VERSION = "1";
 const TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
+const SIGNING_UNAVAILABLE_CODE = "ENTITLEMENT_SIGNING_UNAVAILABLE";
+
+function signingUnavailableError() {
+  const error = new Error("Entitlement signing is unavailable");
+  error.code = SIGNING_UNAVAILABLE_CODE;
+  return error;
+}
 
 function signingPrivateKey() {
   const encoded = process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM_BASE64;
@@ -64,7 +71,8 @@ function issueEntitlementToken({ subject, productKey, tier, externalOrderId, now
 
 function verifyEntitlementToken(token, { expectedSubject, nowSeconds = Math.floor(Date.now() / 1000), expiryGraceSeconds = 0 } = {}) {
   const privateKeyPem = signingPrivateKey();
-  if (!privateKeyPem || typeof token !== "string" || token.length > 4096) throw new Error("Invalid entitlement token");
+  if (!privateKeyPem) throw signingUnavailableError();
+  if (typeof token !== "string" || token.length > 4096) throw new Error("Invalid entitlement token");
   const parts = token.split(".");
   if (parts.length !== 2 || parts.some(part => !part)) throw new Error("Invalid entitlement token");
   const [encodedPayload, encodedSignature] = parts;
@@ -103,5 +111,6 @@ module.exports = {
   audienceForProduct,
   orderHash,
   signingPrivateKey,
+  SIGNING_UNAVAILABLE_CODE,
   TOKEN_TTL_SECONDS,
 };

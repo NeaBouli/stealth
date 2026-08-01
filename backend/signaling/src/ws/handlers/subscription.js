@@ -9,6 +9,20 @@ module.exports = function subscriptionHandlers(ctx) {
   } = ctx;
 
   const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
+  const LEGACY_UNSIGNED_PRODUCTS = new Set([
+    "pro_lifetime",
+    "pro_monthly",
+    "premium_lifetime",
+    "premium_monthly",
+    "securecall_activation",
+    "securecall_pro_lifetime",
+    "securecall_premium_lifetime",
+  ]);
+
+  function requiresSignedEntitlement(entry) {
+    if (typeof entry.productKey !== "string" || !entry.productKey) return false;
+    return !LEGACY_UNSIGNED_PRODUCTS.has(entry.productKey);
+  }
 
   function signedActivation(entry, clientId, extra) {
     let entitlementToken = null;
@@ -23,6 +37,13 @@ module.exports = function subscriptionHandlers(ctx) {
         : null;
     } catch (error) {
       console.error("[ACTIVATION] Entitlement signing failed:", error.message);
+    }
+    if (!entitlementToken && requiresSignedEntitlement(entry)) {
+      return {
+        type: "ACTIVATE_CODE_RESULT",
+        success: false,
+        error: "entitlement_temporarily_unavailable",
+      };
     }
     return {
       type: "ACTIVATE_CODE_RESULT",
@@ -94,6 +115,13 @@ module.exports = function subscriptionHandlers(ctx) {
         console.log("[ACTIVATION] Invalid code attempted:", code.substring(0, 4) + "****");
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "invalid" }));
       }
+      if (entry.revoked === true) {
+        return ws.send(JSON.stringify({
+          type: "ACTIVATE_CODE_RESULT",
+          success: false,
+          error: "entitlement_revoked",
+        }));
+      }
 
       const myClientId = getClientId(connId);
       const devices = Array.isArray(entry.usedBy) ? entry.usedBy : (entry.usedBy ? [entry.usedBy] : []);
@@ -111,13 +139,27 @@ module.exports = function subscriptionHandlers(ctx) {
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "max_devices", message: `Code already used on ${entry.maxUses} devices` }));
       }
 
+      const activation = signedActivation(entry, myClientId, {
+        slot: devices.length + 1,
+        maxSlots: entry.maxUses,
+      });
+      if (!activation.success) return ws.send(JSON.stringify(activation));
+
       devices.push(myClientId);
       entry.usedBy = devices;
       entry.currentUses = devices.length;
       const slot = devices.length;
+      if (saveActivationCodes() === false) {
+        devices.pop();
+        entry.currentUses = devices.length;
+        return ws.send(JSON.stringify({
+          type: "ACTIVATE_CODE_RESULT",
+          success: false,
+          error: "entitlement_temporarily_unavailable",
+        }));
+      }
       console.log("[ACTIVATION] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", entry.tier, "by:", myClientId, "slot:", slot + "/" + entry.maxUses);
-      saveActivationCodes();
-      return ws.send(JSON.stringify(signedActivation(entry, myClientId, { slot, maxSlots: entry.maxUses })));
+      return ws.send(JSON.stringify(activation));
     },
 
     REFRESH_ENTITLEMENT(ws, connId, msg) {
@@ -141,13 +183,27 @@ module.exports = function subscriptionHandlers(ctx) {
           return ws.send(JSON.stringify({ type: "ENTITLEMENT_REFRESH_RESULT", success: false, error: "entitlement_revoked" }));
         }
         const refreshed = signedActivation(entry, myClientId, {});
-        if (!refreshed.entitlementToken) throw new Error("entitlement_signing_unavailable");
+        if (!refreshed.success || !refreshed.entitlementToken) {
+          return ws.send(JSON.stringify({
+            type: "ENTITLEMENT_REFRESH_RESULT",
+            success: false,
+            error: "entitlement_temporarily_unavailable",
+          }));
+        }
         return ws.send(JSON.stringify({
           type: "ENTITLEMENT_REFRESH_RESULT",
           success: true,
           entitlementToken: refreshed.entitlementToken,
         }));
       } catch (error) {
+        if (error && error.code === "ENTITLEMENT_SIGNING_UNAVAILABLE") {
+          console.warn("[ACTIVATION] Entitlement refresh deferred: signer unavailable");
+          return ws.send(JSON.stringify({
+            type: "ENTITLEMENT_REFRESH_RESULT",
+            success: false,
+            error: "entitlement_temporarily_unavailable",
+          }));
+        }
         console.warn("[ACTIVATION] Entitlement refresh rejected:", error.message);
         return ws.send(JSON.stringify({ type: "ENTITLEMENT_REFRESH_RESULT", success: false, error: "invalid_entitlement" }));
       }

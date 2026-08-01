@@ -10,6 +10,7 @@ const {
   audienceForProduct,
   orderHash,
   signingPrivateKey,
+  SIGNING_UNAVAILABLE_CODE,
   TOKEN_TTL_SECONDS,
 } = require("../payments/entitlement_tokens");
 
@@ -78,5 +79,10 @@ assert.strictEqual(issueEntitlementToken({
   externalOrderId: "cs_test_order",
   nowSeconds: now,
 }), null, "missing signing key fails closed without issuing a token");
+assert.throws(
+  () => verifyEntitlementToken(token, { expectedSubject: "sx_test_device", nowSeconds: now + 60 }),
+  error => error && error.code === SIGNING_UNAVAILABLE_CODE,
+  "missing signing key produces a retryable infrastructure error",
+);
 
 console.log("entitlement_tokens.test.js ok");
