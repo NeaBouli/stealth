@@ -1,15 +1,32 @@
 title = "StealthX Custom Gitleaks Config"
 
+[extend]
+  useDefault = true
+
 [allowlist]
   description = "Global allowlist"
+  regexTarget = "line"
   paths = [
     '''node_modules''',
-    '''\.git''',
+    '''(^|/)\.git(/|$)''',
     '''package-lock\.json''',
     '''yarn\.lock''',
-    '''docs/AUDIT_NETWORK\.md''',
-    '''docs/RAILWAY_ENV_VARS\.md''',
     '''google-services\.json'''
+  ]
+  regexes = [
+    '''IFR_TOKEN_ADDRESS\s*=\s*"0x[a-fA-F0-9]{40}"''',
+    '''IFR ERC-20 token:.*0x[a-fA-F0-9]{40}''',
+    '''Firebase.*AIza[0-9A-Za-z_-]+''',
+    '''ADMIN_API_KEY:\s*"smoke-test-admin-key"''',
+    '''process\.env\.TURN_SECRET''',
+    '''TURN_SECRET=\$\{TURN_SECRET\}''',
+    '''(?i)CHANGE_ME_TO_A_SECURE_RANDOM_[A-Z0-9_]+''',
+    '''TURN_SECRET=\[TURN_SECRET\]''',
+    '''TURN_(USERNAME|PASSWORD)\s*=\s*"YOUR_[A-Z0-9_]+"''',
+    '''TURN_(USERNAME|PASSWORD)\s*=\s*"[A-Z0-9_]*TURN[A-Z0-9_]*"''',
+    '''Authorization:\s*Bearer\s+\$\{?ADMIN_API_KEY\}?''',
+    '''Authorization:\s*Bearer\s+YOUR_ADMIN_KEY''',
+    '''X-Admin-Key:\s*YOUR_ADMIN_KEY'''
   ]
 
 [[rules]]

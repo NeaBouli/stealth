@@ -5,10 +5,11 @@
 
 set -euo pipefail
 
-RAILWAY_TOKEN="dc19624a-543b-4e9b-8992-62788e558a8d"
-PROJECT_ID="263caa21-e6f6-4075-9470-22427cfcf5f9"
-SERVICE_ID="a01bf60b-97d5-479b-a71c-f7c961b24c53"
-ENV_ID="5f573fa5-f6f7-44d0-97ce-f734517d3039"
+# Deployment access and identifiers must come from the private operator environment.
+: "${RAILWAY_TOKEN:?Set RAILWAY_TOKEN in the private operator environment}"
+PROJECT_ID="${RAILWAY_PROJECT_ID:?Set RAILWAY_PROJECT_ID in the private operator environment}"
+SERVICE_ID="${RAILWAY_SERVICE_ID:?Set RAILWAY_SERVICE_ID in the private operator environment}"
+ENV_ID="${RAILWAY_ENVIRONMENT_ID:?Set RAILWAY_ENVIRONMENT_ID in the private operator environment}"
 REPO="NeaBouli/stealth"
 LOG_FILE="docs/monitoring/v1.0.22-rollout-log.md"
 
