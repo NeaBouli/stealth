@@ -2492,7 +2492,7 @@ Alle Befunde in Linear erfasst. Codex bitte priorisiert abarbeiten:
 **Security Audit CI Failure — gitleaks 8 false positives**
 
 Ursache: `client_android/app/google-services.json` nicht in `.gitleaks.toml` allowlist.
-Gitleaks flaggte Firebase `AIzaSyByk8haDZkuS-wJqliELdHwr07WP8Bgexw` als API-Key-Leak (8x — 3 Vorkommen in Datei + Git-History).
+Gitleaks flaggte einen Firebase-Browser-Identifier in frueheren Logs; der Wert wurde aus der oeffentlichen Bridge entfernt.
 
 Befund nach Analyse:
 - Kein echter Secret-Leak. Firebase `AIzaSy...` Keys sind public-facing, durch SHA-1 Fingerprint in Firebase Console restricted — nicht durch Geheimhaltung.
@@ -2523,8 +2523,8 @@ Was CC erledigt hat:
 - `/opt/stealthx/signaling/` — Code rsync'd vom lokalen Repo ✓
 - Docker Image `stealthx-signaling:latest` gebaut ✓ (BUILD SUCCESSFUL)
 - coturn installiert, systemd disabled (Docker managed) ✓
-- TURN_SECRET generiert: `48bf46d483a47c5a436d8e5422a78f4b568b939fa4a54da4472b4c0b9a2b1a93`
-- ADMIN_API_KEY generiert: `28b26e581fc1dc512b01d17a10826e1f7daf0ea9852d60bd41f695ab46cb2949`
+- TURN_SECRET generiert: `[REDACTED - rotate if still active]`
+- ADMIN_API_KEY generiert: `[REDACTED - rotate if still active]`
 
 **Was noch fehlt (CODEX übernimmt nach GIO-Action):**
 
@@ -2600,8 +2600,8 @@ ssh hetzner "docker logs stealthx-signaling --tail 20"
 - Host: hetzner (135.181.254.229) — SSH-Key ~/.ssh/id_ed25519_hetzner
 - Docker Compose: /opt/stealthx/docker-compose.yml — fertig, nicht anfassen
 - .env.production: /opt/stealthx/.env.production — nur FILL_FROM_RAILWAY ersetzen
-- TURN_SECRET bereits gesetzt: 48bf46d483a47c5a436d8e5422a78f4b568b939fa4a54da4472b4c0b9a2b1a93
-- ADMIN_API_KEY bereits gesetzt: 28b26e581fc1dc512b01d17a10826e1f7daf0ea9852d60bd41f695ab46cb2949
+- TURN_SECRET bereits gesetzt: `[REDACTED - rotate if still active]`
+- ADMIN_API_KEY bereits gesetzt: `[REDACTED - rotate if still active]`
 
 **BLACKOUT-SICHERUNG:** Infra fertig. Nur Secrets + `docker compose up` fehlen.
 
@@ -5383,3 +5383,29 @@ Open next:
   koordinierten Stealth-Arbeitsblock pruefen und beheben.
 
 ---
+
+## 2026-08-05 01:11 EEST — CODEX SOL — PUBLIC CREDENTIAL REMOVAL / GITLEAKS HARDENING
+
+- **Ticket:** `GIO-20260805-STEALTHX-WEB-SECURITY`; **Status:** In Progress;
+  **Risk:** High until private credential rotation is confirmed.
+- The rollout monitor now requires its access token and deployment identifiers from the
+  private operator environment and fails closed before any network request when one is absent.
+- Removed three distinct credential values from five lines in the current public Bridge while
+  preserving the surrounding historical entries. No value is repeated here.
+- Gitleaks now extends its maintained default rules. Narrow line-level exceptions cover only
+  public contract addresses, explicit environment interpolation, test fixtures and documented
+  placeholders; current-tree scan PASS with zero findings.
+- Full-history scan now correctly reports five historical credential findings instead of
+  the prior eight placeholder false positives. They remain deliberately unignored until private
+  rotation is confirmed; no history rewrite was performed.
+- Verification PASS: rollout script Bash syntax, missing-env fail-closed test, focused hardcoded
+  identifier scan, `git diff --check`, clean `npm ci`, full signaling test suite and
+  `npm audit --audit-level=high` with zero vulnerabilities.
+- Kimi K3 independently confirmed PR #38 contains #39, the parser dependency is already patched
+  on current main, and removal of the embedded rollout credential remains necessary. Integration
+  uses a fresh branch from current `origin/main` rather than the stale original PR branches.
+- **External blocker:** rotate the exposed Railway access token and related identifiers in the
+  private operator environment, then baseline only the retired historical fingerprints. No
+  runtime secret, deployment or provider mutation occurred in this block.
+
+`TASK IN PROGRESS — PROTECTED PR / CI NEXT`
