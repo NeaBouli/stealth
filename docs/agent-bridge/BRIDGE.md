@@ -3057,3 +3057,12 @@ Open next steps:
 - No merge, deployment or payment activation.
 
 `REVIEW IN PROGRESS`
+
+## 2026-08-06 03:40 EEST — CODEX SOL — REVIEW FIXES
+
+- Basic CI and Security Audit passed. Shared checkout client now has per-request 15-second
+  abort handling, safe `personal_sign` compatibility fallback and deterministic button reset.
+- Change is copied identically to SecureChat and Chameleon; local syntax/hash and browser
+  regression checks must pass before push. CodeRabbit final review remains pending.
+
+`REVIEW FIXES IN PROGRESS`

@@ -39,6 +39,31 @@
     return error;
   }
 
+  async function fetchJson(url, options) {
+    var controller = new AbortController();
+    var timeout = window.setTimeout(function () { controller.abort(); }, 15000);
+    try {
+      options.signal = controller.signal;
+      var response = await fetch(url, options);
+      var data = await response.json().catch(function () { return {}; });
+      return { response: response, data: data };
+    } catch (error) {
+      if (error && error.name === "AbortError") throw new Error("The checkout server did not respond in time. Try again.");
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
+  function canRetryPersonalSign(error) {
+    if (!error || error.code === 4001) return false;
+    if (error.code === -32602) return true;
+    var message = String(error.message || "").toLowerCase();
+    return message.indexOf("invalid params") !== -1 ||
+      message.indexOf("invalid argument") !== -1 ||
+      message.indexOf("parameter order") !== -1;
+  }
+
   function injectedProviders() {
     var list = [];
     if (window.ethereum && Array.isArray(window.ethereum.providers)) list = list.concat(window.ethereum.providers);
@@ -104,7 +129,10 @@
 
   function renderConnected() {
     if (addressField) addressField.value = address;
-    if (connectButton) connectButton.textContent = "Wallet connected";
+    if (connectButton) {
+      connectButton.textContent = "Wallet connected";
+      connectButton.disabled = false;
+    }
     if (disconnectButton) disconnectButton.disabled = false;
     setStatus("Connected: " + address.slice(0, 6) + "..." + address.slice(-4) + ". Select a discount checkout to verify the IFR balance.");
   }
@@ -127,7 +155,10 @@
     provider = null;
     address = "";
     if (addressField) addressField.value = "";
-    if (connectButton) connectButton.textContent = "Connect wallet";
+    if (connectButton) {
+      connectButton.textContent = "Connect wallet";
+      connectButton.disabled = false;
+    }
     if (disconnectButton) disconnectButton.disabled = true;
     try {
       if (current && current.disconnect) await current.disconnect();
@@ -137,18 +168,19 @@
 
   async function walletProof(tier) {
     var walletAddress = await connect();
-    var response = await fetch(API + "/stripe/ifr-discount-challenge", {
+    var challengeResult = await fetchJson(API + "/stripe/ifr-discount-challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tier: tier, walletAddress: walletAddress })
     });
-    var challenge = await response.json().catch(function () { return {}; });
-    if (!response.ok || !challenge.message || !challenge.nonce) throw new Error(checkoutError(challenge));
+    var challenge = challengeResult.data;
+    if (!challengeResult.response.ok || !challenge.message || !challenge.nonce) throw new Error(checkoutError(challenge));
     setStatus("Sign the message to prove wallet ownership. This cannot move tokens.");
     var signature;
     try {
       signature = await provider.request({ method: "personal_sign", params: [challenge.message, walletAddress] });
-    } catch (_) {
+    } catch (error) {
+      if (!canRetryPersonalSign(error)) throw error;
       signature = await provider.request({ method: "personal_sign", params: [walletAddress, challenge.message] });
     }
     return { walletAddress: walletAddress, walletNonce: challenge.nonce, walletSignature: signature };
@@ -162,13 +194,13 @@
       var payload = { tier: button.dataset.ifrTier, ifrDiscount: true };
       Object.assign(payload, await walletProof(payload.tier));
       setStatus("Checking IFR balance on Ethereum Mainnet...");
-      var response = await fetch(API + "/stripe/create-dynamic-checkout", {
+      var checkoutResult = await fetchJson(API + "/stripe/create-dynamic-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      var data = await response.json().catch(function () { return {}; });
-      if (!response.ok || !data.url) throw new Error(checkoutError(data));
+      var data = checkoutResult.data;
+      if (!checkoutResult.response.ok || !data.url) throw new Error(checkoutError(data));
       setStatus("Eligible" + balanceText(data.ifrBalanceAmount) + " Opening Stripe with the 50% discount...");
       window.location.assign(data.url);
     } catch (error) {
