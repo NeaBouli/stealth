@@ -5,7 +5,8 @@
  *
  * Tests message processing for subscription.js and webrtc.js handlers.
  * Uses mock ws objects and a real ctx built via buildContext() with in-memory stubs.
- * VERIFY_IFR_LOCK async path is not tested here — requires a live Ethereum RPC.
+ * The legacy unsigned VERIFY_IFR_LOCK command was removed; wallet verification
+ * flows exclusively through the signed SIWE HTTP endpoints (not tested here).
  *
  * Run: node src/__tests__/subscription_webrtc.test.js
  */
@@ -339,145 +340,13 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
 }
 
 // ==========================================
-// Suite: VERIFY_IFR_LOCK handler (sync paths only)
+// Suite: VERIFY_IFR_LOCK permanently removed
 // ==========================================
-console.log("\n[Suite] VERIFY_IFR_LOCK handler (sync paths)");
+console.log("\n[Suite] VERIFY_IFR_LOCK removed");
 {
   clearState();
   const ctx = buildCtx();
-  const ws = mockWs();
-  const connId = "conn-ifr";
-  ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: "alice", ip: "1.1.1.1" });
-  ctx.clientIds.set("alice", connId);
-
-  // Missing wallet
-  ctx.handlers.VERIFY_IFR_LOCK(ws, connId, {});
-  assert(lastMsg(ws).type === "IFR_LOCK_RESULT", "missing wallet → IFR_LOCK_RESULT");
-  assert(lastMsg(ws).success === false && lastMsg(ws).error === "invalid_address", "error=invalid_address");
-
-  // Invalid wallet format (not 0x + 40 hex)
-  ctx.handlers.VERIFY_IFR_LOCK(ws, connId, { walletAddress: "not-a-wallet" });
-  assert(lastMsg(ws).error === "invalid_address", "non-hex wallet → invalid_address");
-
-  // Short address
-  ctx.handlers.VERIFY_IFR_LOCK(ws, connId, { walletAddress: "0xDEAD" });
-  assert(lastMsg(ws).error === "invalid_address", "short address → invalid_address");
-
-  // Wallet bound to different client
-  ctx.walletMappings.push({ wallet: "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef", clientId: "bob", tier: "pro", lastVerified: Date.now() });
-  ctx.handlers.VERIFY_IFR_LOCK(ws, connId, { walletAddress: "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef" });
-  assert(lastMsg(ws).error === "wallet_bound", "wallet bound to other client → wallet_bound");
-  assert(lastMsg(ws).boundTo.endsWith("..."), "boundTo is truncated");
-}
-
-// ==========================================
-// Suite: VERIFY_IFR_LOCK handler (async paths via mock)
-// ==========================================
-async function runIfrLockAsyncTests() {
-  console.log("\n[Suite] VERIFY_IFR_LOCK handler (async paths)");
-
-  const { buildContext } = require("../context");
-  const state = require("../state");
-
-  function clearAsyncState() {
-    for (const [, v] of Object.entries(state)) {
-      if (v instanceof Map) v.clear();
-      else if (Array.isArray(v)) v.splice(0);
-    }
-    const { fcmTokens } = require("../services/fcm_store");
-    fcmTokens.clear();
-    const { activationCodes } = require("../services/activation_store");
-    activationCodes.splice(0);
-    const { walletMappings } = require("../services/wallet_store");
-    walletMappings.splice(0);
-  }
-
-  function buildCtxWithIfrMock(verifyIfrLock) {
-    const mockFcm = { isInitialized: () => false, sendCallInvitePush: () => {}, sendDataMessage: () => {} };
-    const mockPkd = { registerKey: () => ({ keyId: "k1", publicKey: "pk", created: 0 }), getKey: () => null };
-    const mockSubscriptions = { verifySubscription: () => ({ tier: "pro", expiresAt: 9999999999 }), getSubscription: () => null };
-    const mockCustomIds = { resolve: () => null };
-    const mockLicenses = { getStatus: () => ({}), getCurrentPrice: () => null };
-    const mockRateLimit = { registerEvent: () => true, registerBinaryEvent: () => true, clear: () => {} };
-    const mockHb = { start: () => {}, updateClient: () => {}, stop: () => {} };
-    return buildContext({
-      pkd: mockPkd, subscriptions: mockSubscriptions, fcm: mockFcm,
-      customIds: mockCustomIds, licenses: mockLicenses,
-      getIceServers: () => [{ urls: "stun:stun.l.google.com:19302" }],
-      ADMIN_API_KEY: "test-admin-key",
-      ALLOWED_ORIGINS: ["https://stealthx.tech"],
-      CLIENT_ID_REGEX: /^[a-zA-Z0-9_-]{1,64}$/,
-      rateLimit: mockRateLimit, hb: mockHb,
-      giftCodes: new Map(), saveGiftCodes: () => {},
-      saveActivationCodes: () => {},
-      saveWalletMappings: () => {},
-      verifyIfrLock,
-    });
-  }
-
-  const VALID_WALLET = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
-
-  // Test: successful IFR lock verification
-  clearAsyncState();
-  const wsSuccess = mockWs();
-  const connSuccess = "conn-ifr-ok";
-  const ctxSuccess = buildCtxWithIfrMock(() => Promise.resolve({ success: true, tier: "pro", lockedAmount: "100" }));
-  ctxSuccess.clients.set(connSuccess, { ws: wsSuccess, lastSeen: Date.now(), clientId: "alice", ip: "1.1.1.1" });
-  ctxSuccess.clientIds.set("alice", connSuccess);
-  ctxSuccess.handlers.VERIFY_IFR_LOCK(wsSuccess, connSuccess, { walletAddress: VALID_WALLET });
-  await new Promise(r => setTimeout(r, 10));
-  const successMsg = lastMsg(wsSuccess);
-  assert(successMsg.type === "IFR_LOCK_RESULT", "async success → IFR_LOCK_RESULT");
-  assert(successMsg.success === true, "async success → success=true");
-  assert(successMsg.tier === "pro", "async success → tier=pro");
-  assert(successMsg.lockedAmount === "100", "async success → lockedAmount=100");
-  const stored = ctxSuccess.walletMappings.find(w => w.wallet === VALID_WALLET);
-  assert(stored !== undefined, "async success → wallet stored in walletMappings");
-  assert(stored.clientId === "alice", "async success → clientId=alice");
-  assert(stored.tier === "pro", "async success → tier=pro in mapping");
-
-  // Test: failed IFR lock (insufficient lock)
-  clearAsyncState();
-  const wsFail = mockWs();
-  const connFail = "conn-ifr-fail";
-  const ctxFail = buildCtxWithIfrMock(() => Promise.resolve({ success: false, error: "insufficient_lock" }));
-  ctxFail.clients.set(connFail, { ws: wsFail, lastSeen: Date.now(), clientId: "bob", ip: "2.2.2.2" });
-  ctxFail.clientIds.set("bob", connFail);
-  ctxFail.handlers.VERIFY_IFR_LOCK(wsFail, connFail, { walletAddress: VALID_WALLET });
-  await new Promise(r => setTimeout(r, 10));
-  const failMsg = lastMsg(wsFail);
-  assert(failMsg.success === false, "async fail → success=false");
-  assert(failMsg.error === "insufficient_lock", "async fail → error=insufficient_lock");
-  assert(ctxFail.walletMappings.length === 0, "async fail → wallet NOT stored");
-
-  // Test: network error → server_error
-  clearAsyncState();
-  const wsErr = mockWs();
-  const connErr = "conn-ifr-err";
-  const ctxErr = buildCtxWithIfrMock(() => Promise.reject(new Error("RPC unreachable")));
-  ctxErr.clients.set(connErr, { ws: wsErr, lastSeen: Date.now(), clientId: "carol", ip: "3.3.3.3" });
-  ctxErr.clientIds.set("carol", connErr);
-  ctxErr.handlers.VERIFY_IFR_LOCK(wsErr, connErr, { walletAddress: VALID_WALLET });
-  await new Promise(r => setTimeout(r, 10));
-  const errMsg = lastMsg(wsErr);
-  assert(errMsg.type === "IFR_LOCK_RESULT", "RPC error → IFR_LOCK_RESULT");
-  assert(errMsg.success === false, "RPC error → success=false");
-  assert(errMsg.error === "server_error", "RPC error → error=server_error");
-
-  // Test: WS closed before async resolves (readyState=0) — no throw
-  clearAsyncState();
-  const wsClosedWs = mockWs();
-  const connClosed = "conn-ifr-closed";
-  let resolveP;
-  const pendingP = new Promise(r => { resolveP = r; });
-  const ctxClosed = buildCtxWithIfrMock(() => pendingP);
-  ctxClosed.clients.set(connClosed, { ws: wsClosedWs, lastSeen: Date.now(), clientId: "dave", ip: "4.4.4.4" });
-  ctxClosed.clientIds.set("dave", connClosed);
-  ctxClosed.handlers.VERIFY_IFR_LOCK(wsClosedWs, connClosed, { walletAddress: VALID_WALLET });
-  wsClosedWs.readyState = 0; // simulate closed WS
-  resolveP({ success: true, tier: "basic", lockedAmount: "10" });
-  await new Promise(r => setTimeout(r, 10));
-  assert(wsClosedWs.messages.length === 0, "closed WS → no send after async resolves");
+  assert(ctx.handlers.VERIFY_IFR_LOCK === undefined, "VERIFY_IFR_LOCK handler is not registered");
 }
 
 // ==========================================
@@ -661,14 +530,11 @@ console.log("\n[Suite] GHOST_PREPARE handler");
 }
 
 // ==========================================
-// Async suites — run after sync suites complete
+// Summary
 // ==========================================
-runIfrLockAsyncTests().then(() => {
+{
   console.log(`\n${"─".repeat(50)}`);
   const total = passed + failed;
   console.log(`subscription_webrtc.test: ${passed}/${total} passed${failed > 0 ? ` (${failed} FAILED)` : " ✅"}`);
   if (failed > 0) process.exit(1);
-}).catch(e => {
-  console.error("Async test runner failed:", e);
-  process.exit(1);
-});
+}

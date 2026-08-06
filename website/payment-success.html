@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Successful — SecureCall</title>
+    <title>Checkout Return — SecureCall</title>
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#0a0a12">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -134,27 +134,26 @@
 </head>
 <body>
     <div class="container">
-        <div class="checkmark">&#10003;</div>
-        <h1>Payment Successful</h1>
+        <div class="checkmark">&#8230;</div>
+        <h1>Checkout Return</h1>
         <p class="subtitle">
-            Your activation code has been generated.<br>
-            Check your inbox &mdash; code delivered instantly.
+            SecureCall is confirming the payment with Stripe.<br>
+            An activation code is issued only after the signed payment event is verified.
         </p>
 
         <div class="step-card">
-            <h3>Activate Premium</h3>
+            <h3>What happens next</h3>
             <ol>
-                <li>Open <strong>SecureCall</strong> on your Android device</li>
-                <li>Go to <strong>Settings</strong> (gear icon)</li>
-                <li>Scroll to <strong>Activation Code</strong></li>
-                <li>Enter your code and tap <strong>Activate</strong></li>
-                <li>Premium unlocks instantly &mdash; app restarts</li>
+                <li>Stripe confirms the completed payment to SecureCall</li>
+                <li>The server validates the signed notification</li>
+                <li>Your activation code is sent to the checkout email address</li>
+                <li>Enter the code under <strong>Settings &gt; Activation Code</strong></li>
             </ol>
         </div>
 
         <p class="note">
-            Your code works on up to 2 devices. No account needed &mdash; just the code.<br>
-            Keep it safe. Due to our commitment to anonymity, we cannot recover lost codes.
+            Returning to this page alone does not confirm a payment. If no activation code arrives,
+            check the payment status and contact support instead of repeating the checkout.
         </p>
 
         <div id="qrSection" class="qr-section" style="display:none;">

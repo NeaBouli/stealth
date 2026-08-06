@@ -966,6 +966,7 @@ body.landing-redesign {
   .sx-nav-actions .btn.primary { display: none; }
   .hero-actions,
   .cta-buttons { flex-direction: column; }
+  .ifr-checkout-actions { grid-template-columns: 1fr !important; }
   .hero-actions .btn,
   .store-badge { width: 100%; }
   .hero-mini { grid-template-columns: 1fr; }

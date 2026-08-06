@@ -3031,3 +3031,21 @@ Open next steps:
 - SecureChat and Chameleon full device/function QA before fresh AAB/APK builds.
 - VLABS: Stripe runtime key, checkout/webhook/email, AADE/myDATA/e-timologio end-to-end finance transfer.
 - Google Search Console sitemap resubmission/indexing after public deployment.
+
+## 2026-08-06 03:30 EEST — CODEX SOL — WEB-ONLY IFR CHECKOUT REVIEW CANDIDATE
+
+- Ticket `GIO-20260806-STEALTHX-WEB-IFR-CHECKOUT`; branch
+  `fix/gh-42-web-ifr-checkout`; status: source ready for review, production blocked.
+- Added the shared browser-wallet checkout client and updated SecureCall landing, IFR, FAQ,
+  Wiki and checkout-return surfaces. Android remains permanently IFR-/wallet-free.
+- Kimi K3 implemented and reviewed the bounded backend product catalog. Sol integrated and
+  reviewed: six individual products only, Suite excluded, unsigned `VERIFY_IFR_LOCK` removed,
+  product redirects, refund/dispute revocation and PII-free sold-code persistence.
+- PASS: `npm test`; `npm run test:payments`; `npm audit --audit-level=high` (0 findings);
+  `node --check website/js/ifr-checkout.js`; `git diff --check`; 375 px browser layout with
+  no horizontal overflow; `client_android ./gradlew verifyNoAppIfrWalletCode`.
+- No flag enablement, deployment, secret, live RPC/Stripe call or Android artifact. Production
+  remains blocked by VLABS AADE/myDATA/e-timologio readiness, entitlement provisioning for the
+  sibling apps and an enforceable repeated-discount policy.
+
+`READY FOR REVIEW — DO NOT ACTIVATE PAYMENTS`

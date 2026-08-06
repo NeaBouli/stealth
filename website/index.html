@@ -463,7 +463,7 @@
                     <tr><td>STEALTH-DELETE instant local wipe</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                     <tr><td>Emergency Broadcast System</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                     <tr><td>No call content stored server-side</td><td class="own yes">✓</td><td class="yes">common</td></tr>
-                    <tr><td>IFR holder checkout discount</td><td class="own warn">launch-gated</td><td class="no">not typical</td></tr>
+                    <tr><td>IFR holder checkout discount</td><td class="own warn">browser purchase only</td><td class="no">not typical</td></tr>
                     <tr><td>In-app wallet code required for calling</td><td class="own no">no</td><td class="warn">varies</td></tr>
                     <tr><td>Source available for audit</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
                     <tr><td>Direct APK download</td><td class="own yes">✓</td><td class="warn">varies</td></tr>
@@ -478,10 +478,36 @@
                 <div class="section-head"><span class="section-label">Access levels</span><h2>Choose your clearance level.</h2><p class="lead">Every tier includes end-to-end encryption. Upgrade for advanced protection through Play billing or activation codes.</p></div>
                 <div class="pricing-grid">
                     <article class="price-card reveal"><h3>Free</h3><div class="price"><span class="amount">€0</span><span class="period">forever</span></div><ul><li class="included">E2E encrypted calls</li><li class="included">15 min call limit, 10 contacts</li><li class="included">Basic security warnings</li><li class="included">Dark/Light mode</li><li class="included">Ad-supported banner</li><li class="excluded">Call history and online status</li><li class="excluded">Anti-recording protection</li><li class="excluded">GhostNet IP masking</li></ul><a href="#download" class="btn line block">Get started</a></article>
-                    <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">GhostNet IP masking</li><li class="excluded">IFR holder discount planned for a later launch</li></ul><a href="#download" class="btn primary block">Available in app</a></article>
-                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">No ads or crash reporting</li><li class="included">WireGuard VPN integration</li><li class="excluded">IFR holder discount planned for a later launch</li></ul><a href="#download" class="btn primary block">Available in app</a></article>
+                    <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">GhostNet IP masking</li><li class="included">50% IFR holder discount on eligible browser checkout</li></ul><a href="#download" class="btn primary block">Available in app</a></article>
+                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">GhostNet IP masking</li><li class="included">No ads or crash reporting</li><li class="included">WireGuard VPN integration</li><li class="included">50% IFR holder discount on eligible browser checkout</li></ul><a href="#download" class="btn primary block">Available in app</a></article>
                 </div>
-                <div class="ifr-box reveal" id="ifr"><span class="section-label">Planned integration</span><h3>IFR Holder Discount</h3><p>The IFR holder discount is not currently available for purchase. Wallet verification and discounted checkout remain disabled until payment, accounting, and production configuration are approved.</p><p><a class="btn line" href="wiki/ifr-unlock.html">Read planned flow</a></p></div>
+                <div class="ifr-box reveal" id="ifr" data-ifr-checkout data-ifr-product="SecureCall">
+                    <span class="section-label">Browser purchase benefit</span>
+                    <h3>Verify for 50% IFR holder discount</h3>
+                    <p>Connect a browser wallet and sign a message proving ownership. The server checks the IFR balance read-only on Ethereum Mainnet before opening an eligible Stripe checkout. No wallet state enters the Android app.</p>
+                    <div class="ifr-grid">
+                        <div class="card" style="padding:20px">
+                            <h4>Buy IFR</h4>
+                            <ul class="plain-list"><li>Hold at least 2,000 IFR for Pro</li><li>Hold at least 6,000 IFR for Premium</li><li>The check cannot move or spend tokens</li></ul>
+                            <a class="btn line block" href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Open IFR on Uniswap</a>
+                            <p style="text-align:center;margin:18px 0 0"><img src="https://ifrunit.tech/assets/ifr_icon_256.png" alt="IFR token logo" width="96" height="96" loading="lazy"></p>
+                        </div>
+                        <div class="card" style="padding:20px">
+                            <h4>Verify for Stripe discount</h4>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">
+                                <button class="btn primary" type="button" data-ifr-connect>Connect wallet</button>
+                                <button class="btn line" type="button" data-ifr-disconnect disabled>Disconnect</button>
+                            </div>
+                            <input type="text" readonly data-ifr-address aria-label="Connected wallet address" placeholder="Connected wallet address" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--sx-line);background:#111827;color:#f8fafc;margin-bottom:12px;font-weight:700;font-family:var(--sx-font-mono)">
+                            <div class="ifr-checkout-actions" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+                                <button class="btn primary" type="button" data-ifr-tier="pro_lifetime">Pro 50% checkout</button>
+                                <button class="btn primary" type="button" data-ifr-tier="premium_lifetime">Premium 50% checkout</button>
+                            </div>
+                            <p data-ifr-status role="status" aria-live="polite" style="font-size:13px;color:var(--sx-text);font-weight:700;margin:14px 0 0;line-height:1.5">Connect a wallet to prepare the signed browser verification. Checkout availability is controlled by the secure payment backend.</p>
+                        </div>
+                    </div>
+                    <p style="margin:18px 0 0"><a class="btn line" href="wiki/ifr-unlock.html">How browser verification works</a></p>
+                </div>
             </div>
         </section>
 
@@ -550,6 +576,7 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script type="module" src="js/ifr-checkout.js"></script>
     <script>
     const API='https://api.stealthx.tech';
     (async function loadLicensePrices(){
@@ -585,181 +612,6 @@
         }
       }catch(e){console.warn('License prices unavailable:',e.message)}
     })();
-		    (function wireLifetimeCheckout(){
-          var IFR_CHECKOUT_ENABLED=false;
-          if(!IFR_CHECKOUT_ENABLED)return;
-          var WC_PROJECT_ID='32f56abaa4b1d7f59fb1571c0c0a551f';
-          var WC_ESM_URL='https://esm.sh/@walletconnect/ethereum-provider@2.17.3';
-          var RPC_URL='https://eth.llamarpc.com';
-          var ifrProvider=null;
-          var ifrAddress='';
-          function setIfrStatus(message){
-            var status=document.getElementById('ifrDiscountStatus');
-            if(status)status.textContent=message;
-          }
-          function balanceText(value){return value?(' Balance: '+value+' IFR.'):""}
-          function checkoutError(data){
-            var error=(data&&data.error)||'Checkout unavailable';
-            if(error==='ifr_not_eligible')return 'No eligible IFR balance found for this wallet.'+balanceText(data.balanceAmount);
-            if(error==='ifr_tier_too_low')return 'IFR balance found, but tier is too low. Required: '+(data.requiredTier||'higher tier')+'. Current: '+(data.walletTier||'none')+'.'+balanceText(data.balanceAmount);
-            if(error==='wallet_signature_required')return 'Wallet signature is required before IFR discount checkout can open.';
-            if(error==='wallet_signature_invalid')return 'Wallet signature could not be verified. Please reconnect and sign again.';
-            if(error==='wallet_challenge_expired')return 'Wallet verification expired. Please tap checkout again and sign the new request.';
-            if(error==='invalid_wallet_challenge'||error==='wallet_challenge_mismatch')return 'Wallet verification mismatch. Please reconnect the wallet and try again.';
-            if(error==='rate_limited')return 'Too many checkout attempts. Please wait a few minutes and try again.';
-            return error;
-          }
-          function injectedProviders(){
-            var list=[];
-            if(window.ethereum&&Array.isArray(window.ethereum.providers))list=list.concat(window.ethereum.providers);
-            if(window.ethereum)list.push(window.ethereum);
-            if(window.phantom&&window.phantom.ethereum)list.push(window.phantom.ethereum);
-            return list.filter(function(provider,index,all){return provider&&provider.request&&all.indexOf(provider)===index});
-          }
-          function preferredProvider(){
-            var providers=injectedProviders();
-            if(!providers.length)return null;
-            return providers.find(function(provider){return provider.isMetaMask})||
-              providers.find(function(provider){return provider.isPhantom})||
-              providers.find(function(provider){return provider.isCoinbaseWallet})||
-              providers[0];
-          }
-          async function switchMainnet(provider){
-            try{await provider.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x1'}]})}catch(e){}
-          }
-          async function connectInjectedWallet(){
-            var provider=preferredProvider();
-            if(!provider)return null;
-            setIfrStatus('Connecting browser wallet...');
-            var accounts=await provider.request({method:'eth_requestAccounts'});
-            if(!accounts||!accounts[0])throw new Error('No wallet account returned.');
-            await switchMainnet(provider);
-            ifrProvider=provider;
-            ifrAddress=accounts[0];
-            return ifrAddress;
-          }
-          async function connectWalletConnect(){
-            setIfrStatus('Opening WalletConnect...');
-            var mod=await import(WC_ESM_URL);
-            var EthereumProvider=mod.EthereumProvider||mod.default;
-            if(!EthereumProvider)throw new Error('WalletConnect provider unavailable.');
-            var provider=await EthereumProvider.init({
-              projectId:WC_PROJECT_ID,
-              optionalChains:[1],
-              showQrModal:true,
-              rpcMap:{1:RPC_URL},
-              methods:['eth_requestAccounts','personal_sign','wallet_switchEthereumChain'],
-              events:['accountsChanged','chainChanged','disconnect'],
-              metadata:{name:'SecureCall IFR Discount',description:'Read-only IFR holder discount verification for SecureCall checkout.',url:location.origin,icons:[location.origin+'/favicon.ico']},
-              qrModalOptions:{themeMode:'dark'}
-            });
-            var accounts=await provider.enable();
-            if(!accounts||!accounts[0])throw new Error('No wallet account returned.');
-            await switchMainnet(provider);
-            ifrProvider=provider;
-            ifrAddress=accounts[0];
-            return ifrAddress;
-          }
-				    async function connectIfrWallet(){
-            if(ifrProvider&&ifrAddress)return ifrAddress;
-            var walletAddress;
-            try{walletAddress=await connectInjectedWallet()}catch(e){
-              if(e&&e.code===4001)throw e;
-              console.warn('Injected wallet connect failed, falling back to WalletConnect',e);
-            }
-            if(!walletAddress)walletAddress=await connectWalletConnect();
-		        var input=document.getElementById('ifrWalletAddress');
-		        if(input)input.value=walletAddress;
-            setIfrStatus('Wallet connected: '+walletAddress.slice(0,6)+'...'+walletAddress.slice(-4)+'. Choose Pro or Premium checkout.');
-			        return walletAddress;
-			      }
-          async function disconnectIfrWallet(){
-            var provider=ifrProvider;
-            ifrProvider=null;
-            ifrAddress='';
-            var input=document.getElementById('ifrWalletAddress');
-            if(input)input.value='';
-            try{if(provider&&provider.disconnect)await provider.disconnect()}catch(e){}
-            setIfrStatus('Wallet disconnected. Connect a wallet to verify IFR discount eligibility.');
-          }
-			      async function signIfrDiscount(tier){
-		        var walletAddress=await connectIfrWallet();
-		        var challengeResponse=await fetch(API+'/stripe/ifr-discount-challenge',{
-		          method:'POST',
-		          headers:{'Content-Type':'application/json'},
-		          body:JSON.stringify({tier:tier,walletAddress:walletAddress})
-		        });
-		        var challenge=await challengeResponse.json().catch(function(){return{}});
-		        if(!challengeResponse.ok||!challenge.message||!challenge.nonce)throw new Error(challenge.error||'Wallet challenge unavailable');
-		        var status=document.getElementById('ifrDiscountStatus');
-		        if(status)status.textContent='Sign the wallet message to prove ownership...';
-            if(!ifrProvider)throw new Error('Wallet is not connected.');
-		        var signature;
-            try{signature=await ifrProvider.request({method:'personal_sign',params:[challenge.message,walletAddress]})}
-            catch(e){signature=await ifrProvider.request({method:'personal_sign',params:[walletAddress,challenge.message]})}
-		        return {walletAddress:walletAddress,walletNonce:challenge.nonce,walletSignature:signature};
-		      }
-		      async function startCheckout(button){
-	        if(!button||button.disabled)return;
-	        var label=button.textContent;
-	        button.disabled=true;
-	        button.textContent='Opening Stripe...';
-	        try{
-	          var payload={tier:button.dataset.licenseTier};
-		          if(button.dataset.ifrDiscount==='true'){
-		            button.textContent='Signing wallet...';
-                setIfrStatus('Preparing wallet proof...');
-		            payload.ifrDiscount=true;
-		            Object.assign(payload,await signIfrDiscount(payload.tier));
-                button.textContent='Checking IFR...';
-                setIfrStatus('Checking IFR balance on Ethereum Mainnet...');
-		          }
-	          var r=await fetch(API+'/stripe/create-dynamic-checkout',{
-	            method:'POST',
-	            headers:{'Content-Type':'application/json'},
-	            body:JSON.stringify(payload)
-	          });
-		          var d=await r.json().catch(function(){return{}});
-		          if(!r.ok||!d.url)throw new Error(checkoutError(d));
-		          var status=document.getElementById('ifrDiscountStatus');
-		          if(status&&d.ifrDiscountApplied)status.textContent='IFR eligible: '+(d.ifrTier||'verified')+balanceText(d.ifrBalanceAmount)+' Opening Stripe with 50% discount...';
-		          setTimeout(function(){window.location.href=d.url},900);
-	        }catch(e){
-	          button.textContent='Try again';
-	          button.disabled=false;
-	          button.title=e.message;
-	          var status=document.getElementById('ifrDiscountStatus');
-	          if(status)status.textContent=e.message;
-	          setTimeout(function(){ if(!button.disabled) button.textContent=label; },2500);
-	        }
-	      }
-		      document.querySelectorAll('[data-license-tier]').forEach(function(button){
-		        button.addEventListener('click',function(){startCheckout(button)});
-		      });
-		      var connectButton=document.getElementById('connectIfrWallet');
-			      if(connectButton){
-		        connectButton.addEventListener('click',async function(){
-		          var label=connectButton.textContent;
-		          connectButton.disabled=true;
-		          connectButton.textContent='Connecting...';
-		          try{
-			            var address=await connectIfrWallet();
-		            var status=document.getElementById('ifrDiscountStatus');
-		            if(status)status.textContent='Wallet connected: '+address.slice(0,6)+'...'+address.slice(-4)+'. Choose Pro or Premium checkout.';
-		            connectButton.textContent='Wallet connected';
-		          }catch(e){
-		            connectButton.disabled=false;
-		            connectButton.textContent=label;
-		            var status=document.getElementById('ifrDiscountStatus');
-		            if(status)status.textContent=e.message;
-		          }
-			        });
-			      }
-            var disconnectButton=document.getElementById('disconnectIfrWallet');
-            if(disconnectButton){
-              disconnectButton.addEventListener('click',function(){disconnectIfrWallet()});
-            }
-			    })();
     (function(){
       function u(){
         fetch(API+'/health',{signal:AbortSignal.timeout(5000)}).then(function(r){return r.json()}).then(function(d){

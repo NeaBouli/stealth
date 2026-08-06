@@ -2,10 +2,10 @@
 
 module.exports = function subscriptionHandlers(ctx) {
   const {
-    activationCodes, walletMappings, fcmTokens, giftCodes,
+    activationCodes, fcmTokens, giftCodes,
     getClientId, sendToClient,
-    saveActivationCodes, saveWalletMappings, saveGiftCodes,
-    subscriptions, fcm, verifyIfrLock, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash, verifyPlaySubscription,
+    saveActivationCodes, saveGiftCodes,
+    subscriptions, fcm, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash, verifyPlaySubscription,
   } = ctx;
 
   const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
@@ -207,48 +207,6 @@ module.exports = function subscriptionHandlers(ctx) {
         console.warn("[ACTIVATION] Entitlement refresh rejected:", error.message);
         return ws.send(JSON.stringify({ type: "ENTITLEMENT_REFRESH_RESULT", success: false, error: "invalid_entitlement" }));
       }
-    },
-
-    VERIFY_IFR_LOCK(ws, connId, msg) {
-      const wallet = (msg.walletAddress || "").trim();
-      if (!wallet || !wallet.match(/^0x[0-9a-fA-F]{40}$/)) {
-        return ws.send(JSON.stringify({ type: "IFR_LOCK_RESULT", success: false, error: "invalid_address" }));
-      }
-
-      const myClientId = getClientId(connId);
-      const existing = walletMappings.find(w => w.wallet.toLowerCase() === wallet.toLowerCase());
-      if (existing && existing.clientId !== myClientId) {
-        return ws.send(JSON.stringify({ type: "IFR_LOCK_RESULT", success: false, error: "wallet_bound", boundTo: existing.clientId.substring(0, 8) + "..." }));
-      }
-
-      console.log("[IFR] Verifying balance for wallet:", wallet, "client:", myClientId);
-
-      verifyIfrLock(wallet).then(result => {
-        if (result.success) {
-          const idx = walletMappings.findIndex(w => w.wallet.toLowerCase() === wallet.toLowerCase());
-          if (idx >= 0) {
-            walletMappings[idx].clientId = myClientId;
-            walletMappings[idx].tier = result.tier;
-            walletMappings[idx].lastVerified = Date.now();
-          } else {
-            walletMappings.push({ wallet: wallet.toLowerCase(), clientId: myClientId, tier: result.tier, lastVerified: Date.now() });
-          }
-          saveWalletMappings();
-          console.log("[IFR] Balance verified:", wallet, "->", result.tier, "(", result.balanceAmount || result.lockedAmount, "IFR)");
-        }
-        // H-07: guard against closed WS after async
-        try {
-          if (ws.readyState === 1) {
-            const amount = result.balanceAmount || result.lockedAmount || "0";
-            ws.send(JSON.stringify({ type: "IFR_LOCK_RESULT", success: result.success, tier: result.tier || "", lockedAmount: amount, balanceAmount: amount, walletAddress: wallet, error: result.error || "" }));
-          }
-        } catch (_) {}
-      }).catch(e => {
-        console.error("[IFR] Verification error:", e.message);
-        try {
-          if (ws.readyState === 1) ws.send(JSON.stringify({ type: "IFR_LOCK_RESULT", success: false, error: "server_error" }));
-        } catch (_) {}
-      });
     },
 
     INVITE_ACCEPTED(ws, connId, msg) {
