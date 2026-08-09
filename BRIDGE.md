@@ -5446,3 +5446,20 @@ Open next:
   branch is ready for protected GitHub PR/CI integration; obsolete PR #37 must not be merged.
 
 `FINAL REVIEW GREEN — FRESH-MAIN PR READY`
+
+## 2026-08-09 12:11 EEST — CODEX SOL — LEGACY ENTITLEMENT SALVAGE MERGED
+
+- Fresh-main PR #45 merged as `41b6d6e68ee3e7341aa57557a3ff5347591d8798`; exact-main Basic CI run
+  `31305071835` and Security Audit run `31305071833` PASS, including Android Client,
+  signaling tests, lint, dependency audit and secret detection.
+- Obsolete PR #37 was commented and closed as superseded. Its retired Android
+  `VERIFY_IFR_LOCK` path remains excluded; only the independently reviewed consumer purchase,
+  tier parsing and activation-expiry hardening was integrated.
+- Product decision is final for current web sales: every successfully verified IFR holder may
+  receive the provider-defined discount on every eligible checkout. There is no per-wallet
+  reuse limit. Verification remains browser/server-side before purchase; Android apps remain
+  free of IFR and wallet mechanisms.
+- No production deployment, runtime secret, Play release or live payment mutation occurred.
+  VLABS fiscal/AADE and private production fulfillment remain a separate readiness gate.
+
+`TASK COMPLETE — TARGET STOP ACTIVE`
