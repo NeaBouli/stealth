@@ -134,6 +134,13 @@ module.exports = function subscriptionHandlers(ctx) {
         })));
       }
 
+      if (entry.expires) {
+        const expiresAt = Date.parse(entry.expires);
+        if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) {
+          return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "expired" }));
+        }
+      }
+
       if (devices.length >= entry.maxUses) {
         console.log("[ACTIVATION] Code exhausted:", code.substring(0, 4) + "****", "devices:", devices.length, "/", entry.maxUses, "attempted:", myClientId);
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "max_devices", message: `Code already used on ${entry.maxUses} devices` }));

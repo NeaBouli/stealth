@@ -5409,3 +5409,40 @@ Open next:
   runtime secret, deployment or provider mutation occurred in this block.
 
 `TASK IN PROGRESS — PROTECTED PR / CI NEXT`
+
+---
+
+## 2026-08-09 11:47 EEST — CODEX SOL — LEGACY PR #37 SELECTIVE SALVAGE
+
+- **Ticket:** `GIO-20260809-STEALTHX-LEGACY-ENTITLEMENT-SALVAGE`; **Status:** In Progress.
+- PR #37 is not mergeable as a unit: it targets an obsolete base and contains the retired
+  Android-facing `VERIFY_IFR_LOCK` wallet path. That path remains excluded permanently.
+- Salvaged on fresh current-main branch `fix/legacy-entitlement-salvage`: consumer-usable Google
+  Play one-time purchase verification without an app-side admin key, Google API validation,
+  package/product/token binding, idempotent activation issuance, persistence rollback, bounded
+  request rate limiting, case-insensitive server tier parsing and expired-code rejection.
+- Verification PASS: signaling `npm test`; Android `testFreeDebugUnitTest`; Gradle
+  `verifyNoAppIfrWalletCode`; JavaScript syntax and `git diff --check`. Kimi K3 final security
+  review is running. No production, secret, deployment, Play or payment-provider write occurred.
+- PR #37 blocks already on main: Ed25519 entitlement issue/verify, sold-code locking/tombstones,
+  Stripe refund/dispute revocation and browser cross-product checkout. Remaining VLABS fiscal
+  and private-fulfillment hardening stays separate until AADE/runtime integration is ready.
+
+`SELECTIVE SALVAGE TESTED — FINAL REVIEW AND PR NEXT`
+
+## 2026-08-09 12:02 EEST — CODEX SOL — LEGACY PR #37 SALVAGE REVIEW GREEN
+
+- Kimi K3 final delta review found no remaining actionable blocker after its rate-limit,
+  upstream-error and documentation findings were fixed. It independently reran signaling
+  `npm test`: exit 0, `subscription_webrtc.test` 71/71 PASS.
+- Sol reran signaling `npm test` and JavaScript syntax checks: PASS. Android
+  `testFreeDebugUnitTest` PASS in 2m25s with `verifyNoAppIfrWalletCode` PASS. SecureCall purchase
+  verification now uses the pinned network client and never reads or transmits an admin key.
+- Redemption deadlines reject new/unknown-device use, malformed dates fail closed, revoked codes
+  always fail and already bound devices may restore their lifetime entitlement after the
+  redemption deadline. Product/tier server names remain case-insensitive and unknown values
+  still map to FREE.
+- No production, deployment, runtime-secret, Google Play or live-payment write occurred. The
+  branch is ready for protected GitHub PR/CI integration; obsolete PR #37 must not be merged.
+
+`FINAL REVIEW GREEN — FRESH-MAIN PR READY`

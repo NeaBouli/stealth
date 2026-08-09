@@ -70,7 +70,9 @@ For private accounting handoff, configure `VLABS_FINANCE_INGEST_URL` and `VLABS_
 
 ## Backend Endpoint
 
-`POST /billing/verify-purchase` (requires `X-Admin-Key` header)
+`POST /billing/verify-purchase` is called by the purchasing Android app. It is public by design,
+rate limited, restricted to allowlisted package/product pairs and grants a code only after the
+Google Play Developer API confirms the purchase token. Never place an admin key in the app.
 
 Request:
 ```json
