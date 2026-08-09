@@ -196,6 +196,43 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   const r6 = lastMsg(ws);
   assert(r6.success === false && r6.error === "expired", "expired gift code → expired");
 
+  ctx.activationCodes.push({
+    code: "PRO-EXPIRED-2026",
+    tier: "pro",
+    maxUses: 1,
+    usedBy: [],
+    currentUses: 0,
+    expires: new Date(Date.now() - 1000).toISOString(),
+  });
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "PRO-EXPIRED-2026" });
+  const expiredActivation = lastMsg(ws);
+  assert(expiredActivation.success === false && expiredActivation.error === "expired", "expired activation code → expired");
+
+  ctx.activationCodes.push({
+    code: "PRO-BAD-EXPIRY-2026",
+    tier: "pro",
+    maxUses: 1,
+    usedBy: [],
+    currentUses: 0,
+    expires: "not-a-date",
+  });
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "PRO-BAD-EXPIRY-2026" });
+  const invalidExpiryActivation = lastMsg(ws);
+  assert(invalidExpiryActivation.success === false && invalidExpiryActivation.error === "expired", "invalid activation expiry fails closed");
+
+  ctx.activationCodes.push({
+    code: "PRO-REACTIVATE-2026",
+    tier: "pro",
+    maxUses: 1,
+    usedBy: ["alice"],
+    currentUses: 1,
+    expires: new Date(Date.now() - 1000).toISOString(),
+    productKey: "securecall_activation",
+  });
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "PRO-REACTIVATE-2026" });
+  const expiredReactivation = lastMsg(ws);
+  assert(expiredReactivation.success === true, "expired redemption deadline still permits bound-device reactivation");
+
   // Activation code — valid first use
   ctx.activationCodes.push({
     code: "TEAM-ABCD-1234",

@@ -94,18 +94,15 @@ class PurchaseResultActivity : AppCompatActivity() {
                 .replace("wss://", "https://")
                 .replace("ws://", "http://")
                 .replace("/signal", "")
-        val adminKey = prefs.getString("admin_api_key", null) ?: ""
-
         val json = JSONObject().apply {
             put("purchase_token", token)
             put("product_id", productId)
             put("package_name", packageName)
         }
 
-        val client = OkHttpClient()
+        val client = com.securecall.app.net.NetworkManager.buildPinnedClient()
         val request = Request.Builder()
             .url("$serverUrl/billing/verify-purchase")
-            .header("X-Admin-Key", adminKey)
             .post(json.toString().toRequestBody("application/json".toMediaType()))
             .build()
 
