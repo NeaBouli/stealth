@@ -88,7 +88,7 @@ const expectedHandlers = [
   "CALL_INVITE", "CALL_ACCEPT", "CALL_BUSY", "CALL_END",
   "WEBRTC_OFFER", "WEBRTC_ANSWER", "ICE_CANDIDATE", "GHOST_PREPARE",
   "PHONE_LOOKUP", "BATCH_PHONE_LOOKUP", "ONLINE_STATUS_REQUEST",
-  "SUBSCRIPTION_VERIFY", "ACTIVATE_CODE", "REFRESH_ENTITLEMENT", "VERIFY_IFR_LOCK", "INVITE_ACCEPTED",
+  "SUBSCRIPTION_VERIFY", "ACTIVATE_CODE", "REFRESH_ENTITLEMENT", "INVITE_ACCEPTED",
 ];
 
 assert.ok(ctx.handlers && typeof ctx.handlers === "object", "ctx.handlers must be an object");
@@ -98,6 +98,13 @@ for (const type of expectedHandlers) {
     `ctx.handlers.${type} must be a function`
   );
 }
+
+// The legacy unsigned VERIFY_IFR_LOCK command is permanently removed; wallet
+// verification flows exclusively through the signed SIWE HTTP endpoints.
+assert.strictEqual(
+  ctx.handlers.VERIFY_IFR_LOCK, undefined,
+  "legacy unsigned VERIFY_IFR_LOCK handler must stay removed"
+);
 
 // ── Assert: middleware refs ───────────────────────────────────────────────────
 

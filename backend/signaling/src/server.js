@@ -953,6 +953,7 @@ try {
 
 // --- License Pricing API ---
 const licenses = require('./licenses');
+const { getCheckoutProduct } = require('./services/ifr_checkout_catalog');
 
 app.get('/licenses/status', (req, res) => {
   res.json(licenses.getStatus());
@@ -981,7 +982,8 @@ app.post('/stripe/ifr-discount-challenge', checkoutRateLimit, (req, res) => {
   }
   const tier = (req.body?.tier || '').trim();
   const walletAddress = (req.body?.walletAddress || '').trim();
-  if (!tier || !licenses.LICENSES[tier]) {
+  // Only catalog-allowlisted products may enter the IFR discount flow.
+  if (!getCheckoutProduct(tier)) {
     return res.status(400).json({ error: 'invalid_tier' });
   }
   if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
@@ -1029,7 +1031,10 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
     return res.status(410).json({ error: 'checkout_moved_to_vlabs' });
   }
   const { tier } = req.body;
-  if (!tier || !licenses.LICENSES[tier]) {
+  // Only catalog-allowlisted products may enter web checkout; the
+  // stealthx_suite_lifetime bundle is excluded until fulfillment is ready.
+  const checkoutProduct = getCheckoutProduct(tier);
+  if (!checkoutProduct) {
     return res.status(400).json({ error: 'Invalid tier' });
   }
   const price = licenses.getCurrentPrice(tier);
@@ -1089,13 +1094,12 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
         return res.status(403).json({ error: ifr.error || 'ifr_not_eligible', balanceAmount: ifrBalanceAmount });
       }
 
-      const activationTier = lic.activationTier || (tier === 'premium_lifetime' ? 'premium' : 'pro');
-      const needsElite = activationTier === 'premium' || activationTier === 'elite' || tier === 'stealthx_suite_lifetime';
-      const eligible = needsElite ? ifrTier === 'premium' : (ifrTier === 'pro' || ifrTier === 'premium');
+      const requiredIfrTier = checkoutProduct.requiredIfrTier;
+      const eligible = requiredIfrTier === 'premium' ? ifrTier === 'premium' : (ifrTier === 'pro' || ifrTier === 'premium');
       if (!eligible) {
         return res.status(403).json({
           error: 'ifr_tier_too_low',
-          requiredTier: needsElite ? 'premium' : 'pro',
+          requiredTier: requiredIfrTier,
           walletTier: ifrTier,
           balanceAmount: ifrBalanceAmount
         });
@@ -1120,10 +1124,10 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
         quantity: 1
       }],
       mode: 'payment',
-      success_url: 'https://stealthx.tech/payment-success.html?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: 'https://stealthx.tech/#pricing',
+      success_url: checkoutProduct.successUrl,
+      cancel_url: checkoutProduct.cancelUrl,
 	      metadata: {
-	        tier: lic.activationTier || (tier === 'premium_lifetime' ? 'premium' : 'pro'),
+	        tier: checkoutProduct.activationTier,
 	        product: tier,
 	        licenseTier: tier,
 	        type: 'lifetime_dynamic',

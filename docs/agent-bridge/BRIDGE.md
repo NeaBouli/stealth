@@ -3031,3 +3031,47 @@ Open next steps:
 - SecureChat and Chameleon full device/function QA before fresh AAB/APK builds.
 - VLABS: Stripe runtime key, checkout/webhook/email, AADE/myDATA/e-timologio end-to-end finance transfer.
 - Google Search Console sitemap resubmission/indexing after public deployment.
+
+## 2026-08-06 03:30 EEST — CODEX SOL — WEB-ONLY IFR CHECKOUT REVIEW CANDIDATE
+
+- Ticket `GIO-20260806-STEALTHX-WEB-IFR-CHECKOUT`; branch
+  `fix/gh-42-web-ifr-checkout`; status: source ready for review, production blocked.
+- Added the shared browser-wallet checkout client and updated SecureCall landing, IFR, FAQ,
+  Wiki and checkout-return surfaces. Android remains permanently IFR-/wallet-free.
+- Kimi K3 implemented and reviewed the bounded backend product catalog. Sol integrated and
+  reviewed: six individual products only, Suite excluded, unsigned `VERIFY_IFR_LOCK` removed,
+  product redirects, refund/dispute revocation and PII-free sold-code persistence.
+- PASS: `npm test`; `npm run test:payments`; `npm audit --audit-level=high` (0 findings);
+  `node --check website/js/ifr-checkout.js`; `git diff --check`; 375 px browser layout with
+  no horizontal overflow; `client_android ./gradlew verifyNoAppIfrWalletCode`.
+- No flag enablement, deployment, secret, live RPC/Stripe call or Android artifact. Production
+  remains blocked by VLABS AADE/myDATA/e-timologio readiness, entitlement provisioning for the
+  sibling apps and an enforceable repeated-discount policy.
+
+`READY FOR REVIEW — DO NOT ACTIVATE PAYMENTS`
+
+## 2026-08-06 03:33 EEST — CODEX SOL — PR OPEN
+
+- PR `https://github.com/NeaBouli/stealth/pull/43`, implementation commit `4d797ce`.
+- GitHub Android, signaling, dependency, secret, documentation and CodeRabbit checks started.
+- No merge, deployment or payment activation.
+
+`REVIEW IN PROGRESS`
+
+## 2026-08-06 03:40 EEST — CODEX SOL — REVIEW FIXES
+
+- Basic CI and Security Audit passed. Shared checkout client now has per-request 15-second
+  abort handling, safe `personal_sign` compatibility fallback and deterministic button reset.
+- Change is copied identically to SecureChat and Chameleon; local syntax/hash and browser
+  regression checks must pass before push. CodeRabbit final review remains pending.
+
+`REVIEW FIXES IN PROGRESS`
+
+## 2026-08-06 03:47 EEST — CODEX SOL — REVIEW SOURCE GREEN
+
+- Implementation head `4abc531`; PR #43 checks PASS: Android Client, Signaling Tests,
+  Markdown/YAML, Dependency Audit, Secret Detection and Security Summary. CodeRabbit ended
+  green/rate-limited after the shared findings were fixed.
+- Ready for human review only. No merge, deploy, secret or payment activation.
+
+`SOURCE REVIEW GREEN — PRODUCTION BLOCKED`
