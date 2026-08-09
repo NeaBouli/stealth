@@ -3075,3 +3075,16 @@ Open next steps:
 - Ready for human review only. No merge, deploy, secret or payment activation.
 
 `SOURCE REVIEW GREEN — PRODUCTION BLOCKED`
+
+## 2026-08-09 11:09 EEST — CODEX SOL — WEB IFR MERGED
+
+- Gio granted explicit owner/admin approval for the exact reviewed PR #43 head `e333053`.
+- PR #43 merged to `main` as `d21742a4baaa93989d5d5e2d43ede9c0eea50765`.
+- Exact-main Basic CI, Security Audit and GitHub Pages deployment PASS. Live
+  `https://stealthx.tech/` exposes the browser-only IFR controls and returns HTTP 200.
+- Production checkout remains fail-closed: the public challenge endpoint returns HTTP 410
+  `checkout_moved_to_vlabs`. No Stripe/runtime secret, payment flag or Android artifact changed.
+- Remaining gates: VLABS AADE/myDATA/e-timologio, SecureChat/Chameleon entitlement provisioning
+  and server-side repeated-discount enforcement.
+
+`MERGED AND VERIFIED — LIVE PAYMENT STILL BLOCKED`
