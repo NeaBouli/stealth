@@ -1,5 +1,17 @@
 # BRIDGE — stealth
 
+## 2026-08-12 — Private Finance Ownership Refreshed
+
+- Codex remains responsible for commercial integration coordination. Detailed
+  payment, fiscal, provider and release records are maintained only in private
+  `NeaBouli/vlabs` under
+  `docs/finance-integrations/projects/securecall.md` and
+  `stealthx-suite.md`.
+- No sales activation is authorized by this entry. Existing product, runtime,
+  device, entitlement and release gates remain in force.
+- Keep this public repository limited to generic disabled-state and ownership
+  references; do not add operational finance or identity data.
+
 ## Public Payment Data Boundary
 
 - This repository is public. Private payment, tax, provider and deployment operations are maintained only in `NeaBouli/vlabs` under `docs/finance-integrations/projects/securecall.md` and `stealthx-suite.md`.
