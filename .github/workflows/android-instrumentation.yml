@@ -64,7 +64,16 @@ jobs:
           working-directory: client_android
           ndk: 27.0.12077973
           cmake: 3.22.1
-          script: ./gradlew --no-daemon --max-workers=1 connectedFreeDebugAndroidTest --console=plain
+          script: |
+            set -eu
+            ./gradlew --no-daemon --max-workers=1 assembleFreeDebug assembleFreeDebugAndroidTest --console=plain
+            timeout 600 adb install --no-streaming -r -t -g app/build/outputs/apk/free/debug/app-free-debug.apk
+            timeout 600 adb install --no-streaming -r -t -g app/build/outputs/apk/androidTest/free/debug/app-free-debug-androidTest.apk
+            result="$(mktemp)"
+            trap 'rm -f "$result"' EXIT
+            adb shell am instrument -w -r \
+              com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner | tee "$result"
+            grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$result"
 
       - name: Upload instrumentation results
         if: always()
