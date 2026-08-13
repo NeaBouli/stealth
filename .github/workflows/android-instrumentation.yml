@@ -60,22 +60,17 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_2
-          emulator-boot-timeout: 600
+          emulator-boot-timeout: 900
           working-directory: client_android
           ndk: 27.0.12077973
           cmake: 3.22.1
-          script: |
-            set -eu
-            ./gradlew --no-daemon --max-workers=1 assembleFreeDebug assembleFreeDebugAndroidTest --console=plain
-            timeout 600 adb install --no-streaming -r -t -g \
-              "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/free/debug/app-free-debug.apk"
-            timeout 600 adb install --no-streaming -r -t -g \
-              "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/androidTest/free/debug/app-free-debug-androidTest.apk"
-            result="$(mktemp)"
-            trap 'rm -f "$result"' EXIT
-            adb shell am instrument -w -r \
-              com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner | tee "$result"
-            grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$result"
+          script: >-
+            ./gradlew --no-daemon --max-workers=1
+            assembleFreeDebug assembleFreeDebugAndroidTest --console=plain &&
+            bash "${GITHUB_WORKSPACE}/.github/scripts/run-android-smoke.sh"
+            "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/free/debug/app-free-debug.apk"
+            "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/androidTest/free/debug/app-free-debug-androidTest.apk"
+            com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner
 
       - name: Upload instrumentation results
         if: always()

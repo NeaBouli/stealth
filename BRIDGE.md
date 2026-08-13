@@ -5614,3 +5614,16 @@ Open next:
 - YAML, extracted shell syntax, immutable action pins and diff validation pass.
 
 `SECURECALL ARTIFACT PATHS DETERMINISTIC — HOSTED RERUN REQUIRED`
+
+---
+
+## 2026-08-13 20:53 EEST — CODEX SOL — SINGLE-SHELL SMOKE HARNESS
+
+- Hosted logs proved the emulator action executes multiline script entries as separate shell
+  commands. This broke continuations and state even though the generated APKs were valid.
+- A repository-local strict Bash harness now performs bounded non-streaming installs, direct
+  instrumentation and positive test-count validation in one shell. The action invokes it with
+  one folded command. Emulator boot remains bounded and is raised to 900 seconds for API 36.
+- Bash syntax, YAML folding, immutable action pins and diff validation pass.
+
+`SINGLE-SHELL INSTRUMENTATION HARNESS READY — HOSTED RERUN REQUIRED`
