@@ -35,3 +35,12 @@ All interactions in this repository are governed by our [Code of Conduct](CODE_O
 - **Security issues:** [Open an issue](https://github.com/NeaBouli/stealth/issues)
 - **General inquiries:** [Open an issue](https://github.com/NeaBouli/stealth/issues)
 - **Legal / Licensing:** [Open an issue](https://github.com/NeaBouli/stealth/issues)
+
+## Gradle dependency verification
+
+Android dependencies are checksum-locked in
+`client_android/gradle/verification-metadata.xml`. When a reviewed dependency update changes
+the graph, rerun the same affected Gradle CI tasks with
+`--write-verification-metadata sha256`, inspect the metadata diff for only the expected
+component/version changes, and then rerun the tasks without the write flag. Do not accept
+unrelated checksum churn.

@@ -5463,3 +5463,52 @@ Open next:
   VLABS fiscal/AADE and private production fulfillment remain a separate readiness gate.
 
 `TASK COMPLETE — TARGET STOP ACTIVE`
+
+---
+
+## 2026-08-13 18:03 EEST — CODEX SOL — SECURITY/CI GATES HARDENED → REVIEW
+
+- **Branch:** `fix/security-gates-20260813` from exact `origin/main` `e913e5d` in an isolated
+  worktree; the user's dirty/diverged primary checkout was not modified.
+- GitHub Actions now use immutable upstream-verified SHAs, least-privilege permissions and
+  concurrency. Basic CI adds locked Rust tests/Clippy and a complete Free Android
+  test/lint/guard/APK/AAB chain with ephemeral CI-only signing and explicit APK/AAB integrity
+  and signature gates. Existing npm/cargo/pip audit loops now accumulate failures correctly.
+- Added dependency review, monthly Dependabot coverage and API 24/36 emulator instrumentation.
+  Added the official Gradle distribution checksum and strict dependency checksum metadata;
+  removed the unused JitPack repository and documented reviewed metadata regeneration.
+- **Tests:** signaling `npm ci && npm test && npm audit --audit-level=high` PASS (0 known
+  vulnerabilities); Rust `cargo test --locked --all-targets` PASS (28 unit + 6 E2E) and
+  Clippy `-D warnings` PASS. Android metadata-generation run PASS in 22m15s (163 tasks); final
+  metadata-enforced run PASS in 13m34s (163 tasks), including unit tests, release lint,
+  `verifyNoAppIfrWalletCode`, debug APK, Android-test APK, release APK and AAB. APK/AAB ZIP,
+  APK signature and AAB JAR-signature-file gates PASS.
+- One final Android attempt first failed before configuration because the isolated shell lacked
+  `ANDROID_HOME`; a second reached signing and exposed a local PKCS12 test-password mismatch.
+  Neither was a repository defect. The final run used the same environment and one-password
+  ephemeral-key semantics as CI and passed. Temporary signing material was removed.
+- Static validation: every workflow parses, every `uses:` reference is a 40-character SHA,
+  verification XML parses, `git diff --check` PASS, no temporary signing files or configured
+  high-risk secret pattern in the diff.
+- No app logic, production, deployment, runtime credential, payment, Play publishing or
+  private-audit finding was touched. API 24/36 emulator execution and all PR checks remain
+  required on GitHub before merge; the generic private-operator audit release gate remains.
+
+`LOCAL HARDENING GREEN — NORMAL PR AND REQUIRED REVIEW NEXT`
+
+---
+
+## 2026-08-13 18:15 EEST — CODEX SOL — POST-REVIEW CI CORRECTIONS VERIFIED
+
+- Kimi K3 completed an independent read-only deep review. Sol corrected every actionable
+  CI-blocking finding: workflow-level concurrency no longer references matrix context, Android
+  SDK/emulator/ADB tools use explicit SDK paths, and APK verification discovers both the actual
+  release output and the installed `apksigner` deterministically.
+- Sol also made the normal Android build dependency install independent of runner `PATH`.
+- Post-correction validation: all workflow YAML and Gradle verification XML parse, every action
+  reference is a 40-character immutable SHA, no invalid top-level matrix reference remains,
+  `git diff --check` passes, and no temporary signing file remains.
+- Full local build/test results remain the green results recorded above. Hosted API 24/36
+  instrumentation and normal PR review/checks are the remaining pre-merge gates.
+
+`POST-REVIEW SOURCE GREEN — PR NEXT`
