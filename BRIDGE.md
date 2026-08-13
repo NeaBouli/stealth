@@ -5601,3 +5601,16 @@ Open next:
 - YAML, extracted shell syntax, immutable action pins and diff validation pass.
 
 `STREAMING INSTALL PATH REMOVED — HOSTED RERUN REQUIRED`
+
+---
+
+## 2026-08-13 20:39 EEST — CODEX SOL — SECURECALL WORKSPACE PATH CORRECTION
+
+- API 24 completed both APK builds but the runner executed the later ADB line from repository
+  root despite the action's Gradle working directory. The failure was a missing relative file,
+  before installation or test execution.
+- Both SecureCall APK install paths now use explicit `${GITHUB_WORKSPACE}/client_android`
+  locations. SecureChat and Chameleon are root Gradle projects and require no equivalent change.
+- YAML, extracted shell syntax, immutable action pins and diff validation pass.
+
+`SECURECALL ARTIFACT PATHS DETERMINISTIC — HOSTED RERUN REQUIRED`

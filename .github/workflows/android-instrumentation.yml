@@ -67,8 +67,10 @@ jobs:
           script: |
             set -eu
             ./gradlew --no-daemon --max-workers=1 assembleFreeDebug assembleFreeDebugAndroidTest --console=plain
-            timeout 600 adb install --no-streaming -r -t -g app/build/outputs/apk/free/debug/app-free-debug.apk
-            timeout 600 adb install --no-streaming -r -t -g app/build/outputs/apk/androidTest/free/debug/app-free-debug-androidTest.apk
+            timeout 600 adb install --no-streaming -r -t -g \
+              "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/free/debug/app-free-debug.apk"
+            timeout 600 adb install --no-streaming -r -t -g \
+              "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/androidTest/free/debug/app-free-debug-androidTest.apk"
             result="$(mktemp)"
             trap 'rm -f "$result"' EXIT
             adb shell am instrument -w -r \
