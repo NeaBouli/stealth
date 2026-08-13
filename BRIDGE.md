@@ -5512,3 +5512,23 @@ Open next:
   instrumentation and normal PR review/checks are the remaining pre-merge gates.
 
 `POST-REVIEW SOURCE GREEN — PR NEXT`
+
+---
+
+## 2026-08-13 19:10 EEST — CODEX SOL — FRESH-RUNNER METADATA CORRECTION
+
+- The first hosted PR run exposed dependency checksums absent from metadata generated against
+  the warm local Gradle cache. No source or application behavior was implicated.
+- Sol regenerated strict SHA-256 verification metadata against an empty Gradle user home.
+  The fresh-cache chain passed in 29m00s (116 tasks): Free debug unit tests, Free release lint,
+  the IFR/wallet exclusion guard, debug APK and Android-test APK.
+- The exact release chain then passed in 16m10s (133 tasks): Free debug unit tests, release
+  lint, exclusion guard, debug APK, signed release APK and signed AAB. All release APK ZIP and
+  signature checks plus AAB ZIP, JAR verification and concrete signature-entry checks passed.
+- A local post-build copy of the Ubuntu shell gate encountered macOS Bash 3's missing
+  `mapfile`; GitHub's Ubuntu Bash supports it. A portable local equivalent passed and confirms
+  the artifacts themselves are valid.
+- Temporary CI-only signing material was removed. PR #49 will rerun hosted checks after this
+  metadata correction; required review and the separate private-audit release gate remain.
+
+`FRESH-RUNNER DEPENDENCY METADATA GREEN — HOSTED PR RERUN REQUIRED`
