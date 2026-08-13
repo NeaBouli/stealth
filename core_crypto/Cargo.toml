@@ -18,4 +18,4 @@ sha2 = "0.10"
 zeroize = { version = "1", features = ["derive"] }
 rand = "0.8"
 rand_core = { version = "0.6", features = ["getrandom"] }
-jni = { version = "0.21", features = ["invocation"] }
+jni = { version = "0.22", features = ["invocation"] }
