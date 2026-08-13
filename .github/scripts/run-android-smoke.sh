@@ -51,7 +51,7 @@ du -h "$app_apk" "$test_apk"
 timeout 600 adb install --no-streaming -r -t -g "$app_apk"
 timeout 600 adb install --no-streaming -r -t -g "$test_apk"
 
-result="$(mktemp)"
-trap 'rm -f "$result"' EXIT
+result="${GITHUB_WORKSPACE:?}/client_android/app/build/outputs/androidTest-results/instrumentation/result.txt"
+mkdir -p "$(dirname "$result")"
 adb shell am instrument -w -r "$instrumentation" | tee "$result"
 grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$result"

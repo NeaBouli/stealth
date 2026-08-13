@@ -5676,3 +5676,17 @@ Open next:
   Boot remains bounded at 900 seconds. YAML and diff validation pass.
 
 `HARDWARE-ACCELERATED HOSTED EMULATION RESTORED`
+
+---
+
+## 2026-08-13 22:04 EEST — CODEX SOL — INSTRUMENTATION EVIDENCE FIX
+
+- Hosted API 24 and API 36 smoke tests passed on exact head `0297b18`, but GitHub reported
+  that no diagnostic result file was available for artifact upload.
+- The shared smoke harness now persists raw `am instrument` output beneath the uploaded
+  Android test-results tree. Strict pipeline failure propagation and the non-zero test-count
+  assertion remain unchanged.
+- Required verification: shell syntax, hosted API 24/API 36 rerun, non-empty evidence upload,
+  and the complete exact-head CI matrix. No production or runtime action is in scope.
+
+`TEST EXECUTION GREEN — PERSISTED EVIDENCE RERUN REQUIRED`
