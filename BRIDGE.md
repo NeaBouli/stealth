@@ -5548,3 +5548,17 @@ Open next:
   PR checks remain authoritative for emulator execution.
 
 `ACTIONABLE PR REVIEW ITEMS FIXED — HOSTED CHECKS REQUIRED`
+
+---
+
+## 2026-08-13 19:22 EEST — CODEX SOL — LINUX AAPT2 VERIFICATION COVERAGE
+
+- Hosted Linux builds require the platform-specific AAPT2 Linux artifact, which cannot be
+  discovered by a normal macOS build. Sol resolved the exact pinned Linux classifier from the
+  configured Google repository using Gradle's verification writer.
+- Strict metadata now includes the Gradle-generated SHA-256 entry for that classifier. XML and
+  diff validation pass, the three repositories produced the same checksum, and the temporary
+  init script was removed.
+- No dependency version or application code changed. A final hosted rerun remains required.
+
+`CROSS-PLATFORM VERIFICATION METADATA COMPLETE — HOSTED RERUN REQUIRED`
