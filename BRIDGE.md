@@ -5627,3 +5627,15 @@ Open next:
 - Bash syntax, YAML folding, immutable action pins and diff validation pass.
 
 `SINGLE-SHELL INSTRUMENTATION HARNESS READY — HOSTED RERUN REQUIRED`
+
+---
+
+## 2026-08-13 21:05 EEST — CODEX SOL — APK PATH RESOLUTION HARDENED
+
+- API 24 built both APKs but the helper exited at its initial silent path check because action
+  working-directory behavior did not match the supplied workspace path.
+- The shared harness now resolves a missing requested APK by exact basename under the workspace,
+  requires exactly one non-empty match and prints path/size before installation. Ambiguity fails
+  explicitly. Bash syntax and diff validation pass.
+
+`APK DISCOVERY DETERMINISTIC AND DIAGNOSTIC — HOSTED RERUN REQUIRED`
