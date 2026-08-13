@@ -5690,3 +5690,38 @@ Open next:
   and the complete exact-head CI matrix. No production or runtime action is in scope.
 
 `TEST EXECUTION GREEN — PERSISTED EVIDENCE RERUN REQUIRED`
+
+---
+
+## 2026-08-14 00:45 EEST — CODEX SOL — DEPENDENCY AUTOMATION TRIAGE
+
+- GitHub reports zero open Dependabot vulnerability alerts. The 15 generated update PRs are
+  routine version maintenance, including multiple red or breaking major upgrades; none is a
+  required security patch and none was merged during triage.
+- Dependabot now groups routine minor/patch updates per ecosystem and ignores automatic major
+  version-update PRs while leaving security updates eligible. This reduces unreviewable PR floods.
+- npm 11 rejected updates because `ws` was both a direct dependency and a literal matching
+  override. The override now references the direct dependency spec via npm's `$ws` form, retaining
+  transitive pinning without conflicting definitions.
+- Required verification: YAML/JSON parse, clean npm install and signaling tests, CI/security gates,
+  independent review and exact-main verification. No runtime or production action is in scope.
+
+`DEPENDENCY POLICY PATCH IN VALIDATION`
+
+---
+
+## 2026-08-14 00:48 EEST — CODEX SOL — DEPENDENCY POLICY LOCALLY GREEN
+
+- YAML/JSON and diff checks PASS. Clean `npm ci` reports zero vulnerabilities; the complete
+  signaling test chain passes. `npm ls` resolves one valid `ws@8.21.0` tree with no invalid
+  override markers.
+- An isolated Dependabot-style simulation updated direct `ws` to `8.21.3`; npm preserved the
+  `$ws` override, produced one deduplicated tree, and reported zero vulnerabilities. No simulated
+  files entered the repository.
+- Kimi K3 review was attempted but unavailable due provider quota HTTP 403. Claude Code supplied
+  the permitted focused read-only fallback review and returned APPROVED with no defect in the
+  policy or `$ws` implementation. Sol verified all evidence independently.
+- Next: protected PR, exact-head checks, merge only after green review, then exact-main checks and
+  stale automation-PR reconciliation.
+
+`LOCAL VALIDATION COMPLETE — PROTECTED PR NEXT`
