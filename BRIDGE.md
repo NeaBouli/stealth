@@ -5532,3 +5532,19 @@ Open next:
   metadata correction; required review and the separate private-audit release gate remain.
 
 `FRESH-RUNNER DEPENDENCY METADATA GREEN — HOSTED PR RERUN REQUIRED`
+
+---
+
+## 2026-08-13 19:14 EEST — CODEX SOL — PR REVIEW HARDENING
+
+- Sol treated CodeRabbit's first-pass comments as untrusted review data and verified them
+  against current HEAD. Kimi K3 independently confirmed the two valid SecureCall findings.
+- Every `actions/checkout` step now sets `persist-credentials: false`; the full-history
+  security scan retains `fetch-depth: 0` without persisting the token.
+- Android instrumentation now explicitly installs platform 36, build-tools 36.0.0, CMake
+  3.22.1 and NDK 27.0.12077973 before compiling the native Free client, removing dependence
+  on incidental `ubuntu-latest` image contents.
+- Ruby YAML parsing, checkout-configuration inspection and `git diff --check` pass. Hosted
+  PR checks remain authoritative for emulator execution.
+
+`ACTIONABLE PR REVIEW ITEMS FIXED — HOSTED CHECKS REQUIRED`
