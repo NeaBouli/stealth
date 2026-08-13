@@ -5562,3 +5562,17 @@ Open next:
 - No dependency version or application code changed. A final hosted rerun remains required.
 
 `CROSS-PLATFORM VERIFICATION METADATA COMPLETE — HOSTED RERUN REQUIRED`
+
+---
+
+## 2026-08-13 19:45 EEST — CODEX SOL — EMULATOR RUNNER CORRECTION
+
+- Both manual API 24/36 jobs remained indefinitely in `adb wait-for-device`; the existing
+  deadline started only after that unbounded call and therefore could not protect the job.
+- The manual SDK-image/AVD/background-process orchestration was replaced by established
+  `ReactiveCircus/android-emulator-runner` v2.38.0 pinned to immutable commit
+  `a421e43855164a8197daf9d8d40fe71c6996bb0d`. Its bounded 600-second boot flow runs the same
+  Free connected-test task. Explicit platform/build-tools/CMake/NDK provisioning remains.
+- Workflow YAML, immutable action pins and diff validation pass. Hosted execution is required.
+
+`EMULATOR BOOT FLOW BOUNDED — HOSTED RERUN REQUIRED`

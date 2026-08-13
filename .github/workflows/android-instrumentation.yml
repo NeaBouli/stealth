@@ -53,38 +53,18 @@ jobs:
             "cmake;3.22.1" \
             "ndk;27.0.12077973"
 
-      - name: Enable KVM
-        working-directory: ${{ github.workspace }}
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - name: Create and boot emulator
-        working-directory: ${{ github.workspace }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          AVDMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager"
-          EMULATOR="$ANDROID_HOME/emulator/emulator"
-          ADB="$ANDROID_HOME/platform-tools/adb"
-          image="system-images;android-${{ matrix.api-level }};google_apis;x86_64"
-          "$SDKMANAGER" "platform-tools" "emulator" "$image"
-          echo no | "$AVDMANAGER" create avd --force --name ci-device --package "$image" --device pixel_2
-          nohup "$EMULATOR" -avd ci-device -no-window -no-audio -no-boot-anim \
-            -gpu swiftshader_indirect -no-snapshot > "${RUNNER_TEMP}/emulator.log" 2>&1 &
-          "$ADB" wait-for-device
-          deadline=$((SECONDS + 300))
-          until [[ "$("$ADB" shell getprop sys.boot_completed | tr -d '\r')" == "1" ]]; do
-            (( SECONDS < deadline )) || { cat "${RUNNER_TEMP}/emulator.log"; exit 1; }
-            sleep 5
-          done
-          "$ADB" shell input keyevent 82
-
       - name: Run Free instrumented tests
-        run: ./gradlew --no-daemon --max-workers=1 connectedFreeDebugAndroidTest --console=plain
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-boot-timeout: 600
+          working-directory: client_android
+          ndk: 27.0.12077973
+          cmake: 3.22.1
+          script: ./gradlew --no-daemon --max-workers=1 connectedFreeDebugAndroidTest --console=plain
 
       - name: Upload instrumentation results
         if: always()
@@ -94,6 +74,5 @@ jobs:
           path: |
             client_android/**/build/reports/androidTests/**
             client_android/**/build/outputs/androidTest-results/**
-            ${{ runner.temp }}/emulator.log
           if-no-files-found: warn
           retention-days: 7
