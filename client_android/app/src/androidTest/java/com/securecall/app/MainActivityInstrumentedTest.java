@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 import android.Manifest;
 import android.content.Context;
 import android.os.Build;
+import android.os.ParcelFileDescriptor;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -19,22 +20,32 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+
 @RunWith(AndroidJUnit4.class)
 public class MainActivityInstrumentedTest {
 
     @Before
-    public void grantRuntimePermissions() {
+    public void grantRuntimePermissions() throws IOException {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        InstrumentationRegistry.getInstrumentation().getUiAutomation()
-                .grantRuntimePermission(context.getPackageName(), Manifest.permission.RECORD_AUDIO);
-        InstrumentationRegistry.getInstrumentation().getUiAutomation()
-                .grantRuntimePermission(context.getPackageName(), Manifest.permission.READ_CONTACTS);
+        grantRuntimePermission(context, Manifest.permission.RECORD_AUDIO);
+        grantRuntimePermission(context, Manifest.permission.READ_CONTACTS);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            InstrumentationRegistry.getInstrumentation().getUiAutomation()
-                    .grantRuntimePermission(
-                            context.getPackageName(),
-                            Manifest.permission.POST_NOTIFICATIONS
-                    );
+            grantRuntimePermission(context, Manifest.permission.POST_NOTIFICATIONS);
+        }
+    }
+
+    private void grantRuntimePermission(Context context, String permission) throws IOException {
+        String command = "pm grant " + context.getPackageName() + " " + permission;
+        ParcelFileDescriptor output = InstrumentationRegistry.getInstrumentation()
+                .getUiAutomation()
+                .executeShellCommand(command);
+        try (FileInputStream stream = new ParcelFileDescriptor.AutoCloseInputStream(output)) {
+            byte[] buffer = new byte[256];
+            while (stream.read(buffer) != -1) {
+                // Draining the pipe waits for the shell command to finish.
+            }
         }
     }
 
