@@ -27,7 +27,7 @@
     "firebase-admin": "^13.10.0",
     "google-auth-library": "^10.6.2",
     "resend": "^6.10.0",
-    "stripe": "^22.0.0",
+    "stripe": "^22.4.0",
     "ws": "^8.21.0"
   }
 }
