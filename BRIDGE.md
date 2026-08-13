@@ -5639,3 +5639,15 @@ Open next:
   explicitly. Bash syntax and diff validation pass.
 
 `APK DISCOVERY DETERMINISTIC AND DIAGNOSTIC — HOSTED RERUN REQUIRED`
+
+---
+
+## 2026-08-13 21:18 EEST — CODEX SOL — ABI-SPLIT APK SELECTION
+
+- API 24 confirmed the Linux flavor build produced no standard `app-free-debug.apk`; this is
+  the configured ABI-split output behavior, not a build failure.
+- If the exact APK name is absent, the harness now inspects only the expected variant directory,
+  prefers one universal artifact and otherwise one x86_64 artifact. Any unresolved ambiguity
+  remains a hard diagnostic failure. Bash syntax and diff validation pass.
+
+`SECURECALL ABI-SPLIT SELECTION DETERMINISTIC — HOSTED RERUN REQUIRED`

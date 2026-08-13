@@ -17,6 +17,24 @@ resolve_apk() {
   while IFS= read -r match; do
     matches+=("$match")
   done < <(find "${GITHUB_WORKSPACE:?}" -type f -path '*/build/outputs/apk/*' -name "$(basename "$requested")")
+  if [[ "${#matches[@]}" -eq 0 && -d "$(dirname "$requested")" ]]; then
+    while IFS= read -r match; do
+      matches+=("$match")
+    done < <(find "$(dirname "$requested")" -maxdepth 1 -type f -name '*.apk' | sort)
+  fi
+  if [[ "${#matches[@]}" -gt 1 ]]; then
+    local preferred=()
+    local candidate
+    for candidate in "${matches[@]}"; do
+      [[ "$(basename "$candidate")" == *universal*.apk ]] && preferred+=("$candidate")
+    done
+    if [[ "${#preferred[@]}" -eq 0 ]]; then
+      for candidate in "${matches[@]}"; do
+        [[ "$(basename "$candidate")" == *x86_64*.apk ]] && preferred+=("$candidate")
+      done
+    fi
+    [[ "${#preferred[@]}" -eq 1 ]] && matches=("${preferred[0]}")
+  fi
   if [[ "${#matches[@]}" -ne 1 || ! -s "${matches[0]:-}" ]]; then
     echo "Expected exactly one non-empty APK named $(basename "$requested"); found ${#matches[@]}" >&2
     return 1
