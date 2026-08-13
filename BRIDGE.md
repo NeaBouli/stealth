@@ -1,5 +1,14 @@
 # BRIDGE — stealth
 
+## 2026-08-13 — Public security audit handoff — RELEASE GATE
+
+- A private VLABS operator audit records unresolved configuration, public-data
+  hygiene and dependency-coverage work for this repository. No live secret
+  compromise was confirmed by the covered current-checkout review.
+- Release remains gated until the VLABS operator provides a bounded, no-secrets
+  task and confirms its evidence. Do not publish findings, matched values or
+  private evidence here. No production or payment action is authorized.
+
 ## Public Payment Data Boundary
 
 - This repository is public. Private payment, tax, provider and deployment operations are maintained only in `NeaBouli/vlabs` under `docs/finance-integrations/projects/securecall.md` and `stealthx-suite.md`.

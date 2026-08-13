@@ -1,5 +1,15 @@
 # Codex Findings — Aktuelle Session
 
+## Public Security Audit Handoff — 2026-08-13
+
+**Status:** OPEN / release gate. No confirmed live-secret compromise.
+
+- Detailed findings and acceptance criteria are retained only by the private
+  VLABS operator. Obtain a bounded, no-secrets remediation task before changing
+  configuration or making any rotation decision.
+- Retain all existing crypto, auth and physical-device release gates. Do not
+  publish raw audit evidence or private runtime values.
+
 ## Full Pre-Release Audit — StealthX Platform — 2026-05-18
 
 Scope: `/Users/gio/Desktop/repos/stealth`, `/Users/gio/Desktop/repos/securechat`, `/Users/gio/Desktop/repos/chameleon`.
