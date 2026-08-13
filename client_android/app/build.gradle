@@ -23,6 +23,10 @@ googleServices {
 }
 
 android {
+    adbOptions {
+        timeOutInMs 600000
+    }
+
     namespace "com.securecall.app"
     compileSdk 36
 
