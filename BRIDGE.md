@@ -5651,3 +5651,16 @@ Open next:
   remains a hard diagnostic failure. Bash syntax and diff validation pass.
 
 `SECURECALL ABI-SPLIT SELECTION DETERMINISTIC — HOSTED RERUN REQUIRED`
+
+---
+
+## 2026-08-13 21:43 EEST — CODEX SOL — API 24 TEST PERMISSION COMPATIBILITY
+
+- The final API 24 harness installed both APKs and ran 26 tests. Five failed in the common
+  setup because `UiAutomation.grantRuntimePermission` is unavailable on Android 7/API 24;
+  application assertions were not the cause.
+- Test setup now grants declared permissions through API-21-compatible
+  `UiAutomation.executeShellCommand("pm grant …")` and drains the returned pipe to completion.
+  Notification permission remains conditional on API 33+. Product code is unchanged.
+
+`API 24 TEST SETUP COMPATIBILITY FIXED — HOSTED RERUN REQUIRED`
