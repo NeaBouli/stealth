@@ -3388,3 +3388,19 @@ Type: EXTERNAL / RELEASE / VERIFICATION / STATUS
 - No AAB upload, release creation, track mutation or rollout occurred during this read-only check.
 
 `UPLOAD CERTIFICATE MATCH CONFIRMED — 78014 READY FOR AUTHORIZED UPLOAD`
+
+## 2026-08-20 23:35 EEST — CODEX SOL — PLAY UPLOAD COOLDOWN CONFIRMED
+
+Type: EXTERNAL / RELEASE / BLOCKED / STATUS
+
+- With explicit owner authorization, opened SecureCall Production release draft `10` for the
+  replacement of rejected release `78013` and uploaded the locally verified `1.0.47` / `78014`
+  AAB signed by the newly accepted upload certificate.
+- Google transferred all `33.6 MB` and began distribution optimization, then returned the
+  authoritative validation error that a recently reset upload certificate cannot be used before
+  `2026-08-22 11:18:57 UTC` (`2026-08-22 14:18:57 EEST`).
+- No AAB was accepted into the release, no release was submitted for review, no Production track
+  mutation occurred and no rollout started. The prepared draft remains at Production release
+  `10` for retry after the exact Google deadline.
+
+`PLAY COOLDOWN IS THE ONLY UPLOAD GATE — RETRY AFTER 2026-08-22 14:18:57 EEST`
