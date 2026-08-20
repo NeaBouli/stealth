@@ -10,7 +10,7 @@ import okhttp3.CertificatePinner
 
 /**
  * Manages network interface selection for StealthX traffic.
- * Premium feature: route app traffic through eSIM or specific network interface.
+ * Pro/Premium feature: prefer a specific network transport.
  *
  * Default = no binding (Android decides). WiFi/Cellular = explicit bind.
  * When bound network is lost, falls back to default and triggers WS reconnect.
@@ -19,12 +19,10 @@ object NetworkManager {
     private const val TAG = "NetworkManager"
     private const val PREFS = "securecall_prefs"
     private const val KEY_PREFERRED_TRANSPORT = "preferred_network_transport"
-    private const val KEY_ESIM_ROUTING = "esim_routing_enabled"
 
     const val TRANSPORT_DEFAULT = "default"
     const val TRANSPORT_WIFI = "wifi"
     const val TRANSPORT_CELLULAR = "cellular"
-    const val TRANSPORT_ESIM = "esim"
 
     private var boundNetwork: Network? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
@@ -40,17 +38,6 @@ object NetworkManager {
         Log.d(TAG, "Preferred transport set to: $transport")
     }
 
-    fun isEsimRoutingEnabled(context: Context): Boolean {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean(KEY_ESIM_ROUTING, false)
-    }
-
-    fun setEsimRouting(context: Context, enabled: Boolean) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putBoolean(KEY_ESIM_ROUTING, enabled).apply()
-        if (enabled) bindToPreferredNetwork(context) else unbind(context)
-    }
-
     fun getActiveNetworkInfo(context: Context): String {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = cm.activeNetwork ?: return "No network"
@@ -64,10 +51,17 @@ object NetworkManager {
         }
     }
 
+    fun isExternalVpnActive(context: Context): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = cm.activeNetwork ?: return false
+        return cm.getNetworkCapabilities(network)
+            ?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+    }
+
     /**
      * Apply network binding based on preferred transport.
      * Default = no binding (Android decides the best network).
-     * WiFi/Cellular/eSIM = explicit bind via requestNetwork + bindProcessToNetwork.
+     * WiFi/Cellular = explicit bind via requestNetwork + bindProcessToNetwork.
      */
     fun bindToPreferredNetwork(context: Context) {
         val transport = getPreferredTransport(context)
@@ -92,7 +86,7 @@ object NetworkManager {
 
         when (transport) {
             TRANSPORT_WIFI -> requestBuilder.addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-            TRANSPORT_CELLULAR, TRANSPORT_ESIM -> requestBuilder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            TRANSPORT_CELLULAR -> requestBuilder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
         }
 
         val callback = object : ConnectivityManager.NetworkCallback() {

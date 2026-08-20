@@ -29,7 +29,6 @@ SecureCall is available in three tiers. Your effective tier is the highest of: y
 | Ads | Yes | No | No |
 | Anti-recording protection | Off | Toggleable | Forced on |
 | Multi-device support | No | Yes | Yes |
-| WireGuard VPN | No | No | Yes |
 | Custom Call ID | No | No | Yes |
 | Screen capture detection | No | No | Yes |
 | Diagnostic logs | No | Yes | Yes |
@@ -169,38 +168,11 @@ Three options: *System Default*, *Light*, or *Dark*. The selection applies immed
 **Setup eSIM**
 Opens Android's built-in eSIM management settings so you can add a carrier profile. Disabled if your device has no eSIM hardware.
 
-**Route Through eSIM**
-Bind SecureCall traffic to your eSIM rather than your primary SIM. This setting is coming soon and is currently shown as disabled.
-
 **Active Network**
 Read-only display of your current network connection (WiFi or Mobile) and binding status.
 
 **Preferred Network**
 Choose Default, WiFi, or Mobile. SecureCall will prefer this network type when it is available. Only active when switching between networks.
-
----
-
-### VPN — WireGuard *(Premium only)*
-
-SecureCall includes a built-in WireGuard VPN that encrypts all device traffic. Configure it with details provided by your VPN provider.
-
-**Enable VPN**
-Toggle to start or stop the VPN tunnel. On first enable, Android will ask for VPN permission — tap **Allow**.
-
-**VPN Status**
-Shows the current state: *Connected: [server]*, *Enabled — waiting for config*, *Enabled — no configuration*, or *Disabled*.
-
-**WireGuard Configuration**
-Tap to open the configuration dialog. Enter:
-- **Server endpoint** — the IP address or hostname of your WireGuard server
-- **Port** — typically 51820
-- **Server public key** — your server's base64-encoded public key
-- **Client private key** — your device's base64-encoded private key (generated on your server)
-- **DNS** — DNS server the tunnel should use (default: 1.1.1.1)
-- **Client address** — your device's IP inside the VPN (e.g., 10.99.0.2/31)
-
-**Kill Switch**
-When on, all internet traffic is blocked if the VPN connection drops. This prevents any data from leaving the device unencrypted during a VPN failure. Off by default.
 
 ---
 
@@ -284,7 +256,6 @@ SecureCall supports the following deep link formats for adding contacts and shar
 | Contacts (read) | Resolve contact names in call history |
 | Phone state / numbers | Suggest your SIM number at onboarding |
 | Battery optimization exempt | Keep background connection alive |
-| VPN service | WireGuard VPN (Premium) |
 | Boot completed | Auto-restart connection after reboot |
 | Full screen intent | Show incoming call screen over lock screen |
 
@@ -299,7 +270,7 @@ Open Settings → Privacy & Call Settings → Battery Optimization Status. If it
 Check your network connection. If you are on mobile data, try switching to WiFi. If you are on WiFi, ensure you are not behind a restrictive firewall. The app uses a STUN/TURN relay as fallback for NAT traversal.
 
 **The connection status stays red**
-Your device cannot reach the SecureCall server. Check your internet connection. If you are using the WireGuard VPN (Premium), verify the VPN tunnel is up and the server endpoint is reachable.
+Your device cannot reach the SecureCall server. Check your internet connection. If the device uses an external VPN, verify that it allows SecureCall traffic.
 
 **My tier shows Free after entering an activation code**
 Activation codes restart the app automatically. Wait for the restart to complete. If the tier still shows Free, check the code for typos.

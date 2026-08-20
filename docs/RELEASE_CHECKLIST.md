@@ -15,7 +15,7 @@ Last updated: 2026-06-11
   - [ ] Chameleon Pro Lifetime.
   - [ ] Chameleon Elite Lifetime.
   - [ ] StealthX Suite Lifetime.
-- [ ] BUG-029 WireGuard tested with an active WireGuard profile.
+- [ ] Calls tested with and without a device-managed external VPN.
 - [ ] Dependabot high vulnerabilities resolved in GitHub alerts.
 
 ## App Verification

@@ -1150,7 +1150,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 Log.d("WS_SERVICE", "WebRTC peer disconnected — ending call")
                 cancelCallEndGrace() // BUG-011: cancel any pending server CALL_END grace
                 _onCallEnded?.invoke(sessionId)
-            }
+            },
+            isExternalVpnActive = { NetworkManager.isExternalVpnActive(this) }
         )
         // BUG-031: if ICE recovers while a CALL_END grace is pending, cancel it
         mgr.onIceRecovered = { cancelCallEndGrace() }

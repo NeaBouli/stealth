@@ -3088,3 +3088,50 @@ Open next steps:
   and server-side repeated-discount enforcement.
 
 `MERGED AND VERIFIED — LIVE PAYMENT STILL BLOCKED`
+## 2026-08-20 EEST — CODEX SOL — PLAY VPN POLICY REMEDIATION START
+
+- Ticket `GIO-20260820-SECURECALL-VPN-POLICY`; isolated branch
+  `fix/remove-vpnservice-policy-20260820` at submitted-line commit `e9a36ad`.
+- Play rejected Free version code 78013. Merged-manifest inspection finds both the app-owned
+  Ghost VPN service and the WireGuard backend library service in every tier artifact.
+- Required remediation is complete removal of VpnService capability and related product/code
+  surfaces, not a declaration-only workaround. Full tests, merged-manifest gates, version bump
+  and replacement AAB are required before review. No Play upload or production action yet.
+
+`VPN POLICY REMEDIATION IN PROGRESS`
+
+## 2026-08-20 10:41 EEST — CODEX SOL — PLAY VPN POLICY REMEDIATION VERIFIED
+
+Type: FIX / STATUS
+
+- Ticket `GIO-20260820-SECURECALL-VPN-POLICY`; branch
+  `fix/remove-vpnservice-policy-20260820`; replacement version `1.0.47` / `78014`.
+- Removed the app-owned VPN service/controller, manifest service declaration, WireGuard tunnel
+  dependency, VPN/eSIM-tunnel settings, related resources/test, and current product/listing
+  claims. Historical audit records remain intact.
+- Preserved external device-VPN compatibility without declaring a service: active external VPN
+  transport is detected through `NetworkCapabilities`, and WebRTC selects TURN relay-only mode.
+- Added `verifyNoVpnServiceSource` to `preBuild` to block reintroduction of the restricted API,
+  permission, or WireGuard tunnel dependency.
+- Kimi K3 completed an independent read-only inventory/review and identified the external-VPN
+  relay regression risk; Sol implemented and reviewed that mitigation. Claude Code was attempted
+  as the requested small helper but its local OAuth session was expired; it changed no files.
+
+Verification:
+- `verifyNoVpnServiceSource compileFreeDebugKotlin`: PASS.
+- `testFreeDebugUnitTest`: PASS.
+- `lintFreeRelease`: PASS.
+- R8, native compilation, bundle packaging and lint-vital: PASS.
+- Free, Pro and Premium release merged manifests: zero `VpnService`,
+  `BIND_VPN_SERVICE`, WireGuard or `wg-go` markers.
+- Free release dependency graph and packaged intermediary AAB entries: no WireGuard/wg-go.
+- Signed AAB is BLOCKED only because the release keystore password is not available in this
+  isolated session. The keystore was not copied and no secret was read or logged.
+
+External release gate:
+- Google policy requires removal from every active artifact across every release track. A signed
+  `78014` AAB must replace/deactivate the rejected/older VPN-bearing artifacts, and current Play
+  listing text must be aligned before resubmission.
+- No Play upload, submission, push or production write performed in this block.
+
+`LOCAL REMEDIATION VERIFIED — SIGNING AND PLAY TRACK REPLACEMENT BLOCKED`
