@@ -3239,3 +3239,24 @@ Type: DOCUMENTATION / STATUS
   where old VPN findings could be read as a current feature claim.
 
 `VPN PUBLIC DOCUMENTATION ALIGNMENT IN PROGRESS`
+
+## 2026-08-20 16:03 EEST — CODEX SOL — VPN PUBLIC DOCUMENTATION ALIGNMENT COMPLETE
+
+Type: DOCUMENTATION / TEST / STATUS
+
+- Commit `51e6abb45b6f96c8bdb2c93f4039d413a4c14bde` aligns the landing page, both public FAQ
+  surfaces, wiki navigation content, architecture, privacy, security, installation and user
+  manuals, GitHub README and maintained Markdown references with Android release 1.0.47.
+- Canonical statement: SecureCall has no built-in `VpnService`, WireGuard or app-owned VPN
+  tunnel in any tier. It remains compatible with externally managed device VPNs; WebRTC uses
+  STUN/TURN as needed. The documented future iOS boundary is identical.
+- Removed current GhostNet IP-masking claims from pricing, privacy, tier and Matrix material.
+  Historical changelog, bug and audit evidence remains intact and is labeled where ambiguity
+  was possible; research architecture is explicitly marked as not shipped.
+- Validation PASS: `git diff --check`; residual current-claim scan; FAQ structures
+  (`24/24/24` landing and `18/18/18` wiki); 13 changed HTML files show no additional
+  structural errors against `HEAD` with the available legacy HTML4 Tidy validator.
+- No website deployment, Play release, active track, app-signing key or production system was
+  changed. The separate Google upload-key-reset approval remains pending.
+
+`VPN DOCUMENTATION COMPLETE — PUSH AND REMOTE VERIFY NEXT`
