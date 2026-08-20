@@ -6,7 +6,8 @@
       "package_name": "com.securecall.app.free",
       "sha256_cert_fingerprints": [
         "2A:84:ED:E5:72:99:F1:05:B6:78:51:02:E2:D3:85:A6:26:49:B9:A1:CB:3E:01:84:60:9A:25:A9:6A:E4:F8:FB",
-        "1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D"
+        "1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D",
+        "83:18:36:CF:48:17:34:6F:B3:1F:9A:43:D6:15:92:6E:B5:C8:93:BF:35:F8:A1:2E:A4:45:5D:2B:BC:6E:49:D2"
       ]
     }
   },
@@ -16,7 +17,8 @@
       "namespace": "android_app",
       "package_name": "com.securecall.app.pro",
       "sha256_cert_fingerprints": [
-        "1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D"
+        "1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D",
+        "83:18:36:CF:48:17:34:6F:B3:1F:9A:43:D6:15:92:6E:B5:C8:93:BF:35:F8:A1:2E:A4:45:5D:2B:BC:6E:49:D2"
       ]
     }
   },
@@ -26,7 +28,8 @@
       "namespace": "android_app",
       "package_name": "com.securecall.app.premium",
       "sha256_cert_fingerprints": [
-        "1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D"
+        "1E:0A:8E:B4:19:54:0D:E8:54:5F:77:0E:78:DC:DB:93:AB:1B:A8:A0:71:3D:A8:99:92:22:FC:88:C3:FD:B2:1D",
+        "83:18:36:CF:48:17:34:6F:B3:1F:9A:43:D6:15:92:6E:B5:C8:93:BF:35:F8:A1:2E:A4:45:5D:2B:BC:6E:49:D2"
       ]
     }
   },

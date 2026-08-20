@@ -3110,3 +3110,62 @@ Type: EXTERNAL / STATUS
   separate exact authorization before key generation or Console mutation.
 
 `EXISTING UPLOAD KEY LOCKED — RESET DOR READY`
+
+## 2026-08-20 EEST — CODEX SOL — UPLOAD-KEY RESET AUTHORIZED
+
+- Gio explicitly authorized generation of a new SecureCall upload key, local private-key storage
+  inside the Stealth repository, public-certificate export, and a Play Console upload-key reset.
+- Hard boundary: Google's app-signing key must not be changed. The private keystore remains
+  untracked/ignored; its password is stored only in the local macOS Keychain and is never logged,
+  committed, bridged or sent to Google.
+- Planned local paths: `securecall-upload-key-2026.jks` (private, ignored) and
+  `securecall-upload-key-2026.pem` (public reset certificate).
+
+`UPLOAD KEY RESET AUTHORIZED — EXECUTION IN PROGRESS`
+
+## 2026-08-20 14:19 EEST — CODEX SOL — UPLOAD-KEY RESET SUBMITTED
+
+Type: SECURITY / EXTERNAL / STATUS
+
+- Generated a dedicated RSA-4096 SecureCall upload key. The private PKCS12 keystore is stored
+  only at the authorized local Stealth repository path, is excluded from Git and mode `0600`;
+  its random password is stored only in macOS Keychain. The public PEM reset certificate is also
+  local and excluded from Git.
+- Verified that the keystore certificate and exported PEM have the same SHA-256 fingerprint.
+  No secret, password or private-key material was logged, committed, bridged or uploaded.
+- In Play Console for `com.securecall.app.free`, selected `keystore password forgotten`, uploaded
+  only the public PEM and submitted the authorized upload-key-reset request. Console now states
+  that an upload-key-reset request is pending.
+- The separately displayed Google Play app-signing key remains `In Verwendung`; `Schlüssel
+  aktualisieren` was not invoked. No AAB, release, track or production rollout was changed.
+
+Next gate:
+- Wait for Google approval and verify that Play's accepted upload-certificate fingerprint matches
+  the new local public certificate. Then sign and fully validate `1.0.47` / `78014`. Uploading or
+  submitting that release remains a separate external release action.
+
+`UPLOAD KEY RESET PENDING — APP-SIGNING KEY UNCHANGED`
+
+## 2026-08-20 14:49 EEST — CODEX SOL — SIGNED 78014 AND REVIEW FOLLOW-UPS VERIFIED
+
+Type: FIX / SECURITY / STATUS
+
+- Signed Free AAB `1.0.47` / `78014` successfully with the new local upload key. The release
+  chain passed R8, all four native ABI builds, lint-vital, bundle packaging and signature
+  validation. The AAB certificate matches the exported public reset certificate.
+- Merged manifest confirms `com.securecall.app.free`, target SDK 36 and zero `VpnService`,
+  `BIND_VPN_SERVICE`, WireGuard or `wg-go` markers. Packaged AAB has no matching forbidden entries.
+- Kimi K3 completed an independent secret-free read-only review: no critical/high findings and
+  the upload-key workflow correctly preserves Google's separate app-signing key.
+- Closed both actionable review gaps:
+  - Added `WebRtcRelayPolicyTest` for direct, external-VPN and relay-retry decisions; all three
+    cases PASS together with `verifyNoVpnServiceSource`.
+  - Added the new public upload-certificate fingerprint to all three SecureCall entries in
+    `website/.well-known/assetlinks.json`, preserving old-upload compatibility and the Free
+    Google app-signing certificate; JSON validation PASS.
+- Desktop candidate refreshed at `/Users/gio/Desktop/SecureCall-LATEST.aab`; previous `78013`
+  preserved as `/Users/gio/Desktop/SecureCall-v1.0.46-vC78013-before-upload-key-reset.aab`.
+- Google approval of the pending upload-key reset remains the external gate. No AAB was uploaded,
+  no active track changed and no production rollout occurred.
+
+`SIGNED 78014 READY LOCALLY — PLAY UPLOAD KEY RESET STILL PENDING`

@@ -24,6 +24,9 @@ class WebRtcManager(
         private const val TAG = "WEBRTC"
         private const val DC_LABEL = "audio"
         private const val DATA_CHANNEL_OPEN_TIMEOUT_MS = 8_000L
+
+        internal fun shouldUseRelayOnly(externalVpnActive: Boolean, relayRetry: Boolean): Boolean =
+            externalVpnActive || relayRetry
     }
 
     private var factory: PeerConnectionFactory? = null
@@ -78,7 +81,7 @@ class WebRtcManager(
             .createPeerConnectionFactory()
 
         val externalVpnActive = isExternalVpnActive()
-        val relayOnly = externalVpnActive || forceRelayOnly
+        val relayOnly = shouldUseRelayOnly(externalVpnActive, forceRelayOnly)
         val iceServers = if (relayOnly) {
             prioritizeRelayServers(dynamicIceServers ?: buildFallbackIceServers())
         } else {
