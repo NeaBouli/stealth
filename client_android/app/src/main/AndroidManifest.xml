@@ -61,11 +61,6 @@
             android:name="firebase_analytics_collection_enabled"
             android:value="false" />
 
-        <service
-            android:name=".vpn.GhostVpnService"
-            android:permission="android.permission.BIND_VPN_SERVICE"
-            android:exported="false" />
-
 
         <!-- BACKEND-22: WebSocket Hintergrund-Service -->
         <service

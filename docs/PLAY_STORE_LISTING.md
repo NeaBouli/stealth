@@ -7,7 +7,7 @@ SecureCall — Encrypted Calls
 
 ## Short Description (max 80 chars)
 ```
-Encrypted P2P calls. No phone number. No logs. WireGuard VPN built-in.
+Encrypted P2P calls. No phone number. No call recordings. Privacy-first.
 ```
 
 ## Full Description (max 4000 chars)
@@ -21,8 +21,8 @@ WebRTC with DTLS-SRTP encryption. Calls are peer-to-peer — no audio ever touch
 📵 NO PHONE NUMBER REQUIRED
 You are identified only by your SecureID. No registration, no personal data required.
 
-🛡️ BUILT-IN WIREGUARD VPN (Premium)
-Route your calls through an encrypted VPN tunnel for maximum anonymity.
+🛡️ NETWORK RESILIENCE
+SecureCall supports WiFi and mobile data with automatic TURN relay fallback.
 
 💥 STEALTH-DELETE
 5 rapid taps in Settings wipes all app data instantly. No trace left behind.
@@ -33,7 +33,7 @@ Receive critical security alerts from the development team. Pre-installed templa
 📱 THREE TIERS
 • Free — Full calling, banner & interstitial ads
 • Pro — No ads, contacts, call history, online status
-• Premium — All features + WireGuard VPN + anti-recording protection
+• Premium — All features + advanced threat and anti-recording protection
 
 🔓 UNLOCK PREMIUM — THREE WAYS
 • Google Play in-app purchase
@@ -73,7 +73,7 @@ IFR Token: ifrunit.tech
 
 ## Keywords
 ```
-encrypted calls, secure phone, private calling, vpn calls, anonymous calls, e2e encryption, wireguard, stealth delete, privacy
+encrypted calls, secure phone, private calling, anonymous calls, e2e encryption, stealth delete, privacy
 ```
 
 ## Category
@@ -90,7 +90,7 @@ Everyone
 ```
 v2.0 — Initial Release
 • End-to-end encrypted P2P calls
-• WireGuard VPN integration (Premium)
+• Automatic TURN relay fallback
 • Website IFR holder discount via signed browser-wallet verification
 • STEALTH-DELETE emergency wipe
 • Emergency Broadcast System

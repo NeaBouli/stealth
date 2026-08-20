@@ -2,7 +2,6 @@ package com.securecall.app.net
 
 import android.util.Log
 import com.securecall.app.BuildConfig
-import com.securecall.app.vpn.GhostVpnService
 import org.json.JSONObject
 import org.webrtc.*
 import java.nio.ByteBuffer
@@ -17,7 +16,8 @@ class WebRtcManager(
     private val onLocalSdp: (type: String, sdp: String) -> Unit,
     private val onLocalIceCandidate: (JSONObject) -> Unit,
     private val onDataReceived: (ByteArray) -> Unit,
-    private val onPeerDisconnect: (() -> Unit)? = null
+    private val onPeerDisconnect: (() -> Unit)? = null,
+    private val isExternalVpnActive: () -> Boolean = { false }
 ) {
 
     companion object {
@@ -77,7 +77,8 @@ class WebRtcManager(
             .setOptions(PeerConnectionFactory.Options())
             .createPeerConnectionFactory()
 
-        val relayOnly = GhostVpnService.isActive || forceRelayOnly
+        val externalVpnActive = isExternalVpnActive()
+        val relayOnly = externalVpnActive || forceRelayOnly
         val iceServers = if (relayOnly) {
             prioritizeRelayServers(dynamicIceServers ?: buildFallbackIceServers())
         } else {
@@ -86,8 +87,9 @@ class WebRtcManager(
         Log.d(TAG, "Using ${iceServers.size} ICE servers (dynamic=${dynamicIceServers != null})")
         com.securecall.app.debug.SecLogManager.log("ICE", "Init: ${iceServers.size} servers (dynamic=${dynamicIceServers != null})")
         if (relayOnly) {
-            Log.d(TAG, "VPN active or relay retry — RELAY-only ICE mode")
-            com.securecall.app.debug.SecLogManager.log("ICE", "VPN active/retry -> RELAY-only ICE mode")
+            val reason = if (externalVpnActive) "external VPN" else "relay retry"
+            Log.d(TAG, "$reason — RELAY-only ICE mode")
+            com.securecall.app.debug.SecLogManager.log("ICE", "$reason -> RELAY-only ICE mode")
         }
         iceServers.forEach { server ->
             Log.d(TAG, "  ICE server: ${server.urls}")

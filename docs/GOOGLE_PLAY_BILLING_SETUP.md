@@ -19,7 +19,7 @@
    - Type: Recurring subscription
    - Price: €4.99/month
    - Grace period: 3 days
-   - Description: "Premium plan — all features, WireGuard VPN, zero telemetry"
+   - Description: "Premium plan — all features, advanced threat protection, zero telemetry"
 
 4. **securecall_premium_yearly**
    - Type: Recurring subscription

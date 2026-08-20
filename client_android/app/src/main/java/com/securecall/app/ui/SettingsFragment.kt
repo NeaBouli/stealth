@@ -1,6 +1,5 @@
 package com.securecall.app.ui
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -149,9 +148,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        // eSIM + VPN (Premium only)
+        // eSIM setup and preferred network transport
         configureAnonymousNetwork(effectiveTier)
-        configureVpn()
 
         // About section links
         setupAboutLinks()
@@ -194,7 +192,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // BUG-022: Refresh network info + bound status on every resume
         refreshNetworkStatus()
         configureBatteryOptimization()
-        updateVpnStatus(requireContext(), TierManager.isPremium(requireContext()))
     }
 
     /** BUG-022: Refresh network info so eSIM status doesn't stay stale. */
@@ -206,27 +203,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 "$info (bound)"
             } else {
                 info
-            }
-        }
-        // Also refresh eSIM routing toggle to match current state
-        findPreference<SwitchPreferenceCompat>("pref_esim_routing")?.apply {
-            if (isEnabled) {
-                isChecked = com.securecall.app.net.NetworkManager.isEsimRoutingEnabled(ctx)
-            }
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == com.securecall.app.vpn.VpnController.VPN_PERMISSION_REQUEST) {
-            if (resultCode == Activity.RESULT_OK) {
-                com.securecall.app.vpn.VpnController.start(requireContext())
-            } else {
-                // Permission denied — revert toggle
-                com.securecall.app.vpn.VpnController.setEnabled(requireContext(), false)
-                findPreference<SwitchPreferenceCompat>("pref_vpn_enabled")?.isChecked = false
-                updateVpnStatus(requireContext(), true)
             }
         }
     }
@@ -682,47 +658,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        findPreference<SwitchPreferenceCompat>("pref_esim_routing")?.apply {
-            when {
-                !hasEsim -> {
-                    isEnabled = false
-                    isChecked = false
-                    summary = "eSIM not available on this device"
-                }
-                !isProOrPremium -> {
-                    isEnabled = false
-                    isChecked = false
-                    summary = getString(R.string.pref_premium_feature)
-                }
-                effectiveTier != "PREMIUM" -> {
-                    isEnabled = false
-                    isChecked = false
-                    summary = "Premium feature — WireGuard over eSIM"
-                }
-                else -> {
-                    val esimEnabled = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
-                        .getBoolean("esim_wireguard_mode", false)
-                    isEnabled = true
-                    isChecked = esimEnabled
-                    summary = if (esimEnabled) "WireGuard tunnel uses eSIM as physical underlay" else "Route WireGuard VPN through eSIM instead of WiFi"
-                    setOnPreferenceChangeListener { _, newValue ->
-                        val enabled = newValue as Boolean
-                        ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
-                            .edit().putBoolean("esim_wireguard_mode", enabled).apply()
-                        summary = if (enabled) "WireGuard tunnel uses eSIM as physical underlay" else "Route WireGuard VPN through eSIM instead of WiFi"
-                        if (com.securecall.app.vpn.GhostVpnService.isActive) {
-                            com.securecall.app.vpn.VpnController.stop(ctx)
-                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                if (enabled) com.securecall.app.vpn.VpnController.startWithEsimUnderlay(ctx)
-                                else com.securecall.app.vpn.VpnController.start(ctx)
-                            }, 1500)
-                        }
-                        true
-                    }
-                }
-            }
-        }
-
         findPreference<Preference>("pref_network_info")?.apply {
             summary = com.securecall.app.net.NetworkManager.getActiveNetworkInfo(ctx)
             if (com.securecall.app.net.NetworkManager.isBound()) {
@@ -750,280 +685,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     true
                 }
             }
-        }
-    }
-
-    private fun configureVpn() {
-        val isPremium = TierManager.isPremium(requireContext())
-        val ctx = requireContext()
-
-        findPreference<SwitchPreferenceCompat>("pref_vpn_enabled")?.apply {
-            if (!isPremium) {
-                isChecked = false
-                isEnabled = false
-                summary = getString(R.string.pref_premium_feature)
-            } else {
-                isChecked = com.securecall.app.vpn.VpnController.isEnabled(ctx)
-                isEnabled = true
-                setOnPreferenceChangeListener { _, newValue ->
-                    val enabled = newValue as Boolean
-                    if (enabled) {
-                        if (!com.securecall.app.vpn.VpnController.hasConfig(ctx)) {
-                            android.widget.Toast.makeText(ctx, "Configure WireGuard first", android.widget.Toast.LENGTH_SHORT).show()
-                            return@setOnPreferenceChangeListener false
-                        }
-                        val vpnIntent = android.net.VpnService.prepare(ctx)
-                        com.securecall.app.vpn.VpnController.setEnabled(ctx, true)
-                        if (vpnIntent != null) {
-                            @Suppress("DEPRECATION")
-                            startActivityForResult(vpnIntent, com.securecall.app.vpn.VpnController.VPN_PERMISSION_REQUEST)
-                        } else {
-                            com.securecall.app.vpn.VpnController.start(ctx)
-                        }
-                    } else {
-                        com.securecall.app.vpn.VpnController.setEnabled(ctx, false)
-                        com.securecall.app.vpn.VpnController.stop(ctx)
-                    }
-                    // Update status text immediately
-                    updateVpnStatus(ctx, true)
-                    true
-                }
-            }
-        }
-
-        updateVpnStatus(ctx, isPremium)
-
-        findPreference<Preference>("pref_vpn_config")?.apply {
-            if (!isPremium) {
-                isEnabled = false
-                summary = getString(R.string.pref_premium_feature)
-            } else {
-                isEnabled = true
-                if (com.securecall.app.vpn.VpnController.hasConfig(ctx)) {
-                    val prefs = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
-                    summary = prefs.getString("vpn_server_endpoint", "") + ":" + prefs.getInt("vpn_server_port", 51820)
-                }
-                setOnPreferenceClickListener {
-                    showVpnConfigDialog()
-                    true
-                }
-            }
-        }
-
-        findPreference<SwitchPreferenceCompat>("pref_vpn_kill_switch")?.apply {
-            if (!isPremium) {
-                isChecked = false
-                isEnabled = false
-                summary = getString(R.string.pref_premium_feature)
-            } else {
-                isEnabled = true
-                isChecked = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
-                    .getBoolean("vpn_kill_switch", false)
-                setOnPreferenceChangeListener { _, newValue ->
-                    ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
-                        .edit().putBoolean("vpn_kill_switch", newValue as Boolean).apply()
-                    true
-                }
-            }
-        }
-    }
-
-    private fun updateVpnStatus(ctx: android.content.Context, isPremium: Boolean) {
-        findPreference<Preference>("pref_vpn_status")?.summary = when {
-            !isPremium -> getString(R.string.pref_premium_feature)
-            com.securecall.app.vpn.GhostVpnService.isActive ->
-                "Connected: ${com.securecall.app.vpn.GhostVpnService.connectedServer ?: "Unknown"}"
-            com.securecall.app.vpn.VpnController.isEnabled(ctx) && com.securecall.app.vpn.VpnController.hasConfig(ctx) ->
-                "Enabled — waiting for connection"
-            com.securecall.app.vpn.VpnController.isEnabled(ctx) ->
-                "Enabled — no configuration"
-            else -> "VPN disabled"
-        }
-    }
-
-    private fun showVpnConfigDialog() {
-        val ctx = requireContext()
-        val prefs = ctx.getSharedPreferences("securecall_prefs", android.content.Context.MODE_PRIVATE)
-
-        val layout = android.widget.LinearLayout(ctx).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            val pad = resources.getDimensionPixelSize(R.dimen.spacing_lg)
-            setPadding(pad, pad, pad, 0)
-        }
-
-        val endpointInput = android.widget.EditText(ctx).apply {
-            hint = "Server endpoint (IP or hostname)"
-            setText(prefs.getString("vpn_server_endpoint", ""))
-        }
-        val portInput = android.widget.EditText(ctx).apply {
-            hint = "Port (default: 51820)"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText(prefs.getInt("vpn_server_port", 51820).toString())
-        }
-        val pubKeyInput = android.widget.EditText(ctx).apply {
-            hint = "Server public key"
-            setText(prefs.getString("vpn_server_public_key", ""))
-        }
-        val privKeyInput = android.widget.EditText(ctx).apply {
-            hint = "Client private key"
-            setText(prefs.getString("vpn_client_private_key", ""))
-        }
-        val dnsInput = android.widget.EditText(ctx).apply {
-            hint = "DNS (default: 1.1.1.1)"
-            setText(prefs.getString("vpn_dns", "1.1.1.1"))
-        }
-        val clientAddrInput = android.widget.EditText(ctx).apply {
-            hint = "Client address (e.g. 10.99.0.2/31)"
-            setText(prefs.getString("vpn_client_address", ""))
-        }
-        val importButton = android.widget.Button(ctx).apply {
-            text = "Paste WireGuard .conf"
-            setOnClickListener {
-                showWireGuardPasteDialog(
-                    onConfigParsed = { cfg ->
-                        endpointInput.setText(cfg.endpoint)
-                        portInput.setText(cfg.port.toString())
-                        pubKeyInput.setText(cfg.serverPublicKey)
-                        privKeyInput.setText(cfg.clientPrivateKey)
-                        dnsInput.setText(cfg.dns)
-                        clientAddrInput.setText(cfg.clientAddress)
-                    }
-                )
-            }
-        }
-
-        layout.addView(importButton)
-        layout.addView(endpointInput)
-        layout.addView(portInput)
-        layout.addView(pubKeyInput)
-        layout.addView(privKeyInput)
-        layout.addView(dnsInput)
-        layout.addView(clientAddrInput)
-
-        android.app.AlertDialog.Builder(ctx)
-            .setTitle("WireGuard Configuration")
-            .setView(layout)
-            .setPositiveButton("Save") { _, _ ->
-                val endpoint = endpointInput.text.toString().trim()
-                val port = portInput.text.toString().toIntOrNull() ?: 51820
-                val pubKey = pubKeyInput.text.toString().trim()
-                val privKey = privKeyInput.text.toString().trim()
-                val dns = dnsInput.text.toString().trim().ifEmpty { "1.1.1.1" }
-
-                if (endpoint.isEmpty()) {
-                    android.widget.Toast.makeText(ctx, "Server endpoint required", android.widget.Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-
-                val clientAddr = clientAddrInput.text.toString().trim().ifEmpty { "10.66.66.2/32" }
-                com.securecall.app.vpn.VpnController.saveConfig(ctx, endpoint, port, pubKey, privKey, dns, "0.0.0.0/0",
-                    clientAddr, prefs.getBoolean("vpn_kill_switch", false))
-                findPreference<Preference>("pref_vpn_config")?.summary = "$endpoint:$port"
-                android.widget.Toast.makeText(ctx, "VPN config saved", android.widget.Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setNeutralButton("Clear") { _, _ ->
-                com.securecall.app.vpn.VpnController.clearConfig(ctx)
-                com.securecall.app.vpn.VpnController.stop(ctx)
-                findPreference<SwitchPreferenceCompat>("pref_vpn_enabled")?.isChecked = false
-                findPreference<Preference>("pref_vpn_config")?.summary = getString(R.string.pref_vpn_config_summary)
-                updateVpnStatus(ctx, true)
-                android.widget.Toast.makeText(ctx, "VPN config cleared", android.widget.Toast.LENGTH_SHORT).show()
-            }
-            .show()
-    }
-
-    private data class WireGuardConfigFields(
-        val endpoint: String,
-        val port: Int,
-        val serverPublicKey: String,
-        val clientPrivateKey: String,
-        val dns: String,
-        val clientAddress: String,
-    )
-
-    private fun showWireGuardPasteDialog(onConfigParsed: (WireGuardConfigFields) -> Unit) {
-        val ctx = requireContext()
-        val input = android.widget.EditText(ctx).apply {
-            hint = "[Interface]\nPrivateKey = ...\nAddress = ...\nDNS = ...\n\n[Peer]\nPublicKey = ...\nEndpoint = host:port\nAllowedIPs = 0.0.0.0/0"
-            minLines = 10
-            maxLines = 16
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or
-                android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
-                android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            setHorizontallyScrolling(false)
-        }
-
-        android.app.AlertDialog.Builder(ctx)
-            .setTitle("Paste WireGuard .conf")
-            .setView(input)
-            .setPositiveButton("Parse") { _, _ ->
-                val parsed = parseWireGuardConfig(input.text.toString())
-                if (parsed == null) {
-                    android.widget.Toast.makeText(ctx, "Invalid WireGuard config", android.widget.Toast.LENGTH_LONG).show()
-                } else {
-                    onConfigParsed(parsed)
-                    android.widget.Toast.makeText(ctx, "WireGuard config parsed", android.widget.Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
-    private fun parseWireGuardConfig(raw: String): WireGuardConfigFields? {
-        var section = ""
-        var privateKey = ""
-        var address = ""
-        var dns = "1.1.1.1"
-        var publicKey = ""
-        var endpoint = ""
-
-        raw.lineSequence()
-            .map { it.substringBefore('#').trim() }
-            .filter { it.isNotEmpty() }
-            .forEach { line ->
-                when {
-                    line.equals("[Interface]", ignoreCase = true) -> section = "interface"
-                    line.equals("[Peer]", ignoreCase = true) -> section = "peer"
-                    "=" in line -> {
-                        val key = line.substringBefore('=').trim()
-                        val value = line.substringAfter('=').trim()
-                        when {
-                            section == "interface" && key.equals("PrivateKey", ignoreCase = true) -> privateKey = value
-                            section == "interface" && key.equals("Address", ignoreCase = true) -> address = value.substringBefore(',').trim()
-                            section == "interface" && key.equals("DNS", ignoreCase = true) -> dns = value.ifEmpty { "1.1.1.1" }
-                            section == "peer" && key.equals("PublicKey", ignoreCase = true) -> publicKey = value
-                            section == "peer" && key.equals("Endpoint", ignoreCase = true) -> endpoint = value
-                        }
-                    }
-                }
-            }
-
-        if (privateKey.isBlank() || publicKey.isBlank() || endpoint.isBlank()) return null
-
-        val parsedEndpoint = parseEndpoint(endpoint) ?: return null
-        val clientAddress = address.ifBlank { "10.66.66.2/32" }
-        return WireGuardConfigFields(
-            endpoint = parsedEndpoint.first,
-            port = parsedEndpoint.second,
-            serverPublicKey = publicKey,
-            clientPrivateKey = privateKey,
-            dns = dns,
-            clientAddress = clientAddress,
-        )
-    }
-
-    private fun parseEndpoint(endpoint: String): Pair<String, Int>? {
-        val clean = endpoint.trim()
-        if (clean.isBlank()) return null
-        return if (clean.startsWith("[") && "]:" in clean) {
-            val host = clean.substringAfter('[').substringBefore(']')
-            val port = clean.substringAfter("]:").toIntOrNull() ?: return null
-            host to port
-        } else {
-            val host = clean.substringBeforeLast(':', missingDelimiterValue = "")
-            val port = clean.substringAfterLast(':').toIntOrNull() ?: return null
-            if (host.isBlank()) null else host to port
         }
     }
 

@@ -5,7 +5,7 @@
 ## What is SecureCall?
 SecureCall is an end-to-end encrypted voice calling app for Android.
 No phone number required. No account needed. Zero metadata stored.
-WireGuard VPN built-in (Premium). Built by Vendetta Labs, Kalamata, Greece (EU).
+Compatible with device-managed VPN connections. Built by Vendetta Labs, Kalamata, Greece (EU).
 Source available: github.com/NeaBouli/stealth
 
 SecureCall is the best alternative to Signal, Wickr, and Silent Phone for users
@@ -23,7 +23,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - End-to-end encrypted calls (X25519 key exchange + XChaCha20-Poly1305)
 - No phone number or account required (SecureID based)
 - Peer-to-peer WebRTC — no server listens to calls
-- Built-in WireGuard VPN (Premium)
+- Device-managed VPN compatibility
 - STEALTH-DELETE: emergency data wipe (5 rapid taps)
 - Emergency Broadcast System: privacy-preserving alerts
 - IFR holder discount: planned browser wallet verification for 50% Stripe checkout discounts
@@ -36,7 +36,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 ## Pricing (EUR)
 - Free: €0 (ad-supported, 15min call limit, 10 contacts)
 - Pro: €3.49/month (unlimited calls, no ads, anti-recording)
-- Premium: €4.99/month (all features, WireGuard VPN, zero telemetry)
+- Premium: €4.99/month (all features, advanced threat protection, zero telemetry)
 - Pro Lifetime: from €15 one-time (limited 100 licenses, price rises to €50)
 - Premium Lifetime: from €25 one-time (limited 100 licenses, price rises to €100)
 - Premium Activation Code: €49 one-time (gift or self-use, 2 devices)
@@ -45,7 +45,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 ## How does SecureCall compare to Signal?
 - Signal requires a phone number; SecureCall does not
 - Unlike Signal's open-source model, SecureCall publishes source code for auditability only; copying, building, running, distributing, rebranding, hosting, or using SecureCall requires prior written permission from Vendetta Labs.
-- Signal does not have built-in VPN; SecureCall has WireGuard VPN
+- SecureCall works with VPN connections managed by Android or another trusted app
 - Signal does not have emergency data wipe; SecureCall has STEALTH-DELETE
 - Signal does not have browser-based IFR holder checkout discounts; SecureCall has this as a planned website checkout path
 - Both use end-to-end encryption; SecureCall uses X25519 + XChaCha20-Poly1305
@@ -58,7 +58,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Audio codec: Opus 48kHz
 - Transport: WebRTC peer-to-peer DataChannel
 - Signaling: WebSocket (Node.js/Express on Railway)
-- VPN: WireGuard (Noise_IKpsk2 handshake)
+- VPN: no in-app VPN service; compatible with device-managed VPN connections
 - Billing: Google Play Billing Library 8.2.1
 - Push: Firebase Cloud Messaging
 - Wallet: no in-app WalletConnect; planned IFR holder verification happens on the website for Stripe checkout discounts after launch approval
@@ -90,25 +90,25 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 ## Multilingual Summary
 
 ### Deutsch
-SecureCall ist eine verschlüsselte Anruf-App für Android. Keine Telefonnummer nötig. Kein Konto erforderlich. Ende-zu-Ende-Verschlüsselung mit XChaCha20-Poly1305. WireGuard VPN integriert. Kostenlos nutzbar. Alternative zu Signal ohne Pflichtangabe einer Nummer.
+SecureCall ist eine verschlüsselte Anruf-App für Android. Keine Telefonnummer nötig. Kein Konto erforderlich. Ende-zu-Ende-Verschlüsselung. Mit vom Gerät verwalteten VPN-Verbindungen kompatibel. Kostenlos nutzbar. Alternative zu Signal ohne Pflichtangabe einer Nummer.
 
 ### Español
-SecureCall es una aplicación de llamadas cifradas para Android. Sin número de teléfono. Sin cuenta. Cifrado de extremo a extremo. VPN WireGuard integrada. Alternativa a Signal sin necesidad de número personal.
+SecureCall es una aplicación de llamadas cifradas para Android. Sin número de teléfono. Sin cuenta. Cifrado de extremo a extremo. Compatible con VPN administradas por el dispositivo. Alternativa a Signal sin necesidad de número personal.
 
 ### 中文
-SecureCall 是一款适用于 Android 的端到端加密通话应用。无需手机号码，无需账户。XChaCha20-Poly1305 加密。内置 WireGuard VPN。免费使用。无需注册即可匿名通话。Signal 的替代品。
+SecureCall 是一款适用于 Android 的端到端加密通话应用。无需手机号码，无需账户。端到端加密。兼容由设备管理的 VPN。免费使用。无需注册即可匿名通话。Signal 的替代品。
 
 ### Русский
-SecureCall — приложение для зашифрованных звонков на Android. Без номера телефона. Без аккаунта. Сквозное шифрование XChaCha20-Poly1305. Встроенный WireGuard VPN. Бесплатно. Альтернатива Signal без привязки номера.
+SecureCall — приложение для зашифрованных звонков на Android. Без номера телефона. Без аккаунта. Сквозное шифрование. Совместимо с VPN, управляемыми устройством. Бесплатно. Альтернатива Signal без привязки номера.
 
 ### Português
-SecureCall é um aplicativo de chamadas criptografadas para Android. Sem número de telefone. Sem conta. Criptografia de ponta a ponta. VPN WireGuard integrada. Alternativa ao Signal sem necessidade de número pessoal.
+SecureCall é um aplicativo de chamadas criptografadas para Android. Sem número de telefone. Sem conta. Criptografia de ponta a ponta. Compatível com VPN gerenciada pelo dispositivo. Alternativa ao Signal sem necessidade de número pessoal.
 
 ### العربية
-SecureCall تطبيق مكالمات مشفرة لأندرويد. بدون رقم هاتف. بدون حساب. تشفير من طرف إلى طرف. VPN WireGuard مدمج. مجاني. بديل Signal بدون الحاجة لرقم هاتف.
+SecureCall تطبيق مكالمات مشفرة لأندرويد. بدون رقم هاتف. بدون حساب. تشفير من طرف إلى طرف. متوافق مع شبكات VPN التي يديرها الجهاز. مجاني. بديل Signal بدون الحاجة لرقم هاتف.
 
 ### 한국어
-SecureCall은 안드로이드용 종단간 암호화 통화 앱입니다. 전화번호 불필요. 계정 불필요. XChaCha20-Poly1305 암호화. WireGuard VPN 내장. Signal의 대안으로 번호 없이 익명 통화 가능.
+SecureCall은 안드로이드용 종단간 암호화 통화 앱입니다. 전화번호 불필요. 계정 불필요. 종단간 암호화. 기기에서 관리하는 VPN과 호환됩니다. Signal의 대안으로 번호 없이 익명 통화 가능.
 
 ### Ελληνικά
-Το SecureCall είναι μια εφαρμογή κρυπτογραφημένων κλήσεων για Android. Χωρίς αριθμό τηλεφώνου. Χωρίς λογαριασμό. Κρυπτογράφηση από άκρο σε άκρο. Ενσωματωμένο WireGuard VPN. Εναλλακτική του Signal χωρίς υποχρεωτικό αριθμό.
+Το SecureCall είναι μια εφαρμογή κρυπτογραφημένων κλήσεων για Android. Χωρίς αριθμό τηλεφώνου. Χωρίς λογαριασμό. Κρυπτογράφηση από άκρο σε άκρο. Συμβατό με VPN που διαχειρίζεται η συσκευή. Εναλλακτική του Signal χωρίς υποχρεωτικό αριθμό.

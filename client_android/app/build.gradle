@@ -35,8 +35,8 @@ android {
         applicationId "com.securecall.app"
         minSdkVersion 24
         targetSdkVersion 36
-        versionCode 78013
-        versionName "1.0.46"
+        versionCode 78014
+        versionName "1.0.47"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -238,9 +238,6 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.fragment:fragment-ktx:1.6.1'
 
-    // WireGuard VPN tunnel (Premium only, uses GoBackend with Noise_IKpsk2)
-    implementation 'com.wireguard.android:tunnel:1.0.20260102'
-
     // Google Play Billing (FREE flavor only)
     freeImplementation 'com.android.billingclient:billing:8.2.1'
 
@@ -311,4 +308,42 @@ if (!buildingAppBundle) {
             }
         }
     }
+}
+
+tasks.register('verifyNoVpnServiceSource') {
+    group = 'verification'
+    description = 'Fails when app-owned VpnService code, permissions, or tunnel dependencies return.'
+    doLast {
+        def forbidden = [
+            'android.permission.BIND_VPN_SERVICE',
+            'android.net.VpnService',
+            'com.wireguard.android:tunnel'
+        ]
+        def violations = []
+        fileTree(projectDir) {
+            include 'src/**/*.xml', 'src/**/*.kt', 'src/**/*.java'
+            exclude 'build/**'
+        }.each { candidate ->
+            def text = candidate.getText('UTF-8')
+            forbidden.each { marker ->
+                if (text.contains(marker)) {
+                    violations << "${candidate}: ${marker}"
+                }
+            }
+        }
+        configurations.each { configuration ->
+            configuration.allDependencies.each { dependency ->
+                if (dependency.group == 'com.wireguard.android') {
+                    violations << "${configuration.name}: ${dependency.group}:${dependency.name}"
+                }
+            }
+        }
+        if (!violations.isEmpty()) {
+            throw new GradleException("VpnService policy guard failed:\n" + violations.join('\n'))
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('verifyNoVpnServiceSource')
 }

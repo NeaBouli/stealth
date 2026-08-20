@@ -21,7 +21,7 @@ Required for v1:
 - Backend health, WebSocket, routing, activation, and payment tests.
 
 Known v1 blocker:
-- BUG-029 WireGuard call retest requires a valid WireGuard profile on device.
+- External device-VPN compatibility remains part of network regression testing.
 - SecureCall 1.0.45 Free incoming-call ad pause still needs a clean S10 -> Tab S4 accept retest.
 - S7 remains an external call-matrix blocker until it has validated Internet or an approved mobile-data/roaming fallback.
 
