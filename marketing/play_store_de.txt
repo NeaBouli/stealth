@@ -25,7 +25,7 @@ Aufgrund unserer Priorisierung auf Anonymität bieten wir keinen persönlichen S
 📞 ANRUFE
 • Kristallklare Sprachqualität (Opus 48kHz)
 • Automatische Wiederverbindung bei Netzwechsel
-• Funktioniert über WiFi und mobile Daten
+• Funktioniert über WiFi, mobile Daten und optional verwaltete Geräte-VPNs
 • Eingehende Anrufe auch wenn App geschlossen (FCM Push)
 • WebRTC Peer-to-Peer — kein Server hört mit
 

@@ -47,7 +47,7 @@
         lead: "Jeder Plan ist Ende-zu-Ende-verschlüsselt. Kein Abo-Zwang — alle Produkte gibt es auch lebenslang.",
         annual: "Jährlich −15%", monthly: "Monatlich", flag: "Beliebt", perMonth: "/Monat",
         tiers: [
-          { name: "Free", price: "€0", note: "für immer", feats: ["E2E-verschlüsselte Anrufe", "10 Kontakte, 15 Min/Anruf", "Dark- & Light-Mode", "IP-Maskierung"], cta: "Kostenlos starten" },
+          { name: "Free", price: "€0", note: "für immer", feats: ["E2E-verschlüsselte Anrufe", "10 Kontakte, 15 Min/Anruf", "Dark- & Light-Mode", "Mit Geräte-VPN kompatibel"], cta: "Kostenlos starten" },
           { name: "Pro", priceA: "€2,90", priceM: "€3,49", note: "beliebteste Wahl", feats: ["Alles aus Free", "Unbegrenzte Kontakte & Anrufe", "Anti-Recording-Schutz", "Priorisierte Verbindung"], cta: "Pro holen" },
           { name: "Premium", priceA: "€3,99", priceM: "€4,99", note: "maximaler Schutz", feats: ["Alles aus Pro", "Erweiterter Bedrohungsschutz", "Bedrohungs-Auto-Stopp", "Zero Telemetry"], cta: "Premium holen" }] },
       brand: { kicker: "Markensystem", title: "Eine Familie, klar erkennbar.",
@@ -112,7 +112,7 @@
         lead: "Every plan is end-to-end encrypted. No subscription lock-in — every product is also available for life.",
         annual: "Annual −15%", monthly: "Monthly", flag: "Popular", perMonth: "/month",
         tiers: [
-          { name: "Free", price: "€0", note: "forever", feats: ["E2E encrypted calls", "10 contacts, 15 min/call", "Dark & light mode", "Network resilience"], cta: "Start free" },
+          { name: "Free", price: "€0", note: "forever", feats: ["E2E encrypted calls", "10 contacts, 15 min/call", "Dark & light mode", "Device VPN compatible"], cta: "Start free" },
           { name: "Pro", priceA: "€2.90", priceM: "€3.49", note: "most popular", feats: ["Everything in Free", "Unlimited contacts & calls", "Anti-recording protection", "Priority connection"], cta: "Get Pro" },
           { name: "Premium", priceA: "€3.99", priceM: "€4.99", note: "maximum protection", feats: ["Everything in Pro", "Advanced threat protection", "Threat auto-termination", "Zero telemetry"], cta: "Get Premium" }] },
       brand: { kicker: "Brand system", title: "One family, instantly recognizable.",

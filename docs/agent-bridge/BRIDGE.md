@@ -3293,3 +3293,48 @@ Type: FIX / RELEASE / TEST / STATUS
   state remains upload-key reset pending and AAB not uploaded; verify after GitHub gates.
 
 `MAIN INTEGRATION VERIFIED — REMOTE GATES NEXT`
+
+## 2026-08-20 17:11 EEST — CODEX SOL — VPN RELEASE REVIEW FIXES VERIFIED
+
+Type: FIX / REVIEW / TEST / RELEASE / STATUS
+
+- PR `#69` received eight actionable CodeRabbit comments. A separate secret-free Kimi K3
+  read-only review validated the fixes and found one additional dynamic-routing case: an
+  external VPN can start after SecureCall has already bound its process to WiFi or mobile.
+- `NetworkManager` now normalizes legacy `esim` and unknown preferences to `default`, never
+  binds around an active external VPN, watches for later VPN availability, releases pending or
+  active explicit bindings when VPN routing appears, and restores the selected preference once
+  the VPN is gone. `WebRtcManager` requires the real external-VPN callback at construction.
+- Added focused `NetworkManagerTest`; removed stale WireGuard verification metadata; refactored
+  `verifyNoVpnServiceSource` into a cacheable input/output task. Two consecutive focused runs
+  passed, including one reused Gradle configuration-cache run.
+- Corrected maintained German/English Play Store and launch-plan copy, localized design-template
+  text, FAQ button type, Android minimum and historical audit wording. Current-claim scan,
+  `node --check`, `jq empty` and `git diff --check` pass.
+- Full signed chain passed after the initial review fixes: VPN/IFR guards, Free release unit
+  tests, lint-vital, R8, four native ABIs and `bundleFreeRelease`. A subsequent focused release
+  unit/guard run passed after the dynamic VPN watcher addition; final remote CI follows on push.
+- Desktop AAB `/Users/gio/Desktop/SecureCall-LATEST.aab` is `1.0.47` / `78014`, 32 MB, SHA-256
+  `7c9ced79667d3dabae56fa0603135876168294f198f5ac183c8e0221c86292b3`, signed by the new upload
+  certificate (`83:18:36:CF:...:49:D2`) and free of VPN/WireGuard package entries.
+- Play Console still shows the upload-key reset as pending and the prior upload certificate as
+  active. No AAB upload or track mutation occurred. Normal PR approval and Play reset approval
+  remain separate gates; neither may be bypassed.
+
+`REVIEW FIXES VERIFIED — PUSH/REMOTE GATES NEXT — AAB NOT UPLOADED`
+
+## 2026-08-20 17:17 EEST — CODEX SOL — FINAL 78014 REBUILD VERIFIED
+
+Type: RELEASE / TEST / STATUS
+
+- Re-ran the complete signed Free release chain after the dynamic external-VPN watcher change:
+  `verifyNoVpnServiceSource`, `verifyNoAppIfrWalletCode`, `testFreeReleaseUnitTest`,
+  `lintVitalFreeRelease`, R8, four native ABI builds and `bundleFreeRelease` all passed.
+- Final desktop artifact `/Users/gio/Desktop/SecureCall-LATEST.aab` has SHA-256
+  `5257c4cea245d0fadf6b098ffe98c0bc2446e8d899ff7c9ff676e5a1c92feaeb`; signer remains the new
+  upload certificate (`83:18:36:CF:...:49:D2`). The earlier `7c9ced...` artifact hash recorded
+  above is superseded because it predates the final VPN lifecycle fix.
+- Package-entry scan again found no VPN/WireGuard implementation. Upload remains blocked until
+  Google accepts the pending upload-key reset.
+
+`FINAL LOCAL AAB VERIFIED — COMMIT/PUSH NEXT — PLAY UPLOAD PENDING`

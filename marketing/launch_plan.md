@@ -93,7 +93,7 @@ Technical details:
 - XChaCha20-Poly1305 (AEAD) for voice encryption
 - X25519 key exchange with Double Ratchet (PFS)
 - Opus audio codec
-- Premium tier includes GhostNet relay for IP masking
+- Compatible with VPN connections managed by Android or another trusted app
 
 Free tier available, no ads, Crashlytics can be disabled.
 
@@ -146,7 +146,7 @@ Unlike mainstream communication apps, SecureCall is designed from the ground up 
 
 "We believe private communication is a fundamental right, not a premium feature," said [Founder Name], founder of StealthX. "SecureCall makes military-grade encryption accessible to everyone."
 
-SecureCall is available in three tiers: Free (basic encryption), Pro (zero telemetry), and Premium (IP masking via GhostNet relay network).
+SecureCall is available in three tiers: Free (core encrypted calling), Pro (zero telemetry and HD audio), and Premium (all Pro features plus premium support and future feature access).
 
 **About StealthX**
 StealthX is a German privacy technology company building tools for secure communication.

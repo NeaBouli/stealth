@@ -17,7 +17,7 @@ class WebRtcManager(
     private val onLocalIceCandidate: (JSONObject) -> Unit,
     private val onDataReceived: (ByteArray) -> Unit,
     private val onPeerDisconnect: (() -> Unit)? = null,
-    private val isExternalVpnActive: () -> Boolean = { false }
+    private val isExternalVpnActive: () -> Boolean
 ) {
 
     companion object {

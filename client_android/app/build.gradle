@@ -310,9 +310,25 @@ if (!buildingAppBundle) {
     }
 }
 
+def vpnPolicySourceFiles = fileTree(projectDir) {
+    include 'src/**/*.xml', 'src/**/*.kt', 'src/**/*.java'
+    exclude 'build/**'
+}
+def wireguardCoordinates = configurations.collectMany { configuration ->
+    configuration.allDependencies.findAll { dependency ->
+        dependency.group == 'com.wireguard.android'
+    }.collect { dependency ->
+        "${configuration.name}: ${dependency.group}:${dependency.name}"
+    }
+}.sort()
+def vpnPolicyReport = layout.buildDirectory.file('reports/verification/no-vpn-service.txt').get().asFile
+
 tasks.register('verifyNoVpnServiceSource') {
     group = 'verification'
     description = 'Fails when app-owned VpnService code, permissions, or tunnel dependencies return.'
+    inputs.files(vpnPolicySourceFiles)
+    inputs.property('wireguardCoordinates', wireguardCoordinates)
+    outputs.file(vpnPolicyReport)
     doLast {
         def forbidden = [
             'android.permission.BIND_VPN_SERVICE',
@@ -320,10 +336,7 @@ tasks.register('verifyNoVpnServiceSource') {
             'com.wireguard.android:tunnel'
         ]
         def violations = []
-        fileTree(projectDir) {
-            include 'src/**/*.xml', 'src/**/*.kt', 'src/**/*.java'
-            exclude 'build/**'
-        }.each { candidate ->
+        vpnPolicySourceFiles.each { candidate ->
             def text = candidate.getText('UTF-8')
             forbidden.each { marker ->
                 if (text.contains(marker)) {
@@ -331,16 +344,12 @@ tasks.register('verifyNoVpnServiceSource') {
                 }
             }
         }
-        configurations.each { configuration ->
-            configuration.allDependencies.each { dependency ->
-                if (dependency.group == 'com.wireguard.android') {
-                    violations << "${configuration.name}: ${dependency.group}:${dependency.name}"
-                }
-            }
-        }
+        violations.addAll(wireguardCoordinates)
         if (!violations.isEmpty()) {
             throw new GradleException("VpnService policy guard failed:\n" + violations.join('\n'))
         }
+        vpnPolicyReport.parentFile.mkdirs()
+        vpnPolicyReport.setText('No app-owned VpnService markers or WireGuard dependencies found.\n', 'UTF-8')
     }
 }
 
