@@ -3260,3 +3260,14 @@ Type: DOCUMENTATION / TEST / STATUS
   changed. The separate Google upload-key-reset approval remains pending.
 
 `VPN DOCUMENTATION COMPLETE — PUSH AND REMOTE VERIFY NEXT`
+
+## 2026-08-20 16:05 EEST — CODEX SOL — VPN DOCUMENTATION REMOTE VERIFIED
+
+Type: DOCUMENTATION / EXTERNAL / DONE
+
+- Pushed `51e6abb` and bridge follow-up `6919768` to
+  `origin/fix/remove-vpnservice-policy-20260820`.
+- Local `HEAD` and the remote tracking branch match; the isolated worktree was clean after
+  the push. No merge, deployment, Play Console mutation or production rollout occurred.
+
+`VPN DOCUMENTATION TASK COMPLETE — TARGET STOP ACTIVE`
