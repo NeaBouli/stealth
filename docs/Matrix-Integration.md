@@ -58,7 +58,7 @@ This document defines two distinct integration paths:
 
 **Option A** (long-term, high complexity): Replace SecureCall's Node.js signaling server with a Matrix homeserver as the signaling backbone. SecureCall users receive permanent Matrix IDs (`@alice:stealthx.tech`). Any Matrix user on any server can initiate an encrypted call to a SecureCall user. This opens SecureCall to 28+ million potential users without any change to the cryptographic core.
 
-> **Important constraint:** Neither option touches XChaCha20-Poly1305, the Rust crypto engine, Double Ratchet, or GhostNet IP masking. The crypto layer is non-negotiable and stays exactly as it is.
+> **Important constraint:** Neither option touches XChaCha20-Poly1305, the Rust crypto engine, or Double Ratchet. The crypto layer is non-negotiable and stays exactly as it is. Network traffic follows Android's active connection, including an optional external device VPN.
 
 ---
 
@@ -351,7 +351,7 @@ Option A replaces this server with a Matrix homeserver (Synapse or Dendrite). Th
 - SecureCall users can call each other and any Matrix user
 - Federation means no single server is a point of failure
 - The signaling infrastructure is maintained by the Matrix Foundation and community — not by Vendetta Labs alone
-- **Nothing changes in the crypto layer**: XChaCha20-Poly1305, Rust JNI engine, X25519, Double Ratchet, GhostNet, Anti-Recording — all unchanged
+- **Nothing changes in the application security layer**: XChaCha20-Poly1305, Rust JNI engine, X25519, Double Ratchet, and anti-recording controls remain unchanged; network traffic continues to use Android's active connection
 
 ### 4.2 Matrix VoIP specification
 
@@ -465,7 +465,7 @@ Alice                    Matrix HS-A              Matrix HS-B                Bob
 │  │   (Synapse/Dendrite) │    │                                │  │
 │  │                      │    │  ┌──────────────────────────┐  │  │
 │  │  _matrix._tcp SRV    │    │  │  TURN/STUN Server        │  │  │
-│  │  DNS delegation      │    │  │  (coturn + GhostNet)     │  │  │
+│  │  DNS delegation      │    │  │  (coturn)                │  │  │
 │  │                      │    │  └──────────────────────────┘  │  │
 │  │  Handles:            │    │                                │  │
 │  │  - User registration │    │  ┌──────────────────────────┐  │  │
@@ -492,7 +492,7 @@ Android Client (SecureCall App)
 │  │  Handles:          │   │  Double Ratchet                    │ │
 │  │  - Login / sync    │   │  Anti-Recording                    │ │
 │  │  - Sending events  │   │  STEALTH-DELETE                    │ │
-│  │  - Receiving       │   │  GhostNet IP masking               │ │
+│  │  - Receiving       │   │  External VPN compatibility        │ │
 │  │    to_device msgs  │   │  Emergency Broadcast               │ │
 │  │  - Push rules      │   │                                    │ │
 │  └────────────────────┘   └────────────────────────────────────┘ │
@@ -763,7 +763,7 @@ enum class CallEncryptionTier {
 | Deploy Synapse on Railway or VPS | Backend | PostgreSQL, TLS via nginx, Federation enabled |
 | Configure DNS (SRV + well-known) | DevOps | stealthx.tech /_matrix delegation |
 | Test federation with matrix.org | Backend | `federation-tester.matrix.org` tool |
-| Deploy coturn TURN server | Backend | Must integrate with existing GhostNet |
+| Deploy coturn TURN server | Backend | Verify direct and external-VPN network paths |
 | Set up Matrix push gateway service | Backend | FCM forwarding for incoming call notifications |
 | User account provisioning API | Backend | Endpoint for Android to register Matrix accounts |
 
@@ -786,7 +786,7 @@ enum class CallEncryptionTier {
 | Task | Owner | Notes |
 |---|---|---|
 | STEALTH-DELETE: also wipe Matrix credentials | Android | Include Matrix access token in wipe |
-| GhostNet: ensure TURN relay is still routed through GhostNet | Android/Backend | No IP leakage via TURN |
+| Verify TURN behavior over direct and external-VPN network paths | Android/Backend | Document expected IP visibility for each path |
 | Anti-recording: unchanged (not affected by signaling layer) | — | No action required |
 | Migration path for existing SecureCall users | Android/Backend | Map existing SecureCall IDs to Matrix accounts |
 | Rate limiting on Matrix homeserver (prevent abuse) | Backend | Synapse rate limiting config |
@@ -862,7 +862,7 @@ interface MatrixSignalingApi {
 | Matrix homeserver admin | N/A | Can see: call metadata (who called whom, when, duration) if DM room is NOT E2E encrypted. Room E2E encryption (Phase 2) eliminates this. |
 | Third-party homeserver (Bob's server) | N/A | Bob's homeserver receives the `m.call.invite` event. With E2E room encryption, the content is opaque — only the room ID and event type are visible. |
 | Replay attack on m.call.invite | N/A | `call_id` (UUID v4) + `lifetime` field (60 seconds) prevents replay. |
-| TURN server IP leak | GhostNet masks IPs | GhostNet integration must be verified for Matrix TURN endpoint — see section 4.3.7 |
+| TURN server IP visibility | TURN sees the connection source address | Verify and document direct and externally managed VPN paths — see section 4.3.7 |
 
 #### 4.5.2 Olm device encryption for signaling (Phase 2 requirement)
 
@@ -882,7 +882,7 @@ Before Option A ships, the following must be verified unchanged:
 - [ ] X25519 key exchange happens on-device, keypairs never transmitted (audit `core_crypto/`)
 - [ ] Double Ratchet ratchets forward on every session (per-call key derivation test)
 - [ ] STEALTH-DELETE wipes Matrix credentials in addition to existing data
-- [ ] GhostNet routes all network traffic including Matrix API calls through VPN
+- [x] No app-owned VPN routing: Matrix traffic follows Android's active network, including an optional external device VPN
 - [ ] Certificate pinning applies to `matrix.stealthx.tech` endpoint (add to pinned certs)
 - [ ] No plaintext fallback: if Matrix signaling fails, call must fail — not fall back to unencrypted WebSocket
 
@@ -905,7 +905,7 @@ Before Option A ships, the following must be verified unchanged:
         - Federation testing with federation-tester.matrix.org
     
     [ ] INFRA-02: Deploy coturn TURN server
-        - GhostNet IP masking integration
+        - External device-VPN compatibility verification
         - Dynamic TURN credentials (already implemented for existing TURN)
     
     [ ] INFRA-03: Matrix push gateway service
@@ -940,7 +940,7 @@ Before Option A ships, the following must be verified unchanged:
     [ ] QA-01: Full regression test suite pass (all 44 existing tests)
     [ ] QA-02: Federation test: SecureCall → Element call (cross-server)
     [ ] QA-03: Federation test: Element → SecureCall call (inbound from Matrix network)
-    [ ] QA-04: GhostNet IP leak test with Matrix TURN path
+    [ ] QA-04: TURN IP-visibility test on direct and external-VPN paths
     [ ] QA-05: STEALTH-DELETE verification (Matrix credentials wiped)
     
     [ ] PHASE-2 (post-launch):
@@ -953,7 +953,7 @@ Before Option A ships, the following must be verified unchanged:
     - Any Element user can call a SecureCall user by their @sc_xxx:stealthx.tech ID
     - All existing SecureCall features work unchanged
     - STEALTH-DELETE wipes Matrix credentials
-    - GhostNet masks IP on Matrix API calls and TURN
+    - Matrix API and TURN IP visibility is documented for direct and external-VPN paths
     - No increase in binary size > 500KB
     - All 44 regression tests pass
     
@@ -1037,7 +1037,7 @@ When communicating Option A to the community and press, use this framing:
 | **Megolm** | Matrix's group encryption protocol. Used for encrypting room events in multi-party rooms. |
 | **to_device** | A Matrix API for sending encrypted messages directly to a specific device, bypassing room history. Used for key exchange. |
 | **Application Service (AS)** | A Matrix integration service that can bridge Matrix to external systems. Used in Option B. |
-| **GhostNet** | SecureCall's IP masking layer (WireGuard VPN). Must cover Matrix API traffic in Option A. |
+| **External VPN** | Optional device-managed network layer. SecureCall does not create or operate a VPN tunnel; Matrix traffic follows Android's active network. |
 | **DTLS-SRTP** | WebRTC's transport-layer encryption. Present in all WebRTC calls regardless of SecureCall's application layer. |
 | **XChaCha20-Poly1305** | SecureCall's application-layer AEAD cipher. 256-bit key, 192-bit nonce. Applied on top of DTLS-SRTP. |
 | **Deep link** | A URI scheme (`securecall://`) that routes a URL tap directly to a specific screen in the SecureCall Android app. |

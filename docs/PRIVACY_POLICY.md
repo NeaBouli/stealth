@@ -43,7 +43,11 @@ SecureCall is built on the principle that privacy is a fundamental right. We col
 | Contacts | No | Never leaves your device |
 | Crash reports | No | Crashlytics disabled |
 | Analytics | No | Zero telemetry |
-| IP address | No | Masked via GhostNet relay network |
+| IP address | Transient | Visible to signaling/STUN/TURN during connection setup; not logged by SecureCall |
+
+SecureCall does not include a VPN or IP-masking tunnel in any tier. If the
+device uses an externally managed VPN, network visibility depends on that
+provider and configuration.
 
 ## How Encryption Works
 

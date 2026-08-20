@@ -51,7 +51,7 @@
 - [ ] iOS Client
 - [ ] Desktop Client (Linux, macOS, Windows)
 - [ ] Post-Quantum Cryptography (Kyber/ML-KEM)
-- [ ] GhostNet multi-hop relay network
+- [ ] Research a server-side privacy relay network (separate from the app; no app-owned VPN service)
 - [ ] Federation support (self-hosted servers)
 - [ ] End-to-end encrypted messaging
 - [ ] GhostOS — Hardened Android distribution

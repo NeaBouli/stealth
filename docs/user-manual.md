@@ -174,6 +174,9 @@ Read-only display of your current network connection (WiFi or Mobile) and bindin
 **Preferred Network**
 Choose Default, WiFi, or Mobile. SecureCall will prefer this network type when it is available. Only active when switching between networks.
 
+**External VPN compatibility**
+SecureCall does not provide a built-in VPN service or WireGuard tunnel. It can operate over a VPN managed by Android or another trusted app. If that VPN blocks signaling or WebRTC traffic, allow SecureCall in the VPN provider's settings.
+
 ---
 
 ### IFR Holder Discount *(planned)*

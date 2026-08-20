@@ -186,7 +186,7 @@
             <p>Call signaling follows the <strong>MSC2746</strong> specification, the Matrix standard for VoIP call signaling. This ensures interoperability with any compliant Matrix client.</p>
 
             <h3>Crypto Layer Unchanged</h3>
-            <p>The entire crypto layer &mdash; <strong>XChaCha20-Poly1305</strong> encryption, the <strong>Rust crypto engine</strong>, and <strong>GhostNet</strong> relay routing &mdash; stays completely untouched. Federation changes the signaling transport, not the security model.</p>
+            <p>The application crypto layer &mdash; <strong>XChaCha20-Poly1305</strong> encryption and the <strong>Rust crypto engine</strong> &mdash; stays unchanged. Federation changes the signaling transport, not the application encryption model. Network traffic follows Android's active connection, including an externally managed VPN when present; SecureCall does not provide its own VPN tunnel.</p>
 
             <!-- WHAT MATRIX DOES NOT DO -->
             <div class="section-break">What Matrix Does NOT Do</div>

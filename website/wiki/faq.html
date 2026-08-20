@@ -193,7 +193,18 @@
                     </button>
                     <div class="faq-answer">
                         <div class="faq-answer-inner">
-                            Not yet. SecureCall is currently Android-only (Android 10+). An iOS version is planned but not under active development. The Rust crypto engine is cross-platform, so the core security and encryption will be identical when the iOS version is built.
+                            Not yet. SecureCall is currently Android-only (Android 10+). An iOS version is planned but not under active development. The Rust crypto engine is cross-platform, so the core security and encryption will be identical when the iOS version is built. The planned iOS client will support external device VPNs but will not provide its own VPN tunnel.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Does SecureCall include a VPN?
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <div class="faq-answer-inner">
+                            No. Current releases contain no built-in VPN service or WireGuard tunnel. SecureCall remains compatible with a VPN managed by Android or another trusted app, and uses TURN relay when direct WebRTC connectivity is unavailable.
                         </div>
                     </div>
                 </div>
@@ -313,7 +324,7 @@
                     </button>
                     <div class="faq-answer">
                         <div class="faq-answer-inner">
-                            Yes. An internal security audit was conducted in February 2026. The audit covered the Rust crypto engine, the Android client, the signaling server, and the GhostNet transport protocol. All <strong>7 Critical</strong> and <strong>18 High</strong> findings were identified and fixed. The full audit report is available on the <a href="security-audit.html">Security Audit</a> page.
+                            Yes. An internal security audit was conducted in February 2026. The audit covered the Rust crypto engine, the Android client, the signaling server, and the call transport layer. All <strong>7 Critical</strong> and <strong>18 High</strong> findings were identified and fixed. The full audit report is available on the <a href="security-audit.html">Security Audit</a> page.
                         </div>
                     </div>
                 </div>
@@ -380,13 +391,13 @@
                         <td class="check">&#10003;</td>
                     </tr>
                     <tr>
-                        <td>GhostNet IP Masking</td>
+                        <td>Automatic Threat Termination</td>
                         <td class="cross">&mdash;</td>
                         <td class="cross">&mdash;</td>
                         <td class="check">&#10003;</td>
                     </tr>
                     <tr>
-                        <td>Multi-Hop Relay</td>
+                        <td>Hardware Keystore Required</td>
                         <td class="cross">&mdash;</td>
                         <td class="cross">&mdash;</td>
                         <td class="check">&#10003;</td>

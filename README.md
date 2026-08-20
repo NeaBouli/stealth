@@ -14,7 +14,7 @@
 [![Crypto: XChaCha20-Poly1305](https://img.shields.io/badge/Crypto-XChaCha20--Poly1305-7C6CFF.svg)](docs/SECURITY_DESIGN.md)
 [![Security: Audited](https://img.shields.io/badge/Security-Audited-orange.svg)](docs/SECURITY_AUDIT_REPORT.md)
 [![Rust Crypto Engine](https://img.shields.io/badge/Engine-Rust-DEA584.svg)](core_crypto/)
-[![Version](https://img.shields.io/badge/Version-v1.0.46-4ade80.svg)](https://github.com/NeaBouli/stealth/releases/tag/v1.0.46)
+[![Version](https://img.shields.io/badge/Version-v1.0.47-4ade80.svg)](https://github.com/NeaBouli/stealth/releases)
 [![Website](https://img.shields.io/badge/Website-stealthx.tech-34D399.svg)](https://stealthx.tech)
 [![Testers](https://img.shields.io/badge/Beta_Testers-15-blue.svg)](https://play.google.com/apps/testing/com.securecall.app.free)
 
@@ -35,6 +35,7 @@ No call content ever leaves your device unencrypted. Every call is protected end
 - **X25519 Key Exchange** -- Ephemeral Diffie-Hellman key agreement ensures perfect forward secrecy. Each call uses a unique session key.
 - **Zero-Knowledge Architecture** -- The server facilitates connections but cannot decrypt calls. No call content is stored or accessible server-side. Signaling metadata is processed transiently for connection setup.
 - **Anti-Recording Protection** -- Active detection of screen recording, microphone hijacking, and spy apps (Pro/Premium).
+- **External VPN Compatibility** -- SecureCall works over VPN connections managed by Android or another trusted app. It does not create or operate its own VPN tunnel.
 - **Rust Crypto Core** -- All cryptographic operations run in a native Rust library via JNI -- no Java crypto, no OpenSSL.
 - **Source-available client** -- The client source code is publicly visible for transparency and independent audit. Copying, building, running, distributing, rebranding, or using the software requires prior written permission from Vendetta Labs.
 
@@ -167,6 +168,13 @@ The signaling server only facilitates connection establishment. It relays encryp
 - **Encryption:** XChaCha20-Poly1305 (AEAD)
 - **Forward Secrecy:** Double Ratchet protocol
 - **Implementation:** Native Rust via JNI (no Java/Android crypto APIs)
+
+</details>
+
+<details>
+<summary><strong>Does SecureCall include a VPN?</strong></summary>
+
+No. Current Android releases do not contain a built-in VPN service or WireGuard tunnel. SecureCall remains compatible with a device-managed VPN and automatically uses TURN relay when the network requires it. Any future iOS client is planned with the same boundary: external VPN compatible, no app-owned VPN tunnel.
 
 </details>
 
