@@ -3225,3 +3225,17 @@ Type: FIX / SECURITY / STATUS
   no active track changed and no production rollout occurred.
 
 `SIGNED 78014 READY LOCALLY — PLAY UPLOAD KEY RESET STILL PENDING`
+
+## 2026-08-20 — CODEX SOL — VPN PUBLIC DOCUMENTATION ALIGNMENT START
+
+Type: DOCUMENTATION / STATUS
+
+- Continued ticket `GIO-20260820-SECURECALL-VPN-POLICY` after the user requested matching updates
+  across landing, wiki, GitHub README and related maintained documentation.
+- Canonical product statement: current SecureCall releases contain no built-in VPN, `VpnService`
+  or WireGuard tunnel; they remain compatible with a VPN managed by Android or another trusted
+  app. A future iOS client should follow the same boundary unless separately approved.
+- Historical changelogs, audits and test logs remain append-only/factual; add historical context
+  where old VPN findings could be read as a current feature claim.
+
+`VPN PUBLIC DOCUMENTATION ALIGNMENT IN PROGRESS`

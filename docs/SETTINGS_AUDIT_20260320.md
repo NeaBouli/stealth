@@ -56,7 +56,10 @@
 |---------|------------|--------|-------------|--------|
 | Dark Mode | Toggle visible | Toggle visible | Toggle visible | ✅ PASS |
 
-### VPN Section (Premium only)
+### VPN Section (Premium only, historical build)
+> Current status: these app-owned VPN controls and their underlying service were removed in
+> SecureCall 1.0.47. This table remains as an audit record for the tested legacy build.
+
 | Setting | S10 Premium | S7 Pro | Tab S4 Free | Result |
 |---------|------------|--------|-------------|--------|
 | Enable VPN | Toggle visible | "PREMIUM feature" | N/A | ✅ PASS |

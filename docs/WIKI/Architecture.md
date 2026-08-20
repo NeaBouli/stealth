@@ -141,7 +141,7 @@ Client A → TURN Server → Client B
 |--------|-------------|----------|
 | `free` | `com.securecall.app.free` | Basic E2E, 10 contacts, 15 min |
 | `pro` | `com.securecall.app.pro` | Unlimited, HD audio, anti-recording |
-| `premium` | `com.securecall.app.premium` | Everything + GhostNet, auto-terminate |
+| `premium` | `com.securecall.app.premium` | Everything + hardware keystore, auto-terminate |
 
 ---
 

@@ -14,7 +14,7 @@ The official and recommended way to deploy SecureCall.
 |---------|-------------|------|
 | **SecureCall** (Free) | E2E encrypted calls, 10 contacts, 15 min limit | [Google Play](https://play.google.com/store/apps/details?id=com.securecall.app.free) |
 | **SecureCall Pro** | Unlimited calls, HD audio, anti-recording | In-App Upgrade |
-| **SecureCall Premium** | Everything + GhostNet IP masking | In-App Upgrade |
+| **SecureCall Premium** | Everything + automatic threat termination and enforced security controls | In-App Upgrade |
 
 ---
 #### ████ OPTION 2: GITHUB RELEASES (ADVANCED USERS) ████

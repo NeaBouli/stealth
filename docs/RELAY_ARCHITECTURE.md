@@ -3,6 +3,11 @@
 _Based on: StealthX Relay Architecture Handbook v1.0 (April 2026)_
 _Classification: INTERNAL — Developer Reference_
 
+> **Current release note (Android 1.0.47):** GhostNet relay and IP-masking
+> references below describe a research architecture, not functionality shipped
+> in the current SecureCall app. The released client uses WebRTC/STUN/TURN and
+> supports externally managed device VPNs without providing its own VPN tunnel.
+
 ## Core Problem
 
 Even with perfect E2E encryption, third-party relays expose metadata:
@@ -21,7 +26,7 @@ Encryption protects the content — not the communication structure.
 
 Critical points:
 - TURN server knows client IP, call time and duration
-- GhostNet masks client IP, but is a single point of trust
+- A future privacy relay could mask the client IP, but would be a single point of trust
 - FCM (Firebase): Google sees when-metadata
 - Dynamic TURN credentials: positive, but credential server is centralized
 
