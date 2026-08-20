@@ -3094,3 +3094,19 @@ Type: EXTERNAL / STATUS
 - Read-only inspection only; no release, declaration, notification or track state was changed.
 
 `PLAY REJECTION CONFIRMED — REPLACEMENT ARTIFACT REQUIRED`
+
+## 2026-08-20 EEST — CODEX SOL — UPLOAD-KEY CREDENTIAL RECOVERY CHECK
+
+- `securecall-release-key.jks` is the local upload keystore created 2026-05-10; alias
+  `securecall`. Its certificate matches the signed `SecureCall-LATEST.aab` and the documented
+  upload certificate fingerprint.
+- The 2026-08-01 release used this exact keystore with credentials loaded process-locally. No
+  password was committed, stored in project properties, found in macOS Keychain, or present at
+  the documented `~/Documents/SecureCall-Release` backup path.
+- Without the store/key password the existing private upload key cannot be used. Do not guess,
+  rotate the Play app-signing key, or expose credentials.
+- Safe recovery if the password cannot be found: create a new dedicated upload key and request an
+  upload-key reset in Play Console. This does not replace Google's app-signing key and requires a
+  separate exact authorization before key generation or Console mutation.
+
+`EXISTING UPLOAD KEY LOCKED — RESET DOR READY`
