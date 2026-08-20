@@ -3375,3 +3375,16 @@ Type: MERGE / DEPLOY / VERIFICATION / STATUS
   by the pending upload-key reset; the new AAB is not uploaded.
 
 `VPN RELEASE MERGED AND LIVE — PLAY UPLOAD KEY RESET PENDING`
+
+## 2026-08-20 22:37 EEST — CODEX SOL — NEW PLAY UPLOAD KEY ACTIVE
+
+Type: EXTERNAL / RELEASE / VERIFICATION / STATUS
+
+- Reloaded the SecureCall Google Play App Signing page. The displayed upload-certificate
+  SHA-256 is now `83:18:36:CF:48:17:34:6F:B3:1F:9A:43:D6:15:92:6E:B5:C8:93:BF:35:F8:A1:2E:A4:45:5D:2B:BC:6E:49:D2`, exactly matching the new local public certificate and
+  the signer of the verified `1.0.47` / `78014` AAB.
+- Play still renders the contradictory text that a reset request is pending, but the operative
+  upload-certificate value has already changed from the old `1E:0A:...:B2:1D` certificate.
+- No AAB upload, release creation, track mutation or rollout occurred during this read-only check.
+
+`UPLOAD CERTIFICATE MATCH CONFIRMED — 78014 READY FOR AUTHORIZED UPLOAD`
