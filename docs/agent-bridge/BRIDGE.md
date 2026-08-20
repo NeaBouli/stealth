@@ -3271,3 +3271,25 @@ Type: DOCUMENTATION / EXTERNAL / DONE
   the push. No merge, deployment, Play Console mutation or production rollout occurred.
 
 `VPN DOCUMENTATION TASK COMPLETE — TARGET STOP ACTIVE`
+
+## 2026-08-20 16:43 EEST — CODEX SOL — VPN RELEASE MAIN INTEGRATION VERIFIED
+
+Type: FIX / RELEASE / TEST / STATUS
+
+- With explicit user authorization for merge and deployment, integrated the seven unique
+  commits from `fix/remove-vpnservice-policy-20260820` onto fresh `origin/main` in isolated
+  branch `integrate/vpn-policy-release-20260820`. Newer Main web-only IFR checkout and all
+  append-only bridge history were preserved during conflict resolution.
+- Current Main's strict Gradle verification lacked only the resolved
+  `androidx.annotation:annotation-jvm:1.6.0` jar and module checksums. Generated those two
+  entries with Gradle and reviewed the resulting eight-line metadata diff.
+- Integrated release checks PASS: `verifyNoVpnServiceSource`, `verifyNoAppIfrWalletCode`,
+  `testFreeReleaseUnitTest`, `lintVitalFreeRelease`, R8, four native ABI builds and signed
+  `bundleFreeRelease`. Website IFR JavaScript syntax, `assetlinks.json`, FAQ structure,
+  residual current-claim scan and `git diff --check` also PASS.
+- Built AAB: package `com.securecall.app.free`, code `78014`, name `1.0.47-free`, target SDK 36,
+  signed with the new local upload certificate and containing no VPN/WireGuard markers.
+- No Main push, merge, Pages deployment or Play mutation has occurred yet. Last confirmed Play
+  state remains upload-key reset pending and AAB not uploaded; verify after GitHub gates.
+
+`MAIN INTEGRATION VERIFIED — REMOTE GATES NEXT`
