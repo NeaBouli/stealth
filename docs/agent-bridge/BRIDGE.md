@@ -3079,3 +3079,18 @@ External release gate:
 - No Play upload, submission, push or production write performed in this block.
 
 `LOCAL REMEDIATION VERIFIED — SIGNING AND PLAY TRACK REPLACEMENT BLOCKED`
+
+## 2026-08-20 10:49 EEST — CODEX SOL — PLAY CONSOLE READ-ONLY CONFIRMATION
+
+Type: EXTERNAL / STATUS
+
+- SecureCall Play Console app `4976202483547752044`: submission 42 is Production,
+  version `78013 (1.0.46-free)`, submitted 2026-08-15 and rejected 2026-08-18.
+- Console still displays target-API and Play Billing deadline notifications. The local `78014`
+  candidate targets SDK 36 and uses Billing 8.2.1; those warnings can only be cleared by Google's
+  processing of the replacement artifact.
+- Historical Closed Alpha submissions are visible as published. Before resubmission, active
+  tracks must be checked so no VPN-bearing artifact remains active.
+- Read-only inspection only; no release, declaration, notification or track state was changed.
+
+`PLAY REJECTION CONFIRMED — REPLACEMENT ARTIFACT REQUIRED`
