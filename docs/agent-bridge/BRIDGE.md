@@ -3088,3 +3088,273 @@ Open next steps:
   and server-side repeated-discount enforcement.
 
 `MERGED AND VERIFIED — LIVE PAYMENT STILL BLOCKED`
+## 2026-08-20 EEST — CODEX SOL — PLAY VPN POLICY REMEDIATION START
+
+- Ticket `GIO-20260820-SECURECALL-VPN-POLICY`; isolated branch
+  `fix/remove-vpnservice-policy-20260820` at submitted-line commit `e9a36ad`.
+- Play rejected Free version code 78013. Merged-manifest inspection finds both the app-owned
+  Ghost VPN service and the WireGuard backend library service in every tier artifact.
+- Required remediation is complete removal of VpnService capability and related product/code
+  surfaces, not a declaration-only workaround. Full tests, merged-manifest gates, version bump
+  and replacement AAB are required before review. No Play upload or production action yet.
+
+`VPN POLICY REMEDIATION IN PROGRESS`
+
+## 2026-08-20 10:41 EEST — CODEX SOL — PLAY VPN POLICY REMEDIATION VERIFIED
+
+Type: FIX / STATUS
+
+- Ticket `GIO-20260820-SECURECALL-VPN-POLICY`; branch
+  `fix/remove-vpnservice-policy-20260820`; replacement version `1.0.47` / `78014`.
+- Removed the app-owned VPN service/controller, manifest service declaration, WireGuard tunnel
+  dependency, VPN/eSIM-tunnel settings, related resources/test, and current product/listing
+  claims. Historical audit records remain intact.
+- Preserved external device-VPN compatibility without declaring a service: active external VPN
+  transport is detected through `NetworkCapabilities`, and WebRTC selects TURN relay-only mode.
+- Added `verifyNoVpnServiceSource` to `preBuild` to block reintroduction of the restricted API,
+  permission, or WireGuard tunnel dependency.
+- Kimi K3 completed an independent read-only inventory/review and identified the external-VPN
+  relay regression risk; Sol implemented and reviewed that mitigation. Claude Code was attempted
+  as the requested small helper but its local OAuth session was expired; it changed no files.
+
+Verification:
+- `verifyNoVpnServiceSource compileFreeDebugKotlin`: PASS.
+- `testFreeDebugUnitTest`: PASS.
+- `lintFreeRelease`: PASS.
+- R8, native compilation, bundle packaging and lint-vital: PASS.
+- Free, Pro and Premium release merged manifests: zero `VpnService`,
+  `BIND_VPN_SERVICE`, WireGuard or `wg-go` markers.
+- Free release dependency graph and packaged intermediary AAB entries: no WireGuard/wg-go.
+- Signed AAB is BLOCKED only because the release keystore password is not available in this
+  isolated session. The keystore was not copied and no secret was read or logged.
+
+External release gate:
+- Google policy requires removal from every active artifact across every release track. A signed
+  `78014` AAB must replace/deactivate the rejected/older VPN-bearing artifacts, and current Play
+  listing text must be aligned before resubmission.
+- No Play upload, submission, push or production write performed in this block.
+
+`LOCAL REMEDIATION VERIFIED — SIGNING AND PLAY TRACK REPLACEMENT BLOCKED`
+
+## 2026-08-20 10:49 EEST — CODEX SOL — PLAY CONSOLE READ-ONLY CONFIRMATION
+
+Type: EXTERNAL / STATUS
+
+- SecureCall Play Console app `4976202483547752044`: submission 42 is Production,
+  version `78013 (1.0.46-free)`, submitted 2026-08-15 and rejected 2026-08-18.
+- Console still displays target-API and Play Billing deadline notifications. The local `78014`
+  candidate targets SDK 36 and uses Billing 8.2.1; those warnings can only be cleared by Google's
+  processing of the replacement artifact.
+- Historical Closed Alpha submissions are visible as published. Before resubmission, active
+  tracks must be checked so no VPN-bearing artifact remains active.
+- Read-only inspection only; no release, declaration, notification or track state was changed.
+
+`PLAY REJECTION CONFIRMED — REPLACEMENT ARTIFACT REQUIRED`
+
+## 2026-08-20 EEST — CODEX SOL — UPLOAD-KEY CREDENTIAL RECOVERY CHECK
+
+- `securecall-release-key.jks` is the local upload keystore created 2026-05-10; alias
+  `securecall`. Its certificate matches the signed `SecureCall-LATEST.aab` and the documented
+  upload certificate fingerprint.
+- The 2026-08-01 release used this exact keystore with credentials loaded process-locally. No
+  password was committed, stored in project properties, found in macOS Keychain, or present at
+  the documented `~/Documents/SecureCall-Release` backup path.
+- Without the store/key password the existing private upload key cannot be used. Do not guess,
+  rotate the Play app-signing key, or expose credentials.
+- Safe recovery if the password cannot be found: create a new dedicated upload key and request an
+  upload-key reset in Play Console. This does not replace Google's app-signing key and requires a
+  separate exact authorization before key generation or Console mutation.
+
+`EXISTING UPLOAD KEY LOCKED — RESET DOR READY`
+
+## 2026-08-20 EEST — CODEX SOL — UPLOAD-KEY RESET AUTHORIZED
+
+- Gio explicitly authorized generation of a new SecureCall upload key, local private-key storage
+  inside the Stealth repository, public-certificate export, and a Play Console upload-key reset.
+- Hard boundary: Google's app-signing key must not be changed. The private keystore remains
+  untracked/ignored; its password is stored only in the local macOS Keychain and is never logged,
+  committed, bridged or sent to Google.
+- Planned local paths: `securecall-upload-key-2026.jks` (private, ignored) and
+  `securecall-upload-key-2026.pem` (public reset certificate).
+
+`UPLOAD KEY RESET AUTHORIZED — EXECUTION IN PROGRESS`
+
+## 2026-08-20 14:19 EEST — CODEX SOL — UPLOAD-KEY RESET SUBMITTED
+
+Type: SECURITY / EXTERNAL / STATUS
+
+- Generated a dedicated RSA-4096 SecureCall upload key. The private PKCS12 keystore is stored
+  only at the authorized local Stealth repository path, is excluded from Git and mode `0600`;
+  its random password is stored only in macOS Keychain. The public PEM reset certificate is also
+  local and excluded from Git.
+- Verified that the keystore certificate and exported PEM have the same SHA-256 fingerprint.
+  No secret, password or private-key material was logged, committed, bridged or uploaded.
+- In Play Console for `com.securecall.app.free`, selected `keystore password forgotten`, uploaded
+  only the public PEM and submitted the authorized upload-key-reset request. Console now states
+  that an upload-key-reset request is pending.
+- The separately displayed Google Play app-signing key remains `In Verwendung`; `Schlüssel
+  aktualisieren` was not invoked. No AAB, release, track or production rollout was changed.
+
+Next gate:
+- Wait for Google approval and verify that Play's accepted upload-certificate fingerprint matches
+  the new local public certificate. Then sign and fully validate `1.0.47` / `78014`. Uploading or
+  submitting that release remains a separate external release action.
+
+`UPLOAD KEY RESET PENDING — APP-SIGNING KEY UNCHANGED`
+
+## 2026-08-20 14:49 EEST — CODEX SOL — SIGNED 78014 AND REVIEW FOLLOW-UPS VERIFIED
+
+Type: FIX / SECURITY / STATUS
+
+- Signed Free AAB `1.0.47` / `78014` successfully with the new local upload key. The release
+  chain passed R8, all four native ABI builds, lint-vital, bundle packaging and signature
+  validation. The AAB certificate matches the exported public reset certificate.
+- Merged manifest confirms `com.securecall.app.free`, target SDK 36 and zero `VpnService`,
+  `BIND_VPN_SERVICE`, WireGuard or `wg-go` markers. Packaged AAB has no matching forbidden entries.
+- Kimi K3 completed an independent secret-free read-only review: no critical/high findings and
+  the upload-key workflow correctly preserves Google's separate app-signing key.
+- Closed both actionable review gaps:
+  - Added `WebRtcRelayPolicyTest` for direct, external-VPN and relay-retry decisions; all three
+    cases PASS together with `verifyNoVpnServiceSource`.
+  - Added the new public upload-certificate fingerprint to all three SecureCall entries in
+    `website/.well-known/assetlinks.json`, preserving old-upload compatibility and the Free
+    Google app-signing certificate; JSON validation PASS.
+- Desktop candidate refreshed at `/Users/gio/Desktop/SecureCall-LATEST.aab`; previous `78013`
+  preserved as `/Users/gio/Desktop/SecureCall-v1.0.46-vC78013-before-upload-key-reset.aab`.
+- Google approval of the pending upload-key reset remains the external gate. No AAB was uploaded,
+  no active track changed and no production rollout occurred.
+
+`SIGNED 78014 READY LOCALLY — PLAY UPLOAD KEY RESET STILL PENDING`
+
+## 2026-08-20 — CODEX SOL — VPN PUBLIC DOCUMENTATION ALIGNMENT START
+
+Type: DOCUMENTATION / STATUS
+
+- Continued ticket `GIO-20260820-SECURECALL-VPN-POLICY` after the user requested matching updates
+  across landing, wiki, GitHub README and related maintained documentation.
+- Canonical product statement: current SecureCall releases contain no built-in VPN, `VpnService`
+  or WireGuard tunnel; they remain compatible with a VPN managed by Android or another trusted
+  app. A future iOS client should follow the same boundary unless separately approved.
+- Historical changelogs, audits and test logs remain append-only/factual; add historical context
+  where old VPN findings could be read as a current feature claim.
+
+`VPN PUBLIC DOCUMENTATION ALIGNMENT IN PROGRESS`
+
+## 2026-08-20 16:03 EEST — CODEX SOL — VPN PUBLIC DOCUMENTATION ALIGNMENT COMPLETE
+
+Type: DOCUMENTATION / TEST / STATUS
+
+- Commit `51e6abb45b6f96c8bdb2c93f4039d413a4c14bde` aligns the landing page, both public FAQ
+  surfaces, wiki navigation content, architecture, privacy, security, installation and user
+  manuals, GitHub README and maintained Markdown references with Android release 1.0.47.
+- Canonical statement: SecureCall has no built-in `VpnService`, WireGuard or app-owned VPN
+  tunnel in any tier. It remains compatible with externally managed device VPNs; WebRTC uses
+  STUN/TURN as needed. The documented future iOS boundary is identical.
+- Removed current GhostNet IP-masking claims from pricing, privacy, tier and Matrix material.
+  Historical changelog, bug and audit evidence remains intact and is labeled where ambiguity
+  was possible; research architecture is explicitly marked as not shipped.
+- Validation PASS: `git diff --check`; residual current-claim scan; FAQ structures
+  (`24/24/24` landing and `18/18/18` wiki); 13 changed HTML files show no additional
+  structural errors against `HEAD` with the available legacy HTML4 Tidy validator.
+- No website deployment, Play release, active track, app-signing key or production system was
+  changed. The separate Google upload-key-reset approval remains pending.
+
+`VPN DOCUMENTATION COMPLETE — PUSH AND REMOTE VERIFY NEXT`
+
+## 2026-08-20 16:05 EEST — CODEX SOL — VPN DOCUMENTATION REMOTE VERIFIED
+
+Type: DOCUMENTATION / EXTERNAL / DONE
+
+- Pushed `51e6abb` and bridge follow-up `6919768` to
+  `origin/fix/remove-vpnservice-policy-20260820`.
+- Local `HEAD` and the remote tracking branch match; the isolated worktree was clean after
+  the push. No merge, deployment, Play Console mutation or production rollout occurred.
+
+`VPN DOCUMENTATION TASK COMPLETE — TARGET STOP ACTIVE`
+
+## 2026-08-20 16:43 EEST — CODEX SOL — VPN RELEASE MAIN INTEGRATION VERIFIED
+
+Type: FIX / RELEASE / TEST / STATUS
+
+- With explicit user authorization for merge and deployment, integrated the seven unique
+  commits from `fix/remove-vpnservice-policy-20260820` onto fresh `origin/main` in isolated
+  branch `integrate/vpn-policy-release-20260820`. Newer Main web-only IFR checkout and all
+  append-only bridge history were preserved during conflict resolution.
+- Current Main's strict Gradle verification lacked only the resolved
+  `androidx.annotation:annotation-jvm:1.6.0` jar and module checksums. Generated those two
+  entries with Gradle and reviewed the resulting eight-line metadata diff.
+- Integrated release checks PASS: `verifyNoVpnServiceSource`, `verifyNoAppIfrWalletCode`,
+  `testFreeReleaseUnitTest`, `lintVitalFreeRelease`, R8, four native ABI builds and signed
+  `bundleFreeRelease`. Website IFR JavaScript syntax, `assetlinks.json`, FAQ structure,
+  residual current-claim scan and `git diff --check` also PASS.
+- Built AAB: package `com.securecall.app.free`, code `78014`, name `1.0.47-free`, target SDK 36,
+  signed with the new local upload certificate and containing no VPN/WireGuard markers.
+- No Main push, merge, Pages deployment or Play mutation has occurred yet. Last confirmed Play
+  state remains upload-key reset pending and AAB not uploaded; verify after GitHub gates.
+
+`MAIN INTEGRATION VERIFIED — REMOTE GATES NEXT`
+
+## 2026-08-20 17:11 EEST — CODEX SOL — VPN RELEASE REVIEW FIXES VERIFIED
+
+Type: FIX / REVIEW / TEST / RELEASE / STATUS
+
+- PR `#69` received eight actionable CodeRabbit comments. A separate secret-free Kimi K3
+  read-only review validated the fixes and found one additional dynamic-routing case: an
+  external VPN can start after SecureCall has already bound its process to WiFi or mobile.
+- `NetworkManager` now normalizes legacy `esim` and unknown preferences to `default`, never
+  binds around an active external VPN, watches for later VPN availability, releases pending or
+  active explicit bindings when VPN routing appears, and restores the selected preference once
+  the VPN is gone. `WebRtcManager` requires the real external-VPN callback at construction.
+- Added focused `NetworkManagerTest`; removed stale WireGuard verification metadata; refactored
+  `verifyNoVpnServiceSource` into a cacheable input/output task. Two consecutive focused runs
+  passed, including one reused Gradle configuration-cache run.
+- Corrected maintained German/English Play Store and launch-plan copy, localized design-template
+  text, FAQ button type, Android minimum and historical audit wording. Current-claim scan,
+  `node --check`, `jq empty` and `git diff --check` pass.
+- Full signed chain passed after the initial review fixes: VPN/IFR guards, Free release unit
+  tests, lint-vital, R8, four native ABIs and `bundleFreeRelease`. A subsequent focused release
+  unit/guard run passed after the dynamic VPN watcher addition; final remote CI follows on push.
+- Desktop AAB `/Users/gio/Desktop/SecureCall-LATEST.aab` is `1.0.47` / `78014`, 32 MB, SHA-256
+  `7c9ced79667d3dabae56fa0603135876168294f198f5ac183c8e0221c86292b3`, signed by the new upload
+  certificate (`83:18:36:CF:...:49:D2`) and free of VPN/WireGuard package entries.
+- Play Console still shows the upload-key reset as pending and the prior upload certificate as
+  active. No AAB upload or track mutation occurred. Normal PR approval and Play reset approval
+  remain separate gates; neither may be bypassed.
+
+`REVIEW FIXES VERIFIED — PUSH/REMOTE GATES NEXT — AAB NOT UPLOADED`
+
+## 2026-08-20 17:17 EEST — CODEX SOL — FINAL 78014 REBUILD VERIFIED
+
+Type: RELEASE / TEST / STATUS
+
+- Re-ran the complete signed Free release chain after the dynamic external-VPN watcher change:
+  `verifyNoVpnServiceSource`, `verifyNoAppIfrWalletCode`, `testFreeReleaseUnitTest`,
+  `lintVitalFreeRelease`, R8, four native ABI builds and `bundleFreeRelease` all passed.
+- Final desktop artifact `/Users/gio/Desktop/SecureCall-LATEST.aab` has SHA-256
+  `5257c4cea245d0fadf6b098ffe98c0bc2446e8d899ff7c9ff676e5a1c92feaeb`; signer remains the new
+  upload certificate (`83:18:36:CF:...:49:D2`). The earlier `7c9ced...` artifact hash recorded
+  above is superseded because it predates the final VPN lifecycle fix.
+- Package-entry scan again found no VPN/WireGuard implementation. Upload remains blocked until
+  Google accepts the pending upload-key reset.
+
+`FINAL LOCAL AAB VERIFIED — COMMIT/PUSH NEXT — PLAY UPLOAD PENDING`
+
+## 2026-08-20 17:26 EEST — CODEX SOL — REMOTE GATES PASS / EXTERNAL GATES BLOCK MERGE
+
+Type: CI / REVIEW / RELEASE / BLOCKED
+
+- PR `#69` head `9a4cded` passed every reported technical gate: Android Client, instrumented
+  tests on API 24 and API 36, Dependency Review, Dependency Audit, Secret Detection, Security
+  Summary, Rust Core Crypto, Signaling Tests, Markdown/YAML and CodeRabbit.
+- The ordinary `gh pr merge 69 --merge` path was rejected solely by the required independent
+  approving review. Only `NeaBouli` (the PR author) is currently listed as repository collaborator,
+  so no eligible existing collaborator can supply that approval. No admin or branch-protection
+  bypass was used.
+- Direct Play Console verification still shows old upload-certificate SHA-256
+  `1E:0A:8E:B4:...:B2:1D` and the explicit pending-reset notice. The new local signer starts
+  `83:18:36:CF`; therefore `78014` has not been uploaded and must not be uploaded until Google
+  accepts the reset.
+- Website deployment is gated on the normal merge. Play upload is gated on Google accepting the
+  new upload certificate. Both are external state changes; the implementation itself is verified.
+
+`PR 69 TECHNICALLY GREEN — REVIEW REQUIRED — PLAY RESET PENDING`

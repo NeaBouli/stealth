@@ -25,7 +25,7 @@ No phone number. No account. Zero metadata.
 ## Features
 - E2E encrypted calls (X25519 + DTLS-SRTP)
 - No phone number or account required
-- WireGuard VPN (Premium)
+- Device-managed VPN compatibility
 - STEALTH-DELETE emergency wipe
 - Emergency Broadcast System
 - Website IFR holder discount via signed browser-wallet verification

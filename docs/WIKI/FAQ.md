@@ -18,7 +18,10 @@ No. Calls are encrypted end-to-end. Encryption keys are generated on your device
 No. SecureCall generates an anonymous ID on your device. No personal information is required.
 
 ### Is SecureCall available for iOS?
-Not yet. An iOS version is planned but not under active development. The Rust crypto engine is cross-platform, so the core security will be identical.
+Not yet. An iOS version is planned but not under active development. The Rust crypto engine is cross-platform, so the core security will be identical. The planned iOS client will support external device VPNs but will not provide its own VPN tunnel.
+
+### Does SecureCall include a VPN?
+No. Current releases contain no built-in VPN service or WireGuard tunnel. SecureCall remains compatible with a VPN managed by Android or another trusted app, and uses TURN relay when direct WebRTC connectivity is unavailable.
 
 ### Why is the source code public?
 Transparency builds trust. By publishing our source code, we allow security researchers, journalists, and privacy advocates to verify that our encryption works as claimed. Security through obscurity is no security at all.
@@ -28,14 +31,13 @@ Transparency builds trust. By publishing our source code, we allow security rese
 ---
 
 ### What data do you collect?
-- **Free:** Optional anonymous crash reports only (opt-out in Settings)
-- **Pro:** Nothing
-- **Premium:** Absolutely nothing — not even your IP address (masked via GhostNet)
+- **Free:** Ads and optional crash reporting where enabled
+- **Pro/Premium:** No ads and no crash reporting
 
-No call logs, no contacts, no analytics — on any tier.
+No call content, recordings, contact uploads, or persistent server-side call history are stored. FCM and STUN/TURN process the limited technical data required for push delivery and WebRTC connectivity, as documented in the Privacy Policy.
 
 ### Do you comply with GDPR?
-Yes. SecureCall complies with the EU GDPR and the German BDSG. Since we collect virtually no personal data, most GDPR rights are satisfied by default. StealthX is based in Germany.
+SecureCall is designed for GDPR-aligned data minimization. Operational processing by FCM, STUN/TURN, ads, and optional crash reporting is documented in the Privacy Policy. StealthX is operated by Vendetta Labs in Greece (EU).
 
 ### Can law enforcement access my calls?
 No. We cannot provide call content because we do not have it. End-to-end encryption means only the two call participants possess the decryption keys.
@@ -78,7 +80,7 @@ Yes. An internal security audit was conducted in February 2026. All 7 Critical a
 | Screen Capture Detection | — | Yes | Yes |
 | Anti-Recording Protection | — | Block | Auto-Terminate |
 | Spy App Detection | — | Yes | Yes |
-| GhostNet IP Masking | — | — | Yes |
+| External device VPN compatibility | Yes | Yes | Yes |
 | Crash Reports | Opt-out | Disabled | Disabled |
 | Telemetry | Minimal | Zero | Zero |
 

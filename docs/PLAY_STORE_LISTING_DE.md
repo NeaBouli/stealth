@@ -7,7 +7,7 @@ SecureCall — Sichere Anrufe
 
 ## Kurzbeschreibung (max 80 Zeichen)
 ```
-Verschlüsselte P2P-Anrufe. Keine Nummer. Keine Logs. WireGuard VPN.
+Verschlüsselte P2P-Anrufe. Keine Nummer. Keine Anrufaufzeichnungen.
 ```
 
 ## Lange Beschreibung (max 4000 Zeichen)
@@ -21,8 +21,8 @@ WebRTC mit DTLS-SRTP-Verschlüsselung. Anrufe sind Peer-to-Peer — kein Audio b
 📵 KEINE TELEFONNUMMER ERFORDERLICH
 Identifikation nur über Ihre SecureID. Keine Registrierung, keine persönlichen Daten nötig.
 
-🛡️ EINGEBAUTES WIREGUARD VPN (Premium)
-Leiten Sie Ihre Anrufe durch einen verschlüsselten VPN-Tunnel für maximale Anonymität.
+🛡️ ROBUSTE NETZWERKVERBINDUNG
+SecureCall unterstützt WLAN und mobile Daten mit automatischem TURN-Relay-Fallback.
 
 💥 STEALTH-DELETE
 5 schnelle Tipps in den Einstellungen löschen alle App-Daten sofort. Keine Spuren.
@@ -33,7 +33,7 @@ Empfangen Sie kritische Sicherheitswarnungen vom Entwicklerteam. Vorinstallierte
 📱 DREI STUFEN
 • Free — Volle Anruffunktion, Banner- und Interstitial-Werbung
 • Pro — Keine Werbung, Kontakte, Anrufverlauf, Online-Status
-• Premium — Alle Funktionen + WireGuard VPN + Anti-Recording-Schutz
+• Premium — Alle Funktionen + erweiterter Bedrohungs- und Anti-Recording-Schutz
 
 	🔓 PREMIUM FREISCHALTEN
 	• Google Play In-App-Kauf
@@ -68,7 +68,7 @@ Folge uns: @secureslot auf X
 
 ## Keywords
 ```
-verschlüsselte anrufe, sichere telefonate, privat telefonieren, vpn anrufe, anonyme anrufe, ende-zu-ende verschlüsselung
+verschlüsselte anrufe, sichere telefonate, privat telefonieren, anonyme anrufe, ende-zu-ende verschlüsselung
 ```
 
 ## Kategorie
@@ -85,7 +85,7 @@ Alle Altersstufen
 ```
 v2.0 — Erstveröffentlichung
 • Ende-zu-Ende verschlüsselte P2P-Anrufe
-• WireGuard VPN Integration (Premium)
+• Automatischer TURN-Relay-Fallback
 	• Saubere App-Version ohne WalletConnect/IFR-In-App-Flow
 • STEALTH-DELETE Notfall-Löschung
 • Notfall-Broadcast-System

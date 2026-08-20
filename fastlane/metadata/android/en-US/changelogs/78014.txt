@@ -1,0 +1,6 @@
+SecureCall 1.0.47
+
+- Removed the in-app VPN service for Google Play policy compliance
+- Preserved compatibility with device-managed VPN connections
+- Improved network and TURN relay handling
+- Updated settings and product information

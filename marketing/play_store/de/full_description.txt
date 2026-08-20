@@ -22,7 +22,7 @@ SecureCall ist die erste Telefon-App, die von Grund auf für maximale Privatsph�
 • Keine Anrufprotokolle auf unseren Servern
 • Keine Kontaktlisten-Uploads
 • Kein Tracking, keine Werbung
-• Deine IP-Adresse wird durch GhostNet-Relays verschleiert
+• Kompatibel mit VPN-Verbindungen, die Android oder eine vertrauenswürdige App verwaltet
 
 📖 SOURCE AVAILABLE
 
@@ -45,9 +45,9 @@ Der komplette Quellcode ist auf GitHub einsehbar. Jeder kann die Sicherheit veri
 
 💎 PREMIUM VERSION
 • Alles aus PRO
-• GhostNet-Relay-Netzwerk (IP-Verschleierung)
-• Multi-Hop-Routing für maximale Anonymität
-• Dezentrales Relay-Netzwerk
+• Alle Datenschutz- und Audiofunktionen aus PRO
+• Premium-Support und Zugriff auf zukünftige Funktionen
+• Kompatibel mit vom Gerät verwalteten VPN-Verbindungen
 • Zukunftssichere Post-Quantum-Kryptografie (in Entwicklung)
 • Höchste Sicherheitsstufe
 
@@ -74,7 +74,7 @@ Forward Secrecy: Double Ratchet Protocol
 Audio: Opus Codec (6-510 kbps)
 Transport: WebRTC/QUIC mit DTLS
 Krypto-Engine: Rust (speichersicher)
-Netzwerk: GhostNet P2P Relay (Premium)
+Netzwerk: WebRTC mit STUN/TURN; kompatibel mit vom Gerät verwalteten VPNs
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 

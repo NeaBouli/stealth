@@ -21,8 +21,8 @@ WebRTC mit DTLS-SRTP Verschluesselung. Anrufe sind Peer-to-Peer — kein Audio b
 📵 KEINE TELEFONNUMMER NOETIG
 Du wirst nur ueber deine SecureID identifiziert. Keine Registrierung, keine persoenlichen Daten erforderlich.
 
-🛡️ EINGEBAUTES WIREGUARD VPN (Premium)
-Leite deine Anrufe durch einen verschluesselten VPN-Tunnel fuer maximale Anonymitaet.
+🛡️ ROBUSTE NETZWERKVERBINDUNG
+SecureCall unterstuetzt WLAN und mobile Daten mit automatischem TURN-Relay-Fallback.
 
 💥 EMERGENCY DELETE
 5 schnelle Tipps in den Einstellungen loeschen sofort alle App-Daten. Keine Spuren.
@@ -33,7 +33,7 @@ Erhalte kritische Sicherheitswarnungen vom Entwicklerteam. Vorinstallierte Vorla
 📱 DREI VERSIONEN
 • Free — Vollstaendige Anruffunktion, Banner- und Interstitial-Werbung
 • Pro — Keine Werbung, Kontakte, Anrufverlauf, Online-Status
-• Premium — Alle Funktionen + WireGuard VPN + Anti-Recording-Schutz
+• Premium — Alle Funktionen + erweiterter Bedrohungs- und Anti-Recording-Schutz
 
 🔓 PREMIUM FREISCHALTEN — DREI WEGE
 • Google Play In-App-Kauf
@@ -66,7 +66,7 @@ Folge uns: @secureslot auf X
 
 ## Keywords
 ```
-verschluesselte anrufe, sichere telefon app, private anrufe, vpn anrufe, anonyme anrufe, ende zu ende verschluesselung, wireguard, datenschutz, sichere kommunikation
+verschluesselte anrufe, sichere telefon app, private anrufe, anonyme anrufe, ende zu ende verschluesselung, datenschutz, sichere kommunikation
 ```
 
 ## Neuigkeiten (Release Notes v1.0.9)

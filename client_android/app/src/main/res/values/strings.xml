@@ -192,21 +192,9 @@
     <string name="settings_anon_network">Network</string>
     <string name="pref_esim_setup">Setup eSIM</string>
     <string name="pref_esim_setup_summary">Open Android eSIM settings</string>
-    <string name="pref_esim_routing">Route through eSIM</string>
-    <string name="pref_esim_routing_summary">Bind StealthX traffic to eSIM network</string>
     <string name="pref_network_info">Active Network</string>
     <string name="pref_network_transport">Preferred Network</string>
     <string name="pref_premium_feature">💎 PREMIUM feature — upgrade to unlock</string>
-
-    <!-- VPN -->
-    <string name="settings_vpn">VPN Configuration</string>
-    <string name="pref_vpn_enabled">Enable VPN for StealthX</string>
-    <string name="pref_vpn_enabled_summary">Route app traffic through WireGuard VPN tunnel</string>
-    <string name="pref_vpn_status">VPN Status</string>
-    <string name="pref_vpn_config">WireGuard Configuration</string>
-    <string name="pref_vpn_config_summary">Configure server endpoint, keys, and DNS</string>
-    <string name="pref_vpn_kill_switch">Kill Switch</string>
-    <string name="pref_vpn_kill_switch_summary">Block all traffic if VPN connection drops</string>
 
     <!-- Network transport options -->
     <string-array name="network_transport_entries">

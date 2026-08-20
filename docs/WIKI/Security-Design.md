@@ -78,7 +78,11 @@ SecureCall protects against these attacker classes:
 | Accessibility spy detected | — | Alert | Auto-terminate call |
 | FLAG_SECURE | Optional | Default ON | Always enforced |
 | Crash reports | Opt-out | Disabled | Disabled |
-| IP address visible | Transient | Transient | Masked (GhostNet) |
+| Network-level IP processing | Transient (STUN/TURN) | Transient (STUN/TURN) | Transient (STUN/TURN) |
+
+SecureCall does not provide a VPN or IP-masking tunnel in any tier. It can use
+the active Android network, including a VPN managed by Android or another
+trusted app.
 
 ---
 #### ████ ANTI-RECORDING PROTECTION ████

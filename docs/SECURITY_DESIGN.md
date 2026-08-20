@@ -1,5 +1,12 @@
 # SecureCall Ecosystem – Security Design Document
 
+> **Current release boundary (Android 1.0.47):** This document also contains
+> research and long-range architecture concepts. The released Android client
+> uses WebRTC with STUN/TURN and application-layer end-to-end encryption. It
+> contains no built-in VPN, WireGuard tunnel, multi-hop relay, SilentCarrier,
+> QUIC transport, device-owner controls, or OS-level hardening. SecureCall can
+> operate over a VPN managed by Android or another trusted app.
+
 ## 1. Purpose of This Document
 
 This document describes all security-relevant principles,
@@ -104,7 +111,7 @@ Integrity protection of frames
 
 No keys or plaintext in the backend
 
-Optional multi-hop GhostNet routing
+Research-only multi-hop relay concept (not part of the current release)
 
 3.3 Infrastructure-Adjacent Attackers
 
@@ -611,7 +618,7 @@ Example (simplified):
   "require_secure_wlan": true,
   "allow_mobile_data": false,
   "allow_rooted_device": false,
-  "require_vpn": false,
+  "allow_external_vpn": true,
   "enable_imsi_detection": false,
   "max_ghostnet_hops": 1
 }
@@ -622,7 +629,7 @@ WLAN recommended but not enforced
 
 Rooted devices allowed → warning only
 
-No VPN firewall
+No built-in VPN service; external device VPN supported
 
 GhostNet: Single-Hop
 
@@ -642,7 +649,7 @@ Mobile data allowed
 
 Root optionally blockable
 
-VPN firewall active (app-local VPN)
+No built-in VPN service; external device VPN supported
 
 GhostNet: Single-Hop, optimized
 

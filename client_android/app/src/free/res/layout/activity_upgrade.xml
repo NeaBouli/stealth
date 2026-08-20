@@ -163,7 +163,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="&#8226; Everything in Pro\n&#8226; WireGuard VPN\n&#8226; Zero telemetry\n&#8226; Screenshot protection\n&#8226; Hardware keystore"
+                android:text="&#8226; Everything in Pro\n&#8226; Advanced threat protection\n&#8226; Zero telemetry\n&#8226; Screenshot protection\n&#8226; Hardware keystore"
                 android:textSize="13sp"
                 android:textColor="#CCCCCC"
                 android:lineSpacingMultiplier="1.4"

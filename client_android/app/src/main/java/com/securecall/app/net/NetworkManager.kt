@@ -5,12 +5,14 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import okhttp3.CertificatePinner
 
 /**
  * Manages network interface selection for StealthX traffic.
- * Premium feature: route app traffic through eSIM or specific network interface.
+ * Pro/Premium feature: prefer a specific network transport.
  *
  * Default = no binding (Android decides). WiFi/Cellular = explicit bind.
  * When bound network is lost, falls back to default and triggers WS reconnect.
@@ -19,36 +21,36 @@ object NetworkManager {
     private const val TAG = "NetworkManager"
     private const val PREFS = "securecall_prefs"
     private const val KEY_PREFERRED_TRANSPORT = "preferred_network_transport"
-    private const val KEY_ESIM_ROUTING = "esim_routing_enabled"
 
     const val TRANSPORT_DEFAULT = "default"
     const val TRANSPORT_WIFI = "wifi"
     const val TRANSPORT_CELLULAR = "cellular"
-    const val TRANSPORT_ESIM = "esim"
 
     private var boundNetwork: Network? = null
-    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var preferredNetworkCallback: ConnectivityManager.NetworkCallback? = null
+    private var vpnNetworkCallback: ConnectivityManager.NetworkCallback? = null
+
+    internal fun normalizePreferredTransport(transport: String?): String = when (transport) {
+        TRANSPORT_WIFI, TRANSPORT_CELLULAR -> transport
+        else -> TRANSPORT_DEFAULT
+    }
+
+    internal fun shouldBindPreferredNetwork(
+        transport: String?,
+        externalVpnActive: Boolean
+    ): Boolean = !externalVpnActive && normalizePreferredTransport(transport) != TRANSPORT_DEFAULT
 
     fun getPreferredTransport(context: Context): String {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(KEY_PREFERRED_TRANSPORT, TRANSPORT_DEFAULT) ?: TRANSPORT_DEFAULT
+        val stored = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(KEY_PREFERRED_TRANSPORT, TRANSPORT_DEFAULT)
+        return normalizePreferredTransport(stored)
     }
 
     fun setPreferredTransport(context: Context, transport: String) {
+        val normalized = normalizePreferredTransport(transport)
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putString(KEY_PREFERRED_TRANSPORT, transport).apply()
-        Log.d(TAG, "Preferred transport set to: $transport")
-    }
-
-    fun isEsimRoutingEnabled(context: Context): Boolean {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean(KEY_ESIM_ROUTING, false)
-    }
-
-    fun setEsimRouting(context: Context, enabled: Boolean) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putBoolean(KEY_ESIM_ROUTING, enabled).apply()
-        if (enabled) bindToPreferredNetwork(context) else unbind(context)
+            .edit().putString(KEY_PREFERRED_TRANSPORT, normalized).apply()
+        Log.d(TAG, "Preferred transport set to: $normalized")
     }
 
     fun getActiveNetworkInfo(context: Context): String {
@@ -64,35 +66,43 @@ object NetworkManager {
         }
     }
 
+    fun isExternalVpnActive(context: Context): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = cm.activeNetwork ?: return false
+        return cm.getNetworkCapabilities(network)
+            ?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+    }
+
     /**
      * Apply network binding based on preferred transport.
      * Default = no binding (Android decides the best network).
-     * WiFi/Cellular/eSIM = explicit bind via requestNetwork + bindProcessToNetwork.
+     * WiFi/Cellular = explicit bind via requestNetwork + bindProcessToNetwork.
      */
     fun bindToPreferredNetwork(context: Context) {
         val transport = getPreferredTransport(context)
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        // Default = no binding — let Android handle network selection
         if (transport == TRANSPORT_DEFAULT) {
             unbind(context)
             return
         }
 
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        registerVpnWatcher(context.applicationContext, cm)
 
-        // Clean up previous callback before registering new one
-        networkCallback?.let {
-            try { cm.unregisterNetworkCallback(it) } catch (_: Exception) {}
+        // Never bind around an active device VPN. The system default preserves its routing.
+        if (!shouldBindPreferredNetwork(transport, isExternalVpnActive(context))) {
+            releasePreferredBinding(cm, reconnect = true)
+            return
         }
-        networkCallback = null
-        boundNetwork = null
+
+        releasePreferredBinding(cm, reconnect = false)
 
         val requestBuilder = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
 
         when (transport) {
             TRANSPORT_WIFI -> requestBuilder.addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-            TRANSPORT_CELLULAR, TRANSPORT_ESIM -> requestBuilder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            TRANSPORT_CELLULAR -> requestBuilder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
         }
 
         val callback = object : ConnectivityManager.NetworkCallback() {
@@ -116,7 +126,7 @@ object NetworkManager {
                 WebSocketService.instance?.forceReconnect()
             }
         }
-        networkCallback = callback
+        preferredNetworkCallback = callback
 
         try {
             cm.requestNetwork(requestBuilder.build(), callback)
@@ -128,13 +138,61 @@ object NetworkManager {
 
     fun unbind(context: Context) {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        networkCallback?.let {
+        releasePreferredBinding(cm, reconnect = false)
+        vpnNetworkCallback?.let {
             try { cm.unregisterNetworkCallback(it) } catch (_: Exception) {}
         }
-        networkCallback = null
+        vpnNetworkCallback = null
+        Log.d(TAG, "Network binding released — using system default")
+    }
+
+    private fun registerVpnWatcher(context: Context, cm: ConnectivityManager) {
+        vpnNetworkCallback?.let {
+            try { cm.unregisterNetworkCallback(it) } catch (_: Exception) {}
+        }
+
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                Log.d(TAG, "External VPN available — releasing explicit transport binding")
+                releasePreferredBinding(cm, reconnect = true)
+            }
+
+            override fun onLost(network: Network) {
+                // Let Android settle the new default network before restoring a preference.
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (!isExternalVpnActive(context) &&
+                        getPreferredTransport(context) != TRANSPORT_DEFAULT
+                    ) {
+                        bindToPreferredNetwork(context)
+                    }
+                }, 250)
+            }
+        }
+        vpnNetworkCallback = callback
+
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addTransportType(NetworkCapabilities.TRANSPORT_VPN)
+            .build()
+        try {
+            cm.registerNetworkCallback(request, callback)
+        } catch (e: Exception) {
+            vpnNetworkCallback = null
+            Log.w(TAG, "Failed to watch external VPN state: ${e.message}")
+        }
+    }
+
+    private fun releasePreferredBinding(cm: ConnectivityManager, reconnect: Boolean) {
+        val hadPreferredRequest = preferredNetworkCallback != null || boundNetwork != null
+        preferredNetworkCallback?.let {
+            try { cm.unregisterNetworkCallback(it) } catch (_: Exception) {}
+        }
+        preferredNetworkCallback = null
         boundNetwork = null
         cm.bindProcessToNetwork(null)
-        Log.d(TAG, "Network binding released — using system default")
+        if (reconnect && hadPreferredRequest) {
+            WebSocketService.instance?.forceReconnect()
+        }
     }
 
     fun isBound(): Boolean = boundNetwork != null

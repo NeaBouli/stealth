@@ -1,6 +1,9 @@
 # SecureCall Settings Audit
 > Scope: `client_android/app/src/main/res/xml/preferences.xml`, `SettingsFragment.kt`, tier/config providers, billing upgrade screens, VPN/update/custom-id helpers. Date: 2026-06-21. Result after fixes: 0 FAIL / 0 WARN / 12 PASS.
 
+> Historical status: SecureCall 1.0.47 removed the app-owned VPN service and all related settings.
+> The VPN findings below describe only the legacy build audited on this date.
+
 ## Summary
 The Settings surface was reviewed from the first preference to the last. The main issues were stale IFR upgrade copy in the app, a VPN toggle persistence bug, unsafe external URL launching, and an XML/selectability mismatch for Licenses. These were fixed and verified with release builds.
 

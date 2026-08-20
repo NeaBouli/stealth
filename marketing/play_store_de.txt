@@ -25,7 +25,7 @@ Aufgrund unserer Priorisierung auf Anonymität bieten wir keinen persönlichen S
 📞 ANRUFE
 • Kristallklare Sprachqualität (Opus 48kHz)
 • Automatische Wiederverbindung bei Netzwechsel
-• Funktioniert über WiFi, Mobile und VPN
+• Funktioniert über WiFi, mobile Daten und optional verwaltete Geräte-VPNs
 • Eingehende Anrufe auch wenn App geschlossen (FCM Push)
 • WebRTC Peer-to-Peer — kein Server hört mit
 
@@ -34,13 +34,13 @@ Aufgrund unserer Priorisierung auf Anonymität bieten wir keinen persönlichen S
 • STEALTH-DELETE: 5-faches Tippen löscht alle Daten sofort
 • Anti-Aufnahme-Erkennung (Pro/Premium)
 • Screenshot-Schutz (Pro/Premium)
-• WireGuard VPN integriert (Premium)
+• Automatischer TURN-Relay-Fallback
 • Hardware-Keystore Verschlüsselung (Premium)
 
 💰 TARIFE
 • Kostenlos: Verschlüsselte Anrufe, 10 Kontakte, 15 Min. Limit, mit Werbung
 • Pro (€3,49/Monat): Unbegrenzte Anrufe und Kontakte, keine Werbung
-• Premium (€4,99/Monat): Maximale Sicherheit + WireGuard VPN + Zero Telemetry
+• Premium (€4,99/Monat): Maximale Sicherheit + erweiterter Bedrohungsschutz + Zero Telemetry
 • Lifetime Premium: Einmalzahlung €49 — kein Abo nötig
 
 🔑 IFR TOKEN UNLOCK
@@ -80,6 +80,6 @@ SCREENSHOTS (empfohlene Texte):
 1. "Ende-zu-Ende verschlüsselt" — Anrufbildschirm
 2. "Kein Konto nötig" — Startbildschirm mit Kontakten
 3. "Anti-Aufnahme Schutz" — Pro/Premium Features
-4. "WireGuard VPN integriert" — Premium Settings
+4. "Advanced threat protection" — Premium Settings
 5. "STEALTH-DELETE" — Notfall-Löschung
 6. "IFR Token = Lifetime Access" — Wallet-Verbindung

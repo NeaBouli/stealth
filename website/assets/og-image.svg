@@ -45,7 +45,7 @@
     <text x="-320" y="5">E2E Encrypted</text>
 
     <rect x="-230" y="-15" width="130" height="30" rx="15" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
-    <text x="-165" y="5">WireGuard VPN</text>
+    <text x="-165" y="5">VPN Compatible</text>
 
     <rect x="-70" y="-15" width="140" height="30" rx="15" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
     <text x="0" y="5">No Phone Number</text>
