@@ -3358,3 +3358,20 @@ Type: CI / REVIEW / RELEASE / BLOCKED
   new upload certificate. Both are external state changes; the implementation itself is verified.
 
 `PR 69 TECHNICALLY GREEN — REVIEW REQUIRED — PLAY RESET PENDING`
+
+## 2026-08-20 18:59 EEST — CODEX SOL — VPN RELEASE MERGED / PAGES LIVE
+
+Type: MERGE / DEPLOY / VERIFICATION / STATUS
+
+- PR `#69` merged to `main` as `1a85748eca09228b90a70311ec4f98468d6b4e8b` after all final
+  checks passed, including Android Client, API 24/API 36 instrumentation, dependency/security
+  checks, Rust, signaling and CodeRabbit.
+- GitHub Pages run `32389214693` deployed that exact merge commit successfully.
+- Live `https://stealthx.tech/`, `/faq.html`, `/wiki/faq.html` and
+  `/wiki/security-design.html` were fetched successfully and show the corrected current product
+  boundary: no built-in VPN/VpnService/WireGuard tunnel; compatible with external device-managed
+  VPN connections.
+- Final local `1.0.47` / `78014` AAB remains ready on Desktop. Google Play upload remains gated
+  by the pending upload-key reset; the new AAB is not uploaded.
+
+`VPN RELEASE MERGED AND LIVE — PLAY UPLOAD KEY RESET PENDING`
