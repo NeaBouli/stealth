@@ -3338,3 +3338,23 @@ Type: RELEASE / TEST / STATUS
   Google accepts the pending upload-key reset.
 
 `FINAL LOCAL AAB VERIFIED — COMMIT/PUSH NEXT — PLAY UPLOAD PENDING`
+
+## 2026-08-20 17:26 EEST — CODEX SOL — REMOTE GATES PASS / EXTERNAL GATES BLOCK MERGE
+
+Type: CI / REVIEW / RELEASE / BLOCKED
+
+- PR `#69` head `9a4cded` passed every reported technical gate: Android Client, instrumented
+  tests on API 24 and API 36, Dependency Review, Dependency Audit, Secret Detection, Security
+  Summary, Rust Core Crypto, Signaling Tests, Markdown/YAML and CodeRabbit.
+- The ordinary `gh pr merge 69 --merge` path was rejected solely by the required independent
+  approving review. Only `NeaBouli` (the PR author) is currently listed as repository collaborator,
+  so no eligible existing collaborator can supply that approval. No admin or branch-protection
+  bypass was used.
+- Direct Play Console verification still shows old upload-certificate SHA-256
+  `1E:0A:8E:B4:...:B2:1D` and the explicit pending-reset notice. The new local signer starts
+  `83:18:36:CF`; therefore `78014` has not been uploaded and must not be uploaded until Google
+  accepts the reset.
+- Website deployment is gated on the normal merge. Play upload is gated on Google accepting the
+  new upload certificate. Both are external state changes; the implementation itself is verified.
+
+`PR 69 TECHNICALLY GREEN — REVIEW REQUIRED — PLAY RESET PENDING`
