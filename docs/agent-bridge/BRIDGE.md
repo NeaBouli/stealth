@@ -3407,3 +3407,11 @@ Type: FEATURE / FIX / TEST / RELEASE GATE
   deployment, push or production mutation was performed.
 
 `LOCAL IMPLEMENTATION GREEN — VALID CONFIG HANDSHAKE AND RELEASE ACTIONS REMAIN SEPARATE`
+
+## 2026-08-23 02:57 EEST — CODEX SOL — COMMIT RECORDED
+
+- Implementation commit: `155bb31` (`feat: split Play and standalone VPN support`).
+- Device screenshots/XML evidence stays local and untracked; no device identifiers or test
+  artifacts were added to the repository.
+
+`COMMIT RECORDED — PUSH/PUBLISH NOT PERFORMED`

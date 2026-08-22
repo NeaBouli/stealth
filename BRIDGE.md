@@ -5793,3 +5793,11 @@ Open next:
   production mutation occurred in this block.
 
 `IMPLEMENTATION VERIFIED — RELEASE/PUBLISH ACTIONS REMAIN EXTERNAL`
+
+## 2026-08-23 02:57 EEST — CODEX SOL — IMPLEMENTATION COMMITTED
+
+- Verified implementation and documentation were committed as `155bb31`
+  (`feat: split Play and standalone VPN support`).
+- Local device evidence remains intentionally untracked and is not part of the public commit.
+
+`COMMIT 155bb31 RECORDED — NO PUSH OR PUBLISH IN THIS BLOCK`
