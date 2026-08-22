@@ -5,6 +5,7 @@ import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertTrue;
 
 import android.Manifest;
@@ -95,6 +96,17 @@ public class MainActivityInstrumentedTest {
         try (ActivityScenario<MainActivity> ignored = launchMainActivity()) {
             onView(withId(R.id.nav_settings)).perform(click());
             onView(withId(R.id.bottomNav)).check(matches(isDisplayed()));
+        }
+    }
+
+    @Test
+    public void externalVpnIndicator_matchesCurrentTransport() {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        boolean vpnActive = com.securecall.app.net.NetworkManager.INSTANCE
+                .isExternalVpnActive(context);
+        try (ActivityScenario<MainActivity> ignored = launchMainActivity()) {
+            onView(withId(R.id.vpnStatusIndicator)).check(
+                    matches(vpnActive ? isDisplayed() : not(isDisplayed())));
         }
     }
 }

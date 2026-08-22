@@ -174,8 +174,8 @@ Read-only display of your current network connection (WiFi or Mobile) and bindin
 **Preferred Network**
 Choose Default, WiFi, or Mobile. SecureCall will prefer this network type when it is available. Only active when switching between networks.
 
-**External VPN compatibility**
-SecureCall does not provide a built-in VPN service or WireGuard tunnel. It can operate over a VPN managed by Android or another trusted app. If that VPN blocks signaling or WebRTC traffic, allow SecureCall in the VPN provider's settings.
+**VPN routing**
+A green status LED appears only while SecureCall uses Android's active VPN route. The Google Play edition contains no VPN service and relies on a VPN managed by Android or another trusted app. The direct Premium APK can additionally run an optional, app-only WireGuard tunnel after Android VPN consent; its configuration remains local and its private key is encrypted with Android Keystore. If a VPN blocks signaling or WebRTC traffic, allow SecureCall in the provider's settings.
 
 ---
 

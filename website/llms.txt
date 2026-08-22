@@ -58,7 +58,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Audio codec: Opus 48kHz
 - Transport: WebRTC peer-to-peer DataChannel
 - Signaling: WebSocket (Node.js/Express on Railway)
-- VPN: no in-app VPN service; compatible with device-managed VPN connections
+- VPN: Play edition has no VPN service and shows active system-VPN routing; direct Premium APK can optionally run a locally configured, app-only WireGuard tunnel after Android consent
 - Billing: Google Play Billing Library 8.2.1
 - Push: Firebase Cloud Messaging
 - Wallet: no in-app WalletConnect; planned IFR holder verification happens on the website for Stripe checkout discounts after launch approval

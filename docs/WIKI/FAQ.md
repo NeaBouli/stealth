@@ -21,7 +21,7 @@ No. SecureCall generates an anonymous ID on your device. No personal information
 Not yet. An iOS version is planned but not under active development. The Rust crypto engine is cross-platform, so the core security will be identical. The planned iOS client will support external device VPNs but will not provide its own VPN tunnel.
 
 ### Does SecureCall include a VPN?
-No. Current releases contain no built-in VPN service or WireGuard tunnel. SecureCall remains compatible with a VPN managed by Android or another trusted app, and uses TURN relay when direct WebRTC connectivity is unavailable.
+The Google Play edition contains no built-in VPN service. It follows a VPN managed by Android or another trusted app and shows a green status LED while SecureCall uses that route. The separately distributed Premium APK can also run an optional, app-only WireGuard tunnel after Android VPN consent. Its configuration remains local and its private key is protected by Android Keystore.
 
 ### Why is the source code public?
 Transparency builds trust. By publishing our source code, we allow security researchers, journalists, and privacy advocates to verify that our encryption works as claimed. Security through obscurity is no security at all.

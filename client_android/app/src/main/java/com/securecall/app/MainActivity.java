@@ -31,6 +31,7 @@ import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
 import com.securecall.app.security.SecurityEnforcer;
 import com.securecall.app.init.AppInit;
 import com.securecall.app.fcm.FcmTokenManager;
+import com.securecall.app.net.ExternalVpnMonitor;
 import com.securecall.app.ui.CallsFragment;
 import com.securecall.app.ui.ContactsFragment;
 import com.securecall.app.ui.DialerFragment;
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean inCall = false;
     private AudioCapturePlaceholder audioCapture;
     private MaterialToolbar toolbar;
+    private ExternalVpnMonitor externalVpnMonitor;
     private int wireRetryCount = 0;
     private androidx.appcompat.app.AlertDialog phoneNumberDialog;
 
@@ -126,6 +128,23 @@ public class MainActivity extends AppCompatActivity {
         toolbar.setSubtitle("Connecting\u2026");
         toolbar.setSubtitleTextColor(getResources().getColor(android.R.color.darker_gray, null));
         wireConnectionStatusCallbacks();
+
+        // VPN transport status LED: visible only while this process routes through
+        // an Android system VPN. Flavor-specific copy distinguishes external Play
+        // routing from the direct Premium APK tunnel.
+        android.view.MenuItem vpnStatusItem = toolbar.getMenu().findItem(R.id.action_external_vpn_status);
+        if (vpnStatusItem != null) {
+            View vpnActionView = vpnStatusItem.getActionView();
+            if (vpnActionView instanceof com.securecall.app.ui.VpnStatusIndicatorView) {
+                final com.securecall.app.ui.VpnStatusIndicatorView vpnLed =
+                        (com.securecall.app.ui.VpnStatusIndicatorView) vpnActionView;
+                externalVpnMonitor = new ExternalVpnMonitor(this, this, active -> {
+                    vpnLed.setVpnActive(active);
+                    return kotlin.Unit.INSTANCE;
+                });
+            }
+        }
+
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_settings) {
                 showFragment(new SettingsFragment());

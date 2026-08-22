@@ -34,6 +34,7 @@ import com.securecall.app.audio.capture.AudioCapturePlaceholder;
 import com.securecall.app.data.CallHistoryRepository;
 import com.securecall.app.data.CallRecord;
 import com.securecall.app.data.CallType;
+import com.securecall.app.net.ExternalVpnMonitor;
 import com.securecall.app.security.SecureCallMonitor;
 import com.securecall.app.ui.EdgeToEdgeHelper;
 
@@ -59,6 +60,7 @@ public class CallActivity extends AppCompatActivity {
     private TextView pendingConnectionState;
     private Chronometer pendingCallTimer;
     private SecureCallMonitor secureCallMonitor;
+    private ExternalVpnMonitor externalVpnMonitor;
     private boolean isMuted = false;
     private boolean isSpeaker = false;
     private boolean isCallActive = false;
@@ -150,6 +152,17 @@ public class CallActivity extends AppCompatActivity {
         fabEndCall = findViewById(R.id.fabEndCall);
         fabSpeaker = findViewById(R.id.fabSpeaker);
         registerCommunicationDeviceListener();
+
+        // VPN transport status LED: visible only while this process routes through
+        // an Android system VPN. The monitor is lifecycle-scoped.
+        com.securecall.app.ui.VpnStatusIndicatorView vpnLed = findViewById(R.id.vpnStatusIndicator);
+        if (vpnLed != null) {
+            final com.securecall.app.ui.VpnStatusIndicatorView led = vpnLed;
+            externalVpnMonitor = new ExternalVpnMonitor(this, this, active -> {
+                led.setVpnActive(active);
+                return kotlin.Unit.INSTANCE;
+            });
+        }
 
         // Security status views
         securityStatusIcon = findViewById(R.id.securityStatusIcon);

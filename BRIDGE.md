@@ -5725,3 +5725,71 @@ Open next:
   stale automation-PR reconciliation.
 
 `LOCAL VALIDATION COMPLETE — PROTECTED PR NEXT`
+
+---
+
+## 2026-08-23 00:46 EEST — CODEX SOL — EXTERNAL VPN STATUS INDICATOR START
+
+- **Ticket:** `STEALTH-20260823-EXTERNAL-VPN-INDICATOR`; **Type:** FEATURE / STATUS;
+  **Status:** In Progress.
+- Owner requested a visible pulsing protection indicator when SecureCall is actually using an
+  Android system VPN supplied by another app. SecureCall must remain free of `VpnService`,
+  WireGuard implementation, plugin download, VPN installation and VPN configuration code.
+- Existing `NetworkManager.isExternalVpnActive()` and its dynamic VPN watcher already preserve
+  system VPN routing by releasing explicit Wi-Fi/mobile process bindings. Work will add a
+  lifecycle-safe UI state, accessible non-animated fallback and focused automated tests.
+- Isolated clean worktree/branch created from `origin/main` at `1a85748` so the divergent dirty
+  primary worktree remains untouched. No release, Play Console or production mutation is in scope.
+
+`EXTERNAL VPN INDICATOR IN PROGRESS — IMPLEMENTATION AND DEVICE VERIFICATION REQUIRED`
+
+## 2026-08-23 00:52 EEST — CODEX SOL — DISTRIBUTION SCOPE SPLIT
+
+- Owner clarified that direct-download APKs should retain an active built-in WireGuard service,
+  while the Google Play AAB must remain VPN-free. Packaging format alone cannot select code because
+  APK and AAB tasks currently compile the same release variant.
+- Architecture gate: create an explicitly separate Standalone APK build path/package. Play release
+  continues to compile without VPN service/dependency/settings. Standalone may include the VPN only
+  with explicit Android consent and must never be downloaded or installed by the Play app.
+- The historical implementation cannot be restored verbatim: it stored the client private key in
+  ordinary preferences and exposed a no-op kill-switch control. Those paths require secure redesign
+  or removal before a Standalone artifact can be called functional.
+
+`PLAY/STANDALONE SPLIT REQUIRED — DO NOT RESTORE LEGACY VPN VERBATIM`
+
+---
+
+## 2026-08-23 02:54 EEST — CODEX SOL — VPN DISTRIBUTION SPLIT VERIFIED
+
+- **Ticket:** `STEALTH-20260823-EXTERNAL-VPN-INDICATOR`; **Type:** FEATURE / FIX / TEST;
+  **Status:** Implementation Complete, external release actions not performed.
+- Architecture correction to the earlier 00:52 entry: the existing `premium` flavor already is
+  a separate source/package boundary (`com.securecall.app.premium`), so no fourth flavor was
+  required. Free/Pro use no-op flavor bridges; only Premium compiles the WireGuard implementation.
+- Google Play `freeRelease` AAB and Pro APK contain no `VpnService`, WireGuard dependency or
+  native WireGuard library. Premium APK contains the app controller, the upstream GoBackend VPN
+  service and four ABI-specific WireGuard runtimes. Free, Pro and Premium have independent
+  merged-manifest/runtime dependency guards, and CI executes all three.
+- Shared UI now shows a pulsing green LED only when Android reports `TRANSPORT_VPN`; it hides on
+  normal routes and respects disabled system animations. `NetworkManager` reports VPN before its
+  underlying Wi-Fi/mobile transport.
+- Premium WireGuard requires Android consent and a locally supplied valid configuration, routes
+  only SecureCall, encrypts its private key with Android Keystore, validates WireGuard keys,
+  preserves multi-address IPv4/IPv6 imports and removes insecure legacy plaintext on failed
+  migration. No endpoint or customer credential was added.
+- Kimi K3 performed a read-only deep review. Sol fixed its two material findings: missing Pro
+  regression coverage and truncated dual-stack client addresses/DNS. Sol also hardened service
+  shutdown/error-state handling and legacy-key migration.
+- Automated verification: Free and Premium unit tests PASS; Premium compilation PASS;
+  `verifyNoVpnServiceSource`, Free/Pro policy guards and Premium runtime guard PASS;
+  `lintFreeRelease` PASS; signed Free APK/AAB, Pro APK and Premium APK build PASS.
+- Physical verification: S7 Free, Tab S4 Pro and S10 Premium run version `1.0.48` / `78015`
+  connected without crashes. S7 on validated non-VPN Wi-Fi shows no VPN LED. Free/Pro expose no
+  built-in VPN settings. Premium exposes Standalone WireGuard, remains Off without config, rejects
+  incomplete config and retains no config afterward.
+- Residual test boundary: no valid provider WireGuard configuration was available, so a real
+  handshake and active external-VPN LED transition were not performed on hardware; deterministic
+  transport/parser tests cover those state paths. No Play upload, website deployment, push or
+  production mutation occurred in this block.
+
+`IMPLEMENTATION VERIFIED — RELEASE/PUBLISH ACTIONS REMAIN EXTERNAL`

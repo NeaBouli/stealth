@@ -3358,3 +3358,52 @@ Type: CI / REVIEW / RELEASE / BLOCKED
   new upload certificate. Both are external state changes; the implementation itself is verified.
 
 `PR 69 TECHNICALLY GREEN — REVIEW REQUIRED — PLAY RESET PENDING`
+
+## 2026-08-23 00:46 EEST — CODEX SOL — EXTERNAL VPN STATUS INDICATOR START
+
+Type: FEATURE / STATUS
+
+- Ticket `STEALTH-20260823-EXTERNAL-VPN-INDICATOR` adds a visible pulsing protection indicator
+  only while SecureCall's active default network reports Android `TRANSPORT_VPN`.
+- Product boundary remains unchanged: no built-in `VpnService`, WireGuard tunnel, plugin,
+  downloader, installer or VPN configuration. The indicator observes an independently managed
+  system VPN and must not claim protection when routing evidence is absent.
+- Work runs in isolated branch `feat/external-vpn-indicator-20260823` from clean `origin/main`;
+  the dirty/divergent primary worktree is preserved.
+
+`EXTERNAL VPN INDICATOR IN PROGRESS — NO RELEASE MUTATION`
+
+## 2026-08-23 00:52 EEST — CODEX SOL — PLAY/STANDALONE VPN BOUNDARY
+
+Type: DECISION / ARCHITECTURE / STATUS
+
+- Owner requires built-in VPN only in externally distributed Standalone APKs; Play AAB remains
+  strictly VPN-free. A separate build variant/package is required because APK versus AAB is not a
+  source-set boundary in Gradle.
+- Legacy VPN code review found plaintext private-key storage and a non-functional kill-switch
+  setting. No verbatim restoration is allowed; dead controls are removed and any Standalone VPN
+  implementation must use explicit consent, protected key storage and build-time isolation.
+
+`STANDALONE VPN REDESIGN IN SCOPE — PLAY ARTIFACT MUST STAY CLEAN`
+
+## 2026-08-23 02:54 EEST — CODEX SOL — VPN SPLIT BUILD AND DEVICE GATES GREEN
+
+Type: FEATURE / FIX / TEST / RELEASE GATE
+
+- Ticket `STEALTH-20260823-EXTERNAL-VPN-INDICATOR` is implementation-complete on isolated branch
+  `feat/external-vpn-indicator-20260823`. Existing Premium is the standalone source/package
+  boundary; Free and Pro remain VPN-service-free.
+- Free AAB/Pro APK artifact scans and merged-manifest/runtime guards found zero WireGuard or
+  `VpnService` content. Premium contains the controller, upstream GoBackend service and native
+  WireGuard runtimes for all four ABIs.
+- Free/Premium tests, Premium compile, Free lint, all three distribution guards and signed release
+  builds passed. Dependency verification hashes match the retrieved artifacts.
+- Device results: S7 Free, Tab S4 Pro and S10 Premium run `1.0.48` / `78015` connected without
+  crashes. Non-VPN Wi-Fi hides the indicator; Free/Pro have no VPN controls; Premium shows the
+  Standalone controls, stays Off without configuration and rejects invalid configuration.
+- Kimi K3 review findings for Pro regression coverage and dual-stack import preservation were
+  fixed and retested by Sol. Private-key migration and service shutdown were additionally hardened.
+- No valid provider configuration was available for a real WireGuard handshake. No Play upload,
+  deployment, push or production mutation was performed.
+
+`LOCAL IMPLEMENTATION GREEN — VALID CONFIG HANDSHAKE AND RELEASE ACTIONS REMAIN SEPARATE`

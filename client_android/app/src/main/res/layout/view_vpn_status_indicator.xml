@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Compact LED shown only while a system VPN is the active transport for
+     SecureCall traffic. Reused as the toolbar
+     action layout and on the in-call screen. -->
+<com.securecall.app.ui.VpnStatusIndicatorView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/vpnStatusIndicator"
+    android:layout_width="12dp"
+    android:layout_height="12dp"
+    android:layout_gravity="center"
+    android:layout_margin="8dp"
+    android:background="@drawable/status_dot_green" />

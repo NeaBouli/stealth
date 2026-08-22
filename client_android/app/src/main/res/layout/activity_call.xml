@@ -13,10 +13,23 @@
         android:gravity="center"
         android:padding="@dimen/spacing_sm"
         android:paddingTop="@dimen/spacing_xl"
+        android:paddingStart="48dp"
+        android:paddingEnd="48dp"
         android:text="@string/call_connecting"
         android:textColor="@color/stealthx_red"
         android:textSize="@dimen/text_label_small"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- VPN transport status LED.
+         Reserves its space while hidden, so no layout shift when it appears. -->
+    <include
+        layout="@layout/view_vpn_status_indicator"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="20dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Avatar circle -->
     <com.google.android.material.imageview.ShapeableImageView

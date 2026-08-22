@@ -35,8 +35,8 @@ android {
         applicationId "com.securecall.app"
         minSdkVersion 24
         targetSdkVersion 36
-        versionCode 78014
-        versionName "1.0.47"
+        versionCode 78015
+        versionName "1.0.48"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -139,7 +139,9 @@ android {
 
     }
 
-    // Suppress pro/premium variants unless -Pinternal is set
+    // Suppress pro/premium variants unless -Pinternal is set. The built-in
+    // WireGuard service exists only in the premium source set used for direct
+    // APK distribution; the Play freeRelease variant never sees that source.
     variantFilter { variant ->
         def flavorName = variant.flavors*.name
         if (!allowInternalFlavors && (flavorName.contains('pro') || flavorName.contains('premium'))) {
@@ -258,6 +260,10 @@ dependencies {
     premiumImplementation 'com.google.firebase:firebase-messaging'
     premiumImplementation 'com.google.firebase:firebase-crashlytics-ktx'
 
+    // Direct-download Premium APK only. Never add this to implementation or
+    // freeImplementation: Google Play's free AAB must remain VpnService-free.
+    premiumImplementation 'com.wireguard.android:tunnel:1.0.20260102'
+
     // Unit Tests (JVM)
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.3.1'
@@ -310,24 +316,32 @@ if (!buildingAppBundle) {
     }
 }
 
-def vpnPolicySourceFiles = fileTree(projectDir) {
-    include 'src/**/*.xml', 'src/**/*.kt', 'src/**/*.java'
-    exclude 'build/**'
+def nonPremiumVpnPolicySourceFiles = files(
+    fileTree('src/main') { include '**/*.xml', '**/*.kt', '**/*.java' },
+    fileTree('src/free') { include '**/*.xml', '**/*.kt', '**/*.java' },
+    fileTree('src/pro') { include '**/*.xml', '**/*.kt', '**/*.java' },
+    fileTree('src/release') { include '**/*.xml', '**/*.kt', '**/*.java' },
+    fileTree('src/freeRelease') { include '**/*.xml', '**/*.kt', '**/*.java' }
+)
+def nonPremiumWireguardCoordinates = providers.provider {
+    configurations.findAll { configuration ->
+        def name = configuration.name.toLowerCase()
+        name.startsWith('free') || name.startsWith('pro')
+    }.collectMany { configuration ->
+        configuration.allDependencies.findAll { dependency ->
+            dependency.group == 'com.wireguard.android'
+        }.collect { dependency ->
+            "${configuration.name}: ${dependency.group}:${dependency.name}"
+        }
+    }.sort()
 }
-def wireguardCoordinates = configurations.collectMany { configuration ->
-    configuration.allDependencies.findAll { dependency ->
-        dependency.group == 'com.wireguard.android'
-    }.collect { dependency ->
-        "${configuration.name}: ${dependency.group}:${dependency.name}"
-    }
-}.sort()
 def vpnPolicyReport = layout.buildDirectory.file('reports/verification/no-vpn-service.txt').get().asFile
 
 tasks.register('verifyNoVpnServiceSource') {
     group = 'verification'
-    description = 'Fails when app-owned VpnService code, permissions, or tunnel dependencies return.'
-    inputs.files(vpnPolicySourceFiles)
-    inputs.property('wireguardCoordinates', wireguardCoordinates)
+    description = 'Fails when the Google Play free variant gains VpnService code or tunnel dependencies.'
+    inputs.files(nonPremiumVpnPolicySourceFiles)
+    inputs.property('wireguardCoordinates', nonPremiumWireguardCoordinates)
     outputs.file(vpnPolicyReport)
     doLast {
         def forbidden = [
@@ -336,7 +350,7 @@ tasks.register('verifyNoVpnServiceSource') {
             'com.wireguard.android:tunnel'
         ]
         def violations = []
-        vpnPolicySourceFiles.each { candidate ->
+        nonPremiumVpnPolicySourceFiles.each { candidate ->
             def text = candidate.getText('UTF-8')
             forbidden.each { marker ->
                 if (text.contains(marker)) {
@@ -344,15 +358,125 @@ tasks.register('verifyNoVpnServiceSource') {
                 }
             }
         }
-        violations.addAll(wireguardCoordinates)
+        violations.addAll(nonPremiumWireguardCoordinates.get())
         if (!violations.isEmpty()) {
             throw new GradleException("VpnService policy guard failed:\n" + violations.join('\n'))
         }
         vpnPolicyReport.parentFile.mkdirs()
-        vpnPolicyReport.setText('No app-owned VpnService markers or WireGuard dependencies found.\n', 'UTF-8')
+        vpnPolicyReport.setText('Free and Pro source sets contain no VpnService markers or WireGuard dependencies.\n', 'UTF-8')
     }
 }
 
 tasks.named('preBuild').configure {
     dependsOn tasks.named('verifyNoVpnServiceSource')
+}
+
+def freeReleaseMergedManifest = layout.buildDirectory.file(
+    'intermediates/merged_manifest/freeRelease/processFreeReleaseMainManifest/AndroidManifest.xml'
+)
+
+tasks.register('verifyFreeReleaseVpnPolicy') {
+    group = 'verification'
+    description = 'Verifies the merged Play manifest and resolved runtime graph remain VpnService-free.'
+    dependsOn tasks.named('processFreeReleaseMainManifest')
+    inputs.file(freeReleaseMergedManifest)
+    doLast {
+        def manifest = freeReleaseMergedManifest.get().asFile
+        if (!manifest.isFile()) {
+            throw new GradleException("Merged freeRelease manifest not found: ${manifest}")
+        }
+
+        def forbidden = [
+            'android.permission.BIND_VPN_SERVICE',
+            'android.net.VpnService',
+            'com.wireguard.android'
+        ]
+        def violations = forbidden.findAll { manifest.getText('UTF-8').contains(it) }
+
+        def runtimeViolations = configurations.freeReleaseRuntimeClasspath.incoming
+            .resolutionResult.allComponents
+            .collect { it.moduleVersion }
+            .findAll { it != null && it.group == 'com.wireguard.android' }
+            .collect { "${it.group}:${it.name}:${it.version}" }
+
+        if (!violations.isEmpty() || !runtimeViolations.isEmpty()) {
+            throw new GradleException(
+                'Play freeRelease VPN policy guard failed: ' +
+                    (violations + runtimeViolations).join(', ')
+            )
+        }
+    }
+}
+
+tasks.matching { it.name == 'bundleFreeRelease' || it.name == 'assembleFreeRelease' }.configureEach {
+    dependsOn tasks.named('verifyFreeReleaseVpnPolicy')
+}
+
+if (allowInternalFlavors) {
+    def proReleaseMergedManifest = layout.buildDirectory.file(
+        'intermediates/merged_manifest/proRelease/processProReleaseMainManifest/AndroidManifest.xml'
+    )
+    def premiumReleaseMergedManifest = layout.buildDirectory.file(
+        'intermediates/merged_manifest/premiumRelease/processPremiumReleaseMainManifest/AndroidManifest.xml'
+    )
+
+    tasks.register('verifyProReleaseVpnPolicy') {
+        group = 'verification'
+        description = 'Verifies the direct Pro APK remains VpnService- and WireGuard-free.'
+        dependsOn tasks.named('processProReleaseMainManifest')
+        inputs.file(proReleaseMergedManifest)
+        doLast {
+            def manifest = proReleaseMergedManifest.get().asFile
+            if (!manifest.isFile()) {
+                throw new GradleException("Merged proRelease manifest not found: ${manifest}")
+            }
+            def forbidden = [
+                'android.permission.BIND_VPN_SERVICE',
+                'android.net.VpnService',
+                'com.wireguard.android'
+            ]
+            def violations = forbidden.findAll { manifest.getText('UTF-8').contains(it) }
+            def runtimeViolations = configurations.proReleaseRuntimeClasspath.incoming
+                .resolutionResult.allComponents
+                .collect { it.moduleVersion }
+                .findAll { it != null && it.group == 'com.wireguard.android' }
+                .collect { "${it.group}:${it.name}:${it.version}" }
+            if (!violations.isEmpty() || !runtimeViolations.isEmpty()) {
+                throw new GradleException(
+                    'Pro release VPN policy guard failed: ' +
+                        (violations + runtimeViolations).join(', ')
+                )
+            }
+        }
+    }
+
+    tasks.register('verifyPremiumReleaseVpnRuntime') {
+        group = 'verification'
+        description = 'Verifies the direct Premium APK contains both the controller and WireGuard backend services.'
+        dependsOn tasks.named('processPremiumReleaseMainManifest')
+        inputs.file(premiumReleaseMergedManifest)
+        doLast {
+            def manifest = premiumReleaseMergedManifest.get().asFile
+            if (!manifest.isFile()) {
+                throw new GradleException("Merged premiumRelease manifest not found: ${manifest}")
+            }
+            def text = manifest.getText('UTF-8')
+            def required = [
+                'com.securecall.app.vpn.PremiumVpnService',
+                'com.wireguard.android.backend.GoBackend$VpnService',
+                'android.permission.BIND_VPN_SERVICE'
+            ]
+            def missing = required.findAll { !text.contains(it) }
+            if (!missing.isEmpty()) {
+                throw new GradleException('Premium VPN runtime guard failed; missing: ' + missing.join(', '))
+            }
+        }
+    }
+
+    tasks.matching { it.name == 'assemblePremiumRelease' }.configureEach {
+        dependsOn tasks.named('verifyPremiumReleaseVpnRuntime')
+    }
+    tasks.matching { it.name == 'assembleProRelease' }.configureEach {
+        dependsOn tasks.named('verifyProReleaseVpnPolicy')
+    }
 }

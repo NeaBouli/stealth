@@ -58,9 +58,11 @@ object NetworkManager {
         val network = cm.activeNetwork ?: return "No network"
         val caps = cm.getNetworkCapabilities(network) ?: return "Unknown"
         return when {
+            // VPN first: when the system VPN tunnels an underlying WiFi/cellular
+            // network, capabilities list both transports and VPN is authoritative.
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
             caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "WiFi"
             caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "Mobile Data"
-            caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
             caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "Ethernet"
             else -> "Unknown"
         }

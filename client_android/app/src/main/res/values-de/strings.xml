@@ -83,6 +83,8 @@
     <string name="cd_call_outgoing">Ausgehender Anruf</string>
     <string name="cd_call_missed">Verpasster Anruf</string>
     <string name="cd_app_logo">StealthX Logo</string>
+    <string name="external_vpn_status_title">Externer VPN-Status</string>
+    <string name="cd_external_vpn_active">System-VPN aktiv, wird von einer anderen App auf diesem Ger\u00E4t bereitgestellt, nicht von StealthX</string>
 
     <!-- Permissions -->
     <string name="permission_mic_required">Mikrofon-Berechtigung ben\u00F6tigt</string>

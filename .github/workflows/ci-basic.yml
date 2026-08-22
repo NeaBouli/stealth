@@ -130,8 +130,12 @@ jobs:
             -keyalg RSA -keysize 3072 -validity 2 \
             -dname "CN=CI Verification Only"
           chmod +x gradlew
-          ./gradlew --no-daemon --max-workers=1 \
+          ./gradlew --no-daemon --max-workers=1 -Pinternal \
             testFreeDebugUnitTest \
+            testPremiumDebugUnitTest \
+            compilePremiumDebugSources \
+            verifyProReleaseVpnPolicy \
+            verifyPremiumReleaseVpnRuntime \
             lintFreeRelease \
             verifyNoAppIfrWalletCode \
             assembleFreeDebug \
