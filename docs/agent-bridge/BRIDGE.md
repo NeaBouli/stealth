@@ -3404,3 +3404,22 @@ Type: EXTERNAL / RELEASE / BLOCKED / STATUS
   `10` for retry after the exact Google deadline.
 
 `PLAY COOLDOWN IS THE ONLY UPLOAD GATE — RETRY AFTER 2026-08-22 14:18:57 EEST`
+
+## 2026-08-23 00:36 EEST — CODEX SOL — SECURECALL 78014 SUBMITTED TO GOOGLE REVIEW
+
+Type: EXTERNAL / RELEASE / VERIFICATION / STATUS
+
+- Retried Production release draft `10` after Google's upload-key cooldown had expired.
+- Removed only the previously rejected upload object and uploaded the unchanged, locally verified
+  `/Users/gio/Desktop/SecureCall-LATEST.aab` (`1.0.47-free`, version code `78014`, SHA-256
+  `5257c4cea245d0fadf6b098ffe98c0bc2446e8d899ff7c9ff676e5a1c92feaeb`).
+- Google Play completed upload and distribution optimization without the former upload-certificate
+  error. The artifact was accepted as `78014 (1.0.47-free)` in the Production release.
+- Added English release notes describing removal of the built-in VPN service, compatibility with
+  device-managed VPN connections, connection-stability improvements and updated documentation.
+- Saved the Production release and explicitly submitted its single change to Google. Play Console
+  now lists `78014 (1.0.47-free)` under `Changes being reviewed`; Google states that pre-review
+  checks run first and the change is then submitted for review.
+- No immediate rollout was forced. Publication remains controlled by Google's review outcome.
+
+`SECURECALL 78014 ACCEPTED AND SUBMITTED — GOOGLE REVIEW PENDING`
