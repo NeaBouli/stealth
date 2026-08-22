@@ -3358,3 +3358,68 @@ Type: CI / REVIEW / RELEASE / BLOCKED
   new upload certificate. Both are external state changes; the implementation itself is verified.
 
 `PR 69 TECHNICALLY GREEN — REVIEW REQUIRED — PLAY RESET PENDING`
+
+## 2026-08-20 18:59 EEST — CODEX SOL — VPN RELEASE MERGED / PAGES LIVE
+
+Type: MERGE / DEPLOY / VERIFICATION / STATUS
+
+- PR `#69` merged to `main` as `1a85748eca09228b90a70311ec4f98468d6b4e8b` after all final
+  checks passed, including Android Client, API 24/API 36 instrumentation, dependency/security
+  checks, Rust, signaling and CodeRabbit.
+- GitHub Pages run `32389214693` deployed that exact merge commit successfully.
+- Live `https://stealthx.tech/`, `/faq.html`, `/wiki/faq.html` and
+  `/wiki/security-design.html` were fetched successfully and show the corrected current product
+  boundary: no built-in VPN/VpnService/WireGuard tunnel; compatible with external device-managed
+  VPN connections.
+- Final local `1.0.47` / `78014` AAB remains ready on Desktop. Google Play upload remains gated
+  by the pending upload-key reset; the new AAB is not uploaded.
+
+`VPN RELEASE MERGED AND LIVE — PLAY UPLOAD KEY RESET PENDING`
+
+## 2026-08-20 22:37 EEST — CODEX SOL — NEW PLAY UPLOAD KEY ACTIVE
+
+Type: EXTERNAL / RELEASE / VERIFICATION / STATUS
+
+- Reloaded the SecureCall Google Play App Signing page. The displayed upload-certificate
+  SHA-256 is now `83:18:36:CF:48:17:34:6F:B3:1F:9A:43:D6:15:92:6E:B5:C8:93:BF:35:F8:A1:2E:A4:45:5D:2B:BC:6E:49:D2`, exactly matching the new local public certificate and
+  the signer of the verified `1.0.47` / `78014` AAB.
+- Play still renders the contradictory text that a reset request is pending, but the operative
+  upload-certificate value has already changed from the old `1E:0A:...:B2:1D` certificate.
+- No AAB upload, release creation, track mutation or rollout occurred during this read-only check.
+
+`UPLOAD CERTIFICATE MATCH CONFIRMED — 78014 READY FOR AUTHORIZED UPLOAD`
+
+## 2026-08-20 23:35 EEST — CODEX SOL — PLAY UPLOAD COOLDOWN CONFIRMED
+
+Type: EXTERNAL / RELEASE / BLOCKED / STATUS
+
+- With explicit owner authorization, opened SecureCall Production release draft `10` for the
+  replacement of rejected release `78013` and uploaded the locally verified `1.0.47` / `78014`
+  AAB signed by the newly accepted upload certificate.
+- Google transferred all `33.6 MB` and began distribution optimization, then returned the
+  authoritative validation error that a recently reset upload certificate cannot be used before
+  `2026-08-22 11:18:57 UTC` (`2026-08-22 14:18:57 EEST`).
+- No AAB was accepted into the release, no release was submitted for review, no Production track
+  mutation occurred and no rollout started. The prepared draft remains at Production release
+  `10` for retry after the exact Google deadline.
+
+`PLAY COOLDOWN IS THE ONLY UPLOAD GATE — RETRY AFTER 2026-08-22 14:18:57 EEST`
+
+## 2026-08-23 00:36 EEST — CODEX SOL — SECURECALL 78014 SUBMITTED TO GOOGLE REVIEW
+
+Type: EXTERNAL / RELEASE / VERIFICATION / STATUS
+
+- Retried Production release draft `10` after Google's upload-key cooldown had expired.
+- Removed only the previously rejected upload object and uploaded the unchanged, locally verified
+  `/Users/gio/Desktop/SecureCall-LATEST.aab` (`1.0.47-free`, version code `78014`, SHA-256
+  `5257c4cea245d0fadf6b098ffe98c0bc2446e8d899ff7c9ff676e5a1c92feaeb`).
+- Google Play completed upload and distribution optimization without the former upload-certificate
+  error. The artifact was accepted as `78014 (1.0.47-free)` in the Production release.
+- Added English release notes describing removal of the built-in VPN service, compatibility with
+  device-managed VPN connections, connection-stability improvements and updated documentation.
+- Saved the Production release and explicitly submitted its single change to Google. Play Console
+  now lists `78014 (1.0.47-free)` under `Changes being reviewed`; Google states that pre-review
+  checks run first and the change is then submitted for review.
+- No immediate rollout was forced. Publication remains controlled by Google's review outcome.
+
+`SECURECALL 78014 ACCEPTED AND SUBMITTED — GOOGLE REVIEW PENDING`
