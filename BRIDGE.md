@@ -5881,3 +5881,15 @@ Open next:
   exact target track remains required.
 
 `DIRECT RELEASE DONE — PLAY SIGNER ACCEPTED — TARGET TRACK REQUIRED`
+
+## 2026-08-23 11:06 EEST — CODEX SOL — PLAY PRODUCTION REVIEW SUBMITTED
+
+- **Ticket:** `STEALTH-20260823-PLAY-78015`; **Type:** RELEASE / EXTERNAL;
+  **Status:** Done for upload/submission; Google review pending.
+- Owner explicitly authorized production-track upload and review submission. Signed VPN-free
+  `78015 (1.0.48-free)` was accepted with target SDK 36 and English release notes.
+- Production rollout is set to 100%. Play Console now lists the release under changes being
+  reviewed.
+- Rejected `78014` was not included or resubmitted. No other app or track was changed.
+
+`78015 SUBMITTED TO GOOGLE — REVIEW RESULT PENDING`

@@ -3476,3 +3476,16 @@ Type: RELEASE / TEST / STATUS
   publishing authorization before the replacement bundle is uploaded.
 
 `SOURCE/WEBSITE/DIRECT RELEASE CLOSED — PLAY TRACK DECISION OPEN`
+
+## 2026-08-23 11:06 EEST — CODEX SOL — SECURECALL 78015 PLAY SUBMISSION
+
+Type: RELEASE / EXTERNAL / STATUS
+
+- With bounded owner authorization, uploaded VPN-free production bundle
+  `78015 (1.0.48-free)` and submitted it to Google review.
+- Play Console accepted the active upload signer, reports target SDK 36 and lists the 100%
+  production rollout under changes being reviewed.
+- Rejected `78014` was not included or resubmitted. No other app or track changed.
+- Next external gate: Google policy-review decision.
+
+`PLAY PRODUCTION SUBMISSION COMPLETE — GOOGLE REVIEW PENDING`
