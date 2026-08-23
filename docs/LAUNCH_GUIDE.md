@@ -204,7 +204,7 @@ export SECURECALL_KEY_PASSWORD=[KEY_PASSWORD]
 
 ---
 
-## Step 5: Build Release AABs
+## Step 5: Build Distribution Artifacts
 
 ### 5.1 Prerequisites
 
@@ -222,23 +222,30 @@ rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-and
 ```bash
 cd client_android
 ./gradlew clean
-./gradlew bundleFreeRelease bundleProRelease bundlePremiumRelease
+./gradlew -Pinternal bundleFreeRelease \
+  assembleFreeRelease assembleProRelease assemblePremiumRelease \
+  verifyNoVpnServiceSource verifyFreeReleaseVpnPolicy \
+  verifyProReleaseVpnPolicy verifyPremiumReleaseVpnRuntime
 ```
 
-Or: `bash tools/build_release_aabs.sh`
+The Free AAB is the only Google Play artifact. Free, Pro and Premium APKs are direct-download
+artifacts; only the direct Premium APK contains the optional app-managed WireGuard feature.
+See [`DISTRIBUTION_MATRIX.md`](DISTRIBUTION_MATRIX.md).
 
 ### 5.3 Verify
 
 ```bash
-ls -lh app/build/outputs/bundle/*/app-*-release.aab
-# All AABs < 15 MB
+ls -lh app/build/outputs/bundle/freeRelease/app-free-release.aab
+ls -lh app/build/outputs/apk/{free,pro,premium}/release/app-*-release.apk
 ```
 
 ### Checklist
 
 - [ ] Clean build successful
-- [ ] 3 AABs built (FREE, PRO, PREMIUM)
-- [ ] All AABs < 15 MB
+- [ ] Free AAB built for Google Play
+- [ ] Free, Pro and Premium direct APKs built
+- [ ] VPN boundary verification tasks passed
+- [ ] No Pro or Premium artifact is prepared for Google Play
 
 ---
 
@@ -247,7 +254,7 @@ ls -lh app/build/outputs/bundle/*/app-*-release.aab
 ### 6.1 Install APK
 
 ```bash
-./gradlew assembleFreeRelease
+./gradlew bundleFreeRelease assembleFreeRelease
 adb install app/build/outputs/apk/free/release/app-free-release.apk
 ```
 
@@ -407,7 +414,7 @@ Data Safety:
 ```
 [ ] Version in build.gradle incremented (versionCode 3, versionName "1.0")
 [ ] Git Tag: git tag -a v1.0 -m "v1.0 Production" && git push origin v1.0
-[ ] Clean Build of all 3 AABs
+[ ] Clean build of the Free Play AAB and all three direct APKs
 [ ] Railway Server stable (Health Check OK)
 ```
 
@@ -499,7 +506,7 @@ cd stealth.wiki && git add . && git commit -m "Add documentation" && git push
 ### App Build
 - [ ] Keystore generated and stored securely
 - [ ] Release URLs entered in build.gradle
-- [ ] 3 AABs built and tested
+- [ ] Free Play AAB and all three direct APKs built and tested
 - [ ] APK tested on real device
 
 ### Google Play (25 EUR)

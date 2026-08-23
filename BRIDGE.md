@@ -5801,3 +5801,41 @@ Open next:
 - Local device evidence remains intentionally untracked and is not part of the public commit.
 
 `COMMIT 155bb31 RECORDED — NO PUSH OR PUBLISH IN THIS BLOCK`
+
+## 2026-08-23 03:03 EEST — CODEX SOL — DISTRIBUTION COPY CLARIFICATION START
+
+- **Ticket:** `STEALTH-20260823-EXTERNAL-VPN-INDICATOR`; **Type:** DOCUMENTATION / WEBSITE;
+  **Status:** In Progress.
+- Owner requires the sales and download surfaces to state plainly that the optional built-in
+  WireGuard feature is a direct Premium APK advantage. The Google Play edition intentionally
+  excludes an app-owned VPN service to comply with Google Play `VpnService` distribution rules;
+  it can still use and indicate a device-managed VPN.
+- Scope is limited to public product/download/install copy and version/link consistency. Android
+  source, signed artifacts and VPN behavior remain unchanged.
+
+`WEBSITE DISTRIBUTION BOUNDARY COPY IN PROGRESS`
+
+## 2026-08-23 09:53 EEST — CODEX SOL — DISTRIBUTION SPLIT WORKFLOW VERIFIED
+
+- **Ticket:** `STEALTH-20260823-EXTERNAL-VPN-INDICATOR`; **Type:** DECISION / DOCUMENTATION /
+  TEST; **Status:** Review.
+- The permanent project workflow now defines two non-interchangeable channels: the Google Play
+  `freeRelease` AAB always remains app-VPN-free, including after paid feature unlocks; the direct
+  Premium APK is the only artifact with optional app-managed WireGuard. Direct Pro remains
+  VPN-service-free.
+- Added `docs/DISTRIBUTION_MATRIX.md`, updated `AGENTS.md`, release/build/QA/Play checklists,
+  public landing/download/FAQ/Wiki copy and release scripts. The release helper now builds only
+  one Play AAB and the three direct APKs, with all VPN boundary guards.
+- Kimi K3 completed an independent read-only review. Sol fixed its valid findings: internal task
+  flags, deterministic APK naming, stale Wiki version, missing release-notes reference and the
+  obsolete Pro/Premium-AAB Play checklist.
+- Verification: Gradle complete-release command `--dry-run` with Android SDK -> `BUILD SUCCESSFUL`;
+  both release shell scripts pass `bash -n`; `git diff --check` passes; stale active AAB workflow
+  search is clean. Local browser checks at desktop and 390px mobile show no horizontal overflow,
+  three download cards, correct v1.0.48 Wiki state and no console errors.
+- External release gate remains: current public GitHub latest release is v1.0.46 and does not yet
+  contain the three new `SecureCall-{Free,Pro,Premium}-LATEST.apk` assets. Do not deploy the new
+  website copy before a normal v1.0.48 release provides those assets.
+- Local `device-evidence/` remains intentionally untracked and must not be committed.
+
+`WORKFLOW FIXED — LOCAL GATES GREEN — PR/RELEASE PUBLICATION NEXT`

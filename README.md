@@ -85,6 +85,12 @@ Complete documentation is available in the [Wiki](https://github.com/NeaBouli/st
 
 **Download:** [GitHub Releases](https://github.com/NeaBouli/stealth/releases/latest) | [stealthx.tech](https://stealthx.tech)
 
+**Distribution note:** Google Play ships the Free edition without an app-owned VPN service to meet
+Google Play's VpnService distribution requirements. It still follows and indicates an external
+device VPN. Paid features unlocked inside the Play package remain VPN-service-free. The separately
+distributed Premium APK adds optional app-managed WireGuard support after Android consent and
+requires a valid configuration from the user's VPN provider.
+
 </div>
 
 ## Building from Source
@@ -174,7 +180,7 @@ The signaling server only facilitates connection establishment. It relays encryp
 <details>
 <summary><strong>Does SecureCall include a VPN?</strong></summary>
 
-The Google Play edition contains no built-in VPN service. It follows a VPN already managed by Android or another trusted app and shows a green status LED while that route is active. The separately distributed Premium APK can also run an optional, app-only WireGuard tunnel after Android's VPN consent; its configuration stays on the device and its private key is encrypted with Android Keystore. TURN relay remains available when direct WebRTC connectivity is unavailable.
+The Google Play edition contains no built-in VPN service. It follows a VPN already managed by Android or another trusted app and shows a green status LED while that route is active. Paid feature entitlements do not change that boundary. The separately distributed Premium APK can also run an optional, app-managed WireGuard tunnel after Android's VPN consent; its configuration stays on the device and its private key is encrypted with Android Keystore. TURN relay remains available when direct WebRTC connectivity is unavailable.
 
 </details>
 

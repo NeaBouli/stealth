@@ -30,6 +30,9 @@ echo ""
 # ─── 1. APK Size ────────────────────────────────────────
 echo "[1/6] Checking APK size..."
 APK_PATH="client_android/app/build/outputs/apk/free/release/app-free-release.apk"
+if [ ! -f "$APK_PATH" ]; then
+    APK_PATH="client_android/app/build/outputs/apk/free/release/app-free-universal-release.apk"
+fi
 if [ -f "$APK_PATH" ]; then
     APK_SIZE=$(ls -lh "$APK_PATH" | awk '{print $5}')
     echo "  APK size: $APK_SIZE"

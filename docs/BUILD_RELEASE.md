@@ -4,7 +4,7 @@
 
 - Android Studio Hedgehog (2023.1.1) or newer
 - JDK 17+
-- Android SDK 33
+- Android SDK 36
 - NDK (for native crypto library)
 - Rust toolchain (for core_crypto)
 - Release keystore (see [KEYSTORE_INFO.md](KEYSTORE_INFO.md))
@@ -31,32 +31,29 @@ SECURECALL_KEY_PASSWORD=your_key_password
 
 ## Build Commands
 
-### Android App Bundles (AAB) — recommended for Play Store
+### Google Play App Bundle (AAB)
 
 ```bash
 cd client_android
 
-# Build all flavors
+# Only the Free flavor is published through Google Play.
 ./gradlew bundleFreeRelease
-./gradlew bundleProRelease
-./gradlew bundlePremiumRelease
 ```
 
-Output locations:
+Output location:
 ```
 app/build/outputs/bundle/freeRelease/app-free-release.aab
-app/build/outputs/bundle/proRelease/app-pro-release.aab
-app/build/outputs/bundle/premiumRelease/app-premium-release.aab
 ```
 
-### APKs — for direct distribution / testing
+Never upload a Pro or Premium artifact to the SecureCall Google Play listing.
+
+### APKs — direct distribution
 
 ```bash
 cd client_android
 
-./gradlew assembleFreeRelease
-./gradlew assembleProRelease
-./gradlew assemblePremiumRelease
+./gradlew -Pinternal bundleFreeRelease \
+  assembleFreeRelease assembleProRelease assemblePremiumRelease
 ```
 
 Output locations:
@@ -66,10 +63,21 @@ app/build/outputs/apk/pro/release/app-pro-release.apk
 app/build/outputs/apk/premium/release/app-premium-release.apk
 ```
 
-### Build all at once
+The bundle task intentionally shares this invocation so the direct APKs are emitted as the
+unsuffixed, multi-ABI files listed above. A standalone `assemble*Release` invocation enables ABI
+splits and emits `app-<flavor>-universal-release.apk` plus per-ABI APKs instead.
+
+The direct Premium APK contains the optional app-managed WireGuard feature. The Play Free AAB
+and direct Pro APK remain free of the VPN service and WireGuard runtime. Read
+[`DISTRIBUTION_MATRIX.md`](DISTRIBUTION_MATRIX.md) before every release.
+
+### Build the complete distribution set
 
 ```bash
-./gradlew bundleFreeRelease bundleProRelease bundlePremiumRelease
+./gradlew -Pinternal bundleFreeRelease \
+  assembleFreeRelease assembleProRelease assemblePremiumRelease \
+  verifyNoVpnServiceSource verifyFreeReleaseVpnPolicy \
+  verifyProReleaseVpnPolicy verifyPremiumReleaseVpnRuntime
 ```
 
 ## Verification
@@ -95,9 +103,9 @@ jarsigner -verify -verbose app-free-release.aab
 - [ ] R8/ProGuard minification is active
 - [ ] All 3 flavors install and launch correctly
 - [ ] Voice calls work end-to-end (encrypted)
-- [ ] In-app purchases work in sandbox mode
+- [ ] Website purchase links deliver the correct direct edition
 - [ ] No hardcoded test credentials remain
-- [ ] Version name and code are correct (`0.2-beta`, versionCode `2`)
+- [ ] Version name and code match the planned release
 
 ## Version Management
 
@@ -105,8 +113,8 @@ Current version is defined in `client_android/app/build.gradle`:
 
 ```gradle
 defaultConfig {
-    versionCode 2
-    versionName "0.2-beta"
+    versionCode <next unused code>
+    versionName "<release version>"
 }
 ```
 

@@ -3415,3 +3415,32 @@ Type: FEATURE / FIX / TEST / RELEASE GATE
   artifacts were added to the repository.
 
 `COMMIT RECORDED — PUSH/PUBLISH NOT PERFORMED`
+
+## 2026-08-23 03:03 EEST — CODEX SOL — WEBSITE VPN EDITION CLARIFICATION START
+
+Type: DOCUMENTATION / WEBSITE
+
+- Clarify pricing, downloads and installation guidance: Google Play ships without an app-owned
+  VPN service under Play `VpnService` policy; the direct Premium APK provides the optional local
+  WireGuard feature after Android consent.
+- No Android code or release artifact changes are part of this follow-up.
+
+`PUBLIC COPY UPDATE IN PROGRESS`
+
+## 2026-08-23 09:53 EEST — CODEX SOL — PLAY/DIRECT RULE MADE PERMANENT
+
+Type: DECISION / DOCUMENTATION / TEST
+
+- Project `AGENTS.md` and new `docs/DISTRIBUTION_MATRIX.md` are now authoritative for every future
+  SecureCall build and update: Play receives only the VPN-service-free Free AAB; Play paid-tier
+  entitlements never add VPN code; direct Premium alone contains optional app-managed WireGuard;
+  direct Pro remains VPN-free.
+- Release documentation, Play checklist, build helper, performance helper, README, landing,
+  download page, FAQs and Wiki were aligned. Historical Bridge records were left unchanged.
+- Kimi K3 reviewed the full diff read-only. Sol resolved all applicable findings and reran the
+  relevant checks. Gradle release-task dry-run succeeded; shell syntax, diff checks, desktop/mobile
+  layout, local page responses and browser console checks passed.
+- Public GitHub v1.0.46 still lacks the planned three v1.0.48 direct-download aliases. Website
+  publication must remain coordinated with a normal GitHub release so no dead links go live.
+
+`PERMANENT DISTRIBUTION GATE READY FOR PROTECTED PR`

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureCall — Download APK</title>
-    <meta name="description" content="Download the current SecureCall public APK. Pro and Premium unlock inside the same app with an activation code.">
+    <meta name="description" content="Choose SecureCall from Google Play or download the direct Free, Pro, or Premium APK. Direct Premium includes optional app-managed WireGuard support.">
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#0a0a12">
     <link rel="canonical" href="https://stealthx.tech/download">
@@ -185,8 +185,8 @@
 <header>
     <a class="logo" href="/">← stealthx.tech</a>
     <h1>SecureCall APK Download</h1>
-    <p class="subtitle">One public app for every plan. Install SecureCall once, then unlock Pro or Premium in Settings with your activation code.</p>
-    <span class="version-badge">v1.0.46 — vC78013 Latest</span>
+    <p class="subtitle">Choose the edition that matches your purchase and distribution preference. The optional built-in WireGuard feature is exclusive to the direct Premium APK.</p>
+    <span class="version-badge">v1.0.48 — vC78015 Latest</span>
 </header>
 
 <div class="container">
@@ -196,24 +196,45 @@
         This is required for all sideloaded APKs on Android.
     </div>
 
-    <!-- PUBLIC APP -->
+    <div class="notice" style="background:rgba(0,230,118,0.08);border-color:rgba(0,230,118,0.25);color:#7dffb7">
+        <strong>Google Play and direct Premium differ by design</strong>
+        The Google Play edition contains no app-owned VPN service so this listing meets Google Play's VpnService distribution requirements. It can still use and indicate a VPN managed by Android or another installed provider. Pro/Premium features unlocked inside the Play package remain VPN-service-free. The direct Premium APK additionally offers an optional app-managed WireGuard tunnel after Android consent. SecureCall does not supply a VPN endpoint; use a valid configuration from your VPN provider.
+    </div>
+
+    <!-- DIRECT BUILDS -->
     <div class="tier-section">
         <div class="tier-header">
-            <span class="tier-label free">SecureCall Public APK</span>
-            <span class="tier-tag free">FREE + CODE UNLOCK</span>
+            <span class="tier-label free">Official direct APKs</span>
+            <span class="tier-tag free">SIGNED v1.0.48</span>
         </div>
         <div class="apk-grid">
             <a class="apk-card"
-               href="https://github.com/NeaBouli/stealth/releases/download/v1.0.46/SecureCall-LATEST.apk">
+               href="https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Free-LATEST.apk">
                 <span class="download-icon">&#8681;</span>
-                <span class="arch">Universal Android APK</span>
-                <span class="arch-sub">Works on 64-bit ARM, 32-bit ARM, and x86_64 devices</span>
-                <span class="recommended">&#10003; Recommended for all direct downloads</span>
-                <span class="filesize">~63 MB</span>
+                <span class="arch">Free APK</span>
+                <span class="arch-sub">Free calling tier; no built-in VPN service</span>
+                <span class="recommended">Device-managed VPN compatible</span>
+                <span class="filesize">~50 MB</span>
+            </a>
+            <a class="apk-card"
+               href="https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Pro-LATEST.apk">
+                <span class="download-icon">&#8681;</span>
+                <span class="arch">Pro APK</span>
+                <span class="arch-sub">Pro security and calling features; no built-in VPN service</span>
+                <span class="recommended">Requires valid Pro access</span>
+                <span class="filesize">~49 MB</span>
+            </a>
+            <a class="apk-card"
+               href="https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Premium-LATEST.apk">
+                <span class="download-icon">&#8681;</span>
+                <span class="arch">Premium APK</span>
+                <span class="arch-sub">Premium security plus optional app-managed WireGuard</span>
+                <span class="recommended">Direct-download VPN advantage</span>
+                <span class="filesize">~62 MB</span>
             </a>
         </div>
         <p class="subtitle" style="margin-top:18px">
-            This is the same app used for Free, Pro, and Premium. Paid plans unlock after checkout by entering the activation code in SecureCall Settings.
+            Download the APK matching your purchased tier. Free, Pro, and Premium use separate Android package identities. Premium's WireGuard setting requires Android VPN consent and a valid provider configuration stored locally on the device.
         </p>
     </div>
 
@@ -224,11 +245,11 @@
         <dl>
             <div class="faq-item">
                 <dt>Which APK should I download?</dt>
-                <dd>Download the universal APK above. It contains the supported Android CPU variants, so customers do not need to choose between separate APK files.</dd>
+                <dd>Use Google Play for the Free store edition. For a direct purchase, download the APK matching your Free, Pro, or Premium entitlement. Each APK supports the packaged Android CPU variants.</dd>
             </div>
             <div class="faq-item">
-                <dt>Where are the Pro and Premium APKs?</dt>
-                <dd>You do not need separate Pro or Premium APKs. Install the public APK above, then enter your activation code in Settings. The app switches to the highest valid plan on the device.</dd>
+                <dt>Why does only the direct Premium APK include WireGuard?</dt>
+                <dd>The Play edition intentionally excludes an app-owned VPN service to meet Google Play's VpnService distribution requirements for this listing. Paid feature unlocks do not add VPN code. Direct Premium is distributed separately and can offer an optional app-managed WireGuard tunnel after Android consent.</dd>
             </div>
             <div class="faq-item">
                 <dt>Do I need a Pro/Premium license key?</dt>
@@ -236,7 +257,7 @@
             </div>
             <div class="faq-item">
                 <dt>How do I verify the APK signature?</dt>
-                <dd>All builds are signed with the SecureCall release keystore. Check the <a href="https://github.com/NeaBouli/stealth/releases/tag/v1.0.46" target="_blank" rel="noopener">GitHub release</a> for SHA256 checksums.</dd>
+                <dd>All builds are signed with the SecureCall release keystore. Check the <a href="https://github.com/NeaBouli/stealth/releases/latest" target="_blank" rel="noopener">latest GitHub release</a> for SHA256 checksums.</dd>
             </div>
             <div class="faq-item">
                 <dt>Something not working?</dt>
