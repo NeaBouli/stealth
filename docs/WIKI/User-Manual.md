@@ -77,11 +77,12 @@ During a call, the security status bar shows:
 - **Crash reports** — Anonymous crash data (Free tier only, opt-out available)
 - **Delete all data** — Erase all local data (keys, contacts, settings)
 
-### Network and external VPNs
-- SecureCall does not provide a built-in VPN service or WireGuard tunnel.
-- VPN connections managed by Android or another trusted app remain supported.
+### Network and VPNs
+- A green status LED appears only while SecureCall uses Android's active VPN route.
+- The Google Play edition contains no built-in VPN service and remains compatible with a VPN managed by Android or another trusted app.
+- The direct Premium APK can run an optional WireGuard tunnel after Android VPN consent. Only SecureCall is included in that tunnel, its configuration remains local, and its private key is encrypted with Android Keystore.
 - SecureCall automatically uses TURN relay when a direct WebRTC path is unavailable.
-- If an external VPN blocks calling or registration, allow SecureCall in that provider's settings.
+- If a VPN blocks calling or registration, allow SecureCall in that provider's settings.
 
 ---
 #### ████ CONTACT REGISTRY ████

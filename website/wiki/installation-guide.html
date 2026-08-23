@@ -157,7 +157,7 @@
             <div class="section-break">Option 1: Google Play (Recommended)</div>
 
             <h2>Google Play Store Deployment</h2>
-            <p>The official and recommended deployment method. Google Play ensures automatic updates, signature verification, and the smoothest installation experience. All three SecureCall tiers are available through a single listing with in-app upgrade.</p>
+            <p>Google Play provides automatic updates, signature verification, and the smoothest Free-edition installation. This listing intentionally contains no app-owned VPN service to meet Google Play's VpnService distribution requirements. It remains compatible with a VPN managed by Android or another installed provider.</p>
 
             <table>
                 <thead>
@@ -171,30 +171,30 @@
                     <tr>
                         <td><strong>SecureCall (Free)</strong></td>
                         <td>E2E encrypted calls, 10 contacts maximum, 15-minute call limit per session</td>
-                        <td><a href="../download.html">Direct APK</a></td>
+                        <td><a href="https://play.google.com/store/apps/details?id=com.securecall.app.free">Google Play</a></td>
                     </tr>
                     <tr>
                         <td><strong>SecureCall Pro</strong></td>
                         <td>Unlimited calls and contacts, HD audio, anti-recording protection, TLS security</td>
-                        <td>In-App Upgrade</td>
+                        <td><a href="../download.html">Direct Pro APK</a></td>
                     </tr>
                     <tr>
                         <td><strong>SecureCall Premium</strong></td>
-                        <td>Everything in Pro + hardware keystore, automatic threat termination, and enforced security detections</td>
-                        <td>In-App Upgrade</td>
+                        <td>Everything in Pro + automatic threat termination, enforced security detections, and optional app-managed WireGuard</td>
+                        <td><a href="../download.html">Direct Premium APK</a></td>
                     </tr>
                 </tbody>
             </table>
 
             <div class="info-box info">
-                <strong>Recommendation:</strong> Start with the free tier to verify compatibility with your device and network. You can upgrade to Pro or Premium at any time from within the app without losing your contacts or SecureCall ID.
+                <strong>Choose by distribution:</strong> Use Google Play for the VPN-service-free Free edition. Use the separately signed direct Pro or Premium APK matching your purchase. Only direct Premium includes the optional built-in WireGuard configuration; every edition can follow an external device VPN.
             </div>
 
             <!-- SECTION 2: GITHUB RELEASES -->
             <div class="section-break">Option 2: GitHub Releases</div>
 
             <h2>APK Sideloading (Advanced Users)</h2>
-            <p>For users who prefer not to use Google Play, or whose devices lack Play Services, the official APK is available from GitHub Releases. This method requires enabling sideloading on your device.</p>
+            <p>Official Free, Pro, and Premium APKs are available from GitHub Releases. Direct Premium is the only edition with the optional app-managed WireGuard feature. Sideloading requires enabling installation from the browser or file manager used to open the APK.</p>
 
             <div class="info-box warning">
                 <strong>Source-Available License:</strong> SecureCall uses a Source-Available License. Building from source is <strong>not permitted</strong> under the license terms. Only official APK releases from the GitHub Releases page or Google Play are authorized for deployment. Inspect the source code for transparency, but deploy from official binaries only.

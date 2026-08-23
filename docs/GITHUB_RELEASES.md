@@ -1,26 +1,31 @@
 # GitHub Releases Plan
 
-## v1.0-beta Release Assets
+## Release Assets
 
-### PUBLIC (direct download)
-- `app-free-release.apk` (79 MB) — Free tier with ads
+### Public direct downloads
+- `SecureCall-Free-LATEST.apk` — Free direct edition
+- `SecureCall-Pro-LATEST.apk` — Pro direct edition; no app-managed VPN
+- `SecureCall-Premium-LATEST.apk` — Premium direct edition with optional app-managed WireGuard
 
-### NOT uploaded (Play Store only)
-- `app-pro-release.apk` — upgrade via in-app purchase
-- `app-premium-release.apk` — upgrade via in-app purchase
-- `.aab` bundles — Play Store internal
+### Google Play only
+- `app-free-release.aab` — Free Play edition; no app-managed VPN
+
+Pro and Premium artifacts must never be uploaded to the SecureCall Google Play listing. The Play
+edition may detect an independently managed system VPN, but it does not create or configure one.
 
 ## Release Notes Template
 
 ```
-# SecureCall v1.0 Beta
+# SecureCall <version>
 
 End-to-end encrypted voice calls for Android.
 No phone number. No account. Zero metadata.
 
 ## Downloads
-- **Free (with ads):** app-free-release.apk
-- **Pro & Premium:** [Google Play](https://play.google.com/store/apps/details?id=com.securecall.app.free)
+- **Google Play:** Free edition without an app-managed VPN
+- **Direct Free:** SecureCall-Free-LATEST.apk
+- **Direct Pro:** SecureCall-Pro-LATEST.apk
+- **Direct Premium:** SecureCall-Premium-LATEST.apk with optional app-managed WireGuard
 
 ## Features
 - E2E encrypted calls (X25519 + DTLS-SRTP)
@@ -43,9 +48,14 @@ No phone number. No account. Zero metadata.
 
 ## Create Release via CLI
 ```bash
-gh release create v1.0-beta \
-  ~/Documents/SecureCall-Release/final/app-free-release.apk \
-  --title "SecureCall v1.0 Beta" \
-  --notes-file docs/RELEASE_NOTES.md \
-  --prerelease
+gh release create <tag> \
+  SecureCall-Free-LATEST.apk \
+  SecureCall-Pro-LATEST.apk \
+  SecureCall-Premium-LATEST.apk \
+  --title "SecureCall <version>" \
+  --generate-notes \
+  --latest
 ```
+
+The website uses `/releases/latest/download/...`; therefore the public download release must be a
+normal latest release, not a draft or prerelease.

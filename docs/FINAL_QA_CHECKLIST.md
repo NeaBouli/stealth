@@ -3,6 +3,17 @@
 Complete pre-launch quality assurance checklist.
 Mark each item with `[x]` when verified.
 
+## 0. Distribution Boundary
+
+- [ ] Read `docs/DISTRIBUTION_MATRIX.md` before building or publishing.
+- [ ] Google Play candidate is `freeRelease` AAB with package `com.securecall.app.free`.
+- [ ] Free AAB contains no `VpnService`, WireGuard dependency or `libwg` native library.
+- [ ] Direct Pro APK contains no `VpnService`, WireGuard dependency or `libwg` native library.
+- [ ] Direct Premium APK uses package `com.securecall.app.premium` and contains the expected
+      Premium controller and upstream GoBackend VPN services.
+- [ ] No Pro/Premium artifact is uploaded to the SecureCall Google Play listing.
+- [ ] Website, Wiki, README and release notes distinguish Play Free from direct Premium.
+
 ## 1. Build Tests
 
 ### Debug Builds
@@ -12,10 +23,15 @@ Mark each item with `[x]` when verified.
 
 ### Release Builds
 - [ ] FREE Release AAB builds (with keystore)
-- [ ] PRO Release AAB builds
-- [ ] PREMIUM Release AAB builds
+- [ ] FREE direct Release APK builds
+- [ ] PRO direct Release APK builds with `-Pinternal`
+- [ ] PREMIUM direct Release APK builds with `-Pinternal`
+- [ ] `verifyNoVpnServiceSource` passes
+- [ ] `verifyFreeReleaseVpnPolicy` passes
+- [ ] `verifyProReleaseVpnPolicy` passes
+- [ ] `verifyPremiumReleaseVpnRuntime` passes
 - [ ] R8/ProGuard mapping files generated
-- [ ] APK size < 15 MB per flavor
+- [ ] Artifact sizes are recorded and reviewed
 
 ## 2. Installation Tests
 

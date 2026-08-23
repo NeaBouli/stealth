@@ -1,11 +1,14 @@
 # SecureCall Ecosystem – Security Design Document
 
-> **Current release boundary (Android 1.0.47):** This document also contains
+> **Current release boundary (Android 1.0.48):** This document also contains
 > research and long-range architecture concepts. The released Android client
 > uses WebRTC with STUN/TURN and application-layer end-to-end encryption. It
-> contains no built-in VPN, WireGuard tunnel, multi-hop relay, SilentCarrier,
-> QUIC transport, device-owner controls, or OS-level hardening. SecureCall can
-> operate over a VPN managed by Android or another trusted app.
+> The Google Play edition contains no built-in VPN or WireGuard code. The direct
+> Premium APK can run a consent-gated, app-only WireGuard tunnel using a locally
+> supplied configuration whose private key is encrypted with Android Keystore.
+> Neither edition contains a multi-hop relay, SilentCarrier, QUIC transport,
+> device-owner controls, or OS-level hardening. Both can operate over a VPN
+> managed by Android or another trusted app.
 
 ## 1. Purpose of This Document
 
@@ -629,7 +632,7 @@ WLAN recommended but not enforced
 
 Rooted devices allowed → warning only
 
-No built-in VPN service; external device VPN supported
+No built-in VPN service; external device VPN supported with active-route indicator
 
 GhostNet: Single-Hop
 
@@ -649,7 +652,7 @@ Mobile data allowed
 
 Root optionally blockable
 
-No built-in VPN service; external device VPN supported
+No built-in VPN service; external device VPN supported with active-route indicator
 
 GhostNet: Single-Hop, optimized
 
@@ -664,6 +667,8 @@ Anti-debug / anti-emulator mandatory
 8.4 Premium Policy – PhantomLine Elite
 
 WLAN or "dedicated mobile network profile"
+
+Direct APK may use an optional consent-gated, app-only WireGuard tunnel; Play builds remain VPN-service-free
 
 No operation on rooted devices
 

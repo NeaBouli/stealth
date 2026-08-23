@@ -882,7 +882,7 @@ Before Option A ships, the following must be verified unchanged:
 - [ ] X25519 key exchange happens on-device, keypairs never transmitted (audit `core_crypto/`)
 - [ ] Double Ratchet ratchets forward on every session (per-call key derivation test)
 - [ ] STEALTH-DELETE wipes Matrix credentials in addition to existing data
-- [x] No app-owned VPN routing: Matrix traffic follows Android's active network, including an optional external device VPN
+- [x] Play builds use no app-owned VPN routing; all editions follow Android's active route, and direct Premium may use its optional app-only WireGuard tunnel
 - [ ] Certificate pinning applies to `matrix.stealthx.tech` endpoint (add to pinned certs)
 - [ ] No plaintext fallback: if Matrix signaling fails, call must fail — not fall back to unencrypted WebSocket
 
@@ -1037,7 +1037,7 @@ When communicating Option A to the community and press, use this framing:
 | **Megolm** | Matrix's group encryption protocol. Used for encrypting room events in multi-party rooms. |
 | **to_device** | A Matrix API for sending encrypted messages directly to a specific device, bypassing room history. Used for key exchange. |
 | **Application Service (AS)** | A Matrix integration service that can bridge Matrix to external systems. Used in Option B. |
-| **External VPN** | Optional device-managed network layer. SecureCall does not create or operate a VPN tunnel; Matrix traffic follows Android's active network. |
+| **VPN route** | Android's active network route. Play builds use only a device-managed VPN; direct Premium may also use its optional app-only WireGuard tunnel. Matrix traffic follows the same active route. |
 | **DTLS-SRTP** | WebRTC's transport-layer encryption. Present in all WebRTC calls regardless of SecureCall's application layer. |
 | **XChaCha20-Poly1305** | SecureCall's application-layer AEAD cipher. 256-bit key, 192-bit nonce. Applied on top of DTLS-SRTP. |
 | **Deep link** | A URI scheme (`securecall://`) that routes a URL tap directly to a specific screen in the SecureCall Android app. |

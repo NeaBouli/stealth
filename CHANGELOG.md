@@ -7,6 +7,24 @@ Format follows "Keep a Changelog" with security-critical extensions.
 
 ---
 
+## [1.0.48] — 2026-08-23 — vC78015
+
+### Added
+- Active-route VPN status LED on the main and in-call screens
+- Optional app-only WireGuard tunnel in the direct Premium APK
+- Android VPN consent flow and Android Keystore encryption for the client private key
+
+### Security
+- Google Play Free AAB and Pro APK remain free of `VpnService` and WireGuard runtime code
+- Build and CI guards verify the Free, Pro and Premium distribution boundaries
+- WireGuard imports validate keys and preserve IPv4/IPv6 client addresses and routes
+
+### Fixed
+- VPN indicator no longer appears on ordinary Wi-Fi or mobile routes
+- Legacy plaintext VPN keys are removed if secure migration cannot complete
+
+---
+
 ## [1.0.28] — 2026-04-24 — vC50
 
 ### Fixed

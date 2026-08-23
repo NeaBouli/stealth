@@ -1,7 +1,7 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════
-# SecureCall — Build All Release AABs
-# Produces Play Store-ready Android App Bundles
+# SecureCall — Build Play AAB and direct APKs
+# Enforces the permanent Google Play/direct-download distribution boundary.
 # ═══════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../client_android" && pwd)"
 
 echo "╔══════════════════════════════════════════╗"
-echo "║   Building Release AABs                  ║"
+echo "║   Building SecureCall release set        ║"
 echo "╚══════════════════════════════════════════╝"
 
 # ─── Check prerequisites ────────────────────────────────
@@ -32,43 +32,35 @@ fi
 cd "$PROJECT_DIR"
 
 # ─── Clean ───────────────────────────────────────────────
-echo "[1/5] Cleaning previous builds..."
+echo "[1/3] Cleaning previous builds..."
 ./gradlew clean
 
-# ─── Build AABs ─────────────────────────────────────────
-echo "[2/5] Building FREE Release AAB..."
-./gradlew bundleFreeRelease
-
-echo "[3/5] Building PRO Release AAB..."
-./gradlew bundleProRelease
-
-echo "[4/5] Building PREMIUM Release AAB..."
-./gradlew bundlePremiumRelease
+# ─── Build and enforce distribution boundaries ──────────
+echo "[2/3] Building the Free Play AAB and direct APKs..."
+./gradlew -Pinternal \
+    bundleFreeRelease \
+    assembleFreeRelease assembleProRelease assemblePremiumRelease \
+    verifyNoVpnServiceSource verifyFreeReleaseVpnPolicy \
+    verifyProReleaseVpnPolicy verifyPremiumReleaseVpnRuntime
 
 # ─── List outputs ───────────────────────────────────────
-echo "[5/5] Verifying outputs..."
+echo "[3/3] Verifying outputs..."
 echo ""
 echo "═══════════════════════════════════════════"
-echo " Release AABs:"
+echo " Google Play AAB:"
 echo ""
 
-for flavor in free pro premium; do
-    AAB="app/build/outputs/bundle/${flavor}Release/app-${flavor}-release.aab"
-    if [ -f "$AAB" ]; then
-        SIZE=$(ls -lh "$AAB" | awk '{print $5}')
-        echo "  ✓ ${flavor}: ${AAB} (${SIZE})"
-    else
-        echo "  ✗ ${flavor}: NOT FOUND"
-    fi
-done
-
-# ─── Also build APKs for testing ────────────────────────
-echo ""
-echo " Building APKs for testing..."
-./gradlew assembleFreeRelease assembleProRelease assemblePremiumRelease
+AAB="app/build/outputs/bundle/freeRelease/app-free-release.aab"
+if [ -f "$AAB" ]; then
+    SIZE=$(ls -lh "$AAB" | awk '{print $5}')
+    echo "  ✓ free: ${AAB} (${SIZE})"
+else
+    echo "  ✗ free: NOT FOUND"
+    exit 1
+fi
 
 echo ""
-echo " Release APKs:"
+echo " Direct-download APKs:"
 for flavor in free pro premium; do
     APK="app/build/outputs/apk/${flavor}/release/app-${flavor}-release.apk"
     if [ -f "$APK" ]; then
@@ -86,5 +78,6 @@ echo ""
 echo " Next steps:"
 echo "   1. Install APK on device: adb install <apk>"
 echo "   2. Test all QA checklist items"
-echo "   3. Upload AABs to Play Console (Internal Testing)"
+echo "   3. Upload only the Free AAB to Play Console"
+echo "   4. Publish the APKs only through the direct-download release"
 echo "═══════════════════════════════════════════"

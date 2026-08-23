@@ -64,11 +64,13 @@
 - [ ] See `docs/GOOGLE_PLAY_BILLING_SETUP.md`
 
 ## Release Artifacts
-Saved in `~/Documents/SecureCall-Release/final/`:
-- `app-free-release.apk` (79 MB) + `.aab` (47 MB)
-- `app-pro-release.apk` (77 MB) + `.aab` (44 MB)
-- `app-premium-release.apk` (77 MB) + `.aab` (44 MB)
-- Keystore: `~/Documents/SecureCall-Release/securecall-release-key.jks`
+
+- [ ] Upload only `app-free-release.aab` for package `com.securecall.app.free`.
+- [ ] Confirm `verifyFreeReleaseVpnPolicy` passed before upload.
+- [ ] Confirm the AAB contains no `VpnService`, WireGuard dependency or native WireGuard library.
+- [ ] Do not upload Pro or Premium APK/AAB artifacts to this Play listing.
+- [ ] Publish direct Free/Pro/Premium APKs only through the separately documented GitHub/website
+      release path in `docs/DISTRIBUTION_MATRIX.md`.
 
 ## Signing
 - Certificate: CN=SecureCall, O=StealthX

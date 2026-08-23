@@ -1,5 +1,10 @@
 # StealthX Platform — Release Process
 
+> **Mandatory SecureCall distribution gate:** Before any SecureCall release, read
+> [`DISTRIBUTION_MATRIX.md`](DISTRIBUTION_MATRIX.md). Google Play receives only the VPN-service-free
+> Free AAB. Direct Premium is a separate package/APK and is the only edition with optional built-in
+> WireGuard. These artifacts are never interchangeable.
+
 ## The Three Stages (MANDATORY for all StealthX Apps)
 
 ### Stage 1 — Internal Alpha (Developer-internal)

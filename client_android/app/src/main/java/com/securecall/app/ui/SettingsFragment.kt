@@ -9,6 +9,7 @@ import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import com.securecall.app.BuildConfig
 import com.securecall.app.R
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -17,6 +18,12 @@ import com.securecall.app.config.FeatureProviderRegistry
 import com.securecall.app.config.TierManager
 
 class SettingsFragment : PreferenceFragmentCompat() {
+
+    private val vpnPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        com.securecall.app.vpn.VpnFeature.onPermissionResult(this, result.resultCode)
+    }
 
     // Stealth-delete: 5-tap rapid trigger
     private var resetTapCount = 0
@@ -151,6 +158,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // eSIM setup and preferred network transport
         configureAnonymousNetwork(effectiveTier)
 
+        // Flavor boundary: no-op in Free/Pro, real WireGuard controls only in
+        // the direct-download Premium APK source set.
+        com.securecall.app.vpn.VpnFeature.configure(this, vpnPermissionLauncher)
+
         // About section links
         setupAboutLinks()
 
@@ -191,6 +202,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // BUG-022: Refresh network info + bound status on every resume
         refreshNetworkStatus()
+        com.securecall.app.vpn.VpnFeature.refresh(this)
         configureBatteryOptimization()
     }
 

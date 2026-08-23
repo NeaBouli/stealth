@@ -80,9 +80,11 @@ SecureCall protects against these attacker classes:
 | Crash reports | Opt-out | Disabled | Disabled |
 | Network-level IP processing | Transient (STUN/TURN) | Transient (STUN/TURN) | Transient (STUN/TURN) |
 
-SecureCall does not provide a VPN or IP-masking tunnel in any tier. It can use
-the active Android network, including a VPN managed by Android or another
-trusted app.
+The Google Play edition does not provide a VPN or IP-masking tunnel. Every
+edition can use the active Android network, including a VPN managed by Android
+or another trusted app. The direct Premium APK can additionally run an
+app-only WireGuard tunnel from a locally supplied configuration after Android
+consent; its private key is encrypted with Android Keystore.
 
 ---
 #### ████ ANTI-RECORDING PROTECTION ████

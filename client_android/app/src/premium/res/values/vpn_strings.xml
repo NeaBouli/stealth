@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="external_vpn_status_title">VPN status</string>
+    <string name="cd_external_vpn_active">VPN active, SecureCall traffic uses the current tunnel</string>
+    <string name="premium_vpn_category">Standalone VPN</string>
+    <string name="premium_vpn_enabled">Protect SecureCall with WireGuard</string>
+    <string name="premium_vpn_enabled_summary">Routes only this Premium APK through the configured tunnel</string>
+    <string name="premium_vpn_status">VPN status</string>
+    <string name="premium_vpn_status_off">Off</string>
+    <string name="premium_vpn_status_connecting">Connecting</string>
+    <string name="premium_vpn_status_active">Active - SecureCall traffic is routed through WireGuard</string>
+    <string name="premium_vpn_status_error">Connection failed</string>
+    <string name="premium_vpn_config">WireGuard configuration</string>
+    <string name="premium_vpn_config_missing">No configuration saved</string>
+    <string name="premium_vpn_config_saved">Configuration saved</string>
+    <string name="premium_vpn_config_required">Add a valid WireGuard configuration first</string>
+    <string name="premium_vpn_consent_denied">VPN permission was not granted</string>
+    <string name="premium_vpn_config_title">Configure WireGuard</string>
+    <string name="premium_vpn_paste">Paste WireGuard .conf</string>
+    <string name="premium_vpn_endpoint_hint">Server endpoint</string>
+    <string name="premium_vpn_port_hint">Port</string>
+    <string name="premium_vpn_server_key_hint">Server public key</string>
+    <string name="premium_vpn_private_key_hint">Client private key (leave empty to keep saved key)</string>
+    <string name="premium_vpn_dns_hint">DNS server</string>
+    <string name="premium_vpn_allowed_ips_hint">Allowed IPs</string>
+    <string name="premium_vpn_client_address_hint">Client address</string>
+    <string name="premium_vpn_clear">Clear</string>
+    <string name="premium_vpn_cleared">VPN configuration cleared</string>
+    <string name="premium_vpn_invalid_config">The WireGuard configuration is incomplete or invalid</string>
+    <string name="premium_vpn_notification_channel">SecureCall VPN</string>
+    <string name="premium_vpn_notification_connecting">Connecting WireGuard tunnel</string>
+    <string name="premium_vpn_notification_active">SecureCall traffic is protected by WireGuard</string>
+    <string name="premium_vpn_notification_failed">WireGuard connection failed</string>
+    <string name="premium_vpn_save_failed">The private key could not be stored securely</string>
+</resources>

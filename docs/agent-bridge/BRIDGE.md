@@ -3358,3 +3358,106 @@ Type: CI / REVIEW / RELEASE / BLOCKED
   new upload certificate. Both are external state changes; the implementation itself is verified.
 
 `PR 69 TECHNICALLY GREEN — REVIEW REQUIRED — PLAY RESET PENDING`
+
+## 2026-08-23 00:46 EEST — CODEX SOL — EXTERNAL VPN STATUS INDICATOR START
+
+Type: FEATURE / STATUS
+
+- Ticket `STEALTH-20260823-EXTERNAL-VPN-INDICATOR` adds a visible pulsing protection indicator
+  only while SecureCall's active default network reports Android `TRANSPORT_VPN`.
+- Product boundary remains unchanged: no built-in `VpnService`, WireGuard tunnel, plugin,
+  downloader, installer or VPN configuration. The indicator observes an independently managed
+  system VPN and must not claim protection when routing evidence is absent.
+- Work runs in isolated branch `feat/external-vpn-indicator-20260823` from clean `origin/main`;
+  the dirty/divergent primary worktree is preserved.
+
+`EXTERNAL VPN INDICATOR IN PROGRESS — NO RELEASE MUTATION`
+
+## 2026-08-23 00:52 EEST — CODEX SOL — PLAY/STANDALONE VPN BOUNDARY
+
+Type: DECISION / ARCHITECTURE / STATUS
+
+- Owner requires built-in VPN only in externally distributed Standalone APKs; Play AAB remains
+  strictly VPN-free. A separate build variant/package is required because APK versus AAB is not a
+  source-set boundary in Gradle.
+- Legacy VPN code review found plaintext private-key storage and a non-functional kill-switch
+  setting. No verbatim restoration is allowed; dead controls are removed and any Standalone VPN
+  implementation must use explicit consent, protected key storage and build-time isolation.
+
+`STANDALONE VPN REDESIGN IN SCOPE — PLAY ARTIFACT MUST STAY CLEAN`
+
+## 2026-08-23 02:54 EEST — CODEX SOL — VPN SPLIT BUILD AND DEVICE GATES GREEN
+
+Type: FEATURE / FIX / TEST / RELEASE GATE
+
+- Ticket `STEALTH-20260823-EXTERNAL-VPN-INDICATOR` is implementation-complete on isolated branch
+  `feat/external-vpn-indicator-20260823`. Existing Premium is the standalone source/package
+  boundary; Free and Pro remain VPN-service-free.
+- Free AAB/Pro APK artifact scans and merged-manifest/runtime guards found zero WireGuard or
+  `VpnService` content. Premium contains the controller, upstream GoBackend service and native
+  WireGuard runtimes for all four ABIs.
+- Free/Premium tests, Premium compile, Free lint, all three distribution guards and signed release
+  builds passed. Dependency verification hashes match the retrieved artifacts.
+- Device results: S7 Free, Tab S4 Pro and S10 Premium run `1.0.48` / `78015` connected without
+  crashes. Non-VPN Wi-Fi hides the indicator; Free/Pro have no VPN controls; Premium shows the
+  Standalone controls, stays Off without configuration and rejects invalid configuration.
+- Kimi K3 review findings for Pro regression coverage and dual-stack import preservation were
+  fixed and retested by Sol. Private-key migration and service shutdown were additionally hardened.
+- No valid provider configuration was available for a real WireGuard handshake. No Play upload,
+  deployment, push or production mutation was performed.
+
+`LOCAL IMPLEMENTATION GREEN — VALID CONFIG HANDSHAKE AND RELEASE ACTIONS REMAIN SEPARATE`
+
+## 2026-08-23 02:57 EEST — CODEX SOL — COMMIT RECORDED
+
+- Implementation commit: `155bb31` (`feat: split Play and standalone VPN support`).
+- Device screenshots/XML evidence stays local and untracked; no device identifiers or test
+  artifacts were added to the repository.
+
+`COMMIT RECORDED — PUSH/PUBLISH NOT PERFORMED`
+
+## 2026-08-23 03:03 EEST — CODEX SOL — WEBSITE VPN EDITION CLARIFICATION START
+
+Type: DOCUMENTATION / WEBSITE
+
+- Clarify pricing, downloads and installation guidance: Google Play ships without an app-owned
+  VPN service under Play `VpnService` policy; the direct Premium APK provides the optional local
+  WireGuard feature after Android consent.
+- No Android code or release artifact changes are part of this follow-up.
+
+`PUBLIC COPY UPDATE IN PROGRESS`
+
+## 2026-08-23 09:53 EEST — CODEX SOL — PLAY/DIRECT RULE MADE PERMANENT
+
+Type: DECISION / DOCUMENTATION / TEST
+
+- Project `AGENTS.md` and new `docs/DISTRIBUTION_MATRIX.md` are now authoritative for every future
+  SecureCall build and update: Play receives only the VPN-service-free Free AAB; Play paid-tier
+  entitlements never add VPN code; direct Premium alone contains optional app-managed WireGuard;
+  direct Pro remains VPN-free.
+- Release documentation, Play checklist, build helper, performance helper, README, landing,
+  download page, FAQs and Wiki were aligned. Historical Bridge records were left unchanged.
+- Kimi K3 reviewed the full diff read-only. Sol resolved all applicable findings and reran the
+  relevant checks. Gradle release-task dry-run succeeded; shell syntax, diff checks, desktop/mobile
+  layout, local page responses and browser console checks passed.
+- Public GitHub v1.0.46 still lacks the planned three v1.0.48 direct-download aliases. Website
+  publication must remain coordinated with a normal GitHub release so no dead links go live.
+
+`PERMANENT DISTRIBUTION GATE READY FOR PROTECTED PR`
+
+## 2026-08-23 09:58 EEST — CODEX SOL — PR 71 OPEN
+
+- Commit `c3e3313` and the two implementation commits were pushed on the isolated feature branch.
+- Protected PR `https://github.com/NeaBouli/stealth/pull/71` is mergeable; CI is running and an
+  independent approving review is required.
+- No bypass, merge, release, website deployment or Play upload occurred.
+
+`PR REVIEW GATE ACTIVE`
+
+## 2026-08-23 10:08 EEST — CODEX SOL — PR 71 CI GREEN
+
+- Exact head `ecaf24e` passed all ten technical checks, including both Android device APIs,
+  Android Client, Security, Dependencies, Signaling and Rust.
+- Merge remains blocked only by the required independent approving review. No bypass performed.
+
+`CI GREEN — REVIEW REQUIRED`

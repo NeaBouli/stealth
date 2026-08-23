@@ -117,12 +117,6 @@
     <string name="notif_background_title">SecureCall active</string>
     <string name="notif_background_text">Ready for incoming calls</string>
 
-    <!-- Server URLs -->
-    <string name="server_url_production">wss://api.stealthx.tech/signal</string>
-    <string name="server_url_debug">ws://10.0.2.2:8080/signal</string>
-    <string name="stun_server">stun:stun.l.google.com:19302</string>
-    <string name="turn_server">turn:a.relay.metered.ca:443?transport=tcp</string>
-
     <!-- Incoming Call -->
     <string name="incoming_call_title">Incoming Secure Call</string>
     <string name="call_accept">Accept</string>
@@ -148,6 +142,8 @@
     <string name="cd_call_outgoing">Outgoing call</string>
     <string name="cd_call_missed">Missed call</string>
     <string name="cd_app_logo">StealthX Logo</string>
+    <string name="external_vpn_status_title">External VPN status</string>
+    <string name="cd_external_vpn_active">System VPN active, provided by another app on this device, not by StealthX</string>
 
     <!-- Permissions -->
     <string name="permission_mic_required">Microphone permission required</string>

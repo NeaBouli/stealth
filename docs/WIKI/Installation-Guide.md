@@ -8,19 +8,25 @@
 #### ████ OPTION 1: GOOGLE PLAY STORE (RECOMMENDED) ████
 ---
 
-The official and recommended way to deploy SecureCall.
+Google Play provides automatic updates for the Free edition. To meet Google Play's VpnService
+distribution requirements, that listing intentionally contains no app-owned VPN service. It can
+still use and indicate a VPN managed by Android or another installed provider.
 
 | Version | Description | Link |
 |---------|-------------|------|
 | **SecureCall** (Free) | E2E encrypted calls, 10 contacts, 15 min limit | [Google Play](https://play.google.com/store/apps/details?id=com.securecall.app.free) |
-| **SecureCall Pro** | Unlimited calls, HD audio, anti-recording | In-App Upgrade |
-| **SecureCall Premium** | Everything + automatic threat termination and enforced security controls | In-App Upgrade |
+| **SecureCall Pro** | Unlimited calls, HD audio, anti-recording; no built-in VPN | [Direct APK](https://stealthx.tech/download.html) |
+| **SecureCall Premium** | Everything + automatic threat termination and optional app-managed WireGuard | [Direct Premium APK](https://stealthx.tech/download.html) |
 
 ---
 #### ████ OPTION 2: GITHUB RELEASES (ADVANCED USERS) ████
 ---
 
 > **Important:** SecureCall uses a Source-Available License. Building from source is not permitted. Download the official APK from GitHub Releases instead.
+
+Choose the APK matching the purchased tier. Only the separately distributed Premium APK includes
+the optional local WireGuard configuration after Android VPN consent. SecureCall supplies no VPN
+endpoint; the user must provide a valid configuration from their VPN provider.
 
 1. Go to [Releases](https://github.com/NeaBouli/stealth/releases)
 2. Download the latest `.apk` file

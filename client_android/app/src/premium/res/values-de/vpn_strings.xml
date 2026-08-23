@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="external_vpn_status_title">VPN-Status</string>
+    <string name="cd_external_vpn_active">VPN aktiv, SecureCall-Datenverkehr nutzt den aktuellen Tunnel</string>
+    <string name="premium_vpn_category">Standalone-VPN</string>
+    <string name="premium_vpn_enabled">SecureCall mit WireGuard schützen</string>
+    <string name="premium_vpn_enabled_summary">Leitet nur diese Premium-APK durch den konfigurierten Tunnel</string>
+    <string name="premium_vpn_status">VPN-Status</string>
+    <string name="premium_vpn_status_off">Aus</string>
+    <string name="premium_vpn_status_connecting">Verbindung wird hergestellt</string>
+    <string name="premium_vpn_status_active">Aktiv - SecureCall-Datenverkehr läuft durch WireGuard</string>
+    <string name="premium_vpn_status_error">Verbindung fehlgeschlagen</string>
+    <string name="premium_vpn_config">WireGuard-Konfiguration</string>
+    <string name="premium_vpn_config_missing">Keine Konfiguration gespeichert</string>
+    <string name="premium_vpn_config_saved">Konfiguration gespeichert</string>
+    <string name="premium_vpn_config_required">Zuerst eine gültige WireGuard-Konfiguration hinzufügen</string>
+    <string name="premium_vpn_consent_denied">VPN-Berechtigung wurde nicht erteilt</string>
+    <string name="premium_vpn_config_title">WireGuard konfigurieren</string>
+    <string name="premium_vpn_paste">WireGuard-.conf einfügen</string>
+    <string name="premium_vpn_endpoint_hint">Server-Endpunkt</string>
+    <string name="premium_vpn_port_hint">Port</string>
+    <string name="premium_vpn_server_key_hint">Öffentlicher Server-Schlüssel</string>
+    <string name="premium_vpn_private_key_hint">Privater Client-Schlüssel (leer lassen, um den gespeicherten Schlüssel zu behalten)</string>
+    <string name="premium_vpn_dns_hint">DNS-Server</string>
+    <string name="premium_vpn_allowed_ips_hint">Erlaubte IP-Bereiche</string>
+    <string name="premium_vpn_client_address_hint">Client-Adresse</string>
+    <string name="premium_vpn_clear">Löschen</string>
+    <string name="premium_vpn_cleared">VPN-Konfiguration gelöscht</string>
+    <string name="premium_vpn_invalid_config">Die WireGuard-Konfiguration ist unvollständig oder ungültig</string>
+    <string name="premium_vpn_notification_channel">SecureCall VPN</string>
+    <string name="premium_vpn_notification_connecting">WireGuard-Tunnel wird verbunden</string>
+    <string name="premium_vpn_notification_active">SecureCall-Datenverkehr ist durch WireGuard geschützt</string>
+    <string name="premium_vpn_notification_failed">WireGuard-Verbindung fehlgeschlagen</string>
+    <string name="premium_vpn_save_failed">Der private Schlüssel konnte nicht sicher gespeichert werden</string>
+</resources>
