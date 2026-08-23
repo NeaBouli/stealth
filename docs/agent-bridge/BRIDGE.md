@@ -3453,3 +3453,11 @@ Type: DECISION / DOCUMENTATION / TEST
 - No bypass, merge, release, website deployment or Play upload occurred.
 
 `PR REVIEW GATE ACTIVE`
+
+## 2026-08-23 10:08 EEST — CODEX SOL — PR 71 CI GREEN
+
+- Exact head `ecaf24e` passed all ten technical checks, including both Android device APIs,
+  Android Client, Security, Dependencies, Signaling and Rust.
+- Merge remains blocked only by the required independent approving review. No bypass performed.
+
+`CI GREEN — REVIEW REQUIRED`

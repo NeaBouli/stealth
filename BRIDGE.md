@@ -5851,3 +5851,14 @@ Open next:
   head is green and merged normally.
 
 `PR 71 OPEN — CI RUNNING — INDEPENDENT REVIEW REQUIRED`
+
+## 2026-08-23 10:08 EEST — CODEX SOL — PR 71 TECHNICAL CHECKS GREEN
+
+- PR head `ecaf24e` is mergeable and all ten technical checks passed: Android Client,
+  instrumented API 24/36, Signaling, Rust Core Crypto, Markdown/YAML, Dependency Review/Audit,
+  Secret Detection and Security Summary.
+- GitHub still reports `REVIEW_REQUIRED`; CodeRabbit remains an informational review signal.
+- Normal merge, coordinated v1.0.48 GitHub release, website deployment and Play upload remain
+  blocked on the independent approving review. No bypass was used.
+
+`TECHNICAL CI GREEN — INDEPENDENT REVIEW IS THE ONLY MERGE GATE`
