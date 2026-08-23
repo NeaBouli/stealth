@@ -3461,3 +3461,18 @@ Type: DECISION / DOCUMENTATION / TEST
 - Merge remains blocked only by the required independent approving review. No bypass performed.
 
 `CI GREEN — REVIEW REQUIRED`
+
+## 2026-08-23 10:55 EEST — CODEX SOL — RELEASE CLOSEOUT
+
+Type: RELEASE / TEST / STATUS
+
+- PR `#71` merged as `f84faa8`; exact-main Pages, Security Audit and Basic CI all passed.
+- Normal latest release `v1.0.48` is live with signed Free, Pro and Premium APK aliases and the
+  checksum file. The deployed download page documents the Play/direct VPN split.
+- Play Console read-only recheck confirms the new upload certificate is active and matches the
+  signer of VPN-free Free bundle `78015`. Rejected `78014` remains unsubmitted and must not be
+  reused.
+- No Play upload or submission occurred. The exact Play target track must be named in the bounded
+  publishing authorization before the replacement bundle is uploaded.
+
+`SOURCE/WEBSITE/DIRECT RELEASE CLOSED — PLAY TRACK DECISION OPEN`
