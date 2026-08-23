@@ -5893,3 +5893,13 @@ Open next:
 - Rejected `78014` was not included or resubmitted. No other app or track was changed.
 
 `78015 SUBMITTED TO GOOGLE — REVIEW RESULT PENDING`
+
+## 2026-08-23 11:35 EEST — CODEX SOL — SECURECALL TARGET-API POLICY RECHECK
+
+- Read-only Play policy details list legacy Alpha `63002 (1.0.40-free)` and internal
+  `29 (1.0.12-free)` at target SDK 35 as affected artifacts.
+- Submitted production candidate `78015 (1.0.48-free)` targets SDK 36 and includes Billing 8.2.1.
+  Its Google review remains the gate for clearing the target-API, billing and VPN-policy status.
+- No additional Play change was made.
+
+`SECURECALL API36 REMEDIATION SUBMITTED — GOOGLE REVIEW PENDING`

@@ -3489,3 +3489,11 @@ Type: RELEASE / EXTERNAL / STATUS
 - Next external gate: Google policy-review decision.
 
 `PLAY PRODUCTION SUBMISSION COMPLETE — GOOGLE REVIEW PENDING`
+
+## 2026-08-23 11:35 EEST — CODEX SOL — TARGET API POLICY RECHECK
+
+- Play identifies legacy Alpha `63002` and internal `29` at target SDK 35.
+- Production candidate `78015` targets SDK 36 and uses Billing 8.2.1; it is already under review.
+- No additional Play mutation occurred. Google review remains the external resolution gate.
+
+`API36/BILLING REMEDIATION IN REVIEW`
