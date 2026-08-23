@@ -3444,3 +3444,12 @@ Type: DECISION / DOCUMENTATION / TEST
   publication must remain coordinated with a normal GitHub release so no dead links go live.
 
 `PERMANENT DISTRIBUTION GATE READY FOR PROTECTED PR`
+
+## 2026-08-23 09:58 EEST — CODEX SOL — PR 71 OPEN
+
+- Commit `c3e3313` and the two implementation commits were pushed on the isolated feature branch.
+- Protected PR `https://github.com/NeaBouli/stealth/pull/71` is mergeable; CI is running and an
+  independent approving review is required.
+- No bypass, merge, release, website deployment or Play upload occurred.
+
+`PR REVIEW GATE ACTIVE`

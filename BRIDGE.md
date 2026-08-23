@@ -5839,3 +5839,15 @@ Open next:
 - Local `device-evidence/` remains intentionally untracked and must not be committed.
 
 `WORKFLOW FIXED — LOCAL GATES GREEN — PR/RELEASE PUBLICATION NEXT`
+
+## 2026-08-23 09:58 EEST — CODEX SOL — PROTECTED PR OPENED
+
+- Commit `c3e3313` records the permanent distribution workflow and public copy.
+- Branch `feat/external-vpn-indicator-20260823` was pushed and normal PR
+  `https://github.com/NeaBouli/stealth/pull/71` opened against `main`.
+- PR head is mergeable, CI is running, and GitHub requires an independent approving review.
+  No admin merge or branch-protection bypass will be used.
+- GitHub release creation, website deployment and Play upload remain blocked until the exact PR
+  head is green and merged normally.
+
+`PR 71 OPEN — CI RUNNING — INDEPENDENT REVIEW REQUIRED`
