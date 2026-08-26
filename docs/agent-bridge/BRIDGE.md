@@ -3461,3 +3461,24 @@ Type: DECISION / DOCUMENTATION / TEST
 - Merge remains blocked only by the required independent approving review. No bypass performed.
 
 `CI GREEN — REVIEW REQUIRED`
+
+## 2026-08-26 20:15 EEST — CODEX SOL — PLAY VPN REMEDIATION 78016 VERIFIED
+
+Type: FIX / TEST / RELEASE GATE
+
+- Version `1.0.49-free` / `78016` is prepared as the unique Google Play compliance replacement;
+  matching English Play notes and changelog were added. Direct Pro/Premium publication remains
+  on the separate 1.0.48 line.
+- Kimi K3 independently reviewed the version strategy, source-set split and all-track policy
+  implications. Sol reviewed that result and ran the full distribution matrix with the accepted
+  local upload signer.
+- PASS: 245 Gradle tasks, Free/Premium unit tests, Free lint, all Free/Pro/Premium VPN boundary
+  guards, R8, signed Free APK/AAB and direct Pro/Premium APK builds. A preflight without
+  `ANDROID_HOME` stopped before compilation; the canonical SDK-configured rerun passed.
+- Final Free AAB reports package `com.securecall.app.free`, versionCode `78016`, target API 36 and
+  Billing 8.2.1. ZIP/signature validation and manifest/archive/payload scans found zero app-owned
+  VPN service or WireGuard markers.
+- Artifact SHA-256: `75c94f432e6e77c2e8a06e3bdc5f940ee5da885a4aae0f51d7c9275e2bec17c2`.
+  No Google Play mutation occurred in this block.
+
+`SIGNED 78016 VERIFIED — ALL ACTIVE PLAY TRACKS MUST NOW BE CLEANED`

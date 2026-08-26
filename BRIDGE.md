@@ -5862,3 +5862,23 @@ Open next:
   blocked on the independent approving review. No bypass was used.
 
 `TECHNICAL CI GREEN — INDEPENDENT REVIEW IS THE ONLY MERGE GATE`
+
+## 2026-08-26 20:15 EEST — CODEX SOL — PLAY VPN REMEDIATION 78016 VERIFIED
+
+- **Ticket:** `STEALTH-20260826-PLAY-VPN-CLEANUP`; **Type:** FIX / TEST / RELEASE;
+  **Status:** Local Ready.
+- Bumped the Google Play remediation build to `1.0.49-free` / `78016` and added matching English
+  Play release notes. Direct Pro/Premium downloads remain on the published 1.0.48 line.
+- Kimi K3 independently reviewed source-set isolation, version-code safety, track implications
+  and release gates. Sol reviewed the findings and ran the complete required distribution matrix.
+- Final verification PASS: 245 Gradle tasks including Free/Premium unit tests, Free lint,
+  Free/Pro VPN-absence guards, Premium VPN-runtime guard, R8, signed Free APK/AAB and direct
+  Pro/Premium APK builds. The first preflight stopped before compilation because the fresh
+  worktree lacked `ANDROID_HOME`; the repeated canonical run with the existing SDK passed.
+- Final Free AAB is package `com.securecall.app.free`, target API 36, Billing 8.2.1, correctly
+  signed and ZIP-valid. Manifest, dependency, archive-name and payload scans found no
+  `VpnService`, `BIND_VPN_SERVICE`, WireGuard runtime or native WireGuard markers.
+- Artifact SHA-256: `75c94f432e6e77c2e8a06e3bdc5f940ee5da885a4aae0f51d7c9275e2bec17c2`.
+  Desktop aliases were refreshed locally. No Play track was changed in this block.
+
+`78016 LOCAL RELEASE GATES GREEN — PROTECTED PR AND PLAY TRACK CLEANUP NEXT`

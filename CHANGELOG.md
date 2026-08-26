@@ -7,6 +7,17 @@ Format follows "Keep a Changelog" with security-critical extensions.
 
 ---
 
+## [1.0.49] — 2026-08-26 — vC78016
+
+### Fixed
+- Rebuilt the Google Play Free edition without an app-owned `VpnService` or WireGuard runtime
+- Updated the Play remediation artifact to target Android API 36 and Play Billing 8.2.1
+- Preserved detection of VPN connections managed externally by Android or another VPN provider
+
+### Distribution
+- This version is the Google Play compliance replacement; direct Pro and Premium APKs remain on
+  the separately published 1.0.48 line
+
 ## [1.0.48] — 2026-08-23 — vC78015
 
 ### Added

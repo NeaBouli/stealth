@@ -1,0 +1,6 @@
+SecureCall 1.0.49
+
+- Removed the app-owned VPN service from the Google Play edition
+- Preserved support for VPN connections managed by Android or another provider
+- Updated Android 16 compatibility and Google Play Billing
+- Improved release-policy checks
