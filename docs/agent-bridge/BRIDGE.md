@@ -3482,3 +3482,18 @@ Type: FIX / TEST / RELEASE GATE
   No Google Play mutation occurred in this block.
 
 `SIGNED 78016 VERIFIED — ALL ACTIVE PLAY TRACKS MUST NOW BE CLEANED`
+
+## 2026-08-26 20:29 EEST — CODEX SOL — PLAY TRACK VPN CLEANUP SUBMITTED
+
+Type: RELEASE / EXTERNAL / POLICY
+
+- Production and Closed Alpha now use signed Free bundle `1.0.49-free` / `78016`; both changes
+  are in Google review. Internal Testing was replaced with `78016` and is available to testers.
+- The Play App Content artifact inspection now reports zero App Bundles or APKs using the
+  sensitive VPN permission. Existing VPN answers are negative and required no edit.
+- Policy Center retains the historical `78013` rejection while showing the replacement update
+  under review. The submitted artifact targets API 36 and includes Billing 8.2.1.
+- PR `#73` is protected and open. Completed CI checks are green; Android Client and the required
+  independent approving review remain gates.
+
+`PLAY ARTIFACT CLEANUP COMPLETE — GOOGLE REVIEW PENDING`

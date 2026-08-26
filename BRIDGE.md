@@ -5882,3 +5882,20 @@ Open next:
   Desktop aliases were refreshed locally. No Play track was changed in this block.
 
 `78016 LOCAL RELEASE GATES GREEN — PROTECTED PR AND PLAY TRACK CLEANUP NEXT`
+
+## 2026-08-26 20:29 EEST — CODEX SOL — PLAY TRACK VPN CLEANUP SUBMITTED
+
+- **Ticket:** `STEALTH-20260826-PLAY-VPN-CLEANUP`; **Type:** RELEASE / EXTERNAL /
+  POLICY; **Status:** Google Review.
+- Google Play Production and Closed Alpha now both contain the signed VPN-free
+  `1.0.49-free` / `78016` bundle and were submitted together for review. Internal Testing was
+  replaced with `78016` and is already available to internal testers.
+- Play App Content reports no App Bundles or APKs accessing the sensitive VPN permission. The
+  VPN questionnaire remains answered negatively; no declaration change was required.
+- Policy Center still displays the historical `78013` rejection while explicitly reporting that
+  an app update is under review. API 36 and Billing 8.2.1 are present in `78016`; Google must
+  complete review before those historical warnings clear.
+- PR `#73` remains open under normal branch protection. All completed technical checks are green;
+  `Android Client` is still running and an independent approving review is still required.
+
+`ALL ACTIVE PLAY TRACKS REPLACED — GOOGLE REVIEW AND PROTECTED PR REVIEW PENDING`
