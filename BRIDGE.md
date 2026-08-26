@@ -5862,3 +5862,44 @@ Open next:
   blocked on the independent approving review. No bypass was used.
 
 `TECHNICAL CI GREEN — INDEPENDENT REVIEW IS THE ONLY MERGE GATE`
+
+## 2026-08-23 10:55 EEST — CODEX SOL — VPN SPLIT MERGED AND DIRECT RELEASE LIVE
+
+- **Ticket:** `STEALTH-20260823-EXTERNAL-VPN-INDICATOR`; **Type:** RELEASE / TEST / STATUS;
+  **Status:** Done for source, website and direct APK distribution. Google Play replacement is a
+  separate gated publishing action.
+- PR `#71` merged as `f84faa8`. Exact-main GitHub Pages, Security Audit and Basic CI passed.
+- Latest normal GitHub release `v1.0.48` targets `f84faa8` and contains uploaded Free, Pro and
+  Premium APK aliases plus the checksum file. The live download page presents the three editions
+  and the permanent Play/direct VPN boundary.
+- Signed local Play bundle `/Users/gio/Desktop/SecureCall-LATEST.aab` passed signature verification
+  and remains version `78015`, package `com.securecall.app.free`, without app-owned VPN runtime.
+- Read-only Play Console verification confirmed that the upload-key reset is complete and the
+  active upload certificate matches the `78015` signer. Rejected `78014` remains an unsubmitted
+  production change; it must not be resubmitted.
+- No Play artifact upload or track submission was performed. A bounded authorization naming the
+  exact target track remains required.
+
+`DIRECT RELEASE DONE — PLAY SIGNER ACCEPTED — TARGET TRACK REQUIRED`
+
+## 2026-08-23 11:06 EEST — CODEX SOL — PLAY PRODUCTION REVIEW SUBMITTED
+
+- **Ticket:** `STEALTH-20260823-PLAY-78015`; **Type:** RELEASE / EXTERNAL;
+  **Status:** Done for upload/submission; Google review pending.
+- Owner explicitly authorized production-track upload and review submission. Signed VPN-free
+  `78015 (1.0.48-free)` was accepted with target SDK 36 and English release notes.
+- Production rollout is set to 100%. Play Console now lists the release under changes being
+  reviewed.
+- Rejected `78014` was not included or resubmitted. No other app or track was changed.
+
+`78015 SUBMITTED TO GOOGLE — REVIEW RESULT PENDING`
+
+## 2026-08-23 11:35 EEST — CODEX SOL — SECURECALL TARGET-API POLICY RECHECK
+
+- Read-only Play policy details list legacy Alpha `63002 (1.0.40-free)` and internal
+  `29 (1.0.12-free)` at target SDK 35 as affected artifacts.
+- Submitted production candidate `78015 (1.0.48-free)` targets SDK 36 and includes Billing 8.2.1.
+  Its Google review remains the gate for clearing the target-API, billing and VPN-policy status.
+- No additional Play change was made.
+
+`SECURECALL API36 REMEDIATION SUBMITTED — GOOGLE REVIEW PENDING`

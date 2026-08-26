@@ -3461,3 +3461,57 @@ Type: DECISION / DOCUMENTATION / TEST
 - Merge remains blocked only by the required independent approving review. No bypass performed.
 
 `CI GREEN — REVIEW REQUIRED`
+
+## 2026-08-23 10:55 EEST — CODEX SOL — RELEASE CLOSEOUT
+
+Type: RELEASE / TEST / STATUS
+
+- PR `#71` merged as `f84faa8`; exact-main Pages, Security Audit and Basic CI all passed.
+- Normal latest release `v1.0.48` is live with signed Free, Pro and Premium APK aliases and the
+  checksum file. The deployed download page documents the Play/direct VPN split.
+- Play Console read-only recheck confirms the new upload certificate is active and matches the
+  signer of VPN-free Free bundle `78015`. Rejected `78014` remains unsubmitted and must not be
+  reused.
+- No Play upload or submission occurred. The exact Play target track must be named in the bounded
+  publishing authorization before the replacement bundle is uploaded.
+
+`SOURCE/WEBSITE/DIRECT RELEASE CLOSED — PLAY TRACK DECISION OPEN`
+
+## 2026-08-23 11:06 EEST — CODEX SOL — SECURECALL 78015 PLAY SUBMISSION
+
+Type: RELEASE / EXTERNAL / STATUS
+
+- With bounded owner authorization, uploaded VPN-free production bundle
+  `78015 (1.0.48-free)` and submitted it to Google review.
+- Play Console accepted the active upload signer, reports target SDK 36 and lists the 100%
+  production rollout under changes being reviewed.
+- Rejected `78014` was not included or resubmitted. No other app or track changed.
+- Next external gate: Google policy-review decision.
+
+`PLAY PRODUCTION SUBMISSION COMPLETE — GOOGLE REVIEW PENDING`
+
+## 2026-08-23 11:35 EEST — CODEX SOL — TARGET API POLICY RECHECK
+
+- Play identifies legacy Alpha `63002` and internal `29` at target SDK 35.
+- Production candidate `78015` targets SDK 36 and uses Billing 8.2.1; it is already under review.
+- No additional Play mutation occurred. Google review remains the external resolution gate.
+
+`API36/BILLING REMEDIATION IN REVIEW`
+
+## 2026-08-26 19:35 EEST — CODEX SOL — PLAY VPN POLICY REJECTION ROOT CAUSE
+
+Type: EXTERNAL / STATUS / RELEASE GATE
+
+- Google Play policy status and the rejection email were rechecked read-only after the production
+  submission. The local signed Free AAB `78015` and current `origin/main` remain correctly free of
+  `VpnService` and `BIND_VPN_SERVICE`; the bundle targets API 36 and uses Billing 8.2.1.
+- Play App Content nevertheless still derives `android.permission.BIND_VPN_SERVICE`. Closed Alpha
+  `63002` and Internal Test `29` remain active legacy bundles, while production still serves the
+  older accepted line because `78015` was rejected.
+- This confirms that the code fix alone did not complete the policy remediation: every active
+  release track must be replaced or deactivated so no legacy VPN-bearing artifact remains.
+- No Play mutation occurred. Next bounded release action: build a new unique VPN-free Free bundle,
+  replace legacy Alpha/Internal artifacts, submit the clean production candidate and await Google
+  review. The direct Premium APK VPN split remains unchanged and outside Google Play.
+
+`PLAY VPN POLICY BLOCKED — CLEAN ALL ACTIVE TRACKS BEFORE RESUBMISSION`
