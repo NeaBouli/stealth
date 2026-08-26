@@ -3497,3 +3497,21 @@ Type: RELEASE / EXTERNAL / STATUS
 - No additional Play mutation occurred. Google review remains the external resolution gate.
 
 `API36/BILLING REMEDIATION IN REVIEW`
+
+## 2026-08-26 19:35 EEST — CODEX SOL — PLAY VPN POLICY REJECTION ROOT CAUSE
+
+Type: EXTERNAL / STATUS / RELEASE GATE
+
+- Google Play policy status and the rejection email were rechecked read-only after the production
+  submission. The local signed Free AAB `78015` and current `origin/main` remain correctly free of
+  `VpnService` and `BIND_VPN_SERVICE`; the bundle targets API 36 and uses Billing 8.2.1.
+- Play App Content nevertheless still derives `android.permission.BIND_VPN_SERVICE`. Closed Alpha
+  `63002` and Internal Test `29` remain active legacy bundles, while production still serves the
+  older accepted line because `78015` was rejected.
+- This confirms that the code fix alone did not complete the policy remediation: every active
+  release track must be replaced or deactivated so no legacy VPN-bearing artifact remains.
+- No Play mutation occurred. Next bounded release action: build a new unique VPN-free Free bundle,
+  replace legacy Alpha/Internal artifacts, submit the clean production candidate and await Google
+  review. The direct Premium APK VPN split remains unchanged and outside Google Play.
+
+`PLAY VPN POLICY BLOCKED — CLEAN ALL ACTIVE TRACKS BEFORE RESUBMISSION`
