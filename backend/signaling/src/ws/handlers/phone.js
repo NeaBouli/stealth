@@ -58,28 +58,5 @@ module.exports = function phoneHandlers(ctx) {
       });
       return ws.send(JSON.stringify({ type: "BATCH_PHONE_LOOKUP_RESULT", results }));
     },
-
-    ONLINE_STATUS_REQUEST(ws, connId, msg) {
-      if (!getClientId(connId)) {
-        return ws.send(JSON.stringify({ type: "ONLINE_STATUS_RESPONSE", statuses: [], error: "not_registered" }));
-      }
-      if (!clients.get(connId)._onlineStatusReqs) clients.get(connId)._onlineStatusReqs = [];
-      const osReqs = clients.get(connId)._onlineStatusReqs;
-      const osNow = Date.now();
-      while (osReqs.length > 0 && osNow - osReqs[0] > 60000) osReqs.shift();
-      if (osReqs.length >= 10) {
-        return ws.send(JSON.stringify({ type: "ONLINE_STATUS_RESPONSE", statuses: {}, error: "rate_limited" }));
-      }
-      osReqs.push(osNow);
-
-      const phones = Array.isArray(msg.phoneNumbers) ? msg.phoneNumbers.slice(0, 500) : [];
-      const statuses = {};
-      for (const phone of phones) {
-        const normalized = normalizePhone(phone);
-        const resolvedClientId = phoneNumbers.get(normalized);
-        statuses[phone] = !!(resolvedClientId && clientIds.has(resolvedClientId));
-      }
-      return ws.send(JSON.stringify({ type: "ONLINE_STATUS_RESPONSE", statuses }));
-    },
   };
 };

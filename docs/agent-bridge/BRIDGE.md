@@ -3497,3 +3497,62 @@ Type: RELEASE / EXTERNAL / POLICY
   independent approving review remain gates.
 
 `PLAY ARTIFACT CLEANUP COMPLETE — GOOGLE REVIEW PENDING`
+
+---
+
+## 2026-08-17 EEST — CODEX SOL — THREE-DEVICE QA LIMIT FIX
+
+- Central ticket `GIO-20260817-STEALTHX-3X3-QA` is in progress on branch
+  `fix/securecall-free-limit-enforcement` from exact `origin/main` `3f9db1eaaf81`.
+- Kimi K3 implemented centralized Free-tier enforcement: a new contact is rejected
+  after ten stored contacts, and an active Free call ends through the existing clean
+  signaling/audio teardown after 15 minutes. Pro/Premium remain unlimited.
+- Sol reviewed every changed path. Focused policy/timer tests pass 22/22; the complete
+  Free unit suite passes 131/131 across 18 suites.
+- Internal Pro/Premium compilation exposed a pre-existing missing dependency checksum.
+  The exact SHA-256 published by Maven Central was independently matched to the cached
+  artifact and added narrowly to Gradle verification metadata.
+- Unit, lint and R8 processing pass. Release packaging remains blocked because the
+  required local SecureCall signing variables are unavailable; no replacement key was
+  created. Physical QA will therefore use fresh debug-signed tier builds.
+
+`LIMIT FIX SOURCE GREEN — PHYSICAL QA AND RELEASE SIGNING REMAIN OPEN`
+
+## 2026-08-17 04:12 EEST — CODEX SOL — PHYSICAL CALL QA FOUND REMOTE HANGUP DEFECT
+
+- Fresh Free/Pro/Premium debug tiers were assigned to S7/S4/S10. A real Pro-to-Premium
+  encrypted call connected; incoming accept, mute and repeated speaker/earpiece routing were
+  verified from UI state and Android audio routing.
+- Reproduced: when the caller ended the call, the caller cleaned up and received an ACK while
+  the callee stayed active. Kimi K3 independently confirmed that the server relay discarded
+  `reason=user_hangup`, defeating the Android immediate-teardown contract.
+- Added server reason forwarding with legacy default, an Android fallback that delays only an
+  explicit `peer_disconnected`, and focused tests. PASS: Android policy test; full signaling
+  `npm test`; all internal Free/Pro/Premium debug APK builds; 600-event stability runs on the
+  currently connected Free/Pro devices with no captured app crash or ANR.
+- Retest is blocked because S10 disconnected and S7's current Wi-Fi cannot establish the
+  signaling server path. No backend deployment, release artifact or production change occurred.
+
+`REMOTE HANGUP FIX SOURCE GREEN — TWO-DEVICE RETEST BLOCKED`
+## 2026-08-27 04:31 EEST — [CODEX TERMINAL] Pre-Sale Completion Candidate Verified
+
+- SecureCall `1.0.50` / base versionCode `78017` and the shared browser IFR-holder checkout block completed in isolated worktree `fix/presale-complete-20260826`.
+- Full backend, Rust, Android, policy-guard, signed-build and local browser verification passed. Kimi K3 performed an independent review; Sol integrated and retested all findings.
+- Signed AAB and Free/Pro/Premium APK aliases are in `/Users/gio/Desktop/aab apk/presale-2026-08-27/` with package/certificate/hash verification.
+- Physical limitation: S10 disconnected after SecureChat smoke; S7/S4 were reserved for Woizz and not touched. SecureCall two-device tests remain open.
+- External gates: payment/tax standby; signaling deploy; Google review/track cleanup; UMP console; release assets/site deploy; PR review. See root `CODEX_AUDIT.md`.
+
+## 2026-08-27 04:36 EEST — [CODEX TERMINAL] Protected Review Open
+
+- Commit `b16e322d4456f6bee9906aa12c5fb5ed65925241` is published on `fix/presale-complete-20260826`.
+- PR https://github.com/NeaBouli/stealth/pull/74 is open and mergeable; initial dependency and documentation checks pass, while the complete CI set and independent review remain pending.
+- No production, deployment, store or payment/tax action was performed.
+
+`PRE-SALE PR OPEN — RELEASE GATES PRESERVED`
+
+## 2026-08-27 04:46 EEST — [CODEX TERMINAL] PR 74 CI Green
+
+- All required checks passed on exact head `548b61f481661f2711b2a4e06da53458ea53ad1b`.
+- PR remains mergeable but blocked by required independent approving review. External release gates remain unchanged.
+
+`CI GREEN — REVIEW REQUIRED`

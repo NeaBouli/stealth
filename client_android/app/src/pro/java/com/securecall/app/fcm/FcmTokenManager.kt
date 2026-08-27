@@ -6,19 +6,9 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.securecall.app.net.WebSocketService
 
 /**
- * FIX 9 — FCM Push Notifications placeholder.
- *
- * TODO: FCM requires a real Firebase project with google-services.json.
- * Current state: Firebase is disabled in AndroidManifest (placeholder credentials).
- * FCM token registration will silently fail (caught in try/catch).
- *
- * Integration plan:
- * 1. Create Firebase project at console.firebase.google.com
- * 2. Add Android apps for all 3 package names (free, pro, premium)
- * 3. Download google-services.json to client_android/app/
- * 4. Enable FirebaseInitProvider in AndroidManifest.xml
- * 5. Server already handles REGISTER_FCM_TOKEN and sends push via fcm.js
- * 6. Test: kill app on S7, call from S10, verify push wakes S7
+ * FCM token registration for the configured Firebase project.
+ * Initialization failures remain non-fatal so calling still works during a
+ * temporary Firebase outage.
  */
 object FcmTokenManager {
 

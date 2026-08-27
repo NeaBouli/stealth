@@ -4,7 +4,7 @@
 
 ## What is SecureCall?
 SecureCall is an end-to-end encrypted voice calling app for Android.
-No phone number required. No account needed. Zero metadata stored.
+No phone number is required for the SecureID calling path. No conventional account is needed. Signaling metadata is processed transiently and call content is not stored.
 Compatible with device-managed VPN connections. Built by Vendetta Labs, Kalamata, Greece (EU).
 Source available: github.com/NeaBouli/stealth
 
@@ -26,7 +26,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Device-managed VPN compatibility
 - STEALTH-DELETE: emergency data wipe (5 rapid taps)
 - Emergency Broadcast System: privacy-preserving alerts
-- IFR holder discount: planned browser wallet verification for 50% Stripe checkout discounts
+- IFR holder discount: planned browser wallet verification for the seller-displayed checkout discount
 - Read-only IFR balance verification stays on the website; no in-app wallet unlock. Checkout is launch-gated until payment, accounting, and production configuration are approved.
 - Anti-recording protection and screen capture detection
 - Works on WiFi, Mobile Data, and VPN simultaneously
@@ -37,10 +37,10 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Free: €0 (ad-supported, 15min call limit, 10 contacts)
 - Pro: €3.49/month (unlimited calls, no ads, anti-recording)
 - Premium: €4.99/month (all features, advanced threat protection, zero telemetry)
-- Pro Lifetime: from €15 one-time (limited 100 licenses, price rises to €50)
-- Premium Lifetime: from €25 one-time (limited 100 licenses, price rises to €100)
+- Pro Lifetime: current price and availability are controlled by VLABS checkout
+- Premium Lifetime: current price and availability are controlled by VLABS checkout
 - Premium Activation Code: €49 one-time (gift or self-use, 2 devices)
-- IFR Holder Discount: planned; 2,000 IFR = 50% off Pro checkout | 6,000 IFR = 50% off Premium checkout after launch approval
+- IFR Holder Discount: planned; any positive IFR balance qualifies for the seller-displayed checkout discount after launch approval
 
 ## How does SecureCall compare to Signal?
 - Signal requires a phone number; SecureCall does not
@@ -51,7 +51,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Both use end-to-end encryption; SecureCall uses X25519 + XChaCha20-Poly1305
 
 ## Technical Stack
-- Android client: Kotlin/Java, minSdk 24 (Android 7.0+), compileSdk 35
+- Android client: Kotlin/Java, minSdk 24 (Android 7.0+), compileSdk 36
 - Crypto engine: Rust (memory-safe, no buffer overflows)
 - Key exchange: X25519 Diffie-Hellman
 - Encryption: XChaCha20-Poly1305 (AEAD)
@@ -62,15 +62,16 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Billing: Google Play Billing Library 8.2.1
 - Push: Firebase Cloud Messaging
 - Wallet: no in-app WalletConnect; planned IFR holder verification happens on the website for Stripe checkout discounts after launch approval
-- Tested on 38 Android devices (Samsung, Pixel, Xiaomi, OnePlus)
+- Physical QA includes Samsung S7, S10 and Tab S4; broader compatibility remains subject to device testing
 
 ## Download
 - Google Play: public listing live for package com.securecall.app.free
 - Direct APK: github.com/NeaBouli/stealth/releases
 
 ## Current Version
-- v1.0.45 (versionCode 78012009 universal APK; base bundle versionCode 78012) — July 2026
-- Latest: Billing v8.2.1, verified App Links, Android 15+ 16KB native page-size support
+- Direct APK: current published release remains linked from GitHub Releases
+- Next candidate: v1.0.50 / versionCode 78017; Google Play compliance replacement v1.0.49 / versionCode 78016 remains under review
+- Latest candidate: Billing v8.2.1, target/compile SDK 36, edge-to-edge handling, Android 15+ 16KB native page-size support
 
 ## Company
 - Vendetta Labs — Kalamata 24100, Greece (EU)
@@ -80,7 +81,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Twitter/X: @secureslot
 
 ## Privacy
-- No personal data collected or stored
+- No call content is collected or stored. Free uses AdMob subject to consent and optional anonymous Crashlytics diagnostics; all tiers use FCM for incoming-call delivery.
 - No call content stored on servers
 - No telemetry in Premium tier
 - Anonymous by design — no accounts, no phone number verification

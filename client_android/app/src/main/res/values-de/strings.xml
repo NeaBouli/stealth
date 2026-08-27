@@ -40,6 +40,10 @@
     <string name="settings_dark_mode">Dunkler Modus</string>
     <string name="settings_version">Version</string>
     <string name="settings_tier">Aktueller Plan</string>
+    <string name="settings_ad_privacy">Datenschutzoptionen für Werbung</string>
+    <string name="settings_ad_privacy_summary">Einwilligungen für Werbung prüfen</string>
+    <string name="settings_crash_reports">Absturzberichte</string>
+    <string name="settings_crash_reports_summary">Anonyme Absturzdiagnosen teilen</string>
     <string name="enabled">Aktiviert</string>
     <string name="disabled">Deaktiviert</string>
     <string name="pref_cert_pinning">Zertifikat-Pinning</string>

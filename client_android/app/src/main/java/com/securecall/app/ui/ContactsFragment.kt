@@ -220,12 +220,15 @@ class ContactsFragment : Fragment() {
             Log.d(TAG, "refreshOnlineStatus: no registered phones cached, skipping")
             return
         }
-        Log.d(TAG, "refreshOnlineStatus: ${phones.size} registered phones")
-        ws.requestOnlineStatus(phones) { statuses ->
-            if (!isAdded) return@requestOnlineStatus
+        Log.d(TAG, "refreshOnlineStatus: ${phones.size} registered phone hashes")
+        val hashToPhone = phones.associateBy { phone ->
+            sha256(normalizePhoneForDiscovery(phone))
+        }
+        ws.batchPhoneLookup(hashToPhone.keys.toList()) { results ->
+            if (!isAdded) return@batchPhoneLookup
             val onPhones = mutableSetOf<String>()
-            for ((phone, online) in statuses) {
-                if (online) onPhones.add(phone)
+            for ((hash, status) in results) {
+                if (status.first) hashToPhone[hash]?.let(onPhones::add)
             }
             onlinePhones = onPhones
             cachedOnlinePhones = onPhones
@@ -320,7 +323,7 @@ class ContactsFragment : Fragment() {
     }
 
     private fun checkSecureCallMembers() {
-        val ws = com.securecall.app.net.WebSocketService.instance ?: return
+        if (com.securecall.app.net.WebSocketService.instance == null) return
         // Use cachedContacts (set on background thread) instead of allContacts (set on UI thread)
         // to avoid race condition where allContacts is still empty when this runs
         val contactsSnapshot = cachedContacts ?: allContacts
@@ -332,7 +335,7 @@ class ContactsFragment : Fragment() {
         // Hash phone numbers for privacy — server never sees raw numbers
         val hashToPhone = mutableMapOf<String, String>()
         val allHashes = phoneNumbers.map { phone ->
-            val normalized = phone.replace(Regex("[^0-9+]"), "")
+            val normalized = normalizePhoneForDiscovery(phone)
             val hash = sha256(normalized)
             hashToPhone[hash] = phone
             hash
@@ -563,6 +566,25 @@ class ContactsFragment : Fragment() {
         return com.securecall.app.config.TierManager.isFreeTier(ctx)
     }
 
+    /** Deterministic feedback when the Free-tier contact limit rejects an addition. */
+    private fun showContactLimitToast() {
+        val ctx = context ?: return
+        val maxContacts = com.securecall.app.config.FeatureProviderRegistry.get().maxContacts
+        android.widget.Toast.makeText(
+            ctx,
+            com.securecall.app.config.TierLimitPolicy.contactLimitMessage(maxContacts),
+            android.widget.Toast.LENGTH_LONG
+        ).show()
+    }
+
+    private fun normalizePhoneForDiscovery(input: String): String {
+        var normalized = input.replace(Regex("[\\s\\-().\\[\\]/]"), "")
+        if (normalized.startsWith("00")) {
+            normalized = "+" + normalized.substring(2)
+        }
+        return normalized.replace(Regex("[^0-9+]"), "")
+    }
+
     private fun sha256(input: String): String {
         val digest = java.security.MessageDigest.getInstance("SHA-256")
         return digest.digest(input.toByteArray(Charsets.UTF_8))
@@ -631,7 +653,7 @@ class ContactsFragment : Fragment() {
             val online = registered.filter { isContactOnline(it) }.sortedBy { it.name }
             val offline = registered.filter { !isContactOnline(it) }.sortedBy { it.name }
             val sorted = online + offline
-            updateList(sorted, showRegistrationBadge = false)
+            updateList(sorted)
         } else {
             // Search: show ALL contacts, with registration status
             // Normalize query for phone number matching (strip spaces, dashes, parens)
@@ -641,11 +663,11 @@ class ContactsFragment : Fragment() {
                 it.phoneOrId.contains(query, ignoreCase = true) ||
                 it.phoneOrId.replace(Regex("[^0-9+]"), "").contains(normalizedQuery)
             }.sortedWith(compareByDescending<Contact> { isContactRegistered(it) }.thenBy { it.name })
-            updateList(filtered, showRegistrationBadge = true)
+            updateList(filtered)
         }
     }
 
-    private fun updateList(contacts: List<Contact>, showRegistrationBadge: Boolean = false) {
+    private fun updateList(contacts: List<Contact>) {
         if (contacts.isEmpty()) {
             recycler.visibility = View.GONE
             emptyState.visibility = View.VISIBLE
@@ -676,7 +698,11 @@ class ContactsFragment : Fragment() {
                 when (which) {
                     0 -> { // Verify / Unverify
                         // Ensure contact exists in repository (may be phone-book only)
-                        com.securecall.app.data.ContactRepository.save(ctx, contact)
+                        val result = com.securecall.app.data.ContactRepository.save(ctx, contact)
+                        if (result == com.securecall.app.data.ContactRepository.SaveResult.REJECTED_CONTACT_LIMIT) {
+                            showContactLimitToast()
+                            return@setItems
+                        }
                         val updated = contact.copy(isVerified = !contact.isVerified)
                         com.securecall.app.data.ContactRepository.update(ctx, updated)
                         invalidateCache()
@@ -685,7 +711,11 @@ class ContactsFragment : Fragment() {
                         android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_SHORT).show()
                     }
                     1 -> { // Block / Unblock
-                        com.securecall.app.data.ContactRepository.save(ctx, contact)
+                        val result = com.securecall.app.data.ContactRepository.save(ctx, contact)
+                        if (result == com.securecall.app.data.ContactRepository.SaveResult.REJECTED_CONTACT_LIMIT) {
+                            showContactLimitToast()
+                            return@setItems
+                        }
                         val updated = contact.copy(isBlocked = !contact.isBlocked)
                         com.securecall.app.data.ContactRepository.update(ctx, updated)
                         invalidateCache()
@@ -786,9 +816,6 @@ class ContactsFragment : Fragment() {
         val myId = prefs.getString("client_id", null)
             ?: com.securecall.app.net.WebSocketService.instance?.getLocalClientId()
             ?: "unknown"
-        val myPhone = prefs.getString("confirmed_phone_number", null)
-            ?: prefs.getString("manual_phone_number", null) ?: ""
-
         // Build invite link with optional name param
         val nameParam = java.net.URLEncoder.encode(myId.take(16), "UTF-8")
         val inviteLink = "https://stealthx.tech/invite/?id=$myId&name=$nameParam"
@@ -881,9 +908,13 @@ class ContactsFragment : Fragment() {
                 val name = nameInput.text.toString().trim()
                 val phoneOrId = idInput.text.toString().trim()
                 if (name.isNotEmpty() && phoneOrId.isNotEmpty()) {
-                    ContactRepository.save(ctx, Contact(name = name, phoneOrId = phoneOrId))
-                    invalidateCache()
-                    loadContactsAsync(forceRefresh = true)
+                    val result = ContactRepository.save(ctx, Contact(name = name, phoneOrId = phoneOrId))
+                    if (result == ContactRepository.SaveResult.REJECTED_CONTACT_LIMIT) {
+                        showContactLimitToast()
+                    } else {
+                        invalidateCache()
+                        loadContactsAsync(forceRefresh = true)
+                    }
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)

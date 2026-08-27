@@ -64,9 +64,8 @@ const {
   revokeActivationCode,
 } = require("./services/activation_store");
 const { setupActivationAdminRoutes } = require("./services/activation_admin");
-const { walletMappings, loadWalletMappings, saveWalletMappings }   = require("./services/wallet_store");
 const { getClientIp }                                               = require("./middleware/ip");
-const { verifyIfrLock }                                             = require("./services/ifr");
+const { verifyIfrHolding }                                          = require("./services/ifr");
 const { buildContext, wireWs }                                      = require("./context");
 const { writeJsonAtomic }                                           = require("./utils/json_store");
 const { sanitize: sanitizeUtil }                                    = require("./utils/sanitize");
@@ -668,6 +667,20 @@ app.post("/billing/verify-purchase", billingVerificationRateLimit, async (req, r
 // --- SIWE (Sign-In with Ethereum) — cryptographic wallet verification ---
 const SIWE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+// The Android wallet-tier flow is permanently retired. Register these
+// terminal handlers before the historical implementation below so old app
+// builds cannot bind a wallet or unlock an app tier.
+const retiredAppWalletFlow = (_req, res) => res.status(410).json({
+  success: false,
+  error: "app_wallet_flow_retired",
+  message: "IFR holder verification is available only during browser checkout."
+});
+app.get("/siwe/challenge", retiredAppWalletFlow);
+app.post("/siwe/verify", retiredAppWalletFlow);
+app.get("/siwe/verify-link", retiredAppWalletFlow);
+app.get("/siwe/status", retiredAppWalletFlow);
+app.post("/siwe/status", retiredAppWalletFlow);
+
 // Cleanup expired challenges + anti-spam trackers every 60s
 setInterval(() => {
   const now = Date.now();
@@ -686,202 +699,15 @@ setInterval(() => {
   }
 }, 60000);
 
-app.get("/siwe/challenge", (req, res) => {
-  const deviceId = (req.query.deviceId || "").trim();
-  if (!deviceId) return res.status(400).json({ error: "missing_device_id" });
+// Manual address-only eligibility checks are retired. Browser checkout proves
+// wallet ownership through /stripe/ifr-discount-challenge before any balance
+// lookup, preventing a known holder address from being reused by someone else.
+app.post("/verify-ifr", (_req, res) => res.status(410).json({
+  success: false,
+  error: "signed_wallet_proof_required"
+}));
 
-  const nonce = crypto.randomBytes(32).toString("hex");
-  const issuedAt = new Date().toISOString();
-  const message =
-    "SecureCall wants you to verify your Ethereum wallet.\n\n" +
-    "Device: " + deviceId + "\n" +
-    "Nonce: " + nonce + "\n" +
-    "Issued At: " + issuedAt + "\n\n" +
-    "This request will expire in 5 minutes.";
-
-  siweChallenges.set(nonce, { deviceId, message, createdAt: Date.now() });
-  console.log("[SIWE] Challenge issued for", deviceId, "nonce:", nonce.substring(0, 12) + "...");
-  res.json({ nonce, message });
-});
-
-// Read-only IFR hold verification endpoint.
-// This is intentionally not a wallet-binding endpoint; SIWE/WebSocket flows still
-// handle device binding. It exists for app support, QA, and website diagnostics.
-app.post("/verify-ifr", async (req, res) => {
-  const walletAddress = (req.body?.walletAddress || "").trim();
-  if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
-    return res.status(400).json({ success: false, error: "invalid_address" });
-  }
-
-  try {
-    const result = await verifyIfrLock(walletAddress);
-    const amount = result.balanceAmount || result.lockedAmount || "0";
-    const eligibleTiers = [];
-    if (result.success && (result.tier === "pro" || result.tier === "premium")) {
-      eligibleTiers.push("pro");
-    }
-    if (result.success && result.tier === "premium") {
-      eligibleTiers.push("premium", "elite");
-    }
-
-    return res.json({
-      ...result,
-      walletAddress,
-      balanceAmount: amount,
-      // Backward-compatible field for older clients still reading lockedAmount.
-      lockedAmount: amount,
-      eligibleTiers,
-      model: "hold"
-    });
-  } catch (e) {
-    console.error("[IFR] /verify-ifr error:", e.message);
-    return res.status(500).json({ success: false, error: "balance_check_failed" });
-  }
-});
-
-async function handleSiweVerify(req, res) {
-  const walletAddress = (req.body?.walletAddress || req.query?.walletAddress || "").trim();
-  const signature = (req.body?.signature || req.query?.signature || "").trim();
-  const nonce = (req.body?.nonce || req.query?.nonce || "").trim();
-  const deviceId = (req.body?.deviceId || req.query?.deviceId || "").trim();
-
-  // Validate input
-  if (!walletAddress || !signature || !nonce || !deviceId) {
-    return res.status(400).json({ success: false, error: "missing_fields" });
-  }
-  if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
-    return res.status(400).json({ success: false, error: "invalid_address" });
-  }
-
-  // Check nonce
-  const challenge = siweChallenges.get(nonce);
-  if (!challenge) {
-    return res.json({ success: false, error: "invalid_nonce" });
-  }
-  if (challenge.deviceId !== deviceId) {
-    return res.json({ success: false, error: "device_mismatch" });
-  }
-  if (Date.now() - challenge.createdAt > SIWE_TTL_MS) {
-    siweChallenges.delete(nonce);
-    return res.json({ success: false, error: "challenge_expired" });
-  }
-
-  // Invalidate nonce immediately (replay protection)
-  siweChallenges.delete(nonce);
-
-  // Verify signature via ethers.verifyMessage
-  try {
-    const recovered = ethers.verifyMessage(challenge.message, signature);
-    if (recovered.toLowerCase() !== walletAddress.toLowerCase()) {
-      console.log("[SIWE] Signature mismatch: recovered=" + recovered + " expected=" + walletAddress);
-      return res.json({ success: false, error: "signature_invalid" });
-    }
-  } catch (e) {
-    console.error("[SIWE] Signature verification error:", e.message);
-    return res.json({ success: false, error: "signature_invalid" });
-  }
-
-  // Check wallet binding. A fresh SIWE signature proves current wallet
-  // ownership, so it is allowed to move a wallet from an old/stale device to
-  // the current device. The store is keyed by wallet, so this remains a
-  // one-active-device binding until multi-device wallet mappings are added.
-  const existing = walletMappings.find(w => w.wallet.toLowerCase() === walletAddress.toLowerCase());
-  if (existing && existing.clientId !== deviceId && existing.method === "walletconnect") {
-    console.log("[SIWE] Rebinding wallet:", walletAddress, "from", existing.clientId, "to", deviceId);
-  }
-  // If manual-bound to another device → SIWE also overrides (verified > unverified)
-
-  // Verify IFR balance
-  let result;
-  try {
-    result = await verifyIfrLock(walletAddress);
-  } catch (e) {
-    console.error("[SIWE] Balance check error:", e.message);
-    return res.json({ success: false, error: "balance_check_failed" });
-  }
-
-  // SIWE signature is valid — always bind wallet to device (even if insufficient IFR).
-  // This way, when user buys IFR later, the 24h re-verify will pick up the new balance.
-  const tier = result.success ? result.tier : "";
-  const amount = result.balanceAmount || result.lockedAmount || "0";
-
-  const idx = walletMappings.findIndex(w => w.wallet.toLowerCase() === walletAddress.toLowerCase());
-  const mapping = {
-    wallet: walletAddress.toLowerCase(),
-    clientId: deviceId,
-    tier: tier,
-    method: "walletconnect",
-    lastVerified: Date.now(),
-    verifiedAt: existing?.verifiedAt || Date.now()
-  };
-  if (idx >= 0) walletMappings[idx] = mapping;
-  else walletMappings.push(mapping);
-  saveWalletMappings();
-
-  if (result.success) {
-    console.log("[SIWE] Wallet verified:", walletAddress, "→", tier, "(", amount, "IFR) device:", deviceId);
-    res.json({ success: true, tier: tier, lockedAmount: amount, balanceAmount: amount, walletBound: true });
-  } else {
-    console.log("[SIWE] Wallet bound (insufficient):", walletAddress, "(", amount, "IFR) device:", deviceId);
-    res.json({ success: false, tier: "", lockedAmount: amount, balanceAmount: amount, error: "insufficient", walletBound: true });
-  }
-}
-
-app.post("/siwe/verify", handleSiweVerify);
-// Fallback for wallet WebViews that block cross-origin fetch/XHR. The SIWE
-// page can send this as an image beacon; the response body is intentionally
-// not required by the client because SecureCall refreshes via /siwe/status.
-app.get("/siwe/verify-link", handleSiweVerify);
-
-async function handleSiweStatus(req, res) {
-  const deviceId = (req.body?.deviceId || req.query?.deviceId || "").trim();
-  if (!deviceId) {
-    return res.status(400).json({ success: false, verified: false, error: "missing_device_id" });
-  }
-
-  const mapping = walletMappings.find(w => w.clientId === deviceId && w.method === "walletconnect");
-  if (!mapping) {
-    return res.json({ success: false, verified: false, error: "not_found" });
-  }
-
-  let result;
-  try {
-    result = await verifyIfrLock(mapping.wallet);
-  } catch (e) {
-    console.error("[SIWE] Status balance check error:", e.message);
-    return res.json({
-      success: false,
-      verified: true,
-      walletAddress: mapping.wallet,
-      tier: mapping.tier || "",
-      error: "balance_check_failed",
-      walletBound: true
-    });
-  }
-
-  const amount = result.balanceAmount || result.lockedAmount || "0";
-  mapping.lastVerified = Date.now();
-  mapping.tier = result.success ? result.tier : "";
-  saveWalletMappings();
-
-  return res.json({
-    success: !!result.success,
-    verified: true,
-    walletAddress: mapping.wallet,
-    tier: mapping.tier,
-    balanceAmount: amount,
-    // Backward-compatible field for older clients still reading lockedAmount.
-    lockedAmount: amount,
-    walletBound: true,
-    model: "hold",
-    error: result.success ? "" : (result.error || "insufficient")
-  });
-}
-
-app.post("/siwe/status", handleSiweStatus);
-app.get("/siwe/status", handleSiweStatus);
-
-console.log("[SIWE] Endpoints ready: GET /siwe/challenge, POST /siwe/verify, GET /siwe/verify-link, GET/POST /siwe/status");
+console.log("[SIWE] Legacy Android wallet endpoints retired (HTTP 410)");
 
 // --- Health Check Endpoint ---
 app.get("/health", (req, res) => {
@@ -1039,7 +865,6 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
 	    const walletNonce = (req.body?.walletNonce || '').trim();
 	    let checkoutPrice = price;
 	    let ifrDiscountApplied = false;
-	    let ifrTier = "";
 	    let ifrBalanceAmount = "";
 
 	    if (requestedIfrDiscount) {
@@ -1072,22 +897,10 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
 	        return res.status(403).json({ error: 'wallet_signature_invalid' });
 	      }
 
-	      const ifr = await verifyIfrLock(walletAddress);
-      ifrTier = ifr.tier || "";
+	      const ifr = await verifyIfrHolding(walletAddress);
       ifrBalanceAmount = ifr.balanceAmount || ifr.lockedAmount || "";
       if (!ifr.success) {
         return res.status(403).json({ error: ifr.error || 'ifr_not_eligible', balanceAmount: ifrBalanceAmount });
-      }
-
-      const requiredIfrTier = checkoutProduct.requiredIfrTier;
-      const eligible = requiredIfrTier === 'premium' ? ifrTier === 'premium' : (ifrTier === 'pro' || ifrTier === 'premium');
-      if (!eligible) {
-        return res.status(403).json({
-          error: 'ifr_tier_too_low',
-          requiredTier: requiredIfrTier,
-          walletTier: ifrTier,
-          balanceAmount: ifrBalanceAmount
-        });
       }
 
       checkoutPrice = Math.max(50, Math.round(price * 0.5));
@@ -1118,7 +931,7 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
 	        type: 'lifetime_dynamic',
 	        ifrDiscount: ifrDiscountApplied ? 'true' : 'false',
 	        ifrWallet: ifrDiscountApplied ? walletAddress.toLowerCase() : '',
-	        ifrTier,
+	        ifrHolder: ifrDiscountApplied ? 'true' : 'false',
 	        ifrBalanceAmount,
 	        originalPrice: String(price),
 	        checkoutPrice: String(checkoutPrice),
@@ -1126,7 +939,7 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
 	      },
 	      payment_method_types: ['card', 'klarna', 'link']
 	    });
-	    res.json({ url: session.url, sessionId: session.id, price: checkoutPrice, originalPrice: price, ifrDiscountApplied, ifrTier, ifrBalanceAmount });
+	    res.json({ url: session.url, sessionId: session.id, price: checkoutPrice, originalPrice: price, ifrDiscountApplied, ifrHolder: ifrDiscountApplied, ifrBalanceAmount });
 	  } catch (err) {
     console.error('[LICENSES] Checkout error:', err.message);
     res.status(500).json({ error: err.message });

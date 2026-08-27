@@ -4,7 +4,7 @@
     <uses-permission android:name="com.android.vending.BILLING" />
 
     <application>
-        <!-- AdMob App ID (test ID for debug — replace with real ID for production) -->
+        <!-- Production AdMob App ID. Test ad units are selected in debug code. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-4336336811005394~8119860953" />

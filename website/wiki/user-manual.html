@@ -282,7 +282,7 @@
             <p>The current SecureCall app does not include WalletConnect or in-app IFR tier unlocking. IFR holder benefits are available as a browser-based checkout discount.</p>
             <ul>
                 <li><strong>Web flow</strong> &mdash; verify a wallet in the browser, then continue to Stripe checkout.</li>
-                <li><strong>Discount</strong> &mdash; eligible holders receive a 50% checkout discount.</li>
+                <li><strong>Discount</strong> &mdash; eligible holders receive the seller-set discount displayed at checkout.</li>
                 <li><strong>App unlock</strong> &mdash; SecureCall receives a normal license or activation-code unlock.</li>
                 <li><strong>No wallet state in app</strong> &mdash; the Android app does not open wallet apps or store wallet addresses for tier unlocks.</li>
             </ul>
@@ -347,7 +347,7 @@
                 <li><strong>Poor call quality</strong> &mdash; Check your network. Try switching between WiFi and mobile data. If behind a restrictive firewall, the STUN/TURN relay is used as fallback.</li>
                 <li><strong>Connection stays red</strong> &mdash; Your device cannot reach the SecureCall server. Check internet access. If the device uses an external VPN, verify that it allows SecureCall traffic.</li>
                 <li><strong>Tier still shows Free after activation code</strong> &mdash; Activation codes restart the app automatically. Wait for the restart. If tier still shows Free, check the code for typos.</li>
-                <li><strong>IFR verification shows insufficient balance</strong> &mdash; Ensure the verified wallet holds enough IFR on Ethereum Mainnet. Open <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">$IFR on Uniswap</a> if you need to buy more tokens.</li>
+                <li><strong>IFR verification shows no holder balance</strong> &mdash; Ensure the verified wallet holds a positive IFR balance on Ethereum Mainnet. Open <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">$IFR on Uniswap</a> if needed.</li>
                 <li><strong>No audio during call</strong> &mdash; Raise media volume. Disable any active VPN. Try switching network type (WiFi &harr; Mobile).</li>
                 <li><strong>Calls dropped</strong> &mdash; Check network stability. The app reconnects automatically; or tap the connection icon in the toolbar to force reconnect.</li>
             </ul>

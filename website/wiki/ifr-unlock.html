@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IFR Holder Discount — SecureCall Wiki</title>
-    <meta name="description" content="SecureCall IFR holder discount: signed browser wallet verification, server-side IFR balance check, and eligible 50% checkout discount.">
+    <meta name="description" content="SecureCall IFR holder discount: signed browser wallet verification, server-side IFR balance check, and the seller-set discount displayed at checkout.">
     <meta name="theme-color" content="#0a0a12">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://stealthx.tech/wiki/ifr-unlock.html">
@@ -29,7 +29,7 @@
       "@context": "https://schema.org",
       "@type": "TechArticle",
       "headline": "IFR Holder Discount — SecureCall Wiki",
-      "description": "SecureCall IFR holder discount: signed browser wallet verification, server-side IFR balance check, and eligible 50% checkout discount.",
+      "description": "SecureCall IFR holder discount: signed browser wallet verification, server-side IFR balance check, and the seller-set discount displayed at checkout.",
       "url": "https://stealthx.tech/wiki/ifr-unlock.html",
       "author": { "@type": "Organization", "name": "Vendetta Labs" },
       "publisher": { "@type": "Organization", "name": "SecureCall", "url": "https://stealthx.tech" },
@@ -149,7 +149,7 @@
             <div class="wiki-page-header">
                 <div class="wiki-classification">Classification: Restricted &middot; SC-IFR</div>
                 <h1 class="wiki-page-title">IFR Holder Discount</h1>
-                <p class="wiki-page-subtitle">Browser-only IFR ownership verification for an eligible 50% checkout discount.</p>
+                <p class="wiki-page-subtitle">Browser-only IFR ownership verification for the seller-set discount displayed at checkout.</p>
             </div>
             <p class="wiki-meta">IFR is not used for in-app tier unlocking &middot; <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">Open $IFR on Uniswap</a></p>
 
@@ -175,7 +175,7 @@
                 <li><strong>Open web checkout</strong> &mdash; The user starts from the StealthX website, not from the Android app.</li>
                 <li><strong>Verify wallet in browser</strong> &mdash; MetaMask or another browser wallet signs a read-only ownership challenge.</li>
                 <li><strong>Check IFR balance server-side</strong> &mdash; The backend verifies the wallet and IFR balance on Ethereum Mainnet.</li>
-                <li><strong>Apply Stripe discount</strong> &mdash; Eligible holders receive a checkout discount, 50%.</li>
+                <li><strong>Apply checkout discount</strong> &mdash; Eligible holders receive the seller-set discount displayed at checkout.</li>
                 <li><strong>Unlock normally</strong> &mdash; Stripe delivers an activation code or license state. SecureCall stays wallet-free.</li>
             </ol>
 
@@ -205,7 +205,7 @@
                     <tr>
                         <td><strong>Discount value</strong></td>
                         <td>Planned</td>
-                        <td>Proposed 50% off eligible purchases</td>
+                        <td>Seller-set discount displayed for eligible purchases</td>
                     </tr>
                 </tbody>
             </table>
@@ -222,8 +222,8 @@
             <h3>Can I move my tokens?</h3>
             <p>Yes. The planned flow is read-only and does not spend, transfer, or lock IFR. Eligibility will be checked at web checkout time.</p>
 
-            <h3>What if I add more tokens?</h3>
-            <p>Eligibility is checked in the browser before Stripe checkout. The Android app will not need a wallet connection.</p>
+            <h3>Is there a minimum IFR amount?</h3>
+            <p>No. Any positive IFR balance qualifies as holder proof. The seller displays the applicable product discount before checkout; the Android app never needs a wallet connection.</p>
 
             <h3>Is it safe?</h3>
             <p>The planned browser verification never gives SecureCall access to private keys. The server performs a read-only balance check and Stripe handles payment details.</p>

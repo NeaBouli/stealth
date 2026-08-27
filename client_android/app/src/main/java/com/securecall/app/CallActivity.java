@@ -30,6 +30,8 @@ import androidx.preference.PreferenceManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.securecall.app.config.FeatureProviderRegistry;
+import com.securecall.app.config.TierLimitPolicy;
+import com.securecall.app.call.CallLimitTimer;
 import com.securecall.app.audio.capture.AudioCapturePlaceholder;
 import com.securecall.app.data.CallHistoryRepository;
 import com.securecall.app.data.CallRecord;
@@ -80,6 +82,8 @@ public class CallActivity extends AppCompatActivity {
     private android.media.AudioFocusRequest audioFocusRequest;
     private final Handler callHandler = new Handler(Looper.getMainLooper());
     private Runnable callActivationRunnable;
+    // Free-tier call duration limit — armed when the call becomes active, null when unlimited
+    private CallLimitTimer callLimitTimer;
     private AudioManager.OnCommunicationDeviceChangedListener communicationDeviceChangedListener;
 
     // Phone state monitoring — detect incoming cell calls
@@ -741,8 +745,50 @@ public class CallActivity extends AppCompatActivity {
 
             // Start audio capture (requires RECORD_AUDIO permission)
             startAudioCaptureWithPermission(connectionState, callTimer);
+
+            // Free-tier duration limit: arm only when a positive limit is configured
+            startCallLimitTimer();
         };
         callHandler.postDelayed(callActivationRunnable, 2000);
+    }
+
+    /** Arm the Free-tier call duration limit. No-op for Pro/Premium (limit = 0). */
+    private void startCallLimitTimer() {
+        cancelCallLimitTimer();
+        int maxMinutes = FeatureProviderRegistry.INSTANCE.get().getMaxCallDurationMinutes();
+        long limitMs = TierLimitPolicy.INSTANCE.callDurationLimitMs(maxMinutes);
+        if (limitMs <= 0L) return; // Unlimited or invalid — never ends the call
+        callLimitTimer = new CallLimitTimer(limitMs, this::onCallLimitReached, (delayMs, task) -> {
+            callHandler.postDelayed(task, delayMs);
+            return () -> callHandler.removeCallbacks(task);
+        });
+        callLimitTimer.start();
+        Log.d(TAG, "Call duration limit armed: " + maxMinutes + " min");
+    }
+
+    private void cancelCallLimitTimer() {
+        if (callLimitTimer != null) {
+            callLimitTimer.cancel();
+            callLimitTimer = null;
+        }
+    }
+
+    /** Called on the main thread when the Free-tier duration limit expires mid-call. */
+    private void onCallLimitReached() {
+        callLimitTimer = null;
+        if (isEnding || isFinishing() || isDestroyed()) return;
+        int maxMinutes = FeatureProviderRegistry.INSTANCE.get().getMaxCallDurationMinutes();
+        Log.d(TAG, "Call duration limit reached (" + maxMinutes + " min) — ending call");
+        com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(this, "CALL",
+                "Call auto-ended: Free-tier duration limit (" + maxMinutes + " min) reached");
+        TextView connectionState = findViewById(R.id.connectionState);
+        if (connectionState != null) {
+            connectionState.setText(TierLimitPolicy.INSTANCE.callLimitMessage(maxMinutes));
+            connectionState.setTextColor(getResources().getColor(R.color.stealthx_red, getTheme()));
+        }
+        Toast.makeText(this, TierLimitPolicy.INSTANCE.callLimitMessage(maxMinutes), Toast.LENGTH_LONG).show();
+        // Standard teardown: sends CALL_END signaling and stops audio cleanly
+        endCall();
     }
 
     private void startAudioCaptureWithPermission(TextView connectionState, Chronometer callTimer) {
@@ -931,6 +977,7 @@ public class CallActivity extends AppCompatActivity {
         if (isEnding) return;
         isEnding = true;
         cancelPendingCallActivation();
+        cancelCallLimitTimer();
         stopRingbackTone();
         Log.d(TAG, "endCall() — stopping call");
         com.securecall.app.debug.SecLogManager.INSTANCE.logIfEnabled(this, "CALL", "Call ended: " + callContactName);
@@ -1147,10 +1194,18 @@ public class CallActivity extends AppCompatActivity {
                     System.currentTimeMillis(), false, saveSecureId,
                     false, false
                 );
-                com.securecall.app.data.ContactRepository.INSTANCE.save(this, contact);
-                com.securecall.app.ui.ContactsFragment.Companion.invalidateCache();
-                Toast.makeText(this, "Contact saved", Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "Saved contact: " + callContactName + " -> " + callContactId);
+                com.securecall.app.data.ContactRepository.SaveResult saveResult =
+                        com.securecall.app.data.ContactRepository.INSTANCE.save(this, contact);
+                if (saveResult == com.securecall.app.data.ContactRepository.SaveResult.REJECTED_CONTACT_LIMIT) {
+                    Toast.makeText(this, TierLimitPolicy.INSTANCE.contactLimitMessage(
+                            FeatureProviderRegistry.INSTANCE.get().getMaxContacts()),
+                            Toast.LENGTH_LONG).show();
+                    Log.d(TAG, "Post-call contact save rejected by Free-tier limit: " + callContactName);
+                } else {
+                    com.securecall.app.ui.ContactsFragment.Companion.invalidateCache();
+                    Toast.makeText(this, "Contact saved", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Saved contact: " + callContactName + " -> " + callContactId);
+                }
                 releaseProximitySensor();
                 returnToMain();
             })
@@ -1171,6 +1226,7 @@ public class CallActivity extends AppCompatActivity {
         }
         showingSaveDialog = false;
         cancelPendingCallActivation();
+        cancelCallLimitTimer();
         stopRingbackTone();
         stopPhoneStateMonitor();
         abandonAudioFocus();

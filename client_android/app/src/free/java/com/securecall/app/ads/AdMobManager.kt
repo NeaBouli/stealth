@@ -14,21 +14,22 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * AdMob integration for FREE flavor only.
  * - Banner ad at bottom of MainActivity
  * - Interstitial ad after every 3rd completed call
  * - NEVER shown during an active call
- * - Uses test IDs in debug builds
+ * - Requests current privacy consent before any ad request
  */
 object AdMobManager {
 
     private const val TAG = "AdMob"
 
-    // TODO: Replace with real AdMob IDs from admob.google.com before production release
-    // Test Ad Unit IDs (Google-provided, safe for debug)
     private const val BANNER_ID = "ca-app-pub-4336336811005394/5437857296"
     private const val INTERSTITIAL_ID = "ca-app-pub-4336336811005394/4739986746"
 
@@ -40,6 +41,62 @@ object AdMobManager {
     @Volatile
     var isInitialized = false
         private set
+
+    /**
+     * Refresh consent on each app launch and request ads only when UMP permits it.
+     * Errors fail closed unless UMP has a still-valid consent decision cached.
+     */
+    fun requestConsentAndLoad(activity: Activity, container: FrameLayout) {
+        val consentInformation = UserMessagingPlatform.getConsentInformation(activity)
+        val adsRequested = AtomicBoolean(false)
+
+        fun requestAdsIfAllowed() {
+            if (!consentInformation.canRequestAds() || !adsRequested.compareAndSet(false, true)) {
+                if (!consentInformation.canRequestAds()) container.visibility = View.GONE
+                return
+            }
+            init(activity.applicationContext)
+            loadBanner(activity, container)
+            preloadInterstitial(activity.applicationContext)
+        }
+
+        val parameters = ConsentRequestParameters.Builder().build()
+        consentInformation.requestConsentInfoUpdate(
+            activity,
+            parameters,
+            {
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { formError ->
+                    if (formError != null) {
+                        Log.w(TAG, "Consent form unavailable: ${formError.message}")
+                    }
+                    requestAdsIfAllowed()
+                }
+                requestAdsIfAllowed()
+            },
+            { requestError ->
+                Log.w(TAG, "Consent update failed: ${requestError.message}")
+                requestAdsIfAllowed()
+            }
+        )
+    }
+
+    fun isPrivacyOptionsRequired(context: Context): Boolean =
+        UserMessagingPlatform.getConsentInformation(context)
+            .privacyOptionsRequirementStatus ==
+            com.google.android.ump.ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+
+    fun showPrivacyOptions(activity: Activity) {
+        UserMessagingPlatform.showPrivacyOptionsForm(activity) { formError ->
+            if (formError != null) {
+                Log.w(TAG, "Privacy options unavailable: ${formError.message}")
+                android.widget.Toast.makeText(
+                    activity,
+                    "Ad privacy options are currently unavailable",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
 
     /**
      * Initialize AdMob SDK. Call from Application.onCreate() or MainActivity.

@@ -62,16 +62,9 @@ for (const [tier, product] of Object.entries(IFR_CHECKOUT_PRODUCTS)) {
     product.activationTier, LICENSES[tier].activationTier,
     `${tier}: activation tier matches the license model`
   );
-  assert.ok(
-    ["pro", "premium"].includes(product.requiredIfrTier),
-    `${tier}: required IFR tier is pro/premium`
-  );
-  // Premium or elite activation requires a premium IFR hold; pro activation
-  // accepts any verified hold.
-  const expectedIfrTier = product.activationTier === "pro" ? "pro" : "premium";
   assert.strictEqual(
-    product.requiredIfrTier, expectedIfrTier,
-    `${tier}: required IFR tier matches activation tier`
+    Object.prototype.hasOwnProperty.call(product, "requiredIfrTier"), false,
+    `${tier}: token amount does not determine product access`
   );
   const host = FAMILY_HOSTS[product.productFamily];
   assert.ok(

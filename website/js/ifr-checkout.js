@@ -17,6 +17,15 @@
   var status = root.querySelector("[data-ifr-status]");
   var checkoutButtons = root.querySelectorAll("[data-ifr-tier]");
 
+  var checkoutEnabled = root.dataset.ifrEnabled === "true";
+  if (!checkoutEnabled) {
+    if (connectButton) connectButton.disabled = true;
+    if (disconnectButton) disconnectButton.disabled = true;
+    checkoutButtons.forEach(function (button) { button.disabled = true; });
+    if (status) status.textContent = "IFR discount verification and checkout are currently disabled pending payment and fiscal approval.";
+    return;
+  }
+
   function setStatus(message) {
     if (status) status.textContent = message;
   }
@@ -29,8 +38,7 @@
     var error = data && data.error ? data.error : "Checkout unavailable";
     if (error === "checkout_moved_to_vlabs") return "Discount checkout is temporarily unavailable while the fiscal checkout is completed.";
     if (error === "invalid_tier") return "This product is not available for IFR discount checkout.";
-    if (error === "ifr_not_eligible") return "This wallet does not hold enough IFR for the selected discount." + balanceText(data.balanceAmount);
-    if (error === "ifr_tier_too_low") return "The connected wallet does not meet this product's IFR threshold." + balanceText(data.balanceAmount);
+    if (error === "ifr_not_eligible") return "This wallet does not currently hold IFR." + balanceText(data.balanceAmount);
     if (error === "wallet_signature_required") return "Sign the wallet message before checkout can open.";
     if (error === "wallet_signature_invalid") return "The wallet signature could not be verified. Reconnect and try again.";
     if (error === "wallet_challenge_expired") return "Wallet verification expired. Start the checkout again.";
@@ -201,7 +209,7 @@
       });
       var data = checkoutResult.data;
       if (!checkoutResult.response.ok || !data.url) throw new Error(checkoutError(data));
-      setStatus("Eligible" + balanceText(data.ifrBalanceAmount) + " Opening Stripe with the 50% discount...");
+      setStatus("Holder verified" + balanceText(data.ifrBalanceAmount) + " Opening Stripe with the displayed discount...");
       window.location.assign(data.url);
     } catch (error) {
       setStatus(error && error.message ? error.message : "Checkout unavailable");

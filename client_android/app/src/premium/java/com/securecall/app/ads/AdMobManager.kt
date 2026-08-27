@@ -7,6 +7,9 @@ import android.widget.FrameLayout
 /** No-op AdMob stub for PREMIUM flavor — no ads. */
 object AdMobManager {
     var isInitialized = false; private set
+    fun requestConsentAndLoad(activity: Activity, container: FrameLayout) {}
+    fun isPrivacyOptionsRequired(context: Context): Boolean = false
+    fun showPrivacyOptions(activity: Activity) {}
     fun init(context: Context) { isInitialized = true }
     fun loadBanner(activity: Activity, container: FrameLayout) {}
     fun preloadInterstitial(context: Context) {}

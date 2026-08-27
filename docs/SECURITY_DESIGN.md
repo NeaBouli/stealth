@@ -1,6 +1,6 @@
 # SecureCall Ecosystem – Security Design Document
 
-> **Current release boundary (Android 1.0.48):** This document also contains
+> **Current release boundary (Android 1.0.50):** This document also contains
 > research and long-range architecture concepts. The released Android client
 > uses WebRTC with STUN/TURN and application-layer end-to-end encryption. It
 > The Google Play edition contains no built-in VPN or WireGuard code. The direct

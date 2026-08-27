@@ -22,7 +22,21 @@ const ETH_RPC_URLS = Array.from(new Set(
 
 console.log(`[IFR] Configured ${ETH_RPC_URLS.length} Ethereum RPC endpoints for IFR token ${IFR_TOKEN_ADDRESS}`);
 
-async function verifyIfrLock(walletAddress) {
+function classifyLegacyTier(balance) {
+  const humanAmount = (balance / BigInt(10 ** IFR_DECIMALS)).toString();
+  if (balance >= IFR_ELITE_THRESHOLD) return { success: true, tier: "premium", lockedAmount: humanAmount, balanceAmount: humanAmount };
+  if (balance >= IFR_PRO_THRESHOLD) return { success: true, tier: "pro", lockedAmount: humanAmount, balanceAmount: humanAmount };
+  return { success: false, error: "insufficient", lockedAmount: humanAmount, balanceAmount: humanAmount };
+}
+
+function classifyHolderEligibility(balance) {
+  const humanAmount = (balance / BigInt(10 ** IFR_DECIMALS)).toString();
+  return balance > 0n
+    ? { success: true, holder: true, balanceAmount: humanAmount }
+    : { success: false, holder: false, error: "insufficient", balanceAmount: humanAmount };
+}
+
+async function readIfrBalance(walletAddress) {
   if (ETH_RPC_URLS.length === 0) return { success: false, error: "eth_unavailable" };
 
   for (const url of ETH_RPC_URLS) {
@@ -36,9 +50,7 @@ async function verifyIfrLock(walletAddress) {
       const balance = await withTimeout(contract.balanceOf(walletAddress));
       const humanAmount = (balance / BigInt(10 ** IFR_DECIMALS)).toString();
       console.log("[IFR] balanceOf(" + walletAddress + ") = " + humanAmount + " IFR (via " + url + ")");
-      if (balance >= IFR_ELITE_THRESHOLD) return { success: true, tier: "premium", lockedAmount: humanAmount, balanceAmount: humanAmount };
-      if (balance >= IFR_PRO_THRESHOLD)   return { success: true, tier: "pro",   lockedAmount: humanAmount, balanceAmount: humanAmount };
-      return { success: false, error: "insufficient", lockedAmount: humanAmount };
+      return { success: true, balance };
     } catch (e) {
       console.warn("[IFR] RPC failed (" + url + "):", e.message, "— trying next");
     } finally {
@@ -48,4 +60,18 @@ async function verifyIfrLock(walletAddress) {
   return { success: false, error: "all_rpc_failed" };
 }
 
-module.exports = { verifyIfrLock };
+async function verifyIfrLock(walletAddress) {
+  const result = await readIfrBalance(walletAddress);
+  return result.success ? classifyLegacyTier(result.balance) : result;
+}
+
+async function verifyIfrHolding(walletAddress) {
+  const result = await readIfrBalance(walletAddress);
+  return result.success ? classifyHolderEligibility(result.balance) : result;
+}
+
+module.exports = {
+  verifyIfrLock,
+  verifyIfrHolding,
+  classifyHolderEligibility,
+};

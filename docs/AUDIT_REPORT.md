@@ -23,7 +23,7 @@ The StealthX ecosystem (SecureCall, SecureChat, Chameleon) shows a strong securi
 | Android Code (SecureCall) | ⚠️ WARNING | 551+ debug logs in production code |
 | Android Code (Chameleon) | ✅ PASS | Crypto isolation perfect, TierGate correct |
 | Backend Security | ✅ PASS | ALLOWED_SIGNATURES correct, rate limiting active |
-| Cross-Platform Coherence | ✅ PASS | IFR tiers, crypto stack, product names consistent |
+| Cross-Platform Coherence | ✅ PASS | IFR holder policy, crypto stack, product names consistent |
 
 ---
 
@@ -75,7 +75,7 @@ No critical security issues found.
 | Chameleon TierGate centralization | ✅ |
 | :domain does not import :data | ✅ |
 | XChaCha20-Poly1305 as primary encryption (no AES-GCM) | ✅ |
-| IFR tiers consistent across all repos | ✅ |
+| Browser-only IFR holder policy consistent across all repos | ✅ |
 | Product names consistent (no typos) | ✅ |
 | Copyright 2026 on all pages | ✅ |
 | html lang="en" on all 40 pages | ✅ |

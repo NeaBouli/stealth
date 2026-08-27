@@ -3,7 +3,7 @@
 _Based on: StealthX Relay Architecture Handbook v1.0 (April 2026)_
 _Classification: INTERNAL — Developer Reference_
 
-> **Current release note (Android 1.0.48):** GhostNet relay and IP-masking
+> **Current release note (Android 1.0.50):** GhostNet relay and IP-masking
 > references below describe a research architecture, not functionality shipped
 > in the current SecureCall app. The released client uses WebRTC/STUN/TURN and
 > supports externally managed device VPNs. The direct Premium APK may also use

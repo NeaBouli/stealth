@@ -5899,3 +5899,71 @@ Open next:
   `Android Client` is still running and an independent approving review is still required.
 
 `ALL ACTIVE PLAY TRACKS REPLACED — GOOGLE REVIEW AND PROTECTED PR REVIEW PENDING`
+
+## 2026-08-26 23:01 EEST — CODEX SOL — PRE-SALE COMPLETION BLOCK ACTIVE
+
+- **Ticket:** `GIO-20260826-STEALTHX-PRESALE-COMPLETE`; **Type:** AUDIT / FIX / TEST / RELEASE; **Status:** In Progress.
+- Scope: close every independently solvable SecureCall, SecureChat and Chameleon readiness gap across code, app UI, public documentation, distribution artifacts, CI and three-device QA.
+- Payment processing, Stripe production configuration, VAT, AADE/myDATA and e-timologio remain explicitly on standby pending owner data and a separately bounded production authorization.
+- The unmerged SecureCall physical-QA correction is being reconciled on this isolated worktree against current `origin/main`; unrelated dirty canonical worktrees remain untouched.
+- Kimi K3 is performing an independent cross-repository readiness review. Sol retains integration, security review, complete tests, external actions and release decisions.
+
+`PRE-SALE COMPLETION IN PROGRESS — PAYMENT AND TAX ACTIVATION EXCLUDED`
+## 2026-08-27 04:31 EEST — CODEX TERMINAL — FIX/STATUS — PRE-SALE BLOCK VERIFIED
+
+- Scope completed locally for SecureCall plus the shared browser checkout: Android IFR/wallet code remains absent; browser discount requires signed wallet ownership and any positive IFR balance; raw periodic phone discovery was removed; Free limits, reason-aware call termination, UMP consent and Crashlytics preferences were implemented and tested.
+- Kimi K3 completed an independent read-only deep review. Sol fixed the review findings: phone `00`/`+` normalization parity, stale comments, old displayed IFR contract, shadowed legacy SIWE handlers, release-copy consistency and staging hazards.
+- Verification: signaling full test suites PASS; production `npm audit --omit=dev` 0 vulnerabilities; JS syntax PASS; Rust 28 unit + 6 E2E PASS; strict Clippy PASS; SecureCall Android 188-task debug/release policy gate PASS; signed Free/Pro/Premium release builds PASS; local browser checks PASS with no horizontal overflow.
+- Signed candidate: `1.0.50` / base versionCode `78017`, target/compile API 36. Candidate aliases and hashes are stored under `/Users/gio/Desktop/aab apk/presale-2026-08-27/`; no private signing material is in Git.
+- Device evidence: SecureChat base v15 installed and launched on S10 without crash before S10 disconnected. SecureCall 1.0.50 and Chameleon v14 could not receive new physical smoke tests after that disconnect. S7/S4 remained untouched because Woizz occupied them.
+- Release gates still open: Stripe + VAT/AADE/myDATA/e-timologio (explicit standby); controlled signaling deployment and two-device call matrix; Google VPN-policy review/active-track cleanup; AdMob UMP console message; GitHub Release assets/site deployment; normal PR review.
+- Formal report: `CODEX_AUDIT.md` (`1 FAIL / 6 WARN / 10 PASS`). Status remains READY FOR REVIEW, not market-live.
+
+## 2026-08-27 04:36 EEST — CODEX TERMINAL — RELEASE HANDOFF — PR OPEN
+
+- Reviewed implementation committed as `b16e322d4456f6bee9906aa12c5fb5ed65925241` and pushed on `fix/presale-complete-20260826`.
+- Normal protected review opened: https://github.com/NeaBouli/stealth/pull/74
+- PR is open and mergeable. Dependency Review and Markdown/YAML lint are PASS; Android, instrumented API 24/36, signaling, dependency audit, Rust and secret-detection checks are still running. Independent approving review remains required.
+- No merge, deployment, GitHub Release, site publication or Play-track mutation occurred. Stripe and Greek tax activation remain explicitly on standby.
+
+`PR 74 OPEN — CI AND INDEPENDENT REVIEW PENDING`
+
+## 2026-08-27 04:46 EEST — CODEX TERMINAL — CI — ALL REQUIRED CHECKS GREEN
+
+- PR `#74` exact head `548b61f481661f2711b2a4e06da53458ea53ad1b` passed Android API 24/36 instrumentation, Android Client, Signaling Tests, Rust Core Crypto, Dependency Audit/Review, Secret Detection, Security Summary and Markdown/YAML lint.
+- PR remains open and mergeable with `REVIEW_REQUIRED`; no approving independent review exists yet. No merge or external release action was attempted.
+
+`PR 74 CI GREEN — APPROVING REVIEW REQUIRED`
+
+## 2026-08-27 06:31 EEST — CODEX SOL + KIMI K3 — REVIEW HARDENING VERIFIED
+
+- CodeRabbit and Kimi findings were independently checked. Valid issues are fixed: client-supplied call-end reasons can no longer spoof server-owned recovery states; flavor initialization now occurs in `Application`; legacy batch phone lookups are serialized with send-failure and callback-failure recovery.
+- Public privacy, published/candidate version and IFR discount copy now match the actual release state and seller-set checkout model. `CODEX_AUDIT.md` records the complete pre-sale gate state.
+- Verification PASS: signaling full test suite including the spoof regression; SecureCall Android compile/lint/policy matrix; focused batch-queue unit tests; signed Free AAB plus Free/Pro/Premium APK rebuild. Final signed build: 182 tasks, API 36, version `1.0.50` / `78017`.
+- Final AAB SHA-256: `d7f9ec6d41237155e762efc59dd8e0939282154cdc5c8796479957b26f8fae41`. Desktop candidates are refreshed under `/Users/gio/Desktop/aab apk/presale-2026-08-27/`.
+- S7 and Tab S4 are connected but actively running the Woizz audit package; they were inspected read-only and not disturbed. S10 is absent. No physical SecureCall result is claimed for this correction.
+- Remaining gates: normal PR approval/merge and exact-head CI rerun; controlled signaling deployment plus two-device call matrix; Google VPN-policy review; AdMob UMP console verification; GitHub Release/site publication. Stripe and Greek VAT/AADE/myDATA/e-timologio stay on explicit standby.
+
+`REVIEW FIXES LOCALLY GREEN — PROTECTED CI/REVIEW AND EXTERNAL GATES OPEN`
+
+## 2026-08-27 07:45 EEST — CODEX SOL + KIMI K3 — FINAL PRE-SALE REVIEW GAPS CLOSED
+
+- CodeRabbit's final queue-stall finding and Kimi's independent review were confirmed and fixed. Successful legacy batch lookups now have a race-safe five-second timeout; WebSocket disconnect/error drains active and queued lookups exactly once.
+- Focused `BatchPhoneLookupQueueTest` verification PASS: 6 tests, 0 failures/errors, including missing response, late timeout and disconnect drain cases. The complete signed Free/Pro/Premium release matrix PASS: 182 Gradle tasks, target API 36, version `1.0.50` / `78017`.
+- The public IFR verification/checkout surface is now explicitly planned and disabled until payment and fiscal approval. Local browser verification PASS for desktop `1440x900` and mobile `390x844`: controls disabled, standby status visible, no horizontal overflow.
+- Refreshed candidate hashes: Free AAB `aa46a967f54df085895da1804ccf38dbcac5b53ed8c23a7e289350d7c9c71a17`; Free APK `9512b7b13a716c4d37499aa2d09c2180b748e6f9eb6b695393631d5801f238c8`; Pro APK `d5f85fcc9b396a4f5a7a823cb1112f28694bc45b1ce69898946cf31d82122a33`; Premium APK `e9834ab75f6c276c237aecf8c2061c40e770b0a977e8d1e32d2d7cf5db845606`.
+- No device was disturbed: S7/Tab S4 remain reserved by Woizz and S10 is absent. Physical call/reconnect/settings QA, controlled signaling deployment, Play VPN-policy completion, UMP console verification and post-merge release/site publication remain external gates.
+- Stripe production activation and Greek VAT/AADE/myDATA/e-timologio remain the sole intentionally deferred implementation block pending owner data and separately bounded production authorization.
+
+`LOCAL PRE-SALE SCOPE GREEN — EXACT-HEAD CI, REVIEW AND EXTERNAL GATES REMAIN`
+
+## 2026-08-27 08:22 EEST — CODEX SOL + KIMI K3 — GENERATION-SAFE LOOKUP AND CLOSED CHECKOUT GATE
+
+- CodeRabbit correctly identified that a late response without a request ID could be assigned to the next batch lookup after timeout. Kimi independently reviewed the protocol and concurrency model; Sol implemented the bounded correction.
+- A timeout now atomically suspends that WebSocket generation, fails active/pending callbacks once and forces a reconnect. Lookups resume only after a fresh `REGISTERED` acknowledgement. Heartbeat callbacks now reject stale WebSocket instances and the socket reference is volatile.
+- Focused queue verification PASS: 8 tests, including timeout drain, suspended enqueue/resume, stale timeout and late old-generation response. Complete signed matrix PASS: 207 Gradle tasks covering Free/Pro/Premium unit tests, Free Lint, VPN policy/runtime guards, signed Free AAB and all three APKs.
+- Public checkout now has a central `data-ifr-enabled=false` runtime gate. No wallet/checkout handlers bind while closed. Node regression PASS in all three sites; CI workflows execute it. Browser PASS at `1440x900` and `390x844`: zero console errors, controls disabled, no overflow.
+- Refreshed SecureCall hashes: AAB `3350e422ab093919e4a01958fd0a82faa126318c174a992060af18a6e4e91154`; Free APK `ed5f7ea7b610405eb0452ecd9f7c28b58d356750acf42b90f1cb84e23fa8928b`; Pro APK `56c32c30758413046fa43afc957452e02366b64cc84372aabf00ae289f9a544f`; Premium APK `810c30f1aeb5fb1b5f5aa199807b21ddb486d82e2a17f203b7601f258532e011`.
+- Server-side checkout authorization remains part of the intentionally deferred Stripe + Greek VAT/AADE/myDATA/e-timologio implementation block; client-side gating is not treated as a server security boundary.
+
+`FINAL LOCAL REVIEW FIXES GREEN — EXACT-HEAD CI AND NORMAL REVIEW REQUIRED`

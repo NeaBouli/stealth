@@ -17,7 +17,7 @@ object AppInit {
         FeatureProviderRegistry.set(CompileTimeFeatureProvider())
 
         // Phase 8: Crashlytics — disabled for PREMIUM (TELEMETRY_ENABLED=false)
-        // Guard: Firebase may not be initialized if using placeholder credentials
+        // Keep startup resilient if Firebase initialization is temporarily unavailable.
         try {
             FirebaseCrashlytics.getInstance()
                 .setCrashlyticsCollectionEnabled(FeatureProviderRegistry.get().telemetryEnabled)
