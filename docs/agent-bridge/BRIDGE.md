@@ -3549,3 +3549,10 @@ Type: RELEASE / EXTERNAL / POLICY
 - No production, deployment, store or payment/tax action was performed.
 
 `PRE-SALE PR OPEN — RELEASE GATES PRESERVED`
+
+## 2026-08-27 04:46 EEST — [CODEX TERMINAL] PR 74 CI Green
+
+- All required checks passed on exact head `548b61f481661f2711b2a4e06da53458ea53ad1b`.
+- PR remains mergeable but blocked by required independent approving review. External release gates remain unchanged.
+
+`CI GREEN — REVIEW REQUIRED`
