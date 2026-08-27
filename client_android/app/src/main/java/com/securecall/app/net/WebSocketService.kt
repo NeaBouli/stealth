@@ -92,7 +92,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // Phone lookup callback
     private var _phoneLookupCallback: ((String?) -> Unit)? = null
     // Legacy batch responses have no request ID, so requests must remain serialized.
-    private val batchPhoneLookupQueue = BatchPhoneLookupQueue(::sendBatchPhoneLookup)
+    private val batchPhoneLookupTimeoutHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val batchPhoneLookupQueue = BatchPhoneLookupQueue(
+        ::sendBatchPhoneLookup,
+        scheduleTimeout = { delayMs, action ->
+            batchPhoneLookupTimeoutHandler.postDelayed({ action() }, delayMs)
+        },
+    )
     // Activation code callback: returns (success, tier, error)
     private var _activateCodeCallback: ((Boolean, String, String) -> Unit)? = null
 
@@ -735,6 +741,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onDisconnected() {
         Log.d("WS_SERVICE", "WebSocket disconnected")
+        batchPhoneLookupQueue.failAll()
         isConnected = false
         isRegistered = false // BUG-034: reset registration state
         registerPending = false // Allow re-register on next connect
@@ -752,6 +759,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onError(t: Throwable) {
         Log.e("WS_SERVICE", "WebSocket error", t)
+        batchPhoneLookupQueue.failAll()
         isConnected = false
         isRegistered = false // BUG-034: reset registration state on error
         pendingCallQueue.clear() // BUG-034: clear queued calls — will re-queue on reconnect

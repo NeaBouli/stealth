@@ -483,8 +483,8 @@
                 </div>
                 <div class="ifr-box reveal" id="ifr" data-ifr-checkout data-ifr-product="SecureCall">
                     <span class="section-label">Browser purchase benefit</span>
-                    <h3>Verify for the displayed IFR holder discount</h3>
-                    <p>Connect a browser wallet and sign a message proving ownership. The server checks the IFR balance read-only on Ethereum Mainnet before opening an eligible Stripe checkout. No wallet state enters the Android app.</p>
+                    <h3>Planned IFR holder discount</h3>
+                    <p>Browser verification and discounted checkout are currently disabled pending payment and Greek fiscal approval. When enabled, ownership will be signed in the browser and checked read-only; no wallet state enters the Android app.</p>
                     <div class="ifr-grid">
                         <div class="card" style="padding:20px">
                             <h4>Buy IFR</h4>
@@ -495,15 +495,15 @@
                         <div class="card" style="padding:20px">
                             <h4>Verify for Stripe discount</h4>
                             <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">
-                                <button class="btn primary" type="button" data-ifr-connect>Connect wallet</button>
+                                <button class="btn primary" type="button" data-ifr-connect disabled>Connect wallet</button>
                                 <button class="btn line" type="button" data-ifr-disconnect disabled>Disconnect</button>
                             </div>
                             <input type="text" readonly data-ifr-address aria-label="Connected wallet address" placeholder="Connected wallet address" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--sx-line);background:#111827;color:#f8fafc;margin-bottom:12px;font-weight:700;font-family:var(--sx-font-mono)">
                             <div class="ifr-checkout-actions" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
-                                <button class="btn primary" type="button" data-ifr-tier="pro_lifetime">Pro discounted checkout</button>
-                                <button class="btn primary" type="button" data-ifr-tier="premium_lifetime">Premium discounted checkout</button>
+                                <button class="btn primary" type="button" data-ifr-tier="pro_lifetime" disabled>Pro discounted checkout</button>
+                                <button class="btn primary" type="button" data-ifr-tier="premium_lifetime" disabled>Premium discounted checkout</button>
                             </div>
-                            <p data-ifr-status role="status" aria-live="polite" style="font-size:13px;color:var(--sx-text);font-weight:700;margin:14px 0 0;line-height:1.5">Connect a wallet to prepare the signed browser verification. Checkout availability is controlled by the secure payment backend.</p>
+                            <p data-ifr-status role="status" aria-live="polite" style="font-size:13px;color:var(--sx-text);font-weight:700;margin:14px 0 0;line-height:1.5">IFR discount verification and checkout are currently disabled pending payment and fiscal approval.</p>
                         </div>
                     </div>
                     <p style="margin:18px 0 0"><a class="btn line" href="wiki/ifr-unlock.html">How browser verification works</a></p>

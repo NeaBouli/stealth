@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
 <title>SecureCall IFR Discount</title>
 <style>
 :root{color-scheme:dark;--accent:#18e676;--brand:#ff4444;--bg:#070910;--panel:#10141d;--text:#eef3f8;--muted:#a8b0bc}
@@ -24,13 +25,13 @@ input::placeholder{color:#64748b;font-weight:500}
 <body>
 <main class="card" data-ifr-checkout data-ifr-product="SecureCall">
 <h1>SecureCall IFR Discount</h1>
-<p class="muted">Connect a wallet, sign the discount request, then checkout opens with the seller-set discount displayed for eligible holders. No manual wallet address proof is accepted.</p>
-<button class="btn" type="button" data-ifr-connect>Connect Wallet</button>
+<p class="muted">A browser-based IFR holder discount is planned but is not currently enabled. Discounted checkout remains unavailable until payment and Greek fiscal integration are approved. No payment can be made on this page.</p>
+<button class="btn" type="button" data-ifr-connect disabled>Connect Wallet</button>
 <button class="btn line" type="button" data-ifr-disconnect disabled>Disconnect Wallet</button>
 <input readonly data-ifr-address aria-label="Connected wallet address" placeholder="Connected wallet address">
-<button class="btn" type="button" data-ifr-tier="pro_lifetime">Pro Discounted Checkout</button>
-<button class="btn" type="button" data-ifr-tier="premium_lifetime">Premium Discounted Checkout</button>
-<p data-ifr-status role="status" aria-live="polite">Connect MetaMask, Phantom, Coinbase Wallet, or another WalletConnect-compatible Ethereum wallet.</p>
+<button class="btn" type="button" data-ifr-tier="pro_lifetime" disabled>Pro Discounted Checkout</button>
+<button class="btn" type="button" data-ifr-tier="premium_lifetime" disabled>Premium Discounted Checkout</button>
+<p data-ifr-status role="status" aria-live="polite">IFR discount checkout is currently disabled pending payment and fiscal approval.</p>
 </main>
 <script type="module" src="js/ifr-checkout.js"></script>
 </body>

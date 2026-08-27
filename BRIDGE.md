@@ -5945,3 +5945,14 @@ Open next:
 - Remaining gates: normal PR approval/merge and exact-head CI rerun; controlled signaling deployment plus two-device call matrix; Google VPN-policy review; AdMob UMP console verification; GitHub Release/site publication. Stripe and Greek VAT/AADE/myDATA/e-timologio stay on explicit standby.
 
 `REVIEW FIXES LOCALLY GREEN — PROTECTED CI/REVIEW AND EXTERNAL GATES OPEN`
+
+## 2026-08-27 07:45 EEST — CODEX SOL + KIMI K3 — FINAL PRE-SALE REVIEW GAPS CLOSED
+
+- CodeRabbit's final queue-stall finding and Kimi's independent review were confirmed and fixed. Successful legacy batch lookups now have a race-safe five-second timeout; WebSocket disconnect/error drains active and queued lookups exactly once.
+- Focused `BatchPhoneLookupQueueTest` verification PASS: 6 tests, 0 failures/errors, including missing response, late timeout and disconnect drain cases. The complete signed Free/Pro/Premium release matrix PASS: 182 Gradle tasks, target API 36, version `1.0.50` / `78017`.
+- The public IFR verification/checkout surface is now explicitly planned and disabled until payment and fiscal approval. Local browser verification PASS for desktop `1440x900` and mobile `390x844`: controls disabled, standby status visible, no horizontal overflow.
+- Refreshed candidate hashes: Free AAB `aa46a967f54df085895da1804ccf38dbcac5b53ed8c23a7e289350d7c9c71a17`; Free APK `9512b7b13a716c4d37499aa2d09c2180b748e6f9eb6b695393631d5801f238c8`; Pro APK `d5f85fcc9b396a4f5a7a823cb1112f28694bc45b1ce69898946cf31d82122a33`; Premium APK `e9834ab75f6c276c237aecf8c2061c40e770b0a977e8d1e32d2d7cf5db845606`.
+- No device was disturbed: S7/Tab S4 remain reserved by Woizz and S10 is absent. Physical call/reconnect/settings QA, controlled signaling deployment, Play VPN-policy completion, UMP console verification and post-merge release/site publication remain external gates.
+- Stripe production activation and Greek VAT/AADE/myDATA/e-timologio remain the sole intentionally deferred implementation block pending owner data and separately bounded production authorization.
+
+`LOCAL PRE-SALE SCOPE GREEN — EXACT-HEAD CI, REVIEW AND EXTERNAL GATES REMAIN`

@@ -3,7 +3,12 @@ package com.securecall.app.net
 /** Serializes requests because legacy signaling responses have no request ID. */
 internal class BatchPhoneLookupQueue(
     private val sendRequest: (List<String>) -> Boolean,
+    private val scheduleTimeout: (Long, () -> Unit) -> Unit,
 ) {
+    private companion object {
+        const val REQUEST_TIMEOUT_MS = 5_000L
+    }
+
     private data class Request(
         val hashes: List<String>,
         val callback: (Map<String, Pair<Boolean, String>>) -> Unit,
@@ -30,8 +35,26 @@ internal class BatchPhoneLookupQueue(
     }
 
     private fun dispatch(request: Request) {
-        if (!runCatching { sendRequest(request.hashes) }.getOrDefault(false)) {
+        val sent = runCatching { sendRequest(request.hashes) }.getOrDefault(false)
+        if (!sent) {
             finish(request, emptyMap())
+            return
+        }
+        scheduleTimeout(REQUEST_TIMEOUT_MS) { finish(request, emptyMap()) }
+    }
+
+    fun failAll() {
+        val requests = synchronized(lock) {
+            buildList {
+                active?.let(::add)
+                addAll(pending)
+            }.also {
+                active = null
+                pending.clear()
+            }
+        }
+        requests.forEach { request ->
+            runCatching { request.callback(emptyMap()) }
         }
     }
 
