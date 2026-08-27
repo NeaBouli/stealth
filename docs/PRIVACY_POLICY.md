@@ -17,7 +17,8 @@ SecureCall is built on the principle that privacy is a fundamental right. We col
 |-----------|-----------|---------|
 | Call content | No | End-to-end encrypted; we cannot access it |
 | Call metadata | No | No call logs stored on servers |
-| Contacts | No | Contact data never leaves your device |
+| Contacts | Limited | Raw contacts stay local; one-way phone hashes are sent for optional user discovery |
+| Phone number | Optional | Processed for registration, caller identification and lookup only when supplied |
 | Crash reports | Yes (opt-out) | Anonymous crash data via Firebase Crashlytics |
 | Analytics | No | No usage analytics or behavioral tracking |
 | IP address | Transient | Visible to signaling server during call setup only; not logged |
@@ -29,7 +30,8 @@ SecureCall is built on the principle that privacy is a fundamental right. We col
 |-----------|-----------|---------|
 | Call content | No | End-to-end encrypted |
 | Call metadata | No | No call logs stored |
-| Contacts | No | Never leaves your device |
+| Contacts | Limited | Raw contacts stay local; one-way phone hashes are sent for optional user discovery |
+| Phone number | Optional | Processed only when supplied |
 | Crash reports | No | Crashlytics disabled |
 | Analytics | No | Zero telemetry |
 | IP address | Transient | Visible during signaling only; not logged |
@@ -40,14 +42,17 @@ SecureCall is built on the principle that privacy is a fundamental right. We col
 |-----------|-----------|---------|
 | Call content | No | End-to-end encrypted |
 | Call metadata | No | No call logs stored |
-| Contacts | No | Never leaves your device |
+| Contacts | Limited | Raw contacts stay local; one-way phone hashes are sent for optional user discovery |
+| Phone number | Optional | Processed only when supplied |
 | Crash reports | No | Crashlytics disabled |
 | Analytics | No | Zero telemetry |
 | IP address | Transient | Visible to signaling/STUN/TURN during connection setup; not logged by SecureCall |
 
-SecureCall does not include a VPN or IP-masking tunnel in any tier. If the
-device uses an externally managed VPN, network visibility depends on that
-provider and configuration.
+The Google Play edition does not include a VPN service. Every edition can use an
+externally managed Android VPN route. The separately distributed direct Premium
+APK can additionally run an optional app-managed WireGuard tunnel after explicit
+Android consent; its configuration stays local and its private key is protected
+with Android Keystore.
 
 ## How Encryption Works
 
@@ -72,10 +77,12 @@ We do **not** store signaling data or audio packets after the call ends.
 - **Firebase Crashlytics** (Google) — Collects anonymous crash reports to help us fix bugs. You can opt out in Settings. [Google's Privacy Policy](https://policies.google.com/privacy)
 
 ### PRO and PREMIUM Versions
-- No third-party services. Zero external data sharing.
+- No advertising or Crashlytics. FCM, STUN and TURN remain necessary for push delivery and WebRTC connectivity.
 
 ### All Versions
-- **Google Play Billing** — If you purchase Pro or Premium, Google handles payment processing. We never see your payment details. [Google Play Terms](https://play.google.com/intl/en/about/play-terms/)
+- **Firebase Cloud Messaging** — Delivers incoming-call notifications; FCM tokens are stored for delivery.
+- **STUN/TURN providers** — Support WebRTC connectivity and may process network addresses.
+- **Google Play Billing (Play edition)** — If you purchase Pro or Premium, Google handles payment processing. We never see your payment details. [Google Play Terms](https://play.google.com/intl/en/about/play-terms/)
 
 ## Data Storage
 

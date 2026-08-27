@@ -1,12 +1,17 @@
 package com.securecall.app.data
 
 import android.content.Context
+import com.securecall.app.config.FeatureProviderRegistry
+import com.securecall.app.config.TierLimitPolicy
 import org.json.JSONArray
 
 object ContactRepository {
     private const val PREFS = "securecall_contacts"
     private const val KEY = "contacts_json"
     private const val KEY_HIDDEN = "hidden_phones"
+
+    /** Outcome of [save]; lets callers give deterministic feedback on Free-tier limit rejection. */
+    enum class SaveResult { SAVED_NEW, UPDATED_EXISTING, REJECTED_CONTACT_LIMIT }
 
     fun getAll(context: Context): List<Contact> {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -19,7 +24,7 @@ object ContactRepository {
         return list.sortedBy { it.name.lowercase() }
     }
 
-    fun save(context: Context, contact: Contact) {
+    fun save(context: Context, contact: Contact): SaveResult {
         val all = getAll(context).toMutableList()
         val normalizedPhone = PhoneUtils.normalize(contact.phoneOrId, context)
 
@@ -35,7 +40,8 @@ object ContactRepository {
         }
 
         if (existingIdx >= 0) {
-            // Update existing: merge secureId if the new contact provides one
+            // Update existing: merge secureId if the new contact provides one.
+            // Edits of existing contacts are never subject to the contact limit.
             val existing = all[existingIdx]
             val mergedSecureId = contact.secureId ?: existing.secureId
             val mergedName = if (contact.name.isNotBlank() && contact.name != "Unknown") contact.name else existing.name
@@ -43,10 +49,18 @@ object ContactRepository {
                 name = mergedName,
                 secureId = mergedSecureId
             )
-        } else {
-            all.add(contact)
+            persist(context, all)
+            return SaveResult.UPDATED_EXISTING
         }
+
+        // New contact — enforce the Free-tier contact limit (0 = unlimited paid tiers).
+        val maxContacts = FeatureProviderRegistry.get().maxContacts
+        if (!TierLimitPolicy.canAddContact(all.size, maxContacts)) {
+            return SaveResult.REJECTED_CONTACT_LIMIT
+        }
+        all.add(contact)
         persist(context, all)
+        return SaveResult.SAVED_NEW
     }
 
     fun delete(context: Context, contactId: String) {

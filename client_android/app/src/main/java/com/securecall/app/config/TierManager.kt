@@ -71,8 +71,8 @@ object TierManager {
         private val isPremium get() = activatedTier == "PREMIUM"
 
         override val tier: String get() = activatedTier
-        override val maxCallDurationMinutes: Int get() = if (isPro) 0 else 15
-        override val maxContacts: Int get() = if (isPro) 0 else 10
+        override val maxCallDurationMinutes: Int get() = if (isPro) 0 else FeatureFlags.MAX_CALL_DURATION_MINUTES
+        override val maxContacts: Int get() = if (isPro) 0 else FeatureFlags.MAX_CONTACTS
         override val deviceAttestationRequired: Boolean get() = isPro
         override val rootDetectionBlocks: Boolean get() = isPro
         override val certificatePinning: Boolean get() = isPro

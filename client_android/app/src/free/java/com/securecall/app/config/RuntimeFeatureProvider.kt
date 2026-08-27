@@ -1,6 +1,7 @@
 package com.securecall.app.config
 
 import android.content.Context
+import androidx.preference.PreferenceManager
 import com.securecall.app.billing.SubscriptionManager
 import com.securecall.app.billing.SubscriptionTier
 
@@ -33,13 +34,13 @@ class RuntimeFeatureProvider(context: Context) : FeatureProvider {
 
     override val maxCallDurationMinutes: Int
         get() = when (currentTier) {
-            SubscriptionTier.FREE -> 15
+            SubscriptionTier.FREE -> FeatureFlags.MAX_CALL_DURATION_MINUTES
             else -> 0
         }
 
     override val maxContacts: Int
         get() = when (currentTier) {
-            SubscriptionTier.FREE -> 10
+            SubscriptionTier.FREE -> FeatureFlags.MAX_CONTACTS
             else -> 0
         }
 
@@ -56,10 +57,12 @@ class RuntimeFeatureProvider(context: Context) : FeatureProvider {
         get() = currentTier == SubscriptionTier.FREE
 
     override val telemetryEnabled: Boolean
-        get() = currentTier == SubscriptionTier.FREE
+        get() = currentTier == SubscriptionTier.FREE &&
+            PreferenceManager.getDefaultSharedPreferences(appContext)
+                .getBoolean("pref_crash_reports", true)
 
     override val thirdPartyAnalytics: Boolean
-        get() = currentTier == SubscriptionTier.FREE
+        get() = false
 
     override val reconnectStrategy: String
         get() = when (currentTier) {

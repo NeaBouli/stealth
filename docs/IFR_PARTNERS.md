@@ -59,8 +59,8 @@
 
 ### IFR Integration
 - **Current public model:** Browser wallet verification on the website for Stripe checkout discounts
-- **Pro discount:** Hold >= 2,000 IFR -> 50% off eligible Pro checkout
-- **Premium discount:** Hold >= 6,000 IFR -> 50% off eligible Premium checkout
+- **Holder eligibility:** Any positive IFR balance qualifies; no minimum token threshold
+- **Discount:** The seller-displayed holder discount applies to the selected checkout product
 - **Android app status:** No WalletConnect, no in-app IFR unlock in the public app line
 
 ---

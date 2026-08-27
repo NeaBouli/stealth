@@ -5899,3 +5899,22 @@ Open next:
   `Android Client` is still running and an independent approving review is still required.
 
 `ALL ACTIVE PLAY TRACKS REPLACED — GOOGLE REVIEW AND PROTECTED PR REVIEW PENDING`
+
+## 2026-08-26 23:01 EEST — CODEX SOL — PRE-SALE COMPLETION BLOCK ACTIVE
+
+- **Ticket:** `GIO-20260826-STEALTHX-PRESALE-COMPLETE`; **Type:** AUDIT / FIX / TEST / RELEASE; **Status:** In Progress.
+- Scope: close every independently solvable SecureCall, SecureChat and Chameleon readiness gap across code, app UI, public documentation, distribution artifacts, CI and three-device QA.
+- Payment processing, Stripe production configuration, VAT, AADE/myDATA and e-timologio remain explicitly on standby pending owner data and a separately bounded production authorization.
+- The unmerged SecureCall physical-QA correction is being reconciled on this isolated worktree against current `origin/main`; unrelated dirty canonical worktrees remain untouched.
+- Kimi K3 is performing an independent cross-repository readiness review. Sol retains integration, security review, complete tests, external actions and release decisions.
+
+`PRE-SALE COMPLETION IN PROGRESS — PAYMENT AND TAX ACTIVATION EXCLUDED`
+## 2026-08-27 04:31 EEST — CODEX TERMINAL — FIX/STATUS — PRE-SALE BLOCK VERIFIED
+
+- Scope completed locally for SecureCall plus the shared browser checkout: Android IFR/wallet code remains absent; browser discount requires signed wallet ownership and any positive IFR balance; raw periodic phone discovery was removed; Free limits, reason-aware call termination, UMP consent and Crashlytics preferences were implemented and tested.
+- Kimi K3 completed an independent read-only deep review. Sol fixed the review findings: phone `00`/`+` normalization parity, stale comments, old displayed IFR contract, shadowed legacy SIWE handlers, release-copy consistency and staging hazards.
+- Verification: signaling full test suites PASS; production `npm audit --omit=dev` 0 vulnerabilities; JS syntax PASS; Rust 28 unit + 6 E2E PASS; strict Clippy PASS; SecureCall Android 188-task debug/release policy gate PASS; signed Free/Pro/Premium release builds PASS; local browser checks PASS with no horizontal overflow.
+- Signed candidate: `1.0.50` / base versionCode `78017`, target/compile API 36. Candidate aliases and hashes are stored under `/Users/gio/Desktop/aab apk/presale-2026-08-27/`; no private signing material is in Git.
+- Device evidence: SecureChat base v15 installed and launched on S10 without crash before S10 disconnected. SecureCall 1.0.50 and Chameleon v14 could not receive new physical smoke tests after that disconnect. S7/S4 remained untouched because Woizz occupied them.
+- Release gates still open: Stripe + VAT/AADE/myDATA/e-timologio (explicit standby); controlled signaling deployment and two-device call matrix; Google VPN-policy review/active-track cleanup; AdMob UMP console message; GitHub Release assets/site deployment; normal PR review.
+- Formal report: `CODEX_AUDIT.md` (`1 FAIL / 6 WARN / 10 PASS`). Status remains READY FOR REVIEW, not market-live.

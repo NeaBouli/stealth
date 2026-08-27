@@ -238,9 +238,7 @@ public class MainActivity extends AppCompatActivity {
         // AdMob — only show ads if effective tier is FREE (TB-013: ensure container visible)
         if (com.securecall.app.config.TierManager.INSTANCE.isFreeTier(this)) {
             if (adContainer != null) adContainer.setVisibility(android.view.View.VISIBLE);
-            com.securecall.app.ads.AdMobManager.INSTANCE.init(this);
-            com.securecall.app.ads.AdMobManager.INSTANCE.loadBanner(this, adContainer);
-            com.securecall.app.ads.AdMobManager.INSTANCE.preloadInterstitial(this);
+            com.securecall.app.ads.AdMobManager.INSTANCE.requestConsentAndLoad(this, adContainer);
             updateAdVisibilityForTab(bottomNav.getSelectedItemId() != R.id.nav_settings);
         } else {
             // Upgraded user — hide ad container completely
@@ -303,7 +301,7 @@ public class MainActivity extends AppCompatActivity {
             .setPositiveButton("Add Contact", (d, w) -> {
                 // Save inviter as a contact in the active contact repository.
                 SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
-                ContactRepository.INSTANCE.save(this, new Contact(
+                ContactRepository.SaveResult saveResult = ContactRepository.INSTANCE.save(this, new Contact(
                         java.util.UUID.randomUUID().toString(),
                         displayName,
                         inviterSecureId,
@@ -313,6 +311,14 @@ public class MainActivity extends AppCompatActivity {
                         false,
                         false
                 ));
+                if (saveResult == ContactRepository.SaveResult.REJECTED_CONTACT_LIMIT) {
+                    android.widget.Toast.makeText(this,
+                            com.securecall.app.config.TierLimitPolicy.INSTANCE.contactLimitMessage(
+                                    com.securecall.app.config.FeatureProviderRegistry.INSTANCE.get().getMaxContacts()),
+                            android.widget.Toast.LENGTH_LONG).show();
+                    Log.d(TAG, "Invite contact save rejected by Free-tier limit: " + inviterSecureId);
+                    return;
+                }
                 ContactsFragment.Companion.invalidateCache();
                 Log.d(TAG, "Inviter saved as contact: " + inviterSecureId);
                 android.widget.Toast.makeText(this, displayName + " added!", android.widget.Toast.LENGTH_SHORT).show();
@@ -321,9 +327,10 @@ public class MainActivity extends AppCompatActivity {
                 notifyInviteAccepted(inviterSecureId, prefs.getString("client_id", ""));
             })
             .setNeutralButton("Call Now", (d, w) -> {
-                // Save + call immediately
+                // Save + call immediately. The call itself is not contact-gated:
+                // if the Free-tier contact limit rejects the save, the call still proceeds.
                 SharedPreferences prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE);
-                ContactRepository.INSTANCE.save(this, new Contact(
+                ContactRepository.SaveResult saveResult = ContactRepository.INSTANCE.save(this, new Contact(
                         java.util.UUID.randomUUID().toString(),
                         displayName,
                         inviterSecureId,
@@ -333,7 +340,14 @@ public class MainActivity extends AppCompatActivity {
                         false,
                         false
                 ));
-                ContactsFragment.Companion.invalidateCache();
+                if (saveResult == ContactRepository.SaveResult.REJECTED_CONTACT_LIMIT) {
+                    android.widget.Toast.makeText(this,
+                            com.securecall.app.config.TierLimitPolicy.INSTANCE.contactLimitMessage(
+                                    com.securecall.app.config.FeatureProviderRegistry.INSTANCE.get().getMaxContacts()),
+                            android.widget.Toast.LENGTH_LONG).show();
+                } else {
+                    ContactsFragment.Companion.invalidateCache();
+                }
                 notifyInviteAccepted(inviterSecureId, prefs.getString("client_id", ""));
 
                 Intent callIntent = new Intent(this, CallActivity.class);

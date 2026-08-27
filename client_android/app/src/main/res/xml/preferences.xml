@@ -221,6 +221,17 @@
             android:title="@string/settings_privacy"
             android:summary="@string/settings_privacy_summary"
             android:icon="@drawable/ic_shield" />
+        <SwitchPreferenceCompat
+            android:key="pref_crash_reports"
+            android:title="@string/settings_crash_reports"
+            android:summary="@string/settings_crash_reports_summary"
+            android:defaultValue="true"
+            android:icon="@drawable/ic_shield" />
+        <Preference
+            android:key="pref_ad_privacy"
+            android:title="@string/settings_ad_privacy"
+            android:summary="@string/settings_ad_privacy_summary"
+            android:icon="@drawable/ic_shield" />
         <Preference
             android:key="pref_terms"
             android:title="Terms of Service"

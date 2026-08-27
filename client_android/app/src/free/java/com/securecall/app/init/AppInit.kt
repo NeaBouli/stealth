@@ -18,8 +18,8 @@ object AppInit {
         FeatureProviderRegistry.set(RuntimeFeatureProvider(context))
         LicenseChecker.checkAtStartup(context)
 
-        // Phase 8: Crashlytics — enabled for FREE (TELEMETRY_ENABLED=true)
-        // Guard: Firebase may not be initialized if using placeholder credentials
+        // Crashlytics is Free-only and follows the user's diagnostics preference.
+        // Keep startup resilient if Firebase initialization is temporarily unavailable.
         try {
             FirebaseCrashlytics.getInstance()
                 .setCrashlyticsCollectionEnabled(FeatureProviderRegistry.get().telemetryEnabled)

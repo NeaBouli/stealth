@@ -117,7 +117,12 @@ module.exports = function callHandlers(ctx) {
         }
         const peerClientId = getSessionPeer(msg.sessionId, myClientId);
         if (peerClientId) {
-          sendToClient(peerClientId, { type: "CALL_END", sessionId: msg.sessionId, from: myClientId });
+          sendToClient(peerClientId, {
+            type: "CALL_END",
+            sessionId: msg.sessionId,
+            from: myClientId,
+            reason: msg.reason || "user_hangup",
+          });
         }
         routingTable.delete(msg.sessionId);
         console.log("[ROUTING] END:", msg.sessionId, "by", myClientId);

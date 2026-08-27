@@ -14,7 +14,7 @@
 [![Crypto: XChaCha20-Poly1305](https://img.shields.io/badge/Crypto-XChaCha20--Poly1305-7C6CFF.svg)](docs/SECURITY_DESIGN.md)
 [![Security: Audited](https://img.shields.io/badge/Security-Audited-orange.svg)](docs/SECURITY_AUDIT_REPORT.md)
 [![Rust Crypto Engine](https://img.shields.io/badge/Engine-Rust-DEA584.svg)](core_crypto/)
-[![Version](https://img.shields.io/badge/Version-v1.0.48-4ade80.svg)](https://github.com/NeaBouli/stealth/releases)
+[![Version](https://img.shields.io/badge/Version-v1.0.50-4ade80.svg)](https://github.com/NeaBouli/stealth/releases)
 [![Website](https://img.shields.io/badge/Website-stealthx.tech-34D399.svg)](https://stealthx.tech)
 [![Testers](https://img.shields.io/badge/Beta_Testers-15-blue.svg)](https://play.google.com/apps/testing/com.securecall.app.free)
 
@@ -41,7 +41,7 @@ No call content ever leaves your device unencrypted. Every call is protected end
 
 ## IFR Status
 
-The current SecureCall release does not include WalletConnect or in-app IFR tier unlocking. The former IFR/SIWE Android build is retained only as the internal test tag `internal-ifr-wallet-test-2026-06-18`. IFR holder benefits are available as a web checkout flow: verify a wallet in the browser, receive a 50% Stripe discount, then unlock SecureCall through the normal license or activation-code path.
+The current SecureCall release does not include WalletConnect or in-app IFR tier unlocking. The former IFR/SIWE Android build is retained only as the internal test tag `internal-ifr-wallet-test-2026-06-18`. IFR holder benefits are browser-only before purchase: prove wallet ownership, verify any positive IFR balance read-only, receive the seller-defined checkout discount, then unlock SecureCall through the normal license or activation-code path.
 
 ## Architecture
 
@@ -120,7 +120,7 @@ SecureCall uses the following third-party services. **All voice data is encrypte
 
 - The signaling server is **zero-knowledge** -- it facilitates connections but cannot decrypt any call content.
 - TURN relay servers only see encrypted packets -- decryption keys exist only on the two call participants' devices.
-- Firebase is used solely for push notification delivery when the app is in the background. Analytics and Crashlytics are disabled.
+- Firebase provides push notifications for all tiers. The Free tier can send anonymous Crashlytics diagnostics and exposes an in-app opt-out; Pro and Premium keep Crashlytics disabled. No Firebase Analytics events are collected.
 - No call content or recordings are shared with, sold to, or accessible by any third party. Signaling metadata is processed transiently for connection setup.
 
 For the full privacy policy, see [Privacy Policy](https://stealthx.tech/privacy.html).

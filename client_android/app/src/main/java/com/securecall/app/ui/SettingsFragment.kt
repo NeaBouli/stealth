@@ -164,6 +164,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // About section links
         setupAboutLinks()
+        setupCrashReportPreference()
+        setupAdPrivacyOptions()
 
         // Licenses & Disclaimer
         findPreference<Preference>("pref_licenses")?.apply {
@@ -204,6 +206,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         refreshNetworkStatus()
         com.securecall.app.vpn.VpnFeature.refresh(this)
         configureBatteryOptimization()
+        setupAdPrivacyOptions()
     }
 
     /** BUG-022: Refresh network info so eSIM status doesn't stay stale. */
@@ -259,6 +262,34 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("pref_licenses")?.setOnPreferenceClickListener {
             openUrl("https://stealthx.tech/disclaimer.html")
             true
+        }
+    }
+
+    private fun setupAdPrivacyOptions() {
+        findPreference<Preference>("pref_ad_privacy")?.apply {
+            isVisible = BuildConfig.TIER == "FREE" &&
+                com.securecall.app.ads.AdMobManager.isPrivacyOptionsRequired(requireContext())
+            setOnPreferenceClickListener {
+                activity?.let { com.securecall.app.ads.AdMobManager.showPrivacyOptions(it) }
+                true
+            }
+        }
+    }
+
+    private fun setupCrashReportPreference() {
+        findPreference<SwitchPreferenceCompat>("pref_crash_reports")?.apply {
+            isVisible = BuildConfig.TIER == "FREE"
+            setOnPreferenceChangeListener { _, newValue ->
+                val enabled = newValue as Boolean
+                try {
+                    val crashlytics = com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance()
+                    crashlytics.setCrashlyticsCollectionEnabled(enabled)
+                    if (!enabled) crashlytics.deleteUnsentReports()
+                } catch (e: Exception) {
+                    android.util.Log.w("SettingsFragment", "Crash reporting preference update failed", e)
+                }
+                true
+            }
         }
     }
 

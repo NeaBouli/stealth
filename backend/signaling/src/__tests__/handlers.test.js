@@ -274,9 +274,10 @@ console.log("\n[Suite] CALL_ACCEPT + CALL_END handlers");
   assert(aliceAccept.pubKey === "bobPub", "pubKey forwarded to caller");
 
   // Alice ends call
-  ctx.handlers.CALL_END(wsA, "cA", { sessionId });
+  ctx.handlers.CALL_END(wsA, "cA", { sessionId, reason: "user_hangup" });
   assert(lastMsg(wsA).type === "CALL_END_ACK", "CALL_END_ACK sent to ender");
   assert(lastMsg(wsB).type === "CALL_END", "CALL_END forwarded to peer");
+  assert(lastMsg(wsB).reason === "user_hangup", "CALL_END reason forwarded to peer");
   assert(!ctx.routingTable.has(sessionId), "session removed from routingTable");
 }
 

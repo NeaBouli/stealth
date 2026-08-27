@@ -51,6 +51,10 @@
     <string name="settings_report_bug_summary">Report a bug via our form</string>
     <string name="settings_privacy">Privacy Policy</string>
     <string name="settings_privacy_summary">How we protect your data</string>
+    <string name="settings_ad_privacy">Ad Privacy Choices</string>
+    <string name="settings_ad_privacy_summary">Review consent choices used for ads</string>
+    <string name="settings_crash_reports">Crash Reports</string>
+    <string name="settings_crash_reports_summary">Share anonymous crash diagnostics</string>
     <string name="settings_licenses">Open Source Licenses</string>
     <string name="settings_tier">Current Plan</string>
     <string name="enabled">Enabled</string>

@@ -170,10 +170,25 @@ class CallsFragment : Fragment() {
             phoneOrId = savePhoneOrId,
             secureId = if (savePhoneOrId != secureId) secureId else null
         )
-        com.securecall.app.data.ContactRepository.save(ctx, contact)
+        val result = com.securecall.app.data.ContactRepository.save(ctx, contact)
+        if (result == com.securecall.app.data.ContactRepository.SaveResult.REJECTED_CONTACT_LIMIT) {
+            showContactLimitToast(ctx)
+            Log.d(TAG, "Contact save rejected by Free-tier limit: $name")
+            return
+        }
         ContactsFragment.invalidateCache()
         android.widget.Toast.makeText(ctx, "$name saved", android.widget.Toast.LENGTH_SHORT).show()
         Log.d(TAG, "Contact saved from call history: $name -> $savePhoneOrId")
+    }
+
+    /** Deterministic feedback when the Free-tier contact limit rejects an addition. */
+    private fun showContactLimitToast(ctx: android.content.Context) {
+        val maxContacts = com.securecall.app.config.FeatureProviderRegistry.get().maxContacts
+        android.widget.Toast.makeText(
+            ctx,
+            com.securecall.app.config.TierLimitPolicy.contactLimitMessage(maxContacts),
+            android.widget.Toast.LENGTH_LONG
+        ).show()
     }
 
     private fun editContact(record: CallRecord, contact: com.securecall.app.data.Contact) {
@@ -226,7 +241,12 @@ class CallsFragment : Fragment() {
                 secureId = secureId,
                 isBlocked = true
             )
-            com.securecall.app.data.ContactRepository.save(ctx, contact)
+            val result = com.securecall.app.data.ContactRepository.save(ctx, contact)
+            if (result == com.securecall.app.data.ContactRepository.SaveResult.REJECTED_CONTACT_LIMIT) {
+                showContactLimitToast(ctx)
+                Log.d(TAG, "Block rejected by Free-tier contact limit: ${record.contactName}")
+                return
+            }
             android.widget.Toast.makeText(ctx, "${record.contactName} blocked", android.widget.Toast.LENGTH_SHORT).show()
             Log.d(TAG, "Number blocked from call history: ${record.contactName} ($phone)")
         }

@@ -21,6 +21,10 @@ import com.securecall.app.MainActivity
 import com.securecall.app.R
 import com.securecall.app.notifications.IncomingCallNotifications
 
+internal object CallEndPolicy {
+    fun shouldDelay(reason: String): Boolean = reason == "peer_disconnected"
+}
+
 /**
  * BACKEND-22..58 / PATCH 201..204:
  * WebSocketService — hält die WS-Verbindung zum Signaling-Server.
@@ -89,8 +93,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private var _phoneLookupCallback: ((String?) -> Unit)? = null
     // Batch phone lookup callback: returns map of hash/phone → online status (true=online, false=offline but registered)
     private var _batchPhoneLookupCallback: ((Map<String, Pair<Boolean, String>>) -> Unit)? = null
-    // Online status callback: returns map of phone → online (true/false)
-    private var _onlineStatusCallback: ((Map<String, Boolean>) -> Unit)? = null
     // Activation code callback: returns (success, tier, error)
     private var _activateCodeCallback: ((Boolean, String, String) -> Unit)? = null
 
@@ -501,33 +503,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             return
         }
         Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP sent: ${hashes.size} hashes")
-    }
-
-    /** Request online/offline status for a list of phone numbers. Returns phone → online. */
-    fun requestOnlineStatus(phones: List<String>, callback: (statuses: Map<String, Boolean>) -> Unit) {
-        _onlineStatusCallback = callback
-        val arr = org.json.JSONArray(phones)
-        val json = org.json.JSONObject().apply {
-            put("type", "ONLINE_STATUS_REQUEST")
-            put("phoneNumbers", arr)
-        }.toString()
-        val sent = client?.send(json) ?: false
-        if (!sent) {
-            Log.w("WS_SERVICE", "ONLINE_STATUS_REQUEST failed to send")
-            _onlineStatusCallback = null
-            callback(emptyMap())
-            return
-        }
-        Log.d("WS_SERVICE", "ONLINE_STATUS_REQUEST sent: ${phones.size} phones")
-        // Timeout: if no response in 5 seconds, invoke callback with empty map
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            val pending = _onlineStatusCallback
-            if (pending === callback) {
-                Log.w("WS_SERVICE", "ONLINE_STATUS_REQUEST timeout")
-                _onlineStatusCallback = null
-                callback(emptyMap())
-            }
-        }, 5000)
     }
 
     /** Send activation code to server for validation. Returns (success, tier, error). */
@@ -1285,22 +1260,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 handleSecureIdChanged(obj)
                 return
             }
-            if (obj.optString("type") == "ONLINE_STATUS_RESPONSE") {
-                val statusesObj = obj.optJSONObject("statuses")
-                val statuses = mutableMapOf<String, Boolean>()
-                if (statusesObj != null) {
-                    val keys = statusesObj.keys()
-                    while (keys.hasNext()) {
-                        val phone = keys.next()
-                        statuses[phone] = statusesObj.optBoolean(phone, false)
-                    }
-                }
-                Log.d("WS_SERVICE", "ONLINE_STATUS_RESPONSE: ${statuses.size} phones, ${statuses.count { it.value }} online")
-                val cb = _onlineStatusCallback
-                _onlineStatusCallback = null
-                cb?.invoke(statuses)
-                return
-            }
         } catch (_: Throwable) {}
 
         // Standard signaling
@@ -1454,17 +1413,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 Log.d("WS_SERVICE", "CALL_END received, sessionId=$sessionId, reason=$reason")
 
                 val rtc = webRtcManager
-                // BUG-011: server "peer_disconnected" → delay 15s for ICE recovery.
-                // BUG-031: peer sent CALL_END without "user_hangup" reason AND our ICE is
-                //   in grace period → the disconnect was a network event, not an intentional
-                //   hangup.  Delay so our 10s ICE grace has time to expire cleanly.
-                //   Old APKs send CALL_END with reason="" on network drop; new APKs tag
-                //   intentional hangups with reason="user_hangup" which skips this path.
-                val isNetworkDisconnect = reason == "peer_disconnected" ||
-                    (reason != "user_hangup" && rtc?.isInIceGracePeriod() == true)
+                // Only the server's explicit disconnect event gets recovery grace.
+                // Older servers may omit the reason for a user hangup, so an empty reason
+                // must still end the call immediately.
+                val isNetworkDisconnect = CallEndPolicy.shouldDelay(reason)
                 if (isNetworkDisconnect && rtc != null && !rtc.isClosed) {
-                    val logReason = if (reason == "peer_disconnected") "peer_disconnected" else "ICE grace active (BUG-031)"
-                    Log.d("WS_SERVICE", "BUG-031/011: $logReason — delaying CALL_END 15s")
+                    val logReason = "peer_disconnected"
+                    Log.d("WS_SERVICE", "BUG-011: $logReason — delaying CALL_END 15s")
                     com.securecall.app.debug.SecLogManager.log("CALL", "Delaying CALL_END ($logReason) — waiting 15s for peer reconnect")
                     cancelCallEndGrace()
                     callEndGraceHandler = android.os.Handler(android.os.Looper.getMainLooper())
