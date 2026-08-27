@@ -17,6 +17,15 @@
   var status = root.querySelector("[data-ifr-status]");
   var checkoutButtons = root.querySelectorAll("[data-ifr-tier]");
 
+  var checkoutEnabled = root.dataset.ifrEnabled === "true";
+  if (!checkoutEnabled) {
+    if (connectButton) connectButton.disabled = true;
+    if (disconnectButton) disconnectButton.disabled = true;
+    checkoutButtons.forEach(function (button) { button.disabled = true; });
+    if (status) status.textContent = "IFR discount verification and checkout are currently disabled pending payment and fiscal approval.";
+    return;
+  }
+
   function setStatus(message) {
     if (status) status.textContent = message;
   }

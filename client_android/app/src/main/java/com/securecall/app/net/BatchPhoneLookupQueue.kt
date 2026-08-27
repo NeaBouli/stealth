@@ -4,6 +4,7 @@ package com.securecall.app.net
 internal class BatchPhoneLookupQueue(
     private val sendRequest: (List<String>) -> Boolean,
     private val scheduleTimeout: (Long, () -> Unit) -> Unit,
+    private val onProtocolTimeout: () -> Unit,
 ) {
     private companion object {
         const val REQUEST_TIMEOUT_MS = 5_000L
@@ -17,6 +18,7 @@ internal class BatchPhoneLookupQueue(
     private val lock = Any()
     private val pending = ArrayDeque<Request>()
     private var active: Request? = null
+    private var suspended = false
 
     fun enqueue(
         hashes: List<String>,
@@ -40,22 +42,45 @@ internal class BatchPhoneLookupQueue(
             finish(request, emptyMap())
             return
         }
-        scheduleTimeout(REQUEST_TIMEOUT_MS) { finish(request, emptyMap()) }
+        scheduleTimeout(REQUEST_TIMEOUT_MS) { suspendAfterTimeout(request) }
     }
 
-    fun failAll() {
+    fun suspendAndFailAll() {
         val requests = synchronized(lock) {
-            buildList {
-                active?.let(::add)
-                addAll(pending)
-            }.also {
-                active = null
-                pending.clear()
-            }
+            suspended = true
+            drainLocked()
         }
-        requests.forEach { request ->
-            runCatching { request.callback(emptyMap()) }
+        completeEmpty(requests)
+    }
+
+    fun resume() {
+        val next = synchronized(lock) {
+            suspended = false
+            takeNextLocked()
         }
+        next?.let(::dispatch)
+    }
+
+    private fun suspendAfterTimeout(expected: Request) {
+        val requests = synchronized(lock) {
+            if (active !== expected) return
+            suspended = true
+            drainLocked()
+        }
+        completeEmpty(requests)
+        onProtocolTimeout()
+    }
+
+    private fun drainLocked(): List<Request> = buildList {
+        active?.let(::add)
+        addAll(pending)
+    }.also {
+        active = null
+        pending.clear()
+    }
+
+    private fun completeEmpty(requests: List<Request>) {
+        requests.forEach { request -> runCatching { request.callback(emptyMap()) } }
     }
 
     private fun finish(
@@ -75,7 +100,7 @@ internal class BatchPhoneLookupQueue(
     }
 
     private fun takeNextLocked(): Request? {
-        if (active != null || pending.isEmpty()) return null
+        if (suspended || active != null || pending.isEmpty()) return null
         return pending.removeFirst().also { active = it }
     }
 }

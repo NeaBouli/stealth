@@ -98,6 +98,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         scheduleTimeout = { delayMs, action ->
             batchPhoneLookupTimeoutHandler.postDelayed({ action() }, delayMs)
         },
+        onProtocolTimeout = {
+            Log.w("WS_SERVICE", "Batch lookup response timeout — reconnecting uncorrelated protocol")
+            forceReconnect()
+        },
     )
     // Activation code callback: returns (success, tier, error)
     private var _activateCodeCallback: ((Boolean, String, String) -> Unit)? = null
@@ -499,6 +503,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     private fun sendBatchPhoneLookup(hashes: List<String>): Boolean {
+        if (!isConnected || !isRegistered) {
+            Log.w("WS_SERVICE", "BATCH_PHONE_LOOKUP rejected before registration")
+            return false
+        }
         val arr = org.json.JSONArray(hashes)
         val json = org.json.JSONObject().apply {
             put("type", "BATCH_PHONE_LOOKUP")
@@ -593,6 +601,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         if (!isConnected) return
         isRegistered = true
         registerFailCount = 0
+        batchPhoneLookupQueue.resume()
         Log.d("WS_SERVICE", "REGISTERED received for $ackedClientId — flushing ${pendingCallQueue.size} pending calls")
         com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Registered — ${pendingCallQueue.size} queued calls")
         // Send any cached FCM token immediately now that the server knows who
@@ -741,7 +750,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onDisconnected() {
         Log.d("WS_SERVICE", "WebSocket disconnected")
-        batchPhoneLookupQueue.failAll()
+        batchPhoneLookupQueue.suspendAndFailAll()
         isConnected = false
         isRegistered = false // BUG-034: reset registration state
         registerPending = false // Allow re-register on next connect
@@ -759,7 +768,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onError(t: Throwable) {
         Log.e("WS_SERVICE", "WebSocket error", t)
-        batchPhoneLookupQueue.failAll()
+        batchPhoneLookupQueue.suspendAndFailAll()
         isConnected = false
         isRegistered = false // BUG-034: reset registration state on error
         pendingCallQueue.clear() // BUG-034: clear queued calls — will re-queue on reconnect

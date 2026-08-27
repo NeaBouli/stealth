@@ -5956,3 +5956,14 @@ Open next:
 - Stripe production activation and Greek VAT/AADE/myDATA/e-timologio remain the sole intentionally deferred implementation block pending owner data and separately bounded production authorization.
 
 `LOCAL PRE-SALE SCOPE GREEN — EXACT-HEAD CI, REVIEW AND EXTERNAL GATES REMAIN`
+
+## 2026-08-27 08:22 EEST — CODEX SOL + KIMI K3 — GENERATION-SAFE LOOKUP AND CLOSED CHECKOUT GATE
+
+- CodeRabbit correctly identified that a late response without a request ID could be assigned to the next batch lookup after timeout. Kimi independently reviewed the protocol and concurrency model; Sol implemented the bounded correction.
+- A timeout now atomically suspends that WebSocket generation, fails active/pending callbacks once and forces a reconnect. Lookups resume only after a fresh `REGISTERED` acknowledgement. Heartbeat callbacks now reject stale WebSocket instances and the socket reference is volatile.
+- Focused queue verification PASS: 8 tests, including timeout drain, suspended enqueue/resume, stale timeout and late old-generation response. Complete signed matrix PASS: 207 Gradle tasks covering Free/Pro/Premium unit tests, Free Lint, VPN policy/runtime guards, signed Free AAB and all three APKs.
+- Public checkout now has a central `data-ifr-enabled=false` runtime gate. No wallet/checkout handlers bind while closed. Node regression PASS in all three sites; CI workflows execute it. Browser PASS at `1440x900` and `390x844`: zero console errors, controls disabled, no overflow.
+- Refreshed SecureCall hashes: AAB `3350e422ab093919e4a01958fd0a82faa126318c174a992060af18a6e4e91154`; Free APK `ed5f7ea7b610405eb0452ecd9f7c28b58d356750acf42b90f1cb84e23fa8928b`; Pro APK `56c32c30758413046fa43afc957452e02366b64cc84372aabf00ae289f9a544f`; Premium APK `810c30f1aeb5fb1b5f5aa199807b21ddb486d82e2a17f203b7601f258532e011`.
+- Server-side checkout authorization remains part of the intentionally deferred Stripe + Greek VAT/AADE/myDATA/e-timologio implementation block; client-side gating is not treated as a server security boundary.
+
+`FINAL LOCAL REVIEW FIXES GREEN — EXACT-HEAD CI AND NORMAL REVIEW REQUIRED`

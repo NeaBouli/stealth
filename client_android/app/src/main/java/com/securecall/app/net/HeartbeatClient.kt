@@ -40,7 +40,7 @@ class HeartbeatClient(
 
     enum class State { DISCONNECTED, CONNECTING, CONNECTED }
 
-    private var ws: WebSocket? = null
+    @Volatile private var ws: WebSocket? = null
     @Volatile private var _lastSeen: Long = System.currentTimeMillis()
     @Volatile private var state: State = State.DISCONNECTED
 
@@ -194,6 +194,7 @@ class HeartbeatClient(
     }
 
     override fun onOpen(webSocket: WebSocket, response: Response) {
+        if (webSocket !== ws) return
         Log.d("HB", "[CONNECTED] WebSocket connected to $url")
         state = State.CONNECTED
         reconnectPending = false
@@ -204,16 +205,19 @@ class HeartbeatClient(
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
+        if (webSocket !== ws) return
         _lastSeen = System.currentTimeMillis()
         listener.onMessage(text)
     }
 
     override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
+        if (webSocket !== ws) return
         _lastSeen = System.currentTimeMillis()
         listener.onBinaryMessage(bytes.toByteArray())
     }
 
     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+        if (webSocket !== ws) return
         Log.d("HB", "[CLOSING] Server closing: code=$code, reason=$reason")
         val wasConnected = state == State.CONNECTED
         state = State.DISCONNECTED
@@ -242,6 +246,7 @@ class HeartbeatClient(
     }
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+        if (webSocket !== ws) return
         Log.w("HB", "[FAILURE] WebSocket failure: ${t.message}")
         val wasConnected = state == State.CONNECTED
         state = State.DISCONNECTED
