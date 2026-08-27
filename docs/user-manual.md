@@ -188,7 +188,7 @@ IFR holder benefits are planned as a web checkout flow:
 1. Open the StealthX web checkout.
 2. Verify an eligible wallet in the browser.
 3. The backend checks IFR balance read-only on Ethereum Mainnet.
-4. Eligible holders receive a Stripe discount, currently planned at 50%.
+4. Eligible holders receive the seller-set discount displayed at checkout.
 5. SecureCall unlocks through the normal activation-code or license path.
 
 This keeps wallet state out of the Android app and avoids fragile app-return links from wallet browsers.

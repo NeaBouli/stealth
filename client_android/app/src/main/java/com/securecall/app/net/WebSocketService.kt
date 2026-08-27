@@ -91,8 +91,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     // Phone lookup callback
     private var _phoneLookupCallback: ((String?) -> Unit)? = null
-    // Batch phone lookup callback: returns map of hash/phone → online status (true=online, false=offline but registered)
-    private var _batchPhoneLookupCallback: ((Map<String, Pair<Boolean, String>>) -> Unit)? = null
+    // Legacy batch responses have no request ID, so requests must remain serialized.
+    private val batchPhoneLookupQueue = BatchPhoneLookupQueue(::sendBatchPhoneLookup)
     // Activation code callback: returns (success, tier, error)
     private var _activateCodeCallback: ((Boolean, String, String) -> Unit)? = null
 
@@ -489,7 +489,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     /** Batch-check which phone hashes are registered SecureCall users. Returns hash → (online, clientId). */
     fun batchPhoneLookup(hashes: List<String>, callback: (registered: Map<String, Pair<Boolean, String>>) -> Unit) {
-        _batchPhoneLookupCallback = callback
+        batchPhoneLookupQueue.enqueue(hashes, callback)
+    }
+
+    private fun sendBatchPhoneLookup(hashes: List<String>): Boolean {
         val arr = org.json.JSONArray(hashes)
         val json = org.json.JSONObject().apply {
             put("type", "BATCH_PHONE_LOOKUP")
@@ -498,11 +501,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         val sent = client?.send(json) ?: false
         if (!sent) {
             Log.w("WS_SERVICE", "BATCH_PHONE_LOOKUP failed to send")
-            _batchPhoneLookupCallback = null
-            callback(emptyMap())
-            return
+            return false
         }
         Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP sent: ${hashes.size} hashes")
+        return true
     }
 
     /** Send activation code to server for validation. Returns (success, tier, error). */
@@ -1241,9 +1243,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     }
                 }
                 Log.d("WS_SERVICE", "BATCH_PHONE_LOOKUP_RESULT (mode=$mode): ${registered.size} registered, ${registered.count { it.value.first }} online")
-                val cb = _batchPhoneLookupCallback
-                _batchPhoneLookupCallback = null
-                cb?.invoke(registered)
+                batchPhoneLookupQueue.complete(registered)
                 return
             }
             if (obj.optString("type") == "ACTIVATE_CODE_RESULT") {

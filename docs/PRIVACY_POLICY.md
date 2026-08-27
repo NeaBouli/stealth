@@ -17,7 +17,7 @@ SecureCall is built on the principle that privacy is a fundamental right. We col
 |-----------|-----------|---------|
 | Call content | No | End-to-end encrypted; we cannot access it |
 | Call metadata | No | No call logs stored on servers |
-| Contacts | Limited | Raw contacts stay local; one-way phone hashes are sent for optional user discovery |
+| Contacts | Limited | Raw contacts stay local; deterministic SHA-256 phone hashes are sent for optional user discovery; hashing does not guarantee anonymity |
 | Phone number | Optional | Processed for registration, caller identification and lookup only when supplied |
 | Crash reports | Yes (opt-out) | Anonymous crash data via Firebase Crashlytics |
 | Analytics | No | No usage analytics or behavioral tracking |
@@ -30,7 +30,7 @@ SecureCall is built on the principle that privacy is a fundamental right. We col
 |-----------|-----------|---------|
 | Call content | No | End-to-end encrypted |
 | Call metadata | No | No call logs stored |
-| Contacts | Limited | Raw contacts stay local; one-way phone hashes are sent for optional user discovery |
+| Contacts | Limited | Raw contacts stay local; deterministic SHA-256 phone hashes are sent for optional user discovery; hashing does not guarantee anonymity |
 | Phone number | Optional | Processed only when supplied |
 | Crash reports | No | Crashlytics disabled |
 | Analytics | No | Zero telemetry |
@@ -42,7 +42,7 @@ SecureCall is built on the principle that privacy is a fundamental right. We col
 |-----------|-----------|---------|
 | Call content | No | End-to-end encrypted |
 | Call metadata | No | No call logs stored |
-| Contacts | Limited | Raw contacts stay local; one-way phone hashes are sent for optional user discovery |
+| Contacts | Limited | Raw contacts stay local; deterministic SHA-256 phone hashes are sent for optional user discovery; hashing does not guarantee anonymity |
 | Phone number | Optional | Processed only when supplied |
 | Crash reports | No | Crashlytics disabled |
 | Analytics | No | Zero telemetry |

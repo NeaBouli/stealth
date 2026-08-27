@@ -1,8 +1,8 @@
 # StealthX Android Suite — Audit
-> Scope: SecureCall, SecureChat, Chameleon Android clients; signaling checkout/contact paths; public sales, download, privacy and wiki pages  ·  Date: 2026-08-27  ·  Result: 1 FAIL / 6 WARN / 10 PASS
+> Scope: SecureCall, SecureChat, Chameleon Android clients; signaling checkout/contact paths; public sales, download, privacy and wiki pages  ·  Date: 2026-08-27  ·  Result: 1 FAIL / 6 WARN / 12 PASS
 
 ## Summary
-The three Android codebases compile against and target API 36, pass their repository test and lint gates, and produce signed release candidates with verified package names, versions and certificates. Wallet and IFR verification are absent from all Android clients; IFR holder verification is browser-only and requires a signed proof of wallet ownership. Online sales must not launch until the approved Stripe checkout and Greek VAT/AADE/myDATA/e-timologio integration is complete and tested. Remaining non-payment gates are external publication/review work and physical multi-device coverage, not hidden code-build failures.
+The three Android codebases compile against and target API 36, pass their repository test and lint gates, and produce signed release candidates with verified package names, versions and certificates. Wallet and IFR verification are absent from all Android clients; IFR holder verification is browser-only and requires a signed proof of wallet ownership. Every signable SecureChat and Chameleon release variant now requires a server-signed entitlement instead of embedding paid access. Online sales must not launch until the approved Stripe checkout and Greek VAT/AADE/myDATA/e-timologio integration is complete and tested. Remaining non-payment gates are external publication/review work and physical multi-device coverage, not hidden code-build failures.
 
 ## Findings by domain
 ### Payments and Greek tax reporting — FAIL
@@ -22,6 +22,18 @@ The three Android codebases compile against and target API 36, pass their reposi
   - What: Repository guards reject WalletConnect, SIWE and IFR unlock mechanisms in Android application code.
   - Path: The guards passed in SecureCall and Chameleon; SecureChat's equivalent source checks and full Gradle gate passed.
   - Fix: Preserve the guard tasks and browser-only product rule.
+
+### Paid tier authorization — PASS
+- **[LOW] Signable SecureChat and Chameleon builds cannot embed paid access** — `app/build.gradle.kts`, `build.gradle.kts`, `shared/src/main/java/com/stealthx/shared/DevTierOverride.kt`
+  - What: Release, internal, Free, Pro and Elite compatibility variants all keep tier overrides disabled; only debug/screenshot builds can force a tier.
+  - Path: New verification tasks fail the build if a signable variant enables the override. Generated BuildConfig values and signed APKs were rebuilt after the correction.
+  - Fix: Distribute one base APK per product and issue server-signed, device-bound activation credentials after checkout.
+
+### Activation transport pins — PASS
+- **[LOW] Live activation host certificate chain matches the clients** — `data/src/main/java/com/stealthx/data/activation/ActivationCodeClient.kt`, `data/src/main/java/com/stealthx/data/exchange/ContactExchangeManager.kt`
+  - What: The live leaf certificate is valid through October 2026; current Let's Encrypt intermediate and root backup pins are present in both SecureChat and Chameleon.
+  - Path: The live chain and all configured SPKI pins were calculated and compared on 2026-08-27.
+  - Fix: Keep certificate-chain verification in every release gate and rotate overlapping pins before certificate authority changes.
 
 ### IFR checkout authorization — PASS
 - **[LOW] Wallet address ownership is proven before discount eligibility** — `backend/signaling/src/services/ifr.js`, `backend/signaling/src/server.js`, `website/js/ifr-checkout.js`
@@ -91,14 +103,14 @@ The three Android codebases compile against and target API 36, pass their reposi
 
 ### SecureChat build matrix — PASS
 - **[LOW] Full modular gate and signed variants succeeded** — `app`, `data`, `domain`, `presentation`, `security`, `features`
-  - What: 1,305 Gradle tasks passed, followed by signed base, Free, Pro and Elite release artifacts.
+  - What: The original 1,305-task gate passed; the entitlement-hardening rerun passed 1,467 tasks, followed by signed base, Free, Pro and Elite compatibility artifacts with no embedded tier.
   - Path: Unit tests, module checks, Release Lint and debug assembly completed successfully.
   - Fix: Address Gradle 9 deprecations before the toolchain upgrade.
 
 ### Chameleon build matrix — PASS
 - **[LOW] Full modular gate and signed variants succeeded** — `app`, `core`, `data`, `domain`, `presentation`, `security`, `features`
-  - What: 1,448 Gradle tasks passed after a storage-only retry, followed by signed base, Free, Pro and Elite release artifacts.
-  - Path: Unit tests, module checks, Release Lint, IFR/wallet guards and debug assembly completed successfully.
+  - What: The original 1,448-task gate passed; the entitlement and pin-hardening rerun passed 1,615 tasks after clearing generated build output to resolve a full-disk interruption.
+  - Path: Unit tests, module checks, Release Lint, IFR/wallet and release-tier guards, signed base AAB/APK plus compatibility APKs completed successfully.
   - Fix: Address deprecated Android APIs and Gradle 9 warnings in a separate maintenance block.
 
 ### Public privacy statements — PASS

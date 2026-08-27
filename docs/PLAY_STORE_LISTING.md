@@ -39,7 +39,7 @@ Receive critical security alerts from the development team. Pre-installed templa
 • Google Play in-app purchase
 • Activation code (contact @secureslot on X)
 • IFR holders can verify a browser wallet on stealthx.tech
-  for a 50% Stripe checkout discount. No wallet connection
+  for the seller-set discount displayed at checkout. No wallet connection
   runs inside the Android app.
 
 🎁 GIFT PREMIUM ACCESS

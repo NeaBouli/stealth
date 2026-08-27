@@ -117,11 +117,13 @@ module.exports = function callHandlers(ctx) {
         }
         const peerClientId = getSessionPeer(msg.sessionId, myClientId);
         if (peerClientId) {
+          // Recovery-sensitive disconnect reasons are reserved for server-owned paths.
+          const reason = "user_hangup";
           sendToClient(peerClientId, {
             type: "CALL_END",
             sessionId: msg.sessionId,
             from: myClientId,
-            reason: msg.reason || "user_hangup",
+            reason,
           });
         }
         routingTable.delete(msg.sessionId);

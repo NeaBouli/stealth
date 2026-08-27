@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
+import com.securecall.app.init.AppInit
 import com.securecall.app.net.ForegroundServicePolicy
 import com.securecall.app.net.WebSocketService
 
@@ -16,6 +17,9 @@ class SecureCallApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Incoming-call notifications can launch activities before MainActivity.
+        AppInit.init(this)
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: Activity) {

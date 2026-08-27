@@ -95,7 +95,7 @@
             <ul>
                 <li><strong>Call content:</strong> End-to-end encrypted &mdash; we cannot access it</li>
                 <li><strong>Call metadata:</strong> No persistent call history or recordings stored on servers. Signaling metadata (session IDs, connection IDs) is processed transiently for connection setup.</li>
-                <li><strong>Contacts:</strong> Raw contact names and numbers stay on device. One-way phone hashes are sent for optional SecureCall-user discovery.</li>
+                <li><strong>Contacts:</strong> Raw contact names and numbers stay on device. SHA-256 hashes of normalized phone numbers are sent for optional SecureCall-user discovery. Because phone numbers have a limited search space, hashing alone does not guarantee anonymity or prevent re-identification.</li>
                 <li><strong>Phone number:</strong> Optional. If supplied, it is processed for registration, caller identification and number lookup; the SecureID-only path can be used without it.</li>
                 <li><strong>IP address:</strong> Visible during signaling and STUN/TURN connectivity; not persistently logged by our servers. TURN relay providers may see IPs required for WebRTC.</li>
                 <li><strong>Push tokens:</strong> FCM tokens may be stored for push delivery and cleared on deregistration.</li>

@@ -14,7 +14,9 @@
 [![Crypto: XChaCha20-Poly1305](https://img.shields.io/badge/Crypto-XChaCha20--Poly1305-7C6CFF.svg)](docs/SECURITY_DESIGN.md)
 [![Security: Audited](https://img.shields.io/badge/Security-Audited-orange.svg)](docs/SECURITY_AUDIT_REPORT.md)
 [![Rust Crypto Engine](https://img.shields.io/badge/Engine-Rust-DEA584.svg)](core_crypto/)
-[![Version](https://img.shields.io/badge/Version-v1.0.50-4ade80.svg)](https://github.com/NeaBouli/stealth/releases)
+[![Version](https://img.shields.io/badge/Published-v1.0.48-4ade80.svg)](https://github.com/NeaBouli/stealth/releases/latest)
+
+Next reviewed candidate: v1.0.50 / versionCode 78017. It is not the published GitHub release yet.
 [![Website](https://img.shields.io/badge/Website-stealthx.tech-34D399.svg)](https://stealthx.tech)
 [![Testers](https://img.shields.io/badge/Beta_Testers-15-blue.svg)](https://play.google.com/apps/testing/com.securecall.app.free)
 

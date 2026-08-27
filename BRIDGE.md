@@ -5934,3 +5934,14 @@ Open next:
 - PR remains open and mergeable with `REVIEW_REQUIRED`; no approving independent review exists yet. No merge or external release action was attempted.
 
 `PR 74 CI GREEN — APPROVING REVIEW REQUIRED`
+
+## 2026-08-27 06:31 EEST — CODEX SOL + KIMI K3 — REVIEW HARDENING VERIFIED
+
+- CodeRabbit and Kimi findings were independently checked. Valid issues are fixed: client-supplied call-end reasons can no longer spoof server-owned recovery states; flavor initialization now occurs in `Application`; legacy batch phone lookups are serialized with send-failure and callback-failure recovery.
+- Public privacy, published/candidate version and IFR discount copy now match the actual release state and seller-set checkout model. `CODEX_AUDIT.md` records the complete pre-sale gate state.
+- Verification PASS: signaling full test suite including the spoof regression; SecureCall Android compile/lint/policy matrix; focused batch-queue unit tests; signed Free AAB plus Free/Pro/Premium APK rebuild. Final signed build: 182 tasks, API 36, version `1.0.50` / `78017`.
+- Final AAB SHA-256: `d7f9ec6d41237155e762efc59dd8e0939282154cdc5c8796479957b26f8fae41`. Desktop candidates are refreshed under `/Users/gio/Desktop/aab apk/presale-2026-08-27/`.
+- S7 and Tab S4 are connected but actively running the Woizz audit package; they were inspected read-only and not disturbed. S10 is absent. No physical SecureCall result is claimed for this correction.
+- Remaining gates: normal PR approval/merge and exact-head CI rerun; controlled signaling deployment plus two-device call matrix; Google VPN-policy review; AdMob UMP console verification; GitHub Release/site publication. Stripe and Greek VAT/AADE/myDATA/e-timologio stay on explicit standby.
+
+`REVIEW FIXES LOCALLY GREEN — PROTECTED CI/REVIEW AND EXTERNAL GATES OPEN`

@@ -19,14 +19,14 @@ direct Premium APK is not a Google Play artifact and has its own VPN disclosure.
 |----------------|-----------|--------|----------|---------|
 | Personal info - User IDs | Yes | No | Required | App functionality; security and fraud prevention |
 | Personal info - Phone number | Yes | No* | Optional | Contact discovery, caller identification and app functionality |
-| Contacts | Yes | No* | Optional | One-way phone hashes for user discovery; raw names and numbers remain local |
+| Contacts | Yes | No* | Optional | Deterministic SHA-256 phone hashes for user discovery; raw names and numbers remain local; hashing does not guarantee anonymity |
 | App activity - App interactions | Yes** | Yes** | Optional in Free | Advertising |
 | Device or other IDs | Yes** | Yes** | Optional in Free | Advertising; analytics are not used |
 | App info and performance - Crash logs | Yes | Yes*** | Optional in Free, in-app opt-out | App functionality; diagnostics |
 | Purchase history | Yes | Yes**** | Optional | App functionality; account management; fraud prevention |
 
 `*` A user-supplied phone number is processed by the StealthX signaling service while
-the user is registered. Bulk discovery sends one-way hashes. Explicit single-number
+the user is registered. Bulk discovery sends deterministic SHA-256 hashes. Explicit single-number
 dial/lookup actions send the entered number for routing.
 
 `**` Google AdMob processing applies only to the Free tier after UMP consent permits
@@ -53,7 +53,8 @@ status, not payment-card or bank details.
 - Call content is end-to-end encrypted. STUN/TURN providers may process network
   addresses required for WebRTC connectivity.
 - FCM tokens are stored for incoming-call delivery.
-- Raw contact names and the address book remain local. Discovery uses one-way hashes,
+- Raw contact names and the address book remain local. Discovery uses deterministic SHA-256 hashes,
+  which are pseudonymous identifiers but can be re-identified by enumerating the limited phone-number space.
   except when the user explicitly dials or looks up a supplied phone number.
 - Browser IFR holder verification and Stripe checkout are not part of the Android app.
 - The Play artifact contains no `VpnService` and no WireGuard dependency.

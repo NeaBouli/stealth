@@ -29,7 +29,6 @@ import com.securecall.app.data.Contact;
 import com.securecall.app.data.ContactRepository;
 import com.securecall.app.ghostnet.transport.ws.GhostNetWebSocketClient;
 import com.securecall.app.security.SecurityEnforcer;
-import com.securecall.app.init.AppInit;
 import com.securecall.app.fcm.FcmTokenManager;
 import com.securecall.app.net.ExternalVpnMonitor;
 import com.securecall.app.ui.CallsFragment;
@@ -61,8 +60,6 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdgeHelper.enable(this);
 
         // Initialize flavor-specific FeatureProvider
-        AppInit.INSTANCE.init(this);
-
         // Apply activated tier override (activation code unlock)
         com.securecall.app.config.TierManager.INSTANCE.applyTier(this);
 
