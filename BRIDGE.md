@@ -5918,3 +5918,12 @@ Open next:
 - Device evidence: SecureChat base v15 installed and launched on S10 without crash before S10 disconnected. SecureCall 1.0.50 and Chameleon v14 could not receive new physical smoke tests after that disconnect. S7/S4 remained untouched because Woizz occupied them.
 - Release gates still open: Stripe + VAT/AADE/myDATA/e-timologio (explicit standby); controlled signaling deployment and two-device call matrix; Google VPN-policy review/active-track cleanup; AdMob UMP console message; GitHub Release assets/site deployment; normal PR review.
 - Formal report: `CODEX_AUDIT.md` (`1 FAIL / 6 WARN / 10 PASS`). Status remains READY FOR REVIEW, not market-live.
+
+## 2026-08-27 04:36 EEST — CODEX TERMINAL — RELEASE HANDOFF — PR OPEN
+
+- Reviewed implementation committed as `b16e322d4456f6bee9906aa12c5fb5ed65925241` and pushed on `fix/presale-complete-20260826`.
+- Normal protected review opened: https://github.com/NeaBouli/stealth/pull/74
+- PR is open and mergeable. Dependency Review and Markdown/YAML lint are PASS; Android, instrumented API 24/36, signaling, dependency audit, Rust and secret-detection checks are still running. Independent approving review remains required.
+- No merge, deployment, GitHub Release, site publication or Play-track mutation occurred. Stripe and Greek tax activation remain explicitly on standby.
+
+`PR 74 OPEN — CI AND INDEPENDENT REVIEW PENDING`

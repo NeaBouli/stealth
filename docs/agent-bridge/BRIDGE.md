@@ -3541,3 +3541,11 @@ Type: RELEASE / EXTERNAL / POLICY
 - Signed AAB and Free/Pro/Premium APK aliases are in `/Users/gio/Desktop/aab apk/presale-2026-08-27/` with package/certificate/hash verification.
 - Physical limitation: S10 disconnected after SecureChat smoke; S7/S4 were reserved for Woizz and not touched. SecureCall two-device tests remain open.
 - External gates: payment/tax standby; signaling deploy; Google review/track cleanup; UMP console; release assets/site deploy; PR review. See root `CODEX_AUDIT.md`.
+
+## 2026-08-27 04:36 EEST — [CODEX TERMINAL] Protected Review Open
+
+- Commit `b16e322d4456f6bee9906aa12c5fb5ed65925241` is published on `fix/presale-complete-20260826`.
+- PR https://github.com/NeaBouli/stealth/pull/74 is open and mergeable; initial dependency and documentation checks pass, while the complete CI set and independent review remain pending.
+- No production, deployment, store or payment/tax action was performed.
+
+`PRE-SALE PR OPEN — RELEASE GATES PRESERVED`
