@@ -33,7 +33,7 @@
   - `securecall_premium_yearly`: €49.99/year (Subscription)
   - `securecall_pro_lifetime`: $15 one-time (Managed product)
   - `securecall_premium_lifetime`: $25 one-time (Managed product)
-  - `securecall_premium_activation_code`: €49 one-time (Managed product)
+  - `securecall_premium_activation_code`: current seller price is €25 one-time; verify the Play product price before publishing
 
 ## Privacy & Compliance
 - [ ] Privacy Policy URL: https://stealthx.tech/privacy.html

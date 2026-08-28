@@ -152,13 +152,13 @@
                 <h1 class="wiki-page-title">User Manual</h1>
                 <p class="wiki-page-subtitle">Complete reference for setup, settings, and every feature of SecureCall.</p>
             </div>
-            <p class="wiki-meta">Version 1.0.33 &middot; SecureCall &mdash; StealthX Platform &middot; Last updated May 2026</p>
+            <p class="wiki-meta">Published APK 1.0.48 &middot; Play update 1.0.49 under review &middot; SecureCall &mdash; StealthX Platform &middot; Last updated August 2026</p>
 
             <!-- ════ OVERVIEW ════ -->
             <div class="section-break">Overview</div>
 
             <h2>What Is SecureCall?</h2>
-            <p>SecureCall is an end-to-end encrypted voice call app. Every call is encrypted in transit using military-grade cryptography. The server never stores calls, never logs metadata, and never has access to your voice data. Your identity is a randomly generated ID &mdash; no phone number required.</p>
+            <p>SecureCall is an end-to-end encrypted voice call app. Every call is encrypted in transit using modern authenticated cryptography. The server never stores call content and never has access to your voice data. Limited signaling and routing metadata is processed transiently to connect calls. Your identity is a randomly generated ID &mdash; no phone number required.</p>
             <p>When you make a call, SecureCall establishes a direct encrypted audio channel using WebRTC with hardware-backed key exchange. Once connected, audio travels peer-to-peer. If a direct path is not possible, a TURN relay forwards the packets &mdash; but audio remains end-to-end encrypted and the relay cannot read it.</p>
 
             <h2>Tier Overview</h2>
@@ -347,7 +347,7 @@
                 <li><strong>Poor call quality</strong> &mdash; Check your network. Try switching between WiFi and mobile data. If behind a restrictive firewall, the STUN/TURN relay is used as fallback.</li>
                 <li><strong>Connection stays red</strong> &mdash; Your device cannot reach the SecureCall server. Check internet access. If the device uses an external VPN, verify that it allows SecureCall traffic.</li>
                 <li><strong>Tier still shows Free after activation code</strong> &mdash; Activation codes restart the app automatically. Wait for the restart. If tier still shows Free, check the code for typos.</li>
-                <li><strong>IFR verification shows no holder balance</strong> &mdash; Ensure the verified wallet holds a positive IFR balance on Ethereum Mainnet. Open <a href="https://app.uniswap.org/explore/tokens/ethereum/0x77e99917Eca8539c62F509ED1193ac36580A6e7B" target="_blank" rel="noopener">$IFR on Uniswap</a> if needed.</li>
+                <li><strong>IFR holder discount</strong> &mdash; Wallet verification is never performed inside the Android app. The planned browser checkout remains disabled until payment and Greek fiscal integration are approved.</li>
                 <li><strong>No audio during call</strong> &mdash; Raise media volume. Disable any active VPN. Try switching network type (WiFi &harr; Mobile).</li>
                 <li><strong>Calls dropped</strong> &mdash; Check network stability. The app reconnects automatically; or tap the connection icon in the toolbar to force reconnect.</li>
             </ul>
