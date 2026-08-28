@@ -1,5 +1,12 @@
 # BRIDGE — stealth / agent-bridge
 
+## 2026-08-12 — Software Refund Policy Synchronized
+
+- Codex synchronized the generic software refund/entitlement boundary with the
+  private VLABS finance control center. Detailed fiscal and provider records
+  remain private; this public repository records no values or identities.
+- Existing launch, product, runtime, device and review gates remain closed.
+
 ## Public Payment Data Boundary
 
 - Operational payment/Etimologio details live only in the private `NeaBouli/vlabs` finance control center.

@@ -1,5 +1,29 @@
 # BRIDGE — stealth
 
+## 2026-08-12 — Software Refund Policy Synchronized
+
+- The private VLABS operator policy now records no voluntary refund after
+  successful software delivery or activation, while preserving mandatory
+  consumer/payment corrections and exact entitlement revocation.
+- This public entry contains no tax, customer, provider or runtime detail.
+  Authoritative records remain in private `NeaBouli/vlabs` under the existing
+  SecureCall and StealthX Suite finance files.
+- SecureCall software, SecureChat, Chameleon and the Suite remain launch-gated.
+  Custom IDs and voluntary crypto support are separate flows. No sales or
+  Production gate is opened by this entry.
+
+## 2026-08-12 — Private Finance Ownership Refreshed
+
+- Codex remains responsible for commercial integration coordination. Detailed
+  payment, fiscal, provider and release records are maintained only in private
+  `NeaBouli/vlabs` under
+  `docs/finance-integrations/projects/securecall.md` and
+  `stealthx-suite.md`.
+- No sales activation is authorized by this entry. Existing product, runtime,
+  device, entitlement and release gates remain in force.
+- Keep this public repository limited to generic disabled-state and ownership
+  references; do not add operational finance or identity data.
+
 ## Public Payment Data Boundary
 
 - This repository is public. Private payment, tax, provider and deployment operations are maintained only in `NeaBouli/vlabs` under `docs/finance-integrations/projects/securecall.md` and `stealthx-suite.md`.
