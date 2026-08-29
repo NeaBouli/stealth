@@ -5967,3 +5967,29 @@ Open next:
 - Server-side checkout authorization remains part of the intentionally deferred Stripe + Greek VAT/AADE/myDATA/e-timologio implementation block; client-side gating is not treated as a server security boundary.
 
 `FINAL LOCAL REVIEW FIXES GREEN — EXACT-HEAD CI AND NORMAL REVIEW REQUIRED`
+
+## 2026-08-29 01:57 EEST — CODEX SOL — PUBLIC CONTENT CORRECTION READY FOR REVIEW
+
+- Corrected public release/search metadata to GitHub APK v1.0.48 and Play v1.0.49
+  under review; the v1.0.50 candidate and IFR checkout remain clearly launch-gated.
+- Aligned the EUR 25 activation-code price, transient signaling-metadata wording,
+  Android 16/API 36 documentation, current bug-report choices, Play package name,
+  legal navigation, canonical URLs, the Custom Call ID fragment and sitemap dates.
+- Local verification PASS: JSON-LD parse, XML sitemap parse, `git diff --check`, stale-
+  claim guards and 46-page local link/fragment scan with zero broken targets.
+- Work is isolated from the dirty main worktree on branch
+  `docs/public-content-sync-20260829`. GitHub review, CI and live Pages verification
+  remain pending.
+
+`PUBLIC CONTENT CORRECTION IMPLEMENTED / LOCAL GATES PASS / REVIEW PENDING`
+
+## 2026-08-29 02:15 EEST — CODEX SOL — PR 75 EXACT-HEAD GREEN / REVIEW BLOCKED
+
+- Exact head `54a602a` passed all nine checks: Android Client, Dependency Review,
+  Markdown/YAML, Signaling, Rust, dependency audit, secret detection and security summary.
+- CodeRabbit's valid future-date and noindex/sitemap findings were fixed before the final
+  run. The follow-up review was rate-limited but reported as a successful nonblocking check.
+- Protected `main` still requires one independent approval. No admin bypass was used;
+  Pages deployment and live verification wait on merge.
+
+`PR 75 TECHNICALLY GREEN / INDEPENDENT REVIEW REQUIRED`

@@ -1,12 +1,12 @@
 # SecureCall — User Manual
 
-**Version 1.0.33 · StealthX Platform**
+**Published APK 1.0.48 · Play update 1.0.49 under review · StealthX Platform**
 
 ---
 
 ## What Is SecureCall?
 
-SecureCall is an end-to-end encrypted voice call app built for people who need genuine communication privacy. Every call is encrypted in transit using military-grade cryptography. The server never stores calls, never logs metadata, and never has access to your voice data. Your identity is a randomly generated ID — no phone number required.
+SecureCall is an end-to-end encrypted voice call app built for people who need communication privacy. Every call is encrypted in transit using modern authenticated cryptography. The server never stores call content and never has access to your voice data. Limited signaling and routing metadata is processed transiently to connect calls. Your identity is a randomly generated ID — no phone number required.
 
 ---
 

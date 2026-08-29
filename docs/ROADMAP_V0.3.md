@@ -15,7 +15,7 @@ Enable users to invite friends to SecureCall via multiple channels.
 - Share via WhatsApp, Telegram, Email
 - Dedicated "Invite Friends" screen accessible from contacts
 - Invitation template:
-  > "Hi! Join me on SecureCall for encrypted calls: https://play.google.com/store/apps/details?id=com.securecall.free"
+  > "Hi! Join me on SecureCall for encrypted calls: https://play.google.com/store/apps/details?id=com.securecall.app.free"
 - Track pending invitations
 - Deep link handling for invitation acceptance
 

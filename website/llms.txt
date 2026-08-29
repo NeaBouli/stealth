@@ -39,7 +39,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Premium: €4.99/month (all features, advanced threat protection, zero telemetry)
 - Pro Lifetime: current price and availability are controlled by VLABS checkout
 - Premium Lifetime: current price and availability are controlled by VLABS checkout
-- Premium Activation Code: €49 one-time (gift or self-use, 2 devices)
+- Premium Activation Code: €25 one-time (gift or self-use, 2 devices)
 - IFR Holder Discount: planned; any positive IFR balance qualifies for the seller-displayed checkout discount after launch approval
 
 ## How does SecureCall compare to Signal?
@@ -75,7 +75,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 
 ## Company
 - Vendetta Labs — Kalamata 24100, Greece (EU)
-- GDPR compliant, no personal data stored
+- GDPR-oriented data minimization; no call content is stored, while limited routing, entitlement, billing and legal records are handled as described in the privacy policy
 - Contact: GitHub Issues only (no personal support due to anonymity commitment)
 - Website: stealthx.tech
 - Twitter/X: @secureslot
