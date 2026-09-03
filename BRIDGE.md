@@ -1,5 +1,17 @@
 # BRIDGE — stealth
 
+## 2026-09-04 — Private VLABS finance handoff refreshed
+
+- This public repository contains no finance details. The current payment,
+  provider and fiscal instructions are held only by the private VLABS operator.
+- Do not enable a SecureCall, SecureChat, Chameleon or Suite offer from this
+  notice. The responsible developer must first record exact `PRODUCT_READY`
+  evidence for a finished offer; VLABS separately records `FINANCE_READY` after
+  project-specific payment, delivery and reversal tests. Both are required.
+- Preserve every current Checkout, Play, entitlement and support gate until the
+  private operator returns an exact product activation decision. No recipient,
+  account, tax, provider, customer, invoice or runtime value belongs here.
+
 ## Public Payment Data Boundary
 
 - This repository is public. Private payment, tax, provider and deployment operations are maintained only in `NeaBouli/vlabs` under `docs/finance-integrations/projects/securecall.md` and `stealthx-suite.md`.
