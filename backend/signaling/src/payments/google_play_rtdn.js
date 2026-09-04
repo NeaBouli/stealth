@@ -112,18 +112,40 @@ function installGooglePlayRtdnRoute(app, deps) {
         } else {
           const verified = await (deps.verifyPlaySubscriptionToken || verifyPlaySubscriptionToken)(value.packageName, event.purchaseToken);
           deps.subscriptions.refreshByPurchaseToken(
-            event.purchaseToken, verified.productId, verified.tier, verified.expiresAt
+            event.purchaseToken,
+            verified.productId,
+            verified.tier,
+            verified.expiresAt,
+            value.packageName,
+            verified.catalogVersion
           );
         }
       } else if (value.voidedPurchaseNotification) {
         const event = value.voidedPurchaseNotification;
         if (!event.purchaseToken || ![1, 2].includes(event.refundType)) throw new Error("invalid_voided_purchase");
-        if (event.refundType === 1) {
-          deps.subscriptions.expireByPurchaseToken(event.purchaseToken);
-          const activationRevoked = revokeActivationByPurchaseToken(deps.activationCodes, event.purchaseToken);
-          const giftRevoked = revokeGiftByPurchaseToken(deps.giftCodes, event.purchaseToken);
-          if (activationRevoked > 0) deps.saveActivationCodes();
-          if (giftRevoked > 0) deps.saveGiftCodes();
+        deps.subscriptions.expireByPurchaseToken(event.purchaseToken);
+
+        const activationSnapshot = deps.activationCodes.slice();
+        const activationRevoked = revokeActivationByPurchaseToken(deps.activationCodes, event.purchaseToken);
+        if (activationRevoked > 0) {
+          try {
+            if (deps.saveActivationCodes() === false) throw new Error("activation_revocation_persistence_failed");
+          } catch (error) {
+            deps.activationCodes.splice(0, deps.activationCodes.length, ...activationSnapshot);
+            throw error;
+          }
+        }
+
+        const giftSnapshot = new Map(deps.giftCodes);
+        const giftRevoked = revokeGiftByPurchaseToken(deps.giftCodes, event.purchaseToken);
+        if (giftRevoked > 0) {
+          try {
+            if (deps.saveGiftCodes() === false) throw new Error("gift_revocation_persistence_failed");
+          } catch (error) {
+            deps.giftCodes.clear();
+            for (const [code, record] of giftSnapshot) deps.giftCodes.set(code, record);
+            throw error;
+          }
         }
       } else if (!value.testNotification && !value.oneTimeProductNotification) {
         throw new Error("unsupported_notification");

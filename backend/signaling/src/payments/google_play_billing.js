@@ -1,5 +1,11 @@
 const crypto = require("crypto");
 
+const PLAY_CATALOG_VERSION = "securecall-play-v1";
+
+function isPlayBillingEnabled() {
+  return String(process.env.PLAY_BILLING_ENABLED || "").trim().toLowerCase() === "true";
+}
+
 const ONE_TIME_PRODUCTS = Object.freeze({
   securecall_pro_lifetime: "pro",
   securecall_premium_lifetime: "premium",
@@ -24,7 +30,7 @@ function allowedPackages() {
 function resolveOneTimeProduct(packageName, productId) {
   if (!allowedPackages().has(packageName)) return null;
   const tier = ONE_TIME_PRODUCTS[productId];
-  return tier ? { productId, tier } : null;
+  return tier ? { productId, tier, catalogVersion: PLAY_CATALOG_VERSION } : null;
 }
 
 function parseSubscriptionPurchase(value, expectedProductId, now = Date.now()) {
@@ -37,7 +43,12 @@ function parseSubscriptionPurchase(value, expectedProductId, now = Date.now()) {
   const line = value.lineItems.find(item => item?.productId === expectedProductId);
   const expiresAt = Date.parse(line?.expiryTime || "");
   if (!Number.isFinite(expiresAt) || expiresAt <= now) return null;
-  return { expiresAt, tier: SUBSCRIPTION_PRODUCTS[expectedProductId] || null };
+  return {
+    expiresAt,
+    tier: SUBSCRIPTION_PRODUCTS[expectedProductId] || null,
+    catalogVersion: PLAY_CATALOG_VERSION,
+    needsAcknowledgement: value.acknowledgementState !== "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+  };
 }
 
 function parseSubscriptionToken(value, now = Date.now()) {
@@ -97,7 +108,33 @@ async function verifyPlayOneTimePurchase(packageName, productId, purchaseToken) 
     + `/tokens/${encodeURIComponent(purchaseToken)}`;
   const response = await client.request({ url: endpoint, method: "GET" });
   if (response?.data?.purchaseState !== 0) throw new Error("purchase_not_completed");
-  return { ...product, packageName };
+  return {
+    ...product,
+    packageName,
+    needsAcknowledgement: response?.data?.acknowledgementState !== 1,
+  };
+}
+
+async function acknowledgePlaySubscription(packageName, productId, purchaseToken) {
+  if (!allowedPackages().has(packageName) || !SUBSCRIPTION_PRODUCTS[productId] || !purchaseToken) {
+    throw new Error("unsupported_package_or_product");
+  }
+  const client = await publisherClient();
+  const endpoint = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
+    + `${encodeURIComponent(packageName)}/purchases/subscriptions/${encodeURIComponent(productId)}`
+    + `/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`;
+  await client.request({ url: endpoint, method: "POST", data: {} });
+}
+
+async function acknowledgePlayOneTimePurchase(packageName, productId, purchaseToken) {
+  if (!resolveOneTimeProduct(packageName, productId) || !purchaseToken) {
+    throw new Error("unsupported_package_or_product");
+  }
+  const client = await publisherClient();
+  const endpoint = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
+    + `${encodeURIComponent(packageName)}/purchases/products/${encodeURIComponent(productId)}`
+    + `/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`;
+  await client.request({ url: endpoint, method: "POST", data: {} });
 }
 
 function findCodeByPurchaseToken(giftCodes, purchaseToken) {
@@ -131,7 +168,10 @@ function issuePlayActivationCode({
   if (existing) {
     const boundProduct = existing.record.productKey || existing.record.productId;
     const boundPackage = existing.record.purchasePackage || existing.record.packageName;
-    if (boundProduct !== productId || (boundPackage && boundPackage !== packageName)) {
+    const boundCatalogVersion = existing.record.catalogVersion;
+    if (boundProduct !== productId
+        || (boundPackage && boundPackage !== packageName)
+        || boundCatalogVersion !== PLAY_CATALOG_VERSION) {
       throw new Error("purchase_binding_mismatch");
     }
     return {
@@ -155,6 +195,7 @@ function issuePlayActivationCode({
     tier: product.tier,
     productKey: productId,
     purchasePackage: packageName,
+    catalogVersion: PLAY_CATALOG_VERSION,
     note: `Purchased via Google Play (${productId})`,
     createdAt: new Date(now).toISOString(),
     expires,
@@ -175,10 +216,14 @@ function issuePlayActivationCode({
 }
 
 module.exports = {
+  acknowledgePlayOneTimePurchase,
+  acknowledgePlaySubscription,
+  PLAY_CATALOG_VERSION,
   ONE_TIME_PRODUCTS,
   SUBSCRIPTION_PRODUCTS,
   findCodeByPurchaseToken,
   issuePlayActivationCode,
+  isPlayBillingEnabled,
   parseSubscriptionPurchase,
   parseSubscriptionToken,
   resolveOneTimeProduct,

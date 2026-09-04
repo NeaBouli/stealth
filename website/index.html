@@ -77,10 +77,7 @@
         "location": "Greece"
       },
       "offers": [
-        { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "EUR" },
-        { "@type": "Offer", "name": "Pro", "price": "3.49", "priceCurrency": "EUR", "billingIncrement": "P1M" },
-        { "@type": "Offer", "name": "Premium", "price": "4.99", "priceCurrency": "EUR", "billingIncrement": "P1M" },
-        { "@type": "Offer", "name": "Premium Activation Code", "price": "25", "priceCurrency": "EUR" }
+        { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "EUR" }
       ],
       "featureList": [
         "End-to-end encryption (X25519 + DTLS-SRTP)",
@@ -151,7 +148,7 @@
           "name": "Is SecureCall free?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. SecureCall has a free tier with encrypted calls, ads, a 15-minute call limit, and up to 10 contacts. Pro (€3.49/month) and Premium (€4.99/month) tiers add higher limits and advanced security features."
+            "text": "Yes. SecureCall has a free tier with encrypted calls, ads, a 15-minute call limit, and up to 10 contacts. Paid Pro and Premium offers remain unavailable until product and finance readiness are approved."
           }
         },
         {
@@ -478,8 +475,8 @@
                 <div class="section-head"><span class="section-label">Access levels</span><h2>Choose your clearance level.</h2><p class="lead">Every tier includes end-to-end encryption. Upgrade for advanced protection through Play billing or activation codes.</p></div>
                 <div class="pricing-grid">
                     <article class="price-card reveal"><h3>Free</h3><div class="price"><span class="amount">€0</span><span class="period">forever</span></div><ul><li class="included">E2E encrypted calls</li><li class="included">15 min call limit, 10 contacts</li><li class="included">Basic security warnings</li><li class="included">Dark/Light mode</li><li class="included">Ad-supported banner</li><li class="excluded">Call history and online status</li><li class="excluded">Anti-recording protection</li><li class="excluded">Automatic threat termination</li></ul><a href="#download" class="btn line block">Get started</a></article>
-                    <article class="price-card featured reveal"><span class="price-badge">Most popular</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">Automatic threat termination</li><li class="included">Seller-set IFR holder discount on eligible browser checkout</li></ul><a href="#download" class="btn primary block">Available in app</a></article>
-                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">Network selection controls</li><li class="included">No ads or crash reporting</li><li class="included">Device-managed VPN compatibility in every edition</li><li class="included">Optional app-managed WireGuard in the direct Premium APK</li><li class="included">Seller-set IFR holder discount on eligible browser checkout</li></ul><a href="download.html" class="btn primary block">Compare Play and direct APK</a></article>
+                    <article class="price-card featured reveal"><span class="price-badge">Planned</span><h3>Pro</h3><div class="price"><span class="amount">€3.49</span><span class="period">/month</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">Automatic threat termination</li><li class="included">Seller-set IFR holder discount on eligible browser checkout</li></ul><span class="btn primary block" aria-disabled="true">Sales not yet available</span></article>
+                    <article class="price-card reveal"><h3>Premium</h3><div class="price"><span class="amount">€4.99</span><span class="period">/month</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">Network selection controls</li><li class="included">No ads or crash reporting</li><li class="included">Device-managed VPN compatibility in every edition</li><li class="included">Optional app-managed WireGuard in the direct Premium APK</li><li class="included">Seller-set IFR holder discount on eligible browser checkout</li></ul><span class="btn primary block" aria-disabled="true">Sales not yet available</span></article>
                 </div>
                 <div class="ifr-box reveal" id="ifr" data-ifr-checkout data-ifr-product="SecureCall" data-ifr-enabled="false">
                     <span class="section-label">Browser purchase benefit</span>
@@ -514,11 +511,11 @@
 
         <section class="section" id="lifetime">
             <div class="container">
-                <div class="section-head"><span class="section-label">Limited time</span><h2>Forever licenses. No subscription.</h2><p class="lead">One-time purchase, lifetime access, only 100 licenses per tier. Price increases with each sale.</p></div>
+                <div class="section-head"><span class="section-label">Launch gated</span><h2>Planned lifetime licenses.</h2><p class="lead">One-time offers remain unavailable until product and finance readiness are approved for the same catalog version.</p></div>
                 <div class="pricing-grid">
-                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-gold)">Limited: 100</span><h3>Pro Lifetime</h3><div class="price"><span class="amount" id="proPrice">€15</span><span class="period">one-time</span></div><div class="price-meter"><div class="price-meter-head"><span>Licenses remaining</span><strong id="proRemaining">100 / 100</strong></div><div class="meter"><span id="proBar" style="width:0%"></span></div><p style="font-size:12px">Current VLABS catalog price.</p></div><ul><li class="included">Everything in Pro</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><a class="btn primary block" href="https://vlabs.gr/en/shop" target="_blank" rel="noopener">Open VLABS checkout</a></article>
-                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-red);color:#fff">Limited: 100</span><h3>Premium Lifetime</h3><div class="price"><span class="amount" id="premiumPrice">€25</span><span class="period">one-time</span></div><div class="price-meter"><div class="price-meter-head"><span>Licenses remaining</span><strong id="premiumRemaining">100 / 100</strong></div><div class="meter"><span id="premiumBar" style="width:0%"></span></div><p style="font-size:12px">Current VLABS catalog price.</p></div><ul><li class="included">Everything in Premium</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><a class="btn primary block" href="https://vlabs.gr/en/shop" target="_blank" rel="noopener">Open VLABS checkout</a></article>
-                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-green)">Gift option</span><h3>Activation Code</h3><div class="price"><span class="amount">€25</span><span class="period">one-time</span></div><p>Premium access for supported SecureCall versions. Buy a code for yourself or as a gift, then activate it in Settings.</p><ul><li class="included">Premium access</li><li class="included">No subscription</li><li class="included">Supported versions and platforms</li><li class="included">Signed activation after confirmed payment</li></ul><a class="btn teal block" href="https://vlabs.gr/en/shop" target="_blank" rel="noopener">Open VLABS checkout</a></article>
+                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-gold)">Planned</span><h3>Pro Lifetime</h3><div class="price"><span class="amount" id="proPrice">€15</span><span class="period">one-time</span></div><p style="font-size:12px">Candidate VLABS catalog price. Sales are closed.</p><ul><li class="included">Everything in Pro</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><span class="btn primary block" aria-disabled="true">Sales not yet available</span></article>
+                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-red);color:#fff">Planned</span><h3>Premium Lifetime</h3><div class="price"><span class="amount" id="premiumPrice">€25</span><span class="period">one-time</span></div><p style="font-size:12px">Candidate VLABS catalog price. Sales are closed.</p><ul><li class="included">Everything in Premium</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><span class="btn primary block" aria-disabled="true">Sales not yet available</span></article>
+                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-green)">Planned</span><h3>Activation Code</h3><div class="price"><span class="amount">€25</span><span class="period">one-time</span></div><p>Premium access for supported SecureCall versions after both release gates are approved.</p><ul><li class="included">Premium access</li><li class="included">No subscription</li><li class="included">Supported versions and platforms</li><li class="included">Signed activation after confirmed payment</li></ul><span class="btn teal block" aria-disabled="true">Sales not yet available</span></article>
                 </div>
             </div>
         </section>
@@ -580,39 +577,6 @@
     <script type="module" src="js/ifr-checkout.js"></script>
     <script>
     const API='https://api.stealthx.tech';
-    (async function loadLicensePrices(){
-      try{
-        const r=await fetch(API+'/licenses/status');
-        const d=await r.json();
-        const fmt=function(c){return '€'+(c/100).toFixed(2)};
-        const p=d.pro_lifetime;
-        if(p){
-          const proPrice=document.getElementById('proPrice');
-          const proRemaining=document.getElementById('proRemaining');
-          const proNextPrice=document.getElementById('proNextPrice');
-          const proBar=document.getElementById('proBar');
-          const btnPro=document.getElementById('btnProLifetime');
-          if(proPrice)proPrice.textContent=fmt(p.currentPrice);
-          if(proRemaining)proRemaining.textContent=p.remaining+' / 100';
-          if(proNextPrice)proNextPrice.textContent=fmt(p.nextPrice);
-          if(proBar)proBar.style.width=p.sold+'%';
-          if(p.soldOut&&btnPro){btnPro.textContent='Sold out';btnPro.disabled=true;btnPro.classList.add('disabled');}
-        }
-        const pm=d.premium_lifetime;
-        if(pm){
-          const premiumPrice=document.getElementById('premiumPrice');
-          const premiumRemaining=document.getElementById('premiumRemaining');
-          const premiumNextPrice=document.getElementById('premiumNextPrice');
-          const premiumBar=document.getElementById('premiumBar');
-          const btnPremium=document.getElementById('btnPremiumLifetime');
-          if(premiumPrice)premiumPrice.textContent=fmt(pm.currentPrice);
-          if(premiumRemaining)premiumRemaining.textContent=pm.remaining+' / 100';
-          if(premiumNextPrice)premiumNextPrice.textContent=fmt(pm.nextPrice);
-          if(premiumBar)premiumBar.style.width=pm.sold+'%';
-          if(pm.soldOut&&btnPremium){btnPremium.textContent='Sold out';btnPremium.disabled=true;btnPremium.classList.add('disabled');}
-        }
-      }catch(e){console.warn('License prices unavailable:',e.message)}
-    })();
     (function(){
       function u(){
         fetch(API+'/health',{signal:AbortSignal.timeout(5000)}).then(function(r){return r.json()}).then(function(d){

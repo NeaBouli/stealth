@@ -71,7 +71,7 @@ Yes. An internal security audit was conducted in February 2026. All 7 Critical a
 #### ████ TIER COMPARISON ████
 ---
 
-| Feature | Free | Pro (€3.49/mo or $15 Lifetime) | Premium (€4.99/mo or $25 Lifetime) |
+| Feature | Free | Pro (candidate €3.49/mo or €15 lifetime) | Premium (candidate €4.99/mo or €25 lifetime) |
 |---------|------|-------------------------------|-----------------------------------|
 | E2E Encrypted Calls | Yes | Yes | Yes |
 | Audio Quality | Standard | HD (48kHz Opus) | HD (48kHz Opus) |
@@ -89,22 +89,22 @@ Yes. An internal security audit was conducted in February 2026. All 7 Critical a
 ---
 
 ### What are Forever Licenses?
-Forever Licenses are **one-time purchases** that give you lifetime access to Pro or Premium — no subscription needed. Only 100 licenses are available per tier. The price starts low and increases automatically with each sale:
+Forever Licenses are planned **one-time offers** for supported SecureCall versions. Candidate prices are:
 
-- **PRO Lifetime:** Starts at $15, rises to $50 at sellout (100 licenses)
-- **PREMIUM Lifetime:** Starts at $25, rises to $100 at sellout (100 licenses)
+- **PRO Lifetime:** €15
+- **PREMIUM Lifetime:** €25
 
-Once sold out, only monthly/yearly subscriptions remain. The remaining license count and next price are shown live in the app's Upgrade screen.
+Sales remain unavailable until SecureCall records PRODUCT_READY and the private VLABS operator records FINANCE_READY for the same catalog version.
 
 ### Lifetime vs. Subscription — what should I choose?
-- **Lifetime:** Pay once, own forever. Best value for long-term users. Includes all future updates. Available only while licenses last.
-- **Subscription:** Pay monthly or yearly. Cancel anytime. Always available.
+- **Lifetime:** Planned one-time access for the supported product version.
+- **Subscription:** Planned monthly or yearly access managed through Google Play.
 
 ### How do I upgrade or cancel?
-Subscriptions are managed through Google Play. To cancel: Google Play → Subscriptions → SecureCall → Cancel. Features remain active until end of billing period. Lifetime purchases never expire.
+Purchases are currently disabled. When subscriptions launch, cancellation and restoration will be managed through Google Play.
 
 ### Do you see my payment information?
-No. All payments are processed through Google Play Billing. We never see your credit card or billing details.
+No SecureCall payment flow is currently active. Payment and fiscal processing will be controlled by the applicable store and the private VLABS finance service at launch.
 
 ### How do I delete my data?
 Settings → Delete All Data → Uninstall. Since we don't store data on servers, uninstalling removes all traces.

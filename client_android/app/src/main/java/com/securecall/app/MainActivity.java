@@ -825,9 +825,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Runtime unlocks (activation code) can be applied
-        // while the app is already alive, so re-apply the effective tier before
-        // refreshing UI, ads, and feature gates.
+        // Re-apply the effective build/server-verified tier before refreshing
+        // UI, ads and feature gates.
         com.securecall.app.config.TierManager.INSTANCE.applyTier(this);
         checkMissedCallBadge();
         // Always clear launcher badge (notification-based) when user opens the app
@@ -853,7 +852,13 @@ public class MainActivity extends AppCompatActivity {
             String clientId = p.getString("client_id", null);
             if (clientId == null || clientId.isEmpty()) return;
             new Thread(() -> {
-                try { sm.verifyAgainstServer(clientId); }
+                try {
+                    sm.verifyAgainstServer(clientId);
+                    runOnUiThread(() -> {
+                        com.securecall.app.config.TierManager.INSTANCE.applyTier(this);
+                        updateTrialBanner();
+                    });
+                }
                 catch (Exception e) { Log.w(TAG, "subscription verify failed: " + e.getMessage()); }
             }, "subscription-verify").start();
         } catch (Throwable t) {

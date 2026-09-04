@@ -44,6 +44,13 @@ class BillingManager(
     )
 
     fun init() {
+        if (!BuildConfig.BILLING_ENABLED) {
+            listener.onPurchaseFailed(
+                BillingClient.BillingResponseCode.BILLING_UNAVAILABLE,
+                "Purchases are currently unavailable"
+            )
+            return
+        }
         billingClient = BillingClient.newBuilder(activity)
             .setListener(this)
             .enablePendingPurchases(
@@ -154,6 +161,7 @@ class BillingManager(
     }
 
     fun launchPurchaseFlow(productDetails: ProductDetails, offerToken: String) {
+        if (!BuildConfig.BILLING_ENABLED) return
         val productDetailsParamsList = listOf(
             BillingFlowParams.ProductDetailsParams.newBuilder()
                 .setProductDetails(productDetails)
@@ -169,6 +177,7 @@ class BillingManager(
     }
 
     fun launchInAppPurchaseFlow(productDetails: ProductDetails) {
+        if (!BuildConfig.BILLING_ENABLED) return
         val productDetailsParamsList = listOf(
             BillingFlowParams.ProductDetailsParams.newBuilder()
                 .setProductDetails(productDetails)
@@ -216,20 +225,8 @@ class BillingManager(
 
         Log.d(TAG, "Purchase completed: productId=$productId, tier=$tier")
 
-        // Acknowledge the purchase
-        if (!purchase.isAcknowledged) {
-            val ackParams = AcknowledgePurchaseParams.newBuilder()
-                .setPurchaseToken(token)
-                .build()
-            billingClient?.acknowledgePurchase(ackParams) { ackResult ->
-                if (ackResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                    Log.d(TAG, "Purchase acknowledged")
-                } else {
-                    Log.e(TAG, "Acknowledge failed: ${ackResult.debugMessage}")
-                }
-            }
-        }
-
+        // The backend acknowledges only after authoritative verification and
+        // durable entitlement persistence.
         listener.onPurchaseCompleted(tier, token)
     }
 

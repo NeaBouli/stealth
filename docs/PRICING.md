@@ -2,15 +2,15 @@
 
 ## Lifetime Licenses (One-Time Payment)
 
-| Product | Tier | Launch Price | Max Price | IFR Holder Benefit |
-|---------|------|-------------|-----------|--------------------|
-| SecureCall | Pro | €15 | €50 | Positive IFR balance |
-| SecureCall | Premium | €25 | €100 | Positive IFR balance |
-| SecureChat | Pro | €9 | €14.99 | Positive IFR balance |
-| SecureChat | Elite | €19 | €23.99 | Positive IFR balance |
-| Chameleon | Pro | €9 | €14.99 | Positive IFR balance |
-| Chameleon | Elite | €19 | €23.99 | Positive IFR balance |
-| StealthX Suite | All | €54 | €99 | Unavailable until bundle fulfillment launches |
+| Product | Tier | Candidate Price | IFR Holder Benefit |
+|---------|------|-----------------|--------------------|
+| SecureCall | Pro | €15 | Positive IFR balance |
+| SecureCall | Premium | €25 | Positive IFR balance |
+| SecureChat | Pro | €9 | Positive IFR balance |
+| SecureChat | Elite | €19 | Positive IFR balance |
+| Chameleon | Pro | €9 | Positive IFR balance |
+| Chameleon | Elite | €19 | Positive IFR balance |
+| StealthX Suite | All | €54 | Unavailable until bundle fulfillment launches |
 
 ## Rules
 - VLABS is the canonical source for current price, discount and availability.
@@ -20,7 +20,7 @@
 - A lifetime license is a perpetual right to use the purchased supported version; product terms shown before checkout control the exact scope.
 
 ## Status
-- SecureCall: Google Play release path active; web checkout remains launch-gated.
+- SecureCall: distribution is active; Play Billing and web checkout remain launch-gated.
 - SecureChat: closed alpha; paid checkout remains launch-gated.
 - Chameleon: closed alpha; paid checkout remains launch-gated.
 - Suite: unavailable until all component and fulfillment gates pass.

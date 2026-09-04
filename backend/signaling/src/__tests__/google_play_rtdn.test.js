@@ -32,16 +32,16 @@ async function run() {
   installGooglePlayRtdnRoute(app, {
     subscriptions: {
       expireByPurchaseToken(token) { calls.expire += 1; calls.lastExpired = token; return 1; },
-      refreshByPurchaseToken(token, productId, tier, expiresAt) {
+      refreshByPurchaseToken(token, productId, tier, expiresAt, packageName, catalogVersion) {
         calls.refresh += 1;
-        calls.lastRefresh = { token, productId, tier, expiresAt };
+        calls.lastRefresh = { token, productId, tier, expiresAt, packageName, catalogVersion };
         return 1;
       }
     },
     activationCodes,
-    saveActivationCodes() { calls.activationSave += 1; },
+    saveActivationCodes() { calls.activationSave += 1; return calls.failActivationSave !== true; },
     giftCodes,
-    saveGiftCodes() { calls.giftSave += 1; },
+    saveGiftCodes() { calls.giftSave += 1; return true; },
     async verifyPushIdentity(req, audience, email) {
       calls.identity += 1;
       assert.strictEqual(audience, process.env.GOOGLE_PLAY_RTDN_AUDIENCE);
@@ -52,7 +52,12 @@ async function run() {
       calls.verify += 1;
       assert.strictEqual(packageName, "com.securecall.app.free");
       assert.strictEqual(token, "sub-token");
-      return { productId: "securecall_pro_monthly", tier: "pro", expiresAt: Date.now() + 86400000 };
+      return {
+        productId: "securecall_pro_monthly",
+        tier: "pro",
+        expiresAt: Date.now() + 86400000,
+        catalogVersion: "securecall-play-v1"
+      };
     }
   });
 
@@ -74,6 +79,8 @@ async function run() {
     assert.strictEqual((await post(active)).status, 204);
     assert.strictEqual(calls.refresh, 1);
     assert.strictEqual(calls.verify, 1);
+    assert.strictEqual(calls.lastRefresh.packageName, "com.securecall.app.free");
+    assert.strictEqual(calls.lastRefresh.catalogVersion, "securecall-play-v1");
 
     assert.strictEqual((await post(active)).status, 204, "duplicate Pub/Sub message must be acknowledged");
     assert.strictEqual(calls.refresh, 1, "duplicate must not be processed twice");
@@ -96,6 +103,28 @@ async function run() {
     assert.strictEqual(giftCodes.size, 0);
     assert.strictEqual(calls.activationSave, 1);
     assert.strictEqual(calls.giftSave, 1);
+
+    activationCodes.push({ code: "PRO-PARTIAL", purchaseToken: "partial-token" });
+    const partial = envelope("msg-partial", {
+      version: "1.0",
+      packageName: "com.securecall.app.free",
+      voidedPurchaseNotification: { purchaseToken: "partial-token", productType: 2, refundType: 2 }
+    });
+    assert.strictEqual((await post(partial)).status, 204);
+    assert.strictEqual(activationCodes.length, 0, "quantity-based refund revokes non-consumable access");
+
+    activationCodes.push({ code: "PRO-RETRY", purchaseToken: "retry-token" });
+    calls.failActivationSave = true;
+    const retryable = envelope("msg-retry", {
+      version: "1.0",
+      packageName: "com.securecall.app.free",
+      voidedPurchaseNotification: { purchaseToken: "retry-token", productType: 2, refundType: 1 }
+    });
+    assert.strictEqual((await post(retryable)).status, 500);
+    assert.strictEqual(activationCodes.length, 1, "failed persistence restores in-memory entitlement");
+    calls.failActivationSave = false;
+    assert.strictEqual((await post(retryable)).status, 204, "failed revocation notification remains retryable");
+    assert.strictEqual(activationCodes.length, 0);
 
     const unsupported = envelope("msg-evil", {
       version: "1.0",

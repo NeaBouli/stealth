@@ -104,7 +104,7 @@ function buildContext(externalDeps) {
     saveActivationCodes: saveActivationCodesOverride,
     verifyIfrLock: verifyIfrLockOverride,
     issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
-    verifyPlaySubscription,
+    verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
     saveWalletMappings: saveWalletMappingsOverride,
   } = externalDeps;
 
@@ -139,7 +139,7 @@ function buildContext(externalDeps) {
     // Business logic
     verifyIfrLock: verifyIfrLockOverride || verifyIfrLock,
     issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
-    verifyPlaySubscription,
+    verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
     // External services
     pkd, subscriptions, fcm, customIds, licenses,
     getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS,

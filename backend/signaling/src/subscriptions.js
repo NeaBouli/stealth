@@ -44,8 +44,10 @@ function saveSubscriptions() {
     const obj = {};
     for (const [k, v] of subscriptions) obj[k] = v;
     writeJsonAtomic(SUBS_FILE, obj);
+    return true;
   } catch (e) {
     console.error("[SUBSCRIPTION] Save failed:", e.message);
+    return false;
   }
 }
 
@@ -55,8 +57,9 @@ function saveSubscriptions() {
  * Verifies (stores/updates) a subscription for the given clientId.
  * Returns { tier, expiresAt }.
  */
-function recordVerifiedSubscription(clientId, purchaseToken, productId, tier, expiresAt) {
-  if (!clientId || !purchaseToken || !productId || !["pro", "premium"].includes(tier) || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+function recordVerifiedSubscription(clientId, purchaseToken, productId, tier, expiresAt, packageName, catalogVersion) {
+  if (!clientId || !purchaseToken || !productId || !packageName || !catalogVersion
+      || !["pro", "premium"].includes(tier) || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
     throw new Error("invalid_verified_subscription");
   }
   const now = Date.now();
@@ -66,12 +69,19 @@ function recordVerifiedSubscription(clientId, purchaseToken, productId, tier, ex
     tier,
     purchaseToken,
     productId,
+    packageName,
+    catalogVersion,
     expiresAt,
     verifiedAt: now
   };
 
+  const previous = subscriptions.get(clientId);
   subscriptions.set(clientId, entry);
-  saveSubscriptions();
+  if (!saveSubscriptions()) {
+    if (previous) subscriptions.set(clientId, previous);
+    else subscriptions.delete(clientId);
+    throw new Error("subscription_persistence_failed");
+  }
   return { tier, expiresAt };
 }
 
@@ -91,34 +101,54 @@ function getSubscription(clientId) {
  * Returns true if found and deleted, false otherwise.
  */
 function expireSubscription(clientId) {
-  const deleted = subscriptions.delete(clientId);
-  if (deleted) saveSubscriptions();
-  return deleted;
+  const previous = subscriptions.get(clientId);
+  if (!previous) return false;
+  subscriptions.delete(clientId);
+  if (!saveSubscriptions()) {
+    subscriptions.set(clientId, previous);
+    throw new Error("subscription_persistence_failed");
+  }
+  return true;
 }
 
 function expireByPurchaseToken(purchaseToken) {
-  let expired = 0;
+  const removed = [];
   for (const [clientId, entry] of subscriptions) {
     if (entry.purchaseToken !== purchaseToken) continue;
+    removed.push([clientId, entry]);
     subscriptions.delete(clientId);
-    expired += 1;
   }
-  if (expired > 0) saveSubscriptions();
-  return expired;
+  if (removed.length > 0 && !saveSubscriptions()) {
+    for (const [clientId, entry] of removed) subscriptions.set(clientId, entry);
+    throw new Error("subscription_persistence_failed");
+  }
+  return removed.length;
 }
 
-function refreshByPurchaseToken(purchaseToken, productId, tier, expiresAt) {
-  if (!purchaseToken || !productId || !["pro", "premium"].includes(tier) || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+function refreshByPurchaseToken(purchaseToken, productId, tier, expiresAt, packageName, catalogVersion) {
+  if (!purchaseToken || !productId || !packageName || !catalogVersion
+      || !["pro", "premium"].includes(tier) || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
     throw new Error("invalid_verified_subscription");
   }
-  let refreshed = 0;
+  const previousEntries = [];
   for (const [clientId, entry] of subscriptions) {
     if (entry.purchaseToken !== purchaseToken) continue;
-    subscriptions.set(clientId, { ...entry, productId, tier, expiresAt, verifiedAt: Date.now() });
-    refreshed += 1;
+    previousEntries.push([clientId, entry]);
+    subscriptions.set(clientId, {
+      ...entry,
+      productId,
+      tier,
+      expiresAt,
+      packageName,
+      catalogVersion,
+      verifiedAt: Date.now()
+    });
   }
-  if (refreshed > 0) saveSubscriptions();
-  return refreshed;
+  if (previousEntries.length > 0 && !saveSubscriptions()) {
+    for (const [clientId, entry] of previousEntries) subscriptions.set(clientId, entry);
+    throw new Error("subscription_persistence_failed");
+  }
+  return previousEntries.length;
 }
 
 /**
@@ -128,6 +158,7 @@ function refreshByPurchaseToken(purchaseToken, productId, tier, expiresAt) {
 function getTier(clientId) {
   const entry = subscriptions.get(clientId);
   if (!entry) return "FREE";
+  if (!entry.packageName || !entry.catalogVersion) return "FREE";
   if (Date.now() > entry.expiresAt) return "FREE";
   return entry.tier;
 }
