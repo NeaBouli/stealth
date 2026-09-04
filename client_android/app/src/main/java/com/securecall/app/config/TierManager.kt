@@ -6,8 +6,8 @@ import com.securecall.app.billing.SubscriptionManager
 
 /**
  * Manages the effective tier for the app.
- * Checks build flavor, subscription state, and activated_tier from
- * SharedPreferences (activation-code unlock).
+ * Checks build flavor and server-verified subscription state. Legacy activation
+ * state is ignored and removed when activation-code support is disabled.
  * Returns the highest tier available.
  */
 object TierManager {
@@ -19,8 +19,15 @@ object TierManager {
 
     fun getCurrentTier(context: Context): String {
         val buildTier = com.securecall.app.BuildConfig.FLAVOR.lowercase()
-        val activatedTier = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(KEY_ACTIVATED_TIER, null)?.lowercase() ?: ""
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val activatedTier = if (com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) {
+            prefs.getString(KEY_ACTIVATED_TIER, null)?.lowercase() ?: ""
+        } else {
+            if (prefs.contains(KEY_ACTIVATED_TIER)) {
+                prefs.edit().remove(KEY_ACTIVATED_TIER).commit()
+            }
+            ""
+        }
         val subscriptionTier = try {
             SubscriptionManager(context.applicationContext).getCurrentTier().name.lowercase()
         } catch (t: Throwable) {
@@ -40,6 +47,12 @@ object TierManager {
     fun isPremium(context: Context): Boolean = getCurrentTier(context) == "PREMIUM"
 
     fun setActivatedTier(context: Context, tier: String) {
+        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit().remove(KEY_ACTIVATED_TIER).commit()
+            Log.w(TAG, "Ignoring activation tier because activation codes are disabled")
+            return
+        }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putString(KEY_ACTIVATED_TIER, tier.lowercase()).apply()
         Log.d(TAG, "Activated tier set to: $tier")
@@ -56,17 +69,15 @@ object TierManager {
         Log.d(TAG, "Applying tier: $tier (build=${com.securecall.app.BuildConfig.FLAVOR}, activated=${
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_ACTIVATED_TIER, "none")
         })")
-        if (tier != com.securecall.app.BuildConfig.FLAVOR.uppercase()) {
-            // Activated tier is higher than build tier — override the registry
-            FeatureProviderRegistry.set(ActivatedFeatureProvider(tier))
-        }
+        // Always replace the provider so a revoked or expired entitlement takes
+        // effect immediately instead of surviving in process memory.
+        FeatureProviderRegistry.set(EffectiveTierFeatureProvider(tier))
     }
 
     /**
-     * FeatureProvider that returns features for an activated tier.
-     * Used when activation code unlocks a higher tier than the build flavor.
+     * FeatureProvider for the current build or verified runtime tier.
      */
-    private class ActivatedFeatureProvider(private val activatedTier: String) : FeatureProvider {
+    private class EffectiveTierFeatureProvider(private val activatedTier: String) : FeatureProvider {
         private val isPro get() = activatedTier == "PRO" || activatedTier == "PREMIUM"
         private val isPremium get() = activatedTier == "PREMIUM"
 

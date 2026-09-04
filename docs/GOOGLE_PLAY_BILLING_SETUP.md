@@ -1,5 +1,16 @@
 # Google Play Billing Setup
 
+> Launch gate: Play Billing and activation-code redemption are disabled in the
+> current build. The entries below are candidate configuration only. Do not
+> activate them until SecureCall PRODUCT_READY and matching VLABS FINANCE_READY
+> are recorded for catalog version securecall-play-v1.
+
+The signaling backend is independently closed unless
+`PLAY_BILLING_ENABLED=true`. Do not set this variable until both gates are
+recorded for `securecall-play-v1`; changing only the Android build flag is not
+sufficient. RTDN processing remains available while sales are closed so that
+historical revocations can still be applied.
+
 ## In-App Products to create in Play Console
 
 ### Subscriptions
@@ -30,13 +41,13 @@
 
 5. **securecall_pro_lifetime**
    - Type: One-time product (managed/non-consumable)
-   - Price: Dynamic ($15–$50, set initial at $15)
-   - Description: "Pro forever — one-time purchase, limited to 100 licenses"
+   - Candidate price: €15.00
+   - Description: "Pro access for supported SecureCall versions"
 
 6. **securecall_premium_lifetime**
    - Type: One-time product (managed/non-consumable)
-   - Price: Dynamic ($25–$100, set initial at $25)
-   - Description: "Premium forever — one-time purchase, limited to 100 licenses"
+   - Candidate price: €25.00
+   - Description: "Premium access for supported SecureCall versions"
 
 7. **securecall_premium_activation_code**
    - Type: One-time product (managed/non-consumable)
@@ -64,7 +75,12 @@
 5. Set the push-auth service account email as `GOOGLE_PLAY_RTDN_SERVICE_ACCOUNT_EMAIL`.
 6. Send a Play Console test notification before release. The endpoint must return HTTP 204.
 
-The endpoint verifies the Google-signed OIDC token, audience, service-account email, package allowlist and Pub/Sub message ID. It then calls the Google Play Developer API for subscription state. Notifications alone never grant access. Full voided-purchase notifications revoke matching subscriptions and activation codes.
+The endpoint verifies the Google-signed OIDC token, audience, service-account email, package allowlist and Pub/Sub message ID. It then calls the Google Play Developer API for subscription state. Notifications alone never grant access. Full and quantity-based voided-purchase notifications revoke matching subscriptions and activation codes.
+
+The Android client never acknowledges a purchase before verification. The backend
+acknowledges subscriptions and one-time products only after the corresponding
+entitlement has been durably persisted; acknowledgement failure returns a closed
+verification result and remains retryable.
 
 For private accounting handoff, configure `VLABS_FINANCE_INGEST_URL` and `VLABS_FINANCE_INGEST_SECRET` only in the runtime environment. The shared secret must match the private VLABS `FINANCE_INGEST_SECURECALL_SECRET`; never place either value in this public repository.
 
@@ -79,7 +95,8 @@ Request:
 {
   "purchase_token": "...",
   "product_id": "securecall_premium_activation_code",
-  "package_name": "com.securecall.app.free"
+  "package_name": "com.securecall.app.free",
+  "catalog_version": "securecall-play-v1"
 }
 ```
 
@@ -89,7 +106,8 @@ Response:
   "code": "PREM-A1B2C3D4",
   "tier": "premium",
   "expires": "2027-03-23T...",
-  "product_id": "securecall_premium_activation_code"
+  "product_id": "securecall_premium_activation_code",
+  "catalog_version": "securecall-play-v1"
 }
 ```
 
@@ -103,7 +121,7 @@ Response:
 ## Important Notes
 
 - Billing library version: 8.2.1 (`billing`)
-- Only the FREE flavor includes billing (Pro/Premium are pre-activated)
+- Only the FREE flavor contains the dormant Billing client; the release gate keeps it disabled
 - Purchased activation codes are stored in the signed activation-code registry so refunds can revoke them
 - Codes are redeemed via WebSocket `ACTIVATE_CODE` message
 - Without `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64`, purchase and subscription verification fail closed

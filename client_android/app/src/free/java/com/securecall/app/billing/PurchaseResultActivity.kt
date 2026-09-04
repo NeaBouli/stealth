@@ -71,9 +71,17 @@ class PurchaseResultActivity : AppCompatActivity() {
         }
 
         // Activate Now button
-        findViewById<Button>(R.id.btnActivateNow).setOnClickListener {
-            val code = activationCode ?: return@setOnClickListener
-            activateCode(code)
+        findViewById<Button>(R.id.btnActivateNow).apply {
+            visibility = if (com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) {
+                android.view.View.VISIBLE
+            } else {
+                android.view.View.GONE
+            }
+            setOnClickListener {
+                if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) return@setOnClickListener
+                val code = activationCode ?: return@setOnClickListener
+                activateCode(code)
+            }
         }
 
         // Verify purchase with backend
@@ -98,6 +106,7 @@ class PurchaseResultActivity : AppCompatActivity() {
             put("purchase_token", token)
             put("product_id", productId)
             put("package_name", packageName)
+            put("catalog_version", com.securecall.app.BuildConfig.PLAY_CATALOG_VERSION)
         }
 
         val client = com.securecall.app.net.NetworkManager.buildPinnedClient()
@@ -120,7 +129,11 @@ class PurchaseResultActivity : AppCompatActivity() {
                 runOnUiThread {
                     try {
                         val result = JSONObject(body)
-                        if (response.isSuccessful && result.has("code")) {
+                        if (response.isSuccessful
+                            && result.has("code")
+                            && result.optString("product_id") == productId
+                            && result.optString("catalog_version") == com.securecall.app.BuildConfig.PLAY_CATALOG_VERSION
+                        ) {
                             activationCode = result.getString("code")
                             tvCode.text = activationCode
                             tvStatus.text = "Code generated — ${result.optString("tier", "premium").uppercase()} tier"
@@ -142,6 +155,7 @@ class PurchaseResultActivity : AppCompatActivity() {
     }
 
     private fun activateCode(code: String) {
+        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) return
         val ws = WebSocketService.instance
         if (ws == null || !ws.isConnected) {
             Toast.makeText(this, "Not connected to server", Toast.LENGTH_SHORT).show()
@@ -163,7 +177,7 @@ class PurchaseResultActivity : AppCompatActivity() {
                         Runtime.getRuntime().exit(0)
                     }, 1500)
                 } else {
-                    tvStatus.text = "Activation failed: ${error ?: "unknown"}"
+                    tvStatus.text = "Activation failed: $error"
                 }
             }
         }

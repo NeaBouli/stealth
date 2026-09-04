@@ -75,7 +75,11 @@ android {
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
 
             // Billing (In-App-Purchase)
-            buildConfigField "boolean", "BILLING_ENABLED", "true"
+            // Finance gate: Play purchases stay closed until PRODUCT_READY and
+            // FINANCE_READY are recorded for the same immutable offer version.
+            buildConfigField "boolean", "BILLING_ENABLED", "false"
+            buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "false"
+            buildConfigField "String", "PLAY_CATALOG_VERSION", "\"securecall-play-v1\""
             buildConfigField "String", "SKU_PRO_MONTHLY", "\"securecall_pro_monthly\""
             buildConfigField "String", "SKU_PRO_YEARLY", "\"securecall_pro_yearly\""
             buildConfigField "String", "SKU_PREMIUM_MONTHLY", "\"securecall_premium_monthly\""
@@ -109,6 +113,8 @@ android {
             buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
             buildConfigField "boolean", "BILLING_ENABLED", "false"
+            buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "false"
+            buildConfigField "String", "PLAY_CATALOG_VERSION", "\"securecall-play-v1\""
         }
 
         premium {
@@ -135,6 +141,8 @@ android {
             buildConfigField "boolean", "NO_FALLBACK_MODE", "true"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "true"
             buildConfigField "boolean", "BILLING_ENABLED", "false"
+            buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "false"
+            buildConfigField "String", "PLAY_CATALOG_VERSION", "\"securecall-play-v1\""
         }
 
     }
@@ -411,6 +419,46 @@ tasks.register('verifyFreeReleaseVpnPolicy') {
 
 tasks.matching { it.name == 'bundleFreeRelease' || it.name == 'assembleFreeRelease' }.configureEach {
     dependsOn tasks.named('verifyFreeReleaseVpnPolicy')
+}
+
+tasks.register('verifyFreeReleaseBillingClosed') {
+    group = 'verification'
+    description = 'Fails if Google Play Billing is enabled before both release gates are approved.'
+    inputs.files(
+        file('build.gradle'),
+        file('src/free/java/com/securecall/app/billing/UpgradeActivity.kt'),
+        file('src/free/java/com/securecall/app/billing/BillingManager.kt'),
+        file('src/free/java/com/securecall/app/billing/PurchaseResultActivity.kt'),
+        file('src/main/java/com/securecall/app/config/TierManager.kt'),
+        file('src/main/java/com/securecall/app/ui/SettingsFragment.kt')
+    )
+    doLast {
+        def source = file('build.gradle').getText('UTF-8')
+        def freeBlock = (source =~ /(?s)free\s*\{.*?buildConfigField\s+"boolean",\s*"BILLING_ENABLED",\s*"(true|false)"/)
+        if (!freeBlock.find() || freeBlock.group(1) != 'false') {
+            throw new GradleException('Free Play Billing must remain disabled until PRODUCT_READY and FINANCE_READY match.')
+        }
+        def activationBlock = (source =~ /(?s)free\s*\{.*?buildConfigField\s+"boolean",\s*"ACTIVATION_CODE_ENABLED",\s*"(true|false)"/)
+        if (!activationBlock.find() || activationBlock.group(1) != 'false') {
+            throw new GradleException('Activation codes must remain disabled until signed client verification is release-ready.')
+        }
+        def upgradeSource = file('src/free/java/com/securecall/app/billing/UpgradeActivity.kt').getText('UTF-8')
+        def managerSource = file('src/free/java/com/securecall/app/billing/BillingManager.kt').getText('UTF-8')
+        def resultSource = file('src/free/java/com/securecall/app/billing/PurchaseResultActivity.kt').getText('UTF-8')
+        def tierSource = file('src/main/java/com/securecall/app/config/TierManager.kt').getText('UTF-8')
+        def settingsSource = file('src/main/java/com/securecall/app/ui/SettingsFragment.kt').getText('UTF-8')
+        if (!upgradeSource.contains('BuildConfig.BILLING_ENABLED && isPlayStore') ||
+            !managerSource.contains('if (!BuildConfig.BILLING_ENABLED)') ||
+            !resultSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED') ||
+            !tierSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED') ||
+            !settingsSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED')) {
+            throw new GradleException('Billing runtime must enforce the closed BuildConfig gate.')
+        }
+    }
+}
+
+tasks.matching { it.name == 'bundleFreeRelease' || it.name == 'assembleFreeRelease' }.configureEach {
+    dependsOn tasks.named('verifyFreeReleaseBillingClosed')
 }
 
 if (allowInternalFlavors) {

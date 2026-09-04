@@ -311,15 +311,20 @@ app.get("/api/subscription/:clientId", (req, res) => {
 //   { valid: true,  tier, expiresAt, verifiedAt }
 //   { valid: false, tier: "FREE", reason: "not_found" | "expired" | "token_mismatch" }
 app.post("/subscription/status", (req, res) => {
-  const { clientId, purchaseToken } = req.body || {};
-  if (!clientId || typeof clientId !== "string") {
-    return res.status(400).json({ error: "missing_client_id" });
+  const { clientId, purchaseToken, packageName, catalogVersion } = req.body || {};
+  if (!clientId || typeof clientId !== "string"
+      || !purchaseToken || typeof purchaseToken !== "string"
+      || !packageName || typeof packageName !== "string"
+      || !catalogVersion || typeof catalogVersion !== "string") {
+    return res.status(400).json({ error: "invalid_subscription_status_request" });
   }
   const sub = subscriptions.getSubscription(clientId);
   if (!sub) {
     return res.json({ valid: false, tier: "FREE", reason: "not_found" });
   }
-  if (purchaseToken && sub.purchaseToken && purchaseToken !== sub.purchaseToken) {
+  if (purchaseToken !== sub.purchaseToken
+      || packageName !== sub.packageName
+      || catalogVersion !== sub.catalogVersion) {
     return res.json({ valid: false, tier: "FREE", reason: "token_mismatch" });
   }
   if (Date.now() > sub.expiresAt) {
@@ -328,6 +333,9 @@ app.post("/subscription/status", (req, res) => {
   res.json({
     valid: true,
     tier: sub.tier,
+    productId: sub.productId,
+    packageName: sub.packageName,
+    catalogVersion: sub.catalogVersion,
     expiresAt: sub.expiresAt,
     verifiedAt: sub.verifiedAt
   });
@@ -628,17 +636,26 @@ function billingVerificationRateLimit(req, res, next) {
 }
 
 app.post("/billing/verify-purchase", billingVerificationRateLimit, async (req, res) => {
-  const { purchase_token, product_id, package_name } = req.body;
+  const { purchase_token, product_id, package_name, catalog_version } = req.body;
 
   if (typeof purchase_token !== "string" || purchase_token.length < 1 || purchase_token.length > 4096
       || typeof product_id !== "string" || product_id.length < 1 || product_id.length > 200
-      || typeof package_name !== "string" || package_name.length < 1 || package_name.length > 255) {
-    return res.status(400).json({ error: "missing fields: purchase_token, product_id, package_name" });
+      || typeof package_name !== "string" || package_name.length < 1 || package_name.length > 255
+      || typeof catalog_version !== "string" || catalog_version.length < 1 || catalog_version.length > 100) {
+    return res.status(400).json({ error: "invalid purchase verification request" });
   }
 
-  const { issuePlayActivationCode, verifyPlayOneTimePurchase } = require("./payments/google_play_billing");
+  const {
+    PLAY_CATALOG_VERSION,
+    acknowledgePlayOneTimePurchase,
+    issuePlayActivationCode,
+    isPlayBillingEnabled,
+    verifyPlayOneTimePurchase
+  } = require("./payments/google_play_billing");
   try {
-    await verifyPlayOneTimePurchase(package_name, product_id, purchase_token);
+    if (!isPlayBillingEnabled()) throw new Error("play_billing_disabled");
+    if (catalog_version !== PLAY_CATALOG_VERSION) throw new Error("catalog_version_mismatch");
+    const verifiedPurchase = await verifyPlayOneTimePurchase(package_name, product_id, purchase_token);
     const result = issuePlayActivationCode({
       activationCodes,
       giftCodes,
@@ -647,11 +664,15 @@ app.post("/billing/verify-purchase", billingVerificationRateLimit, async (req, r
       productId: product_id,
       packageName: package_name,
     });
+    if (verifiedPurchase.needsAcknowledgement) {
+      await acknowledgePlayOneTimePurchase(package_name, product_id, purchase_token);
+    }
     return res.json({
       code: result.code,
       tier: result.tier,
       expires: result.expires,
       product_id: result.productId,
+      catalog_version: PLAY_CATALOG_VERSION,
       duplicate: result.duplicate,
     });
   } catch (error) {
@@ -956,6 +977,8 @@ ctx = buildContext({
   giftCodes, saveGiftCodes,
   issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
   verifyPlaySubscription: require("./payments/google_play_billing").verifyPlaySubscription,
+  acknowledgePlaySubscription: require("./payments/google_play_billing").acknowledgePlaySubscription,
+  playBillingEnabled: require("./payments/google_play_billing").isPlayBillingEnabled(),
 });
 wireWs(wss, ctx);
 

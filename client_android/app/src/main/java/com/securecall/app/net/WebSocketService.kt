@@ -1521,16 +1521,36 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // Phase 6: SUBSCRIPTION_VERIFY_ACK handling
     private fun handleSubscriptionVerifyAck(obj: org.json.JSONObject) {
         try {
+            val success = obj.optBoolean("success", false)
+            val requestId = obj.optString("requestId", "")
             val tierStr = obj.getString("tier")
             val expiresAt = obj.optLong("expiresAt", 0L)
+            val productId = obj.optString("productId", "")
+            val packageName = obj.optString("packageName", "")
+            val catalogVersion = obj.optString("catalogVersion", "")
             val tier = com.securecall.app.billing.SubscriptionTier.fromName(tierStr)
             Log.d("WS_SERVICE", "SUBSCRIPTION_VERIFY_ACK: tier=$tierStr, expiresAt=$expiresAt")
 
             val ctx = applicationContext
             val manager = com.securecall.app.billing.SubscriptionManager(ctx)
-            manager.updateFromServerVerification(tier, expiresAt)
+            val accepted = success && manager.applyServerVerification(
+                requestId = requestId,
+                tier = tier,
+                expiresAt = expiresAt,
+                productId = productId,
+                packageName = packageName,
+                catalogVersion = catalogVersion
+            )
+            if (accepted) {
+                com.securecall.app.config.TierManager.applyTier(ctx)
+            } else {
+                manager.clearSubscription()
+                com.securecall.app.config.TierManager.applyTier(ctx)
+            }
         } catch (t: Throwable) {
             Log.e("WS_SERVICE", "handleSubscriptionVerifyAck() failed", t)
+            com.securecall.app.billing.SubscriptionManager(applicationContext).clearSubscription()
+            com.securecall.app.config.TierManager.applyTier(applicationContext)
         }
     }
 

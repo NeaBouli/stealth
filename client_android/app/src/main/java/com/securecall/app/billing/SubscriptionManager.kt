@@ -9,12 +9,13 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.util.concurrent.TimeUnit
+import java.util.UUID
 
 /**
- * Persists subscription state in SharedPreferences.
+ * Stores only server-authoritative Google Play subscription state.
  *
- * Stores: tier, purchaseToken, expiresAt, productId, lastVerifiedAt.
+ * A Play purchase is pending and grants no access until the signaling backend
+ * verifies the exact package, product, request and catalog version.
  */
 class SubscriptionManager(context: Context) {
 
@@ -25,6 +26,10 @@ class SubscriptionManager(context: Context) {
         private const val KEY_PURCHASE_TOKEN = "purchase_token"
         private const val KEY_EXPIRES_AT = "expires_at"
         private const val KEY_PRODUCT_ID = "product_id"
+        private const val KEY_PACKAGE_NAME = "package_name"
+        private const val KEY_CATALOG_VERSION = "catalog_version"
+        private const val KEY_VERIFIED = "server_verified"
+        private const val KEY_PENDING_REQUEST_ID = "pending_request_id"
         private const val KEY_LAST_VERIFIED_AT = "last_verified_at"
 
         private val verifyHttpClient: OkHttpClient by lazy {
@@ -34,122 +39,153 @@ class SubscriptionManager(context: Context) {
 
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val appPackageName = context.packageName
 
     fun getCurrentTier(): SubscriptionTier {
-        val name = prefs.getString(KEY_TIER, SubscriptionTier.FREE.name)
-            ?: SubscriptionTier.FREE.name
-        return SubscriptionTier.fromName(name)
+        val stored = SubscriptionTier.fromName(
+            prefs.getString(KEY_TIER, SubscriptionTier.FREE.name)
+                ?: SubscriptionTier.FREE.name
+        )
+        return if (stored == SubscriptionTier.FREE || isVerifiedEntitlementActive()) {
+            stored
+        } else {
+            SubscriptionTier.FREE
+        }
     }
 
-    fun getPurchaseToken(): String {
-        return prefs.getString(KEY_PURCHASE_TOKEN, "") ?: ""
-    }
+    fun getPurchaseToken(): String = prefs.getString(KEY_PURCHASE_TOKEN, "") ?: ""
 
-    fun getExpiresAt(): Long {
-        return prefs.getLong(KEY_EXPIRES_AT, 0L)
-    }
+    fun getExpiresAt(): Long = prefs.getLong(KEY_EXPIRES_AT, 0L)
 
-    fun getProductId(): String {
-        return prefs.getString(KEY_PRODUCT_ID, "") ?: ""
-    }
+    fun getProductId(): String = prefs.getString(KEY_PRODUCT_ID, "") ?: ""
 
-    fun getLastVerifiedAt(): Long {
-        return prefs.getLong(KEY_LAST_VERIFIED_AT, 0L)
-    }
+    fun getLastVerifiedAt(): Long = prefs.getLong(KEY_LAST_VERIFIED_AT, 0L)
 
-    fun updateSubscription(
-        tier: SubscriptionTier,
-        purchaseToken: String,
-        expiresAt: Long,
-        productId: String
-    ) {
-        prefs.edit()
-            .putString(KEY_TIER, tier.name)
+    fun recordPendingPurchase(purchaseToken: String, productId: String): String {
+        require(purchaseToken.isNotBlank()) { "purchase_token_required" }
+        require(productId.isNotBlank()) { "product_id_required" }
+        val requestId = UUID.randomUUID().toString()
+        val committed = prefs.edit()
+            .putString(KEY_TIER, SubscriptionTier.FREE.name)
             .putString(KEY_PURCHASE_TOKEN, purchaseToken)
-            .putLong(KEY_EXPIRES_AT, expiresAt)
+            .putLong(KEY_EXPIRES_AT, 0L)
             .putString(KEY_PRODUCT_ID, productId)
-            .putLong(KEY_LAST_VERIFIED_AT, System.currentTimeMillis())
-            .apply()
-        Log.d(TAG, "Subscription updated: tier=${tier.name}, productId=$productId")
+            .putString(KEY_PACKAGE_NAME, appPackageName)
+            .putString(KEY_CATALOG_VERSION, BuildConfig.PLAY_CATALOG_VERSION)
+            .putBoolean(KEY_VERIFIED, false)
+            .putString(KEY_PENDING_REQUEST_ID, requestId)
+            .putLong(KEY_LAST_VERIFIED_AT, 0L)
+            .commit()
+        check(committed) { "pending_purchase_persistence_failed" }
+        Log.d(TAG, "Purchase pending server verification: productId=" + productId)
+        return requestId
     }
 
-    fun updateFromServerVerification(tier: SubscriptionTier, expiresAt: Long) {
-        prefs.edit()
+    fun applyServerVerification(
+        requestId: String,
+        tier: SubscriptionTier,
+        expiresAt: Long,
+        productId: String,
+        packageName: String,
+        catalogVersion: String
+    ): Boolean {
+        val matchesPending = requestId.isNotBlank()
+            && requestId == prefs.getString(KEY_PENDING_REQUEST_ID, null)
+            && productId == getProductId()
+            && packageName == appPackageName
+            && packageName == prefs.getString(KEY_PACKAGE_NAME, null)
+            && catalogVersion == BuildConfig.PLAY_CATALOG_VERSION
+            && catalogVersion == prefs.getString(KEY_CATALOG_VERSION, null)
+        if (!matchesPending || tier == SubscriptionTier.FREE || expiresAt <= System.currentTimeMillis()) {
+            clearSubscription()
+            return false
+        }
+        val committed = prefs.edit()
             .putString(KEY_TIER, tier.name)
             .putLong(KEY_EXPIRES_AT, expiresAt)
+            .putBoolean(KEY_VERIFIED, true)
+            .remove(KEY_PENDING_REQUEST_ID)
             .putLong(KEY_LAST_VERIFIED_AT, System.currentTimeMillis())
-            .apply()
-        Log.d(TAG, "Server verification updated: tier=${tier.name}, expiresAt=$expiresAt")
+            .commit()
+        if (!committed) {
+            clearSubscription()
+            return false
+        }
+        Log.d(TAG, "Server verification accepted: tier=" + tier.name + ", productId=" + productId)
+        return true
     }
 
     fun clearSubscription() {
-        prefs.edit().clear().apply()
-        Log.d(TAG, "Subscription cleared — downgraded to FREE")
+        prefs.edit().clear().commit()
+        Log.d(TAG, "Subscription cleared - downgraded to FREE")
     }
 
     fun isSubscriptionActive(): Boolean {
         val tier = getCurrentTier()
-        if (tier == SubscriptionTier.FREE) return true // FREE is always active
-        val expiresAt = getExpiresAt()
-        return expiresAt == 0L || System.currentTimeMillis() < expiresAt
+        return tier != SubscriptionTier.FREE && isVerifiedEntitlementActive()
+    }
+
+    private fun isVerifiedEntitlementActive(): Boolean {
+        return prefs.getBoolean(KEY_VERIFIED, false)
+            && prefs.getString(KEY_PACKAGE_NAME, null) == appPackageName
+            && prefs.getString(KEY_CATALOG_VERSION, null) == BuildConfig.PLAY_CATALOG_VERSION
+            && getPurchaseToken().isNotBlank()
+            && getProductId().isNotBlank()
+            && getExpiresAt() > System.currentTimeMillis()
     }
 
     /**
-     * Fix CLIENT-CRIT-002 (2026-04-16): ask the signaling backend whether our
-     * subscription is still valid. Handles the case where the server cancels a
-     * subscription (chargeback, refund, manual cancel in Play Console) while
-     * the app was offline, so the client never received a push notification.
-     *
-     * Call on a background thread. On receiving `{valid: false}` we immediately
-     * downgrade local state to FREE so paid features stop working. On a network
-     * error the stored state is left alone (fail-open — better UX than
-     * kicking paying users out because their carrier dropped a packet).
+     * Revalidates paid access against the authoritative server.
+     * Any unavailable, malformed or mismatched response closes local access.
      */
     fun verifyAgainstServer(clientId: String) {
-        val currentTier = getCurrentTier()
-        if (currentTier == SubscriptionTier.FREE) {
-            // Nothing to verify — free tier always valid.
-            return
-        }
+        if (getCurrentTier() == SubscriptionTier.FREE) return
         val baseUrl = BuildConfig.SIGNAL_WS_URL
             .replace("wss://", "https://")
             .replace("ws://", "http://")
             .replace("/signal", "")
-        val url = "$baseUrl/subscription/status"
-        val purchaseToken = getPurchaseToken()
         val body = JSONObject().apply {
             put("clientId", clientId)
-            if (purchaseToken.isNotEmpty()) put("purchaseToken", purchaseToken)
+            put("purchaseToken", getPurchaseToken())
+            put("packageName", appPackageName)
+            put("catalogVersion", BuildConfig.PLAY_CATALOG_VERSION)
         }.toString()
 
         try {
             val request = Request.Builder()
-                .url(url)
+                .url(baseUrl + "/subscription/status")
                 .post(body.toRequestBody("application/json".toMediaType()))
                 .build()
-            val response = verifyHttpClient.newCall(request).execute()
-            val raw = response.body?.string()
-            response.close()
-            if (!response.isSuccessful || raw.isNullOrEmpty()) {
-                Log.w(TAG, "verifyAgainstServer: HTTP ${response.code} — keeping local state")
-                return
+            verifyHttpClient.newCall(request).execute().use { response ->
+                val raw = response.body?.string()
+                if (!response.isSuccessful || raw.isNullOrEmpty()) {
+                    Log.w(TAG, "Authoritative subscription status unavailable")
+                    clearSubscription()
+                    return
+                }
+                val json = JSONObject(raw)
+                val tier = SubscriptionTier.fromName(json.optString("tier"))
+                val accepted = json.optBoolean("valid", false)
+                    && tier != SubscriptionTier.FREE
+                    && json.optString("productId") == getProductId()
+                    && json.optString("packageName") == appPackageName
+                    && json.optString("catalogVersion") == BuildConfig.PLAY_CATALOG_VERSION
+                    && json.optLong("expiresAt", 0L) > System.currentTimeMillis()
+                if (!accepted) {
+                    clearSubscription()
+                    return
+                }
+                val committed = prefs.edit()
+                    .putString(KEY_TIER, tier.name)
+                    .putLong(KEY_EXPIRES_AT, json.getLong("expiresAt"))
+                    .putBoolean(KEY_VERIFIED, true)
+                    .putLong(KEY_LAST_VERIFIED_AT, System.currentTimeMillis())
+                    .commit()
+                if (!committed) clearSubscription()
             }
-            val json = JSONObject(raw)
-            val valid = json.optBoolean("valid", false)
-            prefs.edit().putLong(KEY_LAST_VERIFIED_AT, System.currentTimeMillis()).apply()
-            if (valid) {
-                val tierName = json.optString("tier", currentTier.name)
-                val expiresAt = json.optLong("expiresAt", getExpiresAt())
-                updateFromServerVerification(SubscriptionTier.fromName(tierName), expiresAt)
-            } else {
-                val reason = json.optString("reason", "unknown")
-                Log.w(TAG, "verifyAgainstServer: server says not valid (reason=$reason) — downgrading to FREE")
-                clearSubscription()
-            }
-        } catch (e: Exception) {
-            // Network / parse error — keep local state (fail-open).
-            Log.w(TAG, "verifyAgainstServer: network error: ${e.message}")
+        } catch (_: Exception) {
+            Log.w(TAG, "Authoritative subscription check failed")
+            clearSubscription()
         }
     }
-
 }

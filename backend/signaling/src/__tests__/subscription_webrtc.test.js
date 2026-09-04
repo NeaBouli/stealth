@@ -61,6 +61,7 @@ function buildCtx(overrides = {}) {
   const mockSubscriptions = {
     recordVerifiedSubscription: (_clientId, _token, _productId, tier, expiresAt) => ({ tier, expiresAt }),
     getSubscription: () => null,
+    expireSubscription: () => true,
   };
   const mockCustomIds = { resolve: () => null };
   const mockLicenses = { getStatus: () => ({}), getCurrentPrice: () => null };
@@ -99,7 +100,14 @@ function buildCtx(overrides = {}) {
     issueEntitlementToken: overrides.issueEntitlementToken || issueEntitlementToken,
     verifyEntitlementToken: overrides.verifyEntitlementToken || verifyEntitlementToken,
     entitlementOrderHash,
-    verifyPlaySubscription: () => ({ tier: "pro", expiresAt: 9999999999999 }),
+    verifyPlaySubscription: overrides.verifyPlaySubscription || (() => ({
+      tier: "pro",
+      expiresAt: 9999999999999,
+      catalogVersion: "securecall-play-v1",
+      needsAcknowledgement: true
+    })),
+    acknowledgePlaySubscription: overrides.acknowledgePlaySubscription || (() => true),
+    playBillingEnabled: overrides.playBillingEnabled ?? true,
   });
 }
 
@@ -108,6 +116,8 @@ function buildCtx(overrides = {}) {
 // ==========================================
 console.log("\n[Suite] SUBSCRIPTION_VERIFY handler");
 {
+  const requestId = "123e4567-e89b-12d3-a456-426614174000";
+  const catalogVersion = "securecall-play-v1";
   clearState();
   const ctx = buildCtx();
   const ws = mockWs();
@@ -115,27 +125,84 @@ console.log("\n[Suite] SUBSCRIPTION_VERIFY handler");
 
   // Not registered
   ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: null, ip: "1.1.1.1" });
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok", productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, {
+    requestId, purchaseToken: "tok", productId: "securecall_pro_monthly",
+    packageName: "com.securecall.app.free", catalogVersion
+  });
   assert(lastMsg(ws).error === "not_registered", "unregistered → not_registered");
 
   // Register
   ctx.clients.get(connId).clientId = "alice";
   ctx.clientIds.set("alice", connId);
 
+  const disabledCtx = buildCtx({ playBillingEnabled: false });
+  const disabledWs = mockWs();
+  disabledCtx.clients.set(connId, {
+    ws: disabledWs, lastSeen: Date.now(), clientId: "alice", ip: "1.1.1.1"
+  });
+  disabledCtx.clientIds.set("alice", connId);
+  disabledCtx.handlers.SUBSCRIPTION_VERIFY(disabledWs, connId, {
+    requestId, purchaseToken: "tok", productId: "securecall_pro_monthly",
+    packageName: "com.securecall.app.free", catalogVersion
+  });
+  assert(lastMsg(disabledWs).error === "play_billing_disabled", "closed backend gate rejects old clients");
+
   // Missing purchaseToken
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
-  assert(lastMsg(ws).type === "ERROR", "missing purchaseToken → ERROR");
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, {
+    requestId, productId: "securecall_pro_monthly",
+    packageName: "com.securecall.app.free", catalogVersion
+  });
+  assert(lastMsg(ws).success === false, "missing purchaseToken fails closed");
 
   // Missing productId
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok", packageName: "com.securecall.app.free" });
-  assert(lastMsg(ws).type === "ERROR", "missing productId → ERROR");
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, {
+    requestId, purchaseToken: "tok", packageName: "com.securecall.app.free", catalogVersion
+  });
+  assert(lastMsg(ws).success === false, "missing productId fails closed");
 
   // Valid → mock returns tier=pro
-  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, { purchaseToken: "tok123", productId: "securecall_pro_monthly", packageName: "com.securecall.app.free" });
+  ctx.handlers.SUBSCRIPTION_VERIFY(ws, connId, {
+    requestId, purchaseToken: "tok123", productId: "securecall_pro_monthly",
+    packageName: "com.securecall.app.free", catalogVersion
+  });
   const ack = lastMsg(ws);
   assert(ack.type === "SUBSCRIPTION_VERIFY_ACK", "valid → SUBSCRIPTION_VERIFY_ACK");
+  assert(ack.success === true, "valid verification is explicitly successful");
+  assert(ack.requestId === requestId, "request binding is echoed");
+  assert(ack.catalogVersion === catalogVersion, "catalog version is bound");
   assert(ack.tier === "pro", "tier from mock subscription service");
   assert(ack.expiresAt === 9999999999999, "expiresAt forwarded");
+
+  const mismatchCtx = buildCtx({
+    verifyPlaySubscription: () => ({
+      tier: "pro",
+      expiresAt: 9999999999999,
+      catalogVersion: "unexpected-catalog",
+      needsAcknowledgement: true
+    })
+  });
+  const mismatchWs = mockWs();
+  mismatchCtx.clients.set(connId, { ws: mismatchWs, lastSeen: Date.now(), clientId: "alice", ip: "1.1.1.1" });
+  mismatchCtx.clientIds.set("alice", connId);
+  mismatchCtx.handlers.SUBSCRIPTION_VERIFY(mismatchWs, connId, {
+    requestId, purchaseToken: "tok123", productId: "securecall_pro_monthly",
+    packageName: "com.securecall.app.free", catalogVersion
+  });
+  assert(lastMsg(mismatchWs).success === false, "catalog mismatch fails closed");
+
+  const acknowledgementCtx = buildCtx({
+    acknowledgePlaySubscription: () => { throw new Error("acknowledgement_failed"); }
+  });
+  const acknowledgementWs = mockWs();
+  acknowledgementCtx.clients.set(connId, {
+    ws: acknowledgementWs, lastSeen: Date.now(), clientId: "alice", ip: "1.1.1.1"
+  });
+  acknowledgementCtx.clientIds.set("alice", connId);
+  acknowledgementCtx.handlers.SUBSCRIPTION_VERIFY(acknowledgementWs, connId, {
+    requestId, purchaseToken: "tok123", productId: "securecall_pro_monthly",
+    packageName: "com.securecall.app.free", catalogVersion
+  });
+  assert(lastMsg(acknowledgementWs).success === false, "acknowledgement failure denies entitlement");
 }
 
 // ==========================================

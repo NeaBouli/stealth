@@ -113,7 +113,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 "PRO" -> { isVisible = true; title = "Upgrade to Premium" }
                 else -> { isVisible = true; title = "Buy Pro / Premium" }
             }
-            summary = "Open checkout and activation-code options"
+            summary = "View purchase options on the SecureCall website"
             setOnPreferenceClickListener {
                 openUrl("https://stealthx.tech/#pricing")
                 true
@@ -580,6 +580,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val isUpgraded = effectiveTier != "FREE"
         val codePref = findPreference<EditTextPreference>("pref_activation_code")
         val activateButton = findPreference<Preference>("pref_activate_button")
+        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) {
+            codePref?.isVisible = false
+            activateButton?.isVisible = false
+            return
+        }
 
         if (isUpgraded) {
             // Already Pro/Premium — hide input, show status
@@ -616,6 +621,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun submitActivationCode(code: String) {
+        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) return
         val ctx = requireContext()
         val ws = com.securecall.app.net.WebSocketService.instance
         if (ws == null || !ws.isConnected) {

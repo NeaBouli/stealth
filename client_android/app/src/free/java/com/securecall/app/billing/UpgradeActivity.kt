@@ -11,8 +11,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.android.billingclient.api.ProductDetails
 import com.securecall.app.BuildConfig
 import com.securecall.app.R
-import com.securecall.app.config.FeatureProviderRegistry
-import com.securecall.app.config.RuntimeFeatureProvider
 import com.securecall.app.net.WebSocketService
 import com.securecall.app.ui.EdgeToEdgeHelper
 
@@ -66,52 +64,64 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         updateCurrentTierDisplay()
         updateLifetimePricing()
 
-        // Sideload/ADB installs: hide IAP buttons and direct users to activation codes.
+        // Purchases remain closed until product and finance readiness approve the same offer version.
         val isPlayStore = com.securecall.app.update.UpdateManager.getUpdateUrl(this).contains("market://")
-        if (!isPlayStore) {
-            Log.d(TAG, "Non-Play-Store install — hiding IAP subscription buttons")
-            findViewById<Button>(R.id.btnProMonthly).visibility = android.view.View.GONE
-            findViewById<Button>(R.id.btnPremiumMonthly).visibility = android.view.View.GONE
-            findViewById<Button>(R.id.btnActivationCode).visibility = android.view.View.GONE
-            findViewById<Button>(R.id.btnRestore).visibility = android.view.View.GONE
-            // Show sideload hint
-            tvStatus.text = "Sideload install — upgrade via Activation Code in Settings"
+        val billingAvailable = BuildConfig.BILLING_ENABLED && isPlayStore
+        if (!billingAvailable) {
+            Log.d(TAG, "Billing gate closed — hiding purchase and restore controls")
+            listOf(
+                R.id.btnProMonthly,
+                R.id.btnProYearly,
+                R.id.btnPremiumMonthly,
+                R.id.btnPremiumYearly,
+                R.id.btnActivationCode,
+                R.id.btnRestore,
+                R.id.btnProLifetime,
+                R.id.btnPremiumLifetime
+            ).forEach { findViewById<Button>(it).visibility = android.view.View.GONE }
+            tvStatus.text = "Purchases are currently unavailable"
         }
 
         billingManager = BillingManager(this, this)
-        if (isPlayStore) billingManager.init()
+        if (billingAvailable) billingManager.init()
 
         // Lifetime buttons
         btnProLifetime.setOnClickListener {
-            if (!isPlayStore) { showSideloadHint(); return@setOnClickListener }
+            if (!billingAvailable) return@setOnClickListener
             launchPurchase(BuildConfig.SKU_PRO_LIFETIME)
         }
         btnPremiumLifetime.setOnClickListener {
-            if (!isPlayStore) { showSideloadHint(); return@setOnClickListener }
+            if (!billingAvailable) return@setOnClickListener
             launchPurchase(BuildConfig.SKU_PREMIUM_LIFETIME)
         }
 
         // Activation Code purchase button (Play Store only)
         findViewById<Button>(R.id.btnActivationCode).setOnClickListener {
+            if (!billingAvailable) return@setOnClickListener
             launchPurchase(BuildConfig.SKU_PREMIUM_ACTIVATION_CODE)
         }
 
         // Subscription buttons (Play Store only)
         findViewById<Button>(R.id.btnProMonthly).setOnClickListener {
+            if (!billingAvailable) return@setOnClickListener
             launchPurchase(BuildConfig.SKU_PRO_MONTHLY)
         }
         findViewById<Button>(R.id.btnProYearly).setOnClickListener {
+            if (!billingAvailable) return@setOnClickListener
             launchPurchase(BuildConfig.SKU_PRO_YEARLY)
         }
         findViewById<Button>(R.id.btnPremiumMonthly).setOnClickListener {
+            if (!billingAvailable) return@setOnClickListener
             launchPurchase(BuildConfig.SKU_PREMIUM_MONTHLY)
         }
         findViewById<Button>(R.id.btnPremiumYearly).setOnClickListener {
+            if (!billingAvailable) return@setOnClickListener
             launchPurchase(BuildConfig.SKU_PREMIUM_YEARLY)
         }
 
         // Restore (Play Store only)
         findViewById<Button>(R.id.btnRestore).setOnClickListener {
+            if (!billingAvailable) return@setOnClickListener
             tvStatus.text = "Restoring purchases..."
             billingManager.destroy()
             billingManager = BillingManager(this, this)
@@ -137,10 +147,6 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         btnPremiumLifetime.text = "Buy PREMIUM Lifetime — ${PricingCalculator.formatPrice(premiumPrice)}"
         tvPremiumNextPrice.text = "Next buyer pays: ${PricingCalculator.formatPrice(premiumNextPrice)}"
         progressPremiumSold.progress = premiumSold
-    }
-
-    private fun showSideloadHint() {
-        Toast.makeText(this, "Go to Settings → Activation Code to upgrade", Toast.LENGTH_LONG).show()
     }
 
     private fun launchPurchase(sku: String) {
@@ -189,7 +195,12 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         runOnUiThread {
             // Check if this is an activation code purchase
             val lastProduct = billingManager.getLastPurchasedProductId()
-            if (lastProduct == BuildConfig.SKU_PREMIUM_ACTIVATION_CODE) {
+            if (lastProduct in setOf(
+                    BuildConfig.SKU_PRO_LIFETIME,
+                    BuildConfig.SKU_PREMIUM_LIFETIME,
+                    BuildConfig.SKU_PREMIUM_ACTIVATION_CODE
+                )
+            ) {
                 // Launch PurchaseResultActivity to show generated code
                 val intent = Intent(this, PurchaseResultActivity::class.java).apply {
                     putExtra(PurchaseResultActivity.EXTRA_PURCHASE_TOKEN, token)
@@ -197,25 +208,24 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
                     putExtra(PurchaseResultActivity.EXTRA_PACKAGE_NAME, packageName)
                 }
                 startActivity(intent)
-                tvStatus.text = "Activation code purchased!"
+                tvStatus.text = "Purchase pending server verification"
                 return@runOnUiThread
             }
 
-            // Normal upgrade flow
-            subscriptionManager.updateSubscription(
-                tier = tier,
-                purchaseToken = token,
-                expiresAt = 0L,
-                productId = lastProduct ?: ""
-            )
-
-            FeatureProviderRegistry.set(RuntimeFeatureProvider(this))
-
-            sendVerificationToBackend(token)
-
+            val productId = lastProduct.orEmpty()
+            val requestId = runCatching {
+                subscriptionManager.recordPendingPurchase(token, productId)
+            }.getOrElse {
+                subscriptionManager.clearSubscription()
+                com.securecall.app.config.TierManager.applyTier(this)
+                tvStatus.text = "Unable to verify purchase"
+                return@runOnUiThread
+            }
+            com.securecall.app.config.TierManager.applyTier(this)
+            sendVerificationToBackend(token, productId, requestId)
             updateCurrentTierDisplay()
-            tvStatus.text = "Upgraded to ${tier.displayName}!"
-            Toast.makeText(this, "Upgraded to ${tier.displayName}!", Toast.LENGTH_LONG).show()
+            tvStatus.text = tier.displayName + " purchase pending server verification"
+            Toast.makeText(this, "Verifying purchase securely...", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -232,16 +242,26 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         }
     }
 
-    private fun sendVerificationToBackend(purchaseToken: String) {
-        val ws = WebSocketService.instance ?: return
-        val productId = subscriptionManager.getProductId()
-        val json = """
-            {
-              "type": "SUBSCRIPTION_VERIFY",
-              "purchaseToken": "$purchaseToken",
-              "productId": "$productId"
-            }
-        """.trimIndent()
+    private fun sendVerificationToBackend(
+        purchaseToken: String,
+        productId: String,
+        requestId: String
+    ) {
+        val ws = WebSocketService.instance
+        if (ws == null || !ws.isConnected) {
+            subscriptionManager.clearSubscription()
+            com.securecall.app.config.TierManager.applyTier(this)
+            tvStatus.text = "Verification unavailable"
+            return
+        }
+        val json = org.json.JSONObject().apply {
+            put("type", "SUBSCRIPTION_VERIFY")
+            put("requestId", requestId)
+            put("purchaseToken", purchaseToken)
+            put("productId", productId)
+            put("packageName", packageName)
+            put("catalogVersion", BuildConfig.PLAY_CATALOG_VERSION)
+        }.toString()
         ws.sendMessage(json)
         Log.d(TAG, "SUBSCRIPTION_VERIFY sent to backend")
     }
