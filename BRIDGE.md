@@ -6005,3 +6005,29 @@ Open next:
   Pages deployment and live verification wait on merge.
 
 `PR 75 TECHNICALLY GREEN / INDEPENDENT REVIEW REQUIRED`
+
+## 2026-09-04 20:16 EEST — CODEX SOL — PRODUCT ENTITLEMENT HARDENING READY FOR REVIEW
+
+- Hardened the Android and signaling entitlement lifecycle fail-closed: exact request,
+  package, product, catalogue and token binding; durable purchase persistence before
+  acknowledgement; runtime downgrade; RTDN refund/revoke/retry handling; and rollback
+  on persistence failure.
+- Added an independent backend default-closed gate. New and legacy clients receive
+  `play_billing_disabled` unless `PLAY_BILLING_ENABLED=true`; RTDN remains available
+  for historical revocations. Android purchase and activation controls remain disabled.
+- Full signaling `npm test` PASS (handler 47/47; subscription/WebRTC 77/77; billing,
+  RTDN, persistence, Stripe/custom-ID and VLABS fulfillment suites included).
+- Android CI-equivalent matrix PASS: Free/Premium unit tests, Premium compile,
+  Pro/Premium VPN policy/runtime checks, Free release lint, no-app-wallet/IFR guard,
+  billing-closed guard, Free debug/release APK and AAB (177 tasks).
+- S7 physical smoke PASS on installed SecureCall Free 1.0.48 / code 78015 / API 36:
+  activity started and remained resumed, process alive, no app Fatal/ANR. The newer
+  78017 candidate is CI-signed only because the existing release-keystore password is
+  not available in the local signing configuration; it was not installed or published.
+- Only S7 was attached. Two-device calls, S10/S4 coverage, Play license-tester
+  purchase/restore/refund/RTDN and live payment flows remain external gates. No product
+  is PRODUCT_READY or FINANCE_READY; all commerce stays disabled.
+- Kimi K3 review was requested but unavailable due its weekly quota (HTTP 403). Sol
+  performed the complete review and test chain. No secrets or production values changed.
+
+`LOCAL CODE/TEST GATES PASS / SINGLE-DEVICE SMOKE PASS / REVIEW AND EXTERNAL E2E GATES OPEN`
