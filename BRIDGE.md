@@ -1,5 +1,23 @@
 # BRIDGE — stealth
 
+## 2026-09-07 — Signaling startup regression fixed locally
+
+- A missing local store-loader import caused the signaling process to exit
+  before opening its HTTP port. The import is restored and a process-level
+  startup regression now requires an isolated `/health` response before the
+  signaling test suite can pass.
+- This source correction contains no endpoint, account, credential, customer,
+  provider, invoice or runtime value. It does not enable Checkout, entitlement,
+  payments or any product.
+- Verification: clean dependency install; full signaling `npm test` PASS; the
+  process-level startup test PASS in three additional consecutive runs; Node
+  syntax checks and Diff-Check PASS. `npm audit --omit=dev` still reports three
+  pre-existing moderate findings in the Express dependency chain; no dependency
+  was changed in this bounded startup fix.
+- Independent read-only analysis identified the defect; Codex Sol owns diff
+  review, full verification and any later deployment decision. No Railway,
+  Stripe or Production change was performed by this patch.
+
 ## 2026-09-06 — Private operator runtime-health handoff
 
 - The private VLABS payment operator detected that the existing SecureCall

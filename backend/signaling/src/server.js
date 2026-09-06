@@ -63,6 +63,7 @@ const {
   saveActivationCodes,
   revokeActivationCode,
 } = require("./services/activation_store");
+const { loadWalletMappings } = require("./services/wallet_store");
 const { setupActivationAdminRoutes } = require("./services/activation_admin");
 const { getClientIp }                                               = require("./middleware/ip");
 const { verifyIfrHolding }                                          = require("./services/ifr");
