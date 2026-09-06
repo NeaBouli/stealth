@@ -6061,3 +6061,19 @@ Open next:
   performed the complete review and test chain. No secrets or production values changed.
 
 `LOCAL CODE/TEST GATES PASS / SINGLE-DEVICE SMOKE PASS / REVIEW AND EXTERNAL E2E GATES OPEN`
+
+## 2026-09-07 — CODEX SOL — STARTUP REGRESSION REVIEW FOLLOW-UP
+
+- The process-level signaling startup test now binds to an operating-system-assigned
+  port, reads the actual bound port from the controlled startup message and keeps all
+  wallet/store fixtures inside its temporary data directory.
+- Child spawn errors and signal exits fail immediately; teardown retains bounded
+  termination and recursive temporary-directory cleanup.
+- Verification PASS: complete signaling `npm test`, five additional consecutive
+  startup-test runs, Node syntax checks and `git diff --check`.
+- Kimi K3 independently reviewed the bounded startup diff and returned APPROVE with
+  no blocking finding. The hosted pull request remains subject to the repository's
+  independent-review protection; no bypass, deployment, payment or product activation
+  was performed.
+
+`STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`

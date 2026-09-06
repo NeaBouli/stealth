@@ -3,26 +3,11 @@
 const assert = require("assert");
 const fs = require("fs");
 const http = require("http");
-const net = require("net");
 const os = require("os");
 const path = require("path");
 const { spawn } = require("child_process");
 
 const SIGNALING_ROOT = path.resolve(__dirname, "../..");
-
-function allocatePort() {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      server.close((error) => {
-        if (error) reject(error);
-        else resolve(address.port);
-      });
-    });
-  });
-}
 
 function getHealth(port) {
   return new Promise((resolve, reject) => {
@@ -42,14 +27,35 @@ function getHealth(port) {
   });
 }
 
-async function waitForHealth(child, port, output) {
+function assertChildRunning(child, output, lifecycle, phase) {
+  if (lifecycle.error) {
+    throw new Error(`signaling server failed to spawn during ${phase}: ${lifecycle.error.message}\n${output.value}`);
+  }
+  if (child.exitCode !== null || child.signalCode !== null) {
+    const result = child.exitCode !== null ? child.exitCode : child.signalCode;
+    throw new Error(`signaling server exited before ${phase} (${result})\n${output.value}`);
+  }
+}
+
+async function waitForListeningPort(child, output, lifecycle) {
+  const deadline = Date.now() + 10000;
+
+  while (Date.now() < deadline) {
+    const match = output.value.match(/Server running on port (\d+)/);
+    if (match) return Number(match[1]);
+    assertChildRunning(child, output, lifecycle, "listening");
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+
+  throw new Error(`signaling server did not report its listening port\n${output.value}`);
+}
+
+async function waitForHealth(child, port, output, lifecycle) {
   const deadline = Date.now() + 10000;
   let lastError;
 
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      throw new Error(`signaling server exited before health check (${child.exitCode})\n${output.value}`);
-    }
+    assertChildRunning(child, output, lifecycle, "health check");
     try {
       return await getHealth(port);
     } catch (error) {
@@ -62,7 +68,7 @@ async function waitForHealth(child, port, output) {
 }
 
 async function stopChild(child) {
-  if (child.exitCode !== null) return;
+  if (!child.pid || child.exitCode !== null || child.signalCode !== null) return;
 
   const exited = new Promise((resolve) => child.once("exit", resolve));
   child.kill("SIGTERM");
@@ -71,23 +77,25 @@ async function stopChild(child) {
     new Promise((resolve) => setTimeout(() => resolve(false), 3000)),
   ]);
   if (!stopped && child.exitCode === null) {
-    child.kill("SIGKILL");
-    await exited;
+    if (child.kill("SIGKILL")) await exited;
   }
 }
 
 (async () => {
-  const port = await allocatePort();
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "securecall-startup-"));
+  const walletsFile = path.join(dataDir, "wallets.json");
+  fs.writeFileSync(walletsFile, JSON.stringify({ wallets: [] }));
   const output = { value: "" };
+  const lifecycle = { error: null };
   const child = spawn(process.execPath, ["src/server.js"], {
     cwd: SIGNALING_ROOT,
     env: {
       HOME: process.env.HOME || "",
       PATH: process.env.PATH || "",
       NODE_ENV: "test",
-      PORT: String(port),
+      PORT: "0",
       DATA_DIR: dataDir,
+      WALLETS_FILE: walletsFile,
       GOOGLE_PLAY_BILLING_ENABLED: "false",
       GOOGLE_PLAY_RTDN_ENABLED: "false",
       LEGACY_STRIPE_CHECKOUT_ENABLED: "false",
@@ -95,11 +103,13 @@ async function stopChild(child) {
     stdio: ["ignore", "pipe", "pipe"],
   });
 
+  child.once("error", (error) => { lifecycle.error = error; });
   child.stdout.on("data", (chunk) => { output.value += chunk.toString(); });
   child.stderr.on("data", (chunk) => { output.value += chunk.toString(); });
 
   try {
-    const response = await waitForHealth(child, port, output);
+    const port = await waitForListeningPort(child, output, lifecycle);
+    const response = await waitForHealth(child, port, output, lifecycle);
     assert.strictEqual(response.statusCode, 200, output.value);
     assert.strictEqual(JSON.parse(response.body).status, "ok", output.value);
     assert.match(output.value, /Server running on port/, output.value);
