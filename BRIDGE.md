@@ -1,5 +1,17 @@
 # BRIDGE — stealth
 
+## 2026-09-06 — Private operator runtime-health handoff
+
+- The private VLABS payment operator detected that the existing SecureCall
+  Test runtime is not currently returning an application response. Ownership,
+  diagnostics and remediation details remain only in the private VLABS Bridge.
+- Do not change Stripe destinations, Railway configuration or payment code
+  from this public notice. Keep every SecureCall/StealthX sales and entitlement
+  gate closed until the private operator records a recovered synthetic signed
+  test and an exact product-specific finance decision.
+- No endpoint, account, credential, customer, provider, invoice or runtime
+  value is published here. No payment, deployment or activation was performed.
+
 ## 2026-09-04 — Private VLABS finance handoff refreshed
 
 - This public repository contains no finance details. The current payment,
