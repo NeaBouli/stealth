@@ -63,6 +63,7 @@ const {
   saveActivationCodes,
   revokeActivationCode,
 } = require("./services/activation_store");
+const { loadWalletMappings } = require("./services/wallet_store");
 const { setupActivationAdminRoutes } = require("./services/activation_admin");
 const { getClientIp }                                               = require("./middleware/ip");
 const { verifyIfrHolding }                                          = require("./services/ifr");
@@ -985,9 +986,11 @@ wireWs(wss, ctx);
 // --- Start Server ---
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`[SIGNAL] Server running on port ${PORT}`);
-  console.log(`[SIGNAL] WebSocket endpoint: ws://0.0.0.0:${PORT}/signal`);
-  console.log(`[SIGNAL] Health check: http://0.0.0.0:${PORT}/health`);
+  const address = server.address();
+  const listeningPort = address && typeof address === "object" ? address.port : PORT;
+  console.log(`[SIGNAL] Server running on port ${listeningPort}`);
+  console.log(`[SIGNAL] WebSocket endpoint: ws://0.0.0.0:${listeningPort}/signal`);
+  console.log(`[SIGNAL] Health check: http://0.0.0.0:${listeningPort}/health`);
 });
 
 // --- Graceful Shutdown ---

@@ -13,6 +13,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.SwitchPreferenceCompat
 import com.securecall.app.R
+import com.securecall.app.config.TierManager
 import com.securecall.app.ui.SettingsFragment
 
 object VpnFeature {
@@ -54,6 +55,10 @@ object VpnFeature {
                     fragment.view?.postDelayed({ refresh(fragment) }, 250)
                     return@setOnPreferenceChangeListener true
                 }
+                if (!TierManager.isPremium(context)) {
+                    Toast.makeText(context, R.string.premium_vpn_license_required, Toast.LENGTH_LONG).show()
+                    return@setOnPreferenceChangeListener false
+                }
                 if (!VpnConfigStore.hasConfig(context)) {
                     Toast.makeText(context, R.string.premium_vpn_config_required, Toast.LENGTH_LONG).show()
                     return@setOnPreferenceChangeListener false
@@ -91,8 +96,17 @@ object VpnFeature {
     fun refresh(fragment: SettingsFragment) {
         if (!fragment.isAdded) return
         val context = fragment.requireContext()
-        fragment.findPreference<SwitchPreferenceCompat>(KEY_ENABLED)?.isChecked =
-            VpnConfigStore.isEnabled(context)
+        val licensed = TierManager.isPremium(context)
+        val enabled = VpnConfigStore.isEnabled(context)
+        fragment.findPreference<SwitchPreferenceCompat>(KEY_ENABLED)?.apply {
+            isChecked = enabled
+            isEnabled = licensed || enabled
+            summary = context.getString(when {
+                licensed -> R.string.premium_vpn_enabled_summary
+                enabled -> R.string.premium_vpn_license_recheck
+                else -> R.string.premium_vpn_license_required
+            })
+        }
         fragment.findPreference<Preference>(KEY_STATUS)?.summary = when (PremiumVpnState.status) {
             PremiumVpnState.Status.OFF -> context.getString(R.string.premium_vpn_status_off)
             PremiumVpnState.Status.CONNECTING -> context.getString(R.string.premium_vpn_status_connecting)
