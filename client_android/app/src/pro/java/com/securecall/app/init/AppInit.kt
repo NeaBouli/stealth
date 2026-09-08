@@ -3,18 +3,17 @@ package com.securecall.app.init
 import android.content.Context
 import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.securecall.app.config.CompileTimeFeatureProvider
 import com.securecall.app.config.FeatureProviderRegistry
 
 /**
  * PRO-flavor initialization.
- * Sets up CompileTimeFeatureProvider, configures Crashlytics.
+ * Applies verified access and configures Crashlytics.
  */
 object AppInit {
     private const val TAG = "AppInit"
 
     fun init(context: Context) {
-        FeatureProviderRegistry.set(CompileTimeFeatureProvider())
+        com.securecall.app.config.TierManager.applyTier(context)
 
         // Phase 8: Crashlytics — disabled for PRO (TELEMETRY_ENABLED=false)
         // Keep startup resilient if Firebase initialization is temporarily unavailable.
