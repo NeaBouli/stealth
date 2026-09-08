@@ -92,7 +92,7 @@ class SubscriptionManagerTest {
         securePrefs.edit().putString("activated_tier", "premium").commit()
         TierManager.applyTier(context)
 
-        val buildTier = BuildConfig.FLAVOR.uppercase()
+        val buildTier = "FREE"
         assertEquals(buildTier, TierManager.getCurrentTier(context))
         assertEquals(buildTier, FeatureProviderRegistry.get().tier)
         assertFalse(securePrefs.contains("activated_tier"))
@@ -110,13 +110,97 @@ class SubscriptionManagerTest {
             catalogVersion = "securecall-play-v1"
         ))
         TierManager.applyTier(context)
-        val buildTier = BuildConfig.FLAVOR.uppercase()
-        val paidTier = if (buildTier == "PREMIUM") "PREMIUM" else "PRO"
+        val buildTier = "FREE"
+        val paidTier = if (BuildConfig.FLAVOR == "free") "PRO" else "FREE"
         assertEquals(paidTier, FeatureProviderRegistry.get().tier)
 
         manager.clearSubscription()
         TierManager.applyTier(context)
         assertEquals(buildTier, FeatureProviderRegistry.get().tier)
+    }
+
+    @Test
+    fun directProofPersistsRestoresExpiresAndRevokes() {
+        val fixture = DirectFixture()
+        val store = fixture.store()
+        assertEquals("FREE", store.currentTier())
+        assertTrue(store.accept(fixture.token))
+        assertEquals("PRO", fixture.store().currentTier())
+        fixture.now += 3600
+        assertEquals("FREE", fixture.store().currentTier())
+        assertEquals(fixture.token, store.tokenForRefresh())
+        assertTrue(store.revoke())
+        assertEquals(null, fixture.store().tokenForRefresh())
+        assertEquals("FREE", fixture.store().currentTier())
+    }
+
+    @Test
+    fun directProofRejectsIdentityDriftAndClockRollback() {
+        val fixture = DirectFixture()
+        assertTrue(fixture.store().accept(fixture.token))
+        fixture.subject = "other-device"
+        assertEquals("FREE", fixture.store().currentTier())
+        fixture.subject = "test-device"
+        fixture.now -= 301
+        assertEquals("FREE", fixture.store().currentTier())
+    }
+
+    @Test
+    fun directProofCannotGrantPlayOrDifferentDirectPlan() {
+        val fixture = DirectFixture()
+        assertFalse(fixture.store("free").accept(fixture.token))
+        assertFalse(fixture.store("premium").accept(fixture.token))
+        assertEquals("FREE", fixture.store("premium").currentTier())
+    }
+
+    @Test
+    fun invalidReplacementPreservesPreviouslyVerifiedProof() {
+        val fixture = DirectFixture()
+        val store = fixture.store()
+        assertTrue(store.accept(fixture.token))
+        assertFalse(store.accept("invalid.replacement"))
+        assertEquals("PRO", store.currentTier())
+        assertEquals(fixture.token, store.tokenForRefresh())
+    }
+
+    @Test
+    fun repeatedAcceptanceCannotMoveVerificationClockBackward() {
+        val fixture = DirectFixture()
+        fixture.now += 3000
+        val store = fixture.store()
+        assertTrue(store.accept(fixture.token))
+        val verifiedTime = fixture.now
+        fixture.now -= 200
+        assertTrue(store.accept(fixture.token))
+        assertEquals(verifiedTime, fixture.prefs.getLong("last_verified_time", 0))
+        fixture.now -= 200
+        assertFalse(store.accept(fixture.token))
+        assertEquals("FREE", store.currentTier())
+    }
+
+    private class DirectFixture {
+        val prefs = MemoryPreferences()
+        var now = 1700000000L
+        var subject = "test-device"
+        val keys = java.security.KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
+        val encoder = java.util.Base64.getUrlEncoder().withoutPadding()
+        val release = "securecall-android-1.0.50-vc78017-api36"
+        val token: String
+
+        init {
+            val payload = listOf("v=2", "iss=stealthx", "aud=securecall", "sub=$subject", "tier=PRO",
+                "product=vlabs_securecall_pro_lifetime", "iat=$now", "exp=${now + 3600}",
+                "order=${"a".repeat(32)}", "catalog=stealthx-lifetime-v1",
+                "offer=securecall-pro-eur-1500-lifetime-v1", "release=$release").joinToString("\n")
+            val encoded = encoder.encodeToString(payload.toByteArray(Charsets.US_ASCII))
+            val signer = java.security.Signature.getInstance("Ed25519")
+            signer.initSign(keys.private)
+            signer.update(encoded.toByteArray(Charsets.US_ASCII))
+            token = "$encoded.${encoder.encodeToString(signer.sign())}"
+        }
+
+        fun store(flavor: String = "pro") = DirectEntitlementStore(prefs, { subject },
+            encoder.encodeToString(keys.public.encoded.takeLast(32).toByteArray()), flavor, release, { now })
     }
 
     private class MemoryPreferences : SharedPreferences {

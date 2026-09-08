@@ -3,12 +3,12 @@ package com.securecall.app.config
 import android.content.Context
 import android.util.Log
 import com.securecall.app.billing.SubscriptionManager
+import com.securecall.app.billing.DirectEntitlementStore
 
 /**
  * Manages the effective tier for the app.
- * Checks build flavor and server-verified subscription state. Legacy activation
- * state is ignored and removed when activation-code support is disabled.
- * Returns the highest tier available.
+ * Direct builds require a signed license. Play builds use their server-verified
+ * subscription. Build flavors and legacy activation strings are not proof.
  */
 object TierManager {
     private const val TAG = "TierManager"
@@ -18,24 +18,21 @@ object TierManager {
     private val TIER_RANK = mapOf("free" to 0, "pro" to 1, "premium" to 2)
 
     fun getCurrentTier(context: Context): String {
-        val buildTier = com.securecall.app.BuildConfig.FLAVOR.lowercase()
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val activatedTier = if (com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) {
-            prefs.getString(KEY_ACTIVATED_TIER, null)?.lowercase() ?: ""
-        } else {
-            if (prefs.contains(KEY_ACTIVATED_TIER)) {
-                prefs.edit().remove(KEY_ACTIVATED_TIER).commit()
-            }
-            ""
+        if (prefs.contains(KEY_ACTIVATED_TIER)) {
+            prefs.edit().remove(KEY_ACTIVATED_TIER).commit()
         }
-        val subscriptionTier = try {
+        val verifiedTier = try {
+            if (com.securecall.app.BuildConfig.FLAVOR != "free") {
+                return DirectEntitlementStore(context.applicationContext).currentTier()
+            }
             SubscriptionManager(context.applicationContext).getCurrentTier().name.lowercase()
         } catch (t: Throwable) {
             Log.w(TAG, "Unable to read subscription tier: ${t.message}")
             ""
         }
 
-        val effective = listOf(buildTier, subscriptionTier, activatedTier)
+        val effective = listOf(verifiedTier)
             .filter { it in TIER_RANK }
             .maxByOrNull { TIER_RANK[it] ?: 0 }
             ?: "free"
@@ -45,20 +42,6 @@ object TierManager {
     fun isFreeTier(context: Context): Boolean = getCurrentTier(context) == "FREE"
     fun isProOrHigher(context: Context): Boolean = getCurrentTier(context) in listOf("PRO", "PREMIUM")
     fun isPremium(context: Context): Boolean = getCurrentTier(context) == "PREMIUM"
-
-    fun setActivatedTier(context: Context, tier: String) {
-        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .edit().remove(KEY_ACTIVATED_TIER).commit()
-            Log.w(TAG, "Ignoring activation tier because activation codes are disabled")
-            return
-        }
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putString(KEY_ACTIVATED_TIER, tier.lowercase()).apply()
-        Log.d(TAG, "Activated tier set to: $tier")
-        // Update FeatureProviderRegistry with new tier's features
-        applyTier(context)
-    }
 
     /**
      * Apply the current effective tier to the FeatureProviderRegistry.
@@ -71,25 +54,25 @@ object TierManager {
         })")
         // Always replace the provider so a revoked or expired entitlement takes
         // effect immediately instead of surviving in process memory.
-        FeatureProviderRegistry.set(EffectiveTierFeatureProvider(tier))
+        FeatureProviderRegistry.set(EffectiveTierFeatureProvider(context.applicationContext))
     }
 
     /**
      * FeatureProvider for the current build or verified runtime tier.
      */
-    private class EffectiveTierFeatureProvider(private val activatedTier: String) : FeatureProvider {
-        private val isPro get() = activatedTier == "PRO" || activatedTier == "PREMIUM"
-        private val isPremium get() = activatedTier == "PREMIUM"
+    private class EffectiveTierFeatureProvider(private val context: Context) : FeatureProvider {
+        private val isPro get() = tier == "PRO" || tier == "PREMIUM"
+        private val isPremium get() = tier == "PREMIUM"
 
-        override val tier: String get() = activatedTier
-        override val maxCallDurationMinutes: Int get() = if (isPro) 0 else FeatureFlags.MAX_CALL_DURATION_MINUTES
-        override val maxContacts: Int get() = if (isPro) 0 else FeatureFlags.MAX_CONTACTS
+        override val tier: String get() = getCurrentTier(context)
+        override val maxCallDurationMinutes: Int get() = if (isPro) 0 else 15
+        override val maxContacts: Int get() = if (isPro) 0 else 10
         override val deviceAttestationRequired: Boolean get() = isPro
         override val rootDetectionBlocks: Boolean get() = isPro
         override val certificatePinning: Boolean get() = isPro
         override val callRecordingAllowed: Boolean get() = !isPro
-        override val telemetryEnabled: Boolean get() = !isPro
-        override val thirdPartyAnalytics: Boolean get() = !isPro
+        override val telemetryEnabled: Boolean get() = !isPro && com.securecall.app.BuildConfig.FLAVOR == "free"
+        override val thirdPartyAnalytics: Boolean get() = telemetryEnabled
         override val reconnectStrategy: String get() = if (isPro) "aggressive" else "basic"
         override val multiDeviceSupport: Boolean get() = isPro
         override val screenCaptureDetection: Boolean get() = isPro

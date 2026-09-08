@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="premium_vpn_license_required">Eine verifizierte Premium-Lizenz ist zum Starten des VPN-Schutzes erforderlich</string>
+    <string name="premium_vpn_license_recheck">Bestehender Tunnel bleibt erhalten. Vor einem VPN-Neustart muss die Premium-Lizenz verifiziert werden.</string>
     <string name="external_vpn_status_title">VPN-Status</string>
     <string name="cd_external_vpn_active">VPN aktiv, SecureCall-Datenverkehr nutzt den aktuellen Tunnel</string>
     <string name="premium_vpn_category">Standalone-VPN</string>

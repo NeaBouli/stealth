@@ -7,12 +7,16 @@ def buildingAppBundle = gradle.startParameter.taskNames.any {
     it.toLowerCase().contains('bundle')
 }
 
-// Guard: pro and premium flavors are internal-only (testing, not distribution).
+// Guard: direct Pro/Premium flavors are excluded from normal Play builds.
 // They are excluded from the build unless -Pinternal is passed on the command line.
 //   Normal:   ./gradlew assembleFreeRelease        → builds
 //             ./gradlew assembleProRelease         → task does not exist
 //   Internal: ./gradlew -Pinternal assembleProDebug → builds
 def allowInternalFlavors = project.hasProperty('internal')
+def entitlementPublicKey = providers.gradleProperty('entitlementPublicKey').getOrElse('')
+if (entitlementPublicKey && !(entitlementPublicKey ==~ /[A-Za-z0-9_-]{43}/)) {
+    throw new GradleException('entitlementPublicKey must be a raw Ed25519 public key in unpadded base64url')
+}
 
 // Google Services + Crashlytics
 apply plugin: 'com.google.gms.google-services'
@@ -37,6 +41,10 @@ android {
         targetSdkVersion 36
         versionCode 78017
         versionName "1.0.50"
+
+        // Public verifier only. Empty until the exact signed release is configured.
+        buildConfigField "String", "ENTITLEMENT_PUBLIC_KEY", "\"${entitlementPublicKey}\""
+        buildConfigField "String", "ENTITLEMENT_RELEASE_ID", '"securecall-android-1.0.50-vc78017-api36"'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -229,6 +237,7 @@ android {
 
 dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.google.crypto.tink:tink-android:1.23.0'
     implementation 'io.github.webrtc-sdk:android:125.6422.07'
 
     implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -430,6 +439,7 @@ tasks.register('verifyFreeReleaseBillingClosed') {
         file('src/free/java/com/securecall/app/billing/BillingManager.kt'),
         file('src/free/java/com/securecall/app/billing/PurchaseResultActivity.kt'),
         file('src/main/java/com/securecall/app/config/TierManager.kt'),
+        file('src/main/java/com/securecall/app/net/WebSocketService.kt'),
         file('src/main/java/com/securecall/app/ui/SettingsFragment.kt')
     )
     doLast {
@@ -447,10 +457,12 @@ tasks.register('verifyFreeReleaseBillingClosed') {
         def resultSource = file('src/free/java/com/securecall/app/billing/PurchaseResultActivity.kt').getText('UTF-8')
         def tierSource = file('src/main/java/com/securecall/app/config/TierManager.kt').getText('UTF-8')
         def settingsSource = file('src/main/java/com/securecall/app/ui/SettingsFragment.kt').getText('UTF-8')
+        def signalingSource = file('src/main/java/com/securecall/app/net/WebSocketService.kt').getText('UTF-8')
         if (!upgradeSource.contains('BuildConfig.BILLING_ENABLED && isPlayStore') ||
             !managerSource.contains('if (!BuildConfig.BILLING_ENABLED)') ||
             !resultSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED') ||
-            !tierSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED') ||
+            tierSource.contains('.putString(KEY_ACTIVATED_TIER,') ||
+            !signalingSource.contains('if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED)') ||
             !settingsSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED')) {
             throw new GradleException('Billing runtime must enforce the closed BuildConfig gate.')
         }
