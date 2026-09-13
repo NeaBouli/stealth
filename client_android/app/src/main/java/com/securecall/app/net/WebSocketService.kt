@@ -105,6 +105,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     )
     private val activationRequests = com.securecall.app.billing.ActivationRequestSlot()
     private val activationHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val testerLicenses by lazy {
+        com.securecall.app.billing.TesterLicenseClient(
+            send = { message -> isRegistered && (client?.send(message.toString()) ?: false) },
+            keyHash = { com.securecall.app.billing.TesterDeviceKey.existingHardwareKeyHash() },
+            subject = { getLocalClientId() },
+            sign = { com.securecall.app.billing.TesterDeviceKey.signChallenge(it) },
+            accept = { com.securecall.app.billing.DirectEntitlementStore(this).accept(it) },
+            schedule = { delay, action -> activationHandler.postDelayed({ action() }, delay) }
+        )
+    }
     private data class PendingEntitlement(val requestId: String, val proof: String)
     @Volatile private var pendingEntitlementProof: PendingEntitlement? = null
     private val entitlementHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -119,6 +129,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private fun refreshDirectEntitlement() {
         if (!isRegistered || pendingEntitlementProof != null) return
         val proof = com.securecall.app.billing.DirectEntitlementStore(this).tokenForRefresh() ?: return
+        if (proof.startsWith("sct1.")) {
+            if (!com.securecall.app.BuildConfig.TESTER_LICENSE_ENABLED) return
+            testerLicenses.start(proof, renewal = true) { _, _ ->
+                com.securecall.app.config.TierManager.applyTier(this)
+            }
+            return
+        }
         val pending = PendingEntitlement(java.util.UUID.randomUUID().toString(), proof)
         pendingEntitlementProof = pending
         val sent = client?.send(org.json.JSONObject().apply {
@@ -375,6 +392,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         Log.d("WS_SERVICE", "onDestroy")
         activationHandler.removeCallbacksAndMessages(null)
         runCatching { activationRequests.clear()?.callback?.invoke(false, "", "not_connected") }
+        testerLicenses.cancel()
         entitlementHandler.removeCallbacksAndMessages(null)
         pendingEntitlementProof = null
         instance = null
@@ -553,8 +571,22 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     /** Send activation code to server for validation. Returns (success, tier, error). */
     fun activateCode(code: String, callback: (success: Boolean, tier: String, error: String) -> Unit) {
-        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) {
+        val testerCode = code.trim().uppercase().startsWith("SC-PREM-")
+        if (!(if (testerCode) com.securecall.app.BuildConfig.TESTER_LICENSE_ENABLED
+                else com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED)) {
             callback(false, "", "activation_disabled")
+            return
+        }
+        if (testerCode) {
+            if (com.securecall.app.BuildConfig.APPLICATION_ID != "com.securecall.app.premium" ||
+                com.securecall.app.BuildConfig.TESTER_ENTITLEMENT_PUBLIC_KEY.isEmpty()) {
+                callback(false, "", "tester_license_unavailable")
+                return
+            }
+            testerLicenses.start(code.trim().uppercase(), renewal = false) { success, error ->
+                com.securecall.app.config.TierManager.applyTier(this)
+                callback(success, if (success) "PREMIUM" else "", error)
+            }
             return
         }
         val request = activationRequests.begin(callback)
@@ -637,6 +669,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         registerPending = false
         if (!isConnected) return
         isRegistered = true
+        testerLicenses.cancel()
         pendingEntitlementProof = null
         entitlementHandler.removeCallbacksAndMessages(null)
         entitlementHandler.post(entitlementCheck)
@@ -1303,6 +1336,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 batchPhoneLookupQueue.complete(registered)
                 return
             }
+            if (testerLicenses.receive(obj)) return
             if (obj.optString("type") == "ENTITLEMENT_REFRESH_RESULT") {
                 val pending = pendingEntitlementProof ?: return
                 if (obj.optString("requestId") != pending.requestId) return

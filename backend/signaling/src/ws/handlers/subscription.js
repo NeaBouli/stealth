@@ -262,6 +262,11 @@ module.exports = function subscriptionHandlers(ctx) {
       if (!myClientId || typeof msg.entitlementToken !== "string") {
         return respond({ success: false, error: "invalid_entitlement" });
       }
+      // Keep tester proofs out of commercial renewal until verified enrollment
+      // persistence and its dedicated renewal adapter are available.
+      if (msg.entitlementToken.startsWith("sct1.")) {
+        return respond({ success: false, error: "tester_enrollment_unavailable" });
+      }
       try {
         const claims = verifyEntitlementToken(msg.entitlementToken, {
           expectedSubject: myClientId,

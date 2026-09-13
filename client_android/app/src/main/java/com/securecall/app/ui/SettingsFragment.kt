@@ -580,7 +580,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val isUpgraded = effectiveTier != "FREE"
         val codePref = findPreference<EditTextPreference>("pref_activation_code")
         val activateButton = findPreference<Preference>("pref_activate_button")
-        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) {
+        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED &&
+            !com.securecall.app.BuildConfig.TESTER_LICENSE_ENABLED) {
             codePref?.isVisible = false
             activateButton?.isVisible = false
             return
@@ -621,7 +622,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun submitActivationCode(code: String) {
-        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) return
+        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED &&
+            !com.securecall.app.BuildConfig.TESTER_LICENSE_ENABLED) return
         val ctx = requireContext()
         val ws = com.securecall.app.net.WebSocketService.instance
         if (ws == null || !ws.isConnected) {
