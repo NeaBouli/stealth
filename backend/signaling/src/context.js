@@ -106,6 +106,7 @@ function buildContext(externalDeps) {
     issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
     saveWalletMappings: saveWalletMappingsOverride,
+    testerLicenseRegistry,
   } = externalDeps;
 
   // Core state from state.js (Maps/Arrays are shared references)
@@ -141,6 +142,7 @@ function buildContext(externalDeps) {
     issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
     // External services
+    testerLicenseRegistry,
     pkd, subscriptions, fcm, customIds, licenses,
     getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS,
     CLIENT_ID_REGEX,
