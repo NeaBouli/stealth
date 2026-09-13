@@ -103,8 +103,51 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             forceReconnect()
         },
     )
-    // Activation code callback: returns (success, tier, error)
-    private var _activateCodeCallback: ((Boolean, String, String) -> Unit)? = null
+    private val activationRequests = com.securecall.app.billing.ActivationRequestSlot()
+    private val activationHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val testerLicenses by lazy {
+        com.securecall.app.billing.TesterLicenseClient(
+            send = { message -> isRegistered && (client?.send(message.toString()) ?: false) },
+            keyHash = { com.securecall.app.billing.TesterDeviceKey.existingHardwareKeyHash() },
+            subject = { getLocalClientId() },
+            sign = { com.securecall.app.billing.TesterDeviceKey.signChallenge(it) },
+            accept = { com.securecall.app.billing.DirectEntitlementStore(this).accept(it) },
+            schedule = { delay, action -> activationHandler.postDelayed({ action() }, delay) }
+        )
+    }
+    private data class PendingEntitlement(val requestId: String, val proof: String)
+    @Volatile private var pendingEntitlementProof: PendingEntitlement? = null
+    private val entitlementHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val entitlementCheck = object : Runnable {
+        override fun run() {
+            com.securecall.app.config.TierManager.applyTier(this@WebSocketService)
+            refreshDirectEntitlement()
+            entitlementHandler.postDelayed(this, 15 * 60 * 1000L)
+        }
+    }
+
+    private fun refreshDirectEntitlement() {
+        if (!isRegistered || pendingEntitlementProof != null) return
+        val proof = com.securecall.app.billing.DirectEntitlementStore(this).tokenForRefresh() ?: return
+        if (proof.startsWith("sct1.")) {
+            if (!com.securecall.app.BuildConfig.TESTER_LICENSE_ENABLED) return
+            testerLicenses.start(proof, renewal = true) { _, _ ->
+                com.securecall.app.config.TierManager.applyTier(this)
+            }
+            return
+        }
+        val pending = PendingEntitlement(java.util.UUID.randomUUID().toString(), proof)
+        pendingEntitlementProof = pending
+        val sent = client?.send(org.json.JSONObject().apply {
+            put("type", "REFRESH_ENTITLEMENT")
+            put("requestId", pending.requestId)
+            put("entitlementToken", proof)
+        }.toString()) ?: false
+        if (!sent) pendingEntitlementProof = null
+        entitlementHandler.postDelayed({
+            if (pendingEntitlementProof == pending) pendingEntitlementProof = null
+        }, 10_000)
+    }
 
     fun getCurrentSessionId(): String? = _currentSessionId
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
@@ -347,6 +390,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onDestroy() {
         Log.d("WS_SERVICE", "onDestroy")
+        activationHandler.removeCallbacksAndMessages(null)
+        runCatching { activationRequests.clear()?.callback?.invoke(false, "", "not_connected") }
+        testerLicenses.cancel()
+        entitlementHandler.removeCallbacksAndMessages(null)
+        pendingEntitlementProof = null
         instance = null
         unregisterNetworkChangeCallback()
         releaseCpuWakeLock()
@@ -523,26 +571,47 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     /** Send activation code to server for validation. Returns (success, tier, error). */
     fun activateCode(code: String, callback: (success: Boolean, tier: String, error: String) -> Unit) {
-        _activateCodeCallback = callback
+        val testerCode = code.trim().uppercase().startsWith("SC-PREM-")
+        if (!(if (testerCode) com.securecall.app.BuildConfig.TESTER_LICENSE_ENABLED
+                else com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED)) {
+            callback(false, "", "activation_disabled")
+            return
+        }
+        if (testerCode) {
+            if (com.securecall.app.BuildConfig.APPLICATION_ID != "com.securecall.app.premium" ||
+                com.securecall.app.BuildConfig.TESTER_ENTITLEMENT_PUBLIC_KEY.isEmpty()) {
+                callback(false, "", "tester_license_unavailable")
+                return
+            }
+            testerLicenses.start(code.trim().uppercase(), renewal = false) { success, error ->
+                com.securecall.app.config.TierManager.applyTier(this)
+                callback(success, if (success) "PREMIUM" else "", error)
+            }
+            return
+        }
+        val request = activationRequests.begin(callback)
+        if (request == null) {
+            callback(false, "", "activation_in_progress")
+            return
+        }
         val json = org.json.JSONObject().apply {
             put("type", "ACTIVATE_CODE")
+            put("requestId", request.id)
             put("code", code.trim().uppercase())
         }.toString()
         val sent = client?.send(json) ?: false
         if (!sent) {
             Log.w("WS_SERVICE", "ACTIVATE_CODE failed to send")
-            _activateCodeCallback = null
-            callback(false, "", "not_connected")
+            activationRequests.take(request.id)?.callback?.invoke(false, "", "not_connected")
             return
         }
-        Log.d("WS_SERVICE", "ACTIVATE_CODE sent: ${code.trim().uppercase()}")
+        Log.d("WS_SERVICE", "ACTIVATE_CODE sent")
         // Timeout: 10 seconds
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            val pending = _activateCodeCallback
-            if (pending === callback) {
+        activationHandler.postDelayed({
+            val pending = activationRequests.take(request.id)
+            if (pending != null) {
                 Log.w("WS_SERVICE", "ACTIVATE_CODE timeout")
-                _activateCodeCallback = null
-                callback(false, "", "timeout")
+                pending.callback(false, "", "timeout")
             }
         }, 10000)
     }
@@ -600,6 +669,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         registerPending = false
         if (!isConnected) return
         isRegistered = true
+        testerLicenses.cancel()
+        pendingEntitlementProof = null
+        entitlementHandler.removeCallbacksAndMessages(null)
+        entitlementHandler.post(entitlementCheck)
         registerFailCount = 0
         batchPhoneLookupQueue.resume()
         Log.d("WS_SERVICE", "REGISTERED received for $ackedClientId — flushing ${pendingCallQueue.size} pending calls")
@@ -761,7 +834,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onMessage(text: String) {
         if (!text.contains("HEARTBEAT_ACK")) {
-            Log.d("WS_SERVICE", "Message: $text")
+            Log.d("WS_SERVICE", "Signaling message received")
         }
         handleIncomingMessageFull(text)
     }
@@ -1263,14 +1336,36 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 batchPhoneLookupQueue.complete(registered)
                 return
             }
+            if (testerLicenses.receive(obj)) return
+            if (obj.optString("type") == "ENTITLEMENT_REFRESH_RESULT") {
+                val pending = pendingEntitlementProof ?: return
+                if (obj.optString("requestId") != pending.requestId) return
+                pendingEntitlementProof = null
+                val store = com.securecall.app.billing.DirectEntitlementStore(this)
+                if (store.tokenForRefresh() != pending.proof) return
+                if (obj.optBoolean("success", false)) {
+                    // A malformed replacement must not destroy the existing proof.
+                    // It still expires locally; explicit server revocations clear it.
+                    store.accept(obj.optString("entitlementToken", ""))
+                } else if (obj.optString("error") in setOf("entitlement_revoked", "invalid_entitlement")) {
+                    store.revoke()
+                }
+                com.securecall.app.config.TierManager.applyTier(this)
+                return
+            }
             if (obj.optString("type") == "ACTIVATE_CODE_RESULT") {
-                val success = obj.optBoolean("success", false)
-                val tier = obj.optString("tier", "")
-                val error = obj.optString("error", "")
-                Log.d("WS_SERVICE", "ACTIVATE_CODE_RESULT: success=$success, tier=$tier, error=$error")
-                val cb = _activateCodeCallback
-                _activateCodeCallback = null
-                cb?.invoke(success, tier, error)
+                val request = activationRequests.take(obj.optString("requestId")) ?: return
+                val store = com.securecall.app.billing.DirectEntitlementStore(this)
+                val serverSuccess = obj.optBoolean("success", false)
+                val success = serverSuccess && store.accept(obj.optString("entitlementToken", ""))
+                val tier = if (success) store.currentTier() else ""
+                val error = when {
+                    success -> ""
+                    serverSuccess -> "entitlement_invalid"
+                    else -> obj.optString("error", "activation_failed")
+                }
+                com.securecall.app.config.TierManager.applyTier(this)
+                request.callback.invoke(success, tier, error)
                 return
             }
             if (obj.optString("type") == "SECUREID_CHANGED") {

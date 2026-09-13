@@ -972,6 +972,7 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
 // All Maps/arrays passed here are the same singletons used by HTTP routes above,
 // so HTTP routes and WS handlers share one consistent state — no split-brain.
 ctx = buildContext({
+  testerLicenseRegistry: require("./services/tester_license_runtime").loadTesterLicenseRuntime(),
   pkd, subscriptions, fcm, customIds, licenses,
   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
   rateLimit, hb,
