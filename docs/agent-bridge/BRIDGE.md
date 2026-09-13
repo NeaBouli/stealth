@@ -3556,3 +3556,9 @@ Type: RELEASE / EXTERNAL / POLICY
 - PR remains mergeable but blocked by required independent approving review. External release gates remain unchanged.
 
 `CI GREEN — REVIEW REQUIRED`
+
+## 2026-09-13 - CODEX SOL - Tester licensing checkpoint
+
+- Authoritative task branch source checkpoint: 2b15b7350189f8c42bc4fbc104eaaffee5455f21. Dedicated, default-disabled Direct Premium tester activation/renewal transport implemented; commercial/Play gates unchanged.
+- Full backend suite PASS. Full JVM suites: Free 206, Pro 206, Premium 213, zero errors/failures. Debug lint all three variants PASS. Source/staged Gitleaks and whitespace checks PASS. Kimi registry and transport reviews completed; lead integrated and retested corrections.
+- Not a release or delivery approval. Hardware enrollment, private provisioning/inventory, signed-update and two-device acceptance remain open. No actual tester codes, emails or production changes. See root Bridge and docs/TESTER_LICENSE_RUNTIME.md for scoped evidence and next gates.
