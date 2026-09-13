@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from prepare_tester_staging import prepare, reference
+from prepare_tester_staging import intake, prepare, reference
 
 
 class PrivateStagingTests(unittest.TestCase):
@@ -49,6 +49,56 @@ class PrivateStagingTests(unittest.TestCase):
         self.assertEqual(before[0][-2:], ("inactive", "unconfirmed"))
         self.assertEqual(self.run_prepare()["new_inactive"], 0)
         self.assertEqual(self.stored(), before)
+
+    def test_intake_without_key_or_inventory(self) -> None:
+        self.csv.chmod(0o644)
+        self.inventory.unlink()
+        result = intake(self.csv, self.root)
+        self.assertEqual(result, {"selected": 1, "codes_generated": 0,
+                                 "status": "awaiting_lead_reconciliation"})
+        target = self.root / "recipient-intake.json"
+        before = target.read_bytes()
+        self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(self.csv.stat().st_mode & 0o777, 0o644)
+        self.assertEqual(intake(self.csv, self.root), result)
+        self.assertEqual(target.read_bytes(), before)
+        self.assertFalse((self.root / "inactive-tester-staging.sqlite3").exists())
+
+    def test_intake_refuses_changed_list(self) -> None:
+        intake(self.csv, self.root)
+        target = self.root / "recipient-intake.json"
+        before = target.read_bytes()
+        self.csv.write_text('email,list\nc@example.invalid,SecureCall \u03b2-test\n', encoding="utf-8")
+        with self.assertRaises(ValueError):
+            intake(self.csv, self.root)
+        self.assertEqual(target.read_bytes(), before)
+
+    def test_intake_storage_failure_does_not_publish(self) -> None:
+        with patch("prepare_tester_staging.os.fsync", side_effect=OSError("synthetic")):
+            with self.assertRaises(OSError):
+                intake(self.csv, self.root)
+        self.assertFalse((self.root / "recipient-intake.json").exists())
+
+    def test_intake_symlink_output_rejected(self) -> None:
+        (self.root / "recipient-intake.json").symlink_to(self.csv)
+        with self.assertRaises(ValueError):
+            intake(self.csv, self.root)
+
+    def test_cli_intake_without_secret(self) -> None:
+        self.csv.chmod(0o644)
+        result = subprocess.run([sys.executable, "-B", str(Path(__file__).with_name("prepare_tester_staging.py")),
+            "--intake-only", "--recipients", str(self.csv), "--private-directory", str(self.root)],
+            capture_output=True, text=True, env={})
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(json.loads(result.stdout)["codes_generated"], 0)
+        self.assertNotIn("example.invalid", result.stdout + result.stderr)
+
+    def test_default_still_requires_inventory(self) -> None:
+        result = subprocess.run([sys.executable, "-B", str(Path(__file__).with_name("prepare_tester_staging.py")),
+            "--recipients", str(self.csv), "--private-directory", str(self.root)],
+            capture_output=True, text=True, env={})
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse((self.root / "inactive-tester-staging.sqlite3").exists())
 
     def test_inventory_prevents_existing_gift(self) -> None:
         self.write_inventory([reference("a@example.invalid", self.pepper)])
