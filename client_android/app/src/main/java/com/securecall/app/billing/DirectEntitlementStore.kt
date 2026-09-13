@@ -13,22 +13,37 @@ class DirectEntitlementStore internal constructor(
     private val publicKey: String,
     private val flavor: String,
     private val release: String,
-    private val clock: () -> Long
+    private val clock: () -> Long,
+    private val testerPublicKey: String = "",
+    private val testerDeviceHash: () -> String? = { null },
+    private val applicationId: String = "com.securecall.app.$flavor",
+    private val testerEnabled: Boolean = true
 ) {
     constructor(context: Context) : this(
         context.getSharedPreferences("securecall_direct_entitlement", Context.MODE_PRIVATE),
         { context.getSharedPreferences("securecall_prefs", Context.MODE_PRIVATE).getString("client_id", null) },
         BuildConfig.ENTITLEMENT_PUBLIC_KEY, BuildConfig.FLAVOR, BuildConfig.ENTITLEMENT_RELEASE_ID,
-        { System.currentTimeMillis() / 1000 }
+        { System.currentTimeMillis() / 1000 },
+        BuildConfig.TESTER_ENTITLEMENT_PUBLIC_KEY,
+        { TesterDeviceKey.existingHardwareKeyHash() }, BuildConfig.APPLICATION_ID,
+        BuildConfig.TESTER_LICENSE_ENABLED
     )
 
     private fun verify(token: String): VerifiedDirectEntitlement {
         require(flavor in setOf("pro", "premium"))
         val identity = subject() ?: throw IllegalArgumentException("Missing local identity")
-        val key = publicKey.decodeBase64()?.toByteArray()
-            ?: throw IllegalArgumentException("Verifier not configured")
         val now = clock()
         require(now + 300 >= prefs.getLong("last_verified_time", 0)) { "Clock rollback" }
+        if (token.startsWith("sct1.")) {
+            require(testerEnabled && flavor == "premium")
+            val testerKey = testerPublicKey.decodeBase64()?.toByteArray()
+                ?: throw IllegalArgumentException("Tester verifier not configured")
+            val device = testerDeviceHash() ?: throw IllegalArgumentException("Enrolled hardware key unavailable")
+            val proof = TesterEntitlementVerifier.verify(token, testerKey, identity, device, now, applicationId)
+            return VerifiedDirectEntitlement("PREMIUM", "securecall_tester_premium_lifetime", proof.expiresAtEpochSeconds)
+        }
+        val key = publicKey.decodeBase64()?.toByteArray()
+            ?: throw IllegalArgumentException("Verifier not configured")
         return DirectEntitlementVerifier.verify(
             token, key, identity, flavor.uppercase(), release, now
         )
