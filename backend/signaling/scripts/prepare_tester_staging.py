@@ -12,19 +12,20 @@ import secrets
 import sqlite3
 import stat
 import sys
+import tempfile
 from typing import Any
 
 
-def private_path(path: Path, *, directory: bool = False) -> None:
+def private_path(path: Path, *, directory: bool = False, readable_source: bool = False) -> None:
     if not path.is_absolute():
         raise ValueError("Absolute private path required")
     for component in (path, *path.parents):
         if component.is_symlink() or (component / ".git").exists():
             raise ValueError("Symlink or Git checkout is not a private staging location")
     info = path.stat()
-    expected = 0o700 if directory else 0o600
+    allowed_modes = {0o700} if directory else ({0o600, 0o644} if readable_source else {0o600})
     kind_ok = stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode)
-    if not kind_ok or info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != expected:
+    if not kind_ok or info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) not in allowed_modes:
         raise ValueError("Private path ownership or permissions invalid")
     if not directory and info.st_nlink != 1:
         raise ValueError("Hard-linked input or store rejected")
@@ -34,8 +35,8 @@ def reference(email: str, pepper: str) -> str:
     return hmac.new(pepper.encode(), email.encode(), hashlib.sha256).hexdigest()
 
 
-def read_candidates(source: Path) -> list[str]:
-    private_path(source)
+def read_candidates(source: Path, *, readable_source: bool = False) -> list[str]:
+    private_path(source, readable_source=readable_source)
     with source.open(newline="", encoding="utf-8-sig") as stream:
         reader = csv.DictReader(stream)
         if reader.fieldnames is None or not {"email", "list"}.issubset(reader.fieldnames):
@@ -54,6 +55,41 @@ def read_candidates(source: Path) -> list[str]:
     if not selected:
         raise ValueError("No exact-list candidates; refusing empty preparation")
     return sorted(selected)
+
+
+def intake(source: Path, directory: Path) -> dict[str, int | str]:
+    """Separate recipient intake: not an entitlement or an authorization to issue."""
+    private_path(directory, directory=True)
+    candidates = read_candidates(source, readable_source=True)
+    payload = {"schema": 1, "status": "awaiting_lead_reconciliation",
+               "codes_generated": 0, "recipients": candidates}
+    target = directory / "recipient-intake.json"
+    if target.exists() or target.is_symlink():
+        private_path(target)
+        if json.loads(target.read_text(encoding="utf-8")) != payload:
+            raise ValueError("Existing intake differs; reconcile instead of overwriting")
+        return {"selected": len(candidates), "codes_generated": 0, "status": "awaiting_lead_reconciliation"}
+    descriptor, name = tempfile.mkstemp(prefix=".intake-", dir=directory)
+    temporary = Path(name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            json.dump(payload, stream, ensure_ascii=True, sort_keys=True)
+            stream.flush()
+            os.fsync(stream.fileno())
+        # Exclusive publish: concurrent imports must never overwrite another snapshot.
+        try:
+            os.link(temporary, target)
+        except FileExistsError:
+            raise ValueError("Concurrent intake exists; retry after it completes") from None
+    finally:
+        temporary.unlink(missing_ok=True)
+    folder = os.open(directory, os.O_RDONLY)
+    try:
+        os.fsync(folder)
+    finally:
+        os.close(folder)
+    private_path(target)
+    return {"selected": len(candidates), "codes_generated": 0, "status": "awaiting_lead_reconciliation"}
 
 
 def prepare(source: Path, inventory: Path, directory: Path, pepper: str) -> dict[str, int]:
@@ -122,12 +158,21 @@ def prepare(source: Path, inventory: Path, directory: Path, pepper: str) -> dict
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--recipients", type=Path, required=True)
-    parser.add_argument("--inventory", type=Path, required=True)
+    parser.add_argument("--inventory", type=Path)
+    parser.add_argument("--intake-only", action="store_true",
+                        help="Private recipient snapshot only; no inventory, pepper or codes")
     parser.add_argument("--private-directory", type=Path, required=True)
     args = parser.parse_args()
     try:
-        result = prepare(args.recipients, args.inventory, args.private_directory,
-                         os.environ.get("TESTER_RECIPIENT_REF_PEPPER", ""))
+        if args.intake_only:
+            if args.inventory is not None:
+                raise ValueError("Intake does not accept a gift inventory")
+            result: dict[str, int | str] = intake(args.recipients, args.private_directory)
+        else:
+            if args.inventory is None:
+                raise ValueError("Gift preparation requires verified inventory")
+            result = dict(prepare(args.recipients, args.inventory, args.private_directory,
+                                 os.environ.get("TESTER_RECIPIENT_REF_PEPPER", "")))
     except Exception:
         # Input/SQLite exceptions can embed addresses or filesystem paths.
         print("Preparation rejected; inspect private inputs, inventory and storage locally.", file=sys.stderr)
