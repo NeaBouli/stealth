@@ -6238,3 +6238,14 @@ Open next:
   security branch. `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain unchanged.
 
 `STX-23 LOCAL GREEN / REVIEW + INTEGRATION PENDING / NO DEPLOY / SALES CLOSED`
+
+## 2026-09-19 21:48 EEST — CODEX SOL — STX-23 PR #92 OPEN
+
+- Published local implementation commit `9064d00` in stacked pull request
+  [#92](https://github.com/NeaBouli/stealth/pull/92) against PR #82's branch.
+- Audit issue #84 records the implementation and remaining gates at
+  https://github.com/NeaBouli/stealth/issues/84#issuecomment-5744470857.
+- PR #92 must wait for #82, then be retargeted to `main`, pass exact-head hosted checks and normal
+  independent review. STX-23 remains open until integration and final signed-release verification.
+
+`PR 92 OPEN / STACKED REVIEW PENDING / NO DEPLOY / SALES CLOSED`
