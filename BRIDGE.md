@@ -6186,3 +6186,43 @@ Open next:
   required.
 
 `PR 82 MERGEABLE / 11 THREADS RESOLVED / ANDROID CI SETUP FIX READY FOR PUSH`
+
+## 2026-09-19 20:35 EEST — CODEX SOL + KIMI K3 — STX-02 PUBLIC STATUS PRIVACY START
+
+- **Ticket:** audit issue [#84](https://github.com/NeaBouli/stealth/issues/84), finding
+  `STX-02`; **Type:** SECURITY / PRIVACY / TEST; **Status:** In Progress.
+- Isolated branch `fix/stx02-status-privacy-20260919` starts from PR #82 exact head `20018e0`.
+  Kimi owns only removal of raw client IP disclosure from the public status surface plus focused
+  regression tests. Sol owns endpoint-contract decisions, full diff/security review, complete
+  signaling verification, publication and finding reconciliation.
+- Acceptance: unauthenticated health/status retains only non-identifying service availability
+  facts; no IP address or per-IP bucket leaves the endpoint; internal connection limiting remains
+  unchanged; a regression test proves representative IPv4 and IPv6 values cannot appear.
+- Out of scope: production deploy, admin/monitoring redesign, broader registration authentication,
+  provider changes, payments and sale activation.
+
+`STX-02 FIX ACTIVE / NO DEPLOY / SALES CLOSED`
+
+## 2026-09-19 20:45 EEST — CODEX SOL + KIMI K3 — STX-02 PUBLIC STATUS PRIVACY LOCALLY VERIFIED
+
+- **Ticket:** audit issue [#84](https://github.com/NeaBouli/stealth/issues/84), finding
+  `STX-02`; **Type:** SECURITY / PRIVACY / TEST; **Status:** Ready for review.
+- Kimi implemented a bounded status-route module and focused regression test. Codex Sol reviewed
+  every changed line and independently reran syntax, focused and complete signaling checks.
+- Unauthenticated `GET /status/live` now returns only `server`, `uptime`, aggregate client/token
+  counts, WebSocket limit facts and `timestamp`. Raw client addresses and per-IP buckets are no
+  longer serialized. The same server-side reconciliation still protects the WebSocket connection
+  limit path.
+- Regression coverage uses only documentation-range IPv4/IPv6 values and proves neither address,
+  a per-IP list nor an IP-bearing key can appear in the public response while exact aggregate
+  values and internal reconciliation remain intact.
+- Verification PASS: three Node syntax checks; focused `status_live.test.js`; complete `npm test`
+  including the three tester suites, process startup, 47/47 handler assertions and 94/94
+  subscription/WebRTC assertions; `git diff --check`; bounded reference scan. The first complete
+  run inside the restricted socket sandbox failed only at local `listen EPERM`; the same suite
+  passed outside that socket sandbox with exit 0.
+- No production deployment or live endpoint verification was performed. Finding `STX-02` remains
+  open until normal review/integration, deployment and a redacted live recheck confirm removal.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`STX-02 LOCAL FIX GREEN / REVIEW + DEPLOY + REDACTED LIVE RECHECK PENDING`
