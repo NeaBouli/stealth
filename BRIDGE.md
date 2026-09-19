@@ -6224,3 +6224,14 @@ Open next:
   `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain unchanged.
 
 `STX-29 LOCAL GREEN / HOSTED CI + REVIEW PENDING / NO DEPLOY / SALES CLOSED`
+
+## 2026-09-19 22:00 EEST — CODEX SOL — STX-29 PR #93 OPEN
+
+- Published verified implementation commit `97efea1` in stacked pull request
+  [#93](https://github.com/NeaBouli/stealth/pull/93).
+- Audit issue #84 records the corrected current-tree count and remaining live gate at
+  https://github.com/NeaBouli/stealth/issues/84#issuecomment-5744526382.
+- PR #93 must wait for #82, then be retargeted to `main`, pass exact-head hosted checks and normal
+  independent review. STX-29 remains open until deployment and a zero-analytics live recheck.
+
+`PR 93 OPEN / STACKED REVIEW PENDING / NO DEPLOY / SALES CLOSED`
