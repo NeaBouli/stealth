@@ -6077,3 +6077,36 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-09-19 12:34 EEST — CODEX SOL — AUDIT INTAKE CATALOG READY
+
+- **Ticket:** `STEALTH-AUDIT-INTAKE-20260919`; **Type:** AUDIT / TRIAGE / DOCS;
+  **Status:** Ready for review; no source remediation started.
+- Ingested the 30-page consolidated SecureCall audit, PR `#83`, issue `#84`, PR `#85`,
+  and the owner's three added S10 UI reports into
+  `docs/audits/SECURECALL_AUDIT_INTAKE_2026-09-19.md`.
+- All `STX-01..62` findings are assigned to six bounded work packages. Added explicit
+  later acceptance gates for narrow-phone navigation, dial-pad measurement, settings
+  touch targets, keyboard-obscured matches, the clipped `0/+` label, and the
+  non-collapsible direct-Premium VPN section.
+- Opened bounded tracking issues: `#87` for the Android SDK bootstrap failure and `#86`
+  for the grouped small-screen/settings device work. Security details remain consolidated
+  in existing issue `#84` rather than being copied into additional public tickets.
+- CI diagnosis: PR `#83` and `#85` are not failing because of GitHub rate limits. The
+  runner starts and `android-actions/setup-android@v4.0.1` requests its obsolete default
+  SDK package `tools` before Gradle. API capacity was available; Actions-minute billing
+  was not readable with the current token and is not implicated by the logs.
+- PR `#85` must be corrected before merge: current source already has a 64dp dial-key
+  minimum, contrary to A3's stated cause. A1's YR2/Root YR chain observation was
+  reproduced, but its proposed pin patch still requires Android/OkHttp cleaned-chain
+  validation and a rotation design.
+- PR `#83` remains report-only and should wait for repaired Android CI, explicit live/
+  conditional evidence labels, recount of the analytics surface, and independent review.
+- Work mode is now bounded blocks with explicit definitions of done and target stops,
+  rather than one open-ended autonomous goal. Kimi K3 is reserved for a non-overlapping
+  read-only catalog review after 17:45 EEST; no Kimi invocation occurred before then.
+- Verification so far: PDF extraction/readability PASS; exact Git revisions recorded;
+  live TLS chain remeasured; current source and workflow checks completed; no app,
+  backend, deployment, payment, store, or production behavior changed.
+
+`AUDIT CATALOG READY / PR AND TICKET LINKING NEXT / REMEDIATION NOT STARTED`
