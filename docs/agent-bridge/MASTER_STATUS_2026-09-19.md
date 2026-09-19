@@ -57,7 +57,7 @@ were built before the September audit fixes and are evidence inputs, not the fin
 | PR #91 | `a5111b8b` | open, mergeable, stacked on #82 | STX-02 public IP disclosure fix |
 | PR #92 | `94221a4b` | open, mergeable, stacked on #82 | STX-23 certificate pin rotation/freshness policy |
 | PR #93 | `f3d9708a` | open, mergeable, stacked on #82 | STX-29 removal of unconsented GA4 |
-| Current product-truth branch | based on `97d667b1` | locally verified; publication/review pending | STX-22, STX-37 and STX-38 corrections |
+| PR #94 | `ec72fbf9` | open, stacked on #90, exact-head CI and normal review pending | STX-22, STX-37 and STX-38 corrections plus drift guards |
 
 The final release must contain all accepted layers on one reviewed immutable commit. Passing tests
 on independent stacked heads is not a substitute for testing the final combined head.

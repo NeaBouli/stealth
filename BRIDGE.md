@@ -6314,3 +6314,16 @@ Open next:
   sales remain closed.
 
 `PRODUCT TRUTH LOCALLY GREEN — STACKED PR + EXACT-HEAD CI + NORMAL REVIEW NEXT`
+
+## 2026-09-19 22:57 EEST — CODEX SOL — PRODUCT TRUTH PUBLISHED FOR REVIEW
+
+- Published commit `ec72fbf9` and opened stacked PR
+  [#94](https://github.com/NeaBouli/stealth/pull/94) against PR #90's exact
+  browser-IFR branch.
+- Stack rule: #82 and #90 must be integrated first. PR #94 must then be
+  retargeted/reconciled and its complete exact-head CI rerun on the final base;
+  independent review remains mandatory.
+- No commercial or runtime gate changed. `PRODUCT_READY=NO`,
+  `FINANCE_READY=NO`, checkout and sales remain closed.
+
+`PR 94 OPEN — HOSTED CI + NORMAL REVIEW PENDING / SALES CLOSED`
