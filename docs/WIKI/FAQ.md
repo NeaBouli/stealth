@@ -9,7 +9,7 @@
 ---
 
 ### What is SecureCall?
-SecureCall is an Android app for end-to-end encrypted voice calls. Every call is encrypted using XChaCha20-Poly1305 with X25519 key exchange and Double Ratchet forward secrecy. The cryptographic engine is written in Rust, and the complete source code is publicly available on GitHub.
+SecureCall is an Android app for end-to-end encrypted voice calls. X25519 and HKDF-SHA256 derive per-call key material, and XChaCha20-Poly1305 protects application media frames. SecureCall does not implement a Double Ratchet. The cryptographic engine is written in Rust, and the complete source code is publicly available on GitHub.
 
 ### Can you listen to my calls?
 No. Calls are encrypted end-to-end. Encryption keys are generated on your device and never sent to our servers. We are technically unable to decrypt your calls, even if compelled by a court order.
@@ -49,7 +49,7 @@ No. We cannot provide call content because we do not have it. End-to-end encrypt
 ### What encryption does SecureCall use?
 - **Symmetric:** XChaCha20-Poly1305 (256-bit AEAD, 192-bit nonce)
 - **Key Exchange:** X25519 (ECDH on Curve25519)
-- **Forward Secrecy:** Double Ratchet protocol
+- **Session Key Lifecycle:** per-call X25519/HKDF-SHA256 key material, discarded at call end; no Double Ratchet
 - **Key Derivation:** HKDF-SHA256
 - **Implementation:** Native Rust via JNI
 
@@ -71,7 +71,7 @@ Yes. An internal security audit was conducted in February 2026. All 7 Critical a
 #### ████ TIER COMPARISON ████
 ---
 
-| Feature | Free | Pro (candidate €3.49/mo or €15 lifetime) | Premium (candidate €4.99/mo or €25 lifetime) |
+| Feature | Free | Pro (direct candidate €15 lifetime) | Premium (direct candidate €25 lifetime) |
 |---------|------|-------------------------------|-----------------------------------|
 | E2E Encrypted Calls | Yes | Yes | Yes |
 | Audio Quality | Standard | HD (48kHz Opus) | HD (48kHz Opus) |

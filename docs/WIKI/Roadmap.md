@@ -5,33 +5,37 @@
 # STRATEGIC DEVELOPMENT ROADMAP
 
 ---
-#### ████ OBJECTIVES ACHIEVED (v0.2-beta) ████
+#### ████ HISTORICAL IMPLEMENTATION BASELINE ████
 ---
 
 - [x] End-to-End Encryption (XChaCha20-Poly1305 + X25519)
 - [x] Rust Crypto Engine with JNI bridge
-- [x] Double Ratchet forward secrecy
+- [x] Per-call X25519/HKDF-SHA256 session-key derivation
 - [x] Node.js Signaling Server
 - [x] WebRTC peer-to-peer audio
 - [x] Opus audio codec (48kHz)
-- [x] Anti-Recording Protection (6 layers)
+- [x] Anti-recording controls implemented for targeted device testing
 - [x] Material Design 3 UI
 - [x] 3 Product Tiers (Free / Pro / Premium)
-- [x] In-App Purchases & Subscriptions
+- [ ] Google Play purchase, restore, refund, revoke, and RTDN lifecycle
 - [x] Firebase Cloud Messaging (push notifications)
-- [x] Security Audit (48 findings, all Critical/High fixed)
+- [ ] September 2026 audit remediation and independent closure evidence
 - [x] R8/ProGuard optimization
 - [x] Crashlytics integration (Free tier, opt-out)
 - [x] Landing page website (neabouli.github.io/stealth)
-- [x] Complete documentation & Wiki
+- [ ] Product, security, distribution, and Wiki truth synchronized with final release
 
 ---
 #### ████ ACTIVE OPERATIONS ████
 ---
 
-- [ ] Beta Testing (10-20 testers)
-- [ ] Google Play Store Launch
-- [ ] Production Server Deployment
+- [ ] Integrate reviewed entitlement, browser-proof, pin, privacy, and product-truth changes
+- [ ] Resolve registration authentication and identity-key-binding release blockers
+- [ ] Complete S10, S7, and Tab S4 call/UI/background/reconnect matrix on the final signed build
+- [ ] Pair the exact release with the isolated VLABS signer and entitlement lifecycle
+- [ ] Complete Stripe Test and fiscal demo sale/refund/dispute evidence
+- [ ] Build fresh direct APKs and Play Free AAB with an unused version code
+- [ ] Google Play review and separately approved direct-sales launch
 
 ---
 #### ████ PLANNED OPERATIONS (v0.3) ████

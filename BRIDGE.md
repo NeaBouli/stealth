@@ -6241,3 +6241,76 @@ Open next:
 - No gate was enabled and no production/provider/payment action occurred.
 
 `PR 90 OPEN / EXACT-HEAD CI + NORMAL REVIEW PENDING / SALES CLOSED`
+
+## 2026-09-19 22:01 EEST — CODEX SOL + KIMI K3 — PRODUCT TRUTH BLOCK START
+
+- **Ticket:** `STEALTHX-PRODUCT-TRUTH-20260919`; **Type:** SECURITY CLAIMS / CONTENT /
+  PRICING / RELEASE-GATE; **Status:** In Progress.
+- Work is isolated on `fix/stx22-stx37-stx38-product-truth-20260919` from exact closed-gate IFR
+  candidate `97d667b`. Kimi owns only the bounded STX-22/STX-37/STX-38 source implementation;
+  Sol owns contract validation, final diff review, integration, testing and external actions.
+- Correct SecureCall claims to the implemented per-call X25519/HKDF/XChaCha20-Poly1305 design
+  without claiming a Double Ratchet, authenticated key exchange or active-server resistance.
+  Preserve accurate SecureChat/Chameleon claims. Remove obsolete GhostNet product promises.
+- Align current direct-channel copy with the VLABS-accepted immutable offer tuple: Pro EUR 15.00
+  / IFR EUR 7.50 and Premium EUR 25.00 / IFR EUR 12.50, any positive verified IFR balance, no
+  threshold or lifetime cap. Remove stale EUR 49, USD/scarcity and mutable-price claims.
+- Add regression coverage for current public/store/app surfaces. Android must remain IFR/wallet-
+  free; all checkout controls and sales remain closed. No deployment, payment/provider mutation,
+  Play publishing or sale activation is authorized in this block.
+
+`PRODUCT_TRUTH ACTIVE — PRODUCT_READY=NO / FINANCE_READY=NO / SALES CLOSED`
+
+## 2026-09-19 22:52 EEST — CODEX SOL — PRODUCT TRUTH LOCAL REVIEW COMPLETE
+
+- **Ticket:** `STEALTHX-PRODUCT-TRUTH-20260919`; **Type:** FIX / SECURITY CLAIMS /
+  PRICING / RELEASE-GATE / TEST; **Status:** Local gates green; stacked review
+  publication pending.
+- Corrected current SecureCall security and architecture claims across README,
+  security/privacy/architecture documents, website/wiki, Play/Fastlane copy and
+  release guidance. Current text now states per-call X25519/HKDF-SHA256 plus
+  XChaCha20-Poly1305, the missing authenticated identity binding and active
+  signaling-service limitation, and separates GHOSTOS/GhostNet/multi-hop/QUIC/
+  SilentCarrier research from shipped functionality.
+- Removed the Android upgrade screen's simulated 100-license scarcity model and
+  retired hard-coded EUR 3.49/EUR 4.99/EUR 49 prices. The complete paid surface
+  stays hidden behind the closed billing gate; any future visible Play price must
+  come from Google `ProductDetails`.
+- Aligned current direct-sale copy with the accepted closed-gate VLABS tuple:
+  Pro EUR 15.00 / IFR EUR 7.50 and Premium EUR 25.00 / IFR EUR 12.50, 5000 bps,
+  any positive verified IFR balance, no threshold/cap, exact five-minute
+  single-use browser proof. Android remains wallet/IFR-free and all checkout
+  controls remain disabled.
+- Added `website/js/product-truth.test.cjs` and wired it into basic CI to guard
+  the current public/store/documentation surfaces against retired crypto,
+  GhostNet, wallet, scarcity and price claims, and to validate the closed IFR
+  offer plus landing JSON-LD.
+- Added the public-safe complete snapshot
+  `docs/agent-bridge/MASTER_STATUS_2026-09-19.md`, including the current PR
+  stack, 62-finding audit register, device/UI matrix, VLABS contract, release
+  order and exact definition of sellable completion.
+- Verification PASS:
+  - `node --check website/js/ifr-checkout.js`;
+  - `node --test website/js/ifr-checkout.test.cjs website/js/custom-id-gate.test.cjs website/js/product-truth.test.cjs` -> 7/7;
+  - Gradle with API 36 SDK: Pro and Premium Debug source compile, Free Debug and
+    Free Release unit tests/resources, and `verifyFreeReleaseBillingClosed` ->
+    BUILD SUCCESSFUL, 105 tasks;
+  - `xmllint --noout client_android/app/src/free/res/layout/activity_upgrade.xml`;
+  - workflow YAML parse with Ruby Psych;
+  - `git diff --check` and bounded added-line live-secret pattern scan -> no hit.
+- `yamllint` is not installed locally; YAML syntax was independently parsed, and
+  hosted CI remains required on the published exact head.
+- Kimi K3 received only the non-overlapping read-only full-diff review. The
+  provider returned HTTP 403 for its five-hour quota before analysis, so Kimi
+  changed no file and supplied no finding. The review prompt is retained for a
+  later retry against the published PR; Sol performed the current line/diff and
+  integration review.
+- Remaining risks are intentionally outside this block: STX-01/STX-21 identity
+  and key binding, STX-03 host verification, remaining audit waves, narrow-phone
+  UI/device QA, canonical durable VLABS checkout/fiscal lifecycle, exact final
+  artifact build and physical three-device release matrix.
+- No deploy, provider/payment mutation, Play action, artifact publication or
+  sale activation occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`, checkout and
+  sales remain closed.
+
+`PRODUCT TRUTH LOCALLY GREEN — STACKED PR + EXACT-HEAD CI + NORMAL REVIEW NEXT`

@@ -42,11 +42,11 @@ SecureCall already uses the technical primitives that Matrix is built on:
 | SecureCall | Matrix |
 |---|---|
 | WebRTC + DTLS-SRTP (call transport) | WebRTC + DTLS-SRTP (call transport) |
-| Double Ratchet (forward secrecy) | Megolm / Olm (Double Ratchet variant) |
+| Per-call X25519/HKDF session key | Megolm / Olm (Double Ratchet variant) |
 | X25519 key exchange | Curve25519 / X25519 |
 | Node.js signaling server (SDP relay) | `m.call.*` events (SDP relay over rooms) |
 | Anonymous SecureCall ID | `@user:homeserver` Matrix ID |
-| Zero-knowledge server | Zero-knowledge federation |
+| Data-minimized signaling service | Federated signaling service |
 
 The architectural overlap is not coincidental — both systems converge on the same cryptographic best practices. The delta between SecureCall and Matrix is primarily in the **signaling layer** and the **identity layer**, not in the cryptographic core.
 
@@ -58,7 +58,7 @@ This document defines two distinct integration paths:
 
 **Option A** (long-term, high complexity): Replace SecureCall's Node.js signaling server with a Matrix homeserver as the signaling backbone. SecureCall users receive permanent Matrix IDs (`@alice:stealthx.tech`). Any Matrix user on any server can initiate an encrypted call to a SecureCall user. This opens SecureCall to 28+ million potential users without any change to the cryptographic core.
 
-> **Important constraint:** Neither option touches XChaCha20-Poly1305, the Rust crypto engine, or Double Ratchet. The crypto layer is non-negotiable and stays exactly as it is. Network traffic follows Android's active connection, including an optional external device VPN.
+> **Important constraint:** Neither option may silently change XChaCha20-Poly1305, the Rust crypto engine, or the current per-call X25519/HKDF key lifecycle. SecureCall does not implement a Double Ratchet. Network traffic follows Android's active connection, including an optional external device VPN.
 
 ---
 
@@ -351,7 +351,7 @@ Option A replaces this server with a Matrix homeserver (Synapse or Dendrite). Th
 - SecureCall users can call each other and any Matrix user
 - Federation means no single server is a point of failure
 - The signaling infrastructure is maintained by the Matrix Foundation and community — not by Vendetta Labs alone
-- **Nothing changes in the application security layer**: XChaCha20-Poly1305, Rust JNI engine, X25519, Double Ratchet, and anti-recording controls remain unchanged; network traffic continues to use Android's active connection
+- **Nothing changes in the application security layer**: XChaCha20-Poly1305, the Rust JNI engine, per-call X25519/HKDF key material and anti-recording controls remain unchanged; network traffic continues to use Android's active connection
 
 ### 4.2 Matrix VoIP specification
 
@@ -489,7 +489,7 @@ Android Client (SecureCall App)
 │  │   -sdk or custom   │   │  core_crypto (Rust JNI)            │ │
 │  │   HTTP client)     │   │  XChaCha20-Poly1305                │ │
 │  │                    │   │  X25519 key exchange               │ │
-│  │  Handles:          │   │  Double Ratchet                    │ │
+│  │  Handles:          │   │  Per-call session-key lifecycle    │ │
 │  │  - Login / sync    │   │  Anti-Recording                    │ │
 │  │  - Sending events  │   │  STEALTH-DELETE                    │ │
 │  │  - Receiving       │   │  External VPN compatibility        │ │
@@ -513,8 +513,8 @@ Audio Frame (raw PCM/Opus)
         ▼
 ┌───────────────────────────────┐
 │  XChaCha20-Poly1305 encrypt   │  ← SecureCall Rust core (JNI)
-│  key = session key from       │    key never leaves device
-│        Double Ratchet         │    nonce = per-frame counter
+│  key = per-call session key   │    key never leaves device
+│        from X25519 + HKDF     │    nonce = per-frame counter
 └───────────────────────────────┘
         │
         ▼  encrypted audio frame (opaque blob)
@@ -669,7 +669,7 @@ Step 8: Audio flows
 
 Step 9: Hangup
   - Either party sends m.call.hangup
-  - PeerConnection closed, session key discarded (forward secrecy)
+  - PeerConnection closed and the per-call session key is discarded
 ```
 
 #### 4.3.7 Push notifications (FCM integration with Matrix)
@@ -880,7 +880,7 @@ Before Option A ships, the following must be verified unchanged:
 
 - [ ] XChaCha20-Poly1305 encryption is applied to every audio frame (Rust unit tests)
 - [ ] X25519 key exchange happens on-device, keypairs never transmitted (audit `core_crypto/`)
-- [ ] Double Ratchet ratchets forward on every session (per-call key derivation test)
+- [ ] A distinct X25519/HKDF session key is derived and discarded for every call
 - [ ] STEALTH-DELETE wipes Matrix credentials in addition to existing data
 - [x] Play builds use no app-owned VPN routing; all editions follow Android's active route, and direct Premium may use its optional app-only WireGuard tunnel
 - [ ] Certificate pinning applies to `matrix.stealthx.tech` endpoint (add to pinned certs)
@@ -982,7 +982,7 @@ It is important to be clear in external communications about what the Matrix int
 
 When communicating Option A to the community and press, use this framing:
 
-> "SecureCall is integrating with the Matrix protocol to bring federated, interoperable voice calling to our users. This means SecureCall users will be reachable from any Matrix client — Element, FluffyChat, and many others. Our cryptographic core — XChaCha20-Poly1305, Double Ratchet, and our Rust native crypto engine — remains unchanged and continues to provide best-in-class end-to-end encryption for all SecureCall-to-SecureCall calls."
+> "SecureCall is evaluating Matrix for federated, interoperable call signaling. SecureCall-to-SecureCall media continues to use its Rust XChaCha20-Poly1305 layer with per-call X25519/HKDF key material. Matrix interoperability must pass a separate security review before release."
 
 ---
 
