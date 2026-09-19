@@ -6386,3 +6386,12 @@ Open next:
   `FINANCE_READY=NO`, sales remain closed.
 
 `TESTER-CODE LOCAL IMPLEMENTATION GREEN — STACKED PR + PRIVATE COORDINATOR DRAFT NEXT`
+
+## 2026-09-20 02:08 EEST — CODEX SOL — TESTER-CODE PR PUBLISHED
+
+- Published implementation commit `6513505` and opened stacked PR
+  [#95](https://github.com/NeaBouli/stealth/pull/95) against PR #94's exact head.
+- Required stack order remains #82 -> #90 -> #94 -> #95, then complete exact-main CI.
+- Hosted exact-head checks and normal review are pending. No production or delivery gate changed.
+
+`PR 95 OPEN — HOSTED CI/REVIEW PENDING — PRODUCTION AND DELIVERY CLOSED`
