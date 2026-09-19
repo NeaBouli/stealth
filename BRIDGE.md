@@ -6469,3 +6469,15 @@ Open next:
   checkout remain closed.
 
 `AUDIT-FIX INTEGRATION LOCALLY GREEN — STACKED PR/CI/REVIEW NEXT — SALES CLOSED`
+
+## 2026-09-20 02:51 EEST — CODEX SOL — AUDIT-FIX PR #96 OPEN
+
+- Published exact integration head `41f0376fa1d9952f6692290fa3030db75d4010c9` as stacked
+  [PR #96](https://github.com/NeaBouli/stealth/pull/96) against PR #95's branch.
+- GitHub reports the PR open and mergeable. Basic CI run `35477233008` started; exact-head checks
+  and normal review remain required before integration. CodeRabbit's immediate success state is
+  not counted as an independent review unless it supplies an actual review of this stacked diff.
+- No production, deployment, Play, payment/provider, private-data, artifact-publication or sales
+  gate changed. `PRODUCT_READY=NO`, `FINANCE_READY=NO`, sales remain closed.
+
+`PR 96 OPEN — EXACT-HEAD CI/REVIEW RUNNING — SALES CLOSED`
