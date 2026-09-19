@@ -66,6 +66,7 @@ const { setupActivationAdminRoutes } = require("./services/activation_admin");
 const { getClientIp, isTrustProxyEnabled }                          = require("./middleware/ip");
 const { verifyIfrHolding }                                          = require("./services/ifr");
 const { buildContext, wireWs }                                      = require("./context");
+const statusRoutes                                                  = require("./routes/status");
 const { writeJsonAtomic }                                           = require("./utils/json_store");
 const { sanitize: sanitizeUtil }                                    = require("./utils/sanitize");
 const { issueEntitlementToken, verifyEntitlementToken, orderHash: entitlementOrderHash } = require("./payments/entitlement_tokens");
@@ -73,17 +74,6 @@ const { issueEntitlementToken, verifyEntitlementToken, orderHash: entitlementOrd
 // Hoisted so HTTP route handlers (defined below) can call ctx.sendToClient
 // after buildContext() runs at startup — before any request arrives.
 let ctx;
-
-function reconcileIpConnections() {
-  const rebuilt = new Map();
-  for (const [, client] of clients) {
-    if (!client || !client.ip) continue;
-    if (client.ws && client.ws.readyState !== WebSocket.OPEN) continue;
-    rebuilt.set(client.ip, (rebuilt.get(client.ip) || 0) + 1);
-  }
-  ipConnections.clear();
-  for (const [ip, count] of rebuilt) ipConnections.set(ip, count);
-}
 
 // Initialize Firebase Cloud Messaging
 fcm.initFcm();
@@ -368,7 +358,7 @@ const wss = new WebSocket.Server({
     }
     // Per-IP connection limit
     const ip = getClientIp(info.req);
-    reconcileIpConnections();
+    statusRoutes.reconcileIpConnections(clients, ipConnections);
     const count = ipConnections.get(ip) || 0;
     if (count >= MAX_CONNS_PER_IP) {
       return done(false, 429, "Too many connections from this IP");
@@ -423,22 +413,14 @@ app.get("/status/last-broadcast", (req, res) => {
   res.json(lastBroadcast);
 });
 
-app.get("/status/live", (req, res) => {
-  reconcileIpConnections();
-  res.json({
-    server: "online",
-    uptime: Math.floor(process.uptime()),
-    connectedClients: clients ? clients.size : 0,
-    registeredIds: clientIds ? clientIds.size : 0,
-    fcmTokens: fcmTokens ? fcmTokens.size : 0,
-    ipConnectionBuckets: Array.from(ipConnections.entries()).map(([ip, count]) => ({ ip, count })),
-    wsLimits: {
-      maxConnectionsPerIp: MAX_CONNS_PER_IP,
-      maxAttemptsPerIp: MAX_WS_ATTEMPTS_PER_IP,
-      attemptWindowMs: WS_ATTEMPT_WINDOW_MS
-    },
-    timestamp: new Date().toISOString()
-  });
+// STX-02: public live-status — availability/count/limit facts only, no client IPs.
+statusRoutes.setup(app, {
+  clients, clientIds, fcmTokens, ipConnections,
+  wsLimits: {
+    maxConnectionsPerIp: MAX_CONNS_PER_IP,
+    maxAttemptsPerIp: MAX_WS_ATTEMPTS_PER_IP,
+    attemptWindowMs: WS_ATTEMPT_WINDOW_MS
+  }
 });
 
 app.post("/admin/broadcast", requireAdmin, (req, res) => {
