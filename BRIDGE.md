@@ -6186,3 +6186,66 @@ Open next:
   required.
 
 `PR 82 MERGEABLE / 11 THREADS RESOLVED / ANDROID CI SETUP FIX READY FOR PUSH`
+
+## 2026-09-19 20:55 EEST — CODEX SOL — STX-23 CERTIFICATE PIN ROTATION START
+
+- **Ticket:** audit issue [#84](https://github.com/NeaBouli/stealth/issues/84), finding
+  `STX-23` plus PR #85 A1; **Type:** SECURITY / AVAILABILITY / ANDROID; **Status:** In Progress.
+- Isolated branch `fix/stx23-certificate-pin-rotation-20260919` starts from PR #82 exact head
+  `20018e0`. Kimi is temporarily usage-limited and has not touched this branch; Sol owns design,
+  implementation and validation, with a later independent review queued.
+- Redacted live-chain verification on 2026-09-19 confirms the leaf key still matches the current
+  pin, while the served hierarchy is now YR2 -> Root YR. The XML pin-set expired 2026-08-14 and
+  the OkHttp backup comments/pins still describe R12/ISRG Root X1.
+- Acceptance: one documented overlapping rotation set for current and previous Let's Encrypt
+  hierarchies; no expired declarative policy; testable single source for OkHttp pins; regression
+  guard against leaf-only pinning/stale expiry; relevant Android unit/lint/build checks. Actual
+  cleaned-chain behavior must be validated before release.
+- Out of scope: production deployment, certificate issuance, server/TLS changes, trust bypass,
+  update-channel redesign, payments and sales activation.
+
+`STX-23 FIX ACTIVE / NO DEPLOY / SALES CLOSED`
+
+## 2026-09-19 21:45 EEST — CODEX SOL — STX-23 LOCAL IMPLEMENTATION VERIFIED
+
+- **Ticket:** audit issue [#84](https://github.com/NeaBouli/stealth/issues/84), finding
+  `STX-23` plus PR #85 A1; **Type:** SECURITY / AVAILABILITY / ANDROID;
+  **Status:** Local implementation complete, review/integration pending.
+- Replaced the expired leaf-oriented pin policy with an overlapping CA policy for the current
+  YR2/Root YR hierarchy and the previous R12/ISRG Root X1 hierarchy. OkHttp uses the dedicated
+  `CertificatePinPolicy`; Android Network Security Configuration carries the exact same set.
+  Leaf certificates are intentionally not pinned.
+- Added deterministic code/XML synchronization and release-only 180-day freshness gates. Free,
+  Pro and Premium now consistently report certificate pinning as baseline transport security,
+  including the active Free `RuntimeFeatureProvider` during process startup.
+- Added JVM policy/runtime regression tests and an explicit opt-in live-chain instrumentation
+  test. Updated the release checklist with the exact API 24/API 36 gate and the 2028-03-01
+  rotation deadline.
+- Verification PASS on the final local tree:
+  - `verifyCertificatePinPolicy`, `verifyCertificatePinFreshness`;
+  - Free/Pro/Premium debug unit suites;
+  - `lintFreeRelease` and `compileFreeDebugAndroidTestKotlin`;
+  - Free debug app/test APK assembly;
+  - opt-in production-chain test against `api.stealthx.tech` on isolated API 24 and API 36
+    emulators, one test passed on each;
+  - `git diff --check`.
+- Claude's bounded read-only review found one startup-provider inconsistency; Sol fixed it and
+  added the Free-provider regression test before the final green test chain. Kimi was temporarily
+  provider-limited and made no STX-23 change, so no Kimi contribution is claimed.
+- No physical device, production server, TLS endpoint, runtime secret, payment provider, Google
+  Play release or sales switch was changed. The worktree does not contain the release keystore;
+  the signed AAB/APK remains a final integrated-release task, not an artifact of this stacked
+  security branch. `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain unchanged.
+
+`STX-23 LOCAL GREEN / REVIEW + INTEGRATION PENDING / NO DEPLOY / SALES CLOSED`
+
+## 2026-09-19 21:48 EEST — CODEX SOL — STX-23 PR #92 OPEN
+
+- Published local implementation commit `9064d00` in stacked pull request
+  [#92](https://github.com/NeaBouli/stealth/pull/92) against PR #82's branch.
+- Audit issue #84 records the implementation and remaining gates at
+  https://github.com/NeaBouli/stealth/issues/84#issuecomment-5744470857.
+- PR #92 must wait for #82, then be retargeted to `main`, pass exact-head hosted checks and normal
+  independent review. STX-23 remains open until integration and final signed-release verification.
+
+`PR 92 OPEN / STACKED REVIEW PENDING / NO DEPLOY / SALES CLOSED`
