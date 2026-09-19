@@ -6067,3 +6067,51 @@ Open next:
   private VLABS operator and the version-bound finance gates pass.
 
 `PR 82 LOCAL REVIEW GATES GREEN — ONE REVIEWED PUSH, HOSTED CI AND VLABS SOURCE ACCEPTANCE NEXT`
+
+## 2026-09-19 19:01 EEST — CODEX SOL + KIMI K3 — PR #82 FOLLOW-UP HARDENING VERIFIED
+
+- **Ticket:** `STEALTHX-SALES-READINESS-20260919-B1`; **Type:** FIX / SECURITY /
+  TEST / RELEASE-GATE; **Status:** Follow-up implementation locally verified,
+  commit and reviewed push pending.
+- Kimi K3 independently reviewed the published PR diff and then implemented one
+  bounded, non-overlapping backend block: single-hop proxy-aware request
+  limiting, terminal reversal idempotency, canonical legacy sale revocation,
+  gift-code persistence rollback, focused limiter tests and the stale-lock
+  runbook heading correction. Kimi made no commit, push, deploy or external
+  change.
+- Codex Sol reviewed every changed line and tightened the result: forwarded
+  headers are trusted only under the explicit `TRUST_PROXY=true|1` deployment
+  contract; the shared IP helper uses the rightmost address appended by the one
+  trusted proxy; recovered Stripe session keys require the complete `cs_`
+  format; failed gift persistence restores the exact prior object state; and
+  contradictory legacy terminal tiers fail closed.
+- Changed files are limited to the signaling proxy/IP helper, fulfillment and
+  subscription handlers, their existing tests, and `docs/BACKUP_RESTORE.md`.
+  Android, website, product catalogue, prices and production configuration were
+  not changed in this follow-up.
+- Verification PASS after Sol integration: complete signaling `npm test`,
+  including startup, context, 47/47 handlers, 94/94 subscription/WebRTC,
+  payment, RTDN, entitlement and VLABS fulfillment suites; JavaScript syntax;
+  `git diff --check`; and a bounded live-secret-pattern diff scan with no hit.
+  The first sandboxed test attempt failed only because localhost listen was
+  denied (`EPERM`); the same full suite passed outside that socket sandbox.
+- The earlier exact Android CI-equivalent 183-task API-36 build remains valid
+  because no Android file changed after it. Hosted GitHub Actions have not
+  produced a new run for the pushed PR head because the account-level Actions
+  allowance is currently unavailable; no repeated dispatch or weakened gate is
+  permitted.
+- `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain unchanged. Sales, browser IFR
+  discount, Stripe fulfillment, fiscal activation, deployment and publishing
+  stay closed pending reviewed source acceptance, VLABS pairing and the normal
+  version-bound release gates.
+
+`PR 82 FOLLOW-UP LOCALLY GREEN — COMMIT/PUSH, THREAD RECONCILIATION AND VLABS ACCEPTANCE NEXT`
+
+### 2026-09-19 19:04 EEST — Dependency audit note
+
+- `npm ls --all --omit=dev` resolves successfully. `npm audit --omit=dev
+  --audit-level=high` exits `0`: no High/Critical advisory blocks this patch.
+  It reports three Moderate advisories in the transitive `qs` dependency via
+  Express/body-parser. That lockfile remediation is intentionally separated
+  from PR #82's fulfillment/security review diff and remains required before a
+  final `PRODUCT_READY` decision.

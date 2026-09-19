@@ -193,9 +193,17 @@ module.exports = function subscriptionHandlers(ctx) {
         const gift = giftCodes.get(code);
         if (gift.used) return respond({ success: false, error: "already_used" });
         if (new Date(gift.expires) < new Date()) return respond({ success: false, error: "expired" });
+        const previousUsed = gift.used;
+        const hadUsedBy = Object.prototype.hasOwnProperty.call(gift, "usedBy");
+        const previousUsedBy = gift.usedBy;
         gift.used = true;
         gift.usedBy = myClientId;
-        saveGiftCodes();
+        if (saveGiftCodes() === false) {
+          gift.used = previousUsed;
+          if (hadUsedBy) gift.usedBy = previousUsedBy;
+          else delete gift.usedBy;
+          return respond({ success: false, error: "entitlement_temporarily_unavailable" });
+        }
         console.log("[GIFT] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", gift.tier, "by:", myClientId);
         return respond({ success: true, tier: gift.tier });
       }
