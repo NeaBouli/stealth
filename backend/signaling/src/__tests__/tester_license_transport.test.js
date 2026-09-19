@@ -16,11 +16,12 @@ try {
   const signer = crypto.generateKeyPairSync("ed25519");
   const device = crypto.generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   const hash = value => crypto.createHash("sha256").update(value).digest("hex");
-  const keyHash = hash(device.publicKey.export({type:"spki",format:"der"}));
+  const publicKeyDer = device.publicKey.export({type:"spki",format:"der"});
+  const publicKey = publicKeyDer.toString("base64url");
+  const keyHash = hash(publicKeyDer);
   const code = `SC-PREM-${"D".repeat(48)}`;
   const state = {schema:1, grants:[{id:"a".repeat(64),codeHash:hash(code),status:"active",binding:null}],
-    enrolledKeys:[{hash:keyHash,publicKeyPem:device.publicKey.export({type:"spki",format:"pem"}),
-      package:"com.securecall.app.premium",assurance:"hardware-verified",status:"active"}]};
+    enrolledKeys:[]};
   fs.writeFileSync(file, JSON.stringify(state), {mode:0o600});
   assert.equal(loadTesterLicenseRuntime({}),null);
   assert.equal(loadTesterLicenseRuntime({SECURECALL_TESTER_LICENSE_ENABLED:"true"}),null);
@@ -42,7 +43,8 @@ try {
     assert.equal(replies[0].requestId,requestId);
     return replies[0];
   };
-  const start = () => invoke(active,"TESTER_ACTIVATION_BEGIN",{code,keyHash,packageName:"com.securecall.app.premium",subject:"forged"});
+  const start = () => invoke(active,"TESTER_ACTIVATION_BEGIN",{code,publicKey,
+    packageName:"com.securecall.app.premium",subject:"forged",keyHash:"0".repeat(64)});
   const prove = challenge => ({challengeId:challenge.challengeId,
     signature:crypto.sign("sha256",Buffer.from(challenge.challenge),device.privateKey).toString("base64url")});
   const challenge = start(); assert.equal(challenge.success,true);
@@ -56,6 +58,15 @@ try {
   const renewed = invoke(active,"TESTER_RENEWAL_COMPLETE",prove(renewal));
   assert.equal(renewed.success,true);
   verifyTesterEntitlement(renewed.entitlementToken,verification);
+  const foreign = crypto.generateKeyPairSync("ec", {namedCurve:"prime256v1"});
+  const wrongProof = challenge => ({challengeId:challenge.challengeId,
+    signature:crypto.sign("sha256",Buffer.from(challenge.challenge),foreign.privateKey).toString("base64url")});
+  const retry = start();
+  assert.equal(invoke(active,"TESTER_ACTIVATION_COMPLETE",wrongProof(retry)).success,false);
+  const tokenParts = activation.entitlementToken.split(".");
+  const replacement = tokenParts[1].endsWith("A") ? "B" : "A";
+  const manipulated = `${tokenParts[0]}.${tokenParts[1].slice(0,-1)}${replacement}.${tokenParts[2]}`;
+  assert.equal(invoke(active,"TESTER_RENEWAL_BEGIN",{entitlementToken:manipulated,keyHash}).success,false);
   const other = start(); subject="synthetic-session-B";
   assert.equal(invoke(active,"TESTER_ACTIVATION_COMPLETE",prove(other)).success,false);
   subject=null;
