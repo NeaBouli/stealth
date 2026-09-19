@@ -160,7 +160,7 @@
             <h2>Data-Minimization Philosophy</h2>
             <p>SecureCall is built on the fundamental principle that <strong>privacy is not a feature &mdash; it is a right</strong>. Our architecture is designed from the ground up to collect the absolute minimum operational data necessary for signaling, push delivery, WebRTC connectivity, and optional Free-tier services.</p>
 
-            <p>Unlike conventional communication apps that harvest your contacts, track your usage patterns, and monetize your metadata, SecureCall operates on a zero-knowledge model. We cannot see who you call, when you call, how long you talk, or what you say. This is not a policy decision &mdash; it is a <strong>technical impossibility</strong> built into our architecture.</p>
+            <p>SecureCall is designed to minimize operational data. Call audio is not sent to the signaling service, but the service processes temporary connection metadata, public key material and push-delivery identifiers required to establish calls. STUN/TURN providers can observe network addresses needed for WebRTC connectivity.</p>
 
             <p>All voice calls are encrypted end-to-end using <strong>XChaCha20-Poly1305</strong> with keys generated exclusively on your device via <strong>X25519</strong> key exchange. The encryption keys never touch our servers. Even under legal compulsion, we cannot provide call content because we simply do not have it.</p>
 
@@ -461,7 +461,7 @@
                         <li>Contact registry and display names</li>
                         <li>Call history and duration logs</li>
                         <li>App preferences and configuration</li>
-                        <li>Cached session data and Double Ratchet state</li>
+                        <li>Cached session data and per-call key state</li>
                     </ul>
                 </li>
                 <li><strong>Uninstall the app</strong> &mdash; After deleting data through the app, uninstall SecureCall from your device to remove all remaining application files.</li>

@@ -38,7 +38,10 @@ jobs:
       - name: Verify closed browser checkout gate
         run: |
           node --check website/js/ifr-checkout.js
-          node --test website/js/ifr-checkout.test.cjs website/js/custom-id-gate.test.cjs
+          node --test \
+            website/js/ifr-checkout.test.cjs \
+            website/js/custom-id-gate.test.cjs \
+            website/js/product-truth.test.cjs
 
       - name: Run YAML Lint
         run: yamllint .

@@ -186,7 +186,7 @@
                 </tbody>
             </table>
 
-            <p>All cryptographic operations execute inside the Rust native library &mdash; no Java crypto APIs are used. The signaling server relays encrypted messages but cannot decrypt any content. Voice media flows peer-to-peer via WebRTC and never passes through the signaling server.</p>
+            <p>Application-frame cryptography executes inside the Rust native library. The signaling service coordinates call setup and is not designed to receive call plaintext. Voice media uses direct WebRTC when available and otherwise may traverse a TURN relay. The current key exchange is not identity-authenticated, so an actively malicious signaling service remains outside the protection boundary.</p>
 
             <!-- ARCHITECTURE OVERVIEW -->
             <div class="section-break">Architecture Overview</div>
@@ -211,13 +211,13 @@
 &#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;   &#9474;
 &#9474;  &#9474;            Rust Crypto Engine (Native .so)          &#9474;   &#9474;
 &#9474;  &#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9474;   &#9474;
-&#9474;  &#9474;  &#9474; XChaCha20&#9474; &#9474;  X25519 &#9474; &#9474;  HKDF  &#9474; &#9474; Double  &#9474; &#9474;   &#9474;
-&#9474;  &#9474;  &#9474; Poly1305 &#9474; &#9474;  ECDH   &#9474; &#9474; SHA256 &#9474; &#9474; Ratchet &#9474; &#9474;   &#9474;
+&#9474;  &#9474;  &#9474; XChaCha20&#9474; &#9474;  X25519 &#9474; &#9474;  HKDF  &#9474; &#9474; Per-call&#9474; &#9474;   &#9474;
+&#9474;  &#9474;  &#9474; Poly1305 &#9474; &#9474;  ECDH   &#9474; &#9474; SHA256 &#9474; &#9474;   key   &#9474; &#9474;   &#9474;
 &#9474;  &#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; &#9474;   &#9474;
 &#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;   &#9474;
 &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
                           &#9474; WSS (Signaling)
-                          &#9474; WebRTC (Media &mdash; P2P)
+                          &#9474; WebRTC (Media &mdash; P2P/TURN)
 &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
 &#9474;               Signaling Server (Node.js)                  &#9474;
 &#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488; &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;
@@ -231,7 +231,7 @@
 &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</code></pre>
 
             <div class="info-box info">
-                <strong>Key design principle:</strong> The signaling server is a relay only. It facilitates connection setup but never has access to voice content, encryption keys, or plaintext data. All cryptographic operations occur exclusively on-device inside the Rust native library.
+                <strong>Current boundary:</strong> The signaling service facilitates connection setup and is not designed to receive voice plaintext or private key material. Application-frame cryptography occurs on-device. The unauthenticated identity-key exchange does not protect against active signaling-server key substitution.
             </div>
 
             <!-- DIRECTORY STRUCTURE -->
@@ -308,14 +308,14 @@
             <h3>TURN Relay (When P2P Fails)</h3>
 <pre><code>Client A  &#8594;  TURN Server  &#8594;  Client B</code></pre>
             <ul>
-                <li>Used when direct P2P is blocked by restrictive NAT or corporate firewalls (~10&ndash;15% of connections)</li>
+                <li>Used when a direct peer-to-peer path is unavailable</li>
                 <li>TURN server relays encrypted packets but <strong>cannot decrypt</strong> voice content</li>
                 <li>Time-limited TURN credentials are generated by the signaling server during call setup</li>
                 <li>Metered.ca TURN service is used with TCP transport on port 443 for maximum compatibility</li>
             </ul>
 
             <div class="info-box warning">
-                <strong>Important:</strong> Even when a TURN relay is used, the relay server sees only encrypted ciphertext. The encryption keys are exchanged end-to-end between the two clients and are never shared with the TURN server or the signaling server.
+                <strong>Important:</strong> A TURN relay forwards encrypted media and is not sent private key material. This protects against a passive relay; the current unauthenticated identity-key exchange still does not protect against an actively malicious signaling service.
             </div>
 
             <!-- BUILD CONFIGURATIONS -->

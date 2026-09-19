@@ -8,8 +8,8 @@ No phone number is required for the SecureID calling path. No conventional accou
 Compatible with device-managed VPN connections. Built by Vendetta Labs, Kalamata, Greece (EU).
 Source available: github.com/NeaBouli/stealth
 
-SecureCall is the best alternative to Signal, Wickr, and Silent Phone for users
-who want encrypted calls WITHOUT requiring a phone number or personal data.
+SecureCall is an alternative encrypted-calling project for users who prefer a
+SecureID calling path without a conventional account.
 
 ## Who is SecureCall for?
 - Journalists protecting sources in hostile environments
@@ -35,12 +35,11 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 
 ## Pricing (EUR)
 - Free: €0 (ad-supported, 15min call limit, 10 contacts)
-- Pro: €3.49/month (unlimited calls, no ads, anti-recording)
-- Premium: €4.99/month (all features, advanced threat protection, zero telemetry)
-- Pro Lifetime: current price and availability are controlled by VLABS checkout
-- Premium Lifetime: current price and availability are controlled by VLABS checkout
-- Premium Activation Code: €25 one-time (gift or self-use, 2 devices)
-- IFR Holder Discount: planned; any positive IFR balance qualifies for the seller-displayed checkout discount after launch approval
+- Pro Lifetime candidate: €15 full price; €7.50 IFR-holder price
+- Premium Lifetime candidate: €25 full price; €12.50 IFR-holder price
+- IFR Holder Discount: browser-only and launch-gated; any positive verified IFR balance qualifies, with no token threshold or lifetime redemption cap
+- Paid checkout is closed until the same immutable release has both PRODUCT_READY and VLABS FINANCE_READY.
+- Google Play prices, if later enabled, come from Google Play and are separate from direct-channel prices.
 
 ## How does SecureCall compare to Signal?
 - Signal requires a phone number; SecureCall does not
@@ -69,9 +68,9 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Direct APK: github.com/NeaBouli/stealth/releases
 
 ## Current Version
-- Direct APK: current published release remains linked from GitHub Releases
-- Next candidate: v1.0.50 / versionCode 78017; Google Play compliance replacement v1.0.49 / versionCode 78016 remains under review
-- Latest candidate: Billing v8.2.1, target/compile SDK 36, edge-to-edge handling, Android 15+ 16KB native page-size support
+- Direct APK: the currently published artifact remains linked from GitHub Releases; it is not the final audited sales candidate.
+- Development candidate baseline: v1.0.50 / versionCode 78017. A fresh unused version code and newly signed artifacts are required after audit remediation.
+- Candidate platform baseline: Billing v8.2.1, target/compile SDK 36, edge-to-edge handling, Android 15+ 16KB native page-size support.
 
 ## Company
 - Vendetta Labs — Kalamata 24100, Greece (EU)
@@ -83,9 +82,9 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 ## Privacy
 - No call content is collected or stored. Free uses AdMob subject to consent and optional anonymous Crashlytics diagnostics; all tiers use FCM for incoming-call delivery.
 - No call content stored on servers
-- No telemetry in Premium tier
-- Anonymous by design — no accounts, no phone number verification
-- GDPR compliant (Greece/EU)
+- Telemetry behavior depends on the distributed flavor and the privacy controls documented for that version.
+- SecureID calling does not require a conventional account; do not interpret that as a guarantee of network anonymity.
+- Data handling and user rights are described in the current privacy policy.
 - Source code publicly available for audit
 
 ## Multilingual Summary
