@@ -6412,3 +6412,16 @@ Open next:
   data handling or sale activation is authorized by this integration block.
 
 `AUDIT-FIX INTEGRATION IN PROGRESS — PR 95 CI PENDING — SALES CLOSED`
+
+## 2026-09-20 02:24 EEST — CODEX SOL — PR #95 EXACT-HEAD CI GREEN
+
+- GitHub Actions run `35475561291` passed on exact baseline `2cb2aed`: Markdown/YAML, Rust Core
+  Crypto, Signaling Tests including all 25 private staging/export tests, and Android Client.
+  Android completed in 8m12s.
+- CodeRabbit's check passed by skipping review on the stacked non-main base; it is not treated as
+  an independent review. Kimi K3 was retried for the next integration review, but its provider
+  returned the five-hour quota response before reading code or changing files.
+- Sequential gate satisfied: integration of the already reviewed #89/#91/#92/#93 implementation
+  commits may now proceed. Production, private delivery and sales gates remain closed.
+
+`PR 95 CI GREEN — AUDIT-FIX INTEGRATION ACTIVE — SALES CLOSED`
