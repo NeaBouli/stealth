@@ -19,7 +19,7 @@ module.exports = function testerLicenseHandlers({ getClientId, testerLicenseRegi
       try {
         // Subject always comes from the registered session, never the message.
         let input;
-        if (method === "begin") input = { subject, code: msg.code, keyHash: msg.keyHash, packageName: msg.packageName };
+        if (method === "begin") input = { subject, code: msg.code, publicKey: msg.publicKey, packageName: msg.packageName };
         else if (method === "beginRefresh") input = { subject, token: msg.entitlementToken, keyHash: msg.keyHash };
         else input = { subject, challengeId: msg.challengeId, signature: msg.signature };
         const result = testerLicenseRegistry[method](input);

@@ -72,6 +72,9 @@ jobs:
       - name: Run signaling tests
         run: npm test
 
+      - name: Test private tester staging tools
+        run: python3 -B -m unittest discover -s scripts -p 'test_*tester_staging.py' -v
+
   rust-core:
     name: Rust Core Crypto
     runs-on: ubuntu-latest

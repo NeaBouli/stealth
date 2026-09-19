@@ -19,10 +19,21 @@ with the community coordinator; this document is not a delivery authorization.
 ## Activation and renewal
 
 Registered sessions use dedicated BEGIN/COMPLETE challenge exchanges. The server
-takes the subject from the connection, not a message claim. A P-256 proof from a
-previously approved hardware key is required. The client checks challenge domain,
-subject, device key and request correlation before signing. It only accepts a
-correctly signed `sct1` proof through the regular entitlement store.
+takes the subject from the connection, not a message claim. On first activation,
+Direct Premium creates a P-256 Android Keystore signing key and locally requires
+TEE or StrongBox backing. The server parses the canonical SPKI key, derives its
+hash and verifies possession before atomically storing the key and binding the
+grant. It never trusts a client-supplied device identifier or activation key hash.
+The client checks challenge domain, subject, device key and request correlation
+before signing. It only accepts a correctly signed `sct1` proof through the
+regular entitlement store.
+
+This is server-verified P-256 key possession with local hardware enforcement,
+not remote Android Key Attestation. A rooted or otherwise compromised device can
+subvert client-side checks, and hardware implementation claims are not visible to
+the server. The design prevents ordinary copied app data or a copied client ID
+from carrying the non-exportable private key, but it does not claim absolute
+copy resistance on manipulated hardware.
 
 An active lifetime grant can issue successive 30-day signed leases. Renewal needs
 fresh key possession and rechecks the grant, enrolled key and stored binding.
@@ -55,16 +66,14 @@ this implementation.
 
 ## Remaining release gates
 
-1. Implement and validate hardware enrollment against trusted attestation evidence,
-   challenge, package and signer. Never accept client-supplied `hardware-verified`.
-2. Reconcile the private gift inventory and provision dedicated signer, approved
-   enrollment and inactive gift records. The runtime has no public import endpoint.
-3. Build and inspect the configured signed Direct Premium APK. Check activation,
+1. Reconcile the private gift inventory and provision the dedicated signer and
+   approved inactive gift records. The runtime has no public import endpoint.
+2. Build and inspect the configured signed Direct Premium APK. Check activation,
    reinstall/recovery, updates, offline expiry and revocation on two real devices.
    Every subsequent Direct Premium update must preserve the approved public
    verifier and tester feature configuration while the gift program is active;
    publishing a default-disabled candidate is not a valid gift-user update.
-4. Submit the redacted recipient count, exact artifact identity, test evidence and
+3. Submit the redacted recipient count, exact artifact identity, test evidence and
    rollback plan for the separately required production/delivery approval.
 
 ## Local checks
@@ -72,9 +81,7 @@ this implementation.
 `npm test` includes the dedicated synthetic registry, protocol and transport suite.
 Android billing unit tests include client correlation, challenge-domain rejection,
 proof validation, timeout, concurrency, device-loss and all-flavor verifier checks.
-Synthetic preapproved keys test registry behavior only, not real enrollment.
-
-The maintained upstream reference for server-side certificate-chain validation
-is [Android Key Attestation Verifier](https://github.com/android/keyattestation).
-It is not yet integrated here. A local Keystore check must not substitute for
-trusted chain, fresh revocation information and application/challenge validation.
+Synthetic P-256 keys test protocol and durable binding behavior; connected-device
+tests are still required to establish actual Android Keystore behavior on the
+supported hardware. Local Keystore checks must never be documented as remote
+attestation.

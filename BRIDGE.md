@@ -6327,3 +6327,73 @@ Open next:
   `FINANCE_READY=NO`, checkout and sales remain closed.
 
 `PR 94 OPEN — HOSTED CI + NORMAL REVIEW PENDING / SALES CLOSED`
+## 2026-09-20 01:13 EEST — Tester-code first-use device binding  →  In Progress
+
+- **Branch:** `feat/tester-codes-complete-20260920`
+- **Baseline:** `464da48da0f70eb13c12dbca4d8a48fd1ab3c88e` (current SecureCall stacked candidate)
+- **Scope:** Direct Premium only. Complete the PR #82 tester-license path so a fresh install can
+  create a non-exportable P-256 Android Keystore key and atomically bind one active personal code
+  to proof of that key. Preserve same-key retry/renewal and reject other keys, copied app data,
+  replay and concurrent first activation.
+- **Security boundary:** No device identifier is trusted. Local hardware enforcement and remote
+  key-possession proof are distinct from Android Key Attestation and must not be described as
+  attestation. No recipient data, raw code, signer key or production registry enters Git or an
+  agent prompt.
+- **Ownership:** Kimi K3 receives the bounded implementation slice. Sol owns architecture,
+  line-by-line diff review, integration, full tests and every external action.
+- **Production:** No deployment, registry mutation, code activation, email delivery or release
+  authorization in this block.
+- **Risk:** High (auth/licensing and durable one-device binding).
+
+---
+
+## 2026-09-20 02:04 EEST — CODEX SOL — TESTER-CODE PATH LOCALLY COMPLETE
+
+- Completed the Direct Premium first-use path: a fresh install creates a P-256 Android
+  Keystore signing key, locally requires TEE/StrongBox backing, sends canonical public SPKI,
+  and proves possession before the server atomically stores the key and binds the active grant
+  to the registered session subject. The server derives the key hash and never trusts a device
+  ID or client-supplied activation hash.
+- Same-key retry and renewal remain supported. Other key/subject, replay, concurrent first
+  binding, revoked/corrupt state, invalid key/proof/token, lock contention and persistence
+  failure are covered by fail-closed tests. Renewal BEGIN now rechecks active grant, active key
+  and exact binding before issuing a challenge.
+- Added a separate private draft exporter. It atomically creates mode600 delivery CSV,
+  inactive hash-only runtime registry and checksum manifest in an owner-only directory outside
+  Git. Output is idempotent, conflict-safe and explicitly `draft_do_not_send_or_activate`.
+  No recipient, raw code, private signer or device data is present in this repository.
+- Read-only aggregate production inventory found no current tester registry and no redeemed or
+  recipient-linked legacy gift record. Unused generic legacy activation entries remain a
+  separate owner-disposition gate; no record was read, changed, revoked or imported.
+- Verification PASS:
+  - full signaling/backend suite including tester, payment, RTDN and fulfillment tests;
+  - private preparation/export suite: 25/25 synthetic tests;
+  - strict mypy: 4 files, zero issues;
+  - Premium Debug unit tests and AndroidTest compilation: BUILD SUCCESSFUL;
+  - S10 API31 Pro-Debug hardware-key instrumentation: 1/1;
+  - Tab S4 API29 Premium-Debug hardware-key instrumentation: 1/1;
+  - `git diff --check` and bounded added-line credential scan: no finding.
+- Independent Terra review found one Medium renewal-BEGIN fail-closed gap; it was fixed and the
+  focused/full suites rerun green. Kimi K3 and Claude Code were retried read-only but both
+  providers rejected startup on usage limits; neither changed files or supplied findings.
+- Remaining gates: publish this stacked branch and obtain exact-head CI/review; run the private
+  coordinator preparation/export on the separate recipient host; integrate the remaining
+  SecureCall audit/UI stack; build the exact configured signed Direct Premium candidate; then
+  perform end-to-end two-device activation/recovery/revocation acceptance before any production
+  import, activation or email delivery.
+- No deployment, runtime secret, production registry mutation, code activation, email delivery,
+  artifact publication, payment action or sale activation occurred. `PRODUCT_READY=NO`,
+  `FINANCE_READY=NO`, sales remain closed.
+
+`TESTER-CODE LOCAL IMPLEMENTATION GREEN — STACKED PR + PRIVATE COORDINATOR DRAFT NEXT`
+
+## 2026-09-20 02:08 EEST — CODEX SOL — TESTER-CODE PR PUBLISHED
+
+- Published implementation commit `6513505` and opened stacked PR
+  [#95](https://github.com/NeaBouli/stealth/pull/95) against PR #94's exact head.
+- Required stack order remains #82 -> #90 -> #94 -> #95, then complete exact-main CI.
+- Hosted exact-head checks and normal review are pending. No production or delivery gate changed.
+- The Basic CI signaling job now also runs all synthetic private staging/export tests so this
+  boundary is enforced on every candidate rather than only by the local verification record.
+
+`PR 95 OPEN — HOSTED CI/REVIEW PENDING — PRODUCTION AND DELIVERY CLOSED`
