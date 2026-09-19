@@ -5,13 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security Architecture — SecureCall</title>
-    <meta name="description" content="SecureCall security architecture: XChaCha20-Poly1305 encryption, X25519 key exchange, Double Ratchet forward secrecy, Rust crypto engine.">
+    <meta name="description" content="SecureCall security architecture: XChaCha20-Poly1305 application-frame encryption, per-call X25519/HKDF key material, and a Rust crypto engine.">
     <meta name="theme-color" content="#0B0B0F">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://stealthx.tech/security.html">
 
     <meta property="og:title" content="Security Architecture — SecureCall">
-    <meta property="og:description" content="How SecureCall protects your voice calls with military-grade cryptography.">
+    <meta property="og:description" content="How SecureCall protects voice calls, including current trust boundaries and audit limits.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://stealthx.tech/security.html">
 
@@ -82,7 +82,7 @@
             <tr><th>Component</th><th>Algorithm</th><th>Details</th></tr>
             <tr><td><strong>Symmetric Encryption</strong></td><td>XChaCha20-Poly1305</td><td>256-bit AEAD cipher with 192-bit extended nonce</td></tr>
             <tr><td><strong>Key Exchange</strong></td><td>X25519</td><td>Elliptic Curve Diffie-Hellman on Curve25519</td></tr>
-            <tr><td><strong>Forward Secrecy</strong></td><td>Double Ratchet</td><td>Per-session key derivation with ratcheting</td></tr>
+            <tr><td><strong>Session Key Lifecycle</strong></td><td>X25519 + HKDF-SHA256</td><td>Separate key material per call, discarded at call end</td></tr>
             <tr><td><strong>Key Derivation</strong></td><td>HKDF-SHA256</td><td>HMAC-based key derivation function</td></tr>
             <tr><td><strong>Transport</strong></td><td>DTLS-SRTP</td><td>Encrypted peer-to-peer media transport</td></tr>
             <tr><td><strong>Audio Codec</strong></td><td>Opus</td><td>48kHz, adaptive bitrate 6-510 kbps</td></tr>
@@ -91,32 +91,32 @@
         <h2>Architecture Overview</h2>
 
         <h3>Key Generation</h3>
-        <p>When you install SecureCall, your device generates an <strong>X25519 key pair</strong> using a cryptographically secure random number generator (CSPRNG). The private key never leaves your device. The public key is used to establish encrypted channels with your contacts.</p>
+        <p>For each call, SecureCall uses <strong>X25519</strong> key material generated on the participating devices. The private material is not sent to the signaling service. The current exchange is not authenticated by a long-term identity signature.</p>
 
         <h3>Call Establishment</h3>
         <ol>
-            <li>Caller sends encrypted signaling message via our relay server</li>
+            <li>Caller sends call-setup data through the signaling service</li>
             <li>Both parties perform X25519 Diffie-Hellman key exchange</li>
             <li>Shared secret is derived using HKDF-SHA256</li>
-            <li>Double Ratchet initializes with the shared secret</li>
+            <li>The per-call session key becomes active</li>
             <li>Direct peer-to-peer connection is established via WebRTC</li>
             <li>Voice frames are encrypted with XChaCha20-Poly1305 before transmission</li>
         </ol>
 
-        <h3>Perfect Forward Secrecy</h3>
-        <p>The <strong>Double Ratchet</strong> protocol ensures that each call session uses unique encryption keys. Even if an attacker compromises your long-term key, they cannot decrypt past or future calls. Each voice frame uses a fresh key derived from the ratchet state.</p>
+        <h3>Per-call key lifecycle</h3>
+        <p>X25519 and HKDF-SHA256 derive separate key material for each call, which is discarded when the call ends. XChaCha20-Poly1305 protects application media frames. SecureCall does not currently implement a Double Ratchet, per-frame ratcheting, authenticated identity-key exchange, or post-compromise security.</p>
 
         <h3>Signaling Server</h3>
-        <p>Our signaling server facilitates call setup but <strong>cannot decrypt any content</strong>. It only sees:</p>
+        <p>The signaling service facilitates call setup and is not designed to receive call plaintext. It does process:</p>
         <ul>
-            <li>Encrypted signaling payloads (opaque to the server)</li>
-            <li>Temporary connection identifiers (not linked to identity)</li>
-            <li>IP addresses (transient; not logged; masked for Premium users)</li>
+            <li>Call-setup and delivery messages required by the protocol</li>
+            <li>Pseudonymous SecureIDs and temporary connection identifiers</li>
+            <li>Network endpoints and operational data as described in the privacy policy</li>
         </ul>
-        <p>Once a peer-to-peer connection is established, voice data flows directly between devices without touching our servers.</p>
+        <p>Media uses a direct WebRTC path when available and otherwise may traverse a TURN relay. Application media frames remain encrypted. Because the key exchange is not yet identity-authenticated, an actively malicious signaling service remains outside the current protection boundary.</p>
 
         <h2>Rust Crypto Engine</h2>
-        <p>The cryptographic core of SecureCall is written in <strong>Rust</strong>, a systems programming language that guarantees memory safety at compile time. This eliminates entire classes of vulnerabilities:</p>
+        <p>The cryptographic core of SecureCall is written in <strong>Rust</strong>. Rust's type and ownership system reduces several classes of memory-safety defects in safe Rust; native dependencies, FFI boundaries, logic errors, and unsafe code still require review and tests:</p>
         <ul>
             <li><strong>No buffer overflows</strong> &mdash; Rust prevents out-of-bounds memory access</li>
             <li><strong>No use-after-free</strong> &mdash; The ownership system ensures memory is properly managed</li>
@@ -166,8 +166,8 @@
         <h2>StealthX Platform &mdash; Shared Crypto Stack</h2>
         <p>SecureCall is part of the StealthX Platform. All three products share the same cryptographic foundation:</p>
         <table>
-            <tr><th>Product</th><th>Encryption</th><th>Key Exchange</th><th>Forward Secrecy</th><th>Transport</th></tr>
-            <tr><td><strong>SecureCall</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Double Ratchet</td><td>WebRTC DTLS-SRTP</td></tr>
+            <tr><th>Product</th><th>Encryption</th><th>Key Exchange</th><th>Key Lifecycle</th><th>Transport</th></tr>
+            <tr><td><strong>SecureCall</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Per-call HKDF key; no ratchet</td><td>WebRTC DTLS-SRTP</td></tr>
             <tr><td><strong>SecureChat</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Double Ratchet</td><td>Tor/.onion Relay Nodes</td></tr>
             <tr><td><strong>Chameleon</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Double Ratchet</td><td>Local + AIDL IPC</td></tr>
         </table>

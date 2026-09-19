@@ -1,93 +1,42 @@
-SecureCall — Deine Stimme gehört nur dir.
+SecureCall - verschluesselte Sprachanrufe fuer Android
 
-SecureCall ist die erste Telefon-App, die von Grund auf für maximale Privatsphäre entwickelt wurde. Jeder Anruf wird Ende-zu-Ende verschlüsselt — mit militärischer Kryptografie, die selbst Geheimdienste nicht knacken können.
+SecureCall ermoeglicht Ende-zu-Ende-verschluesselte 1:1-Sprachanrufe ueber eine SecureID. Fuer den SecureID-Anrufpfad ist kein herkoemmliches Benutzerkonto erforderlich.
 
-🔒 SICHERHEIT AUF HÖCHSTEM NIVEAU
+SICHERHEITSDESIGN
 
-• Ende-zu-Ende-Verschlüsselung mit XChaCha20-Poly1305 (AEAD)
-• Schlüsselaustausch über X25519 (Elliptic Curve Diffie-Hellman)
-• Double-Ratchet-Protokoll für Perfect Forward Secrecy
-• Jeder Anruf hat einen einzigartigen Sitzungsschlüssel
-• Kryptografie-Engine komplett in Rust geschrieben — speichersicher, keine Buffer Overflows
-• Unabhängig auditiert
+* XChaCha20-Poly1305 schuetzt Anwendungs-Medienframes.
+* X25519 und HKDF-SHA256 leiten fuer jeden Anruf separates Schluesselmaterial ab.
+* Das Schluesselmaterial wird nach dem Anruf verworfen.
+* Die Kryptografie-Engine ist in Rust implementiert.
+* Anrufinhalte werden vom Signalisierungsdienst nicht gespeichert.
 
-📞 KRISTALLKLARE ANRUFE
+SecureCall behauptet nicht, ein Double Ratchet, einen authentifizierten Identitaets-Schluesselaustausch, Post-Compromise-Sicherheit oder Schutz vor einem boesartigen Signalisierungsdienst zu implementieren. Quellcode und aktueller Auditstatus stehen zur unabhaengigen Pruefung bereit.
 
-• Opus-Audio-Codec für natürliche Sprachqualität
-• Optimiert für niedrige Latenz, auch bei schlechter Verbindung
-• Funktioniert über WLAN und Mobilfunk
+ANRUFE
 
-🛡️ ZERO METADATA
+* Opus-Audio-Codec
+* Unterstuetzung fuer WLAN und mobile Daten
+* Benachrichtigungen fuer eingehende Anrufe ueber Firebase Cloud Messaging
+* Optionale lokale Kontakte zur Anzeige von Namen
+* Dunkles Design und Bedienungshilfen
 
-• Keine Anrufprotokolle auf unseren Servern
-• Keine Kontaktlisten-Uploads
-• Kein Tracking, keine Werbung
-• Kompatibel mit VPN-Verbindungen, die Android oder eine vertrauenswürdige App verwaltet
+DATENSCHUTZ
 
-📖 SOURCE AVAILABLE
-
-Der komplette Quellcode ist auf GitHub einsehbar. Jeder kann die Sicherheit verifizieren — Vertrauen durch Transparenz.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📱 FREE VERSION
-• Ende-zu-Ende verschlüsselte Anrufe
-• Basis-Audiqualität (Opus)
-• Anonyme Crash-Reports (Crashlytics, abschaltbar)
-• Perfekt zum Ausprobieren
-
-⭐ PRO VERSION
-• Alles aus FREE
-• HD-Audio-Qualität
-• Keine Telemetrie — absolut kein Tracking
-• Bevorzugter Support
-• Unterstütze die Entwicklung
-
-💎 PREMIUM VERSION
-• Alles aus PRO
-• Alle Datenschutz- und Audiofunktionen aus PRO
-• Premium-Support und Zugriff auf zukünftige Funktionen
-• Kompatibel mit vom Gerät verwalteten VPN-Verbindungen
-• Zukunftssichere Post-Quantum-Kryptografie (in Entwicklung)
-• Höchste Sicherheitsstufe
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-ZEITLICH BEGRENZTES ANGEBOT
-
-Forever-Lizenzen — Kein Abo!
-
-PRO Lifetime: Ab $15 (100 verfügbar)
-PREMIUM Lifetime: Ab $25 (100 verfügbar)
-
-Der Preis steigt automatisch mit jedem Verkauf!
-Frühkäufer bekommen den besten Deal. Einmal ausverkauft, gilt der reguläre Abo-Preis.
-Jetzt kaufen, bevor der Preis steigt!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-TECHNISCHE DETAILS
-
-Verschlüsselung: XChaCha20-Poly1305 (AEAD)
-Schlüsselaustausch: X25519 (ECDH)
-Forward Secrecy: Double Ratchet Protocol
-Audio: Opus Codec (6-510 kbps)
-Transport: WebRTC/QUIC mit DTLS
-Krypto-Engine: Rust (speichersicher)
-Netzwerk: WebRTC mit STUN/TURN; kompatibel mit vom Gerät verwalteten VPNs
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+* Kein Upload der Kontaktliste
+* Keine Speicherung von Anrufinhalten durch den Signalisierungsdienst
+* Routing- und Zustellmetadaten werden wie in der Datenschutzrichtlinie beschrieben verarbeitet.
+* Die Google-Play-Version stellt keinen VPN-Dienst bereit und installiert keinen. Sie folgt dem aktiven Android-Netzwerk, einschliesslich eines von Android oder einer anderen vertrauenswuerdigen App verwalteten VPNs.
 
 BERECHTIGUNGEN
 
-• Mikrofon: Für Sprachanrufe (nur während aktiver Anrufe)
-• Internet: Für verschlüsselte Verbindungen
-• Kontakte: Zum Anzeigen von Namen (optional, Daten verlassen das Gerät nie)
+* Mikrofon: waehrend Sprachanrufen erforderlich
+* Internet: fuer Signalisierung und Medientransport erforderlich
+* Benachrichtigungen: fuer eingehende Anrufe
+* Kontakte: optional, werden lokal zur Anzeige von Namen verwendet
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+Die aktuelle Android-App enthaelt weder WalletConnect noch eine IFR-Token-Freischaltung in der App. Zukuenftige kostenpflichtige Angebote sind von dieser kostenlosen Google-Play-Version getrennt und unterliegen der beim Anbieter angezeigten Verfuegbarkeit.
 
-SecureCall wird entwickelt von StealthX — einem Team, das glaubt, dass Privatsphäre ein Grundrecht ist.
-
-Datenschutzrichtlinie: https://neabouli.github.io/stealth/privacy.html
-Quellcode: https://github.com/NeaBouli/stealth
+Datenschutzrichtlinie: https://stealthx.tech/privacy.html
+Sicherheitsdetails: https://stealthx.tech/security.html
+Quellcode und Auditstatus: https://github.com/NeaBouli/stealth
 Support: https://github.com/NeaBouli/stealth/issues

@@ -1,18 +1,10 @@
-SecureCall v0.2-beta — First Public Beta!
+This update prepares SecureCall for current Android releases:
 
-New:
-• End-to-end encrypted voice calls (XChaCha20-Poly1305)
-• Material Design 3 user interface
-• Three tiers: Free, Pro, and Premium
-• Opus audio codec for crystal-clear calls
-• In-app purchases for Pro/Premium upgrades
-• GhostNet relay network (Premium)
-• Contacts & call history
-• Dark mode support
+* Targets Android API 36
+* Uses Google Play Billing Library 8.2.1 while paid controls remain disabled
+* Improves edge-to-edge layout handling
+* Keeps the Google Play build free of an app-owned VPN service
+* Improves call stability and notification handling
+* Clarifies the implemented per-call encryption design
 
-Security:
-• Independently audited crypto code
-• Perfect Forward Secrecy
-• Zero-knowledge architecture
-
-Feedback? Open an issue at https://github.com/NeaBouli/stealth/issues
+Report problems at https://github.com/NeaBouli/stealth/issues

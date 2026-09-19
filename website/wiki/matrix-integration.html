@@ -159,7 +159,7 @@
             <h2>Why Matrix?</h2>
             <p>Matrix is an open, federated communication protocol &mdash; not a product, but a protocol, much like SMTP is for email. It is used by the <strong>German Bundeswehr</strong>, <strong>Mozilla</strong>, <strong>KDE</strong>, and a growing number of governments and enterprises that require sovereignty over their communication infrastructure.</p>
             <p>With over <strong>28 million accounts</strong> across thousands of federated homeservers, Matrix represents the largest open communication network outside of email itself.</p>
-            <p>SecureCall already shares the same cryptographic primitives that Matrix relies on: <strong>X25519</strong> for key exchange, <strong>WebRTC</strong> for real-time transport, and the <strong>Double Ratchet</strong> algorithm for forward secrecy. This alignment makes Matrix the natural federation target &mdash; no cryptographic compromises are required.</p>
+            <p>SecureCall already uses <strong>X25519</strong> for per-call key exchange and <strong>WebRTC</strong> for real-time transport. It does not implement a Double Ratchet. Any Matrix integration must therefore treat Olm/Megolm as a separate protocol and pass a new security review.</p>
 
             <!-- PHASE 1 -->
             <div class="section-break">Phase 1: Contact Exchange (v1.7)</div>

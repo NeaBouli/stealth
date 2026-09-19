@@ -1,93 +1,42 @@
-SecureCall — Your voice belongs to you.
+SecureCall - encrypted voice calls for Android
 
-SecureCall is the first phone app built from the ground up for maximum privacy. Every call is end-to-end encrypted with military-grade cryptography that even intelligence agencies cannot break.
+SecureCall provides end-to-end encrypted one-to-one voice calls through a SecureID. A conventional account is not required for the SecureID calling path.
 
-🔒 SECURITY AT THE HIGHEST LEVEL
+SECURITY DESIGN
 
-• End-to-end encryption with XChaCha20-Poly1305 (AEAD)
-• Key exchange via X25519 (Elliptic Curve Diffie-Hellman)
-• Double Ratchet protocol for Perfect Forward Secrecy
-• Every call uses a unique session key
-• Cryptography engine written entirely in Rust — memory-safe, no buffer overflows
-• Independently audited
+* XChaCha20-Poly1305 protects application media frames.
+* X25519 and HKDF-SHA256 derive separate key material for each call.
+* Per-call key material is discarded when the call ends.
+* The cryptographic engine is implemented in Rust.
+* Call content is not stored by the signaling service.
 
-📞 CRYSTAL-CLEAR CALLS
+SecureCall does not claim to implement a Double Ratchet, authenticated identity-key exchange, post-compromise security, or protection from a malicious signaling service. The source and current audit status are available for independent review.
 
-• Opus audio codec for natural voice quality
-• Optimized for low latency, even on poor connections
-• Works over WiFi and cellular networks
+CALLING
 
-🛡️ ZERO METADATA
+* Opus audio codec
+* Wi-Fi and mobile-data support
+* Incoming-call notifications through Firebase Cloud Messaging
+* Optional local contacts for displaying names
+* Dark theme and accessibility support
 
-• No call logs on our servers
-• No contact list uploads
-• No tracking, no ads
-• Compatible with VPN connections managed by Android or another trusted app
+PRIVACY
 
-📖 SOURCE AVAILABLE
-
-The complete source code is available on GitHub. Anyone can verify the security — trust through transparency.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📱 FREE VERSION
-• End-to-end encrypted calls
-• Standard audio quality (Opus)
-• Anonymous crash reports (Crashlytics, can be disabled)
-• Perfect for trying out
-
-⭐ PRO VERSION
-• Everything in FREE
-• HD audio quality
-• Zero telemetry — absolutely no tracking
-• Priority support
-• Support the development
-
-💎 PREMIUM VERSION
-• Everything in PRO
-• All PRO privacy and audio features
-• Premium support and future feature access
-• Compatible with device-managed VPN connections
-• Future-proof post-quantum cryptography (in development)
-• Highest security tier
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-LIMITED TIME OFFER
-
-Forever Licenses — Not a subscription!
-
-PRO Lifetime: Starting at $15 (100 available)
-PREMIUM Lifetime: Starting at $25 (100 available)
-
-Price increases automatically as licenses sell out!
-First buyers get the best deal. Once sold out, price returns to monthly subscription.
-Buy now before the price goes up!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-TECHNICAL DETAILS
-
-Encryption: XChaCha20-Poly1305 (AEAD)
-Key Exchange: X25519 (ECDH)
-Forward Secrecy: Double Ratchet Protocol
-Audio: Opus Codec (6-510 kbps)
-Transport: WebRTC/QUIC with DTLS
-Crypto Engine: Rust (memory-safe)
-Network: WebRTC with STUN/TURN; device-managed VPN compatible
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+* No contact-list upload
+* No call-content storage on the signaling service
+* Routing and delivery metadata is processed as described in the privacy policy.
+* The Google Play edition does not provide or install a VPN service. It follows Android's active network, including a VPN managed by Android or another trusted app.
 
 PERMISSIONS
 
-• Microphone: For voice calls (only during active calls)
-• Internet: For encrypted connections
-• Contacts: To display names (optional, data never leaves your device)
+* Microphone: required during voice calls
+* Internet: required for signaling and media transport
+* Notifications: used for incoming calls
+* Contacts: optional, used locally to display names
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+The current Android app contains no WalletConnect or in-app IFR-token unlock. Any future paid offer is separate from this free Google Play edition and remains subject to the availability shown by the seller.
 
-SecureCall is built by StealthX — a team that believes privacy is a fundamental right.
-
-Privacy Policy: https://neabouli.github.io/stealth/privacy.html
-Source Code: https://github.com/NeaBouli/stealth
+Privacy policy: https://stealthx.tech/privacy.html
+Security details: https://stealthx.tech/security.html
+Source and audit status: https://github.com/NeaBouli/stealth
 Support: https://github.com/NeaBouli/stealth/issues
