@@ -6186,3 +6186,52 @@ Open next:
   required.
 
 `PR 82 MERGEABLE / 11 THREADS RESOLVED / ANDROID CI SETUP FIX READY FOR PUSH`
+
+## 2026-09-19 21:54 EEST — CODEX SOL — STX-29 GOOGLE ANALYTICS REMOVAL START
+
+- **Ticket:** audit issue [#84](https://github.com/NeaBouli/stealth/issues/84), finding
+  `STX-29`; **Type:** PRIVACY / WEBSITE / RELEASE-GATE; **Status:** In Progress.
+- Isolated branch `fix/stx29-remove-google-analytics-20260919` starts from PR #82 exact head
+  `20018e0`. The exact current tree contains unconditional GA4 code on 31 HTML pages; the older
+  audit baseline counted 32, so acceptance uses a fresh path inventory rather than copying the
+  stale count.
+- Decision: remove GA4 entirely from the SecureCall site to match the stated privacy model. Do not
+  introduce cookies, consent tooling, replacement tracking or query-string collection.
+- Acceptance: no Google Analytics loader/property/`gtag` calls in `website/**/*.html`; protected
+  invite/payment/privacy/wiki surfaces remain parseable and behaviorally intact; targeted website
+  tests and diff/secret hygiene pass.
+- Out of scope: IFR/Stripe behavior, Android, VLABS finance, public policy deployment, analytics
+  provider administration and sales activation.
+
+`STX-29 FIX ACTIVE / ANALYTICS REMOVAL ONLY / SALES CLOSED`
+
+## 2026-09-19 21:56 EEST — CODEX SOL + CLAUDE CODE — STX-29 LOCAL GREEN
+
+- Removed the complete unconditional GA4 loader/initializer from all 31 affected HTML files in
+  the current PR #82 tree. The fresh inventory covers 46 HTML pages and now returns zero loader,
+  property-ID, `gtag` or `dataLayer` hits.
+- Added `website/js/no-google-analytics.test.cjs` and wired it into Basic CI beside the existing
+  fail-closed browser checkout tests. The guard recursively scans every website HTML page.
+- Claude Code performed only the mechanical 31-page deletion plus focused test/workflow edit.
+  Sol reviewed the full diff, confirmed every HTML change is deletion-only and independently ran
+  the verification chain.
+- Verification PASS: checkout/privacy Node tests 4/4; `ifr-checkout.js` syntax; 46/46 HTML files
+  have balanced script tags and one closing head; all 50 JSON-LD blocks parse; workflow YAML
+  parses; `git diff --check`; bounded secret-pattern diff scan. Local `yamllint` is unavailable,
+  so the pinned hosted Basic CI lint remains required.
+- No replacement tracker, cookies or consent machinery was added. No IFR/Stripe behavior,
+  Android code, VLABS provider state, production website or sales switch changed.
+  `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain unchanged.
+
+`STX-29 LOCAL GREEN / HOSTED CI + REVIEW PENDING / NO DEPLOY / SALES CLOSED`
+
+## 2026-09-19 22:00 EEST — CODEX SOL — STX-29 PR #93 OPEN
+
+- Published verified implementation commit `97efea1` in stacked pull request
+  [#93](https://github.com/NeaBouli/stealth/pull/93).
+- Audit issue #84 records the corrected current-tree count and remaining live gate at
+  https://github.com/NeaBouli/stealth/issues/84#issuecomment-5744526382.
+- PR #93 must wait for #82, then be retargeted to `main`, pass exact-head hosted checks and normal
+  independent review. STX-29 remains open until deployment and a zero-analytics live recheck.
+
+`PR 93 OPEN / STACKED REVIEW PENDING / NO DEPLOY / SALES CLOSED`
