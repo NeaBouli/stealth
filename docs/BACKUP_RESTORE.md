@@ -102,6 +102,26 @@ curl -fsS https://api.stealthx.tech/licenses/status
 ## Notes
 
 - The backup script uses `flock` to prevent overlapping runs.
+
+### Recovering a stale fulfillment lock
+
+The VLABS order and sold-code stores fail closed when their adjacent `.lock`
+file already exists. Never delete either lock while a writer may still be
+running.
+
+1. Stop all signaling instances that can write the affected store and confirm
+   that no replacement instance or deployment is starting.
+2. Take a filesystem snapshot or copy of the JSON store and its lock file.
+3. Read the lock owner (`pid:owner-token`) and confirm that the PID is absent on
+   the host where the store is mounted. On shared storage, repeat this check on
+   every writer host.
+4. Remove only the verified stale lock (`vlabs_fulfillment_orders.json.lock` or
+   `sold_codes.json.lock`). Do not edit or replace the JSON store.
+5. Start one signaling instance, verify that it can read the store, and run a
+   signed non-production duplicate/retry check before restoring normal traffic.
+
+If ownership or writer state cannot be proven, leave the lock in place and
+restore from a verified snapshot instead of forcing recovery.
 - Archives are written as `.tmp` first and atomically renamed after `tar` succeeds.
 - Archives are mode `600`.
 - Keep the backup host and production host access-controlled; these files may contain activation and purchase state.

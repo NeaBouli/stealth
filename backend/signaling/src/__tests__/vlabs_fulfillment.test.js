@@ -22,7 +22,7 @@ global.fetch = async (_url, options) => {
 const fulfillment = require("../payments/vlabs_fulfillment");
 const {
   verifySignature, isRevocationReason, validateFulfillmentContract, validateRevocationContract,
-  PRODUCTS, CATALOG_VERSION, MIN_FULFILLMENT_SECRET_LENGTH,
+  PRODUCTS, CATALOG_VERSION, MIN_FULFILLMENT_SECRET_LENGTH, INTERNAL_RATE_LIMIT_MAX_REQUESTS,
 } = fulfillment;
 const soldCodes = require("../payments/sold_codes");
 
@@ -256,11 +256,11 @@ function makeRes() {
   };
 }
 
-function signedReq(requestBody) {
+function signedReq(requestBody, ip = "127.0.0.1") {
   const raw = JSON.stringify(requestBody);
   const ts = Math.floor(Date.now() / 1000).toString();
   const sig = crypto.createHmac("sha256", process.env.VLABS_FULFILLMENT_SECRET).update(`${ts}.${raw}`).digest("hex");
-  return { get: header => ({ "x-vlabs-timestamp": ts, "x-vlabs-signature": sig }[header]), body: requestBody };
+  return { get: header => ({ "x-vlabs-timestamp": ts, "x-vlabs-signature": sig }[header]), body: requestBody, ip };
 }
 
 let orderCounter = 0;
@@ -346,6 +346,28 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.strictEqual(shortSecretRes.statusCode, 503);
   process.env.VLABS_FULFILLMENT_SECRET = SECRET;
 
+  // Rate limiting happens before HMAC parsing and covers both internal routes.
+  const attackerIp = "203.0.113.60";
+  for (let attempt = 0; attempt < INTERNAL_RATE_LIMIT_MAX_REQUESTS; attempt += 1) {
+    const rateRes = makeRes();
+    await routes["/internal/vlabs/fulfill"]({ get: () => "", body: {}, ip: attackerIp }, rateRes);
+    assert.strictEqual(rateRes.statusCode, 401);
+  }
+  const limitedFulfillRes = makeRes();
+  await routes["/internal/vlabs/fulfill"]({
+    get: () => { throw new Error("authentication must not run after rate limiting"); },
+    body: {},
+    ip: attackerIp,
+  }, limitedFulfillRes);
+  assert.strictEqual(limitedFulfillRes.statusCode, 429);
+  const limitedRevokeRes = makeRes();
+  routes["/internal/vlabs/revoke"]({
+    get: () => { throw new Error("authentication must not run after rate limiting"); },
+    body: {},
+    ip: attackerIp,
+  }, limitedRevokeRes);
+  assert.strictEqual(limitedRevokeRes.statusCode, 429);
+
   // Duplicate binding: identical tuple is idempotent, tuple drift is rejected.
   const duplicateTarget = fulfillBody("stealthx-securecall-premium-lifetime");
   const firstRes = makeRes();
@@ -381,6 +403,12 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   await routes["/internal/vlabs/revoke"](signedReq(revokeFor(duplicateTarget)), duplicateRevokeRes);
   assert.strictEqual(duplicateRevokeRes.statusCode, 200);
   assert.strictEqual(duplicateRevokeRes.payload.duplicate, true, "duplicate revoke stays idempotent");
+  const mismatchedPaymentRevokeRes = makeRes();
+  await routes["/internal/vlabs/revoke"](
+    signedReq(revokeFor(duplicateTarget, { paymentReference: "pi_test_wrong_payment" })),
+    mismatchedPaymentRevokeRes,
+  );
+  assert.strictEqual(mismatchedPaymentRevokeRes.statusCode, 409, "duplicate revoke with payment drift fails closed");
   const driftedRevokeRes = makeRes();
   await routes["/internal/vlabs/revoke"](signedReq(revokeFor(duplicateTarget, { releaseId: "drifted-release" })), driftedRevokeRes);
   assert.strictEqual(driftedRevokeRes.statusCode, 409, "revoke with tuple drift fails closed");
@@ -396,6 +424,23 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   const partialRes = makeRes();
   await routes["/internal/vlabs/revoke"](signedReq(revokeFor(disputeTarget, { reason: "partial_refund" })), partialRes);
   assert.strictEqual(partialRes.statusCode, 400);
+
+  // A payment-reference-only reversal must find and revoke the original
+  // fulfilled order rather than creating a second hash-keyed tombstone.
+  const referenceTarget = fulfillBody("stealthx-securecall-pro-lifetime");
+  const referenceFulfillRes = makeRes();
+  await routes["/internal/vlabs/fulfill"](signedReq(referenceTarget), referenceFulfillRes);
+  assert.strictEqual(referenceFulfillRes.payload.fulfilled, true);
+  const referenceRevoke = revokeFor(referenceTarget);
+  delete referenceRevoke.externalOrderId;
+  const referenceRevokeRes = makeRes();
+  routes["/internal/vlabs/revoke"](signedReq(referenceRevoke), referenceRevokeRes);
+  assert.strictEqual(referenceRevokeRes.payload.revoked, true);
+  const referenceOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+  assert.strictEqual(referenceOrders[referenceTarget.externalOrderId].status, "REVOKED");
+  const referencePaymentKey = `payment_${crypto.createHash("sha256").update(referenceTarget.paymentReference).digest("hex").slice(0, 32)}`;
+  assert.strictEqual(referenceOrders[referencePaymentKey], undefined, "payment-only revoke reuses the original order key");
+  assert.strictEqual(soldCodes.findByStripeSession(referenceTarget.externalOrderId).revoked, true);
 
   // Revoke-before-fulfill tombstone: later fulfillment fails closed.
   const tombstoneTarget = fulfillBody("stealthx-chameleon-elite-lifetime");
@@ -423,6 +468,18 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   // Stripe may deliver a refund/dispute before VLABS has a local session order.
   // The payment-intent tombstone must still block a later fulfillment.
   const paymentOnlyTarget = fulfillBody("stealthx-securechat-elite-lifetime");
+  const paymentOnlySale = soldCodes.recordSale({
+    code: "ELIT-PAYM-ENT0-ONLY",
+    tier: "elite",
+    stripeSessionId: paymentOnlyTarget.externalOrderId,
+    paymentReference: paymentOnlyTarget.paymentReference,
+    productKey: "securechat_elite_lifetime",
+    catalogVersion: CATALOG_VERSION,
+    offerVersion: paymentOnlyTarget.offerVersion,
+    releaseId: paymentOnlyTarget.releaseId,
+    externalProductId: paymentOnlyTarget.productId,
+    activationCodesRef: activationCodes,
+  });
   const paymentOnlyRevoke = revokeFor(paymentOnlyTarget);
   delete paymentOnlyRevoke.externalOrderId;
   const paymentOnlyRevokeRes = makeRes();
@@ -430,9 +487,51 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.strictEqual(paymentOnlyRevokeRes.statusCode, 200);
   assert.strictEqual(paymentOnlyRevokeRes.payload.tombstoned, true);
   assert.strictEqual(soldCodes.isReversed(null, paymentOnlyTarget.paymentReference), true);
+  assert.strictEqual(
+    soldCodes.load().find(entry => entry.code === paymentOnlySale.code).revoked,
+    true,
+    "payment-reference-only reversal revokes the matching sold code",
+  );
   const paymentOnlyLateFulfillRes = makeRes();
   await routes["/internal/vlabs/fulfill"](signedReq(paymentOnlyTarget), paymentOnlyLateFulfillRes);
   assert.strictEqual(paymentOnlyLateFulfillRes.statusCode, 409, "payment-only reversal blocks later fulfillment");
+
+  // Legacy rows must never be mutated before terminal status and existing
+  // payment-reference checks have passed.
+  const legacyBlockedTarget = fulfillBody("stealthx-securecall-pro-lifetime", {
+    externalOrderId: "cs_test_legacy_blocked",
+    paymentReference: "pi_test_legacy_blocked",
+  });
+  const legacyMismatchTarget = fulfillBody("stealthx-securecall-pro-lifetime", {
+    externalOrderId: "cs_test_legacy_mismatch",
+    paymentReference: "pi_test_legacy_new",
+  });
+  const guardedLegacyOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+  guardedLegacyOrders[legacyBlockedTarget.externalOrderId] = {
+    productId: legacyBlockedTarget.productId,
+    tier: "pro",
+    status: "TOMBSTONED",
+    paymentReference: legacyBlockedTarget.paymentReference,
+  };
+  guardedLegacyOrders[legacyMismatchTarget.externalOrderId] = {
+    productId: legacyMismatchTarget.productId,
+    tier: "pro",
+    status: "FULFILLED",
+    paymentReference: "pi_test_legacy_original",
+  };
+  fs.writeFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, JSON.stringify(guardedLegacyOrders), { mode: 0o600 });
+  const blockedLegacyRes = makeRes();
+  await routes["/internal/vlabs/fulfill"](signedReq(legacyBlockedTarget), blockedLegacyRes);
+  assert.strictEqual(blockedLegacyRes.statusCode, 409);
+  const mismatchLegacyRes = makeRes();
+  await routes["/internal/vlabs/fulfill"](signedReq(legacyMismatchTarget), mismatchLegacyRes);
+  assert.strictEqual(mismatchLegacyRes.statusCode, 409);
+  const mismatchLegacyRevokeRes = makeRes();
+  routes["/internal/vlabs/revoke"](signedReq(revokeFor(legacyMismatchTarget)), mismatchLegacyRevokeRes);
+  assert.strictEqual(mismatchLegacyRevokeRes.statusCode, 409);
+  const guardedLegacyAfter = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+  assert.deepStrictEqual(guardedLegacyAfter[legacyBlockedTarget.externalOrderId], guardedLegacyOrders[legacyBlockedTarget.externalOrderId]);
+  assert.deepStrictEqual(guardedLegacyAfter[legacyMismatchTarget.externalOrderId], guardedLegacyOrders[legacyMismatchTarget.externalOrderId]);
 
   // Pre-contract receiver orders remain revocable and are bound during the
   // signed request instead of wedging on missing tuple fields.
@@ -499,6 +598,7 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   console.log("vlabs_fulfillment.test.js ok");
 })().catch(error => {
   global.fetch = realFetch;
+  fs.rmSync(directory, { recursive: true, force: true });
   console.error(error);
   process.exit(1);
 });

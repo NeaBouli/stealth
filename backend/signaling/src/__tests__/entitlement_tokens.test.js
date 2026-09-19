@@ -117,6 +117,29 @@ assert.strictEqual(verifiedV2.release, V2_CLAIMS.releaseId);
 assert.throws(() => verifyEntitlementToken(v2Token, { expectedSubject: "copied_device", nowSeconds: now + 60 }),
   undefined, "v2 token is bound to its subject");
 
+function signRawClaims(payload) {
+  const encoded = Buffer.from(payload, "utf8").toString("base64url");
+  const signature = crypto.sign(null, Buffer.from(encoded, "utf8"), privateKey).toString("base64url");
+  return `${encoded}.${signature}`;
+}
+
+// A valid signature must not make stale or ambiguous contract claims acceptable.
+for (const [claim, staleValue] of [
+  ["catalog", "stealthx-lifetime-v0"],
+  ["offer", "securechat-pro-eur-900-lifetime-v0"],
+  ["release", "securechat-android-0.1.10-alpha-vc14-api35"],
+]) {
+  const stalePayload = v2Payload.replace(new RegExp(`^${claim}=.*$`, "m"), `${claim}=${staleValue}`);
+  assert.throws(() => verifyEntitlementToken(signRawClaims(stalePayload), {
+    expectedSubject: "sx_test_device",
+    nowSeconds: now + 60,
+  }), /Invalid entitlement claims/, `signed stale ${claim} is rejected`);
+}
+assert.throws(() => verifyEntitlementToken(signRawClaims(`${v2Payload}\noffer=${V2_CLAIMS.offerVersion}`), {
+  expectedSubject: "sx_test_device",
+  nowSeconds: now + 60,
+}), /Invalid entitlement claims/, "signed duplicate claims are rejected");
+
 // v2 tamper: a modified claim no longer matches the signature.
 const tamperedPayload = Buffer.from(
   v2Payload.replace("release=securechat-android-0.1.11-alpha-vc15-api36", "release=securechat-android-9.9.9-forged"),
