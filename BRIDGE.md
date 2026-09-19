@@ -6393,5 +6393,7 @@ Open next:
   [#95](https://github.com/NeaBouli/stealth/pull/95) against PR #94's exact head.
 - Required stack order remains #82 -> #90 -> #94 -> #95, then complete exact-main CI.
 - Hosted exact-head checks and normal review are pending. No production or delivery gate changed.
+- The Basic CI signaling job now also runs all synthetic private staging/export tests so this
+  boundary is enforced on every candidate rather than only by the local verification record.
 
 `PR 95 OPEN — HOSTED CI/REVIEW PENDING — PRODUCTION AND DELIVERY CLOSED`
