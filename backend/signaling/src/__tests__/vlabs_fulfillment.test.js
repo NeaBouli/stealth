@@ -1,8 +1,10 @@
 const assert = require("assert");
 const crypto = require("crypto");
 const fs = require("fs");
+const http = require("http");
 const os = require("os");
 const path = require("path");
+const { spawn } = require("child_process");
 
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "securecall-vlabs-payment-"));
 process.env.SOLD_CODES_FILE = path.join(directory, "sold_codes.json");
@@ -22,7 +24,9 @@ global.fetch = async (_url, options) => {
 const fulfillment = require("../payments/vlabs_fulfillment");
 const {
   verifySignature, isRevocationReason, validateFulfillmentContract, validateRevocationContract,
-  PRODUCTS, CATALOG_VERSION, MIN_FULFILLMENT_SECRET_LENGTH, INTERNAL_RATE_LIMIT_MAX_REQUESTS,
+  createRequestRateLimiter,
+  PRODUCTS, CATALOG_VERSION, MIN_FULFILLMENT_SECRET_LENGTH,
+  INTERNAL_RATE_LIMIT_MAX_REQUESTS, INTERNAL_RATE_LIMIT_MAX_BUCKETS,
 } = fulfillment;
 const soldCodes = require("../payments/sold_codes");
 
@@ -159,6 +163,33 @@ assert.throws(() => validateRevocationContract(revokeBody("stealthx-chameleon-pr
   error => error.status === 400, "partial refund is not a revocation");
 assert.throws(() => validateRevocationContract(revokeBody("stealthx-chameleon-pro-lifetime", { adjustmentEventId: undefined })),
   error => error.status === 400, "missing adjustment event rejected");
+
+// --- Internal pre-HMAC rate limiter ----------------------------------------
+
+{
+  let now = 1_000_000;
+  const limiter = createRequestRateLimiter({ limit: 2, windowMs: 60_000, now: () => now });
+  assert.strictEqual(limiter.allow({ ip: "203.0.113.1" }), true);
+  assert.strictEqual(limiter.allow({ ip: "203.0.113.1" }), true);
+  assert.strictEqual(limiter.allow({ ip: "203.0.113.1" }), false, "third request inside the window is rejected");
+  assert.strictEqual(limiter.allow({ ip: "203.0.113.2" }), true, "a distinct client keeps its own bucket");
+  now += 60_000;
+  assert.strictEqual(limiter.allow({ ip: "203.0.113.1" }), true, "window reset lifts the rejection");
+  assert.strictEqual(limiter.allow({ ip: "203.0.113.1" }), true);
+  assert.strictEqual(limiter.allow({ ip: "203.0.113.1" }), false, "the reset window enforces the limit again");
+}
+
+{
+  let now = 2_000_000;
+  const limiter = createRequestRateLimiter({ windowMs: 60_000, now: () => now });
+  for (let index = 0; index < INTERNAL_RATE_LIMIT_MAX_BUCKETS; index += 1) {
+    assert.strictEqual(limiter.allow({ ip: `198.51.${index >> 8}.${index & 255}` }), true);
+  }
+  assert.strictEqual(limiter.allow({ ip: "192.0.2.1" }), false, "bucket capacity fails closed for new clients");
+  assert.strictEqual(limiter.allow({ ip: "198.51.0.0" }), true, "tracked clients are not evicted by the cap");
+  now += 60_000;
+  assert.strictEqual(limiter.allow({ ip: "192.0.2.1" }), true, "expired buckets are reclaimed before failing closed");
+}
 
 // --- sold_codes regression + contract tuple persistence --------------------
 
@@ -496,6 +527,127 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   await routes["/internal/vlabs/fulfill"](signedReq(paymentOnlyTarget), paymentOnlyLateFulfillRes);
   assert.strictEqual(paymentOnlyLateFulfillRes.statusCode, 409, "payment-only reversal blocks later fulfillment");
 
+  // A payment tombstone plus the later session tombstone for the same
+  // immutable contract keep a payment-reference-only reversal idempotent.
+  const dualTombstoneTarget = fulfillBody("stealthx-securecall-pro-lifetime");
+  const dualTombstoneRevoke = revokeFor(dualTombstoneTarget);
+  delete dualTombstoneRevoke.externalOrderId;
+  const dualFirstRevokeRes = makeRes();
+  routes["/internal/vlabs/revoke"](signedReq(dualTombstoneRevoke, "198.51.100.10"), dualFirstRevokeRes);
+  assert.strictEqual(dualFirstRevokeRes.payload.tombstoned, true);
+  const dualLateFulfillRes = makeRes();
+  await routes["/internal/vlabs/fulfill"](signedReq(dualTombstoneTarget, "198.51.100.10"), dualLateFulfillRes);
+  assert.strictEqual(dualLateFulfillRes.statusCode, 409, "fulfillment after payment reversal still fails closed");
+  const dualOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+  const dualPaymentKey = `payment_${crypto.createHash("sha256").update(dualTombstoneTarget.paymentReference).digest("hex").slice(0, 32)}`;
+  assert.strictEqual(dualOrders[dualPaymentKey].status, "TOMBSTONED", "payment tombstone exists");
+  assert.strictEqual(dualOrders[dualTombstoneTarget.externalOrderId].status, "TOMBSTONED", "session tombstone exists");
+  const dualRetryRevokeRes = makeRes();
+  routes["/internal/vlabs/revoke"](signedReq(dualTombstoneRevoke, "198.51.100.10"), dualRetryRevokeRes);
+  assert.strictEqual(dualRetryRevokeRes.statusCode, 200);
+  assert.strictEqual(dualRetryRevokeRes.payload.duplicate, true,
+    "payment + session tombstones keep the reversal idempotent");
+
+  // Ambiguous scans still fail closed: a live order beside a tombstone for
+  // the same payment reference is never silently treated as a duplicate.
+  const ambiguousTarget = fulfillBody("stealthx-securecall-premium-lifetime");
+  const ambiguousPaymentKey = `payment_${crypto.createHash("sha256").update(ambiguousTarget.paymentReference).digest("hex").slice(0, 32)}`;
+  const ambiguousOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+  ambiguousOrders[ambiguousTarget.externalOrderId] = {
+    productId: ambiguousTarget.productId,
+    tier: "premium",
+    catalogVersion: CATALOG_VERSION,
+    offerVersion: ambiguousTarget.offerVersion,
+    releaseId: ambiguousTarget.releaseId,
+    amount: 2500,
+    currency: "eur",
+    paymentReference: ambiguousTarget.paymentReference,
+    status: "FULFILLED",
+    createdAt: new Date().toISOString(),
+  };
+  ambiguousOrders[ambiguousPaymentKey] = {
+    productId: ambiguousTarget.productId,
+    tier: "premium",
+    catalogVersion: CATALOG_VERSION,
+    offerVersion: ambiguousTarget.offerVersion,
+    releaseId: ambiguousTarget.releaseId,
+    amount: 2500,
+    currency: "eur",
+    paymentReference: ambiguousTarget.paymentReference,
+    status: "TOMBSTONED",
+    createdAt: new Date().toISOString(),
+    tombstonedAt: new Date().toISOString(),
+    revokeReason: "stripe_full_refund",
+  };
+  fs.writeFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, JSON.stringify(ambiguousOrders), { mode: 0o600 });
+  const ambiguousRevoke = revokeFor(ambiguousTarget);
+  delete ambiguousRevoke.externalOrderId;
+  const ambiguousRevokeRes = makeRes();
+  routes["/internal/vlabs/revoke"](signedReq(ambiguousRevoke, "198.51.100.11"), ambiguousRevokeRes);
+  assert.strictEqual(ambiguousRevokeRes.statusCode, 409, "live order beside a tombstone fails closed");
+
+  // Legacy terminal rows remain idempotent only when their historical tier
+  // agrees with the product contract. A contradictory row is not accepted as
+  // a harmless duplicate merely because it lacks the modern tuple fields.
+  const legacyTierTarget = fulfillBody("stealthx-securecall-pro-lifetime");
+  const legacyTierOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+  legacyTierOrders.payment_legacy_tier_conflict = {
+    productId: legacyTierTarget.productId,
+    tier: "premium",
+    paymentReference: legacyTierTarget.paymentReference,
+    status: "TOMBSTONED",
+  };
+  legacyTierOrders[legacyTierTarget.externalOrderId] = {
+    productId: legacyTierTarget.productId,
+    tier: "pro",
+    paymentReference: legacyTierTarget.paymentReference,
+    status: "REVOKED",
+  };
+  fs.writeFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, JSON.stringify(legacyTierOrders), { mode: 0o600 });
+  const legacyTierRevoke = revokeFor(legacyTierTarget);
+  delete legacyTierRevoke.externalOrderId;
+  const legacyTierRevokeRes = makeRes();
+  routes["/internal/vlabs/revoke"](signedReq(legacyTierRevoke, "198.51.100.13"), legacyTierRevokeRes);
+  assert.strictEqual(legacyTierRevokeRes.statusCode, 409, "legacy terminal tier mismatch fails closed");
+
+  // Payment-reference-only reversal must still reach legacy sold entries that
+  // predate paymentReferenceHash once the scan recovers the canonical cs_ key.
+  const hashlessTarget = fulfillBody("stealthx-chameleon-pro-lifetime");
+  const hashlessSale = soldCodes.recordSale({
+    code: "PRO0-NOH0-ASH0-0001",
+    tier: "pro",
+    stripeSessionId: hashlessTarget.externalOrderId,
+    productKey: "chameleon_pro_lifetime",
+    activationCodesRef: activationCodes,
+  });
+  assert.strictEqual(hashlessSale.paymentReferenceHash, null, "legacy sold entry has no payment reference hash");
+  const hashlessOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+  hashlessOrders[hashlessTarget.externalOrderId] = {
+    productId: hashlessTarget.productId,
+    tier: "pro",
+    catalogVersion: CATALOG_VERSION,
+    offerVersion: hashlessTarget.offerVersion,
+    releaseId: hashlessTarget.releaseId,
+    amount: 900,
+    currency: "eur",
+    paymentReference: hashlessTarget.paymentReference,
+    paymentEventId: hashlessTarget.paymentEventId,
+    code: hashlessSale.code,
+    status: "FULFILLED",
+    createdAt: new Date().toISOString(),
+  };
+  fs.writeFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, JSON.stringify(hashlessOrders), { mode: 0o600 });
+  const hashlessRevoke = revokeFor(hashlessTarget);
+  delete hashlessRevoke.externalOrderId;
+  const hashlessRevokeRes = makeRes();
+  routes["/internal/vlabs/revoke"](signedReq(hashlessRevoke, "198.51.100.12"), hashlessRevokeRes);
+  assert.strictEqual(hashlessRevokeRes.statusCode, 200);
+  assert.strictEqual(hashlessRevokeRes.payload.revoked, true);
+  assert.strictEqual(soldCodes.findByStripeSession(hashlessTarget.externalOrderId).revoked, true,
+    "legacy sold entry without paymentReferenceHash is revoked via the discovered order key");
+  assert.ok(!activationCodes.some(candidate => candidate.code === hashlessSale.code),
+    "revoked legacy code leaves the activation set");
+
   // Legacy rows must never be mutated before terminal status and existing
   // payment-reference checks have passed.
   const legacyBlockedTarget = fulfillBody("stealthx-securecall-pro-lifetime", {
@@ -592,6 +744,76 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
     corruptStoreRes,
   );
   assert.strictEqual(corruptStoreRes.statusCode, 503, "invalid order state fails closed");
+
+  // Deployment regression: behind the single trusted nginx hop
+  // (TRUST_PROXY=true) the pre-HMAC limiter must bucket the rightmost
+  // X-Forwarded-For entry, so distinct forwarded clients stay isolated and
+  // client-supplied multi-hop prefixes are never trusted.
+  const proxyDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "securecall-vlabs-proxy-"));
+  fs.writeFileSync(path.join(proxyDataDir, "wallets.json"), JSON.stringify({ wallets: [] }));
+  const proxyOutput = { value: "" };
+  const proxyChild = spawn(process.execPath, ["src/server.js"], {
+    cwd: path.resolve(__dirname, "../.."),
+    env: {
+      HOME: process.env.HOME || "",
+      PATH: process.env.PATH || "",
+      NODE_ENV: "test",
+      PORT: "0",
+      DATA_DIR: proxyDataDir,
+      WALLETS_FILE: path.join(proxyDataDir, "wallets.json"),
+      GOOGLE_PLAY_BILLING_ENABLED: "false",
+      GOOGLE_PLAY_RTDN_ENABLED: "false",
+      LEGACY_STRIPE_CHECKOUT_ENABLED: "false",
+      TRUST_PROXY: "true",
+      VLABS_FULFILLMENT_SECRET: SECRET,
+      VLABS_FULFILLMENT_ORDERS_FILE: path.join(proxyDataDir, "orders.json"),
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  proxyChild.stdout.on("data", chunk => { proxyOutput.value += chunk.toString(); });
+  proxyChild.stderr.on("data", chunk => { proxyOutput.value += chunk.toString(); });
+  try {
+    const portDeadline = Date.now() + 10000;
+    let proxyPort = null;
+    while (proxyPort === null && Date.now() < portDeadline) {
+      const match = proxyOutput.value.match(/Server running on port (\d+)/);
+      if (match) proxyPort = Number(match[1]);
+      else await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    assert.ok(proxyPort, `proxy test server did not report its port\n${proxyOutput.value}`);
+
+    const postFulfill = forwardedFor => new Promise((resolvePromise, rejectPromise) => {
+      const request = http.request({
+        host: "127.0.0.1",
+        port: proxyPort,
+        path: "/internal/vlabs/fulfill",
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Forwarded-For": forwardedFor },
+        timeout: 2000,
+      }, response => {
+        response.resume();
+        response.on("end", () => resolvePromise(response.statusCode));
+      });
+      request.once("timeout", () => request.destroy(new Error("fulfill request timed out")));
+      request.once("error", rejectPromise);
+      request.end("{}");
+    });
+
+    const proxiedClient = "203.0.113.60";
+    for (let attempt = 0; attempt < INTERNAL_RATE_LIMIT_MAX_REQUESTS; attempt += 1) {
+      assert.strictEqual(await postFulfill(proxiedClient), 401,
+        "unsigned request passes the limiter and fails authentication");
+    }
+    assert.strictEqual(await postFulfill(proxiedClient), 429,
+      "requests beyond the limit from the same forwarded client are throttled");
+    assert.strictEqual(await postFulfill("203.0.113.61"), 401,
+      "a distinct forwarded client keeps its own bucket");
+    assert.strictEqual(await postFulfill(`198.51.100.9, ${proxiedClient}`), 429,
+      "a spoofed multi-hop prefix is ignored; the trusted single hop is bucketed");
+  } finally {
+    proxyChild.kill("SIGKILL");
+    fs.rmSync(proxyDataDir, { recursive: true, force: true });
+  }
 
   global.fetch = realFetch;
   fs.rmSync(directory, { recursive: true, force: true });

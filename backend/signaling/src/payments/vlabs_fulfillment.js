@@ -529,7 +529,20 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef) {
         const matchingPaymentOrderKeys = externalOrderId ? [] : Object.keys(orders)
           .filter(key => orders[key] && orders[key].paymentReference === paymentReference);
         if (matchingPaymentOrderKeys.length > 1) {
-          throw httpError(409, "Revocation contract mismatch");
+          // A payment tombstone and a later session tombstone can coexist for
+          // the same immutable contract; a repeated payment-reference-only
+          // reversal of that terminal state stays idempotent. Any live or
+          // conflicting row keeps the scan ambiguous and fails closed.
+          const terminalDuplicate = matchingPaymentOrderKeys.every(key => {
+            const candidate = orders[key];
+            if (!candidate || (candidate.status !== "REVOKED" && candidate.status !== "TOMBSTONED")) return false;
+            if (candidate.productId !== productId) return false;
+            if (candidate.paymentReference && candidate.paymentReference !== paymentReference) return false;
+            if (isLegacyOrder(candidate)) return candidate.tier === product.tier;
+            return !revocationTupleDrift(candidate, req.body);
+          });
+          if (!terminalDuplicate) throw httpError(409, "Revocation contract mismatch");
+          return { duplicate: true };
         }
         const orderKey = externalOrderId
           || matchingPaymentOrderKeys[0]
@@ -556,7 +569,14 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef) {
         if (existing && revocationTupleDrift(existing, req.body)) {
           throw httpError(409, "Revocation contract mismatch");
         }
-        const result = soldCodes.revokeByStripeSession(externalOrderId || null, activationCodesRef, {
+        // The payment-reference scan may have recovered the canonical cs_
+        // order key; forward it so legacy sold entries without a
+        // paymentReferenceHash are still found and revoked.
+        const scannedOrderKey = matchingPaymentOrderKeys[0] || null;
+        const soldSessionKey = externalOrderId
+          || (scannedOrderKey && /^cs_[a-zA-Z0-9_]+$/.test(scannedOrderKey) ? scannedOrderKey : null)
+          || null;
+        const result = soldCodes.revokeByStripeSession(soldSessionKey, activationCodesRef, {
           paymentIntent: paymentReference,
           productKey: product.productKey,
           eventId: adjustmentEventId,
@@ -623,4 +643,5 @@ module.exports = {
   CATALOG_VERSION,
   MIN_FULFILLMENT_SECRET_LENGTH,
   INTERNAL_RATE_LIMIT_MAX_REQUESTS,
+  INTERNAL_RATE_LIMIT_MAX_BUCKETS,
 };
