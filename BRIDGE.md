@@ -6077,3 +6077,39 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-09-19 19:37 EEST — CODEX SOL — SIGNALING DEPENDENCY REMEDIATION START
+
+- **Ticket:** `STEALTH-20260919-SIGNALING-QS`; **Type:** SECURITY / DEPENDENCY / TEST;
+  **Status:** In Progress.
+- Isolated branch `deps/signaling-qs-20260919` starts from current `origin/main` at
+  `e06d018417bae5be16bf6b89d0a1887586a99d3b`; canonical and unrelated worktrees remain
+  untouched.
+- Scope is deliberately narrow: update the signaling production lockfile from the vulnerable
+  transitive `qs` chain to the supported Express 4 dependency set, without changing application
+  code, API behavior, sales gates or production configuration.
+- Acceptance requires a clean install, full signaling and payment suites, zero production npm
+  audit findings, an exact dependency-tree check, diff validation and a bounded secret scan.
+
+`DEPENDENCY REMEDIATION IN PROGRESS — NO RUNTIME OR SALES ACTIVATION`
+
+## 2026-09-19 19:46 EEST — CODEX SOL + KIMI K3 — SIGNALING DEPENDENCY REMEDIATION VERIFIED
+
+- **Ticket:** `STEALTH-20260919-SIGNALING-QS`; **Type:** SECURITY / DEPENDENCY / TEST;
+  **Status:** Ready for Review.
+- Kimi K3 independently traced the three Moderate production advisories to the single deduplicated
+  `qs@6.15.2` chain and identified the smallest supported Express 4 update. Sol generated and
+  reviewed the exact lockfile-only dependency change; `package.json` and application code are
+  unchanged.
+- Resolved production tree: `express@4.22.3`, `body-parser@1.20.8`, `qs@6.16.0`,
+  `side-channel@1.1.1`, `path-to-regexp@0.1.13`, `object-inspect@1.13.4` and
+  `side-channel-list@1.0.1`.
+- Verification PASS: clean `npm ci --ignore-scripts`; full `npm test` including startup,
+  handlers 47/47, subscription/WebRTC 77/77 and all entitlement/payment suites; focused
+  `npm run test:payments`; `npm audit --omit=dev` with zero vulnerabilities; exact `npm ls`;
+  `git diff --check`; bounded modified-file secret scan with zero matches.
+- The sandboxed test attempts initially stopped at local port binding with `EPERM`; the exact same
+  commands passed outside that network sandbox. No runtime, deployment, payment, finance or sales
+  state was changed.
+
+`LOCKFILE SECURITY FIX GREEN — SEPARATE PROTECTED REVIEW REQUIRED`
