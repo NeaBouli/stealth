@@ -4,6 +4,8 @@ Date: 2026-09-19
 
 Status: CATALOG ONLY - NO REMEDIATION APPLIED
 
+Published for review in [PR #88](https://github.com/NeaBouli/stealth/pull/88).
+
 ## Purpose
 
 This document turns the September 2026 audit material into bounded work packages without
@@ -197,5 +199,7 @@ Work proceeds in bounded blocks, not as one open-ended autonomous goal:
 - PR #83: hold for CI, corrections, and review.
 - PR #85: hold for report correction, CI, and review.
 - Issue #84: remains the canonical 62-finding register.
-- Next permitted action before implementation: publish this catalog, link the bounded tickets,
-  and obtain the independent catalog review when Kimi becomes available.
+- Catalog publication and ticket/PR linking: complete in PR #88, issues #86/#87, issue #84,
+  and audit PRs #83/#85.
+- Next permitted action before implementation: obtain the independent catalog review when
+  Kimi becomes available, then wait for the owner's explicit instruction to begin a fix block.
