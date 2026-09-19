@@ -255,6 +255,24 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   const r4 = lastMsg(ws);
   assert(r4.success === true && r4.tier === "pro", "valid gift code → success + tier");
 
+  // Gift code — persistence failure rolls back the in-memory redemption
+  const failingGiftCtx = buildCtx({ saveGiftCodes: () => false });
+  const failingGiftWs = mockWs();
+  failingGiftCtx.clients.set(connId, { ws: failingGiftWs, lastSeen: Date.now(), clientId: "alice", ip: "1.1.1.1" });
+  failingGiftCtx.clientIds.set("alice", connId);
+  failingGiftCtx.giftCodes.set("GIFT-PERSIST-2026", {
+    tier: "pro",
+    used: false,
+    expires: new Date(Date.now() + 86400000).toISOString(),
+  });
+  failingGiftCtx.handlers.ACTIVATE_CODE(failingGiftWs, connId, { code: "GIFT-PERSIST-2026" });
+  const r4b = lastMsg(failingGiftWs);
+  assert(r4b.success === false && r4b.error === "entitlement_temporarily_unavailable",
+    "gift persistence failure → generic persistence error");
+  const rolledBackGift = failingGiftCtx.giftCodes.get("GIFT-PERSIST-2026");
+  assert(rolledBackGift.used === false && !Object.prototype.hasOwnProperty.call(rolledBackGift, "usedBy"),
+    "gift persistence failure restores the exact in-memory state");
+
   // Gift code — already used
   ctx.giftCodes.set("GIFT-USED-2026", {
     tier: "pro",

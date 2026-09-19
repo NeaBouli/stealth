@@ -102,6 +102,9 @@ curl -fsS https://api.stealthx.tech/licenses/status
 ## Notes
 
 - The backup script uses `flock` to prevent overlapping runs.
+- Archives are written as `.tmp` first and atomically renamed after `tar` succeeds.
+- Archives are mode `600`.
+- Keep the backup host and production host access-controlled; these files may contain activation and purchase state.
 
 ### Recovering a stale fulfillment lock
 
@@ -122,6 +125,3 @@ running.
 
 If ownership or writer state cannot be proven, leave the lock in place and
 restore from a verified snapshot instead of forcing recovery.
-- Archives are written as `.tmp` first and atomically renamed after `tar` succeeds.
-- Archives are mode `600`.
-- Keep the backup host and production host access-controlled; these files may contain activation and purchase state.
