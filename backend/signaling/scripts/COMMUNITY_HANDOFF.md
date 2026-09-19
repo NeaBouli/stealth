@@ -20,6 +20,11 @@ to obtain a complete server gift inventory or a reference/signing key.
 6. Keep the resulting recipient-intake.json private on this host. Return source
    commit, test result, selected count, codes_generated=0 and status only. Do not
    attach addresses, code mappings or private file contents to public Git or chat.
+7. After the lead supplies the reviewed current staging/export commit and confirms
+   the private inventory input, the coordinator may run the documented preparation
+   and draft-export commands. Keep all three resulting files private. Draft rows
+   remain `draft_do_not_send`; do not send a code until the lead returns the exact
+   signed APK identity and an explicit ready-to-deliver authorization.
 
 ## Lead deliverables still outstanding
 

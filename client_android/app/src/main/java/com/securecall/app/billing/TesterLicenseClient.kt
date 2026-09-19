@@ -6,7 +6,7 @@ import java.util.UUID
 /** One challenge exchange at a time; no code retained after the initial send. */
 class TesterLicenseClient(
     private val send: (JSONObject) -> Boolean,
-    private val keyHash: () -> String?,
+    private val deviceIdentity: (createIfMissing: Boolean) -> TesterDeviceIdentity?,
     private val subject: () -> String?,
     private val sign: (String) -> String?,
     private val accept: (String) -> Boolean,
@@ -19,15 +19,17 @@ class TesterLicenseClient(
     @Synchronized
     fun start(value: String, renewal: Boolean, callback: (Boolean, String) -> Unit) {
         if (pending != null) { callback(false, "activation_in_progress"); return }
-        val device = keyHash()
         val identity = subject()
-        if (device == null || identity.isNullOrEmpty()) { callback(false, "tester_enrollment_required"); return }
-        val request = Pending(UUID.randomUUID().toString(), renewal, identity, device, callback)
+        if (identity.isNullOrEmpty()) { callback(false, "tester_enrollment_required"); return }
+        val device = deviceIdentity(!renewal)
+        if (device == null) { callback(false, "tester_enrollment_required"); return }
+        val request = Pending(UUID.randomUUID().toString(), renewal, identity, device.keyHash, callback)
         pending = request
         val message = JSONObject().put("type", if (renewal) "TESTER_RENEWAL_BEGIN" else "TESTER_ACTIVATION_BEGIN")
-            .put("requestId", request.id).put("keyHash", device)
-        if (renewal) message.put("entitlementToken", value)
+            .put("requestId", request.id)
+        if (renewal) message.put("entitlementToken", value).put("keyHash", device.keyHash)
         else message.put("code", value).put("packageName", "com.securecall.app.premium")
+            .put("publicKey", device.publicKey)
         if (!send(message)) { finish(false, "not_connected"); return }
         schedule(15_000) { timeout(request.id) }
     }
@@ -47,7 +49,10 @@ class TesterLicenseClient(
         val prefix = if (request.renewal) "TESTER_RENEWAL" else "TESTER_ACTIVATION"
         val expected = prefix + if (request.completing) "_RESULT" else "_CHALLENGE"
         if (type != expected) return true
-        if (subject() != request.identity || keyHash() != request.device) { finish(false, "tester_identity_changed"); return true }
+        if (subject() != request.identity || deviceIdentity(false)?.keyHash != request.device) {
+            finish(false, "tester_identity_changed")
+            return true
+        }
         if (!message.optBoolean("success", false)) { finish(false, "tester_license_unavailable"); return true }
         if (request.completing) {
             val valid = accept(message.optString("entitlementToken"))

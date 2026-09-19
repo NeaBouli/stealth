@@ -6,10 +6,25 @@ const crypto = require("crypto");
 const { issueTesterEntitlement, verifyTesterEntitlement } = require("../payments/tester_entitlement_tokens");
 const HEX = /^[a-f0-9]{64}$/;
 const SUBJECT = /^[A-Za-z0-9_-]{1,64}$/;
+const PUBLIC_KEY = /^[A-Za-z0-9_-]{80,512}$/;
 const PACKAGE = "com.securecall.app.premium";
 const matches = (pattern, value) => typeof value === "string" && pattern.test(value);
 function fail() { throw new Error("tester_license_unavailable"); }
 function digest(value) { return crypto.createHash("sha256").update(value).digest("hex"); }
+
+function parseDevicePublicKey(value) {
+  if (typeof value !== "string" || !PUBLIC_KEY.test(value)) fail();
+  let der, publicKey, canonical;
+  try {
+    der = Buffer.from(value, "base64url");
+    if (der.toString("base64url") !== value) fail();
+    publicKey = crypto.createPublicKey({key:der, type:"spki", format:"der"});
+    canonical = publicKey.export({type:"spki", format:"der"});
+  } catch { fail(); }
+  if (publicKey.asymmetricKeyType !== "ec" || publicKey.asymmetricKeyDetails?.namedCurve !== "prime256v1"
+      || !Buffer.isBuffer(canonical) || !canonical.equals(der)) fail();
+  return { hash:digest(canonical), publicKeyPem:publicKey.export({type:"spki", format:"pem"}) };
+}
 
 function privatePath(file, directory = false) {
   if (!path.isAbsolute(file)) fail();
@@ -31,16 +46,20 @@ function validate(data) {
         || (grant.binding !== null && (!matches(HEX, grant.binding?.keyHash) || !matches(SUBJECT, grant.binding?.subject)))) fail();
     ids.add(grant.id); codes.add(grant.codeHash);
   }
-  // These records must originate from the operator's verified attestation process.
-  // There is deliberately no API here accepting enrollment approval from a client.
   for (const key of data.enrolledKeys) {
+    // hardware-verified is retained only for compatible operator-provisioned records.
+    // Runtime first binding always writes the narrower possession-only assurance.
     if (!key || !matches(HEX, key.hash) || keys.has(key.hash) || key.package !== PACKAGE
-        || key.assurance !== "hardware-verified" || !["active", "revoked"].includes(key.status)
+        || !["p256-key-possession-v1", "hardware-verified"].includes(key.assurance)
+        || !["active", "revoked"].includes(key.status)
         || typeof key.publicKeyPem !== "string" || key.publicKeyPem.length > 2048) fail();
     const publicKey = crypto.createPublicKey(key.publicKeyPem);
     if (publicKey.asymmetricKeyType !== "ec" || publicKey.asymmetricKeyDetails?.namedCurve !== "prime256v1"
         || digest(publicKey.export({ type: "spki", format: "der" })) !== key.hash) fail();
     keys.add(key.hash);
+  }
+  for (const grant of data.grants) {
+    if (grant.binding && !keys.has(grant.binding.keyHash)) fail();
   }
   return data;
 }
@@ -91,26 +110,32 @@ function createTesterLicenseRegistry({ file, privateKey, now = () => Math.floor(
       } finally { fs.closeSync(fd); }
     }
   }
-  function records(state, codeHash, keyHash) {
-    const grant = state.grants.find(g => g.codeHash === codeHash && g.status === "active");
-    const key = state.enrolledKeys.find(k => k.hash === keyHash && k.status === "active");
-    if (!grant || !key) fail();
-    return { grant, key };
+  function activeKey(state, keyHash) {
+    const key = state.enrolledKeys.find(k => k.hash === keyHash);
+    if (!key || key.status !== "active") fail();
+    return key;
   }
-  function begin({ code, subject, keyHash, packageName }) {
+  function begin({ code, subject, publicKey, packageName }) {
     if (typeof code !== "string" || !/^SC-PREM-[A-F0-9]{48}$/.test(code)
-        || !matches(SUBJECT, subject) || !matches(HEX, keyHash) || packageName !== PACKAGE) fail();
+        || !matches(SUBJECT, subject) || packageName !== PACKAGE) fail();
+    const parsedKey = parseDevicePublicKey(publicKey);
     const codeHash = digest(code);
-    const { grant } = records(read(), codeHash, keyHash);
-    if (grant.binding && (grant.binding.keyHash !== keyHash || grant.binding.subject !== subject)) fail();
+    const state = read();
+    const grant = state.grants.find(g => g.codeHash === codeHash && g.status === "active");
+    if (!grant || (grant.binding &&
+        (grant.binding.keyHash !== parsedKey.hash || grant.binding.subject !== subject))) fail();
+    const existingKey = state.enrolledKeys.find(key => key.hash === parsedKey.hash);
+    if (existingKey && (existingKey.status !== "active" || existingKey.package !== PACKAGE
+        || existingKey.publicKeyPem !== parsedKey.publicKeyPem)) fail();
     const time = now();
     for (const [id, record] of challenges) {
       if (record.expires <= time || record.subject === subject) challenges.delete(id);
     }
     if (challenges.size >= 256) fail();
     const id = crypto.randomUUID();
-    const challenge = `securecall-tester-activation-v1\n${id}\n${grant.id}\n${subject}\n${keyHash}\n${crypto.randomBytes(32).toString("base64url")}`;
-    challenges.set(id, { kind: "activate", codeHash, subject, keyHash, challenge, expires: time + 300 });
+    const challenge = `securecall-tester-activation-v1\n${id}\n${grant.id}\n${subject}\n${parsedKey.hash}\n${crypto.randomBytes(32).toString("base64url")}`;
+    challenges.set(id, { kind: "activate", codeHash, subject, keyHash:parsedKey.hash,
+      publicKeyPem:parsedKey.publicKeyPem, challenge, expires: time + 300 });
     return { challengeId: id, challenge };
   }
   function activate({ challengeId, signature, subject }) {
@@ -118,19 +143,33 @@ function createTesterLicenseRegistry({ file, privateKey, now = () => Math.floor(
     challenges.delete(challengeId);
     if (!pending || pending.kind !== "activate" || pending.expires <= now() || pending.subject !== subject
         || typeof signature !== "string" || !/^[A-Za-z0-9_-]{64,144}$/.test(signature)) fail();
+    const bytes = Buffer.from(signature, "base64url");
+    if (bytes.toString("base64url") !== signature
+        || !crypto.verify("sha256", Buffer.from(pending.challenge), pending.publicKeyPem, bytes)) fail();
     return transaction(state => {
-      const { grant, key } = records(state, pending.codeHash, pending.keyHash);
-      const bytes = Buffer.from(signature, "base64url");
-      if (bytes.toString("base64url") !== signature
-          || !crypto.verify("sha256", Buffer.from(pending.challenge), key.publicKeyPem, bytes)) fail();
-      if (grant.binding && (grant.binding.subject !== subject || grant.binding.keyHash !== key.hash)) fail();
-      grant.binding = { subject, keyHash: key.hash };
-      return issueTesterEntitlement({ subject, grantHash: grant.id, deviceKeyHash: key.hash, privateKey, nowSeconds: now() });
+      const grant = state.grants.find(g => g.codeHash === pending.codeHash && g.status === "active");
+      if (!grant || (grant.binding &&
+          (grant.binding.subject !== subject || grant.binding.keyHash !== pending.keyHash))) fail();
+      let key = state.enrolledKeys.find(entry => entry.hash === pending.keyHash);
+      if (key) {
+        if (key.status !== "active" || key.package !== PACKAGE || key.publicKeyPem !== pending.publicKeyPem) fail();
+      } else {
+        key = {hash:pending.keyHash, publicKeyPem:pending.publicKeyPem, package:PACKAGE,
+          assurance:"p256-key-possession-v1", status:"active"};
+        state.enrolledKeys.push(key);
+      }
+      grant.binding = { subject, keyHash: pending.keyHash };
+      return issueTesterEntitlement({ subject, grantHash: grant.id, deviceKeyHash: pending.keyHash,
+        privateKey, nowSeconds: now() });
     });
   }
   function beginRefresh({ token, subject, keyHash }) {
-    verifyTesterEntitlement(token, { subject, deviceKeyHash: keyHash, publicKey: verifier,
+    const claims = verifyTesterEntitlement(token, { subject, deviceKeyHash: keyHash, publicKey: verifier,
       nowSeconds: now(), expiryGraceSeconds: 7 * 86400 });
+    const state = read();
+    const grant = state.grants.find(g => g.id === claims.grant && g.status === "active");
+    activeKey(state, keyHash);
+    if (!grant || grant.binding?.subject !== subject || grant.binding?.keyHash !== keyHash) fail();
     const time = now();
     for (const [id, record] of challenges) {
       if (record.expires <= time || record.subject === subject) challenges.delete(id);
@@ -153,7 +192,7 @@ function createTesterLicenseRegistry({ file, privateKey, now = () => Math.floor(
     // resurrect a revoked grant or a revoked enrolled key.
     return transaction(state => {
       const grant = state.grants.find(g => g.id === claims.grant && g.status === "active");
-      const key = state.enrolledKeys.find(k => k.hash === keyHash && k.status === "active");
+      const key = activeKey(state, keyHash);
       if (!grant || !key || grant.binding?.subject !== subject || grant.binding?.keyHash !== keyHash) fail();
       const bytes = Buffer.from(signature, "base64url");
       if (bytes.toString("base64url") !== signature

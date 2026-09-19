@@ -9,13 +9,15 @@ class TesterLicenseClientTest {
         val sent = mutableListOf<JSONObject>()
         val results = mutableListOf<Pair<Boolean, String>>()
         val timers = mutableListOf<() -> Unit>()
-        var device: String? = "a".repeat(64)
+        var device: TesterDeviceIdentity? = TesterDeviceIdentity("a".repeat(64), "synthetic-public-key")
         var identity: String? = "synthetic"
         var connected = true
         var valid = true
         var signed = 0
+        val keyRequests = mutableListOf<Boolean>()
         val client = TesterLicenseClient(
-            send = { if (connected) sent.add(it); connected }, keyHash = { device }, subject = { identity },
+            send = { if (connected) sent.add(it); connected },
+            deviceIdentity = { create -> keyRequests.add(create); device }, subject = { identity },
             sign = { signed++; "synthetic-signature" }, accept = { valid && it == "synthetic-proof" },
             schedule = { _, action -> timers.add(action) }
         )
@@ -34,6 +36,14 @@ class TesterLicenseClientTest {
     @Test fun activationAndRenewalCompleteOnlyAfterProofValidation() {
         for (renewal in listOf(false, true)) {
             val h = Harness(); h.start(renewal)
+            assertEquals(listOf(!renewal), h.keyRequests)
+            if (renewal) {
+                assertEquals("a".repeat(64), h.sent.single().getString("keyHash"))
+                assertFalse(h.sent.single().has("publicKey"))
+            } else {
+                assertEquals("synthetic-public-key", h.sent.single().getString("publicKey"))
+                assertFalse(h.sent.single().has("keyHash"))
+            }
             h.client.receive(h.result(renewal)); assertTrue(h.results.isEmpty())
             h.client.receive(h.challenge(renewal)); assertEquals(1, h.signed)
             h.client.receive(h.challenge(renewal)); assertEquals(1, h.signed)
@@ -49,6 +59,15 @@ class TesterLicenseClientTest {
         val domain = Harness(); domain.start()
         domain.client.receive(domain.challenge().put("challenge", "unrelated signing request"))
         assertEquals(0, domain.signed); assertFalse(domain.results.single().first)
+        for (renewal in listOf(false, true)) {
+            val crossDomain = Harness(); crossDomain.start(renewal)
+            val opposite = crossDomain.challenge(!renewal)
+                .put("type", "TESTER_${if (renewal) "RENEWAL" else "ACTIVATION"}_CHALLENGE")
+                .put("requestId", crossDomain.sent.single().getString("requestId"))
+            crossDomain.client.receive(opposite)
+            assertEquals(0, crossDomain.signed)
+            assertEquals(false to "invalid_tester_challenge", crossDomain.results.single())
+        }
         val identity = Harness(); identity.start(); identity.identity = "changed"
         identity.client.receive(identity.challenge()); assertEquals(0, identity.signed)
         val proof = Harness(); proof.start(); proof.valid = false

@@ -1,22 +1,62 @@
 package com.securecall.app.billing
 
 import android.os.Build
+import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
+import android.util.Base64
+import java.security.KeyPairGenerator
 import java.security.KeyFactory
 import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.PrivateKey
 import java.security.Signature
-import android.util.Base64
+import java.security.spec.ECGenParameterSpec
 
-/** Reads existing enrolled key only. Missing/lost/software keys never recreate access. */
+data class TesterDeviceIdentity(val keyHash: String, val publicKey: String)
+
+/** Hardware-backed signing key used only by the Direct Premium tester-license flow. */
 object TesterDeviceKey {
     const val ALIAS = "securecall_tester_enrolled_v1"
 
+    @Synchronized
+    fun ensureHardwareKeyIdentity(): TesterDeviceIdentity? {
+        return try {
+            val store = loadStore()
+            if (store.containsAlias(ALIAS)) {
+                hardwareIdentity(store)
+            } else {
+                try {
+                    KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore").apply {
+                        initialize(
+                            KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_SIGN)
+                                .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
+                                .setDigests(KeyProperties.DIGEST_SHA256)
+                                .setUserAuthenticationRequired(false)
+                                .build()
+                        )
+                        generateKeyPair()
+                    }
+                    hardwareIdentity(store).also { identity ->
+                        if (identity == null) store.deleteEntry(ALIAS)
+                    }
+                } catch (_: Exception) {
+                    // The alias did not exist before this call. Remove a partially-created key,
+                    // but never replace or delete an alias that predated activation.
+                    runCatching { if (store.containsAlias(ALIAS)) store.deleteEntry(ALIAS) }
+                    null
+                }
+            }
+        } catch (_: Exception) { null }
+    }
+
+    fun existingHardwareKeyIdentity(): TesterDeviceIdentity? = try {
+        hardwareIdentity(loadStore())
+    } catch (_: Exception) { null }
+
     fun signChallenge(challenge: String): String? = try {
-        if (challenge.length !in 1..512 || existingHardwareKeyHash() == null) null else {
-            val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        if (challenge.length !in 1..512 || existingHardwareKeyIdentity() == null) null else {
+            val store = loadStore()
             val key = store.getKey(ALIAS, null) as PrivateKey
             val signature = Signature.getInstance("SHA256withECDSA").apply {
                 initSign(key)
@@ -26,8 +66,11 @@ object TesterDeviceKey {
         }
     } catch (_: Exception) { null }
 
-    fun existingHardwareKeyHash(): String? = try {
-        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+    fun existingHardwareKeyHash(): String? = existingHardwareKeyIdentity()?.keyHash
+
+    private fun loadStore(): KeyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+
+    private fun hardwareIdentity(store: KeyStore): TesterDeviceIdentity? = try {
         val privateKey = store.getKey(ALIAS, null) as? PrivateKey
         val certificate = store.getCertificate(ALIAS)
         if (privateKey == null || certificate == null) null else {
@@ -38,9 +81,20 @@ object TesterDeviceKey {
                 info.securityLevel == KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT ||
                     info.securityLevel == KeyProperties.SECURITY_LEVEL_STRONGBOX
             } else info.isInsideSecureHardware
-            if (!hardware || info.origin != KeyProperties.ORIGIN_GENERATED) null
-            else MessageDigest.getInstance("SHA-256").digest(certificate.publicKey.encoded)
-                .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            val encoded = certificate.publicKey.encoded
+            if (!hardware || info.origin != KeyProperties.ORIGIN_GENERATED ||
+                info.keySize != 256 || info.purposes and KeyProperties.PURPOSE_SIGN == 0 ||
+                !info.digests.contains(KeyProperties.DIGEST_SHA256) || encoded.isEmpty()) {
+                null
+            } else {
+                val hash = MessageDigest.getInstance("SHA-256").digest(encoded)
+                    .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+                val publicKey = Base64.encodeToString(
+                    encoded,
+                    Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+                )
+                TesterDeviceIdentity(hash, publicKey)
+            }
         }
     } catch (_: Exception) { null }
 }

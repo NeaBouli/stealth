@@ -17,34 +17,43 @@ const publicKey = pair.publicKey.export({ type: "spki", format: "pem" });
 const hash = data => crypto.createHash("sha256").update(data).digest("hex");
 function device() {
   const pair = crypto.generateKeyPairSync("ec", { namedCurve: "prime256v1" });
-  return { pair, hash: hash(pair.publicKey.export({ type: "spki", format: "der" })),
+  const der = pair.publicKey.export({ type: "spki", format: "der" });
+  return { pair, hash: hash(der), publicKey: der.toString("base64url"),
     publicKeyPem: pair.publicKey.export({ type: "spki", format: "pem" }),
-    package: "com.securecall.app.premium", assurance: "hardware-verified", status: "active" };
+    package: "com.securecall.app.premium", assurance: "p256-key-possession-v1", status: "active" };
 }
-// Synthetic approval fixtures test the registry, NOT physical attestation.
 const a = device(), b = device(), unknown = device();
 const code = `SC-PREM-${"A".repeat(48)}`;
 const initial = { schema: 1, grants: [{ id: "b".repeat(64), codeHash: hash(code), status: "active", binding: null }],
-  enrolledKeys: [a, b].map(({ pair: _pair, ...entry }) => entry) };
+  enrolledKeys: [] };
 let now = 1700000000;
 const save = data => fs.writeFileSync(file, JSON.stringify(data), { mode: 0o600 });
 const load = () => JSON.parse(fs.readFileSync(file));
 const registry = () => createTesterLicenseRegistry({ file, privateKey, now: () => now });
-const begin = (service, key = a, subject = "synthetic-A") => service.begin({ code, subject, keyHash: key.hash, packageName: key.package });
+const begin = (service, key = a, subject = "synthetic-A") => service.begin({ code, subject,
+  publicKey: key.publicKey, packageName: key.package });
 const prove = (challenge, key = a, subject = "synthetic-A") => ({ challengeId: challenge.challengeId, subject,
   signature: crypto.sign("sha256", Buffer.from(challenge.challenge), key.pair.privateKey).toString("base64url") });
 (async () => { try {
   save(initial);
   const service = registry();
-  assert.throws(() => service.begin({code,subject:[],keyHash:a.hash,packageName:a.package}));
+  assert.throws(() => service.begin({code,subject:[],publicKey:a.publicKey,packageName:a.package}));
   const malformed = structuredClone(initial);
-  malformed.enrolledKeys[0].hash = "0".repeat(64); save(malformed);
+  malformed.enrolledKeys.push({hash:"0".repeat(64),publicKeyPem:a.publicKeyPem,package:a.package,
+    assurance:a.assurance,status:"active"}); save(malformed);
+  assert.throws(() => begin(service), {message:"tester_license_unavailable"});
+  const dangling = structuredClone(initial);
+  dangling.grants[0].binding = {subject:"synthetic-A",keyHash:a.hash}; save(dangling);
   assert.throws(() => begin(service), {message:"tester_license_unavailable"});
   fs.writeFileSync(file, "invalid synthetic JSON");
   assert.throws(() => begin(service), {message:"tester_license_unavailable"});
   save(initial);
-  assert.throws(() => begin(service, unknown));
-  assert.throws(() => service.begin({ code: "bad", subject: "synthetic-A", keyHash: a.hash, packageName: a.package }));
+  assert.doesNotThrow(() => begin(service, unknown));
+  assert.throws(() => service.begin({ code: "bad", subject: "synthetic-A", publicKey: a.publicKey, packageName: a.package }));
+  const rsa = crypto.generateKeyPairSync("rsa", {modulusLength:2048}).publicKey
+    .export({type:"spki",format:"der"}).toString("base64url");
+  assert.throws(() => service.begin({code,subject:"synthetic-A",publicKey:rsa,packageName:a.package}));
+  assert.throws(() => service.begin({code,subject:"synthetic-A",publicKey:`${a.publicKey}=`,packageName:a.package}));
   let state = load(); state.grants[0].status = "inactive"; save(state);
   assert.throws(() => begin(service));
   save(initial);
@@ -52,6 +61,8 @@ const prove = (challenge, key = a, subject = "synthetic-A") => ({ challengeId: c
   const challengeA = begin(service), challengeB = begin(serviceB, b, "synthetic-B");
   const token = service.activate(prove(challengeA));
   assert.equal(verifyTesterEntitlement(token, { subject: "synthetic-A", deviceKeyHash: a.hash, publicKey, nowSeconds: now }).tier, "PREMIUM");
+  assert.deepEqual(load().enrolledKeys, [{hash:a.hash,publicKeyPem:a.publicKeyPem,package:a.package,
+    assurance:"p256-key-possession-v1",status:"active"}]);
   assert.throws(() => service.activate(prove(challengeA)));
   assert.throws(() => serviceB.activate(prove(challengeB, b, "synthetic-B")));
   assert.throws(() => begin(registry(), b, "synthetic-B"));
@@ -68,13 +79,20 @@ const prove = (challenge, key = a, subject = "synthetic-A") => ({ challengeId: c
   assert.throws(() => restarted.refresh(prove(renewal)));
   const forged = restarted.beginRefresh({ token: renewed, subject: "synthetic-A", keyHash: a.hash });
   assert.throws(() => restarted.refresh(prove(forged, b)));
-  const revoked = restarted.beginRefresh({ token: renewed, subject: "synthetic-A", keyHash: a.hash });
   state = load(); state.grants[0].status = "revoked"; save(state);
+  assert.throws(() => restarted.beginRefresh({token:renewed,subject:"synthetic-A",keyHash:a.hash}));
+  state.grants[0].status = "active"; save(state);
+  const revoked = restarted.beginRefresh({ token: renewed, subject: "synthetic-A", keyHash: a.hash });
+  state.grants[0].status = "revoked"; save(state);
   assert.throws(() => restarted.refresh(prove(revoked)));
   state.grants[0].status = "active";
   state.enrolledKeys[0].status = "revoked"; save(state);
-  const revokedKey = restarted.beginRefresh({token:renewed,subject:"synthetic-A",keyHash:a.hash});
-  assert.throws(() => restarted.refresh(prove(revokedKey)));
+  assert.throws(() => begin(restarted));
+  assert.throws(() => restarted.beginRefresh({token:renewed,subject:"synthetic-A",keyHash:a.hash}));
+  state.enrolledKeys[0].status = "active"; save(state);
+  fs.writeFileSync(file, "invalid synthetic JSON");
+  assert.throws(() => restarted.beginRefresh({token:renewed,subject:"synthetic-A",keyHash:a.hash}));
+  save(state);
   now += TTL_SECONDS + 7 * 86400 + 1;
   assert.throws(() => restarted.beginRefresh({token:renewed,subject:"synthetic-A",keyHash:a.hash}));
 
@@ -109,7 +127,7 @@ const prove = (challenge, key = a, subject = "synthetic-A") => ({ challengeId: c
       } else {
         fixture=msg;
         service=createTesterLicenseRegistry({file:msg.file,privateKey:msg.privateKey,now:()=>msg.now});
-        challenge=service.begin({code:msg.code,subject:msg.subject,keyHash:msg.keyHash,packageName:msg.packageName});
+        challenge=service.begin({code:msg.code,subject:msg.subject,publicKey:msg.publicKey,packageName:msg.packageName});
         process.send({ready:true});
       }
     });`;
@@ -129,7 +147,7 @@ const prove = (challenge, key = a, subject = "synthetic-A") => ({ challengeId: c
         clearTimeout(timer); if(code !== 0) { readyReject(new Error("worker failed")); resultReject(new Error("worker failed")); } resolve();
       }));
       child.on("error", () => { readyReject(new Error("worker error")); resultReject(new Error("worker error")); });
-      child.send({file,privateKey,now,code,subject:`synthetic-${i}`,keyHash:key.hash,packageName:key.package,
+      child.send({file,privateKey,now,code,subject:`synthetic-${i}`,publicKey:key.publicKey,packageName:key.package,
         devicePrivateKey:key.pair.privateKey.export({type:"pkcs8",format:"pem"})});
       return { child, ready, result, exited };
     });
@@ -142,7 +160,7 @@ const prove = (challenge, key = a, subject = "synthetic-A") => ({ challengeId: c
   } finally {
     children.forEach(child => { if(child.exitCode === null) child.kill(); });
   }
-  console.log("tester_license_registry: activation/retry/restart/renewal/revoke/storage negatives PASS (synthetic enrollment only)");
+  console.log("tester_license_registry: first-bind/retry/restart/renewal/revoke/race/storage negatives PASS (synthetic keys)");
 } finally {
   fs.rmSync(dir, { recursive: true, force: true });
 } })().catch(() => { console.error("tester_license_registry synthetic test FAILED"); process.exitCode=1; });

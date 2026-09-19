@@ -63,6 +63,28 @@ All records are constrained to inactive/unconfirmed; no activation switch exists
 SQLite is not encrypted at rest: use approved protected local storage and backup
 policy. Permissions do not defend against the same OS account or privileged users.
 
+After review, create an explicitly inactive private handoff draft:
+
+```sh
+python3 -B backend/signaling/scripts/export_tester_staging.py \
+  --staging-database "$PRIVATE_STAGING_DATABASE" \
+  --private-output-directory "$PRIVATE_HANDOFF_DIRECTORY"
+```
+
+Both paths must be absolute, owner-owned and outside Git. The output directory
+must already be mode700. The exporter atomically creates three mode600 files:
+
+- `tester-delivery-draft.csv` contains the private email/code mapping and is the
+  only delivery input. Every row is marked `draft_do_not_send`.
+- `tester-runtime-registry-inactive.json` contains only code hashes, opaque grant
+  IDs and inactive bindings. It contains no address or raw code.
+- `tester-handoff-manifest.json` pins both payloads and lists the remaining gates.
+
+The bundle is deterministic and idempotent. A conflicting or partial prior bundle,
+unsafe path, invalid staging record or concurrent export fails without replacing
+data. This step does not confirm recipients, activate grants, import production
+state, build an APK or authorize email delivery.
+
 No physical-device guarantee, signed entitlement, ownership recovery, expiration
 policy, commercial product binding or license import is implemented by staging.
 Those require the current verified runtime contract and separately reviewed tests.
@@ -76,7 +98,11 @@ From repository root:
 
 ```sh
 python3 -B -m unittest discover -s backend/signaling/scripts -p test_prepare_tester_staging.py -v
-mypy --strict backend/signaling/scripts/prepare_tester_staging.py backend/signaling/scripts/test_prepare_tester_staging.py
+python3 -B -m unittest discover -s backend/signaling/scripts -p 'test_*tester_staging.py' -v
+mypy --strict backend/signaling/scripts/prepare_tester_staging.py \
+  backend/signaling/scripts/export_tester_staging.py \
+  backend/signaling/scripts/test_prepare_tester_staging.py \
+  backend/signaling/scripts/test_export_tester_staging.py
 ```
 
 Tests use only synthetic addresses and ephemeral secrets. Temporary fixture

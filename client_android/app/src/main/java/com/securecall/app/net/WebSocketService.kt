@@ -108,7 +108,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private val testerLicenses by lazy {
         com.securecall.app.billing.TesterLicenseClient(
             send = { message -> isRegistered && (client?.send(message.toString()) ?: false) },
-            keyHash = { com.securecall.app.billing.TesterDeviceKey.existingHardwareKeyHash() },
+            deviceIdentity = { createIfMissing ->
+                if (createIfMissing) {
+                    com.securecall.app.billing.TesterDeviceKey.ensureHardwareKeyIdentity()
+                } else {
+                    com.securecall.app.billing.TesterDeviceKey.existingHardwareKeyIdentity()
+                }
+            },
             subject = { getLocalClientId() },
             sign = { com.securecall.app.billing.TesterDeviceKey.signChallenge(it) },
             accept = { com.securecall.app.billing.DirectEntitlementStore(this).accept(it) },
