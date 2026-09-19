@@ -6077,3 +6077,39 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-09-19 18:16 EEST — CODEX SOL — PR #82 REVIEW GATES LOCALLY GREEN
+
+- **Ticket:** `STEALTHX-SALES-READINESS-20260919-B1`; **Type:** FIX / SECURITY /
+  TEST / RELEASE-GATE; **Status:** Local verification complete, PR update pending.
+- Work was isolated on `fix/pr82-review-gates-20260919` from exact PR `#82` head
+  `3e5196b9b4c00481c7a2b0152d729c92501a8b78`; dirty canonical checkouts and
+  unrelated user files were not changed.
+- Closed the outstanding entitlement/fulfillment review gates: signed stale or
+  duplicate claims fail closed; internal fulfillment/revoke requests are bounded
+  before HMAC work; legacy rows are not migrated before immutable checks;
+  payment-reference-only reversals revoke the original sale; terminal retries
+  remain idempotent only for the same contract; activation requires a registered
+  client; Android revoke clears token and verification timestamp atomically; and
+  the Free activation gate is covered by an executable runtime test.
+- Added a conservative stale-lock recovery runbook. No automatic lock reclaim,
+  production mutation, payment, deployment, publishing or sales activation was
+  performed.
+- Verification PASS: complete signaling `npm test`; focused entitlement,
+  fulfillment and subscription/WebRTC suites; Free Debug and Free Release unit
+  tests; `verifyFreeReleaseBillingClosed`; and the exact Android CI-equivalent
+  command (183 Gradle tasks in 41m42s) covering Premium compile/tests, Free lint,
+  API-36 Free APK/AAB, VPN policy/runtime gates, no-app-wallet/IFR gate, R8,
+  archive integrity and test signing verification. `git diff --check` and the
+  bounded secret-pattern scan also passed.
+- Kimi K3 was assigned only an independent read-only final-diff review. The local
+  provider connection failed before analysis; the external retry was not allowed
+  to export an unpublished diff. Kimi produced no result and changed no file.
+  Sol completed the full security/integration review and will request Kimi again
+  against the published PR diff.
+- `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain unchanged. Android contains no
+  IFR/wallet verification. Browser IFR discount, Stripe fulfillment and fiscal
+  activation remain closed until the reviewed product commit is accepted by the
+  private VLABS operator and the version-bound finance gates pass.
+
+`PR 82 LOCAL REVIEW GATES GREEN — ONE REVIEWED PUSH, HOSTED CI AND VLABS SOURCE ACCEPTANCE NEXT`

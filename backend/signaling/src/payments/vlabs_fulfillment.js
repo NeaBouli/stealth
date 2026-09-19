@@ -9,6 +9,9 @@ const { sendActivationCode } = require("./email_handler");
 const MAX_CLOCK_SKEW_SECONDS = 300;
 const MIN_FULFILLMENT_SECRET_LENGTH = 32;
 const CATALOG_VERSION = "stealthx-lifetime-v1";
+const INTERNAL_RATE_LIMIT_WINDOW_MS = 60_000;
+const INTERNAL_RATE_LIMIT_MAX_REQUESTS = 60;
+const INTERNAL_RATE_LIMIT_MAX_BUCKETS = 4096;
 const inFlightOrders = new Set();
 
 // Static immutable sales contract for the private VLABS receiver.
@@ -197,6 +200,46 @@ function authenticateRequest(req, secret) {
   return verifySignature(secret, timestamp, JSON.stringify(req.body || {}), signature);
 }
 
+function requestIp(req) {
+  if (req && typeof req.ip === "string" && req.ip.length > 0) return req.ip.slice(0, 128);
+  const remoteAddress = req && req.socket && req.socket.remoteAddress;
+  return typeof remoteAddress === "string" && remoteAddress.length > 0
+    ? remoteAddress.slice(0, 128)
+    : "unknown";
+}
+
+function createRequestRateLimiter({
+  limit = INTERNAL_RATE_LIMIT_MAX_REQUESTS,
+  windowMs = INTERNAL_RATE_LIMIT_WINDOW_MS,
+  now = () => Date.now(),
+} = {}) {
+  const buckets = new Map();
+  return {
+    allow(req) {
+      const currentTime = now();
+      const key = requestIp(req);
+      let bucket = buckets.get(key);
+      if (bucket && currentTime - bucket.startedAt >= windowMs) {
+        buckets.delete(key);
+        bucket = null;
+      }
+      if (!bucket) {
+        if (buckets.size >= INTERNAL_RATE_LIMIT_MAX_BUCKETS) {
+          for (const [candidate, value] of buckets) {
+            if (currentTime - value.startedAt >= windowMs) buckets.delete(candidate);
+          }
+          if (buckets.size >= INTERNAL_RATE_LIMIT_MAX_BUCKETS) return false;
+        }
+        buckets.set(key, { startedAt: currentTime, count: 1 });
+        return true;
+      }
+      if (bucket.count >= limit) return false;
+      bucket.count += 1;
+      return true;
+    },
+  };
+}
+
 function requireExactClaim(value, expected, label) {
   if (!validString(value, 160)) throw httpError(400, `Missing or invalid ${label}`);
   if (value !== expected) throw httpError(409, `Contract drift: ${label} mismatch`);
@@ -296,7 +339,11 @@ function configuredSecret() {
 }
 
 function setupVlabsFulfillmentRoute(app, activationCodesRef) {
+  const requestRateLimiter = createRequestRateLimiter();
   app.post("/internal/vlabs/fulfill", async (req, res) => {
+    if (!requestRateLimiter.allow(req)) {
+      return res.status(429).json({ ok: false, error: "Too many fulfillment requests" });
+    }
     const secret = configuredSecret();
     if (!secret) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
     if (!authenticateRequest(req, secret)) {
@@ -325,13 +372,17 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef) {
           const orders = loadOrders();
           let existing = orders[externalOrderId];
           if (existing) {
+            if (existing.status === "TOMBSTONED" || existing.status === "REVOKED") {
+              throw httpError(409, "Order was revoked before fulfillment");
+            }
             if (isLegacyOrder(existing) && existing.productId === productId) {
+              if (existing.tier !== product.tier
+                || (existing.paymentReference && existing.paymentReference !== req.body.paymentReference)) {
+                throw httpError(409, "Order contract mismatch");
+              }
               existing = bindLegacyOrder(existing, req.body, product);
               orders[externalOrderId] = existing;
               saveOrders(orders);
-            }
-            if (existing.status === "TOMBSTONED" || existing.status === "REVOKED") {
-              throw httpError(409, "Order was revoked before fulfillment");
             }
             if (fulfillmentTupleDrift(existing, req.body)) {
               throw httpError(409, "Order contract mismatch");
@@ -454,6 +505,9 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef) {
   });
 
   app.post("/internal/vlabs/revoke", (req, res) => {
+    if (!requestRateLimiter.allow(req)) {
+      return res.status(429).json({ ok: false, error: "Too many fulfillment requests" });
+    }
     const secret = configuredSecret();
     if (!secret) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
     if (!authenticateRequest(req, secret)) {
@@ -467,15 +521,34 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef) {
       return res.status(error.status || 400).json({ ok: false, error: error.message });
     }
     const { externalOrderId, productId, reason, paymentReference, adjustmentEventId } = req.body;
-    const orderKey = externalOrderId
-      || `payment_${crypto.createHash("sha256").update(paymentReference).digest("hex").slice(0, 32)}`;
-
     try {
       const outcome = withOrdersLock(lock => {
         assertOrdersLockOwned(lock);
         const orders = loadOrders();
+        const paymentOrderKey = `payment_${crypto.createHash("sha256").update(paymentReference).digest("hex").slice(0, 32)}`;
+        const matchingPaymentOrderKeys = externalOrderId ? [] : Object.keys(orders)
+          .filter(key => orders[key] && orders[key].paymentReference === paymentReference);
+        if (matchingPaymentOrderKeys.length > 1) {
+          throw httpError(409, "Revocation contract mismatch");
+        }
+        const orderKey = externalOrderId
+          || matchingPaymentOrderKeys[0]
+          || paymentOrderKey;
         let existing = orders[orderKey];
-        if (existing && isLegacyOrder(existing) && existing.productId === productId) {
+        if (existing && (existing.productId !== productId
+          || (existing.paymentReference && existing.paymentReference !== paymentReference))) {
+          throw httpError(409, "Revocation contract mismatch");
+        }
+        if (existing && !isLegacyOrder(existing) && revocationTupleDrift(existing, req.body)) {
+          throw httpError(409, "Revocation contract mismatch");
+        }
+        if (existing && (existing.status === "REVOKED" || existing.status === "TOMBSTONED")) {
+          return { duplicate: true };
+        }
+        if (existing && isLegacyOrder(existing)) {
+          if (existing.tier !== product.tier) {
+            throw httpError(409, "Revocation contract mismatch");
+          }
           existing = bindLegacyOrder(existing, req.body, product);
           orders[orderKey] = existing;
           saveOrders(orders);
@@ -483,10 +556,6 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef) {
         if (existing && revocationTupleDrift(existing, req.body)) {
           throw httpError(409, "Revocation contract mismatch");
         }
-        if (existing && (existing.status === "REVOKED" || existing.status === "TOMBSTONED")) {
-          return { duplicate: true };
-        }
-
         const result = soldCodes.revokeByStripeSession(externalOrderId || null, activationCodesRef, {
           paymentIntent: paymentReference,
           productKey: product.productKey,
@@ -549,7 +618,9 @@ module.exports = {
   isRevocationReason,
   validateFulfillmentContract,
   validateRevocationContract,
+  createRequestRateLimiter,
   PRODUCTS,
   CATALOG_VERSION,
   MIN_FULFILLMENT_SECRET_LENGTH,
+  INTERNAL_RATE_LIMIT_MAX_REQUESTS,
 };

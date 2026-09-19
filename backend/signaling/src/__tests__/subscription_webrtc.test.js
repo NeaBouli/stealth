@@ -68,7 +68,7 @@ function buildCtx(overrides = {}) {
   const mockRateLimit = { registerEvent: () => true, registerBinaryEvent: () => true, clear: () => {} };
   const mockHb = { start: () => {}, updateClient: () => {}, stop: () => {} };
   const giftCodes = new Map();
-  const saveGiftCodes = () => {};
+  const saveGiftCodes = overrides.saveGiftCodes || (() => {});
   const saveActivationCodes = overrides.saveActivationCodes || (() => true);
   const issueEntitlementToken = ({ subject, productKey, tier }) => `signed:${subject}:${productKey}:${tier}`;
   const verifyEntitlementToken = (token, { expectedSubject }) => {
@@ -216,6 +216,18 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   const connId = "conn-ac";
   ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: "alice", ip: "1.1.1.1" });
   ctx.clientIds.set("alice", connId);
+
+  // Unregistered sockets cannot inspect or consume gift/activation codes.
+  const unregisteredWs = mockWs();
+  ctx.giftCodes.set("GIFT-UNREGISTERED-2026", {
+    tier: "pro",
+    used: false,
+    expires: new Date(Date.now() + 86400000).toISOString(),
+  });
+  ctx.handlers.ACTIVATE_CODE(unregisteredWs, "conn-unregistered", { code: "GIFT-UNREGISTERED-2026" });
+  const unregisteredResult = lastMsg(unregisteredWs);
+  assert(unregisteredResult.success === false && unregisteredResult.error === "not_registered", "unregistered activation fails before code lookup");
+  assert(ctx.giftCodes.get("GIFT-UNREGISTERED-2026").used === false, "unregistered activation does not consume a gift code");
 
   // Missing code
   ctx.handlers.ACTIVATE_CODE(ws, connId, {});
