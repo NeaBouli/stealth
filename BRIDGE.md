@@ -6397,3 +6397,18 @@ Open next:
   boundary is enforced on every candidate rather than only by the local verification record.
 
 `PR 95 OPEN — HOSTED CI/REVIEW PENDING — PRODUCTION AND DELIVERY CLOSED`
+
+## 2026-09-20 02:20 EEST — CODEX SOL — AUDIT-FIX INTEGRATION STARTED
+
+- Created isolated branch `integrate/securecall-audit-release-20260920` from immutable PR #95
+  candidate `2cb2aed9774eeb4d65e500e696fce01c9ec3b0a0`. The dirty/diverged canonical checkout remains
+  untouched.
+- This block may integrate only the independently reviewed implementation commits from PRs #89,
+  #91, #92 and #93 after conflict/staleness review. Historical Bridge-only commits are excluded.
+  Report-only PRs #83/#85/#88 remain a separate documentation decision.
+- Kimi K3 owns the non-writing conflict/risk review. Sol owns every applied diff, integration
+  decision and the full backend/web/Android/CI verification chain.
+- No merge to `main`, deployment, provider/payment/Play mutation, artifact publication, private
+  data handling or sale activation is authorized by this integration block.
+
+`AUDIT-FIX INTEGRATION IN PROGRESS — PR 95 CI PENDING — SALES CLOSED`
