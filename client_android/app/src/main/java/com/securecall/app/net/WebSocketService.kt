@@ -569,6 +569,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         return true
     }
 
+    internal fun beginActivationRequest(
+        callback: (success: Boolean, tier: String, error: String) -> Unit
+    ): com.securecall.app.billing.ActivationRequestSlot.Request? = activationRequests.begin(callback)
+
+    internal fun sendActivationMessage(message: String): Boolean = client?.send(message) ?: false
+
     /** Send activation code to server for validation. Returns (success, tier, error). */
     fun activateCode(code: String, callback: (success: Boolean, tier: String, error: String) -> Unit) {
         val testerCode = code.trim().uppercase().startsWith("SC-PREM-")
@@ -589,7 +595,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             }
             return
         }
-        val request = activationRequests.begin(callback)
+        val request = beginActivationRequest(callback)
         if (request == null) {
             callback(false, "", "activation_in_progress")
             return
@@ -599,7 +605,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             put("requestId", request.id)
             put("code", code.trim().uppercase())
         }.toString()
-        val sent = client?.send(json) ?: false
+        val sent = sendActivationMessage(json)
         if (!sent) {
             Log.w("WS_SERVICE", "ACTIVATE_CODE failed to send")
             activationRequests.take(request.id)?.callback?.invoke(false, "", "not_connected")

@@ -77,5 +77,8 @@ class DirectEntitlementStore internal constructor(
         prefs.getString("token", null)?.takeIf { it.length in 1..4096 }
     } else null
 
-    fun revoke(): Boolean = prefs.edit().remove("token").commit()
+    fun revoke(): Boolean = prefs.edit()
+        .remove("token")
+        .remove("last_verified_time")
+        .commit()
 }

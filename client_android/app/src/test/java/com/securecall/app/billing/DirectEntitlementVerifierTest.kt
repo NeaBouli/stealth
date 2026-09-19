@@ -254,8 +254,20 @@ class DirectEntitlementVerifierTest {
     fun errorsDoNotLeakTokenContent() {
         val token = issueToken(validClaims(audience = "securechat"))
         val error = assertThrows(IllegalArgumentException::class.java) { verifyPro(token) }
-        assertTrue(error.message == null || !token.contains(error.message ?: "\u0000"))
-        assertTrue(error.message == null || !error.message!!.contains(SUBJECT))
+        assertEquals("invalid entitlement token", error.message)
+        assertTrue(!token.contains(error.message ?: "\u0000"))
+        assertTrue(!error.message!!.contains(SUBJECT))
+
+        val signed = issueToken(validClaims())
+        val invalidSignature = assertThrows(SecurityException::class.java) {
+            verifyPro(signed, publicKey = rawOtherPublicKey)
+        }
+        assertEquals("invalid entitlement signature", invalidSignature.message)
+
+        val invalidKey = assertThrows(IllegalArgumentException::class.java) {
+            verifyPro(signed, publicKey = ByteArray(31))
+        }
+        assertEquals("invalid verifier key", invalidKey.message)
     }
 
     private companion object {

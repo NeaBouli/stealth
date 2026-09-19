@@ -164,11 +164,15 @@ class SubscriptionManagerTest {
         val store = fixture.store()
         assertEquals("FREE", store.currentTier())
         assertTrue(store.accept(fixture.token))
+        assertTrue(fixture.prefs.contains("token"))
+        assertTrue(fixture.prefs.contains("last_verified_time"))
         assertEquals("PRO", fixture.store().currentTier())
         fixture.now += 3600
         assertEquals("FREE", fixture.store().currentTier())
         assertEquals(fixture.token, store.tokenForRefresh())
         assertTrue(store.revoke())
+        assertFalse(fixture.prefs.contains("token"))
+        assertFalse(fixture.prefs.contains("last_verified_time"))
         assertEquals(null, fixture.store().tokenForRefresh())
         assertEquals("FREE", fixture.store().currentTier())
     }

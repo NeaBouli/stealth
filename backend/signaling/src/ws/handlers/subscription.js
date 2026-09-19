@@ -173,6 +173,10 @@ module.exports = function subscriptionHandlers(ctx) {
         ? msg.requestId : undefined;
       const respond = result => ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", ...result,
         ...(requestId ? { requestId } : {}) }));
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        return respond({ success: false, error: "not_registered" });
+      }
       const code = (msg.code || "").trim().toUpperCase();
       if (!code) {
         return respond({ success: false, error: "missing_code" });
@@ -190,9 +194,8 @@ module.exports = function subscriptionHandlers(ctx) {
         if (gift.used) return respond({ success: false, error: "already_used" });
         if (new Date(gift.expires) < new Date()) return respond({ success: false, error: "expired" });
         gift.used = true;
-        gift.usedBy = getClientId(connId);
+        gift.usedBy = myClientId;
         saveGiftCodes();
-        const myClientId = getClientId(connId);
         console.log("[GIFT] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", gift.tier, "by:", myClientId);
         return respond({ success: true, tier: gift.tier });
       }
@@ -208,7 +211,6 @@ module.exports = function subscriptionHandlers(ctx) {
         });
       }
 
-      const myClientId = getClientId(connId);
       const devices = Array.isArray(entry.usedBy) ? entry.usedBy : (entry.usedBy ? [entry.usedBy] : []);
 
       if (devices.includes(myClientId)) {
