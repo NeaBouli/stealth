@@ -6062,22 +6062,6 @@ Open next:
 
 `LOCAL CODE/TEST GATES PASS / SINGLE-DEVICE SMOKE PASS / REVIEW AND EXTERNAL E2E GATES OPEN`
 
-## 2026-09-07 — CODEX SOL — STARTUP REGRESSION REVIEW FOLLOW-UP
-
-- The process-level signaling startup test now binds to an operating-system-assigned
-  port, reads the actual bound port from the controlled startup message and keeps all
-  wallet/store fixtures inside its temporary data directory.
-- Child spawn errors and signal exits fail immediately; teardown retains bounded
-  termination and recursive temporary-directory cleanup.
-- Verification PASS: complete signaling `npm test`, five additional consecutive
-  startup-test runs, Node syntax checks and `git diff --check`.
-- Kimi K3 independently reviewed the bounded startup diff and returned APPROVE with
-  no blocking finding. The hosted pull request remains subject to the repository's
-  independent-review protection; no bypass, deployment, payment or product activation
-  was performed.
-
-`STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
-
 ## 2026-09-19 18:16 EEST — CODEX SOL — PR #82 REVIEW GATES LOCALLY GREEN
 
 - **Ticket:** `STEALTHX-SALES-READINESS-20260919-B1`; **Type:** FIX / SECURITY /
@@ -6161,3 +6145,44 @@ Open next:
   Express/body-parser. That lockfile remediation is intentionally separated
   from PR #82's fulfillment/security review diff and remains required before a
   final `PRODUCT_READY` decision.
+## 2026-09-07 — CODEX SOL — STARTUP REGRESSION REVIEW FOLLOW-UP
+
+- The process-level signaling startup test now binds to an operating-system-assigned
+  port, reads the actual bound port from the controlled startup message and keeps all
+  wallet/store fixtures inside its temporary data directory.
+- Child spawn errors and signal exits fail immediately; teardown retains bounded
+  termination and recursive temporary-directory cleanup.
+- Verification PASS: complete signaling `npm test`, five additional consecutive
+  startup-test runs, Node syntax checks and `git diff --check`.
+- Kimi K3 independently reviewed the bounded startup diff and returned APPROVE with
+  no blocking finding. The hosted pull request remains subject to the repository's
+  independent-review protection; no bypass, deployment, payment or product activation
+  was performed.
+
+`STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-09-19 19:08 EEST — CODEX SOL — PR #82 MAIN SYNC AND ANDROID CI REPAIR
+
+- PR #82 was merged with current `origin/main` without rebase, force-push or
+  dropped history. The only textual conflict was append-only `BRIDGE.md`; both
+  histories were retained. Exact head `818a07c940128987f79ad994d7323104ad0120ed`
+  is mergeable, Draft and still requires normal review.
+- The complete signaling suite passed again after the integration. All eleven
+  previously open review threads were rechecked against source/tests and
+  resolved; no unrelated thread was changed.
+- Hosted Actions are running again, correcting the earlier allowance-blocked
+  observation. Signaling, Rust, Markdown/YAML and Dependency Review passed.
+  Both Android workflows failed before repository code because the pinned
+  `android-actions/setup-android` default still requests the removed legacy SDK
+  package `tools`.
+- Both workflows now override the pinned action with `packages:
+  platform-tools`; the existing next step continues to install API 36,
+  Build-Tools 36, CMake and NDK explicitly. The pinned action's official
+  `action.yml` confirms that `packages` is supported and its default is `tools
+  platform-tools`. Both edited workflows parse as YAML and `git diff --check`
+  passes.
+- No application behavior, Android source, product, payment, deployment,
+  provider or sales gate changed. A hosted rerun on the new exact head remains
+  required.
+
+`PR 82 MERGEABLE / 11 THREADS RESOLVED / ANDROID CI SETUP FIX READY FOR PUSH`
