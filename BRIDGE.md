@@ -6062,6 +6062,89 @@ Open next:
 
 `LOCAL CODE/TEST GATES PASS / SINGLE-DEVICE SMOKE PASS / REVIEW AND EXTERNAL E2E GATES OPEN`
 
+## 2026-09-19 18:16 EEST — CODEX SOL — PR #82 REVIEW GATES LOCALLY GREEN
+
+- **Ticket:** `STEALTHX-SALES-READINESS-20260919-B1`; **Type:** FIX / SECURITY /
+  TEST / RELEASE-GATE; **Status:** Local verification complete, PR update pending.
+- Work was isolated on `fix/pr82-review-gates-20260919` from exact PR `#82` head
+  `3e5196b9b4c00481c7a2b0152d729c92501a8b78`; dirty canonical checkouts and
+  unrelated user files were not changed.
+- Closed the outstanding entitlement/fulfillment review gates: signed stale or
+  duplicate claims fail closed; internal fulfillment/revoke requests are bounded
+  before HMAC work; legacy rows are not migrated before immutable checks;
+  payment-reference-only reversals revoke the original sale; terminal retries
+  remain idempotent only for the same contract; activation requires a registered
+  client; Android revoke clears token and verification timestamp atomically; and
+  the Free activation gate is covered by an executable runtime test.
+- Added a conservative stale-lock recovery runbook. No automatic lock reclaim,
+  production mutation, payment, deployment, publishing or sales activation was
+  performed.
+- Verification PASS: complete signaling `npm test`; focused entitlement,
+  fulfillment and subscription/WebRTC suites; Free Debug and Free Release unit
+  tests; `verifyFreeReleaseBillingClosed`; and the exact Android CI-equivalent
+  command (183 Gradle tasks in 41m42s) covering Premium compile/tests, Free lint,
+  API-36 Free APK/AAB, VPN policy/runtime gates, no-app-wallet/IFR gate, R8,
+  archive integrity and test signing verification. `git diff --check` and the
+  bounded secret-pattern scan also passed.
+- Kimi K3 was assigned only an independent read-only final-diff review. The local
+  provider connection failed before analysis; the external retry was not allowed
+  to export an unpublished diff. Kimi produced no result and changed no file.
+  Sol completed the full security/integration review and will request Kimi again
+  against the published PR diff.
+- `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain unchanged. Android contains no
+  IFR/wallet verification. Browser IFR discount, Stripe fulfillment and fiscal
+  activation remain closed until the reviewed product commit is accepted by the
+  private VLABS operator and the version-bound finance gates pass.
+
+`PR 82 LOCAL REVIEW GATES GREEN — ONE REVIEWED PUSH, HOSTED CI AND VLABS SOURCE ACCEPTANCE NEXT`
+
+## 2026-09-19 19:01 EEST — CODEX SOL + KIMI K3 — PR #82 FOLLOW-UP HARDENING VERIFIED
+
+- **Ticket:** `STEALTHX-SALES-READINESS-20260919-B1`; **Type:** FIX / SECURITY /
+  TEST / RELEASE-GATE; **Status:** Follow-up implementation locally verified,
+  commit and reviewed push pending.
+- Kimi K3 independently reviewed the published PR diff and then implemented one
+  bounded, non-overlapping backend block: single-hop proxy-aware request
+  limiting, terminal reversal idempotency, canonical legacy sale revocation,
+  gift-code persistence rollback, focused limiter tests and the stale-lock
+  runbook heading correction. Kimi made no commit, push, deploy or external
+  change.
+- Codex Sol reviewed every changed line and tightened the result: forwarded
+  headers are trusted only under the explicit `TRUST_PROXY=true|1` deployment
+  contract; the shared IP helper uses the rightmost address appended by the one
+  trusted proxy; recovered Stripe session keys require the complete `cs_`
+  format; failed gift persistence restores the exact prior object state; and
+  contradictory legacy terminal tiers fail closed.
+- Changed files are limited to the signaling proxy/IP helper, fulfillment and
+  subscription handlers, their existing tests, and `docs/BACKUP_RESTORE.md`.
+  Android, website, product catalogue, prices and production configuration were
+  not changed in this follow-up.
+- Verification PASS after Sol integration: complete signaling `npm test`,
+  including startup, context, 47/47 handlers, 94/94 subscription/WebRTC,
+  payment, RTDN, entitlement and VLABS fulfillment suites; JavaScript syntax;
+  `git diff --check`; and a bounded live-secret-pattern diff scan with no hit.
+  The first sandboxed test attempt failed only because localhost listen was
+  denied (`EPERM`); the same full suite passed outside that socket sandbox.
+- The earlier exact Android CI-equivalent 183-task API-36 build remains valid
+  because no Android file changed after it. Hosted GitHub Actions have not
+  produced a new run for the pushed PR head because the account-level Actions
+  allowance is currently unavailable; no repeated dispatch or weakened gate is
+  permitted.
+- `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain unchanged. Sales, browser IFR
+  discount, Stripe fulfillment, fiscal activation, deployment and publishing
+  stay closed pending reviewed source acceptance, VLABS pairing and the normal
+  version-bound release gates.
+
+`PR 82 FOLLOW-UP LOCALLY GREEN — COMMIT/PUSH, THREAD RECONCILIATION AND VLABS ACCEPTANCE NEXT`
+
+### 2026-09-19 19:04 EEST — Dependency audit note
+
+- `npm ls --all --omit=dev` resolves successfully. `npm audit --omit=dev
+  --audit-level=high` exits `0`: no High/Critical advisory blocks this patch.
+  It reports three Moderate advisories in the transitive `qs` dependency via
+  Express/body-parser. That lockfile remediation is intentionally separated
+  from PR #82's fulfillment/security review diff and remains required before a
+  final `PRODUCT_READY` decision.
 ## 2026-09-07 — CODEX SOL — STARTUP REGRESSION REVIEW FOLLOW-UP
 
 - The process-level signaling startup test now binds to an operating-system-assigned
@@ -6077,3 +6160,29 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-09-19 19:08 EEST — CODEX SOL — PR #82 MAIN SYNC AND ANDROID CI REPAIR
+
+- PR #82 was merged with current `origin/main` without rebase, force-push or
+  dropped history. The only textual conflict was append-only `BRIDGE.md`; both
+  histories were retained. Exact head `818a07c940128987f79ad994d7323104ad0120ed`
+  is mergeable, Draft and still requires normal review.
+- The complete signaling suite passed again after the integration. All eleven
+  previously open review threads were rechecked against source/tests and
+  resolved; no unrelated thread was changed.
+- Hosted Actions are running again, correcting the earlier allowance-blocked
+  observation. Signaling, Rust, Markdown/YAML and Dependency Review passed.
+  Both Android workflows failed before repository code because the pinned
+  `android-actions/setup-android` default still requests the removed legacy SDK
+  package `tools`.
+- Both workflows now override the pinned action with `packages:
+  platform-tools`; the existing next step continues to install API 36,
+  Build-Tools 36, CMake and NDK explicitly. The pinned action's official
+  `action.yml` confirms that `packages` is supported and its default is `tools
+  platform-tools`. Both edited workflows parse as YAML and `git diff --check`
+  passes.
+- No application behavior, Android source, product, payment, deployment,
+  provider or sales gate changed. A hosted rerun on the new exact head remains
+  required.
+
+`PR 82 MERGEABLE / 11 THREADS RESOLVED / ANDROID CI SETUP FIX READY FOR PUSH`

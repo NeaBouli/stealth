@@ -7,12 +7,25 @@ def buildingAppBundle = gradle.startParameter.taskNames.any {
     it.toLowerCase().contains('bundle')
 }
 
-// Guard: pro and premium flavors are internal-only (testing, not distribution).
+// Guard: direct Pro/Premium flavors are excluded from normal Play builds.
 // They are excluded from the build unless -Pinternal is passed on the command line.
 //   Normal:   ./gradlew assembleFreeRelease        → builds
 //             ./gradlew assembleProRelease         → task does not exist
 //   Internal: ./gradlew -Pinternal assembleProDebug → builds
 def allowInternalFlavors = project.hasProperty('internal')
+def entitlementPublicKey = providers.gradleProperty('entitlementPublicKey').getOrElse('')
+def testerEntitlementPublicKey = providers.gradleProperty('testerEntitlementPublicKey').getOrElse('')
+def testerLicensesEnabled = providers.gradleProperty('testerLicensesEnabled').getOrElse('false')
+if (!(testerLicensesEnabled in ['true', 'false']) ||
+        (testerLicensesEnabled == 'true' && (!allowInternalFlavors || !testerEntitlementPublicKey))) {
+    throw new GradleException('Tester licensing requires -Pinternal and an explicit tester public verifier')
+}
+if (testerEntitlementPublicKey && !(testerEntitlementPublicKey ==~ /[A-Za-z0-9_-]{43}/)) {
+    throw new GradleException('testerEntitlementPublicKey must be a raw Ed25519 public key in unpadded base64url')
+}
+if (entitlementPublicKey && !(entitlementPublicKey ==~ /[A-Za-z0-9_-]{43}/)) {
+    throw new GradleException('entitlementPublicKey must be a raw Ed25519 public key in unpadded base64url')
+}
 
 // Google Services + Crashlytics
 apply plugin: 'com.google.gms.google-services'
@@ -37,6 +50,12 @@ android {
         targetSdkVersion 36
         versionCode 78017
         versionName "1.0.50"
+
+        // Public verifier only. Empty until the exact signed release is configured.
+        buildConfigField "String", "ENTITLEMENT_PUBLIC_KEY", "\"${entitlementPublicKey}\""
+        buildConfigField "String", "TESTER_ENTITLEMENT_PUBLIC_KEY", "\"${testerEntitlementPublicKey}\""
+        buildConfigField "boolean", "TESTER_LICENSE_ENABLED", "false"
+        buildConfigField "String", "ENTITLEMENT_RELEASE_ID", '"securecall-android-1.0.50-vc78017-api36"'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -140,6 +159,7 @@ android {
             buildConfigField "String", "LOGGING_LEVEL", "\"ERROR_ONLY\""
             buildConfigField "boolean", "NO_FALLBACK_MODE", "true"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "true"
+            buildConfigField "boolean", "TESTER_LICENSE_ENABLED", testerLicensesEnabled
             buildConfigField "boolean", "BILLING_ENABLED", "false"
             buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "false"
             buildConfigField "String", "PLAY_CATALOG_VERSION", "\"securecall-play-v1\""
@@ -229,6 +249,7 @@ android {
 
 dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.google.crypto.tink:tink-android:1.23.0'
     implementation 'io.github.webrtc-sdk:android:125.6422.07'
 
     implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -424,6 +445,7 @@ tasks.matching { it.name == 'bundleFreeRelease' || it.name == 'assembleFreeRelea
 tasks.register('verifyFreeReleaseBillingClosed') {
     group = 'verification'
     description = 'Fails if Google Play Billing is enabled before both release gates are approved.'
+    dependsOn 'testFreeDebugUnitTest', 'testFreeReleaseUnitTest'
     inputs.files(
         file('build.gradle'),
         file('src/free/java/com/securecall/app/billing/UpgradeActivity.kt'),
@@ -450,7 +472,7 @@ tasks.register('verifyFreeReleaseBillingClosed') {
         if (!upgradeSource.contains('BuildConfig.BILLING_ENABLED && isPlayStore') ||
             !managerSource.contains('if (!BuildConfig.BILLING_ENABLED)') ||
             !resultSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED') ||
-            !tierSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED') ||
+            tierSource.contains('.putString(KEY_ACTIVATED_TIER,') ||
             !settingsSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED')) {
             throw new GradleException('Billing runtime must enforce the closed BuildConfig gate.')
         }

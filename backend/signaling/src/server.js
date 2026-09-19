@@ -65,7 +65,7 @@ const {
 } = require("./services/activation_store");
 const { loadWalletMappings } = require("./services/wallet_store");
 const { setupActivationAdminRoutes } = require("./services/activation_admin");
-const { getClientIp }                                               = require("./middleware/ip");
+const { getClientIp, isTrustProxyEnabled }                          = require("./middleware/ip");
 const { verifyIfrHolding }                                          = require("./services/ifr");
 const { buildContext, wireWs }                                      = require("./context");
 const { writeJsonAtomic }                                           = require("./utils/json_store");
@@ -141,6 +141,13 @@ const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 
 // --- App Setup ---
 const app = express();
+// Production topology is exactly one trusted nginx hop (deploy/nginx). Hop
+// count 1 lets Express derive req.ip from the rightmost X-Forwarded-For entry
+// nginx appended; client-supplied multi-hop prefixes are not trusted, so the
+// pre-HMAC fulfillment rate limiter buckets the real client, not a spoof.
+if (isTrustProxyEnabled()) {
+  app.set("trust proxy", 1);
+}
 // Stripe webhook needs raw body for signature verification — must come BEFORE express.json()
 app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
@@ -498,8 +505,10 @@ function saveGiftCodes() {
   try {
     const obj = Object.fromEntries(giftCodes);
     writeJsonAtomic(GIFT_CODES_FILE, obj);
+    return true;
   } catch (e) {
     console.error("[GIFT] Failed to save gift_codes.json:", e.message);
+    return false;
   }
 }
 
@@ -972,6 +981,7 @@ app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) 
 // All Maps/arrays passed here are the same singletons used by HTTP routes above,
 // so HTTP routes and WS handlers share one consistent state — no split-brain.
 ctx = buildContext({
+  testerLicenseRegistry: require("./services/tester_license_runtime").loadTesterLicenseRuntime(),
   pkd, subscriptions, fcm, customIds, licenses,
   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
   rateLimit, hb,
