@@ -22,6 +22,13 @@ const ETH_RPC_URLS = Array.from(new Set(
 
 console.log(`[IFR] Configured ${ETH_RPC_URLS.length} Ethereum RPC endpoints for IFR token ${IFR_TOKEN_ADDRESS}`);
 
+// Full wallet addresses are personal data and must not appear in application
+// logs; keep only enough to correlate a balance lookup.
+function maskWalletAddress(walletAddress) {
+  const text = String(walletAddress || "");
+  return text.length > 10 ? text.slice(0, 6) + "..." + text.slice(-4) : "***";
+}
+
 function classifyLegacyTier(balance) {
   const humanAmount = (balance / BigInt(10 ** IFR_DECIMALS)).toString();
   if (balance >= IFR_ELITE_THRESHOLD) return { success: true, tier: "premium", lockedAmount: humanAmount, balanceAmount: humanAmount };
@@ -49,7 +56,7 @@ async function readIfrBalance(walletAddress) {
       ]);
       const balance = await withTimeout(contract.balanceOf(walletAddress));
       const humanAmount = (balance / BigInt(10 ** IFR_DECIMALS)).toString();
-      console.log("[IFR] balanceOf(" + walletAddress + ") = " + humanAmount + " IFR (via " + url + ")");
+      console.log("[IFR] balanceOf(" + maskWalletAddress(walletAddress) + ") = " + humanAmount + " IFR (via " + url + ")");
       return { success: true, balance };
     } catch (e) {
       console.warn("[IFR] RPC failed (" + url + "):", e.message, "— trying next");
@@ -74,4 +81,5 @@ module.exports = {
   verifyIfrLock,
   verifyIfrHolding,
   classifyHolderEligibility,
+  maskWalletAddress,
 };
