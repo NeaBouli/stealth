@@ -6113,3 +6113,14 @@ Open next:
   state was changed.
 
 `LOCKFILE SECURITY FIX GREEN — SEPARATE PROTECTED REVIEW REQUIRED`
+
+## 2026-09-19 20:10 EEST — CODEX SOL — PR #89 ANDROID RUNNER FIX REUSED
+
+- Hosted PR #89 checks pass for Signaling, Rust, dependency review/audit, secret detection,
+  security summary and Markdown/YAML. Android stopped before repository code because current
+  `main` still requests the removed SDK package `tools` from the pinned setup action.
+- Reused, without reimplementation, the exact two-workflow `packages: platform-tools` correction
+  already validated on PR #82. No Android source, dependency, product or runtime behavior changed.
+- A fresh exact-head hosted run is required; normal independent review remains mandatory.
+
+`PR 89 CI INFRA CORRECTION REUSED — HOSTED RERUN NEXT`
