@@ -308,6 +308,105 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
 
+def certificatePinSource = file(
+    'src/main/java/com/securecall/app/net/CertificatePinPolicy.kt'
+)
+def certificatePinConfig = file('src/main/res/xml/network_security_config.xml')
+
+tasks.register('verifyCertificatePinPolicy') {
+    group = 'verification'
+    description = 'Verifies OkHttp and Android certificate pins stay synchronized and rotation-safe.'
+    inputs.files(certificatePinSource, certificatePinConfig)
+    doLast {
+        def host = 'api.stealthx.tech'
+        def sourceText = certificatePinSource.getText('UTF-8')
+        def sourceHostMatcher = sourceText =~ /const val HOST\s*=\s*"([^"]+)"/
+        if (!sourceHostMatcher.find() || sourceHostMatcher.group(1) != host) {
+            throw new GradleException("Certificate pin host must remain ${host}.")
+        }
+
+        def sourcePins = [] as Set
+        def sourcePinMatcher = sourceText =~ /"(sha256\/[A-Za-z0-9+\/]{43}=)"/
+        sourcePinMatcher.each { match -> sourcePins << match[1] }
+
+        def xml = new groovy.xml.XmlSlurper(false, false).parse(certificatePinConfig)
+        def domainConfig = xml.'domain-config'.find { config ->
+            config.domain.any { domain -> domain.text().trim() == host }
+        }
+        if (domainConfig == null || domainConfig.size() == 0) {
+            throw new GradleException("No network security config found for ${host}.")
+        }
+        def pinSet = domainConfig.'pin-set'[0]
+        if (pinSet == null || pinSet.size() == 0) {
+            throw new GradleException("No declarative certificate pin-set found for ${host}.")
+        }
+
+        def xmlPins = pinSet.pin.collect { pin ->
+            "sha256/${pin.text().trim()}"
+        }.toSet()
+        if (sourcePins != xmlPins) {
+            throw new GradleException(
+                "OkHttp and network security pins differ: code=${sourcePins.sort()}, xml=${xmlPins.sort()}"
+            )
+        }
+
+        if (sourcePins.size() < 4) {
+            throw new GradleException('Certificate pin policy requires current and previous-chain backups.')
+        }
+
+        def expirationText = pinSet.@expiration.text().trim()
+        if (expirationText.isEmpty()) {
+            throw new GradleException('Certificate pin-set expiration is required.')
+        }
+        try {
+            java.time.LocalDate.parse(expirationText)
+        } catch (java.time.format.DateTimeParseException ignored) {
+            throw new GradleException(
+                "Certificate pin-set expiration is not an ISO date: ${expirationText}"
+            )
+        }
+    }
+}
+
+tasks.register('verifyCertificatePinFreshness') {
+    group = 'verification'
+    description = 'Fails release builds when fewer than 180 days remain before pin policy expiry.'
+    dependsOn tasks.named('verifyCertificatePinPolicy')
+    inputs.file(certificatePinConfig)
+    doLast {
+        def xml = new groovy.xml.XmlSlurper(false, false).parse(certificatePinConfig)
+        def domainConfig = xml.'domain-config'.find { config ->
+            config.domain.any { domain -> domain.text().trim() == 'api.stealthx.tech' }
+        }
+        if (domainConfig == null || domainConfig.size() == 0) {
+            throw new GradleException('No network security config found for api.stealthx.tech.')
+        }
+        def pinSet = domainConfig.'pin-set'[0]
+        if (pinSet == null || pinSet.size() == 0) {
+            throw new GradleException('No declarative certificate pin-set found for api.stealthx.tech.')
+        }
+        def expiration = java.time.LocalDate.parse(
+            pinSet.@expiration.text().trim()
+        )
+        def minimumSafeExpiration = java.time.LocalDate.now(java.time.ZoneOffset.UTC).plusDays(180)
+        if (!expiration.isAfter(minimumSafeExpiration)) {
+            throw new GradleException(
+                "Certificate pin-set expires ${expiration}; rotate before the 180-day release window closes."
+            )
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('verifyCertificatePinPolicy')
+}
+
+tasks.matching { task ->
+    task.name ==~ /(assemble|bundle|lint)(Free|Pro|Premium)Release/
+}.configureEach {
+    dependsOn tasks.named('verifyCertificatePinFreshness')
+}
+
 
 // PATCH 215 — native build integration skeleton (Opus JNI codec)
 android {
