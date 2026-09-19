@@ -6226,3 +6226,15 @@ Open next:
   `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
 
 `STX-02 LOCAL FIX GREEN / REVIEW + DEPLOY + REDACTED LIVE RECHECK PENDING`
+
+## 2026-09-19 20:48 EEST — CODEX SOL — STX-02 PR #91 OPEN
+
+- Published commit `73dad5d` in stacked PR
+  [#91](https://github.com/NeaBouli/stealth/pull/91), based on PR #82's branch.
+- Audit register #84 was updated with the implementation and explicit remaining gates:
+  https://github.com/NeaBouli/stealth/issues/84#issuecomment-5744055001
+- PR #91 must wait for #82, then be retargeted to `main` and pass exact-head CI plus normal
+  independent review. STX-02 remains open until integration, separately authorized deployment and
+  a redacted live endpoint recheck.
+
+`STX-02 PR91 OPEN / STACKED REVIEW PENDING / NO DEPLOY`
