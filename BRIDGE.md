@@ -6186,3 +6186,58 @@ Open next:
   required.
 
 `PR 82 MERGEABLE / 11 THREADS RESOLVED / ANDROID CI SETUP FIX READY FOR PUSH`
+
+## 2026-09-19 20:08 EEST — CODEX SOL + KIMI K3 — BROWSER IFR CONTRACT HARDENING START
+
+- **Ticket:** `STEALTHX-SALES-READINESS-20260919-B3`; **Type:** SECURITY / PAYMENT-GATE /
+  TEST; **Status:** In Progress.
+- This isolated branch starts from exact reviewed PR #82 head `20018e0`. Kimi K3 owns only the
+  source-side browser wallet-proof hardening and focused tests; Sol owns architecture, diff review,
+  integration, full test chains, VLABS coordination and all external actions.
+- Scope: EIP-4361-shaped domain/chain/URI/nonce/expiry binding, strict single-use verification,
+  HTTP negative tests, privacy-minimal logging/documentation and preservation of every closed gate.
+- Out of scope: Android wallet/IFR code, private VLABS offer definitions, production secrets,
+  deployment, Stripe/provider changes, invoices, Play changes and sales activation. Exact
+  discounted offer tuple remains with VLABS request `SECURECALL-VLABS-INPUT-01`.
+
+`B3 IMPLEMENTATION ACTIVE — PRODUCT_READY=NO / FINANCE_READY=NO / SALES CLOSED`
+
+## 2026-09-19 20:30 EEST — CODEX SOL + KIMI K3 — BROWSER IFR CONTRACT LOCAL GATES GREEN
+
+- **Ticket:** `STEALTHX-SALES-READINESS-20260919-B3`; **Type:** SECURITY / PAYMENT-GATE /
+  PRIVACY / TEST; **Status:** Ready for stacked review; no activation.
+- Kimi K3 implemented the bounded browser-proof extraction and negative HTTP matrix. Its first
+  correction attempt stopped before edits on restricted-network provider access; the approved
+  retry completed the same scope. Kimi made no commit, push, deployment or provider change.
+- Codex Sol reviewed the complete diff and added the final empty-body fail-closed boundary plus
+  the canonical `invalid_tier` response. The proof now binds domain, URI, Ethereum Mainnet,
+  product, normalized wallet, random nonce and exact five-minute timestamps; lookup-key drift,
+  expiry-at-boundary, temporal drift, wrong account/signature and replay all reject before Stripe.
+- Stripe metadata contains only a one-way proof digest/version and eligibility/price facts. Raw
+  wallet, signature and IFR balance are not persisted there; wallet logs are masked. The immediate
+  browser response retains the public balance only for the connected holder's eligibility UI.
+  Payment methods remain provider-configured.
+- Changed source is limited to the extracted IFR checkout module, signaling route wiring, IFR log
+  masking, focused tests, package test scripts, privacy copy and the historical WalletConnect note.
+  Android remains free of IFR/wallet logic.
+- Verification PASS: JavaScript syntax; focused IFR HTTP proof suite; website closed-gate test
+  `1/1`; complete signaling `npm test` including `47/47` handler and `94/94` subscription/WebRTC
+  assertions; complete `npm run test:payments`; `git diff --check`; modified-file secret-pattern
+  review (only an existing redacted `sk_live_*` documentation pattern matched).
+- Remaining gates: the legacy route stays default-off; VLABS must define and approve the exact
+  product/catalog/release/full-price/discounted-price/expiry tuples and the final proof-reference
+  contract. The process-local challenge store is not a multi-instance production store and is not
+  accepted as the eventual VLABS runtime. PR #82, PR #89, paired signer/runtime, artifact/device
+  evidence and finance lifecycle approval remain open.
+
+`B3 LOCAL GREEN — STACKED REVIEW NEXT / PRODUCT_READY=NO / FINANCE_READY=NO / SALES CLOSED`
+
+## 2026-09-19 20:33 EEST — CODEX SOL — BROWSER IFR CONTRACT PUBLISHED FOR REVIEW
+
+- Published commit `dd8b36b` and opened stacked PR
+  [#90](https://github.com/NeaBouli/stealth/pull/90) against PR #82's branch.
+- The stack boundary is explicit: PR #90 must not merge before PR #82. After #82 is integrated,
+  #90 may be retargeted to `main` and must pass its own exact-head CI plus normal review.
+- No gate was enabled and no production/provider/payment action occurred.
+
+`PR 90 OPEN / EXACT-HEAD CI + NORMAL REVIEW PENDING / SALES CLOSED`

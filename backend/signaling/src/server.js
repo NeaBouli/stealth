@@ -5,8 +5,6 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
-const { ethers } = require("ethers");
-
 // Resolve writable data dir — Railway volumes mount as root, overriding Dockerfile chown.
 // Falls back to /tmp/stealthx-data when the preferred path is not writable.
 const _DATA_PREFERRED = process.env.DATA_DIR || path.join(__dirname, "..", "data");
@@ -818,163 +816,14 @@ app.post('/admin/reset-licenses', requireAdmin, (req, res) => {
   res.json({ ok: true, status: licenses.getStatus() });
 });
 
-app.post('/stripe/ifr-discount-challenge', checkoutRateLimit, (req, res) => {
-  if (process.env.LEGACY_STRIPE_CHECKOUT_ENABLED !== 'true') {
-    return res.status(410).json({ error: 'checkout_moved_to_vlabs' });
-  }
-  const tier = (req.body?.tier || '').trim();
-  const walletAddress = (req.body?.walletAddress || '').trim();
-  // Only catalog-allowlisted products may enter the IFR discount flow.
-  if (!getCheckoutProduct(tier)) {
-    return res.status(400).json({ error: 'invalid_tier' });
-  }
-  if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
-    return res.status(400).json({ error: 'invalid_wallet' });
-  }
-
-  const nonce = crypto.randomBytes(32).toString('hex');
-  const issuedAt = new Date().toISOString();
-  const message =
-    'StealthX IFR holder discount\n\n' +
-    'Wallet: ' + walletAddress.toLowerCase() + '\n' +
-    'Product: ' + tier + '\n' +
-    'Discount: 50% Stripe checkout\n' +
-    'Nonce: ' + nonce + '\n' +
-    'Issued At: ' + issuedAt + '\n\n' +
-    'Sign this message to prove wallet ownership. This does not transfer tokens or grant spending permission.';
-
-  siweChallenges.set(nonce, {
-    deviceId: 'stripe-checkout',
-    purpose: 'stripe_ifr_discount',
-    tier,
-    walletAddress: walletAddress.toLowerCase(),
-    message,
-    createdAt: Date.now()
-  });
-  res.json({ nonce, message });
-});
-
-// Rate limit: 5 checkout requests per IP per 10 minutes
-function checkoutRateLimit(req, res, next) {
-  const ip = getClientIp(req);
-  const now = Date.now();
-  if (!checkoutRateLimits.has(ip)) checkoutRateLimits.set(ip, []);
-  const attempts = checkoutRateLimits.get(ip);
-  while (attempts.length > 0 && now - attempts[0] > 600000) attempts.shift();
-  if (attempts.length >= 5) {
-    return res.status(429).json({ error: "rate_limited", retry_after_seconds: 600 });
-  }
-  attempts.push(now);
-  next();
-}
-
-app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) => {
-  if (process.env.LEGACY_STRIPE_CHECKOUT_ENABLED !== 'true') {
-    return res.status(410).json({ error: 'checkout_moved_to_vlabs' });
-  }
-  const { tier } = req.body;
-  // Only catalog-allowlisted products may enter web checkout; the
-  // stealthx_suite_lifetime bundle is excluded until fulfillment is ready.
-  const checkoutProduct = getCheckoutProduct(tier);
-  if (!checkoutProduct) {
-    return res.status(400).json({ error: 'Invalid tier' });
-  }
-  const price = licenses.getCurrentPrice(tier);
-  if (price === null) {
-    return res.status(410).json({ error: 'Sold out' });
-  }
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    return res.status(503).json({ error: 'Stripe not configured' });
-  }
-  try {
-    const stripe = require('stripe')(secretKey);
-	    const lic = licenses.LICENSES[tier];
-	    const requestedIfrDiscount = req.body?.ifrDiscount === true || req.body?.ifrDiscount === 'true';
-	    const walletAddress = (req.body?.walletAddress || '').trim();
-	    const walletSignature = (req.body?.walletSignature || '').trim();
-	    const walletNonce = (req.body?.walletNonce || '').trim();
-	    let checkoutPrice = price;
-	    let ifrDiscountApplied = false;
-	    let ifrBalanceAmount = "";
-
-	    if (requestedIfrDiscount) {
-	      if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
-	        return res.status(400).json({ error: 'invalid_wallet' });
-	      }
-	      if (!walletSignature || !walletNonce) {
-	        return res.status(400).json({ error: 'wallet_signature_required' });
-	      }
-
-	      const challenge = siweChallenges.get(walletNonce);
-	      if (!challenge || challenge.purpose !== 'stripe_ifr_discount') {
-	        return res.status(403).json({ error: 'invalid_wallet_challenge' });
-	      }
-	      if (Date.now() - challenge.createdAt > SIWE_TTL_MS) {
-	        siweChallenges.delete(walletNonce);
-	        return res.status(403).json({ error: 'wallet_challenge_expired' });
-	      }
-	      if (challenge.tier !== tier || challenge.walletAddress !== walletAddress.toLowerCase()) {
-	        return res.status(403).json({ error: 'wallet_challenge_mismatch' });
-	      }
-	      siweChallenges.delete(walletNonce);
-
-	      try {
-	        const recovered = ethers.verifyMessage(challenge.message, walletSignature);
-	        if (recovered.toLowerCase() !== walletAddress.toLowerCase()) {
-	          return res.status(403).json({ error: 'wallet_signature_invalid' });
-	        }
-	      } catch (e) {
-	        return res.status(403).json({ error: 'wallet_signature_invalid' });
-	      }
-
-	      const ifr = await verifyIfrHolding(walletAddress);
-      ifrBalanceAmount = ifr.balanceAmount || ifr.lockedAmount || "";
-      if (!ifr.success) {
-        return res.status(403).json({ error: ifr.error || 'ifr_not_eligible', balanceAmount: ifrBalanceAmount });
-      }
-
-      checkoutPrice = Math.max(50, Math.round(price * 0.5));
-      ifrDiscountApplied = true;
-    }
-
-    const priceData = {
-      currency: 'eur',
-      unit_amount: checkoutPrice
-    };
-    if (lic.stripeProductId) {
-      priceData.product = lic.stripeProductId;
-    } else {
-      priceData.product_data = { name: lic.name || tier };
-    }
-    const session = await stripe.checkout.sessions.create({
-      line_items: [{
-        price_data: priceData,
-        quantity: 1
-      }],
-      mode: 'payment',
-      success_url: checkoutProduct.successUrl,
-      cancel_url: checkoutProduct.cancelUrl,
-	      metadata: {
-	        tier: checkoutProduct.activationTier,
-	        product: tier,
-	        licenseTier: tier,
-	        type: 'lifetime_dynamic',
-	        ifrDiscount: ifrDiscountApplied ? 'true' : 'false',
-	        ifrWallet: ifrDiscountApplied ? walletAddress.toLowerCase() : '',
-	        ifrHolder: ifrDiscountApplied ? 'true' : 'false',
-	        ifrBalanceAmount,
-	        originalPrice: String(price),
-	        checkoutPrice: String(checkoutPrice),
-	        discountPercent: ifrDiscountApplied ? '50' : '0'
-	      },
-	      payment_method_types: ['card', 'klarna', 'link']
-	    });
-	    res.json({ url: session.url, sessionId: session.id, price: checkoutPrice, originalPrice: price, ifrDiscountApplied, ifrHolder: ifrDiscountApplied, ifrBalanceAmount });
-	  } catch (err) {
-    console.error('[LICENSES] Checkout error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
+// --- IFR browser checkout (default-closed; wallet-proof contract in payments/ifr_checkout) ---
+const { setupIfrCheckoutRoutes, createCheckoutRateLimiter } = require('./payments/ifr_checkout');
+setupIfrCheckoutRoutes(app, {
+  challengeStore: siweChallenges,
+  licenses,
+  getCheckoutProduct,
+  verifyIfrHolding,
+  checkoutRateLimit: createCheckoutRateLimiter({ limits: checkoutRateLimits, getClientIp }),
 });
 
 // --- Wire modular WS context (replaces inline wss.on("connection",...) block) ---
