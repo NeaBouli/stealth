@@ -6425,3 +6425,47 @@ Open next:
   commits may now proceed. Production, private delivery and sales gates remain closed.
 
 `PR 95 CI GREEN — AUDIT-FIX INTEGRATION ACTIVE — SALES CLOSED`
+
+## 2026-09-20 02:49 EEST — CODEX SOL — AUDIT-FIX INTEGRATION LOCALLY GREEN
+
+- **Ticket:** `STEALTHX-AUDIT-FIX-INTEGRATION-20260920`; **Type:** FIX / SECURITY /
+  PRIVACY / RELEASE-GATE / TEST; **Status:** exact-head local gates green; stacked PR and hosted
+  CI pending.
+- Integrated only the current implementation content from PRs #89, #91, #92 and #93 on top of
+  immutable tester-code candidate `2cb2aed`. This updates vulnerable request-parser dependencies,
+  removes per-client IP buckets from `/status/live`, replaces brittle leaf pinning with the live
+  Let's Encrypt YR2/ISRG Root YR policy plus controlled rollover pins, and removes unconsented GA4
+  loading from all 32 website HTML surfaces. New regression tests and CI wiring were preserved
+  alongside the newer IFR, product-truth and tester-license suites.
+- Deliberately excluded historical Bridge-only commits and report-only PRs #83/#85/#88. PR #85's
+  dialpad diagnosis is stale against the current source (`minHeight=64dp` already exists), and its
+  pin proposal required the live-chain validation now implemented here. Those audit documents must
+  be corrected/reconciled separately rather than copied into the release branch as fact.
+- Verification PASS on the exact local head:
+  - signaling/backend full suite and `npm audit --omit=dev` (zero vulnerabilities);
+  - website contract suite: 8/8, with no GA loader/property/`gtag` marker left in website HTML;
+  - synthetic private tester staging/export suite: 25/25; strict mypy: four files, zero issues;
+  - live TLS chain: leaf deliberately unpinned; YR2, ISRG Root YR and rollover root configured;
+  - Android API-36 release matrix: 185 tasks in 10m47s, including Free/Premium unit tests,
+    Premium source compile, Free lint/R8, VPN distribution guards, IFR/wallet guard, Free Debug,
+    signed Free Release APK and AAB;
+  - built metadata: `com.securecall.app.free`, `1.0.50-free`, versionCode `78017`, minSdk 24,
+    targetSdk 36; ZIP integrity and APK v2 signature verification passed; AAB JAR verification
+    returned `jar verified` and contained the expected manifest/SF/RSA entries;
+  - Rust core: 34/34 tests; `cargo clippy --locked --all-targets -- -D warnings` passed;
+  - `git diff --check` and bounded added-line credential-pattern scan passed.
+- The APK/AAB above used an ephemeral CI-only self-signed certificate and are verification
+  artifacts, not distributable release artifacts. Jarsigner reported the expected self-signed,
+  short-lived/no-timestamp warnings plus current JDK JarInputStream warnings; production signing
+  and final artifact checks remain a later exact-candidate gate.
+- Kimi K3 was assigned only the independent read-only integration review. Its provider returned
+  the five-hour quota response before reading or changing files, so it supplied no review and no
+  change. Sol performed the conflict, line, integration and complete local verification review.
+- Next sequential gate: publish this branch as a stacked PR against #95, run hosted exact-head CI
+  and obtain normal review. STX-01/STX-21 authentication/key binding, STX-03 host verification and
+  revalidated narrow-phone UI fixes remain separate later blocks.
+- No merge to `main`, deployment, provider/payment/Play mutation, private-data handling, artifact
+  publication, code activation or sale occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`, sales and
+  checkout remain closed.
+
+`AUDIT-FIX INTEGRATION LOCALLY GREEN — STACKED PR/CI/REVIEW NEXT — SALES CLOSED`
