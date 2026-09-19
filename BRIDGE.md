@@ -6231,3 +6231,13 @@ Open next:
   evidence and finance lifecycle approval remain open.
 
 `B3 LOCAL GREEN — STACKED REVIEW NEXT / PRODUCT_READY=NO / FINANCE_READY=NO / SALES CLOSED`
+
+## 2026-09-19 20:33 EEST — CODEX SOL — BROWSER IFR CONTRACT PUBLISHED FOR REVIEW
+
+- Published commit `dd8b36b` and opened stacked PR
+  [#90](https://github.com/NeaBouli/stealth/pull/90) against PR #82's branch.
+- The stack boundary is explicit: PR #90 must not merge before PR #82. After #82 is integrated,
+  #90 may be retargeted to `main` and must pass its own exact-head CI plus normal review.
+- No gate was enabled and no production/provider/payment action occurred.
+
+`PR 90 OPEN / EXACT-HEAD CI + NORMAL REVIEW PENDING / SALES CLOSED`
