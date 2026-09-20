@@ -3,7 +3,6 @@ package com.securecall.app.security
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
-import java.security.AlgorithmParameters
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.KeyStore
@@ -11,7 +10,6 @@ import java.security.PrivateKey
 import java.security.Signature
 import java.security.interfaces.ECPublicKey
 import java.security.spec.ECGenParameterSpec
-import java.security.spec.ECParameterSpec
 
 /** Per-install, non-exportable identity used to authenticate signaling. */
 object IdentitySigningKey {
@@ -65,7 +63,7 @@ object IdentitySigningKey {
         val publicKey = certificate.publicKey as? ECPublicKey ?: return null
         if (!key.algorithm.equals(KeyProperties.KEY_ALGORITHM_EC, ignoreCase = true)
             || key.encoded != null
-            || !isP256(publicKey)
+            || !P256DomainParameters.matches(publicKey.params)
             || !canSignAndVerify(key, publicKey)) return null
 
         // API 24 software Keystore implementations may throw while exposing KeyInfo even though
@@ -87,17 +85,6 @@ object IdentitySigningKey {
         KeyFactory.getInstance(key.algorithm, "AndroidKeyStore")
             .getKeySpec(key, KeyInfo::class.java)
     }.getOrNull()
-
-    private fun isP256(publicKey: ECPublicKey): Boolean = runCatching {
-        val expected = AlgorithmParameters.getInstance("EC").run {
-            init(ECGenParameterSpec("secp256r1"))
-            getParameterSpec(ECParameterSpec::class.java)
-        }
-        publicKey.params.curve == expected.curve
-            && publicKey.params.generator == expected.generator
-            && publicKey.params.order == expected.order
-            && publicKey.params.cofactor == expected.cofactor
-    }.getOrDefault(false)
 
     private fun canSignAndVerify(key: PrivateKey, publicKey: ECPublicKey): Boolean = runCatching {
         val probe = "securecall-identity-key-validation-v1".toByteArray(Charsets.UTF_8)

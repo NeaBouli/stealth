@@ -50,6 +50,9 @@ class IdentitySigningKeyInstrumentedTest {
         val aliasPresent = store.containsAlias(IdentitySigningKey.ALIAS)
         val key = store.getKey(IdentitySigningKey.ALIAS, null) as? PrivateKey
         val publicKey = store.getCertificate(IdentitySigningKey.ALIAS)?.publicKey as? ECPublicKey
+        val identityParsed = publicKey?.encoded?.let {
+            IdentityProtocol.identityFromPublicKey(IdentityProtocol.encodeBase64Url(it)) != null
+        } ?: false
         val signVerify = if (key != null && publicKey != null) runCatching {
             val probe = "securecall-identity-test-diagnostic".toByteArray(Charsets.UTF_8)
             val signature = Signature.getInstance("SHA256withECDSA").run {
@@ -75,6 +78,6 @@ class IdentitySigningKeyInstrumentedTest {
         )
         "Identity key rejected: alias=$aliasPresent,key=${key?.algorithm ?: "missing"}," +
             "nonExportable=${key?.encoded == null},curveBits=${publicKey?.params?.curve?.field?.fieldSize}," +
-            "signVerify=$signVerify,keyInfo=$keyInfo"
+            "signVerify=$signVerify,identityParsed=$identityParsed,keyInfo=$keyInfo"
     }.getOrElse { "Identity key diagnostic failed: ${it.javaClass.simpleName}" }
 }
