@@ -69,7 +69,7 @@ object TierManager {
         override val maxContacts: Int get() = if (isPro) 0 else 10
         override val deviceAttestationRequired: Boolean get() = isPro
         override val rootDetectionBlocks: Boolean get() = isPro
-        override val certificatePinning: Boolean get() = isPro
+        override val certificatePinning: Boolean get() = true
         override val callRecordingAllowed: Boolean get() = !isPro
         override val telemetryEnabled: Boolean get() = !isPro && com.securecall.app.BuildConfig.FLAVOR == "free"
         override val thirdPartyAnalytics: Boolean get() = telemetryEnabled

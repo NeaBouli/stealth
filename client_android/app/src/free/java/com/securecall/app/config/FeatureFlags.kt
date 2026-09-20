@@ -17,7 +17,8 @@ object FeatureFlags {
     // --- Security ---
     const val DEVICE_ATTESTATION_REQUIRED = false
     const val ROOT_DETECTION_BLOCKS = false       // warn only
-    const val CERTIFICATE_PINNING = false
+    // Transport authentication is baseline security, not a paid-tier feature.
+    const val CERTIFICATE_PINNING = true
     const val SCREEN_CAPTURE_DETECTION = false
     const val DEBUGGER_DETECTION = false
     const val EMULATOR_DETECTION = false

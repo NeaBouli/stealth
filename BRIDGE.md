@@ -6397,3 +6397,140 @@ Open next:
   boundary is enforced on every candidate rather than only by the local verification record.
 
 `PR 95 OPEN — HOSTED CI/REVIEW PENDING — PRODUCTION AND DELIVERY CLOSED`
+
+## 2026-09-20 02:20 EEST — CODEX SOL — AUDIT-FIX INTEGRATION STARTED
+
+- Created isolated branch `integrate/securecall-audit-release-20260920` from immutable PR #95
+  candidate `2cb2aed9774eeb4d65e500e696fce01c9ec3b0a0`. The dirty/diverged canonical checkout remains
+  untouched.
+- This block may integrate only the independently reviewed implementation commits from PRs #89,
+  #91, #92 and #93 after conflict/staleness review. Historical Bridge-only commits are excluded.
+  Report-only PRs #83/#85/#88 remain a separate documentation decision.
+- Kimi K3 owns the non-writing conflict/risk review. Sol owns every applied diff, integration
+  decision and the full backend/web/Android/CI verification chain.
+- No merge to `main`, deployment, provider/payment/Play mutation, artifact publication, private
+  data handling or sale activation is authorized by this integration block.
+
+`AUDIT-FIX INTEGRATION IN PROGRESS — PR 95 CI PENDING — SALES CLOSED`
+
+## 2026-09-20 02:24 EEST — CODEX SOL — PR #95 EXACT-HEAD CI GREEN
+
+- GitHub Actions run `35475561291` passed on exact baseline `2cb2aed`: Markdown/YAML, Rust Core
+  Crypto, Signaling Tests including all 25 private staging/export tests, and Android Client.
+  Android completed in 8m12s.
+- CodeRabbit's check passed by skipping review on the stacked non-main base; it is not treated as
+  an independent review. Kimi K3 was retried for the next integration review, but its provider
+  returned the five-hour quota response before reading code or changing files.
+- Sequential gate satisfied: integration of the already reviewed #89/#91/#92/#93 implementation
+  commits may now proceed. Production, private delivery and sales gates remain closed.
+
+`PR 95 CI GREEN — AUDIT-FIX INTEGRATION ACTIVE — SALES CLOSED`
+
+## 2026-09-20 02:49 EEST — CODEX SOL — AUDIT-FIX INTEGRATION LOCALLY GREEN
+
+- **Ticket:** `STEALTHX-AUDIT-FIX-INTEGRATION-20260920`; **Type:** FIX / SECURITY /
+  PRIVACY / RELEASE-GATE / TEST; **Status:** exact-head local gates green; stacked PR and hosted
+  CI pending.
+- Integrated only the current implementation content from PRs #89, #91, #92 and #93 on top of
+  immutable tester-code candidate `2cb2aed`. This updates vulnerable request-parser dependencies,
+  removes per-client IP buckets from `/status/live`, replaces brittle leaf pinning with the live
+  Let's Encrypt YR2/ISRG Root YR policy plus controlled rollover pins, and removes unconsented GA4
+  loading from all 32 website HTML surfaces. New regression tests and CI wiring were preserved
+  alongside the newer IFR, product-truth and tester-license suites.
+- Deliberately excluded historical Bridge-only commits and report-only PRs #83/#85/#88. PR #85's
+  dialpad diagnosis is stale against the current source (`minHeight=64dp` already exists), and its
+  pin proposal required the live-chain validation now implemented here. Those audit documents must
+  be corrected/reconciled separately rather than copied into the release branch as fact.
+- Verification PASS on the exact local head:
+  - signaling/backend full suite and `npm audit --omit=dev` (zero vulnerabilities);
+  - website contract suite: 8/8, with no GA loader/property/`gtag` marker left in website HTML;
+  - synthetic private tester staging/export suite: 25/25; strict mypy: four files, zero issues;
+  - live TLS chain: leaf deliberately unpinned; YR2, ISRG Root YR and rollover root configured;
+  - Android API-36 release matrix: 185 tasks in 10m47s, including Free/Premium unit tests,
+    Premium source compile, Free lint/R8, VPN distribution guards, IFR/wallet guard, Free Debug,
+    signed Free Release APK and AAB;
+  - built metadata: `com.securecall.app.free`, `1.0.50-free`, versionCode `78017`, minSdk 24,
+    targetSdk 36; ZIP integrity and APK v2 signature verification passed; AAB JAR verification
+    returned `jar verified` and contained the expected manifest/SF/RSA entries;
+  - Rust core: 34/34 tests; `cargo clippy --locked --all-targets -- -D warnings` passed;
+  - `git diff --check` and bounded added-line credential-pattern scan passed.
+- The APK/AAB above used an ephemeral CI-only self-signed certificate and are verification
+  artifacts, not distributable release artifacts. Jarsigner reported the expected self-signed,
+  short-lived/no-timestamp warnings plus current JDK JarInputStream warnings; production signing
+  and final artifact checks remain a later exact-candidate gate.
+- Kimi K3 was assigned only the independent read-only integration review. Its provider returned
+  the five-hour quota response before reading or changing files, so it supplied no review and no
+  change. Sol performed the conflict, line, integration and complete local verification review.
+- Next sequential gate: publish this branch as a stacked PR against #95, run hosted exact-head CI
+  and obtain normal review. STX-01/STX-21 authentication/key binding, STX-03 host verification and
+  revalidated narrow-phone UI fixes remain separate later blocks.
+- No merge to `main`, deployment, provider/payment/Play mutation, private-data handling, artifact
+  publication, code activation or sale occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`, sales and
+  checkout remain closed.
+
+`AUDIT-FIX INTEGRATION LOCALLY GREEN — STACKED PR/CI/REVIEW NEXT — SALES CLOSED`
+
+## 2026-09-20 02:51 EEST — CODEX SOL — AUDIT-FIX PR #96 OPEN
+
+- Published exact integration head `41f0376fa1d9952f6692290fa3030db75d4010c9` as stacked
+  [PR #96](https://github.com/NeaBouli/stealth/pull/96) against PR #95's branch.
+- GitHub reports the PR open and mergeable. Basic CI run `35477233008` started; exact-head checks
+  and normal review remain required before integration. CodeRabbit's immediate success state is
+  not counted as an independent review unless it supplies an actual review of this stacked diff.
+- No production, deployment, Play, payment/provider, private-data, artifact-publication or sales
+  gate changed. `PRODUCT_READY=NO`, `FINANCE_READY=NO`, sales remain closed.
+
+`PR 96 OPEN — EXACT-HEAD CI/REVIEW RUNNING — SALES CLOSED`
+
+## 2026-09-20 03:01 EEST — CODEX SOL — INDEPENDENT REVIEW FINDINGS REMEDIATED
+
+- Terra completed the bounded read-only diff review after Kimi remained provider-quota blocked.
+  It confirmed the status redaction, dependency lock, code/XML pin parity and preserved CI suites,
+  and found one High release-gate gap plus two Medium residuals.
+- High gap fixed: `.github/scripts/run-android-smoke.sh` now accepts only the explicit
+  `securecallLivePinTest=true` option, and the existing API-24/API-36 instrumentation matrix now
+  passes it. The live pin test therefore becomes mandatory whenever the release-candidate
+  instrumentation workflow runs instead of silently skipping.
+- Analytics guard strengthened: it now scans executable HTML/JS/MJS/CJS/JSX/TS/TSX website
+  sources, excludes only its own pattern fixture, and requires every external script to use an
+  integrity hash plus anonymous CORS.
+- While validating that guard, the old QR dependency on `payment-success.html` returned HTTP 404.
+  It was replaced with immutable `qrcodejs@1.0.0`, protected by a verified SHA-384 SRI hash, and
+  the page was adapted to its API. A local real-browser check rendered the synthetic Custom-ID
+  QR and deep link successfully with all local assets returning HTTP 200.
+- Focused verification PASS: website contracts 9/9; runner `bash -n`; instrumentation workflow
+  YAML parse; QR CDN HTTP 200 plus matching SHA-384; `git diff --check`.
+- Remaining Medium design tradeoff: Android declarative pins expire on 2028-03-01 and Android
+  then stops enforcing that XML pin-set for already-installed clients. Current SecureCall API,
+  signaling, heartbeat and GhostNet paths also use the non-expiring OkHttp `CertificatePinner`,
+  and release builds are blocked inside the 180-day rotation window. Removing XML expiration
+  would deliberately trade fail-open risk for possible old-client outage and is not changed
+  silently in this integration block; it remains an explicit later security decision.
+- The API-24/API-36 workflow must now pass on the exact published head. No production, Play,
+  payment/provider, private-data, artifact-publication or sale gate changed.
+
+`REVIEW FIXES LOCAL GREEN — API 24/36 LIVE-PIN CI NEXT — SALES CLOSED`
+
+## 2026-09-20 03:21 EEST — CODEX SOL — INSTRUMENTATION KEYSTORE CONTRACT FIXED
+
+- Exact-head Basic CI run `35477703615` passed all four jobs on `5312029`: Android Client,
+  Signaling Tests, Rust Core Crypto and Markdown/YAML plus website gates.
+- The separately dispatched API-24/API-36 instrumentation run `35477710503` executed 25 tests
+  on each emulator. The live TLS-pin test and the other 23 tests passed; both jobs failed only at
+  `TesterDeviceKeyInstrumentedTest` because GitHub's software-only Android Keystore correctly
+  cannot satisfy SecureCall's hardware-backed tester-device requirement.
+- Corrected the test contract without weakening production behavior: it now creates an
+  independent EC-signing probe. On a software-only Keystore it verifies fail-closed behavior and
+  removal of the tester alias; where hardware-backed signing exists it still requires stable key
+  reuse, a valid key hash, challenge signing and independent ECDSA verification.
+- Focused local verification passed: Android test-source compilation, Free unit tests and Debug
+  plus AndroidTest APK assembly. The hardware-backed path then passed on both connected physical
+  devices, S10 and Tab S4 (`OK (1 test)` on each). Only temporary `com.securecall.app.free` and
+  test packages were installed and removed; the pre-existing S10 Premium and Tab S4 Pro packages
+  remain installed.
+- Next gate: commit/push the test correction and rerun exact-head Basic CI plus the complete
+  API-24/API-36 instrumentation matrix. No production, Play, payment/provider, private-data,
+  artifact-publication or sale gate changed. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain
+  closed.
+
+`BASIC CI GREEN — KEYSTORE TEST FIX LOCAL+DEVICE GREEN — CI RERUN NEXT — SALES CLOSED`

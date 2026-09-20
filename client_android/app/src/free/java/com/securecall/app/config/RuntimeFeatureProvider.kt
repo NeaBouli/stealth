@@ -50,8 +50,9 @@ class RuntimeFeatureProvider(context: Context) : FeatureProvider {
     override val rootDetectionBlocks: Boolean
         get() = currentTier != SubscriptionTier.FREE
 
+    // Transport authentication is baseline security, not a paid-tier feature.
     override val certificatePinning: Boolean
-        get() = currentTier != SubscriptionTier.FREE
+        get() = true
 
     override val callRecordingAllowed: Boolean
         get() = currentTier == SubscriptionTier.FREE

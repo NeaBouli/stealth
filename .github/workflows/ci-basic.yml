@@ -35,13 +35,14 @@ jobs:
         with:
           node-version: 22
 
-      - name: Verify closed browser checkout gate
+      - name: Verify browser privacy and closed checkout gates
         run: |
           node --check website/js/ifr-checkout.js
           node --test \
             website/js/ifr-checkout.test.cjs \
             website/js/custom-id-gate.test.cjs \
-            website/js/product-truth.test.cjs
+            website/js/product-truth.test.cjs \
+            website/js/no-google-analytics.test.cjs
 
       - name: Run YAML Lint
         run: yamllint .
