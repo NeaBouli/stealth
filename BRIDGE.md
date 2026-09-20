@@ -7128,3 +7128,22 @@ Open next:
   remain closed.
 
 `STX-10 APPROVED LOCALLY — COMMIT / STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 13:35 EEST — CODEX SOL — STX-10 stacked PR and hosted CI green
+
+- Published implementation commit `3e717bb4e47e187091d5cb422281fb3ff1146ab5` as stacked
+  [PR #100](https://github.com/NeaBouli/stealth/pull/100), based on the exact green PR #99
+  branch `fix/securecall-pkd-bounds-20260920`. GitHub reports the PR mergeable.
+- Hosted Basic CI run
+  [35505130750](https://github.com/NeaBouli/stealth/actions/runs/35505130750) passed all
+  four jobs: Markdown/YAML plus privacy and deployment-secret guards, Signaling Tests including
+  private tester staging tools, Rust Core Crypto, and the complete Android Client verification.
+- The new deployment guard ran successfully in hosted CI. Independent Kimi review remains
+  `APPROVE`, and Sol repeated Bash syntax, guard/negative-control, YAML structure, diff and
+  redacted secret-pattern checks locally before publication.
+- STX-10 remains open in audit umbrella issue #84 until the reviewed dependency stack is
+  integrated. This append records evidence only; no runtime, deployment, restart,
+  production-data, credential rotation, Play, payment/provider, artifact or sales action
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`PR 100 HOSTED CI GREEN — STX-10 READY FOR STACK REVIEW — NO RUNTIME ACTION`
