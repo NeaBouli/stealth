@@ -67,6 +67,7 @@ const {
 const { loadWalletMappings } = require("./services/wallet_store");
 const { setupActivationAdminRoutes } = require("./services/activation_admin");
 const { getClientIp, isTrustProxyEnabled }                          = require("./middleware/ip");
+const { makeRequireAdmin }                                         = require("./middleware/admin");
 const { pkdRegistrationRateLimit }                                  = require("./security/pkd_registration_limiter");
 const { verifyIfrHolding }                                          = require("./services/ifr");
 const { buildContext, wireWs }                                      = require("./context");
@@ -147,6 +148,7 @@ const app = express();
 if (isTrustProxyEnabled()) {
   app.set("trust proxy", 1);
 }
+const requireAdmin = makeRequireAdmin(ADMIN_API_KEY, { getClientIp });
 // Stripe webhook needs raw body for signature verification — must come BEFORE express.json()
 app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
@@ -203,19 +205,6 @@ app.get("/", (req, res) => {
     message: "SecureCall Signaling Server (Client IDs + Forwarding)"
   });
 });
-
-// --- Admin Auth Middleware ---
-function requireAdmin(req, res, next) {
-  if (!ADMIN_API_KEY) {
-    return res.status(403).json({ error: "admin_api_disabled" });
-  }
-  // BUG-076: Only accept admin key via header, not query param (prevents log leak)
-  const provided = req.headers["x-admin-key"];
-  if (provided !== ADMIN_API_KEY) {
-    return res.status(401).json({ error: "unauthorized" });
-  }
-  next();
-}
 
 // --- Routing Debug API (admin-only) ---
 app.get("/routing/list", requireAdmin, (req, res) => {
@@ -300,11 +289,7 @@ app.delete("/key/:id", requireAdmin, (req, res) => {
 // --- Subscription Admin API ---
 // Fix HIGH-007 (2026-04-16): unified on ADMIN_API_KEY. The old ADMIN_KEY
 // variant is dropped — all admin routes now check a single env var.
-app.get("/api/subscription/:clientId", (req, res) => {
-  const adminKey = req.headers["x-admin-key"];
-  if (!ADMIN_API_KEY || adminKey !== ADMIN_API_KEY) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
+app.get("/api/subscription/:clientId", requireAdmin, (req, res) => {
   const sub = subscriptions.getSubscription(req.params.clientId);
   if (!sub) {
     return res.status(404).json({ error: "No subscription found" });
@@ -768,7 +753,7 @@ setupActivationAdminRoutes(app, requireAdmin, revokeActivationCode);
 try {
   const stripeHandler = require('./payments/stripe_handler');
   // Pass activationCodes reference so new codes from purchases are usable immediately
-  stripeHandler.setupRoutes(app, activationCodes);
+  stripeHandler.setupRoutes(app, activationCodes, { requireAdmin });
 } catch (e) {
   console.warn("[STRIPE] Could not load stripe_handler:", e.message);
 }
