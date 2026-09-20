@@ -6481,3 +6481,32 @@ Open next:
   gate changed. `PRODUCT_READY=NO`, `FINANCE_READY=NO`, sales remain closed.
 
 `PR 96 OPEN — EXACT-HEAD CI/REVIEW RUNNING — SALES CLOSED`
+
+## 2026-09-20 03:01 EEST — CODEX SOL — INDEPENDENT REVIEW FINDINGS REMEDIATED
+
+- Terra completed the bounded read-only diff review after Kimi remained provider-quota blocked.
+  It confirmed the status redaction, dependency lock, code/XML pin parity and preserved CI suites,
+  and found one High release-gate gap plus two Medium residuals.
+- High gap fixed: `.github/scripts/run-android-smoke.sh` now accepts only the explicit
+  `securecallLivePinTest=true` option, and the existing API-24/API-36 instrumentation matrix now
+  passes it. The live pin test therefore becomes mandatory whenever the release-candidate
+  instrumentation workflow runs instead of silently skipping.
+- Analytics guard strengthened: it now scans executable HTML/JS/MJS/CJS/JSX/TS/TSX website
+  sources, excludes only its own pattern fixture, and requires every external script to use an
+  integrity hash plus anonymous CORS.
+- While validating that guard, the old QR dependency on `payment-success.html` returned HTTP 404.
+  It was replaced with immutable `qrcodejs@1.0.0`, protected by a verified SHA-384 SRI hash, and
+  the page was adapted to its API. A local real-browser check rendered the synthetic Custom-ID
+  QR and deep link successfully with all local assets returning HTTP 200.
+- Focused verification PASS: website contracts 9/9; runner `bash -n`; instrumentation workflow
+  YAML parse; QR CDN HTTP 200 plus matching SHA-384; `git diff --check`.
+- Remaining Medium design tradeoff: Android declarative pins expire on 2028-03-01 and Android
+  then stops enforcing that XML pin-set for already-installed clients. Current SecureCall API,
+  signaling, heartbeat and GhostNet paths also use the non-expiring OkHttp `CertificatePinner`,
+  and release builds are blocked inside the 180-day rotation window. Removing XML expiration
+  would deliberately trade fail-open risk for possible old-client outage and is not changed
+  silently in this integration block; it remains an explicit later security decision.
+- The API-24/API-36 workflow must now pass on the exact published head. No production, Play,
+  payment/provider, private-data, artifact-publication or sale gate changed.
+
+`REVIEW FIXES LOCAL GREEN — API 24/36 LIVE-PIN CI NEXT — SALES CLOSED`

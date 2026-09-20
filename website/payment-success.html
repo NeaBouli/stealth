@@ -157,7 +157,7 @@
         <div id="qrSection" class="qr-section" style="display:none;">
             <h3 style="color:#00E676; margin-bottom:8px;">Custom ID Ready!</h3>
             <p style="color:#aaa; font-size:14px; margin-bottom:12px;">Scan this QR code with your device camera to activate your Custom ID.</p>
-            <canvas id="qrCanvas"></canvas>
+            <div id="qrCanvas"></div>
             <div class="deep-link" id="deepLinkDisplay"></div>
         </div>
 
@@ -166,7 +166,10 @@
             <a href="wiki/user-manual.html" class="btn-secondary">User Manual</a>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"
+        integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU"
+        crossorigin="anonymous"></script>
     <script>
     (function() {
         const params = new URLSearchParams(window.location.search);
@@ -182,7 +185,14 @@
             deepLinkDisplay.textContent = deepLink;
 
             if (typeof QRCode !== "undefined") {
-                QRCode.toCanvas(qrCanvas, deepLink, { width: 256, margin: 2, color: { dark: "#ffffff", light: "#0a0a12" } });
+                new QRCode(qrCanvas, {
+                    text: deepLink,
+                    width: 256,
+                    height: 256,
+                    colorDark: "#ffffff",
+                    colorLight: "#0a0a12",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
             }
         }
     })();
