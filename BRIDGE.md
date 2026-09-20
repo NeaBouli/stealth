@@ -6510,3 +6510,27 @@ Open next:
   payment/provider, private-data, artifact-publication or sale gate changed.
 
 `REVIEW FIXES LOCAL GREEN — API 24/36 LIVE-PIN CI NEXT — SALES CLOSED`
+
+## 2026-09-20 03:21 EEST — CODEX SOL — INSTRUMENTATION KEYSTORE CONTRACT FIXED
+
+- Exact-head Basic CI run `35477703615` passed all four jobs on `5312029`: Android Client,
+  Signaling Tests, Rust Core Crypto and Markdown/YAML plus website gates.
+- The separately dispatched API-24/API-36 instrumentation run `35477710503` executed 25 tests
+  on each emulator. The live TLS-pin test and the other 23 tests passed; both jobs failed only at
+  `TesterDeviceKeyInstrumentedTest` because GitHub's software-only Android Keystore correctly
+  cannot satisfy SecureCall's hardware-backed tester-device requirement.
+- Corrected the test contract without weakening production behavior: it now creates an
+  independent EC-signing probe. On a software-only Keystore it verifies fail-closed behavior and
+  removal of the tester alias; where hardware-backed signing exists it still requires stable key
+  reuse, a valid key hash, challenge signing and independent ECDSA verification.
+- Focused local verification passed: Android test-source compilation, Free unit tests and Debug
+  plus AndroidTest APK assembly. The hardware-backed path then passed on both connected physical
+  devices, S10 and Tab S4 (`OK (1 test)` on each). Only temporary `com.securecall.app.free` and
+  test packages were installed and removed; the pre-existing S10 Premium and Tab S4 Pro packages
+  remain installed.
+- Next gate: commit/push the test correction and rerun exact-head Basic CI plus the complete
+  API-24/API-36 instrumentation matrix. No production, Play, payment/provider, private-data,
+  artifact-publication or sale gate changed. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain
+  closed.
+
+`BASIC CI GREEN — KEYSTORE TEST FIX LOCAL+DEVICE GREEN — CI RERUN NEXT — SALES CLOSED`
