@@ -47,6 +47,9 @@ jobs:
       - name: Run YAML Lint
         run: yamllint .
 
+      - name: Guard deployment scripts against secret output
+        run: bash deployment/check_deploy_secret_output.sh
+
   signaling-tests:
     name: Signaling Tests
     runs-on: ubuntu-latest
