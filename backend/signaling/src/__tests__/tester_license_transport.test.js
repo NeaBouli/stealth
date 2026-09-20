@@ -33,8 +33,13 @@ try {
   assert.equal(loadTesterLicenseRuntime(env),null);
   fs.chmodSync(signerFile,0o600);
   const registry = createTesterLicenseRegistry({file,privateKey:signer.privateKey.export({type:"pkcs8",format:"pem"})});
-  let subject = "synthetic-session-A";
-  const active = handlers({getClientId:()=>subject,testerLicenseRegistry:registry});
+  const legacySubject = "synthetic-session-A";
+  const canonicalSubject = "synthetic-session-v2";
+  let subject = legacySubject;
+  const identityRegistry = {
+    aliasesFor: identityId => identityId === canonicalSubject ? [legacySubject] : [],
+  };
+  const active = handlers({getClientId:()=>subject,testerLicenseRegistry:registry,identityRegistry});
   const invoke = (map, type, fields={}) => {
     const requestId = crypto.randomUUID();
     const replies = [];
@@ -58,6 +63,12 @@ try {
   const renewed = invoke(active,"TESTER_RENEWAL_COMPLETE",prove(renewal));
   assert.equal(renewed.success,true);
   verifyTesterEntitlement(renewed.entitlementToken,verification);
+  subject=canonicalSubject;
+  const migration = invoke(active,"TESTER_RENEWAL_BEGIN",{entitlementToken:renewed.entitlementToken,keyHash});
+  const migrated = invoke(active,"TESTER_RENEWAL_COMPLETE",prove(migration));
+  assert.equal(migrated.success,true);
+  verifyTesterEntitlement(migrated.entitlementToken,{...verification,subject:canonicalSubject});
+  assert.equal(JSON.parse(fs.readFileSync(file,"utf8")).grants[0].binding.subject,canonicalSubject);
   const foreign = crypto.generateKeyPairSync("ec", {namedCurve:"prime256v1"});
   const wrongProof = challenge => ({challengeId:challenge.challengeId,
     signature:crypto.sign("sha256",Buffer.from(challenge.challenge),foreign.privateKey).toString("base64url")});

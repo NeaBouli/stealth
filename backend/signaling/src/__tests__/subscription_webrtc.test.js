@@ -108,6 +108,7 @@ function buildCtx(overrides = {}) {
     })),
     acknowledgePlaySubscription: overrides.acknowledgePlaySubscription || (() => true),
     playBillingEnabled: overrides.playBillingEnabled ?? true,
+    identityRegistry: overrides.identityRegistry,
   });
 }
 
@@ -474,6 +475,117 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "FULL-CODE-5678" });
   const r9 = lastMsg(ws);
   assert(r9.success === false && r9.error === "max_devices", "full code → max_devices");
+
+  // A cryptographically authorized legacy alias can move an existing binding
+  // to the canonical identity without consuming another device slot.
+  clearState();
+  let migrationSaves = 0;
+  const canonicalId = "sc-canonical-test";
+  const legacyId = "android-legacy-test";
+  const identityRegistry = { aliasesFor: identityId => identityId === canonicalId ? [legacyId] : [] };
+  const migrationCtx = buildCtx({
+    identityRegistry,
+    saveActivationCodes: () => { migrationSaves += 1; return true; },
+    verifyEntitlementToken: (_token, { expectedSubject }) => {
+      if (expectedSubject !== legacyId) throw new Error("subject mismatch");
+      return { product:"securecall_premium_lifetime", order:"order-hash" };
+    },
+  });
+  const migrationWs = mockWs();
+  const migrationConn = "conn-identity-migration";
+  migrationCtx.clients.set(migrationConn, {
+    ws:migrationWs, lastSeen:Date.now(), clientId:canonicalId, ip:"1.1.1.6",
+  });
+  migrationCtx.clientIds.set(canonicalId, migrationConn);
+  migrationCtx.activationCodes.push({
+    code:"PREM-IDENTITY-MIGRATION", tier:"premium", maxUses:1,
+    usedBy:legacyId, currentUses:1, productKey:"securecall_premium_lifetime",
+    stripeSessionId:"cs_identity_migration",
+  });
+  migrationCtx.handlers.ACTIVATE_CODE(migrationWs, migrationConn, { code:"PREM-IDENTITY-MIGRATION" });
+  const migratedActivation = lastMsg(migrationWs);
+  const migratedEntry = migrationCtx.activationCodes[0];
+  assert(migratedActivation.success === true
+    && migratedActivation.entitlementToken === `signed:${canonicalId}:securecall_premium_lifetime:premium`,
+  "authorized alias reactivation issues a canonical entitlement");
+  assert(JSON.stringify(migratedEntry.usedBy) === JSON.stringify([canonicalId])
+    && migratedEntry.currentUses === 1 && migrationSaves === 1,
+  "authorized alias reactivation persists one canonical binding");
+
+  migratedEntry.usedBy = legacyId;
+  migratedEntry.currentUses = 1;
+  migrationCtx.handlers.REFRESH_ENTITLEMENT(migrationWs, migrationConn, {
+    entitlementToken:"legacy-refresh-token",
+  });
+  const migratedRefresh = lastMsg(migrationWs);
+  assert(migratedRefresh.success === true
+    && migratedRefresh.entitlementToken === `signed:${canonicalId}:securecall_premium_lifetime:premium`,
+  "legacy commercial proof refreshes only to the canonical identity");
+  assert(JSON.stringify(migratedEntry.usedBy) === JSON.stringify([canonicalId])
+    && migratedEntry.currentUses === 1 && migrationSaves === 2,
+  "commercial refresh atomically migrates its stored binding");
+
+  clearState();
+  const rollbackCtx = buildCtx({
+    identityRegistry,
+    saveActivationCodes: () => false,
+    verifyEntitlementToken: (_token, { expectedSubject }) => {
+      if (expectedSubject !== legacyId) throw new Error("subject mismatch");
+      return { product:"securecall_premium_lifetime", order:"order-hash" };
+    },
+  });
+  const rollbackWs = mockWs();
+  rollbackCtx.clients.set(migrationConn, {
+    ws:rollbackWs, lastSeen:Date.now(), clientId:canonicalId, ip:"1.1.1.6",
+  });
+  rollbackCtx.clientIds.set(canonicalId, migrationConn);
+  rollbackCtx.activationCodes.push({
+    code:"PREM-IDENTITY-ROLLBACK", tier:"premium", maxUses:1,
+    usedBy:legacyId, productKey:"securecall_premium_lifetime", stripeSessionId:"cs_identity_rollback",
+  });
+  rollbackCtx.handlers.ACTIVATE_CODE(rollbackWs, migrationConn, { code:"PREM-IDENTITY-ROLLBACK" });
+  const rollbackActivation = lastMsg(rollbackWs);
+  const rollbackEntry = rollbackCtx.activationCodes[0];
+  assert(rollbackActivation.success === false
+    && rollbackActivation.error === "entitlement_temporarily_unavailable",
+  "binding migration fails closed when persistence fails");
+  assert(rollbackEntry.usedBy === legacyId
+    && !Object.prototype.hasOwnProperty.call(rollbackEntry, "currentUses"),
+  "failed migration restores the exact legacy in-memory representation");
+
+  rollbackCtx.handlers.REFRESH_ENTITLEMENT(rollbackWs, migrationConn, {
+    entitlementToken:"legacy-refresh-token",
+  });
+  const rollbackRefresh = lastMsg(rollbackWs);
+  assert(rollbackRefresh.success === false
+    && rollbackRefresh.error === "entitlement_temporarily_unavailable"
+    && rollbackEntry.usedBy === legacyId,
+  "refresh migration persistence failure returns no canonical entitlement");
+
+  clearState();
+  const unauthorizedCtx = buildCtx({
+    identityRegistry: { aliasesFor: () => [] },
+    verifyEntitlementToken: (_token, { expectedSubject }) => {
+      if (expectedSubject !== legacyId) throw new Error("subject mismatch");
+      return { product:"securecall_premium_lifetime", order:"order-hash" };
+    },
+  });
+  const unauthorizedWs = mockWs();
+  unauthorizedCtx.clients.set(migrationConn, {
+    ws:unauthorizedWs, lastSeen:Date.now(), clientId:canonicalId, ip:"1.1.1.6",
+  });
+  unauthorizedCtx.clientIds.set(canonicalId, migrationConn);
+  unauthorizedCtx.activationCodes.push({
+    code:"PREM-NO-ALIAS", tier:"premium", maxUses:1, usedBy:[legacyId], currentUses:1,
+    productKey:"securecall_premium_lifetime", stripeSessionId:"cs_no_alias",
+  });
+  unauthorizedCtx.handlers.REFRESH_ENTITLEMENT(unauthorizedWs, migrationConn, {
+    entitlementToken:"legacy-refresh-token",
+  });
+  assert(lastMsg(unauthorizedWs).success === false
+    && lastMsg(unauthorizedWs).error === "invalid_entitlement"
+    && unauthorizedCtx.activationCodes[0].usedBy[0] === legacyId,
+  "unregistered aliases cannot migrate commercial entitlements");
 }
 
 // ==========================================

@@ -12,6 +12,16 @@ const matches = (pattern, value) => typeof value === "string" && pattern.test(va
 function fail() { throw new Error("tester_license_unavailable"); }
 function digest(value) { return crypto.createHash("sha256").update(value).digest("hex"); }
 
+function refreshSubjects(subject, legacySubjects) {
+  if (!matches(SUBJECT, subject) || !Array.isArray(legacySubjects) || legacySubjects.length > 8) fail();
+  const subjects = [subject];
+  for (const legacy of legacySubjects) {
+    if (!matches(SUBJECT, legacy)) fail();
+    if (!subjects.includes(legacy)) subjects.push(legacy);
+  }
+  return subjects;
+}
+
 function parseDevicePublicKey(value) {
   if (typeof value !== "string" || !PUBLIC_KEY.test(value)) fail();
   let der, publicKey, canonical;
@@ -163,40 +173,52 @@ function createTesterLicenseRegistry({ file, privateKey, now = () => Math.floor(
         privateKey, nowSeconds: now() });
     });
   }
-  function beginRefresh({ token, subject, keyHash }) {
-    const claims = verifyTesterEntitlement(token, { subject, deviceKeyHash: keyHash, publicKey: verifier,
-      nowSeconds: now(), expiryGraceSeconds: 7 * 86400 });
+  function beginRefresh({ token, subject, keyHash, legacySubjects = [] }) {
+    const subjects = refreshSubjects(subject, legacySubjects);
+    let claims, sourceSubject;
+    for (const candidate of subjects) {
+      try {
+        claims = verifyTesterEntitlement(token, { subject:candidate, deviceKeyHash:keyHash, publicKey:verifier,
+          nowSeconds:now(), expiryGraceSeconds:7 * 86400 });
+        sourceSubject = candidate;
+        break;
+      } catch { /* Try only aliases already authorized by the identity registry. */ }
+    }
+    if (!claims || !sourceSubject) fail();
     const state = read();
     const grant = state.grants.find(g => g.id === claims.grant && g.status === "active");
     activeKey(state, keyHash);
-    if (!grant || grant.binding?.subject !== subject || grant.binding?.keyHash !== keyHash) fail();
+    if (!grant || grant.binding?.subject !== sourceSubject || grant.binding?.keyHash !== keyHash) fail();
     const time = now();
     for (const [id, record] of challenges) {
       if (record.expires <= time || record.subject === subject) challenges.delete(id);
     }
     if (challenges.size >= 256) fail();
     const id = crypto.randomUUID();
-    const challenge = `securecall-tester-renewal-v1\n${id}\n${digest(token)}\n${subject}\n${keyHash}\n${crypto.randomBytes(32).toString("base64url")}`;
-    challenges.set(id, { kind: "refresh", token, subject, keyHash, challenge, expires: time + 300 });
+    const challenge = `securecall-tester-renewal-v1\n${id}\n${digest(token)}\n${sourceSubject}\n${subject}\n${keyHash}\n${crypto.randomBytes(32).toString("base64url")}`;
+    challenges.set(id, { kind:"refresh", token, subject, sourceSubject, keyHash, challenge, expires:time + 300 });
     return { challengeId: id, challenge };
   }
-  function refresh({ challengeId, signature, subject }) {
+  function refresh({ challengeId, signature, subject, legacySubjects = [] }) {
     const pending = challenges.get(challengeId);
     challenges.delete(challengeId);
     if (!pending || pending.kind !== "refresh" || pending.expires <= now() || pending.subject !== subject
         || typeof signature !== "string" || !/^[A-Za-z0-9_-]{64,144}$/.test(signature)) fail();
+    const subjects = refreshSubjects(subject, legacySubjects);
+    if (!subjects.includes(pending.sourceSubject)) fail();
     const keyHash = pending.keyHash;
-    const claims = verifyTesterEntitlement(pending.token, { subject, deviceKeyHash: keyHash, publicKey: verifier,
+    const claims = verifyTesterEntitlement(pending.token, { subject:pending.sourceSubject, deviceKeyHash:keyHash, publicKey:verifier,
       nowSeconds: now(), expiryGraceSeconds: 7 * 86400 });
     // Revalidation on every refresh; possession of an old signed proof cannot
     // resurrect a revoked grant or a revoked enrolled key.
     return transaction(state => {
       const grant = state.grants.find(g => g.id === claims.grant && g.status === "active");
       const key = activeKey(state, keyHash);
-      if (!grant || !key || grant.binding?.subject !== subject || grant.binding?.keyHash !== keyHash) fail();
+      if (!grant || !key || grant.binding?.subject !== pending.sourceSubject || grant.binding?.keyHash !== keyHash) fail();
       const bytes = Buffer.from(signature, "base64url");
       if (bytes.toString("base64url") !== signature
           || !crypto.verify("sha256", Buffer.from(pending.challenge), key.publicKeyPem, bytes)) fail();
+      grant.binding.subject = subject;
       return issueTesterEntitlement({ subject, grantHash: grant.id, deviceKeyHash: keyHash, privateKey, nowSeconds: now() });
     });
   }

@@ -183,7 +183,7 @@
                 </tbody>
             </table>
 
-            <p>Application-frame cryptography executes inside the Rust native library. The signaling service coordinates call setup and is not designed to receive call plaintext. Voice media uses direct WebRTC when available and otherwise may traverse a TURN relay. The current key exchange is not identity-authenticated, so an actively malicious signaling service remains outside the protection boundary.</p>
+            <p>Application-frame cryptography executes inside the Rust native library. The signaling service coordinates call setup and is not designed to receive call plaintext. Voice media uses direct WebRTC when available and otherwise may traverse a TURN relay. A P-256 Android Keystore identity signs registration and both X25519 call transcripts before media starts.</p>
 
             <!-- ARCHITECTURE OVERVIEW -->
             <div class="section-break">Architecture Overview</div>
@@ -228,7 +228,7 @@
 &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</code></pre>
 
             <div class="info-box info">
-                <strong>Current boundary:</strong> The signaling service facilitates connection setup and is not designed to receive voice plaintext or private key material. Application-frame cryptography occurs on-device. The unauthenticated identity-key exchange does not protect against active signaling-server key substitution.
+                <strong>Current boundary:</strong> The signaling service facilitates connection setup and is not designed to receive voice plaintext or private key material. Canonical <code>sc-...</code> identities are key-derived and call transcripts are signed. Alias, custom-ID and phone lookup remain server-resolved and require canonical-ID or security-code verification.
             </div>
 
             <!-- DIRECTORY STRUCTURE -->
@@ -288,8 +288,8 @@
 <pre><code>Client A  &#8594;  WSS  &#8594;  Signaling Server  &#8594;  WSS  &#8594;  Client B</code></pre>
             <ul>
                 <li>Encrypted WebSocket connection (TLS) between each client and the signaling server</li>
-                <li>Server relays encrypted signaling messages (SDP offers/answers, ICE candidates, key exchange data)</li>
-                <li>Server <strong>cannot read</strong> message content &mdash; it acts as an opaque relay</li>
+                <li>TLS protects each client-to-server hop; the server processes SDP offers/answers, ICE candidates and signed key-exchange data</li>
+                <li>Call content is not sent through this signaling channel; signaling metadata is visible to the service</li>
                 <li>Call setup typically completes in 1&ndash;2 seconds on stable connections</li>
             </ul>
 
@@ -312,7 +312,7 @@
             </ul>
 
             <div class="info-box warning">
-                <strong>Important:</strong> A TURN relay forwards encrypted media and is not sent private key material. This protects against a passive relay; the current unauthenticated identity-key exchange still does not protect against an actively malicious signaling service.
+                <strong>Important:</strong> A TURN relay forwards encrypted media and is not sent private key material. Direct canonical identities are protected by signed transcripts; server-resolved aliases still require canonical-ID or security-code verification.
             </div>
 
             <!-- BUILD CONFIGURATIONS -->

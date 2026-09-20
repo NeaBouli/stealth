@@ -6534,3 +6534,104 @@ Open next:
   closed.
 
 `BASIC CI GREEN — KEYSTORE TEST FIX LOCAL+DEVICE GREEN — CI RERUN NEXT — SALES CLOSED`
+
+## 2026-09-20 03:34 EEST — CODEX SOL — STX-01/STX-21 COUPLED AUTH BLOCK STARTED
+
+- **Ticket:** `STEALTHX-STX01-STX21-AUTH-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** FIX / AUTH / CRYPTO /
+  MIGRATION / TEST; **Status:** In Progress; **Risk:** High.
+- **Branch:** `fix/securecall-authenticated-registration-20260920`, created from exact verified
+  PR #96 head `a8f8f19094f3fd60ad77180a8557896f30abc200`. The older analysis worktree and the dirty
+  canonical checkout remain untouched.
+- **Bounded objective:** prevent unauthenticated WebSocket registration from claiming another
+  SecureID or overwriting its push/routing state, and bind call/key-exchange messages to an
+  authenticated long-term client identity. Preserve existing users through an explicit,
+  fail-closed compatibility/migration design; do not change communication cryptography beyond
+  what is required for authenticated identity binding.
+- **Acceptance gates:** concrete exploit regression tests; authenticated registration and replay,
+  takeover, concurrent-claim and reconnect tests; signed call/key-exchange validation including
+  tamper/wrong-identity rejection; Android migration and restore behavior; full signaling,
+  Android, Rust and instrumentation suites; no protocol downgrade that silently reopens the old
+  path.
+- Kimi K3 was retried for the preceding review but remains provider-quota blocked before code
+  access. It will not be repeatedly invoked until the quota window changes. Sol owns architecture
+  and implementation; an independent read-only reviewer will be used before approval.
+- No deployment, production data/schema mutation, key rotation, Play/provider/payment action,
+  private-data handling, artifact publication or sale is authorized in this block.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`STX-01/STX-21 AUTH BLOCK IN PROGRESS — HIGH RISK — SALES CLOSED`
+
+## 2026-09-20 04:18 EEST — CODEX SOL — STX-01/STX-21 protocol boundary fixed
+
+- The implementation sequence is now fixed before code changes: (1) self-certifying P-256
+  installation identity, (2) one-time registration challenge/proof, (3) persistent canonical
+  identity and legacy-alias registry, (4) FCM-only proof for an unbound legacy `android-*` alias,
+  (5) signed call/key-exchange transcripts, (6) transcript-bound session-key derivation and key
+  confirmation, then Android/backend/Rust/instrumentation regression gates.
+- A legacy alias is never migrated by first claimant. If the signaling service has no previously
+  persisted FCM route capable of delivering the migration challenge, the client must use its new
+  self-certifying identity; the old alias is not silently rebound. Existing alias routing is kept
+  only after a successful proof, so current contacts can migrate without making the old takeover
+  flaw permanent.
+- The protocol has an explicit `transition` mode for a bounded rollout and an `enforce` mode for
+  closure. The default implementation is fail-closed; no permanent unsigned downgrade path will
+  be accepted. Production mode selection and rollout remain a separate, explicitly authorized
+  deployment task.
+- The same block will also remove the discovered inbound-media fail-open branch that currently
+  passes raw binary data to the decoder when no session key exists. This is directly within the
+  authenticated-key-exchange trust boundary.
+- Kimi K3 could not perform the requested read-only review: the first run was blocked by local
+  DNS isolation and the network-enabled retry was denied because it would transfer private
+  project code to an external provider without a separate code-egress authorization. No source
+  was transferred and Kimi produced no result or change. Sol continues from the completed local
+  Terra analysis and remains responsible for design, implementation and verification.
+
+`DESIGN FIXED — BACKEND TRUST CHAIN FIRST — NO PRODUCTION ACTION — SALES CLOSED`
+
+## 2026-09-20 05:54 EEST — CODEX SOL — STX-01/STX-21 implementation and local gates complete
+
+- **Ticket:** `STEALTHX-STX01-STX21-AUTH-20260920`; **Status:** Implementation complete,
+  review and local verification green; stacked PR and hosted exact-head CI remain next.
+- Added a self-certifying P-256 installation identity with one-time registration proof, replay
+  protection and persistent canonical/legacy-alias registry. Call invite/accept transcripts and
+  FCM v2 invites are signed; X25519/HKDF derivation is bound to the authenticated transcript,
+  explicit key confirmation gates WebRTC, ICE and inbound media, and the old raw-media fail-open
+  path is removed.
+- Replaced first-claim legacy migration with an immutable, private pre-transition FCM-route
+  snapshot. The loader accepts only an absolute regular non-symlink mode-0600 file, enforces a
+  maximum 14-day expiry and fails closed when absent or expired. The operator preparation tool
+  uses exclusive/no-follow creation, mode 0600 and file/directory fsync and logs only aggregate
+  counts. Mutable runtime registration state can no longer authorize alias migration.
+- Canonical FCM persistence now completes before alias binding; failure restores memory and leaves
+  the alias unbound. Legacy clients cannot mutate FCM routes. Identity challenges are capped at
+  four pending requests per source IP and 1,024 globally. Android validates the complete migration
+  transcript and refuses cold, disconnected, stale or mismatched challenges instead of queuing a
+  proof; it reconnects for a fresh challenge.
+- Canonical entitlement migration is atomic and fail-closed. Obsolete parallel handshake/signal
+  classes were removed. Contact, dialer and in-call UI corrections in the stacked baseline remain
+  integrated, and public security documentation now describes the implemented static per-call
+  key model instead of unsupported Double-Ratchet/PFS claims.
+- **Independent review:** Terra's final bounded review reported no blocking finding after the
+  immutable-route fix. Its remaining availability observation (global challenge capacity) was
+  addressed with the tested per-source cap. Kimi K3 remained unavailable/provider-blocked and
+  made no change; Sol reviewed every diff and owns integration.
+- **Verification PASS:** complete signaling `npm test`, including authenticated-call, identity,
+  migration, 50/50 handler and 102/102 subscription/WebRTC assertions; Android Free/Pro/Premium
+  unit and compile matrix (91 tasks); Free/Pro/Premium lint and debug assembly (164 tasks, zero
+  lint errors; existing warnings Free 332, Pro 264, Premium 275); website JS plus 9/9 contract
+  tests; Rust 28 unit plus 6 E2E tests and strict Clippy; `git diff --check`; bounded added-line
+  credential-pattern scan. The server-start test required normal local socket permissions after
+  the sandbox correctly denied `0.0.0.0` binding.
+- **Physical verification PASS:** isolated `com.securecall.app.free.devtest` identity-keystore
+  instrumentation completed 1/1 on S10/Android 12 and 1/1 on Tab S4/Android 10. Gradle removed
+  the temporary packages; S10 Premium and Tab S4 Pro release packages remain installed.
+- **Remaining gate:** publish this branch as a stacked PR against PR #96 and obtain hosted
+  exact-head CI/review. A real authenticated two-device call requires a compatible isolated
+  signaling deployment; no production deployment is authorized. Production must create the
+  private snapshot with token writes stopped, use transition mode only under an explicit bounded
+  rollout decision, and end in enforce mode. Transition mode is not the final security state.
+- No production, Play, payment/provider, private-data, artifact-publication or sales action
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-01/STX-21 LOCAL GREEN — STACKED PR/CI NEXT — STAGING E2E STILL REQUIRED — SALES CLOSED`
