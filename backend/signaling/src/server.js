@@ -76,6 +76,7 @@ const { issueEntitlementToken, verifyEntitlementToken, orderHash: entitlementOrd
 const { createIdentityRegistry } = require("./services/identity_registry");
 const { loadIdentityMigrationRoutes } = require("./services/identity_migration_routes");
 const { readIdentityProtocolConfig } = require("./security/identity_protocol");
+const { resolveTurnSecret } = require("./security/turn_secret");
 
 // Hoisted so HTTP route handlers (defined below) can call ctx.sendToClient
 // after buildContext() runs at startup — before any request arrives.
@@ -88,12 +89,12 @@ const identityRegistry = createIdentityRegistry({ file: process.env.IDENTITY_REG
 fcm.initFcm();
 
 // --- STUN/TURN Configuration (BACKEND-02) ---
-const TURN_SECRET = process.env.TURN_SECRET || null;
+const TURN_SECRET = resolveTurnSecret(process.env);
 const TURN_HOST   = process.env.TURN_HOST   || null;
 const TURN_TTL    = 86400; // 24h
 
 if (process.env.NODE_ENV === "production" && !TURN_SECRET && (!process.env.TURN_USER || !process.env.TURN_PASS)) {
-  console.warn("[WARN] No TURN credentials configured — relay disabled. Set TURN_SECRET (own coturn) or TURN_USER+TURN_PASS (Metered.ca).");
+  console.warn("[WARN] No TURN credentials configured — relay disabled. Set TURN_SECRET or TURN_SECRET_FILE (own coturn), or TURN_USER+TURN_PASS (Metered.ca).");
 }
 
 // RFC 8489 REST API: time-limited HMAC-SHA1 credentials for own coturn (use-auth-secret mode).

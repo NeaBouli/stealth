@@ -165,27 +165,45 @@ SIGNAL_DOMAIN=signal.securecall.app
 TURN_DOMAIN=turn.securecall.app
 WEBSITE_DOMAIN=neabouli.github.io/stealth
 ADMIN_EMAIL=admin@example.com
-
-# Generate secure values:
-ADMIN_API_KEY=$(openssl rand -hex 32)
-TURN_USER=securecall
-TURN_PASS=$(openssl rand -hex 24)
-
-echo "Admin API Key: $ADMIN_API_KEY"
-echo "TURN Password: $TURN_PASS"
 ```
+
+Store `ADMIN_API_KEY` privately in `.env`. Do not put the coturn shared secret
+in `.env` when using Docker Compose. Create the ignored Compose secret file
+instead:
+
+```bash
+mkdir -p secrets
+(umask 077 && openssl rand -hex 32 > secrets/turn_secret)
+chmod 600 secrets/turn_secret
+```
+
+The same file is mounted read-only into signaling and coturn. A non-Compose
+runtime may instead use exactly one private `TURN_SECRET` or `TURN_SECRET_FILE`
+setting; never configure both.
+
+`deploy/scripts/backup.sh` intentionally excludes this file. Keep it only in
+an approved encrypted secret store, or generate one replacement during restore.
+Create the shared file before `docker compose up`; signaling and coturn must
+never be restored with different values.
 
 ### 3.3 Configure TURN Server
 
 ```bash
-# Edit coturn config with your VPS IP
-nano coturn/turnserver.conf
+# Edit only public deployment settings such as the VPS IP. Keep the secret
+# token in the template unchanged; it is rendered at container startup.
+nano coturn/turnserver.conf.template
 ```
 
 Uncomment and set:
 ```
 external-ip=YOUR_VPS_PUBLIC_IP
-user=securecall:YOUR_TURN_PASSWORD
+```
+
+Validate the renderer and Compose model before any service start:
+
+```bash
+sh coturn/test-render-config.sh
+docker compose config --quiet
 ```
 
 ## Step 4: SSL Certificates (Let's Encrypt)
@@ -256,8 +274,8 @@ npx wscat -c wss://signal.securecall.app/signal
 # Check website
 curl -I https://neabouli.github.io/stealth/
 
-# Check TURN
-turnutils_uclient -t -u securecall -w YOUR_TURN_PASS turn.securecall.app
+# Check TURN startup without printing credentials
+docker compose logs --tail=100 coturn
 ```
 
 ## Step 6: Monitoring
