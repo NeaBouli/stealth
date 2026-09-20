@@ -25,6 +25,11 @@ Two deployment options are available:
 - **Option A: Bare-metal (PM2)** — `deployment/` directory (this guide)
 - **Option B: Docker** — `deploy/` directory (see `docs/DEPLOYMENT_GUIDE.md`)
 
+The Docker path is authoritative for new deployments and keeps the shared TURN
+secret out of environment interpolation and the committed coturn template. The
+bare-metal path remains a legacy option and must place the same private secret
+in signaling and `/etc/turnserver.conf` through the operator's secret workflow.
+
 ## Server Requirements
 
 | Spec | Minimum | Recommended |
@@ -155,7 +160,11 @@ sudo nano /etc/turnserver.conf
 
 Set:
 - `external-ip=YOUR_VPS_IP`
-- `static-auth-secret=YOUR_TURN_PASS` (from Step 2 output)
+- `static-auth-secret=<same private 64-hex value configured for signaling>`
+
+Do not write `$TURN_SECRET` literally into the coturn file. For new systems,
+prefer the Docker flow in `docs/DEPLOYMENT_GUIDE.md`, which renders this value
+from `deploy/secrets/turn_secret` at container startup.
 
 Uncomment TLS lines after SSL cert is obtained:
 - `cert=/etc/letsencrypt/live/turn.securecall.app/fullchain.pem`
@@ -228,6 +237,9 @@ The signaling server is stateless (in-memory only). Back up:
 - `/opt/securecall/signaling/.env` (credentials)
 - `/etc/letsencrypt/` (SSL certs)
 - `/etc/turnserver.conf` (TURN config)
+
+These contain private material. Store backups encrypted and access-controlled;
+the Docker backup script intentionally excludes `deploy/secrets/turn_secret`.
 
 ### Security Hardening
 

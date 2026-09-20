@@ -1,0 +1,45 @@
+# SecureCall TURN Server (coturn) configuration template.
+# render-config.sh replaces the single token below from the Compose secret file.
+
+# Network
+listening-port=3478
+tls-listening-port=5349
+
+# Set explicitly when coturn runs behind NAT.
+# external-ip=YOUR_PUBLIC_IP
+
+# Relay port range (must match docker-compose port mapping)
+min-port=49152
+max-port=49200
+
+# Authentication
+# RFC 8489 HMAC-based time-limited credentials. The generated runtime config and
+# signaling server read the same 64-hex Compose secret.
+use-auth-secret
+static-auth-secret=__TURN_SECRET_64HEX__
+
+# Realm (must match TURN_HOST domain)
+realm=stealthx.tech
+
+# TLS
+cert=/etc/letsencrypt/live/stealthx.tech/fullchain.pem
+pkey=/etc/letsencrypt/live/stealthx.tech/privkey.pem
+
+# Security
+no-multicast-peers
+denied-peer-ip=10.0.0.0-10.255.255.255
+denied-peer-ip=172.16.0.0-172.31.255.255
+denied-peer-ip=192.168.0.0-192.168.255.255
+denied-peer-ip=127.0.0.0-127.255.255.255
+fingerprint
+
+# Logging
+log-file=stdout
+
+# Performance
+# max-bps=0
+# bps-capacity=0
+stale-nonce=600
+
+# The Docker deployment does not expose the coturn CLI.
+no-cli

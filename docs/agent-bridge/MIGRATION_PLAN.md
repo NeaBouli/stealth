@@ -80,10 +80,16 @@ listening-port=3478
 tls-listening-port=5349
 realm=turn.stealthx.tech
 use-auth-secret
-static-auth-secret=$TURN_SECRET  # generiert, in env
+static-auth-secret=REPLACE_WITH_PRIVATE_64_HEX_VALUE
 cert=/etc/letsencrypt/live/turn.stealthx.tech/fullchain.pem
 pkey=/etc/letsencrypt/live/turn.stealthx.tech/privkey.pem
 ```
+
+> **2026-09-20 clarification:** The line above is historical pseudocode, not a
+> coturn interpolation feature. New Docker deployments use
+> `deploy/coturn/turnserver.conf.template` and render the same private 64-hex
+> file secret for signaling and coturn. Never deploy the literal text
+> `$TURN_SECRET`.
 
 **DNS:** `turn.stealthx.tech` → Server IP
 **Vorteil:** Keine Kosten pro Minute, volle Kontrolle, eigene Logs
