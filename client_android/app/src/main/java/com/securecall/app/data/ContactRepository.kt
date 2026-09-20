@@ -3,6 +3,7 @@ package com.securecall.app.data
 import android.content.Context
 import com.securecall.app.config.FeatureProviderRegistry
 import com.securecall.app.config.TierLimitPolicy
+import com.securecall.app.security.IdentityProtocol
 import org.json.JSONArray
 
 object ContactRepository {
@@ -33,8 +34,9 @@ object ContactRepository {
             existing.phoneOrId == contact.phoneOrId ||
             (contact.secureId != null && existing.secureId == contact.secureId) ||
             (existing.secureId != null && existing.secureId == contact.phoneOrId) ||
-            (contact.phoneOrId.startsWith("android-") && existing.secureId == contact.phoneOrId) ||
-            (!contact.phoneOrId.startsWith("android-") && !existing.phoneOrId.startsWith("android-") &&
+            (IdentityProtocol.isDirectClientId(contact.phoneOrId) && existing.secureId == contact.phoneOrId) ||
+            (!IdentityProtocol.isDirectClientId(contact.phoneOrId) &&
+                !IdentityProtocol.isDirectClientId(existing.phoneOrId) &&
                 normalizedPhone.isNotEmpty() &&
                 PhoneUtils.normalize(existing.phoneOrId, context) == normalizedPhone)
         }

@@ -7,6 +7,7 @@ module.exports = function subscriptionHandlers(ctx) {
     saveActivationCodes, saveGiftCodes,
     subscriptions, fcm, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
+    identityRegistry,
   } = ctx;
 
   const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
@@ -56,6 +57,48 @@ module.exports = function subscriptionHandlers(ctx) {
       ...extra,
       ...(entitlementToken ? { entitlementToken } : {}),
     };
+  }
+
+  function authorizedSubjects(clientId) {
+    const subjects = [clientId];
+    if (!identityRegistry || typeof identityRegistry.aliasesFor !== "function") return subjects;
+    try {
+      for (const alias of identityRegistry.aliasesFor(clientId)) {
+        if (typeof alias === "string" && alias && !subjects.includes(alias)) subjects.push(alias);
+        if (subjects.length >= 9) break;
+      }
+    } catch {
+      // Canonical entitlements remain usable; legacy migration stays fail-closed.
+    }
+    return subjects;
+  }
+
+  function migrateActivationBinding(entry, sourceSubject, targetSubject) {
+    const previousHadUsedBy = Object.prototype.hasOwnProperty.call(entry, "usedBy");
+    const previousUsedBy = entry.usedBy;
+    const previousHadCurrentUses = Object.prototype.hasOwnProperty.call(entry, "currentUses");
+    const previousCurrentUses = entry.currentUses;
+    const devices = Array.isArray(previousUsedBy) ? [...previousUsedBy]
+      : (previousUsedBy ? [previousUsedBy] : []);
+    if (sourceSubject === targetSubject) return devices;
+    if (!devices.includes(sourceSubject)) return null;
+
+    const migrated = [];
+    for (const device of devices) {
+      const value = device === sourceSubject ? targetSubject : device;
+      if (!migrated.includes(value)) migrated.push(value);
+    }
+    entry.usedBy = migrated;
+    entry.currentUses = migrated.length;
+    let persisted = false;
+    try { persisted = saveActivationCodes() !== false; } catch { persisted = false; }
+    if (persisted) return migrated;
+
+    if (previousHadUsedBy) entry.usedBy = previousUsedBy;
+    else delete entry.usedBy;
+    if (previousHadCurrentUses) entry.currentUses = previousCurrentUses;
+    else delete entry.currentUses;
+    return null;
   }
 
   return {
@@ -219,14 +262,21 @@ module.exports = function subscriptionHandlers(ctx) {
         });
       }
 
-      const devices = Array.isArray(entry.usedBy) ? entry.usedBy : (entry.usedBy ? [entry.usedBy] : []);
+      const devices = Array.isArray(entry.usedBy) ? [...entry.usedBy] : (entry.usedBy ? [entry.usedBy] : []);
+      const boundSubject = authorizedSubjects(myClientId).find(subject => devices.includes(subject));
 
-      if (devices.includes(myClientId)) {
-        console.log("[ACTIVATION] Code re-activated:", code.substring(0, 4) + "****", "by:", myClientId);
-        return respond(signedActivation(entry, myClientId, {
-          slot: devices.indexOf(myClientId) + 1,
+      if (boundSubject) {
+        const activation = signedActivation(entry, myClientId, {
+          slot: devices.indexOf(boundSubject) + 1,
           maxSlots: entry.maxUses,
-        }));
+        });
+        if (!activation.success) return respond(activation);
+        if (boundSubject !== myClientId
+            && !migrateActivationBinding(entry, boundSubject, myClientId)) {
+          return respond({ success: false, error: "entitlement_temporarily_unavailable" });
+        }
+        console.log("[ACTIVATION] Code re-activated:", code.substring(0, 4) + "****", "by:", myClientId);
+        return respond(activation);
       }
 
       if (entry.expires) {
@@ -278,14 +328,28 @@ module.exports = function subscriptionHandlers(ctx) {
         return respond({ success: false, error: "tester_enrollment_unavailable" });
       }
       try {
-        const claims = verifyEntitlementToken(msg.entitlementToken, {
-          expectedSubject: myClientId,
-          expiryGraceSeconds: 7 * 24 * 60 * 60,
-        });
+        let claims;
+        let verifiedSubject;
+        let verificationError;
+        for (const subject of authorizedSubjects(myClientId)) {
+          try {
+            claims = verifyEntitlementToken(msg.entitlementToken, {
+              expectedSubject: subject,
+              expiryGraceSeconds: 7 * 24 * 60 * 60,
+            });
+            verifiedSubject = subject;
+            break;
+          } catch (error) {
+            if (error && error.code === "ENTITLEMENT_SIGNING_UNAVAILABLE") throw error;
+            verificationError = error;
+          }
+        }
+        if (!claims || !verifiedSubject) throw verificationError || new Error("invalid entitlement");
         const entry = activationCodes.find(candidate => {
           const devices = Array.isArray(candidate.usedBy) ? candidate.usedBy : (candidate.usedBy ? [candidate.usedBy] : []);
           const reference = candidate.stripeSessionId || candidate.code;
-          return devices.includes(myClientId)
+          return candidate.revoked !== true
+            && devices.includes(verifiedSubject)
             && candidate.productKey === claims.product
             && entitlementOrderHash(reference) === claims.order
             && (claims.v !== "2" || (
@@ -299,6 +363,13 @@ module.exports = function subscriptionHandlers(ctx) {
         }
         const refreshed = signedActivation(entry, myClientId, {});
         if (!refreshed.success || !refreshed.entitlementToken) {
+          return respond({
+            success: false,
+            error: "entitlement_temporarily_unavailable",
+          });
+        }
+        if (verifiedSubject !== myClientId
+            && !migrateActivationBinding(entry, verifiedSubject, myClientId)) {
           return respond({
             success: false,
             error: "entitlement_temporarily_unavailable",

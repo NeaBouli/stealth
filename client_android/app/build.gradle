@@ -13,6 +13,7 @@ def buildingAppBundle = gradle.startParameter.taskNames.any {
 //             ./gradlew assembleProRelease         → task does not exist
 //   Internal: ./gradlew -Pinternal assembleProDebug → builds
 def allowInternalFlavors = project.hasProperty('internal')
+def isolatedDeviceTest = project.hasProperty('isolatedDeviceTest')
 def entitlementPublicKey = providers.gradleProperty('entitlementPublicKey').getOrElse('')
 def testerEntitlementPublicKey = providers.gradleProperty('testerEntitlementPublicKey').getOrElse('')
 def testerLicensesEnabled = providers.gradleProperty('testerLicensesEnabled').getOrElse('false')
@@ -33,6 +34,12 @@ apply plugin: 'com.google.firebase.crashlytics'
 
 googleServices {
     missingGoogleServicesStrategy = "ignore"
+}
+
+if (isolatedDeviceTest) {
+    tasks.configureEach { task ->
+        if (task.name.endsWith("DebugGoogleServices")) task.enabled = false
+    }
 }
 
 android {
@@ -212,6 +219,9 @@ android {
         }
         debug {
             minifyEnabled false
+            // Opt-in package isolation lets instrumentation run beside an
+            // installed release without replacing its signature or app data.
+            if (isolatedDeviceTest) applicationIdSuffix ".devtest"
             firebaseCrashlytics {
                 mappingFileUploadEnabled false
             }

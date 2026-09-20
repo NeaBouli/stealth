@@ -20,10 +20,30 @@ import com.securecall.app.BuildConfig
 import com.securecall.app.MainActivity
 import com.securecall.app.R
 import com.securecall.app.notifications.IncomingCallNotifications
+import com.securecall.app.crypto.SessionKeyBinding
+import com.securecall.app.security.IdentityProtocol
+import com.securecall.app.security.IdentitySigningKey
+import com.securecall.app.security.VerifiedCallAccept
+import com.securecall.app.security.VerifiedCallInvite
 
 internal object CallEndPolicy {
     fun shouldDelay(reason: String): Boolean = reason == "peer_disconnected"
 }
+
+private enum class SecureCallRole { CALLER, CALLEE }
+
+private data class CallSecurityState(
+    val role: SecureCallRole,
+    val invite: VerifiedCallInvite,
+    val inviteTranscript: String,
+    var accept: VerifiedCallAccept? = null,
+    var acceptTranscript: String? = null,
+    var expectedPeerConfirmation: String? = null,
+    var localConfirmationSent: Boolean = false,
+    var peerConfirmed: Boolean = false,
+    var established: Boolean = false,
+    var securityCode: String? = null,
+)
 
 /**
  * BACKEND-22..58 / PATCH 201..204:
@@ -69,6 +89,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     @Volatile private var _onCallAccepted: ((String) -> Unit)? = null
     @Volatile private var _onCallEnded: ((String) -> Unit)? = null
     @Volatile private var _onCallError: ((String, String) -> Unit)? = null
+    @Volatile private var _onSecureSessionEstablished: ((String, String) -> Unit)? = null
 
     // Audio playback pipeline
     private var audioPlayer: com.securecall.app.ghostnet.media.playback.GhostAudioPlayer? = null
@@ -81,6 +102,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     private var localPrivKey: ByteArray? = null
     private var remotePubKey: ByteArray? = null
     private var sessionKey: ByteArray? = null
+    @Volatile private var callSecurityState: CallSecurityState? = null
+
+    @Volatile private var registrationIdentity: com.securecall.app.security.CallIdentity? = null
+    @Volatile private var registrationRequestedClientId: String? = null
+    @Volatile private var canonicalRegistrationRetried = false
 
     // WebRTC P2P DataChannel transport
     private var webRtcManager: WebRtcManager? = null
@@ -159,13 +185,23 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     fun setOnCallAccepted(cb: ((String) -> Unit)?) { _onCallAccepted = cb }
     fun setOnCallEnded(cb: ((String) -> Unit)?) { _onCallEnded = cb }
     fun setOnCallError(cb: ((String, String) -> Unit)?) { _onCallError = cb }
+    fun setOnSecureSessionEstablished(cb: ((String, String) -> Unit)?) {
+        _onSecureSessionEstablished = cb
+        val state = callSecurityState
+        val code = state?.securityCode
+        if (cb != null && state?.established == true && code != null) cb(state.invite.sessionId, code)
+    }
+    fun isSecureSessionEstablished(): Boolean = callSecurityState?.established == true
+    fun getSecurityCode(): String? = callSecurityState?.takeIf { it.established }?.securityCode
     fun clearSession() {
         _currentSessionId = null
+        fcmPendingSessionId = null
         localPrivKey?.fill(0)
         localPrivKey = null
         remotePubKey = null
         sessionKey?.fill(0)
         sessionKey = null
+        callSecurityState = null
         webRtcManager?.close()
         webRtcManager = null
         killAllAudio()
@@ -252,15 +288,90 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         return prefs.getString("client_id", null)
     }
 
-    /**
-     * BUG-010: Called by FCM handler to prevent duplicate IncomingCallActivity.
-     * When WS reconnects and receives the same CALL_INVITE, it will be suppressed
-     * because we already started the activity from FCM.
-     */
-    fun setFcmPendingSession(sessionId: String) {
-        fcmPendingSessionId = sessionId
-        _currentSessionId = sessionId // Mark session active so BUSY isn't sent for same call
-        Log.d("WS_SERVICE", "BUG-010: FCM pending session set: $sessionId")
+    fun acceptFcmInvite(payload: String): Boolean {
+        val invite = parseVerifiedInvite(payload) ?: return false
+        if (!acceptAuthenticatedInvite(invite)) return false
+        fcmPendingSessionId = invite.sessionId
+        return true
+    }
+
+    private fun parseVerifiedInvite(payload: String): VerifiedCallInvite? {
+        return try {
+            val obj = org.json.JSONObject(payload)
+            if (obj.optString("type") !in setOf("CALL_INVITE", "CALL_INVITE_V2")) return null
+            val callerPhone = obj.optString("callerPhone", "").takeIf { it.length <= 64 } ?: return null
+            val invite = VerifiedCallInvite(
+                sessionId = obj.optString("sessionId"),
+                fromClientId = obj.optString("from"),
+                fromIdentityId = obj.optString("fromIdentityId"),
+                to = obj.optString("to"),
+                requestedTo = obj.optString("requestedTo"),
+                ephemeralPublicKey = obj.optString("ephemeralPublicKey"),
+                identityPublicKey = obj.optString("identityPublicKey"),
+                issuedAt = obj.optLong("issuedAt", -1),
+                nonce = obj.optString("nonce"),
+                signature = obj.optString("signature"),
+                inviteDigest = obj.optString("inviteDigest"),
+                callerPhone = callerPhone,
+            )
+            val localIdentity = IdentitySigningKey.existingIdentity() ?: return null
+            if (invite.to != localIdentity.identityId || getLocalClientId() != localIdentity.identityId) return null
+            invite.takeIf {
+                IdentityProtocol.verifyCallInvite(it, System.currentTimeMillis() / 1000)
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    @Synchronized
+    private fun acceptAuthenticatedInvite(invite: VerifiedCallInvite): Boolean {
+        val existing = callSecurityState
+        if (existing != null) return existing.invite == invite
+        if (_currentSessionId != null && _currentSessionId != invite.sessionId) return false
+        val transcript = IdentityProtocol.callInviteTranscript(
+            invite.sessionId, invite.fromClientId, invite.fromIdentityId, invite.requestedTo,
+            invite.ephemeralPublicKey, invite.issuedAt, invite.nonce,
+        ) ?: return false
+        val remoteKey = IdentityProtocol.decodeBase64Url(invite.ephemeralPublicKey, 32) ?: return false
+        callSecurityState = CallSecurityState(SecureCallRole.CALLEE, invite, transcript)
+        remotePubKey = remoteKey
+        _currentSessionId = invite.sessionId
+        return true
+    }
+
+    private fun handleIdentityMigrationChallenge(payload: String) {
+        try {
+            val obj = org.json.JSONObject(payload)
+            if (obj.optString("type") != "IDENTITY_MIGRATION_CHALLENGE") return
+            val identity = registrationIdentity ?: IdentitySigningKey.existingIdentity() ?: return
+            val challengeId = obj.optString("challengeId")
+            val challenge = obj.optString("challenge")
+            val requestedClientId = obj.optString("requestedClientId")
+            val expiresAt = obj.optLong("expiresAt", -1)
+            if (obj.optString("identityId") != identity.identityId
+                || !IdentityProtocol.validateRegistrationChallenge(
+                    challengeId, challenge, requestedClientId, identity, expiresAt,
+                    System.currentTimeMillis() / 1000,
+                )) return
+            when (com.securecall.app.security.IdentityMigrationChallengePolicy.decide(
+                isConnected, registerPending, registrationRequestedClientId, requestedClientId,
+            )) {
+                com.securecall.app.security.IdentityMigrationChallengePolicy.Action.REJECT -> return
+                com.securecall.app.security.IdentityMigrationChallengePolicy.Action.RESTART_REGISTRATION -> {
+                    Log.w("WS_SERVICE", "Stale identity migration challenge; requesting a fresh registration")
+                    forceReconnect()
+                }
+                com.securecall.app.security.IdentityMigrationChallengePolicy.Action.SUBMIT -> {
+                    if (!submitIdentityProof(challengeId, challenge, requestedClientId, expiresAt)) {
+                        Log.w("WS_SERVICE", "Identity migration proof send failed; requesting a fresh registration")
+                        forceReconnect()
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            Log.w("WS_SERVICE", "Invalid identity migration challenge")
+        }
     }
 
     // HeartbeatClient owns ALL heartbeat + reconnect logic.
@@ -282,8 +393,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         private const val CHANNEL_ID = "securecall_foreground"
         private const val CHANNEL_INCOMING = "securecall_incoming_call_urgent"
         private const val NOTIFICATION_ID = 1001
-        const val ACTION_FCM_CALL_INVITE = "com.securecall.app.action.FCM_CALL_INVITE"
-        const val EXTRA_FCM_SESSION_ID = "fcm_session_id"
+        const val ACTION_FCM_CALL_INVITE_V2 = "com.securecall.app.action.FCM_CALL_INVITE_V2"
+        const val ACTION_IDENTITY_MIGRATION_CHALLENGE =
+            "com.securecall.app.action.IDENTITY_MIGRATION_CHALLENGE"
+        const val EXTRA_FCM_PAYLOAD = "fcm_authenticated_call_payload"
+        const val EXTRA_IDENTITY_CHALLENGE = "fcm_identity_challenge"
+        private const val REGISTER_TIMEOUT_MS = 15_000L
 
         @JvmStatic
         fun isBackgroundServiceEnabled(context: Context): Boolean {
@@ -318,13 +433,18 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Ensure foreground notification is up — Android 8 ANR if not called within 5s of startForegroundService()
         startForegroundWithNotification()
-        if (intent?.action == ACTION_FCM_CALL_INVITE) {
-            val sessionId = intent.getStringExtra(EXTRA_FCM_SESSION_ID).orEmpty()
-            if (sessionId.isNotEmpty()) {
-                setFcmPendingSession(sessionId)
+        if (intent?.action == ACTION_FCM_CALL_INVITE_V2) {
+            val payload = intent.getStringExtra(EXTRA_FCM_PAYLOAD).orEmpty()
+            val invite = parseVerifiedInvite(payload)
+            if (invite != null && acceptAuthenticatedInvite(invite)) {
+                fcmPendingSessionId = invite.sessionId
+                startIncomingRingtone()
+                Log.d("WS_SERVICE", "Authenticated FCM call wake action accepted")
+            } else {
+                Log.w("WS_SERVICE", "Rejected invalid FCM call wake action")
             }
-            startIncomingRingtone()
-            Log.d("WS_SERVICE", "FCM call wake action handled for session=$sessionId")
+        } else if (intent?.action == ACTION_IDENTITY_MIGRATION_CHALLENGE) {
+            handleIdentityMigrationChallenge(intent.getStringExtra(EXTRA_IDENTITY_CHALLENGE).orEmpty())
         }
         // Ensure the foreground signaling service keeps the CPU alive while it is running.
         acquireCpuWakeLock()
@@ -510,6 +630,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     fun sendBinary(data: ByteArray): Boolean {
         // Fail closed: never send plaintext. If crypto unavailable or encryption fails, drop the frame.
+        if (callSecurityState?.established != true) return false
         val key = sessionKey ?: return false
         if (!com.securecall.crypto.CoreCrypto.isNativeAvailable()) return false
         val encrypted = com.securecall.crypto.CoreCrypto.encrypt(key, data) ?: return false
@@ -548,7 +669,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 _phoneLookupCallback = null
                 callback(null)
             }
-        }, 5000)
+        }, 15_000)
     }
 
     /** Batch-check which phone hashes are registered SecureCall users. Returns hash → (online, clientId). */
@@ -649,11 +770,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         // message. Previously a hardcoded 1.5s timer could fire even if REGISTER
         // was rejected — which caused REGISTER_FCM_TOKEN to race ahead of REGISTER
         // and the "not_registered" server error seen on S10 in the 2026-04-16 logs.
-        scheduleRegisterTimeout()
     }
 
     // Fix CLIENT-CRIT-001 / MED-002 (2026-04-16): ack-driven registration.
-    // We schedule a 5s timeout when we send REGISTER. If the server does not
+    // We schedule a bounded timeout when we send the authenticated registration.
+    // The window includes an FCM round-trip during one-time legacy-ID migration.
     // respond with `REGISTERED` in that window, we treat the connection as
     // broken, clear the pending call queue so invites do not fire against an
     // un-registered socket, and force the HeartbeatClient to reconnect.
@@ -663,23 +784,43 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         registerTimeoutHandler = h
         h.postDelayed({
             if (registerPending && !isRegistered) {
-                Log.w("WS_SERVICE", "REGISTER timeout — no REGISTERED ack in 5s, forcing reconnect")
+                Log.w("WS_SERVICE", "REGISTER timeout — no authenticated ack, forcing reconnect")
                 registerPending = false
                 pendingCallQueue.clear()
                 try { client?.forceReconnect() } catch (_: Exception) {}
             }
-        }, 5000)
+        }, REGISTER_TIMEOUT_MS)
     }
 
     /**
      * Called when the server confirms REGISTER with a {"type":"REGISTERED"} message.
      * This is the only place that flips `isRegistered = true`.
      */
-    private fun onRegisterAck(ackedClientId: String) {
+    private fun onRegisterAck(ackedClientId: String, protocol: Int, ackedIdentityId: String) {
         registerTimeoutHandler?.removeCallbacksAndMessages(null)
         registerTimeoutHandler = null
         registerPending = false
         if (!isConnected) return
+        val identity = registrationIdentity
+        if (protocol != 2 || identity == null || ackedClientId != identity.identityId
+            || ackedIdentityId != identity.identityId) {
+            Log.e("WS_SERVICE", "Rejected invalid authenticated registration acknowledgement")
+            pendingCallQueue.clear()
+            try { client?.forceReconnect() } catch (_: Exception) {}
+            return
+        }
+        val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
+        val previous = prefs.getString("client_id", null)
+        val editor = prefs.edit().putString("client_id", ackedClientId)
+        if (!previous.isNullOrEmpty() && previous != ackedClientId) {
+            editor.putString("legacy_client_id", previous)
+        }
+        if (!editor.commit()) {
+            Log.e("WS_SERVICE", "Unable to persist authenticated local identity")
+            pendingCallQueue.clear()
+            try { client?.forceReconnect() } catch (_: Exception) {}
+            return
+        }
         isRegistered = true
         testerLicenses.cancel()
         pendingEntitlementProof = null
@@ -784,22 +925,61 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     private fun registerClient() {
-        val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
-        var clientId = prefs.getString("client_id", null)
-        if (clientId == null) {
-            clientId = "android-" + java.util.UUID.randomUUID().toString().substring(0, 8)
-            prefs.edit().putString("client_id", clientId).apply()
-            Log.d("WS_SERVICE", "Generated new clientId: $clientId")
+        val identity = IdentitySigningKey.ensureIdentity()
+        if (identity == null) {
+            registerPending = false
+            Log.e("WS_SERVICE", "Authenticated identity key unavailable")
+            _onCallError?.invoke("identity_key_unavailable", "Secure identity key unavailable")
+            return
         }
-        // App signature for fork protection — SHA-256 of signing certificate
-        val appSignature = getAppSignature()
+        registrationIdentity = identity
+        val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
+        val stored = prefs.getString("client_id", null)
+        val requested = if (!canonicalRegistrationRetried
+            && stored?.matches(Regex("^[A-Za-z0-9_-]{1,64}$")) == true) stored else identity.identityId
+        sendIdentityRegistrationBegin(requested)
+    }
+
+    private fun sendIdentityRegistrationBegin(requestedClientId: String) {
+        val identity = registrationIdentity ?: return
+        registrationRequestedClientId = requestedClientId
+        val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
         val json = org.json.JSONObject().apply {
-            put("type", "REGISTER")
-            put("clientId", clientId)
-            put("appSignature", appSignature)
+            put("type", "IDENTITY_REGISTER_BEGIN")
+            put("protocol", 2)
+            put("clientId", requestedClientId)
+            put("identityId", identity.identityId)
+            put("publicKey", identity.publicKey)
+            put("phoneNumber", prefs.getString("confirmed_phone_number", "") ?: "")
+            put("appSignature", getAppSignature())
         }.toString()
-        client?.send(json)
-        Log.d("WS_SERVICE", "REGISTER sent: $clientId")
+        if (client?.send(json) != true) {
+            registerPending = false
+            Log.w("WS_SERVICE", "Authenticated registration request could not be sent")
+            return
+        }
+        scheduleRegisterTimeout()
+        Log.d("WS_SERVICE", "Authenticated registration started")
+    }
+
+    private fun submitIdentityProof(
+        challengeId: String,
+        challenge: String,
+        requestedClientId: String,
+        expiresAt: Long,
+    ): Boolean {
+        val identity = registrationIdentity ?: IdentitySigningKey.existingIdentity() ?: return false
+        if (registrationRequestedClientId != requestedClientId
+            || !IdentityProtocol.validateRegistrationChallenge(
+                challengeId, challenge, requestedClientId, identity, expiresAt,
+                System.currentTimeMillis() / 1000,
+            )) return false
+        val signature = IdentitySigningKey.sign(challenge) ?: return false
+        return client?.send(org.json.JSONObject().apply {
+            put("type", "IDENTITY_REGISTER_COMPLETE")
+            put("challengeId", challengeId)
+            put("signature", signature)
+        }.toString()) == true
     }
 
     /** Returns SHA-256 hex digest of the app's signing certificate. */
@@ -830,6 +1010,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     /** Re-register with the server (e.g. after manual phone number change in Settings). */
     fun reRegister() {
+        canonicalRegistrationRetried = false
         registerClient()
     }
 
@@ -839,6 +1020,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         isConnected = false
         isRegistered = false // BUG-034: reset registration state
         registerPending = false // Allow re-register on next connect
+        registrationRequestedClientId = null
+        canonicalRegistrationRetried = false
         statusCallbackOffline?.invoke()
         com.securecall.app.debug.SecLogManager.logIfEnabled(this, "WS", "Disconnected")
         // HeartbeatClient owns reconnect — do NOT schedule here
@@ -856,6 +1039,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         batchPhoneLookupQueue.suspendAndFailAll()
         isConnected = false
         isRegistered = false // BUG-034: reset registration state on error
+        registrationRequestedClientId = null
+        canonicalRegistrationRetried = false
         pendingCallQueue.clear() // BUG-034: clear queued calls — will re-queue on reconnect
         errorCallback?.invoke(t)
         statusCallbackOffline?.invoke()
@@ -872,16 +1057,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     override fun onBinaryMessage(data: ByteArray) {
-        val key = sessionKey
-        val audioData = if (key != null && com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
-            try {
-                com.securecall.crypto.CoreCrypto.decrypt(key, data)
-            } catch (e: Exception) {
-                Log.w("WS_SERVICE", "E2E decrypt failed, dropping frame", e)
-                return
-            }
-        } else {
-            data
+        if (callSecurityState?.established != true || !com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
+            Log.w("WS_SERVICE", "Dropping media before authenticated key confirmation")
+            return
+        }
+        val key = sessionKey ?: return
+        val audioData = try {
+            com.securecall.crypto.CoreCrypto.decrypt(key, data)
+        } catch (e: Exception) {
+            Log.w("WS_SERVICE", "E2E decrypt failed, dropping frame", e)
+            return
         }
         if (audioData == null || audioData.isEmpty()) return
 
@@ -1138,23 +1323,61 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             return
         }
 
-        var pubKeyB64 = ""
-        if (com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
-            val keypair = com.securecall.crypto.CoreCrypto.generateKeyPair()
-            localPrivKey = keypair.copyOfRange(0, 32)
-            pubKeyB64 = android.util.Base64.encodeToString(keypair.copyOfRange(32, 64), android.util.Base64.NO_WRAP)
-            Log.d("WS_SERVICE", "Generated X25519 keypair for outgoing call")
-        } else {
-            Log.w("WS_SERVICE", "Native crypto unavailable — call will be unencrypted")
+        val identity = IdentitySigningKey.existingIdentity()
+        if (identity == null || getLocalClientId() != identity.identityId
+            || !com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
+            _onCallError?.invoke("secure_session_unavailable", "Authenticated call security is unavailable")
+            return
         }
-        // Include caller's phone number so callee can resolve contact name
+        val keypair = com.securecall.crypto.CoreCrypto.generateKeyPair()
+        if (keypair.size != 64) {
+            _onCallError?.invoke("secure_session_unavailable", "Authenticated call security is unavailable")
+            return
+        }
+        localPrivKey?.fill(0)
+        localPrivKey = keypair.copyOfRange(0, 32)
+        val publicKey = IdentityProtocol.encodeBase64Url(keypair.copyOfRange(32, 64))
+        keypair.fill(0)
+        val sessionId = java.util.UUID.randomUUID().toString()
+        val issuedAt = System.currentTimeMillis() / 1000
+        val nonce = IdentityProtocol.randomNonce()
+        val transcript = IdentityProtocol.callInviteTranscript(
+            sessionId, identity.identityId, identity.identityId, targetId,
+            publicKey, issuedAt, nonce,
+        )
+        val signature = transcript?.let(IdentitySigningKey::sign)
+        val inviteDigest = transcript?.let(IdentityProtocol::transcriptDigest)
+        if (transcript == null || signature == null || inviteDigest == null) {
+            clearSession()
+            _onCallError?.invoke("invalid_call_target", "The selected SecureCall identity is invalid")
+            return
+        }
         val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
-        val callerPhone = prefs.getString("confirmed_phone_number", "") ?: ""
-        val json = """{"type":"CALL_INVITE","to":"$targetId","pubKey":"$pubKeyB64","callerPhone":"$callerPhone"}"""
-        client?.send(json)
+        val callerPhone = (prefs.getString("confirmed_phone_number", "") ?: "").take(64)
+        val invite = VerifiedCallInvite(
+            sessionId, identity.identityId, identity.identityId, targetId, targetId,
+            publicKey, identity.publicKey, issuedAt, nonce, signature, inviteDigest, callerPhone,
+        )
+        callSecurityState = CallSecurityState(SecureCallRole.CALLER, invite, transcript)
+        val sent = client?.send(org.json.JSONObject().apply {
+            put("type", "CALL_INVITE")
+            put("protocol", 2)
+            put("sessionId", sessionId)
+            put("to", targetId)
+            put("ephemeralPublicKey", publicKey)
+            put("issuedAt", issuedAt)
+            put("nonce", nonce)
+            put("signature", signature)
+            put("callerPhone", callerPhone)
+        }.toString()) == true
+        if (!sent) {
+            clearSession()
+            _onCallError?.invoke("not_connected", "Unable to send authenticated call invitation")
+            return
+        }
         // BUG-032: Mark call active during ringing — prevents heartbeat staleness from killing the WS
         client?.setCallActive(true)
-        Log.d("WS_SERVICE", "CALL_INVITE sent to $targetId (callerPhone=$callerPhone, callActive=true)")
+        Log.d("WS_SERVICE", "Authenticated CALL_INVITE sent")
     }
 
     fun sendCallAccept(sessionId: String) {
@@ -1173,20 +1396,90 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             return
         }
 
-        var pubKeyB64 = ""
+        val state = callSecurityState
+        val identity = IdentitySigningKey.existingIdentity()
         val remotePub = remotePubKey
-        if (com.securecall.crypto.CoreCrypto.isNativeAvailable() && remotePub != null) {
-            val keypair = com.securecall.crypto.CoreCrypto.generateKeyPair()
-            localPrivKey = keypair.copyOfRange(0, 32)
-            pubKeyB64 = android.util.Base64.encodeToString(keypair.copyOfRange(32, 64), android.util.Base64.NO_WRAP)
-            sessionKey = com.securecall.crypto.CoreCrypto.deriveSessionKey(localPrivKey, remotePub)
-            Log.d("WS_SERVICE", "E2E session key derived (callee)")
+        if (state?.role != SecureCallRole.CALLEE || state.invite.sessionId != sessionId
+            || identity == null || identity.identityId != getLocalClientId() || remotePub == null
+            || !com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
+            _onCallError?.invoke("invalid_secure_invite", "The authenticated invitation is unavailable")
+            return
         }
-        val json = """{"type":"CALL_ACCEPT","sessionId":"$sessionId","pubKey":"$pubKeyB64"}"""
-        client?.send(json)
-        Log.d("WS_SERVICE", "CALL_ACCEPT sent for session $sessionId")
-        // Callee prepares for WebRTC (will receive offer from caller)
-        startWebRtc(sessionId, isOfferer = false)
+        val keypair = com.securecall.crypto.CoreCrypto.generateKeyPair()
+        if (keypair.size != 64) {
+            _onCallError?.invoke("secure_session_unavailable", "Authenticated call security is unavailable")
+            return
+        }
+        localPrivKey?.fill(0)
+        localPrivKey = keypair.copyOfRange(0, 32)
+        val publicKey = IdentityProtocol.encodeBase64Url(keypair.copyOfRange(32, 64))
+        keypair.fill(0)
+        val issuedAt = System.currentTimeMillis() / 1000
+        val nonce = IdentityProtocol.randomNonce()
+        val acceptTranscript = IdentityProtocol.callAcceptTranscript(
+            sessionId, state.invite.inviteDigest, identity.identityId, identity.identityId,
+            state.invite.fromIdentityId, publicKey, issuedAt, nonce,
+        )
+        val signature = acceptTranscript?.let(IdentitySigningKey::sign)
+        val acceptDigest = acceptTranscript?.let(IdentityProtocol::transcriptDigest)
+        val privateKey = localPrivKey
+        val baseKey = if (privateKey != null) {
+            com.securecall.crypto.CoreCrypto.deriveSessionKey(privateKey, remotePub)
+        } else null
+        val boundKey = if (baseKey != null && acceptTranscript != null) {
+            SessionKeyBinding.bind(baseKey, state.inviteTranscript, acceptTranscript)
+        } else null
+        baseKey?.fill(0)
+        localPrivKey?.fill(0)
+        localPrivKey = null
+        if (acceptTranscript == null || signature == null || acceptDigest == null || boundKey == null) {
+            boundKey?.fill(0)
+            _onCallError?.invoke("secure_session_unavailable", "Authenticated key agreement failed")
+            return
+        }
+        sessionKey?.fill(0)
+        sessionKey = boundKey
+        state.acceptTranscript = acceptTranscript
+        state.accept = VerifiedCallAccept(
+            sessionId, state.invite.inviteDigest, acceptDigest, identity.identityId,
+            identity.identityId, state.invite.fromIdentityId, publicKey,
+            identity.publicKey, issuedAt, nonce, signature,
+        )
+        state.expectedPeerConfirmation = SessionKeyBinding.confirmation(
+            boundKey, sessionId, "caller", state.invite.inviteDigest, acceptDigest,
+        )
+        state.securityCode = SessionKeyBinding.securityCode(
+            boundKey, sessionId, state.invite.inviteDigest, acceptDigest,
+        )
+        val acceptSent = client?.send(org.json.JSONObject().apply {
+            put("type", "CALL_ACCEPT")
+            put("protocol", 2)
+            put("sessionId", sessionId)
+            put("inviteDigest", state.invite.inviteDigest)
+            put("toIdentityId", state.invite.fromIdentityId)
+            put("ephemeralPublicKey", publicKey)
+            put("issuedAt", issuedAt)
+            put("nonce", nonce)
+            put("signature", signature)
+        }.toString()) == true
+        val localConfirmation = SessionKeyBinding.confirmation(
+            boundKey, sessionId, "callee", state.invite.inviteDigest, acceptDigest,
+        )
+        val confirmationSent = acceptSent && localConfirmation != null && client?.send(
+            org.json.JSONObject().apply {
+                put("type", "CALL_KEY_CONFIRM")
+                put("protocol", 2)
+                put("sessionId", sessionId)
+                put("role", "callee")
+                put("confirmation", localConfirmation)
+            }.toString()
+        ) == true
+        state.localConfirmationSent = confirmationSent
+        if (!confirmationSent) {
+            _onCallError?.invoke("secure_session_unavailable", "Authenticated key confirmation failed")
+            return
+        }
+        Log.d("WS_SERVICE", "Authenticated CALL_ACCEPT and key confirmation sent")
     }
 
     @JvmOverloads
@@ -1262,37 +1555,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // ===================== Incoming Message Handling =====================
 
     private fun handleIncomingMessageFull(json: String) {
-        // Key-Exchange
-        try {
-            val parsedKey = com.securecall.app.net.signal.SignalParser.parse(json)
-            if (parsedKey != null) {
-                handleKeyExchange(json)
-                return
-            }
-        } catch (_: Throwable) {}
-
-        // Call-Signaling
-        try {
-            val parsedCall = com.securecall.app.net.signal.CallSignalParser.parse(json)
-            if (parsedCall != null) {
-                val (type, callId) = parsedCall
-                when (type) {
-                    "call-init" -> {
-                        Log.d("WS_SERVICE", "Received call-init: $callId")
-                        com.securecall.app.call.CallController.incomingCall(callId)
-                    }
-                    "call-bye" -> {
-                        Log.d("WS_SERVICE", "Received call-bye: $callId")
-                        com.securecall.app.call.CallController.endCall()
-                    }
-                    else -> {
-                        Log.w("WS_SERVICE", "Unknown call-signal type: $type")
-                    }
-                }
-                return
-            }
-        } catch (_: Throwable) {}
-
         // Emergency Broadcast — only a template_id, no message content
         try {
             val obj = org.json.JSONObject(json)
@@ -1392,44 +1654,130 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         handleGhostAck(json)
     }
 
+    private fun parseVerifiedAccept(obj: org.json.JSONObject): VerifiedCallAccept? {
+        return try {
+            val accept = VerifiedCallAccept(
+                sessionId = obj.optString("sessionId"),
+                inviteDigest = obj.optString("inviteDigest"),
+                acceptDigest = obj.optString("acceptDigest"),
+                fromClientId = obj.optString("from"),
+                fromIdentityId = obj.optString("fromIdentityId"),
+                toIdentityId = obj.optString("toIdentityId"),
+                ephemeralPublicKey = obj.optString("ephemeralPublicKey"),
+                identityPublicKey = obj.optString("identityPublicKey"),
+                issuedAt = obj.optLong("issuedAt", -1),
+                nonce = obj.optString("nonce"),
+                signature = obj.optString("signature"),
+            )
+            accept.takeIf { IdentityProtocol.verifyCallAccept(it, System.currentTimeMillis() / 1000) }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    @Synchronized
+    private fun handleAuthenticatedAccept(accept: VerifiedCallAccept): Boolean {
+        val state = callSecurityState ?: return false
+        val identity = IdentitySigningKey.existingIdentity() ?: return false
+        if (state.role != SecureCallRole.CALLER || state.invite.sessionId != accept.sessionId
+            || state.invite.inviteDigest != accept.inviteDigest
+            || accept.toIdentityId != identity.identityId
+            || (state.invite.requestedTo.startsWith("sc-")
+                && state.invite.requestedTo != accept.fromIdentityId)) return false
+        val acceptTranscript = IdentityProtocol.callAcceptTranscript(
+            accept.sessionId, accept.inviteDigest, accept.fromClientId, accept.fromIdentityId,
+            accept.toIdentityId, accept.ephemeralPublicKey, accept.issuedAt, accept.nonce,
+        ) ?: return false
+        val remoteKey = IdentityProtocol.decodeBase64Url(accept.ephemeralPublicKey, 32) ?: return false
+        val privateKey = localPrivKey ?: return false
+        if (!com.securecall.crypto.CoreCrypto.isNativeAvailable()) return false
+        val baseKey = com.securecall.crypto.CoreCrypto.deriveSessionKey(privateKey, remoteKey) ?: return false
+        val boundKey = SessionKeyBinding.bind(baseKey, state.inviteTranscript, acceptTranscript)
+        baseKey.fill(0)
+        privateKey.fill(0)
+        localPrivKey = null
+        if (boundKey == null) return false
+        sessionKey?.fill(0)
+        sessionKey = boundKey
+        remotePubKey = remoteKey
+        state.accept = accept
+        state.acceptTranscript = acceptTranscript
+        state.expectedPeerConfirmation = SessionKeyBinding.confirmation(
+            boundKey, accept.sessionId, "callee", accept.inviteDigest, accept.acceptDigest,
+        )
+        state.securityCode = SessionKeyBinding.securityCode(
+            boundKey, accept.sessionId, accept.inviteDigest, accept.acceptDigest,
+        )
+        val localConfirmation = SessionKeyBinding.confirmation(
+            boundKey, accept.sessionId, "caller", accept.inviteDigest, accept.acceptDigest,
+        ) ?: return false
+        val sent = client?.send(org.json.JSONObject().apply {
+            put("type", "CALL_KEY_CONFIRM")
+            put("protocol", 2)
+            put("sessionId", accept.sessionId)
+            put("role", "caller")
+            put("confirmation", localConfirmation)
+        }.toString()) == true
+        state.localConfirmationSent = sent
+        return sent
+    }
+
+    @Synchronized
+    private fun handleKeyConfirmation(obj: org.json.JSONObject): Boolean {
+        val state = callSecurityState ?: return false
+        if (state.accept == null) return false
+        val expectedRole = if (state.role == SecureCallRole.CALLER) "callee" else "caller"
+        if (!SessionKeyBinding.acceptsPeerConfirmation(
+                established = state.established,
+                localConfirmationSent = state.localConfirmationSent,
+                protocol = obj.optInt("protocol", -1),
+                expectedSessionId = state.invite.sessionId,
+                receivedSessionId = obj.optString("sessionId"),
+                expectedRole = expectedRole,
+                receivedRole = obj.optString("role"),
+                expectedConfirmation = state.expectedPeerConfirmation,
+                receivedConfirmation = obj.optString("confirmation"),
+            )) return false
+        val code = state.securityCode ?: return false
+        state.peerConfirmed = true
+        state.established = true
+        _onSecureSessionEstablished?.invoke(state.invite.sessionId, code)
+        if (state.role == SecureCallRole.CALLER) {
+            killAllAudio()
+            _onCallAccepted?.invoke(state.invite.sessionId)
+            startWebRtc(state.invite.sessionId, isOfferer = true)
+        } else {
+            startWebRtc(state.invite.sessionId, isOfferer = false)
+        }
+        return true
+    }
+
     private fun handleIncomingMessage(json: String) {
         try {
             val obj = org.json.JSONObject(json)
             when (obj.optString("type")) {
                 "CALL_INVITE" -> {
-                    val sessionId = obj.optString("sessionId", "")
-                    val from = obj.optString("from", "")
-                    val callerPhone = obj.optString("callerPhone", "")
-
-                    // BUG-010: If FCM already delivered this call, suppress duplicate.
-                    // IncomingCallActivity is already ringing — just store the pubKey and session.
-                    if (fcmPendingSessionId == sessionId) {
-                        Log.d("WS_SERVICE", "BUG-010: CALL_INVITE suppressed (FCM already delivered session $sessionId)")
-                        val pubKeyB64 = obj.optString("pubKey", "")
-                        if (pubKeyB64.isNotEmpty()) {
-                            remotePubKey = android.util.Base64.decode(pubKeyB64, android.util.Base64.NO_WRAP)
-                            Log.d("WS_SERVICE", "Stored caller's X25519 public key (from WS after FCM)")
-                        }
-                        _currentSessionId = sessionId
-                        fcmPendingSessionId = null // Clear — WS has taken over
+                    val invite = parseVerifiedInvite(obj.toString())
+                    if (invite == null) {
+                        Log.w("WS_SERVICE", "Rejected invalid authenticated CALL_INVITE")
                         return
                     }
-
-                    // FIX 1: Busy signal — reject if already in active call
-                    if (_currentSessionId != null) {
-                        Log.d("WS_SERVICE", "BUSY: rejecting CALL_INVITE from $from (already in session $_currentSessionId)")
-                        val busyJson = """{"type":"CALL_BUSY","sessionId":"$sessionId","from":"${getLocalClientId() ?: ""}"}"""
+                    if (_currentSessionId != null && _currentSessionId != invite.sessionId) {
+                        Log.d("WS_SERVICE", "BUSY: rejecting authenticated CALL_INVITE")
+                        val busyJson = """{"type":"CALL_BUSY","sessionId":"${invite.sessionId}"}"""
                         client?.send(busyJson)
                         return
                     }
-                    val pubKeyB64 = obj.optString("pubKey", "")
-                    if (pubKeyB64.isNotEmpty()) {
-                        remotePubKey = android.util.Base64.decode(pubKeyB64, android.util.Base64.NO_WRAP)
-                        Log.d("WS_SERVICE", "Stored caller's X25519 public key")
+                    if (!acceptAuthenticatedInvite(invite)) {
+                        Log.w("WS_SERVICE", "Rejected conflicting authenticated CALL_INVITE")
+                        return
                     }
-                    Log.d("WS_SERVICE", "Incoming CALL_INVITE, sessionId=$sessionId, from=$from, callerPhone=$callerPhone")
-                    _currentSessionId = sessionId
-                    _onIncomingCall?.invoke(sessionId, from, callerPhone)
+                    if (fcmPendingSessionId == invite.sessionId) {
+                        fcmPendingSessionId = null
+                        Log.d("WS_SERVICE", "Suppressed duplicate authenticated WS invite after FCM")
+                        return
+                    }
+                    _onIncomingCall?.invoke(invite.sessionId, invite.fromClientId, invite.callerPhone)
                 }
                 "CALL_BUSY" -> {
                     val sessionId = obj.optString("sessionId", "")
@@ -1439,26 +1787,33 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 "CALL_INVITE_ACK" -> {
                     val ok = obj.optBoolean("ok", false)
                     val sessionId = obj.optString("sessionId", "")
-                    Log.d("WS_SERVICE", "CALL_INVITE_ACK ok=$ok, sessionId=$sessionId")
-                    if (ok) _currentSessionId = sessionId
+                    val state = callSecurityState
+                    if (ok && obj.optInt("protocol", -1) == 2
+                        && state?.role == SecureCallRole.CALLER && state.invite.sessionId == sessionId) {
+                        _currentSessionId = sessionId
+                        Log.d("WS_SERVICE", "Authenticated CALL_INVITE acknowledged")
+                    } else {
+                        Log.w("WS_SERVICE", "Rejected invalid CALL_INVITE acknowledgement")
+                    }
                 }
                 "CALL_ACCEPT" -> {
-                    val sessionId = obj.optString("sessionId", "")
-                    val pubKeyB64 = obj.optString("pubKey", "")
-                    if (pubKeyB64.isNotEmpty() && localPrivKey != null && com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
-                        val remotePub = android.util.Base64.decode(pubKeyB64, android.util.Base64.NO_WRAP)
-                        sessionKey = com.securecall.crypto.CoreCrypto.deriveSessionKey(localPrivKey, remotePub)
-                        Log.d("WS_SERVICE", "E2E session key derived (caller)")
+                    val accept = parseVerifiedAccept(obj)
+                    if (accept == null || !handleAuthenticatedAccept(accept)) {
+                        Log.w("WS_SERVICE", "Rejected invalid authenticated CALL_ACCEPT")
+                        _onCallError?.invoke("invalid_call_accept", "Authenticated call acceptance failed")
                     }
-                    Log.d("WS_SERVICE", "Remote accepted call, sessionId=$sessionId")
-                    killAllAudio()
-                    _onCallAccepted?.invoke(sessionId)
-                    // Caller initiates WebRTC P2P
-                    startWebRtc(sessionId, isOfferer = true)
                 }
                 "CALL_ACCEPT_ACK" -> {
-                    Log.d("WS_SERVICE", "CALL_ACCEPT_ACK received")
-                    killAllAudio()
+                    if (obj.optInt("protocol", -1) == 2) {
+                        Log.d("WS_SERVICE", "Authenticated CALL_ACCEPT acknowledged")
+                        killAllAudio()
+                    }
+                }
+                "CALL_KEY_CONFIRM" -> {
+                    if (!handleKeyConfirmation(obj)) {
+                        Log.w("WS_SERVICE", "Rejected invalid key confirmation")
+                        _onCallError?.invoke("invalid_key_confirmation", "Authenticated key confirmation failed")
+                    }
                 }
                 "CALL_END_ACK" -> {
                     Log.d("WS_SERVICE", "CALL_END_ACK received")
@@ -1471,12 +1826,34 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     val sdp = obj.optString("sdp", "")
                     if (sdp.isNotEmpty()) webRtcManager?.onRemoteAnswer(sdp)
                 }
-                "WEBRTC_OFFER_ACK", "WEBRTC_ANSWER_ACK", "ICE_CANDIDATE_ACK" -> {
+                "WEBRTC_OFFER_ACK", "WEBRTC_ANSWER_ACK", "ICE_CANDIDATE_ACK",
+                "CALL_KEY_CONFIRM_ACK" -> {
                     // Server acknowledgments — no action needed
+                }
+                "IDENTITY_REGISTER_CHALLENGE" -> {
+                    val requested = registrationRequestedClientId ?: return
+                    if (!submitIdentityProof(
+                            obj.optString("challengeId"), obj.optString("challenge"),
+                            requested, obj.optLong("expiresAt", -1))) {
+                        Log.w("WS_SERVICE", "Rejected invalid identity registration challenge")
+                    }
+                }
+                "IDENTITY_MIGRATION_PENDING" -> {
+                    Log.d("WS_SERVICE", "Waiting for trusted identity migration challenge")
+                }
+                "IDENTITY_MIGRATION_REQUIRED" -> {
+                    val identity = registrationIdentity ?: return
+                    if (canonicalRegistrationRetried
+                        || obj.optString("canonicalClientId") != identity.identityId) {
+                        Log.w("WS_SERVICE", "Rejected invalid identity migration fallback")
+                        return
+                    }
+                    canonicalRegistrationRetried = true
+                    sendIdentityRegistrationBegin(identity.identityId)
                 }
                 "REGISTERED" -> {
                     val acked = obj.optString("clientId", "")
-                    onRegisterAck(acked)
+                    onRegisterAck(acked, obj.optInt("protocol", -1), obj.optString("identityId", ""))
                     // H-01: inject ICE servers from REGISTERED message (avoids public HTTP endpoint)
                     val iceServers = obj.optJSONArray("iceServers")
                     if (iceServers != null && iceServers.length() > 0) {
@@ -1502,7 +1879,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     // Fix CLIENT-CRIT-001 (2026-04-16): treat unauthorized_client as a hard
                     // failure. Stop retrying after a handful of attempts so a stuck fork
                     // protection state does not drain the battery with a 4s reconnect loop.
-                    if (error == "unauthorized_client") {
+                    if (error == "unauthorized_client" || error.startsWith("identity_")
+                        || error == "invalid_identity_proof") {
                         registerPending = false
                         pendingCallQueue.clear()
                         registerFailCount++
@@ -1600,29 +1978,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 Log.d("WS_SERVICE", "GHOST_ACK received → ghostNetId=$id")
             }
         } catch (_: Exception) {}
-    }
-
-    // PATCH 201: Key-Exchange handling
-    private fun handleKeyExchange(json: String) {
-        try {
-            val parsed = com.securecall.app.net.signal.SignalParser.parse(json) ?: return
-            val (type, remotePub) = parsed
-            when (type) {
-                "key-offer" -> {
-                    Log.d("WS_SERVICE", "Received key-offer → sending key-answer")
-                    val localPub = com.securecall.app.ghostnet.keys.GhostNetKeyMaterial.getLocalPub()
-                    val answer = com.securecall.app.net.signal.KeyAnswer(localPub).toJson()
-                    client?.send(answer)
-                    com.securecall.app.ghostnet.handshake.HandshakeController.acceptIncoming(remotePub)
-                }
-                "key-answer" -> {
-                    Log.d("WS_SERVICE", "Received key-answer → completing handshake")
-                    com.securecall.app.ghostnet.handshake.HandshakeController.startOutgoing(remotePub)
-                }
-            }
-        } catch (t: Throwable) {
-            Log.e("WS_SERVICE", "handleKeyExchange() failed", t)
-        }
     }
 
     // Phase 6: SUBSCRIPTION_VERIFY_ACK handling
