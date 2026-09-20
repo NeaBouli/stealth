@@ -6777,3 +6777,29 @@ Open next:
   closed.
 
 `STX-03 LOCAL GREEN + KIMI APPROVED — STACKED PR/EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 11:26 EEST — CODEX SOL — STX-03 exact-head CI green
+
+- Published the bounded repository correction as stacked
+  [PR #98](https://github.com/NeaBouli/stealth/pull/98), based on the exact verified
+  PR #97 branch. The functional commit is `6254b2a`; the exact verified head after the
+  CI portability correction is `cec300cafee5596abbf2a84248878eb4f139f3fe`.
+- The first hosted run correctly exposed a test-only cross-platform defect: GNU `stat`
+  accepted the macOS-form command but did not return a permission mode. Commit `cec300c`
+  now tries the GNU form first and falls back to macOS. The security implementation and
+  runtime behavior were unchanged. The renderer test and the full signaling suite then
+  passed locally again.
+- Exact-head Basic CI run
+  [35499091700](https://github.com/NeaBouli/stealth/actions/runs/35499091700) passed all
+  four jobs: Android Client, Signaling Tests including private tester staging tools,
+  Rust Core Crypto and Markdown/YAML plus browser privacy/closed-checkout gates. GitHub
+  reports PR #98 `MERGEABLE` with merge state `CLEAN`.
+- CodeRabbit reports success only because reviews are disabled for the stacked base branch;
+  it is not counted as review evidence. The independent Kimi K3 `APPROVE` and Sol review
+  recorded above remain the actual review evidence.
+- STX-03 is fixed at repository/template level but remains open in the audit register until
+  the reviewed stack is integrated and a separately authorized fresh/staging container start
+  verifies both consumers. No production mutation, deployment, restart or secret rotation
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`PR 98 EXACT-HEAD CI GREEN — REPOSITORY FIX READY FOR STACK REVIEW — NO RUNTIME ACTION`
