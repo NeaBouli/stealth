@@ -26,6 +26,7 @@ import com.securecall.app.CallActivity
 import com.securecall.app.R
 import com.securecall.app.data.Contact
 import com.securecall.app.data.ContactRepository
+import com.securecall.app.security.IdentityProtocol
 import com.securecall.app.ui.adapter.ContactAdapter
 
 class DialerFragment : Fragment() {
@@ -205,7 +206,7 @@ class DialerFragment : Fragment() {
 
         if (matches.isNotEmpty()) {
             contactSuggestions.adapter = ContactAdapter(matches, onCallClick = { contact ->
-                if (contact.phoneOrId.startsWith("android-")) {
+                if (IdentityProtocol.isDirectClientId(contact.phoneOrId)) {
                     // Pre-call health check
                     val ws = com.securecall.app.net.WebSocketService.instance
                     if (ws == null || !ws.isConnected) {
@@ -269,7 +270,7 @@ class DialerFragment : Fragment() {
         val normalized = normalizePhone(number)
         val match = allContacts.find { normalizePhone(it.phoneOrId) == normalized }
 
-        if (match != null && match.phoneOrId.startsWith("android-")) {
+        if (match != null && IdentityProtocol.isDirectClientId(match.phoneOrId)) {
             // Pre-call health check
             val ws = com.securecall.app.net.WebSocketService.instance
             if (ws == null || !ws.isConnected) {

@@ -1,6 +1,6 @@
 # SecureCall Ecosystem – Security Design Document
 
-> **Current release boundary (Android 1.0.50):** This document separates current
+> **Current candidate boundary (Android 1.0.50):** This document separates current
 > behavior from research and long-range architecture concepts. The released
 > Android client uses WebRTC with STUN/TURN and application-layer end-to-end encryption.
 > The Google Play edition contains no built-in VPN or WireGuard code. The direct
@@ -29,7 +29,8 @@ It serves as the master reference for developers, auditors, and architects.
 
 3. **Zero-Retention Principle**
    Per-call key material is kept only for the active call and then discarded.
-   Long-term authenticated identity keys are not a current product guarantee.
+   A per-install P-256 identity key is held in Android Keystore and is used to
+   authenticate registration and the ephemeral per-call key exchange.
 
 4. **Defense in Depth**
    Multiple layers protect independently:
@@ -118,9 +119,11 @@ No call audio or per-call private key material sent to the signaling service
 
 Research-only multi-hop relay concept (not part of the current release)
 
-Current limitation: the per-call exchange is not authenticated by a long-term
-identity signature, so an active signaling-server key-substitution attack is not
-yet prevented.
+The per-call X25519 exchange is signed by per-install P-256 identity keys and
+bound to the call transcript. Direct calls to a key-derived canonical `sc-...`
+identity reject signaling-server key substitution. Human-readable aliases,
+custom IDs and phone lookup remain server-resolved; users must verify the
+canonical identity or six-digit security code when target authenticity matters.
 
 3.3 Infrastructure-Adjacent Attackers
 
@@ -170,10 +173,13 @@ The Core Crypto Engine (Rust) provides all security primitives.
 
 4.1 Identity Authentication Status
 
-The current SecureCall call setup does not bind the ephemeral X25519 exchange to
-a long-term authenticated identity signature. Ed25519-backed identity binding,
-verified device migration and hardware-backed identity storage are research
-requirements, not current product guarantees.
+The current candidate creates a non-exportable P-256 identity key in Android
+Keystore. Its canonical `sc-...` identity is the SHA-256 digest of the canonical
+public-key encoding. Registration uses a signed server challenge. Migration from
+a legacy identifier additionally requires a challenge delivered through a
+read-only FCM route snapshot captured before the protocol transition; a legacy
+session cannot create or replace that route. Ephemeral X25519 call keys and both
+endpoint identities are covered by signed call transcripts.
 
 4.2 Session Setup
 
@@ -181,10 +187,11 @@ Each call uses X25519 and HKDF-SHA256 to derive per-call key material. That
 material is used with XChaCha20-Poly1305 for application media frames and is
 discarded when the call ends.
 
-The current release does not implement a Double Ratchet, Noise handshake,
-per-frame key rotation, authenticated identity-key exchange or post-compromise
-security. A malicious signaling service is outside the current cryptographic
-protection boundary.
+The current candidate does not implement a Double Ratchet, Noise handshake,
+per-frame key rotation or post-compromise security. A malicious signaling
+service can deny service and can misresolve a human-readable alias, custom ID or
+phone lookup. It cannot silently substitute keys for a directly addressed
+canonical identity without failing transcript signatures or key confirmation.
 
 4.3 Audio Frame Encryption
 
@@ -468,18 +475,22 @@ The current privacy policy defines what is retained or logged.
 
 7.1 Identity Model
 
-The current app uses a SecureID and per-call X25519 material. It does not yet
-provide a cryptographically authenticated long-term identity-key binding. The
-backend must not be described as knowing no user data; it processes network and
-routing data required to deliver signaling and push events.
+The current candidate uses a key-derived canonical SecureID, a per-install P-256
+identity key and per-call X25519 material. The backend must not be described as
+knowing no user data; it processes network and routing data required to deliver
+signaling and push events. Alias, phone and custom-ID mappings remain part of the
+server trust boundary.
 
 7.2 Registration (pseudonymous)
 
 A client registers as follows:
 
-Registers its SecureID and current delivery/routing data through the documented
-WebSocket protocol. Authentication and identity-key binding remain active audit
-work and are not claimed as complete.
+The client signs a short-lived server challenge with its Android Keystore
+identity key. The server derives the canonical SecureID from the submitted
+public key and persists only verified identity and alias bindings. A legacy
+alias can migrate only after proof delivered through its immutable,
+pre-transition FCM route. Runtime legacy registration cannot alter this proof
+channel; without a snapshot entry migration fails closed.
 
 The registration serves only to:
 
@@ -520,15 +531,18 @@ The server does not store state data longer than technically necessary.
 
 7.5 Key Directory
 
-Long-term authenticated identity-key directory behavior is a future design
-requirement. It is not a guarantee of the current release.
+The identity registry binds canonical `sc-...` IDs to P-256 public keys and
+rejects conflicting key or alias claims. It is not a public transparency log,
+and server-resolved aliases still require user verification of the canonical ID
+or call security code.
 
 7.6 Signaling Security
 
-Signaling is not intended to receive call plaintext. The current release does
-not cryptographically authenticate all signaling content with Ed25519 and does
-not protect against an actively malicious signaling service. Registration and
-key-binding hardening are tracked release blockers.
+Signaling is not intended to receive call plaintext. Registration, call invites,
+call acceptance and ephemeral-key transcripts are authenticated with P-256
+signatures; peers exchange transcript-bound HMAC confirmations before WebRTC
+media starts. SDP, ICE, presence, alias resolution and availability still depend
+on the signaling service and TLS transport.
 
 
 8. Policy Engine & Product Line Profiles (Research Roadmap)
@@ -950,13 +964,13 @@ The current architecture is intended to ensure:
 
 Plaintext never leaves the device.
 
-Call content is protected independently of the signaling transport, subject to
-the current unauthenticated key-exchange limitation.
+Call content is protected independently of the signaling transport after both
+clients verify the signed key transcript and peer key confirmation.
 
 Metadata is minimized to the limit of technical feasibility.
 
 The Android app protects its local cryptographic state within documented
 platform limits. GHOSTOS and additional OS hardening remain research concepts.
 
-The backend is outside the call-plaintext trust boundary, but current signaling
-authentication hardening is still required before a final release claim.
+The backend is outside the call-plaintext trust boundary. It remains trusted for
+availability, metadata processing and non-canonical alias resolution.

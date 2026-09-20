@@ -157,7 +157,7 @@
             <p>SecureCall is designed around four foundational security principles that govern every architectural and implementation decision across the platform.</p>
 
             <ol>
-                <li><strong>End-to-End Encryption</strong> — Application media frames are encrypted on-device using the Rust cryptographic engine. Passive network intermediaries and an honest signaling service do not receive call plaintext. The current key exchange is not bound to an authenticated long-term identity, so an actively malicious signaling service is outside this protection boundary.</li>
+                <li><strong>End-to-End Encryption</strong> — Application media frames are encrypted on-device using the Rust cryptographic engine. A P-256 Android Keystore identity signs registration and both per-call X25519 transcripts. Call plaintext is not sent to signaling.</li>
                 <li><strong>Metadata Minimization</strong> — Collect and store as little metadata as possible. Call routing uses two anonymous IDs and a timestamp. Optional contact discovery sends deterministic SHA-256 hashes of normalized phone numbers; raw names, raw numbers, and full contact lists stay on the device. Hashing does not guarantee anonymity.</li>
                 <li><strong>Content Retention Boundary</strong> — The signaling service is not designed to store call content or audio recordings. Per-call key material is discarded after the call. Limited routing, delivery, entitlement, security, and operational records are handled as described in the privacy policy.</li>
                 <li><strong>Verifiable Transparency</strong> — The client source code and current audit status are publicly inspectable under the StealthX Source-Available License. Researchers can review the implementation, reproduce supported tests, and report discrepancies. Source availability is not itself proof that no defect or backdoor exists. Copying, building, running, distributing, rebranding, hosting, or using SecureCall requires prior written permission from Vendetta Labs.</li>
@@ -181,7 +181,7 @@
                     <tr>
                         <td><strong>Network</strong></td>
                         <td>Passive eavesdropping, man-in-the-middle interception, traffic analysis</td>
-                        <td>XChaCha20-Poly1305 application-frame encryption plus WebRTC/TLS transport. Active signaling-server key substitution remains a documented limitation.</td>
+                        <td>XChaCha20-Poly1305 application-frame encryption, signed key transcripts and WebRTC/TLS transport. Server-resolved alias targeting remains a documented trust boundary.</td>
                     </tr>
                     <tr>
                         <td><strong>Server Operator</strong></td>
@@ -215,7 +215,7 @@
             <div class="section-break">System Architecture</div>
 
             <h2>Architectural Overview</h2>
-            <p>The SecureCall system is composed of the Android client application and the signaling service. Application-frame cryptography is performed by the client's native Rust engine through JNI. The signaling service is not designed to receive call plaintext, but the current unauthenticated key exchange does not protect against an actively malicious signaling service.</p>
+            <p>The SecureCall system is composed of the Android client application and the signaling service. Application-frame cryptography is performed by the client's native Rust engine through JNI. Registration and call-key transcripts are authenticated by a per-install Android Keystore identity; the signaling service is not designed to receive call plaintext.</p>
 
 <pre><code>&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
 &#9474;                 Android App                  &#9474;
@@ -306,7 +306,7 @@
             </table>
 
             <div class="info-box info">
-                <strong>VPN boundary:</strong> The Google Play Free build and direct Pro build do not contain an app-owned VPN service and may follow a trusted device-managed VPN. The separately distributed direct Premium APK may run an optional, locally configured app-only WireGuard tunnel after Android consent. A VPN changes network routing; it does not repair the current unauthenticated identity-key-exchange limitation.
+                <strong>VPN boundary:</strong> The Google Play Free build and direct Pro build do not contain an app-owned VPN service and may follow a trusted device-managed VPN. The separately distributed direct Premium APK may run an optional, locally configured app-only WireGuard tunnel after Android consent. A VPN changes network routing; it does not authenticate aliases or replace canonical-ID/security-code verification.
             </div>
 
             <!-- SECTION 5: ANTI-RECORDING PROTECTION -->

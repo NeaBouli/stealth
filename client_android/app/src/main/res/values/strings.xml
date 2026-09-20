@@ -20,6 +20,7 @@
     <string name="call_start">Call</string>
     <string name="call_end">End Call</string>
     <string name="call_encrypted">End-to-end encrypted</string>
+    <string name="call_security_code">Security code: %1$s %2$s</string>
     <string name="call_unknown_caller">Unknown</string>
 
     <!-- Contacts -->
