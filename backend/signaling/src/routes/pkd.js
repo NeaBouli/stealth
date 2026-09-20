@@ -1,7 +1,15 @@
 "use strict";
 
-function setup(app, { pkd, requireAdmin }) {
-  app.post("/key/register", (req, res) => {
+// STX-08: the modular route enforces the same bounded per-client registration
+// limiter as the inline route in server.js. Callers may inject a compatible
+// middleware (tests); production falls back to the shared env-configured
+// default limiter so both paths share one bounded bucket store.
+const { pkdRegistrationRateLimit } = require("../security/pkd_registration_limiter");
+
+function setup(app, { pkd, requireAdmin, registerRateLimit }) {
+  const limiter = registerRateLimit || pkdRegistrationRateLimit;
+
+  app.post("/key/register", limiter, (req, res) => {
     const { publicKey } = req.body || {};
     if (!publicKey || typeof publicKey !== "string") {
       return res.status(400).json({

@@ -67,6 +67,7 @@ const {
 const { loadWalletMappings } = require("./services/wallet_store");
 const { setupActivationAdminRoutes } = require("./services/activation_admin");
 const { getClientIp, isTrustProxyEnabled }                          = require("./middleware/ip");
+const { pkdRegistrationRateLimit }                                  = require("./security/pkd_registration_limiter");
 const { verifyIfrHolding }                                          = require("./services/ifr");
 const { buildContext, wireWs }                                      = require("./context");
 const statusRoutes                                                  = require("./routes/status");
@@ -244,7 +245,8 @@ app.get("/clients/list", requireAdmin, (req, res) => {
 });
 
 // --- Public Key Directory API (BACKEND-05) ---
-app.post("/key/register", (req, res) => {
+// STX-08: registration is throttled per trusted client IP (bounded limiter).
+app.post("/key/register", pkdRegistrationRateLimit, (req, res) => {
   const { publicKey } = req.body || {};
   if (!publicKey || typeof publicKey !== "string") {
     return res.status(400).json({
