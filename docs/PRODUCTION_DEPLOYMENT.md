@@ -100,7 +100,13 @@ This installs: Node.js 18, PM2, Nginx, Certbot, Coturn, UFW firewall.
 bash deployment/deploy_signaling.sh
 ```
 
-**SAVE THE OUTPUT** — it contains your TURN_PASS and ADMIN_API_KEY.
+The script never prints credential values. On first deploy it writes fresh
+`TURN_PASS` and `ADMIN_API_KEY` values only into
+`/opt/securecall/signaling/.env` (owner-only, mode `0600`); on later runs it
+preserves the existing file and only re-enforces the permissions. Transfer
+both values into your encrypted password manager through your restricted
+operator workflow — do not print, log, or retain them in terminal output,
+screenshots, or tickets.
 
 Verify:
 ```bash
@@ -253,9 +259,15 @@ the Docker backup script intentionally excludes `deploy/secrets/turn_secret`.
 
 ## Credential Storage
 
-> **WARNING**: Never commit credentials to git!
+> **WARNING**: Never commit credentials to git, and never print them to
+> terminal, provisioner, or CI output.
 
-Store securely in a password manager:
+`deployment/deploy_signaling.sh` never emits credential values: fresh
+`TURN_PASS` / `ADMIN_API_KEY` values exist only in
+`/opt/securecall/signaling/.env` (mode `0600`, owner-only). Read them from
+that restricted file only inside your operator workflow and store them in an
+encrypted password manager; keep every backup encrypted and
+access-controlled.
 
 | Credential | Location | Purpose |
 |------------|----------|---------|

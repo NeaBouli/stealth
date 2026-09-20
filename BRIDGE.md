@@ -7009,3 +7009,141 @@ Open next:
   action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
 
 `PR 99 HOSTED CI GREEN — STX-08 READY FOR STACK REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 13:04 EEST — CODEX SOL — STX-10 deploy secret-output hardening started
+
+- **Ticket:** `STEALTHX-STX10-DEPLOY-SECRET-OUTPUT-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** SECURITY / FIX / TEST;
+  **Status:** In Progress; **Risk:** Medium because the legacy PM2 deployment script prints
+  generated TURN and admin credentials to terminal/provisioner output.
+- **Branch:** `fix/securecall-deploy-secret-output-20260920`, isolated from the canonical
+  checkout and stacked on exact green PR #99 head
+  `bc533c2590ebbfe71888b0073b19dff6ab3f5df2`.
+- **Current evidence:** `deployment/deploy_signaling.sh` generates credentials before checking
+  whether `.env` already exists, writes new values only on first setup, but always prints the
+  generated values. Existing installations therefore expose newly generated, non-effective
+  values as well as leaking secret material into output. The production runbook explicitly asks
+  operators to retain that output.
+- **Authorized repository-only scope:** generate credentials only when creating `.env`; create
+  that file with owner-only permissions; never print secret values; print only the restricted
+  file path and safe custody guidance; update the matching runbook; add a deterministic static
+  guard limited to `deployment/*.sh`; wire it into Basic CI.
+- **Agent split:** Kimi K3 owns the bounded script/docs/guard implementation and focused local
+  checks. Sol owns secret-flow design, full diff review, negative-control verification,
+  integration checks, commit/push/stacked PR and final status. Claude Code remains available but
+  is not assigned overlapping files.
+- **Acceptance gates:** Bash syntax passes; first-create and preserve-existing branches never
+  print credential values; `.env` creation is mode `0600`; a synthetic unsafe output statement
+  makes the guard fail; current deployment scripts pass; documentation no longer asks operators
+  to save credential-bearing output; diff and credential scans pass; hosted exact-head CI passes.
+- **Explicit exclusions:** do not execute the deployment script against a host; no runtime,
+  server, service, credential rotation, production-data, Play, payment/provider, artifact or
+  sales action. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-10 IN PROGRESS — KIMI IMPLEMENTATION / SOL SECURITY REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 13:13 EEST — KIMI K3 — STX-10 deploy secret-output hardening implemented
+
+- **Files:** `deployment/deploy_signaling.sh` (credentials now generated only
+  inside the first-create `.env` branch; `.env` forced to mode `0600` in both
+  branches; all credential-value output removed and replaced with a path-only
+  message plus encrypted/restricted custody guidance), new guard
+  `deployment/check_deploy_secret_output.sh` (deterministic scan limited to
+  `deployment/*.sh` for echo/printf expansion of secret-bearing variable
+  names, path:line-only findings, synthetic unsafe negative control, static
+  assertions for `chmod 600` `.env` handling and no stale save-output
+  instruction), `docs/PRODUCTION_DEPLOYMENT.md` (Step 2 and Credential
+  Storage sections no longer ask operators to save credential-bearing
+  output), `.github/workflows/ci-basic.yml` (guard wired into the Basic CI
+  lint job). Legacy bare-metal path preserved; no modernization beyond the
+  ticket scope.
+- **Checks (all local, real results):** `bash -n` on all five
+  `deployment/*.sh` PASS; guard run PASS (exit 0, negative control detected
+  without reproducing the unsafe line); live-fire negative control PASS
+  (temporary unsafe `deployment/*.sh` file made the guard fail with exit 1,
+  findings printed path:line only, file removed); PyYAML parse of
+  `ci-basic.yml` PASS with the guard step present in the lint job (yamllint
+  is not installed locally — hosted CI runs it); runbook structure check
+  PASS (26 balanced fences, stale instruction absent, new guidance present);
+  `git diff --check` PASS; bounded credential-pattern scan of the diff found
+  no credential material; stale-instruction grep over `deployment/` and the
+  runbook found nothing.
+- **Residual risks:** the guard is a textual regex gate — obfuscated output
+  (indirection via intermediate variables) is out of scope and remains a
+  review responsibility; hosted exact-head CI, full diff review and the
+  release decision stay with Codex Sol.
+- **No-runtime statement:** the deployment script was never executed against
+  a host; no server, credential rotation, production-data, Play,
+  payment/provider, artifact or sales action occurred.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-10 IMPLEMENTED LOCALLY — SOL REVIEW / COMMIT / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 13:16 EEST — CODEX SOL — STX-10 integration review corrections
+
+- Sol reviewed the complete script, guard, runbook and CI diff. The bounded Kimi implementation
+  correctly removes credential output, avoids needless generation on existing installations and
+  preserves the legacy PM2 flow.
+- Sol corrected a creation-time permission gap: post-write `chmod 600` alone allowed a brief
+  default-umask window. New `.env` files are now opened inside a subshell with `umask 077`, then
+  explicitly kept at mode `0600`; existing files are also forced to `0600` without reading or
+  printing their values.
+- Sol made the guard fail closed on unreadable files or scan errors. Its synthetic unsafe control
+  must now return the exact finding status, and the static checks require both restrictive
+  creation and final mode enforcement. The new guard file is ASCII-only.
+- **Checks after correction:** Bash syntax for all `deployment/*.sh` passed; the guard and its
+  built-in unsafe negative control passed; PyYAML parsed Basic CI and confirmed the lint-job
+  wiring; `git diff --check` passed; bounded stale-instruction/output scans found no unsafe
+  deployment output outside the guard's quoted synthetic fixture.
+- No application runtime is changed by this repository-only block, so the signaling/Android
+  suites are not claimed as local evidence; exact-head hosted CI remains required. No host,
+  deployment, service, credential rotation, production-data, Play, payment/provider, artifact or
+  sales action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-10 SOL REVIEW CORRECTED — FINAL KIMI REVIEW / COMMIT / HOSTED CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 13:25 EEST — KIMI K3 / CODEX SOL — STX-10 final review approved
+
+- Kimi completed an independent read-only review of the exact five-file final diff and returned
+  `APPROVE`; the working tree was unchanged by the review. No Critical, High or Medium finding
+  remains in this block.
+- **Verified behavior:** credentials are generated only while creating a missing `.env`; creation
+  occurs under `umask 077` and mode `0600` is enforced for both new and existing files; no secret
+  value or newly generated non-effective value reaches stdout/stderr; the legacy PM2 deployment
+  flow otherwise remains intact.
+- **Guard and documentation:** the deployment guard fails closed on unreadable files and scan
+  errors, detects both historical unsafe output shapes, proves a synthetic unsafe control using
+  path-and-line-only findings, and excludes only its documented self-file. The runbook contains
+  path-only encrypted-custody guidance and no stale instruction to retain credential output.
+- **Independent checks:** Bash syntax passed for all five `deployment/*.sh` files; the guard
+  passed with exit `0`; Basic CI parsed structurally and contains the guard after checkout in the
+  lint job; `git diff --check` passed; the bounded added-line secret scan found no credential
+  material. Two scan hits were reviewed as benign: a documented commit SHA and the guard's own
+  regular-expression definition.
+- **Accepted residuals:** the guard is intentionally textual and cannot replace review for
+  indirection, lowercase variable names or deliberately unusual output expressions. Hosted
+  exact-head CI is still required, and no deployment script was run against a host.
+- No runtime, deployment, restart, production-data, credential rotation, Play, payment/provider,
+  artifact or sales action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales
+  remain closed.
+
+`STX-10 APPROVED LOCALLY — COMMIT / STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 13:35 EEST — CODEX SOL — STX-10 stacked PR and hosted CI green
+
+- Published implementation commit `3e717bb4e47e187091d5cb422281fb3ff1146ab5` as stacked
+  [PR #100](https://github.com/NeaBouli/stealth/pull/100), based on the exact green PR #99
+  branch `fix/securecall-pkd-bounds-20260920`. GitHub reports the PR mergeable.
+- Hosted Basic CI run
+  [35505130750](https://github.com/NeaBouli/stealth/actions/runs/35505130750) passed all
+  four jobs: Markdown/YAML plus privacy and deployment-secret guards, Signaling Tests including
+  private tester staging tools, Rust Core Crypto, and the complete Android Client verification.
+- The new deployment guard ran successfully in hosted CI. Independent Kimi review remains
+  `APPROVE`, and Sol repeated Bash syntax, guard/negative-control, YAML structure, diff and
+  redacted secret-pattern checks locally before publication.
+- STX-10 remains open in audit umbrella issue #84 until the reviewed dependency stack is
+  integrated. This append records evidence only; no runtime, deployment, restart,
+  production-data, credential rotation, Play, payment/provider, artifact or sales action
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`PR 100 HOSTED CI GREEN — STX-10 READY FOR STACK REVIEW — NO RUNTIME ACTION`
