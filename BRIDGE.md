@@ -6989,3 +6989,23 @@ Open next:
   `FINANCE_READY=NO`; checkout and sales remain closed.
 
 `STX-08 APPROVED LOCALLY — STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 12:42 EEST — CODEX SOL — STX-08 stacked PR and hosted CI green
+
+- Published commit `24f323ca8668c67512fa2ed4a1729476f6db265f` as stacked
+  [PR #99](https://github.com/NeaBouli/stealth/pull/99), based on the reviewed PR #98
+  branch `fix/securecall-turn-secret-template-20260920`. GitHub reports the PR `MERGEABLE`
+  with merge state `CLEAN`.
+- Hosted Basic CI run
+  [35502674817](https://github.com/NeaBouli/stealth/actions/runs/35502674817) passed all
+  four jobs: Android Client, Signaling Tests including the new bounded-PKD regression, Rust Core
+  Crypto, and Markdown/YAML plus privacy/closed-checkout gates. CodeRabbit reports success only
+  because reviews are disabled for the stacked base branch; it is not counted as review evidence.
+- Independent review evidence remains Kimi K3's final read-only `APPROVE`, plus Sol's line review
+  and two complete local signaling-suite passes. The implementation now has local and hosted
+  verification without a runtime mutation.
+- STX-08 remains open in audit umbrella issue #84 until the dependency stack is reviewed and
+  integrated. No deployment, restart, production-data, Play, payment/provider, artifact or sales
+  action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`PR 99 HOSTED CI GREEN — STX-08 READY FOR STACK REVIEW — NO RUNTIME ACTION`
