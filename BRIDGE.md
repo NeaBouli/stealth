@@ -7248,3 +7248,31 @@ Open next:
   remain closed.
 
 `PR 101 HOSTED CI GREEN — STX-14 READY FOR STACK REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 15:54 EEST — KIMI K3 / CODEX SOL — Audit/release stack integration review complete
+
+- **Ticket:** `STEALTHX-STACK-INTEGRATION-REVIEW-20260920`; **Scope:** read-only ancestry,
+  patch-equivalence, final-tree, CI and merge-order review for PRs #82, #90-#101. No merge,
+  retarget, branch deletion, deployment or runtime action was performed.
+- **Verdict:** `READY_TO_INTEGRATE` subject to normal review and controlled sequential merging.
+  Exact tip `495e11359e07e0768b0a6a58fcff4464493c3848` is 41 commits ahead and zero behind
+  `origin/main`; GitHub reports PRs #82, #90 and #94-#101 mergeable. All ten exact heads have
+  successful Basic CI for Android Client, Signaling Tests, Rust Core Crypto and lint/guards.
+- **Parallel PR reconciliation:** #96 deliberately re-applies the implementation content of #89,
+  #91, #92 and #93 on the newer stack base. Patch/content comparison found no lost fix, revert,
+  duplicate patch or conflicting overwrite. Those four PRs must be closed as superseded and not
+  merged separately; their audit trace remains in issue #84 and the retained branches.
+- **Required sequence:** regular merges only, in order #82 -> #90 -> #94 -> #95 -> #96 -> #97
+  -> #98 -> #99 -> #100 -> #101, checking the unique diff after each base retarget. After the
+  final merge, `origin/main` must have an empty tree diff against the reviewed final tip, followed
+  by the complete signaling, website-contract, Rust, Android flavor/policy and artifact checks.
+- **Independent review:** Kimi K3 inspected the complete public, secret-free stack read-only and
+  returned `READY_TO_INTEGRATE`; Sol independently verified current GitHub heads, mergeability and
+  exact-head CI, including the previously ambiguous #94 and #96 checks. No credential, private
+  data, server or provider access was delegated.
+- **Residual gates:** normal approving review remains required; stale post-merge status documents
+  must be refreshed; removed historical TURN credential material still requires separately
+  authorized runtime rotation before deployment; live status/privacy/TLS checks and two-device
+  E2E remain later gates. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STACK REVIEW COMPLETE — READY TO INTEGRATE AFTER EXPLICIT MERGE AUTHORIZATION — NO RUNTIME ACTION`
