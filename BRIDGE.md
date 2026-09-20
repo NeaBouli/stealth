@@ -7147,3 +7147,132 @@ Open next:
   occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
 
 `PR 100 HOSTED CI GREEN — STX-10 READY FOR STACK REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 14:30 EEST — CODEX SOL — STX-14 centralized admin-auth block started
+
+- **Ticket:** `STEALTHX-STX14-ADMIN-AUTH-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** SECURITY / AUTH / TEST;
+  **Status:** In Progress; **Risk:** High because the block changes the shared authorization
+  boundary for administrative and payment-adjacent diagnostic routes.
+- **Branch:** `fix/securecall-admin-auth-20260920`, isolated and stacked on exact green PR #100
+  head `2dbc741de68e69e5c9c2c46e5ef203b313190cb0`.
+- **Verified current defect:** the active server and modular context use duplicate direct-string
+  admin-key comparisons; `/api/subscription/:clientId` and `/stripe/test-email` reimplement the
+  check inline with divergent status behavior, and the latter is not fail-closed when both the
+  configured key and request header are absent. No shared failed-attempt throttle protects the
+  admin boundary.
+- **Owner-authorized repository-only scope:** centralize all listed routes on one timing-safe,
+  fail-closed middleware; reject non-string headers; apply a bounded per-client fixed-window
+  failed-auth limiter; preserve successful route payloads and business logic; add deterministic
+  unit/wiring regressions; run focused and complete signaling suites plus hosted exact-head CI.
+- **Agent split:** Kimi K3 may implement the bounded secret-free repository changes and run local
+  tests. Codex Sol retains architecture, secret handling, full diff/security review, integration,
+  commit/push/PR and all external actions. Claude Code is reserved for a distinct small helper
+  only if one emerges; it will not edit overlapping files.
+- **Data boundary:** only public repository code and synthetic test data may be delegated. No
+  password, API key, private key, token, customer data, production configuration or server access
+  is provided to any delegated agent despite the owner's broad operational request.
+- **Acceptance gates:** disabled admin API returns `403`; missing/wrong/malformed credentials
+  return a stable `401`; repeated failures receive bounded `429` handling without unbounded map
+  growth; a correct credential invokes `next`; all active admin routes use the same middleware;
+  Stripe test-mail wiring is verified without sending mail; no provider or payment call occurs;
+  full signaling and hosted CI remain green.
+- **Explicit non-goals:** no server/runtime/deployment/restart, no credential inspection or
+  rotation, no real email, checkout, webhook, Play, payment/provider, artifact or sales action.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-14 IN PROGRESS — KIMI IMPLEMENTATION / SOL SECURITY REVIEW — REPOSITORY ONLY`
+
+## 2026-09-20 14:53 EEST — KIMI K3 / CODEX SOL — STX-14 implementation reviewed and verified
+
+- **Status:** Local implementation approved; commit, stacked PR and exact-head hosted CI remain.
+  The shared `makeRequireAdmin` boundary now pre-hashes the configured credential and compares
+  fixed-size SHA-256 digests with `crypto.timingSafeEqual`. Missing configuration fails closed
+  with `403`; malformed, missing and wrong credentials receive stable `401` responses; bounded
+  repeated failures receive `429` plus `Retry-After`.
+- **Limiter:** failed attempts are keyed by a digest of the resolved client IP, use a monotonic
+  fixed window, enforce `bucketTtlMs >= windowMs`, prune stale entries, and keep a hard bucket
+  cap. Valid credentials are evaluated before the failure limiter so an attacker cannot lock an
+  administrator out by exhausting the same IP bucket. Only aggregate bucket/failure counts are
+  exposed; no credential, digest or raw IP is logged.
+- **Route integration:** the active server creates one shared middleware instance and uses it for
+  all in-file admin routes, `/api/subscription/:clientId`, activation administration, custom-ID
+  administration and Stripe setup. `/stripe/test-email` no longer performs a divergent direct
+  comparison; Stripe route setup fails closed before registration if the shared middleware is
+  absent. No payment, webhook or email business behavior was changed.
+- **Tests added:** `backend/signaling/src/__tests__/admin_auth.test.js` covers constant-time
+  matching, disabled/malformed/wrong credentials, exact throttle boundaries and retry guidance,
+  successful-key bypass of a saturated failure bucket, independent client budgets, TTL pruning,
+  backwards/non-finite clocks, hard bucket bounds, strict configuration clamping, source wiring,
+  and Stripe's missing-middleware fail-closed behavior using synthetic data only. The test is
+  wired into the normal signaling suite.
+- **Independent review:** Kimi K3 reviewed only the five public, secret-free task files in
+  read-only mode and returned `APPROVE`. No Critical, High or Medium finding remains. Accepted
+  low residuals are the documented bounded-map eviction trade-off under a very large distributed
+  source-IP spray, an existing admin-only test-email HTML/error-sanitization opportunity, and the
+  operational dependence on the documented one-trusted-proxy IP contract. No secret, server,
+  environment file, customer data or provider was exposed to the reviewer.
+- **Real verification:** `node src/__tests__/admin_auth.test.js` passed; `npm test` passed the
+  complete signaling chain including tester licenses, authenticated calls, TURN rendering,
+  identity registration/migration, startup, status, WebSocket handlers, subscriptions,
+  activations, email mocks, IFR checkout proof, Stripe, custom IDs, VLABS export/fulfillment,
+  Google Play Billing/RTDN, entitlements and PKD bounds; `node --check` passed for all four
+  changed JavaScript files; `git diff --check` passed; the final active-path scan found no direct
+  admin-key comparison outside the centralized middleware.
+- **Changed:** `backend/signaling/src/middleware/admin.js`, `backend/signaling/src/server.js`,
+  `backend/signaling/src/payments/stripe_handler.js`, new
+  `backend/signaling/src/__tests__/admin_auth.test.js`, `backend/signaling/package.json`, and this
+  append-only Bridge entry. No dependency or lockfile changed.
+- **No-runtime statement:** no server/runtime/deployment/restart, credential inspection or
+  rotation, real email, checkout, webhook, Play, payment/provider, artifact or sales action
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-14 APPROVED LOCALLY — COMMIT / STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 15:03 EEST — CODEX SOL — STX-14 stacked PR and hosted CI green
+
+- Published implementation commit `2d743041ec922b7b63248dd0d67e6e27d96cb359` as stacked
+  [PR #101](https://github.com/NeaBouli/stealth/pull/101), based on the exact green PR #100
+  branch `fix/securecall-deploy-secret-output-20260920`.
+- Hosted Basic CI run
+  [35509140597](https://github.com/NeaBouli/stealth/actions/runs/35509140597) passed all four
+  jobs: Markdown/YAML with privacy and deployment guards, the complete Signaling Tests including
+  private tester staging tools and the new admin-auth regressions, Rust Core Crypto, and the full
+  Android Client verification.
+- The exact published diff retains Kimi K3's independent `APPROVE` verdict and Sol's local full
+  signaling-suite pass. GitHub reports the stacked PR mergeable; STX-14 remains open in audit
+  umbrella issue #84 until the dependency stack is reviewed and integrated.
+- This append records repository and CI evidence only. No runtime, deployment, restart,
+  credential inspection or rotation, real email, checkout, webhook, Play, payment/provider,
+  artifact or sales action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales
+  remain closed.
+
+`PR 101 HOSTED CI GREEN — STX-14 READY FOR STACK REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 15:54 EEST — KIMI K3 / CODEX SOL — Audit/release stack integration review complete
+
+- **Ticket:** `STEALTHX-STACK-INTEGRATION-REVIEW-20260920`; **Scope:** read-only ancestry,
+  patch-equivalence, final-tree, CI and merge-order review for PRs #82, #90-#101. No merge,
+  retarget, branch deletion, deployment or runtime action was performed.
+- **Verdict:** `READY_TO_INTEGRATE` subject to normal review and controlled sequential merging.
+  Exact tip `495e11359e07e0768b0a6a58fcff4464493c3848` is 41 commits ahead and zero behind
+  `origin/main`; GitHub reports PRs #82, #90 and #94-#101 mergeable. All ten exact heads have
+  successful Basic CI for Android Client, Signaling Tests, Rust Core Crypto and lint/guards.
+- **Parallel PR reconciliation:** #96 deliberately re-applies the implementation content of #89,
+  #91, #92 and #93 on the newer stack base. Patch/content comparison found no lost fix, revert,
+  duplicate patch or conflicting overwrite. Those four PRs must be closed as superseded and not
+  merged separately; their audit trace remains in issue #84 and the retained branches.
+- **Required sequence:** regular merges only, in order #82 -> #90 -> #94 -> #95 -> #96 -> #97
+  -> #98 -> #99 -> #100 -> #101, checking the unique diff after each base retarget. After the
+  final merge, `origin/main` must have an empty tree diff against the reviewed final tip, followed
+  by the complete signaling, website-contract, Rust, Android flavor/policy and artifact checks.
+- **Independent review:** Kimi K3 inspected the complete public, secret-free stack read-only and
+  returned `READY_TO_INTEGRATE`; Sol independently verified current GitHub heads, mergeability and
+  exact-head CI, including the previously ambiguous #94 and #96 checks. No credential, private
+  data, server or provider access was delegated.
+- **Residual gates:** normal approving review remains required; stale post-merge status documents
+  must be refreshed; removed historical TURN credential material still requires separately
+  authorized runtime rotation before deployment; live status/privacy/TLS checks and two-device
+  E2E remain later gates. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STACK REVIEW COMPLETE — READY TO INTEGRATE AFTER EXPLICIT MERGE AUTHORIZATION — NO RUNTIME ACTION`
