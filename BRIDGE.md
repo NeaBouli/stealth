@@ -6670,3 +6670,25 @@ Open next:
   `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
 
 `PR 97 BASIC CI GREEN — API-24 FIX LOCAL+DEVICE GREEN — HOSTED MATRIX RERUN NEXT`
+
+## 2026-09-20 06:45 EEST — CODEX SOL — PR #97 API-24 root cause isolated and fixed
+
+- Correction to the preceding provisional diagnosis: API-24 `KeyInfo` was complete and valid.
+  The actual incompatibility was `AlgorithmParameters.getInstance("EC")`, which is unavailable
+  on the API-24 image and caused both P-256 checks to fail closed despite a valid key.
+- Diagnostic commit `e459b65` made the failure observable without exposing key material. Hosted
+  run `35486820761` then passed 26/26 tests on API 36 and 25/26 on API 24; the sole API-24 failure
+  showed a non-exportable 256-bit EC signing key with generated origin, sign-only purpose,
+  SHA-256 digest and successful ECDSA sign/verify.
+- Replaced the provider-dependent lookup with one shared comparison against the published NIST
+  P-256 domain parameters. Both Android-Keystore validation and imported-public-key validation use
+  the same implementation; a new P-384 regression assertion proves non-P-256 rejection remains
+  fail-closed.
+- Focused verification PASS: Free unit tests plus app/test APK assembly (88 tasks) and the exact
+  identity instrumentation test on a local Android-7/API-24 emulator. A subsequent full local run
+  passed the identity test and then the local emulator OS crashed during a later unrelated UI test;
+  therefore only a fresh hosted 26-test API-24/API-36 matrix will close this gate.
+- No production, deployment, Play, payment/provider, private-data, artifact-publication or sales
+  action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`API-24 ROOT CAUSE FIXED LOCALLY — EXACT-HEAD CI/MATRIX NEXT — SALES CLOSED`
