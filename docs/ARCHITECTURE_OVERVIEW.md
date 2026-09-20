@@ -26,12 +26,16 @@ distributed or sold as current SecureCall functionality.
 ## 3. Current Trust Boundary
 
 - X25519 and HKDF-SHA256 derive per-call key material.
+- A per-install P-256 Android Keystore identity signs registration and both
+  sides of the ephemeral X25519 exchange.
+- Transcript-bound HMAC confirmation must succeed before WebRTC media starts;
+  both clients display the same six-digit verification code.
 - XChaCha20-Poly1305 protects application media frames in the Rust crypto path.
 - Per-call material is discarded after the call.
-- SecureCall does not currently implement a Double Ratchet, authenticated long-term identity-key
-  binding or post-compromise security.
-- The signaling service is not designed to receive call plaintext, but an actively malicious
-  signaling service remains outside the current cryptographic protection boundary.
+- SecureCall does not implement a Double Ratchet or post-compromise security.
+- Direct canonical `sc-...` identities are key-derived. Human-readable aliases,
+  custom IDs and phone lookup remain server-resolved and require canonical-ID or
+  security-code verification when target authenticity matters.
 - The service and network providers process the operational metadata documented in the privacy
   policy; SecureCall must not be described as zero-metadata or zero-knowledge.
 
@@ -61,6 +65,6 @@ provider may forward encrypted media packets but is not given the per-call priva
 
 ## 6. Research Roadmap
 
-GHOSTOS, multi-hop relays, QUIC, SilentCarrier, authenticated identity-key binding and alternative
+GHOSTOS, multi-hop relays, QUIC, SilentCarrier, a public identity transparency layer and alternative
 federated signaling are research or future work. They require separate architecture, security,
 compatibility and release review before any product claim.

@@ -12,6 +12,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.securecall.app.notifications.IncomingCallNotifications
+import com.securecall.app.security.IdentityProtocol
 import com.securecall.app.ui.EdgeToEdgeHelper
 
 class IncomingCallActivity : AppCompatActivity() {
@@ -150,7 +151,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
         // Show SecureCall ID if it's a registered user
         val secureIdLabel = findViewById<TextView>(R.id.incomingCallerSecureId)
-        if (callerClientId.startsWith("android-")) {
+        if (IdentityProtocol.isDirectClientId(callerClientId)) {
             secureIdLabel.text = "Secure ID: $callerClientId"
             secureIdLabel.visibility = android.view.View.VISIBLE
         }
