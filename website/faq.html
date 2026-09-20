@@ -193,7 +193,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        Call audio is protected between the clients and is not sent to the signaling service. The service does process connection metadata and relays public key material required to establish a call; current identity and key-binding hardening is tracked publicly before release.
+                        Call audio is protected between the clients and is not sent to the signaling service. A P-256 Android Keystore identity authenticates registration and the per-call X25519 exchange. The service still processes connection metadata, public keys and routing data. Alias, custom-ID and phone lookup remain server-resolved.
                     </div>
                 </div>
             </div>
@@ -293,7 +293,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        <strong>XChaCha20-Poly1305</strong> for application-frame encryption, <strong>X25519</strong> for key exchange, and <strong>HKDF-SHA256</strong> for per-call key derivation. Key material is discarded when the call ends. SecureCall does not implement a Double Ratchet, authenticated identity-key exchange, or post-compromise security. See our <a href="security.html">Security Architecture</a> page for details.
+                        <strong>XChaCha20-Poly1305</strong> for application-frame encryption, <strong>X25519</strong> for key exchange, <strong>HKDF-SHA256</strong> for per-call key derivation and <strong>P-256</strong> signatures for identity authentication. Key material is discarded when the call ends. SecureCall does not implement a Double Ratchet or post-compromise security. See our <a href="security.html">Security Architecture</a> page for details.
                     </div>
                 </div>
             </div>

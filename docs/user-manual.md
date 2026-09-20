@@ -12,7 +12,7 @@ SecureCall is an end-to-end encrypted voice call app built for people who need c
 
 ## How It Works
 
-When you make a call, SecureCall derives per-call key material with X25519 and HKDF-SHA256 and protects application media frames with XChaCha20-Poly1305. The signaling service coordinates connection setup and processes SecureIDs, public key material and routing/delivery metadata; call audio is not sent to that service. WebRTC uses a direct route when available and otherwise may use a TURN relay. The current exchange is not authenticated by a long-term identity signature, so an actively malicious signaling service remains outside the protection boundary.
+When you make a call, SecureCall derives per-call key material with X25519 and HKDF-SHA256 and protects application media frames with XChaCha20-Poly1305. A per-install P-256 identity key in Android Keystore signs registration and the ephemeral key exchange. Media starts only after both clients verify a transcript-bound confirmation, and both show the same six-digit security code. The signaling service coordinates connection setup and processes SecureIDs, public key material and routing/delivery metadata; call audio is not sent to that service. WebRTC uses a direct route when available and otherwise may use a TURN relay. Human-readable aliases, custom IDs and phone lookups remain server-resolved, so compare the canonical SecureID or security code when target authenticity matters. SecureCall does not implement a Double Ratchet or post-compromise security.
 
 Your SecureCall ID is your identity on the network. It is randomly generated on your device and never tied to your phone number, email, or real name.
 

@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.ContactsContract
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.securecall.app.security.IdentityProtocol
 
 /**
  * Resolves phone numbers to contact names using the Android system phone book.
@@ -84,12 +85,12 @@ object PhoneBookResolver {
             && contactByClientId.name != clientId) return contactByClientId.name
 
         // 2b. By SecureID in secureId field (contact saved by phone, secureId linked later)
-        if (clientId.startsWith("android-")) {
+        if (IdentityProtocol.isDirectClientId(clientId)) {
             val contactBySecureId = contacts.find { it.secureId == clientId }
             if (contactBySecureId != null && contactBySecureId.name.isNotBlank()) {
                 // BUG-013: Also try phone book with this contact's phone number
                 val phoneFromContact = contactBySecureId.phoneOrId
-                if (!phoneFromContact.startsWith("android-")) {
+                if (!IdentityProtocol.isDirectClientId(phoneFromContact)) {
                     val phoneBookName = resolvePhoneNumber(context, phoneFromContact)
                     if (phoneBookName != null) return phoneBookName
                 }
@@ -99,9 +100,8 @@ object PhoneBookResolver {
 
         // 3. By normalized phone number
         if (phoneNumber.isNotEmpty()) {
-            val normalizedCaller = PhoneUtils.normalize(phoneNumber, context)
             val contactByPhone = contacts.find {
-                !it.phoneOrId.startsWith("android-") &&
+                !IdentityProtocol.isDirectClientId(it.phoneOrId) &&
                 PhoneUtils.matches(it.phoneOrId, phoneNumber, context)
             }
             if (contactByPhone != null && contactByPhone.name.isNotBlank()) return contactByPhone.name

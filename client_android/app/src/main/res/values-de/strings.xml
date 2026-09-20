@@ -17,6 +17,7 @@
     <string name="call_active">Anruf aktiv</string>
     <string name="call_ended">Anruf beendet</string>
     <string name="call_encrypted">Ende-zu-Ende verschl\u00FCsselt</string>
+    <string name="call_security_code">Sicherheitscode: %1$s %2$s</string>
     <string name="call_unknown_caller">Unbekannt</string>
 
     <!-- Contacts -->

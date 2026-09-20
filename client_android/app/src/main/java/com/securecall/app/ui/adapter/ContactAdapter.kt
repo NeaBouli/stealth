@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.securecall.app.R
 import com.securecall.app.data.Contact
+import com.securecall.app.security.IdentityProtocol
 
 class ContactAdapter(
     private var contacts: List<Contact>,
@@ -53,7 +54,7 @@ class ContactAdapter(
         val contact = contacts[position]
         holder.txtName.text = if (contact.isVerified) "${contact.name} \u2713" else contact.name
         // Show phone + SecureID if both are available
-        val subtitle = if (contact.secureId != null && !contact.phoneOrId.startsWith("android-")) {
+        val subtitle = if (contact.secureId != null && !IdentityProtocol.isDirectClientId(contact.phoneOrId)) {
             "${contact.phoneOrId} | ${contact.secureId}"
         } else {
             contact.phoneOrId
@@ -64,8 +65,8 @@ class ContactAdapter(
         holder.itemView.contentDescription = contact.name
 
         val normalizedPhone = contact.phoneOrId.replace(Regex("[^0-9+]"), "")
-        val effectiveClientId = contact.secureId ?: if (contact.phoneOrId.startsWith("android-")) contact.phoneOrId else null
-        val isSecureCallMember = contact.phoneOrId.startsWith("android-") ||
+        val effectiveClientId = contact.secureId ?: contact.phoneOrId.takeIf(IdentityProtocol::isDirectClientId)
+        val isSecureCallMember = IdentityProtocol.isDirectClientId(contact.phoneOrId) ||
             contact.secureId != null ||
             registeredPhones.contains(normalizedPhone)
         val isOnline = onlinePhones.contains(normalizedPhone) ||

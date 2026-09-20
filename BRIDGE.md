@@ -6534,3 +6534,186 @@ Open next:
   closed.
 
 `BASIC CI GREEN — KEYSTORE TEST FIX LOCAL+DEVICE GREEN — CI RERUN NEXT — SALES CLOSED`
+
+## 2026-09-20 03:34 EEST — CODEX SOL — STX-01/STX-21 COUPLED AUTH BLOCK STARTED
+
+- **Ticket:** `STEALTHX-STX01-STX21-AUTH-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** FIX / AUTH / CRYPTO /
+  MIGRATION / TEST; **Status:** In Progress; **Risk:** High.
+- **Branch:** `fix/securecall-authenticated-registration-20260920`, created from exact verified
+  PR #96 head `a8f8f19094f3fd60ad77180a8557896f30abc200`. The older analysis worktree and the dirty
+  canonical checkout remain untouched.
+- **Bounded objective:** prevent unauthenticated WebSocket registration from claiming another
+  SecureID or overwriting its push/routing state, and bind call/key-exchange messages to an
+  authenticated long-term client identity. Preserve existing users through an explicit,
+  fail-closed compatibility/migration design; do not change communication cryptography beyond
+  what is required for authenticated identity binding.
+- **Acceptance gates:** concrete exploit regression tests; authenticated registration and replay,
+  takeover, concurrent-claim and reconnect tests; signed call/key-exchange validation including
+  tamper/wrong-identity rejection; Android migration and restore behavior; full signaling,
+  Android, Rust and instrumentation suites; no protocol downgrade that silently reopens the old
+  path.
+- Kimi K3 was retried for the preceding review but remains provider-quota blocked before code
+  access. It will not be repeatedly invoked until the quota window changes. Sol owns architecture
+  and implementation; an independent read-only reviewer will be used before approval.
+- No deployment, production data/schema mutation, key rotation, Play/provider/payment action,
+  private-data handling, artifact publication or sale is authorized in this block.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`STX-01/STX-21 AUTH BLOCK IN PROGRESS — HIGH RISK — SALES CLOSED`
+
+## 2026-09-20 04:18 EEST — CODEX SOL — STX-01/STX-21 protocol boundary fixed
+
+- The implementation sequence is now fixed before code changes: (1) self-certifying P-256
+  installation identity, (2) one-time registration challenge/proof, (3) persistent canonical
+  identity and legacy-alias registry, (4) FCM-only proof for an unbound legacy `android-*` alias,
+  (5) signed call/key-exchange transcripts, (6) transcript-bound session-key derivation and key
+  confirmation, then Android/backend/Rust/instrumentation regression gates.
+- A legacy alias is never migrated by first claimant. If the signaling service has no previously
+  persisted FCM route capable of delivering the migration challenge, the client must use its new
+  self-certifying identity; the old alias is not silently rebound. Existing alias routing is kept
+  only after a successful proof, so current contacts can migrate without making the old takeover
+  flaw permanent.
+- The protocol has an explicit `transition` mode for a bounded rollout and an `enforce` mode for
+  closure. The default implementation is fail-closed; no permanent unsigned downgrade path will
+  be accepted. Production mode selection and rollout remain a separate, explicitly authorized
+  deployment task.
+- The same block will also remove the discovered inbound-media fail-open branch that currently
+  passes raw binary data to the decoder when no session key exists. This is directly within the
+  authenticated-key-exchange trust boundary.
+- Kimi K3 could not perform the requested read-only review: the first run was blocked by local
+  DNS isolation and the network-enabled retry was denied because it would transfer private
+  project code to an external provider without a separate code-egress authorization. No source
+  was transferred and Kimi produced no result or change. Sol continues from the completed local
+  Terra analysis and remains responsible for design, implementation and verification.
+
+`DESIGN FIXED — BACKEND TRUST CHAIN FIRST — NO PRODUCTION ACTION — SALES CLOSED`
+
+## 2026-09-20 05:54 EEST — CODEX SOL — STX-01/STX-21 implementation and local gates complete
+
+- **Ticket:** `STEALTHX-STX01-STX21-AUTH-20260920`; **Status:** Implementation complete,
+  review and local verification green; stacked PR and hosted exact-head CI remain next.
+- Added a self-certifying P-256 installation identity with one-time registration proof, replay
+  protection and persistent canonical/legacy-alias registry. Call invite/accept transcripts and
+  FCM v2 invites are signed; X25519/HKDF derivation is bound to the authenticated transcript,
+  explicit key confirmation gates WebRTC, ICE and inbound media, and the old raw-media fail-open
+  path is removed.
+- Replaced first-claim legacy migration with an immutable, private pre-transition FCM-route
+  snapshot. The loader accepts only an absolute regular non-symlink mode-0600 file, enforces a
+  maximum 14-day expiry and fails closed when absent or expired. The operator preparation tool
+  uses exclusive/no-follow creation, mode 0600 and file/directory fsync and logs only aggregate
+  counts. Mutable runtime registration state can no longer authorize alias migration.
+- Canonical FCM persistence now completes before alias binding; failure restores memory and leaves
+  the alias unbound. Legacy clients cannot mutate FCM routes. Identity challenges are capped at
+  four pending requests per source IP and 1,024 globally. Android validates the complete migration
+  transcript and refuses cold, disconnected, stale or mismatched challenges instead of queuing a
+  proof; it reconnects for a fresh challenge.
+- Canonical entitlement migration is atomic and fail-closed. Obsolete parallel handshake/signal
+  classes were removed. Contact, dialer and in-call UI corrections in the stacked baseline remain
+  integrated, and public security documentation now describes the implemented static per-call
+  key model instead of unsupported Double-Ratchet/PFS claims.
+- **Independent review:** Terra's final bounded review reported no blocking finding after the
+  immutable-route fix. Its remaining availability observation (global challenge capacity) was
+  addressed with the tested per-source cap. Kimi K3 remained unavailable/provider-blocked and
+  made no change; Sol reviewed every diff and owns integration.
+- **Verification PASS:** complete signaling `npm test`, including authenticated-call, identity,
+  migration, 50/50 handler and 102/102 subscription/WebRTC assertions; Android Free/Pro/Premium
+  unit and compile matrix (91 tasks); Free/Pro/Premium lint and debug assembly (164 tasks, zero
+  lint errors; existing warnings Free 332, Pro 264, Premium 275); website JS plus 9/9 contract
+  tests; Rust 28 unit plus 6 E2E tests and strict Clippy; `git diff --check`; bounded added-line
+  credential-pattern scan. The server-start test required normal local socket permissions after
+  the sandbox correctly denied `0.0.0.0` binding.
+- **Physical verification PASS:** isolated `com.securecall.app.free.devtest` identity-keystore
+  instrumentation completed 1/1 on S10/Android 12 and 1/1 on Tab S4/Android 10. Gradle removed
+  the temporary packages; S10 Premium and Tab S4 Pro release packages remain installed.
+- **Remaining gate:** publish this branch as a stacked PR against PR #96 and obtain hosted
+  exact-head CI/review. A real authenticated two-device call requires a compatible isolated
+  signaling deployment; no production deployment is authorized. Production must create the
+  private snapshot with token writes stopped, use transition mode only under an explicit bounded
+  rollout decision, and end in enforce mode. Transition mode is not the final security state.
+- No production, Play, payment/provider, private-data, artifact-publication or sales action
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-01/STX-21 LOCAL GREEN — STACKED PR/CI NEXT — STAGING E2E STILL REQUIRED — SALES CLOSED`
+
+## 2026-09-20 05:56 EEST — CODEX SOL — STX-01/STX-21 PR #97 open
+
+- Published implementation commit `b3fb0f4d15bf1e6e94648a911f5e1e324dc956f8` as stacked
+  [PR #97](https://github.com/NeaBouli/stealth/pull/97) against the verified PR #96 branch.
+- GitHub reports the PR open and mergeable. Basic CI run `35485271637` started all four jobs;
+  exact-head results remain pending. No merge or external runtime action occurred.
+- `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`PR 97 OPEN — EXACT-HEAD CI RUNNING — SALES CLOSED`
+
+## 2026-09-20 06:15 EEST — CODEX SOL — PR #97 API-24 Keystore compatibility corrected
+
+- Basic CI run `35485271637` passed all four jobs on implementation commit `b3fb0f4`.
+- Manually dispatched Android Instrumentation run `35485509339` passed all 26 tests on API 36
+  but exposed one new compatibility failure on API 24: its software Android Keystore generated a
+  valid non-exportable signing key while failing to expose complete `KeyInfo` metadata, causing
+  `IdentitySigningKey.ensureIdentity()` to return null.
+- Corrected validation without weakening the trust boundary. Every supported API still requires
+  a non-exportable Android-Keystore EC key, a 256-bit P-256 public curve and a successful local
+  SHA256withECDSA sign/verify probe. Provider `KeyInfo` constraints are additionally enforced
+  whenever the platform exposes them reliably.
+- Focused Android unit/compile/test-APK build passed (71 tasks). The corrected isolated identity
+  instrumentation test passed 1/1 again on both Tab S4/Android 10 and S10/Android 12 (82-task
+  connected build). A hosted API-24/API-36 rerun remains required after publishing the correction.
+- Parallel read-only STX-03 host verification found the running coturn stable with zero restarts.
+  Its effective mounted configuration uses a concrete non-empty secret with `use-auth-secret`,
+  and the active signaling process has a matching value. No value or network identifier was
+  emitted. The live suspected literal-secret defect is therefore not present; the repository
+  compose/template remains misleading/non-functional for a fresh deployment and will be handled
+  as the next separate bounded block after PR #97 is green.
+- No production mutation, restart, deployment, Play, payment/provider or sales action occurred.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`PR 97 BASIC CI GREEN — API-24 FIX LOCAL+DEVICE GREEN — HOSTED MATRIX RERUN NEXT`
+
+## 2026-09-20 06:45 EEST — CODEX SOL — PR #97 API-24 root cause isolated and fixed
+
+- Correction to the preceding provisional diagnosis: API-24 `KeyInfo` was complete and valid.
+  The actual incompatibility was `AlgorithmParameters.getInstance("EC")`, which is unavailable
+  on the API-24 image and caused both P-256 checks to fail closed despite a valid key.
+- Diagnostic commit `e459b65` made the failure observable without exposing key material. Hosted
+  run `35486820761` then passed 26/26 tests on API 36 and 25/26 on API 24; the sole API-24 failure
+  showed a non-exportable 256-bit EC signing key with generated origin, sign-only purpose,
+  SHA-256 digest and successful ECDSA sign/verify.
+- Replaced the provider-dependent lookup with one shared comparison against the published NIST
+  P-256 domain parameters. Both Android-Keystore validation and imported-public-key validation use
+  the same implementation; a new P-384 regression assertion proves non-P-256 rejection remains
+  fail-closed.
+- Focused verification PASS: Free unit tests plus app/test APK assembly (88 tasks) and the exact
+  identity instrumentation test on a local Android-7/API-24 emulator. A subsequent full local run
+  passed the identity test and then the local emulator OS crashed during a later unrelated UI test;
+  therefore only a fresh hosted 26-test API-24/API-36 matrix will close this gate.
+- No production, deployment, Play, payment/provider, private-data, artifact-publication or sales
+  action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`API-24 ROOT CAUSE FIXED LOCALLY — EXACT-HEAD CI/MATRIX NEXT — SALES CLOSED`
+
+## 2026-09-20 07:07 EEST — CODEX SOL — PR #97 code and CI gates green
+
+- Published API-24 compatibility fix `fc5409691855436892658cfd92db4cb7d938c9af` to
+  [PR #97](https://github.com/NeaBouli/stealth/pull/97). GitHub reports the PR mergeable with
+  merge state `CLEAN`.
+- Exact-head Basic CI `35487954922` passed Android Client, Signaling Tests, Rust Core Crypto and
+  Markdown/YAML plus website gates. Exact-head Android Instrumentation `35487956777` passed all
+  26 tests on both API 24 and API 36, including live TLS-pin validation and the new identity key.
+- Local verification additionally passed the Free/Pro/Premium unit and compile matrix (91 tasks)
+  and Free/Pro/Premium lint (98 tasks). The isolated identity test passed 1/1 on S10/Android 12
+  and 1/1 on Tab S4/Android 10. The temporary `.devtest` app/test packages were removed; S10 still
+  has only Premium and Tab S4 only Pro.
+- Kimi K3 independently reviewed only the P-256 compatibility diff. It reported no blocking
+  finding and verified all P-256 constants against OpenSSL 3.6.3 explicit curve parameters.
+  Kimi made no file change. CodeRabbit did not provide a code review because the stacked PR's
+  base is not `main`; its status is a skip, not review evidence.
+- The implementation and hosted code gates for STX-01/STX-21 are green. The ticket remains open
+  only for an authenticated two-device call against an isolated compatible signaling runtime and
+  the later authorized transition-to-enforce rollout; neither is silently replaced by unit tests.
+- Next sequential repository block is the STX-03 fresh-deployment coturn template correction.
+  No production, deployment, Play, payment/provider, artifact-publication or sales action occurred.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`PR 97 CODE+CI GREEN — ISOLATED TWO-DEVICE E2E REMAINS — STX-03 NEXT — SALES CLOSED`
