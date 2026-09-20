@@ -7228,3 +7228,23 @@ Open next:
   occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
 
 `STX-14 APPROVED LOCALLY — COMMIT / STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 15:03 EEST — CODEX SOL — STX-14 stacked PR and hosted CI green
+
+- Published implementation commit `2d743041ec922b7b63248dd0d67e6e27d96cb359` as stacked
+  [PR #101](https://github.com/NeaBouli/stealth/pull/101), based on the exact green PR #100
+  branch `fix/securecall-deploy-secret-output-20260920`.
+- Hosted Basic CI run
+  [35509140597](https://github.com/NeaBouli/stealth/actions/runs/35509140597) passed all four
+  jobs: Markdown/YAML with privacy and deployment guards, the complete Signaling Tests including
+  private tester staging tools and the new admin-auth regressions, Rust Core Crypto, and the full
+  Android Client verification.
+- The exact published diff retains Kimi K3's independent `APPROVE` verdict and Sol's local full
+  signaling-suite pass. GitHub reports the stacked PR mergeable; STX-14 remains open in audit
+  umbrella issue #84 until the dependency stack is reviewed and integrated.
+- This append records repository and CI evidence only. No runtime, deployment, restart,
+  credential inspection or rotation, real email, checkout, webhook, Play, payment/provider,
+  artifact or sales action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales
+  remain closed.
+
+`PR 101 HOSTED CI GREEN — STX-14 READY FOR STACK REVIEW — NO RUNTIME ACTION`
