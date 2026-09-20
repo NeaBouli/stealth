@@ -16,10 +16,12 @@ services:
       - MAX_CONNS_PER_IP=${MAX_CONNS_PER_IP:-10}
       - STUN_URL=${STUN_URL:-stun:stun.l.google.com:19302}
       - TURN_HOST=${TURN_HOST:-turn.stealthx.tech}
-      - TURN_SECRET=${TURN_SECRET}
+      - TURN_SECRET_FILE=/run/secrets/turn_secret
       - TURN_USER=${TURN_USER:-}
       - TURN_PASS=${TURN_PASS:-}
       - FIREBASE_SERVICE_ACCOUNT_KEY=${FIREBASE_SERVICE_ACCOUNT_KEY:-}
+    secrets:
+      - turn_secret
     networks:
       - securecall-net
     expose:
@@ -69,7 +71,10 @@ services:
     container_name: securecall-turn
     restart: unless-stopped
     environment:
-      - TURN_SECRET=${TURN_SECRET}
+      - TURN_SECRET_FILE=/run/secrets/turn_secret
+      - TURN_CONFIG_TEMPLATE=/etc/coturn/turnserver.conf.template
+      - TURN_CONFIG_RUNTIME=/run/turn/turnserver.conf
+    entrypoint: ["/usr/local/bin/render-turn-config.sh"]
     ports:
       - "3478:3478"        # TURN/STUN TCP
       - "3478:3478/udp"    # TURN/STUN UDP
@@ -77,8 +82,13 @@ services:
       - "5349:5349/udp"    # TURN/STUN DTLS
       - "49152-49200:49152-49200/udp"  # TURN relay ports
     volumes:
-      - ./coturn/turnserver.conf:/etc/turnserver.conf:ro
+      - ./coturn/turnserver.conf.template:/etc/coturn/turnserver.conf.template:ro
+      - ./coturn/render-config.sh:/usr/local/bin/render-turn-config.sh:ro
       - ./certbot/conf:/etc/letsencrypt:ro
+    secrets:
+      - turn_secret
+    tmpfs:
+      - /run/turn:rw,noexec,nosuid,nodev,size=64k,mode=0700
     networks:
       - securecall-net
     logging:
@@ -86,6 +96,10 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+secrets:
+  turn_secret:
+    file: ./secrets/turn_secret
 
 networks:
   securecall-net:
