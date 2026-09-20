@@ -49,6 +49,11 @@ class IdentityProtocolTest {
 
         val rsa = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
         assertNull(IdentityProtocol.identityFromPublicKey(IdentityProtocol.encodeBase64Url(rsa.public.encoded)))
+
+        val p384 = KeyPairGenerator.getInstance("EC").apply {
+            initialize(ECGenParameterSpec("secp384r1"))
+        }.generateKeyPair()
+        assertNull(IdentityProtocol.identityFromPublicKey(IdentityProtocol.encodeBase64Url(p384.public.encoded)))
     }
 
     @Test

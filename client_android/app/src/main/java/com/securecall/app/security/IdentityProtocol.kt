@@ -2,14 +2,11 @@ package com.securecall.app.security
 
 import okio.ByteString.Companion.decodeBase64
 import okio.ByteString.Companion.toByteString
-import java.security.AlgorithmParameters
 import java.security.KeyFactory
 import java.security.MessageDigest
 import java.security.PublicKey
 import java.security.Signature
 import java.security.interfaces.ECPublicKey
-import java.security.spec.ECGenParameterSpec
-import java.security.spec.ECParameterSpec
 import java.security.spec.X509EncodedKeySpec
 
 data class CallIdentity(val identityId: String, val keyHash: String, val publicKey: String)
@@ -74,7 +71,7 @@ object IdentityProtocol {
         return try {
             val key = KeyFactory.getInstance("EC").generatePublic(X509EncodedKeySpec(bytes)) as? ECPublicKey
                 ?: return null
-            if (!sameParameters(key.params, p256Parameters()) || !key.encoded.contentEquals(bytes)) return null
+            if (!P256DomainParameters.matches(key.params) || !key.encoded.contentEquals(bytes)) return null
             val hash = encodeBase64Url(MessageDigest.getInstance("SHA-256").digest(bytes))
             CallIdentity("sc-$hash", hash, encoded)
         } catch (_: Exception) {
@@ -221,12 +218,4 @@ object IdentityProtocol {
     private fun validTranscript(value: String): Boolean = value.length in 1..4096
         && value.startsWith("securecall-") && !value.contains('\u0000')
 
-    private fun p256Parameters(): ECParameterSpec {
-        val parameters = AlgorithmParameters.getInstance("EC")
-        parameters.init(ECGenParameterSpec("secp256r1"))
-        return parameters.getParameterSpec(ECParameterSpec::class.java)
-    }
-
-    private fun sameParameters(a: ECParameterSpec, b: ECParameterSpec): Boolean =
-        a.curve == b.curve && a.generator == b.generator && a.order == b.order && a.cofactor == b.cofactor
 }
