@@ -7,12 +7,26 @@ def buildingAppBundle = gradle.startParameter.taskNames.any {
     it.toLowerCase().contains('bundle')
 }
 
-// Guard: pro and premium flavors are internal-only (testing, not distribution).
+// Guard: direct Pro/Premium flavors are excluded from normal Play builds.
 // They are excluded from the build unless -Pinternal is passed on the command line.
 //   Normal:   ./gradlew assembleFreeRelease        → builds
 //             ./gradlew assembleProRelease         → task does not exist
 //   Internal: ./gradlew -Pinternal assembleProDebug → builds
 def allowInternalFlavors = project.hasProperty('internal')
+def isolatedDeviceTest = project.hasProperty('isolatedDeviceTest')
+def entitlementPublicKey = providers.gradleProperty('entitlementPublicKey').getOrElse('')
+def testerEntitlementPublicKey = providers.gradleProperty('testerEntitlementPublicKey').getOrElse('')
+def testerLicensesEnabled = providers.gradleProperty('testerLicensesEnabled').getOrElse('false')
+if (!(testerLicensesEnabled in ['true', 'false']) ||
+        (testerLicensesEnabled == 'true' && (!allowInternalFlavors || !testerEntitlementPublicKey))) {
+    throw new GradleException('Tester licensing requires -Pinternal and an explicit tester public verifier')
+}
+if (testerEntitlementPublicKey && !(testerEntitlementPublicKey ==~ /[A-Za-z0-9_-]{43}/)) {
+    throw new GradleException('testerEntitlementPublicKey must be a raw Ed25519 public key in unpadded base64url')
+}
+if (entitlementPublicKey && !(entitlementPublicKey ==~ /[A-Za-z0-9_-]{43}/)) {
+    throw new GradleException('entitlementPublicKey must be a raw Ed25519 public key in unpadded base64url')
+}
 
 // Google Services + Crashlytics
 apply plugin: 'com.google.gms.google-services'
@@ -20,6 +34,12 @@ apply plugin: 'com.google.firebase.crashlytics'
 
 googleServices {
     missingGoogleServicesStrategy = "ignore"
+}
+
+if (isolatedDeviceTest) {
+    tasks.configureEach { task ->
+        if (task.name.endsWith("DebugGoogleServices")) task.enabled = false
+    }
 }
 
 android {
@@ -37,6 +57,12 @@ android {
         targetSdkVersion 36
         versionCode 78017
         versionName "1.0.50"
+
+        // Public verifier only. Empty until the exact signed release is configured.
+        buildConfigField "String", "ENTITLEMENT_PUBLIC_KEY", "\"${entitlementPublicKey}\""
+        buildConfigField "String", "TESTER_ENTITLEMENT_PUBLIC_KEY", "\"${testerEntitlementPublicKey}\""
+        buildConfigField "boolean", "TESTER_LICENSE_ENABLED", "false"
+        buildConfigField "String", "ENTITLEMENT_RELEASE_ID", '"securecall-android-1.0.50-vc78017-api36"'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -140,6 +166,7 @@ android {
             buildConfigField "String", "LOGGING_LEVEL", "\"ERROR_ONLY\""
             buildConfigField "boolean", "NO_FALLBACK_MODE", "true"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "true"
+            buildConfigField "boolean", "TESTER_LICENSE_ENABLED", testerLicensesEnabled
             buildConfigField "boolean", "BILLING_ENABLED", "false"
             buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "false"
             buildConfigField "String", "PLAY_CATALOG_VERSION", "\"securecall-play-v1\""
@@ -192,6 +219,9 @@ android {
         }
         debug {
             minifyEnabled false
+            // Opt-in package isolation lets instrumentation run beside an
+            // installed release without replacing its signature or app data.
+            if (isolatedDeviceTest) applicationIdSuffix ".devtest"
             firebaseCrashlytics {
                 mappingFileUploadEnabled false
             }
@@ -229,6 +259,7 @@ android {
 
 dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.google.crypto.tink:tink-android:1.23.0'
     implementation 'io.github.webrtc-sdk:android:125.6422.07'
 
     implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -285,6 +316,105 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.5.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+def certificatePinSource = file(
+    'src/main/java/com/securecall/app/net/CertificatePinPolicy.kt'
+)
+def certificatePinConfig = file('src/main/res/xml/network_security_config.xml')
+
+tasks.register('verifyCertificatePinPolicy') {
+    group = 'verification'
+    description = 'Verifies OkHttp and Android certificate pins stay synchronized and rotation-safe.'
+    inputs.files(certificatePinSource, certificatePinConfig)
+    doLast {
+        def host = 'api.stealthx.tech'
+        def sourceText = certificatePinSource.getText('UTF-8')
+        def sourceHostMatcher = sourceText =~ /const val HOST\s*=\s*"([^"]+)"/
+        if (!sourceHostMatcher.find() || sourceHostMatcher.group(1) != host) {
+            throw new GradleException("Certificate pin host must remain ${host}.")
+        }
+
+        def sourcePins = [] as Set
+        def sourcePinMatcher = sourceText =~ /"(sha256\/[A-Za-z0-9+\/]{43}=)"/
+        sourcePinMatcher.each { match -> sourcePins << match[1] }
+
+        def xml = new groovy.xml.XmlSlurper(false, false).parse(certificatePinConfig)
+        def domainConfig = xml.'domain-config'.find { config ->
+            config.domain.any { domain -> domain.text().trim() == host }
+        }
+        if (domainConfig == null || domainConfig.size() == 0) {
+            throw new GradleException("No network security config found for ${host}.")
+        }
+        def pinSet = domainConfig.'pin-set'[0]
+        if (pinSet == null || pinSet.size() == 0) {
+            throw new GradleException("No declarative certificate pin-set found for ${host}.")
+        }
+
+        def xmlPins = pinSet.pin.collect { pin ->
+            "sha256/${pin.text().trim()}"
+        }.toSet()
+        if (sourcePins != xmlPins) {
+            throw new GradleException(
+                "OkHttp and network security pins differ: code=${sourcePins.sort()}, xml=${xmlPins.sort()}"
+            )
+        }
+
+        if (sourcePins.size() < 4) {
+            throw new GradleException('Certificate pin policy requires current and previous-chain backups.')
+        }
+
+        def expirationText = pinSet.@expiration.text().trim()
+        if (expirationText.isEmpty()) {
+            throw new GradleException('Certificate pin-set expiration is required.')
+        }
+        try {
+            java.time.LocalDate.parse(expirationText)
+        } catch (java.time.format.DateTimeParseException ignored) {
+            throw new GradleException(
+                "Certificate pin-set expiration is not an ISO date: ${expirationText}"
+            )
+        }
+    }
+}
+
+tasks.register('verifyCertificatePinFreshness') {
+    group = 'verification'
+    description = 'Fails release builds when fewer than 180 days remain before pin policy expiry.'
+    dependsOn tasks.named('verifyCertificatePinPolicy')
+    inputs.file(certificatePinConfig)
+    doLast {
+        def xml = new groovy.xml.XmlSlurper(false, false).parse(certificatePinConfig)
+        def domainConfig = xml.'domain-config'.find { config ->
+            config.domain.any { domain -> domain.text().trim() == 'api.stealthx.tech' }
+        }
+        if (domainConfig == null || domainConfig.size() == 0) {
+            throw new GradleException('No network security config found for api.stealthx.tech.')
+        }
+        def pinSet = domainConfig.'pin-set'[0]
+        if (pinSet == null || pinSet.size() == 0) {
+            throw new GradleException('No declarative certificate pin-set found for api.stealthx.tech.')
+        }
+        def expiration = java.time.LocalDate.parse(
+            pinSet.@expiration.text().trim()
+        )
+        def minimumSafeExpiration = java.time.LocalDate.now(java.time.ZoneOffset.UTC).plusDays(180)
+        if (!expiration.isAfter(minimumSafeExpiration)) {
+            throw new GradleException(
+                "Certificate pin-set expires ${expiration}; rotate before the 180-day release window closes."
+            )
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('verifyCertificatePinPolicy')
+}
+
+tasks.matching { task ->
+    task.name ==~ /(assemble|bundle|lint)(Free|Pro|Premium)Release/
+}.configureEach {
+    dependsOn tasks.named('verifyCertificatePinFreshness')
 }
 
 
@@ -424,11 +554,13 @@ tasks.matching { it.name == 'bundleFreeRelease' || it.name == 'assembleFreeRelea
 tasks.register('verifyFreeReleaseBillingClosed') {
     group = 'verification'
     description = 'Fails if Google Play Billing is enabled before both release gates are approved.'
+    dependsOn 'testFreeDebugUnitTest', 'testFreeReleaseUnitTest'
     inputs.files(
         file('build.gradle'),
         file('src/free/java/com/securecall/app/billing/UpgradeActivity.kt'),
         file('src/free/java/com/securecall/app/billing/BillingManager.kt'),
         file('src/free/java/com/securecall/app/billing/PurchaseResultActivity.kt'),
+        file('src/free/res/layout/activity_upgrade.xml'),
         file('src/main/java/com/securecall/app/config/TierManager.kt'),
         file('src/main/java/com/securecall/app/ui/SettingsFragment.kt')
     )
@@ -445,14 +577,42 @@ tasks.register('verifyFreeReleaseBillingClosed') {
         def upgradeSource = file('src/free/java/com/securecall/app/billing/UpgradeActivity.kt').getText('UTF-8')
         def managerSource = file('src/free/java/com/securecall/app/billing/BillingManager.kt').getText('UTF-8')
         def resultSource = file('src/free/java/com/securecall/app/billing/PurchaseResultActivity.kt').getText('UTF-8')
+        def upgradeLayout = file('src/free/res/layout/activity_upgrade.xml').getText('UTF-8')
         def tierSource = file('src/main/java/com/securecall/app/config/TierManager.kt').getText('UTF-8')
         def settingsSource = file('src/main/java/com/securecall/app/ui/SettingsFragment.kt').getText('UTF-8')
         if (!upgradeSource.contains('BuildConfig.BILLING_ENABLED && isPlayStore') ||
             !managerSource.contains('if (!BuildConfig.BILLING_ENABLED)') ||
             !resultSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED') ||
-            !tierSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED') ||
+            tierSource.contains('.putString(KEY_ACTIVATED_TIER,') ||
             !settingsSource.contains('BuildConfig.ACTIVATION_CODE_ENABLED')) {
             throw new GradleException('Billing runtime must enforce the closed BuildConfig gate.')
+        }
+        def retiredOfferMarkers = [
+            'PricingCalculator',
+            'Only $',
+            'Next buyer pays',
+            '100 licenses',
+            '€49',
+            '€3.49',
+            '€4.99'
+        ]
+        def retiredOfferHits = retiredOfferMarkers.findAll { marker ->
+            upgradeSource.contains(marker) || upgradeLayout.contains(marker)
+        }
+        if (!retiredOfferHits.isEmpty() ||
+            file('src/main/java/com/securecall/app/billing/PricingCalculator.kt').exists()) {
+            throw new GradleException(
+                'Upgrade UI contains retired scarcity or hard-coded paid pricing: ' +
+                    retiredOfferHits.join(', ')
+            )
+        }
+        if (!upgradeSource.contains('R.id.billingPurchaseContent).visibility = View.GONE') ||
+            !upgradeSource.contains('oneTimePurchaseOfferDetails?.formattedPrice') ||
+            !upgradeSource.contains('pricingPhaseList') ||
+            !upgradeLayout.contains('android:id="@+id/billingPurchaseContent"')) {
+            throw new GradleException(
+                'Closed Billing must hide the entire paid surface and future prices must come from ProductDetails.'
+            )
         }
     }
 }

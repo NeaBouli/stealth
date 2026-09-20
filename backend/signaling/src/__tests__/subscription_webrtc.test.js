@@ -68,7 +68,7 @@ function buildCtx(overrides = {}) {
   const mockRateLimit = { registerEvent: () => true, registerBinaryEvent: () => true, clear: () => {} };
   const mockHb = { start: () => {}, updateClient: () => {}, stop: () => {} };
   const giftCodes = new Map();
-  const saveGiftCodes = () => {};
+  const saveGiftCodes = overrides.saveGiftCodes || (() => {});
   const saveActivationCodes = overrides.saveActivationCodes || (() => true);
   const issueEntitlementToken = ({ subject, productKey, tier }) => `signed:${subject}:${productKey}:${tier}`;
   const verifyEntitlementToken = (token, { expectedSubject }) => {
@@ -108,6 +108,7 @@ function buildCtx(overrides = {}) {
     })),
     acknowledgePlaySubscription: overrides.acknowledgePlaySubscription || (() => true),
     playBillingEnabled: overrides.playBillingEnabled ?? true,
+    identityRegistry: overrides.identityRegistry,
   });
 }
 
@@ -217,6 +218,18 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: "alice", ip: "1.1.1.1" });
   ctx.clientIds.set("alice", connId);
 
+  // Unregistered sockets cannot inspect or consume gift/activation codes.
+  const unregisteredWs = mockWs();
+  ctx.giftCodes.set("GIFT-UNREGISTERED-2026", {
+    tier: "pro",
+    used: false,
+    expires: new Date(Date.now() + 86400000).toISOString(),
+  });
+  ctx.handlers.ACTIVATE_CODE(unregisteredWs, "conn-unregistered", { code: "GIFT-UNREGISTERED-2026" });
+  const unregisteredResult = lastMsg(unregisteredWs);
+  assert(unregisteredResult.success === false && unregisteredResult.error === "not_registered", "unregistered activation fails before code lookup");
+  assert(ctx.giftCodes.get("GIFT-UNREGISTERED-2026").used === false, "unregistered activation does not consume a gift code");
+
   // Missing code
   ctx.handlers.ACTIVATE_CODE(ws, connId, {});
   const r1 = lastMsg(ws);
@@ -242,6 +255,24 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "GIFT-GOOD-2026" });
   const r4 = lastMsg(ws);
   assert(r4.success === true && r4.tier === "pro", "valid gift code → success + tier");
+
+  // Gift code — persistence failure rolls back the in-memory redemption
+  const failingGiftCtx = buildCtx({ saveGiftCodes: () => false });
+  const failingGiftWs = mockWs();
+  failingGiftCtx.clients.set(connId, { ws: failingGiftWs, lastSeen: Date.now(), clientId: "alice", ip: "1.1.1.1" });
+  failingGiftCtx.clientIds.set("alice", connId);
+  failingGiftCtx.giftCodes.set("GIFT-PERSIST-2026", {
+    tier: "pro",
+    used: false,
+    expires: new Date(Date.now() + 86400000).toISOString(),
+  });
+  failingGiftCtx.handlers.ACTIVATE_CODE(failingGiftWs, connId, { code: "GIFT-PERSIST-2026" });
+  const r4b = lastMsg(failingGiftWs);
+  assert(r4b.success === false && r4b.error === "entitlement_temporarily_unavailable",
+    "gift persistence failure → generic persistence error");
+  const rolledBackGift = failingGiftCtx.giftCodes.get("GIFT-PERSIST-2026");
+  assert(rolledBackGift.used === false && !Object.prototype.hasOwnProperty.call(rolledBackGift, "usedBy"),
+    "gift persistence failure restores the exact in-memory state");
 
   // Gift code — already used
   ctx.giftCodes.set("GIFT-USED-2026", {
@@ -426,14 +457,17 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   const legacyActivation = lastMsg(outageWs);
   assert(legacyActivation.success === true && !legacyActivation.entitlementToken, "legacy SecureCall activation remains compatible without signer");
 
-  ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token" });
+  const refreshRequestId = "12345678-1234-1234-1234-123456789abc";
+  ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token", requestId: refreshRequestId });
   const refresh = lastMsg(ws);
+  assert(refresh.requestId === refreshRequestId, "refresh echoes correlation identifier");
   assert(refresh.success === true && refresh.type === "ENTITLEMENT_REFRESH_RESULT", "active purchase refreshes signed entitlement");
   assert(refresh.entitlementToken === "signed:alice:securechat_pro_lifetime:pro", "refresh returns a new signed lease");
 
   ctx.activationCodes.splice(ctx.activationCodes.indexOf(entry), 1);
-  ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token" });
+  ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token", requestId: refreshRequestId });
   const revokedRefresh = lastMsg(ws);
+  assert(revokedRefresh.requestId === refreshRequestId, "revocation echoes correlation identifier");
   assert(revokedRefresh.success === false && revokedRefresh.error === "entitlement_revoked", "revoked purchase cannot refresh entitlement");
 
   // Activation code — max devices exceeded
@@ -441,6 +475,182 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "FULL-CODE-5678" });
   const r9 = lastMsg(ws);
   assert(r9.success === false && r9.error === "max_devices", "full code → max_devices");
+
+  // A cryptographically authorized legacy alias can move an existing binding
+  // to the canonical identity without consuming another device slot.
+  clearState();
+  let migrationSaves = 0;
+  const canonicalId = "sc-canonical-test";
+  const legacyId = "android-legacy-test";
+  const identityRegistry = { aliasesFor: identityId => identityId === canonicalId ? [legacyId] : [] };
+  const migrationCtx = buildCtx({
+    identityRegistry,
+    saveActivationCodes: () => { migrationSaves += 1; return true; },
+    verifyEntitlementToken: (_token, { expectedSubject }) => {
+      if (expectedSubject !== legacyId) throw new Error("subject mismatch");
+      return { product:"securecall_premium_lifetime", order:"order-hash" };
+    },
+  });
+  const migrationWs = mockWs();
+  const migrationConn = "conn-identity-migration";
+  migrationCtx.clients.set(migrationConn, {
+    ws:migrationWs, lastSeen:Date.now(), clientId:canonicalId, ip:"1.1.1.6",
+  });
+  migrationCtx.clientIds.set(canonicalId, migrationConn);
+  migrationCtx.activationCodes.push({
+    code:"PREM-IDENTITY-MIGRATION", tier:"premium", maxUses:1,
+    usedBy:legacyId, currentUses:1, productKey:"securecall_premium_lifetime",
+    stripeSessionId:"cs_identity_migration",
+  });
+  migrationCtx.handlers.ACTIVATE_CODE(migrationWs, migrationConn, { code:"PREM-IDENTITY-MIGRATION" });
+  const migratedActivation = lastMsg(migrationWs);
+  const migratedEntry = migrationCtx.activationCodes[0];
+  assert(migratedActivation.success === true
+    && migratedActivation.entitlementToken === `signed:${canonicalId}:securecall_premium_lifetime:premium`,
+  "authorized alias reactivation issues a canonical entitlement");
+  assert(JSON.stringify(migratedEntry.usedBy) === JSON.stringify([canonicalId])
+    && migratedEntry.currentUses === 1 && migrationSaves === 1,
+  "authorized alias reactivation persists one canonical binding");
+
+  migratedEntry.usedBy = legacyId;
+  migratedEntry.currentUses = 1;
+  migrationCtx.handlers.REFRESH_ENTITLEMENT(migrationWs, migrationConn, {
+    entitlementToken:"legacy-refresh-token",
+  });
+  const migratedRefresh = lastMsg(migrationWs);
+  assert(migratedRefresh.success === true
+    && migratedRefresh.entitlementToken === `signed:${canonicalId}:securecall_premium_lifetime:premium`,
+  "legacy commercial proof refreshes only to the canonical identity");
+  assert(JSON.stringify(migratedEntry.usedBy) === JSON.stringify([canonicalId])
+    && migratedEntry.currentUses === 1 && migrationSaves === 2,
+  "commercial refresh atomically migrates its stored binding");
+
+  clearState();
+  const rollbackCtx = buildCtx({
+    identityRegistry,
+    saveActivationCodes: () => false,
+    verifyEntitlementToken: (_token, { expectedSubject }) => {
+      if (expectedSubject !== legacyId) throw new Error("subject mismatch");
+      return { product:"securecall_premium_lifetime", order:"order-hash" };
+    },
+  });
+  const rollbackWs = mockWs();
+  rollbackCtx.clients.set(migrationConn, {
+    ws:rollbackWs, lastSeen:Date.now(), clientId:canonicalId, ip:"1.1.1.6",
+  });
+  rollbackCtx.clientIds.set(canonicalId, migrationConn);
+  rollbackCtx.activationCodes.push({
+    code:"PREM-IDENTITY-ROLLBACK", tier:"premium", maxUses:1,
+    usedBy:legacyId, productKey:"securecall_premium_lifetime", stripeSessionId:"cs_identity_rollback",
+  });
+  rollbackCtx.handlers.ACTIVATE_CODE(rollbackWs, migrationConn, { code:"PREM-IDENTITY-ROLLBACK" });
+  const rollbackActivation = lastMsg(rollbackWs);
+  const rollbackEntry = rollbackCtx.activationCodes[0];
+  assert(rollbackActivation.success === false
+    && rollbackActivation.error === "entitlement_temporarily_unavailable",
+  "binding migration fails closed when persistence fails");
+  assert(rollbackEntry.usedBy === legacyId
+    && !Object.prototype.hasOwnProperty.call(rollbackEntry, "currentUses"),
+  "failed migration restores the exact legacy in-memory representation");
+
+  rollbackCtx.handlers.REFRESH_ENTITLEMENT(rollbackWs, migrationConn, {
+    entitlementToken:"legacy-refresh-token",
+  });
+  const rollbackRefresh = lastMsg(rollbackWs);
+  assert(rollbackRefresh.success === false
+    && rollbackRefresh.error === "entitlement_temporarily_unavailable"
+    && rollbackEntry.usedBy === legacyId,
+  "refresh migration persistence failure returns no canonical entitlement");
+
+  clearState();
+  const unauthorizedCtx = buildCtx({
+    identityRegistry: { aliasesFor: () => [] },
+    verifyEntitlementToken: (_token, { expectedSubject }) => {
+      if (expectedSubject !== legacyId) throw new Error("subject mismatch");
+      return { product:"securecall_premium_lifetime", order:"order-hash" };
+    },
+  });
+  const unauthorizedWs = mockWs();
+  unauthorizedCtx.clients.set(migrationConn, {
+    ws:unauthorizedWs, lastSeen:Date.now(), clientId:canonicalId, ip:"1.1.1.6",
+  });
+  unauthorizedCtx.clientIds.set(canonicalId, migrationConn);
+  unauthorizedCtx.activationCodes.push({
+    code:"PREM-NO-ALIAS", tier:"premium", maxUses:1, usedBy:[legacyId], currentUses:1,
+    productKey:"securecall_premium_lifetime", stripeSessionId:"cs_no_alias",
+  });
+  unauthorizedCtx.handlers.REFRESH_ENTITLEMENT(unauthorizedWs, migrationConn, {
+    entitlementToken:"legacy-refresh-token",
+  });
+  assert(lastMsg(unauthorizedWs).success === false
+    && lastMsg(unauthorizedWs).error === "invalid_entitlement"
+    && unauthorizedCtx.activationCodes[0].usedBy[0] === legacyId,
+  "unregistered aliases cannot migrate commercial entitlements");
+}
+
+// ==========================================
+// Suite: ACTIVATE_CODE requestId correlation
+// ==========================================
+console.log("\n[Suite] ACTIVATE_CODE requestId correlation");
+{
+  clearState();
+  const ctx = buildCtx();
+  const ws = mockWs();
+  const connId = "conn-ac-reqid";
+  ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: "carol", ip: "1.1.1.5" });
+  ctx.clientIds.set("carol", connId);
+  const activateRequestId = "12345678-1234-1234-1234-123456789abc";
+
+  ctx.activationCodes.push({
+    code: "TEAM-REQID-0001",
+    tier: "pro",
+    maxUses: 2,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "securechat_pro_lifetime",
+  });
+
+  // Success path echoes the correlation identifier
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "TEAM-REQID-0001", requestId: activateRequestId });
+  const echoed = lastMsg(ws);
+  assert(echoed.success === true && echoed.type === "ACTIVATE_CODE_RESULT", "activation with requestId still succeeds");
+  assert(echoed.requestId === activateRequestId, "success echoes correlation identifier");
+
+  // Repeat activation echoes the correlation identifier
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "TEAM-REQID-0001", requestId: activateRequestId });
+  const repeatEcho = lastMsg(ws);
+  assert(repeatEcho.success === true && repeatEcho.requestId === activateRequestId, "re-activation echoes correlation identifier");
+
+  // Rejection path echoes the correlation identifier
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "NOPE-REQID-XXXX", requestId: activateRequestId });
+  const rejectEcho = lastMsg(ws);
+  assert(rejectEcho.success === false && rejectEcho.error === "invalid", "rejection keeps existing error shape");
+  assert(rejectEcho.requestId === activateRequestId, "rejection echoes correlation identifier");
+
+  // Old callers without requestId keep the unchanged response shape
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "NOPE-REQID-XXXX" });
+  const noId = lastMsg(ws);
+  assert(noId.success === false && noId.error === "invalid", "no requestId keeps rejection behavior");
+  assert(!Object.prototype.hasOwnProperty.call(noId, "requestId"), "no requestId → response omits the field");
+
+  ctx.activationCodes.push({
+    code: "TEAM-NOID-0002",
+    tier: "pro",
+    maxUses: 1,
+    usedBy: [],
+    currentUses: 0,
+    productKey: "securechat_pro_lifetime",
+  });
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "TEAM-NOID-0002" });
+  const noIdSuccess = lastMsg(ws);
+  assert(noIdSuccess.success === true, "no requestId keeps success behavior");
+  assert(!Object.prototype.hasOwnProperty.call(noIdSuccess, "requestId"), "no requestId → success omits the field");
+
+  // Invalid requestId is omitted, not echoed
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "NOPE-REQID-XXXX", requestId: "not-a-uuid" });
+  const invalidId = lastMsg(ws);
+  assert(invalidId.success === false && invalidId.error === "invalid", "invalid requestId keeps rejection behavior");
+  assert(!Object.prototype.hasOwnProperty.call(invalidId, "requestId"), "invalid requestId is omitted from the response");
 }
 
 // ==========================================

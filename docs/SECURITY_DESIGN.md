@@ -1,14 +1,15 @@
 # SecureCall Ecosystem – Security Design Document
 
-> **Current release boundary (Android 1.0.50):** This document also contains
-> research and long-range architecture concepts. The released Android client
-> uses WebRTC with STUN/TURN and application-layer end-to-end encryption. It
+> **Current candidate boundary (Android 1.0.50):** This document separates current
+> behavior from research and long-range architecture concepts. The released
+> Android client uses WebRTC with STUN/TURN and application-layer end-to-end encryption.
 > The Google Play edition contains no built-in VPN or WireGuard code. The direct
 > Premium APK can run a consent-gated, app-only WireGuard tunnel using a locally
 > supplied configuration whose private key is encrypted with Android Keystore.
 > Neither edition contains a multi-hop relay, SilentCarrier, QUIC transport,
 > device-owner controls, or OS-level hardening. Both can operate over a VPN
-> managed by Android or another trusted app.
+> managed by Android or another trusted app. Chapters explicitly marked
+> **Research roadmap** describe ideas, not shipped or purchasable functionality.
 
 ## 1. Purpose of This Document
 
@@ -23,19 +24,21 @@ It serves as the master reference for developers, auditors, and architects.
 
 2. **Metadata Minimization**
    The system generates as few metadata as technically possible.
-   No logs, no tracking, no telemetry.
+   Call content is not stored. Limited routing, delivery, entitlement and
+   operational data is handled as documented in the privacy policy.
 
 3. **Zero-Retention Principle**
-   Cryptographic keys are kept as briefly as possible,
-   never persisted (except Identity Key under secure conditions).
+   Per-call key material is kept only for the active call and then discarded.
+   A per-install P-256 identity key is held in Android Keystore and is used to
+   authenticate registration and the ephemeral per-call key exchange.
 
 4. **Defense in Depth**
    Multiple layers protect independently:
    - Crypto
-   - GhostNet Transport
+   - WebRTC/STUN/TURN transport
    - Signaling
    - Security Monitor
-   - OS Hardening (Premium/OS)
+   - Android platform controls
 
 5. **Fail-Safe Default**
    When in doubt → block, never continue in a weakened state.
@@ -108,13 +111,19 @@ State/carrier-based surveillance
 
 Countermeasures:
 
-End-to-end encryption
+Application-frame encryption against passive network observers
 
 Integrity protection of frames
 
-No keys or plaintext in the backend
+No call audio or per-call private key material sent to the signaling service
 
 Research-only multi-hop relay concept (not part of the current release)
+
+The per-call X25519 exchange is signed by per-install P-256 identity keys and
+bound to the call transcript. Direct calls to a key-derived canonical `sc-...`
+identity reject signaling-server key substitution. Human-readable aliases,
+custom IDs and phone lookup remain server-resolved; users must verify the
+canonical identity or six-digit security code when target authenticity matters.
 
 3.3 Infrastructure-Adjacent Attackers
 
@@ -130,9 +139,9 @@ Countermeasures:
 
 Minimalist signaling logic
 
-No long-term logs
+Documented retention limits and log redaction
 
-Public key directory without real names
+Pseudonymous SecureIDs rather than mandatory real names
 
 Relays without access to keys/plaintext
 
@@ -146,7 +155,7 @@ Forcing insecure radio modes
 
 IMSI/IMEI capture and movement profiles
 
-Countermeasures (Premium/OS):
+Research requirements (not implemented in the current release):
 
 IMSI catcher detection (anomaly detection)
 
@@ -162,39 +171,27 @@ Optional complete deactivation of classic GSM telephony
 The SecureCall Ecosystem uses modern, auditable cryptography modules.
 The Core Crypto Engine (Rust) provides all security primitives.
 
-4.1 Identity Keys
+4.1 Identity Authentication Status
 
-Type: Ed25519 (signature) + X25519 (key exchange)
-
-Generation: locally on the device
-
-Storage:
-
-Free/Pro: encrypted in app storage
-
-Premium/OS: in hardware TPM / Secure Element, if available
-
-Export: prohibited
-
-Backup: not provided (security risk)
+The current candidate creates a non-exportable P-256 identity key in Android
+Keystore. Its canonical `sc-...` identity is the SHA-256 digest of the canonical
+public-key encoding. Registration uses a signed server challenge. Migration from
+a legacy identifier additionally requires a challenge delivered through a
+read-only FCM route snapshot captured before the protocol transition; a legacy
+session cannot create or replace that route. Ephemeral X25519 call keys and both
+endpoint identities are covered by signed call transcripts.
 
 4.2 Session Setup
 
-Each call uses a new session:
+Each call uses X25519 and HKDF-SHA256 to derive per-call key material. That
+material is used with XChaCha20-Poly1305 for application media frames and is
+discarded when the call ends.
 
-Start via X25519 key agreement
-
-Derivation of a one-time root key
-
-Establishment of a Double Ratchet or Noise_NX / Noise_XX protocol
-
-Automatic key rotation (forward secrecy)
-
-A compromised session key must not:
-
-Allow decryption of previous audio frames (FS)
-
-Compromise future frames (PCS)
+The current candidate does not implement a Double Ratchet, Noise handshake,
+per-frame key rotation or post-compromise security. A malicious signaling
+service can deny service and can misresolve a human-readable alias, custom ID or
+phone lookup. It cannot silently substitute keys for a directly addressed
+canonical identity without failing transcript signatures or key confirmation.
 
 4.3 Audio Frame Encryption
 
@@ -208,7 +205,7 @@ XChaCha20-Poly1305
 
 Nonce increment per frame (overflow never permitted)
 
-Guaranteed integrity protection
+AEAD integrity verification under the documented key and nonce assumptions
 
 4.4 Key Lifecycles
 
@@ -216,7 +213,7 @@ Identity Keys → long-term (1 identity per device)
 
 Session Keys → valid only for one call
 
-Frame Keys → rotate continuously
+Frame nonces → unique per frame within the per-call key lifecycle
 
 Keys are deleted from RAM using zeroize/explicit_bzero
 
@@ -228,7 +225,7 @@ Session keys
 
 Audio frames
 
-Connection metadata
+Call content; limited connection metadata is handled as documented in the privacy policy
 
 Network statistics (except technical metrics without identity)
 
@@ -366,28 +363,27 @@ Terminate app
 Isolate device (Premium/OS)
 
 
-6. GhostNet Transport Layer
+6. Transport Layer
 
-The GhostNet Layer is the encrypted transport channel of the SecureCall Ecosystem.
-It ensures that audio frames leave the device exclusively in encrypted form.
+The current Android release uses WebRTC with STUN/TURN plus application-layer
+encryption. Older code and documents use the internal name GhostNet for several
+transport experiments; that name does not imply a deployed relay network or IP
+masking product.
 
 6.1 Architecture
 
-GhostNet consists of three sublayers:
+The current path consists of:
 
-Transport (WebRTC/QUIC)
+Transport (WebRTC)
 
 Audio Engine (Opus)
 
-Routing (Single-Hop / Multi-Hop)
+Routing (peer-to-peer where possible, otherwise TURN relay)
 
 6.2 Transport (WebRTC / QUIC)
 
-GhostNet uses depending on device and product line:
-
-WebRTC with DTLS for maximum compatibility
-
-or QUIC with embedded AEAD layer for Premium/OS
+The current release uses WebRTC. QUIC transport is research-only and is not a
+current tier feature.
 
 Properties:
 
@@ -411,7 +407,7 @@ FEC (Forward Error Correction) enabled
 
 Jitter buffer with dynamic size
 
-6.4 Single-Hop GhostNet (Free/Pro)
+6.4 Current WebRTC/TURN Routing
 
 P2P connection or relay via TURN
 
@@ -419,9 +415,10 @@ Metadata kept minimal
 
 No relay access to audio (everything encrypted)
 
-6.5 Multi-Hop Routing (Premium/OS)
+6.5 Multi-Hop Routing (Research Roadmap - Not Implemented)
 
-Premium and OS support multi-hop GhostNet routing:
+No current SecureCall edition supports or sells multi-hop routing. The following
+chain is a research concept only:
 
 Example chain:
 
@@ -443,9 +440,10 @@ Making traffic correlation more difficult
 
 Protection against state surveillance measures
 
-6.6 SilentCarrier Mode
+6.6 SilentCarrier Mode (Research Roadmap - Not Implemented)
 
-Available for Free/Pro/Premium (OS optionally disabled):
+No current SecureCall edition implements SilentCarrier. The following is a
+research concept only:
 
 The app initiates a normal GSM call
 
@@ -472,41 +470,27 @@ Implement frame limits & nonce monitoring
 
 The signaling system serves exclusively to connect
 two devices with each other.
-It knows no user data and stores no connection metadata.
+It processes pseudonymous identifiers and transient routing/delivery metadata.
+The current privacy policy defines what is retained or logged.
 
 7.1 Identity Model
 
-Each device has:
-
-Identity Key Pair (Ed25519/X25519)
-
-Generated locally
-
-Never exported
-
-Never stored on backend
-
-Optional: Stealth identities (Premium/OS)
-
-Multiple identities per device
-
-Rotating
-
-Ideal for covert communication
-
-The backend knows only public keys, never real names or phone numbers.
+The current candidate uses a key-derived canonical SecureID, a per-install P-256
+identity key and per-call X25519 material. The backend must not be described as
+knowing no user data; it processes network and routing data required to deliver
+signaling and push events. Alias, phone and custom-ID mappings remain part of the
+server trust boundary.
 
 7.2 Registration (pseudonymous)
 
 A client registers as follows:
 
-Sends public key
-
-Receives a random, meaningless user ID
-
-No IP logs (only ephemeral)
-
-No timestamp persistence
+The client signs a short-lived server challenge with its Android Keystore
+identity key. The server derives the canonical SecureID from the submitted
+public key and persists only verified identity and alias bindings. A legacy
+alias can migrate only after proof delivered through its immutable,
+pre-transition FCM route. Runtime legacy registration cannot alter this proof
+channel; without a snapshot entry migration fails closed.
 
 The registration serves only to:
 
@@ -526,8 +510,8 @@ Exchange of ICE candidates
 
 Notification "call ended"
 
-Important:
-The server never knows the identity of participants beyond a public key.
+Important: the server sees the pseudonymous identifiers and network metadata
+required for signaling. It does not receive call plaintext.
 
 7.4 Transport Mechanisms
 
@@ -547,47 +531,28 @@ The server does not store state data longer than technically necessary.
 
 7.5 Key Directory
 
-The Key Directory allows:
-
-Retrieve public key of user X
-
-Identity consisting of:
-
-random user_id
-
-public_key
-
-The Key Directory does not store:
-
-IP addresses
-
-Timestamps
-
-Communication partners
-
-Device information
+The identity registry binds canonical `sc-...` IDs to P-256 public keys and
+rejects conflicting key or alias claims. It is not a public transparency log,
+and server-resolved aliases still require user verification of the canonical ID
+or call security code.
 
 7.6 Signaling Security
 
-Signaling itself is not trusted.
-
-Therefore:
-
-All content is signed
-
-Identity-based verification via Ed25519
-
-Replay protection
-
-No sensitive content sent via signaling
+Signaling is not intended to receive call plaintext. Registration, call invites,
+call acceptance and ephemeral-key transcripts are authenticated with P-256
+signatures; peers exchange transcript-bound HMAC confirmations before WebRTC
+media starts. SDP, ICE, presence, alias resolution and availability still depend
+on the signaling service and TLS transport.
 
 
-8. Policy Engine & Product Line Profiles
+8. Policy Engine & Product Line Profiles (Research Roadmap)
 
 The Policy Engine is the central control component of the SecureCall Ecosystem.
 It defines how the system responds to risks, configurations, and network conditions.
 
-Each product line receives its own policy profile:
+The following profiles are design goals, not shipped tier guarantees. Current
+tier behavior must be taken only from tested Android flavor code and the active
+distribution matrix.
 
 Free (GhostTalk Basic)
 
@@ -634,9 +599,7 @@ Rooted devices allowed → warning only
 
 No built-in VPN service; external device VPN supported with active-route indicator
 
-GhostNet: Single-Hop
-
-SilentCarrier Mode available
+WebRTC/TURN only; no multi-hop or SilentCarrier implementation
 
 No IMSI detection
 
@@ -654,9 +617,7 @@ Root optionally blockable
 
 No built-in VPN service; external device VPN supported with active-route indicator
 
-GhostNet: Single-Hop, optimized
-
-SilentCarrier Mode active
+WebRTC/TURN only; no multi-hop or SilentCarrier implementation
 
 Stronger anti-tampering
 
@@ -676,9 +637,9 @@ Device-Owner mode mandatory
 
 App whitelist active
 
-GhostNet: Multi-Hop
+No multi-hop implementation
 
-IMSI catcher detection active
+IMSI catcher detection is not implemented
 
 Stealth UI available
 
@@ -686,7 +647,7 @@ All background processes blocked
 
 Radio profiles restricted (LTE-only possible)
 
-SilentCarrier Mode active
+SilentCarrier is not implemented
 
 8.5 OS Policy – GHOSTOS BlackRoot
 
@@ -726,10 +687,11 @@ These decisions are enforced by the Security Monitor
 and apply globally in the app.
 
 
-9. OS-Level Security – GHOSTOS BlackRoot
+9. OS-Level Security - GHOSTOS BlackRoot (Research Roadmap)
 
-GHOSTOS BlackRoot is a hardened special-purpose operating system based on Android
-for military and high-security deployments.
+GHOSTOS BlackRoot is a research concept for a hardened special-purpose Android
+operating system. It is not implemented, distributed or sold as part of the
+current SecureCall release.
 It follows the principle "Maximum Security – Minimum Surface".
 
 9.1 Core Principles
@@ -865,8 +827,9 @@ Internal audit process
 
 10. Integration, API Boundaries & Security Architecture
 
-This chapter describes the interaction of modules and defines
-what security guarantees each layer provides and where explicit boundaries lie.
+This chapter records target boundaries. Statements about GHOSTOS, multi-hop
+relays and signed signaling are research requirements unless a current-release
+note explicitly says otherwise.
 
 10.1 API Boundaries & Responsibilities
 
@@ -906,7 +869,7 @@ Forward exclusively encrypted frames
 
 Know neither identity nor destination of the user
 
-Store no metadata
+Store only the documented minimum metadata required for operation and safety
 
 GHOSTOS BlackRoot
 
@@ -922,15 +885,14 @@ Crypto Engine ↔ Android App
 
 Exchange only encrypted payloads
 
-App never receives private keys in plaintext
+Private key material must remain inside the documented crypto boundary
 
 Communication via FFI is limited & verified
 
 Android App ↔ Backend
 
-Backend is not trusted
-
-Signals are signed/verified
+Backend is not trusted for call plaintext. Current signaling is not fully
+authenticated and remains release-blocking audit work.
 
 GhostNet ↔ Backend
 
@@ -956,8 +918,8 @@ Highest trust level
 SecureCall App
 Trusts crypto, but not the OS
 
-OS (BlackRoot)
-Trusts app, protects hardware & radio
+OS (BlackRoot research concept)
+Target only; not part of the current release
 
 GhostNet Relays
 Untrusted
@@ -967,17 +929,10 @@ Untrusted
 
 10.4 Minimal Metadata
 
-The system guarantees:
-
-No storage of IP addresses
-
-No storage of communication partners
-
-No persistence of timestamps
-
-No device information
-
-No analysis by relays
+The current system aims to minimize metadata. It does not guarantee zero
+metadata: network endpoints, pseudonymous identifiers, delivery state,
+entitlement facts and operational records may be processed or retained as
+described in the privacy policy and server configuration.
 
 10.5 Error Handling & Fail-Safe
 
@@ -1005,14 +960,17 @@ Premium/OS: external audits required
 
 10.7 Security Architecture Summary
 
-The architecture ensures:
+The current architecture is intended to ensure:
 
 Plaintext never leaves the device.
 
-No component blindly trusts another.
+Call content is protected independently of the signaling transport after both
+clients verify the signed key transcript and peer key confirmation.
 
 Metadata is minimized to the limit of technical feasibility.
 
-OS hardening protects hardware, app protects cryptography.
+The Android app protects its local cryptographic state within documented
+platform limits. GHOSTOS and additional OS hardening remain research concepts.
 
-Backend is replaceable & untrusted by design.
+The backend is outside the call-plaintext trust boundary. It remains trusted for
+availability, metadata processing and non-canonical alias resolution.

@@ -21,9 +21,6 @@
     <link rel="stylesheet" href="../css/wiki-v2.css">
     <link rel="icon" href="/assets/brand/stealthx-logo.png" type="image/x-icon">
     <link rel="shortcut icon" href="../logo.png">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2L60E8E7R"></script>
-    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-V2L60E8E7R");</script>
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -165,7 +162,7 @@
                 <li><strong>Open SecureCall</strong> &mdash; Launch the app from your home screen or app drawer. The main screen shows your contact list and recent calls.</li>
                 <li><strong>Select a contact</strong> &mdash; Navigate to the Contacts tab and locate the person you want to call. Tap the <strong>phone icon</strong> next to their name.</li>
                 <li><strong>Tap the Call button</strong> &mdash; A call initiation request is sent through our encrypted signaling server. The connection is being established.</li>
-                <li><strong>Wait for the connection</strong> &mdash; The call typically connects within 1&ndash;2 seconds. During this time, an X25519 key exchange occurs and the Double Ratchet is initialized.</li>
+                <li><strong>Wait for the connection</strong> &mdash; The call typically connects within 1&ndash;2 seconds. During this time, X25519 and HKDF-SHA256 derive per-call key material.</li>
                 <li><strong>Verify the lock icon</strong> &mdash; Once connected, check the lock icon at the top of the call screen. The color indicates your encryption and threat status.</li>
             </ol>
 
@@ -244,7 +241,7 @@
             <ul>
                 <li><strong>Speaker</strong> &mdash; Toggle between the earpiece and the loudspeaker. The earpiece is the default for private conversations. Use the loudspeaker when privacy is not a concern or in hands-free scenarios.</li>
                 <li><strong>Mute</strong> &mdash; Mute your microphone so the other party cannot hear you. Your end remains encrypted and the call stays active. The mute state is indicated by a visual icon change.</li>
-                <li><strong>End Call</strong> &mdash; Terminate the call and destroy all session keys immediately. The Double Ratchet state is ratcheted forward, ensuring that the keys used in this session cannot decrypt future or past calls.</li>
+                <li><strong>End Call</strong> &mdash; Terminate the call and discard the per-call session key. SecureCall does not implement a Double Ratchet or claim post-compromise protection.</li>
             </ul>
 
             <h3>Call Duration Limits</h3>

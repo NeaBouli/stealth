@@ -106,6 +106,10 @@ function buildContext(externalDeps) {
     issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
     saveWalletMappings: saveWalletMappingsOverride,
+    saveFcmTokens: saveFcmTokensOverride,
+    testerLicenseRegistry,
+    identityRegistry, identityMigrationRoutes,
+    identityProtocolMode, identityTransitionDeadline, nowSeconds,
   } = externalDeps;
 
   // Core state from state.js (Maps/Arrays are shared references)
@@ -127,7 +131,7 @@ function buildContext(externalDeps) {
     fcmTokens, activationCodes, walletMappings,
     giftCodes, saveGiftCodes,
     // Store ops
-    loadFcmTokens, saveFcmTokens,
+    loadFcmTokens, saveFcmTokens: saveFcmTokensOverride || saveFcmTokens,
     loadActivationCodes,
     saveActivationCodes: saveActivationCodesOverride || saveActivationCodes,
     loadWalletMappings,
@@ -141,6 +145,9 @@ function buildContext(externalDeps) {
     issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
     // External services
+    testerLicenseRegistry,
+    identityRegistry, identityMigrationRoutes,
+    identityProtocolMode, identityTransitionDeadline, nowSeconds,
     pkd, subscriptions, fcm, customIds, licenses,
     getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS,
     CLIENT_ID_REGEX,

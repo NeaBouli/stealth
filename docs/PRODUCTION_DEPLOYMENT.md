@@ -25,6 +25,11 @@ Two deployment options are available:
 - **Option A: Bare-metal (PM2)** — `deployment/` directory (this guide)
 - **Option B: Docker** — `deploy/` directory (see `docs/DEPLOYMENT_GUIDE.md`)
 
+The Docker path is authoritative for new deployments and keeps the shared TURN
+secret out of environment interpolation and the committed coturn template. The
+bare-metal path remains a legacy option and must place the same private secret
+in signaling and `/etc/turnserver.conf` through the operator's secret workflow.
+
 ## Server Requirements
 
 | Spec | Minimum | Recommended |
@@ -95,7 +100,13 @@ This installs: Node.js 18, PM2, Nginx, Certbot, Coturn, UFW firewall.
 bash deployment/deploy_signaling.sh
 ```
 
-**SAVE THE OUTPUT** — it contains your TURN_PASS and ADMIN_API_KEY.
+The script never prints credential values. On first deploy it writes fresh
+`TURN_PASS` and `ADMIN_API_KEY` values only into
+`/opt/securecall/signaling/.env` (owner-only, mode `0600`); on later runs it
+preserves the existing file and only re-enforces the permissions. Transfer
+both values into your encrypted password manager through your restricted
+operator workflow — do not print, log, or retain them in terminal output,
+screenshots, or tickets.
 
 Verify:
 ```bash
@@ -155,7 +166,11 @@ sudo nano /etc/turnserver.conf
 
 Set:
 - `external-ip=YOUR_VPS_IP`
-- `static-auth-secret=YOUR_TURN_PASS` (from Step 2 output)
+- `static-auth-secret=<same private 64-hex value configured for signaling>`
+
+Do not write `$TURN_SECRET` literally into the coturn file. For new systems,
+prefer the Docker flow in `docs/DEPLOYMENT_GUIDE.md`, which renders this value
+from `deploy/secrets/turn_secret` at container startup.
 
 Uncomment TLS lines after SSL cert is obtained:
 - `cert=/etc/letsencrypt/live/turn.securecall.app/fullchain.pem`
@@ -229,6 +244,9 @@ The signaling server is stateless (in-memory only). Back up:
 - `/etc/letsencrypt/` (SSL certs)
 - `/etc/turnserver.conf` (TURN config)
 
+These contain private material. Store backups encrypted and access-controlled;
+the Docker backup script intentionally excludes `deploy/secrets/turn_secret`.
+
 ### Security Hardening
 
 - [ ] SSH key-only auth (disable password login)
@@ -241,9 +259,15 @@ The signaling server is stateless (in-memory only). Back up:
 
 ## Credential Storage
 
-> **WARNING**: Never commit credentials to git!
+> **WARNING**: Never commit credentials to git, and never print them to
+> terminal, provisioner, or CI output.
 
-Store securely in a password manager:
+`deployment/deploy_signaling.sh` never emits credential values: fresh
+`TURN_PASS` / `ADMIN_API_KEY` values exist only in
+`/opt/securecall/signaling/.env` (mode `0600`, owner-only). Read them from
+that restricted file only inside your operator workflow and store them in an
+encrypted password manager; keep every backup encrypted and
+access-controlled.
 
 | Credential | Location | Purpose |
 |------------|----------|---------|

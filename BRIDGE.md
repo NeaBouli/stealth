@@ -6062,6 +6062,89 @@ Open next:
 
 `LOCAL CODE/TEST GATES PASS / SINGLE-DEVICE SMOKE PASS / REVIEW AND EXTERNAL E2E GATES OPEN`
 
+## 2026-09-19 18:16 EEST — CODEX SOL — PR #82 REVIEW GATES LOCALLY GREEN
+
+- **Ticket:** `STEALTHX-SALES-READINESS-20260919-B1`; **Type:** FIX / SECURITY /
+  TEST / RELEASE-GATE; **Status:** Local verification complete, PR update pending.
+- Work was isolated on `fix/pr82-review-gates-20260919` from exact PR `#82` head
+  `3e5196b9b4c00481c7a2b0152d729c92501a8b78`; dirty canonical checkouts and
+  unrelated user files were not changed.
+- Closed the outstanding entitlement/fulfillment review gates: signed stale or
+  duplicate claims fail closed; internal fulfillment/revoke requests are bounded
+  before HMAC work; legacy rows are not migrated before immutable checks;
+  payment-reference-only reversals revoke the original sale; terminal retries
+  remain idempotent only for the same contract; activation requires a registered
+  client; Android revoke clears token and verification timestamp atomically; and
+  the Free activation gate is covered by an executable runtime test.
+- Added a conservative stale-lock recovery runbook. No automatic lock reclaim,
+  production mutation, payment, deployment, publishing or sales activation was
+  performed.
+- Verification PASS: complete signaling `npm test`; focused entitlement,
+  fulfillment and subscription/WebRTC suites; Free Debug and Free Release unit
+  tests; `verifyFreeReleaseBillingClosed`; and the exact Android CI-equivalent
+  command (183 Gradle tasks in 41m42s) covering Premium compile/tests, Free lint,
+  API-36 Free APK/AAB, VPN policy/runtime gates, no-app-wallet/IFR gate, R8,
+  archive integrity and test signing verification. `git diff --check` and the
+  bounded secret-pattern scan also passed.
+- Kimi K3 was assigned only an independent read-only final-diff review. The local
+  provider connection failed before analysis; the external retry was not allowed
+  to export an unpublished diff. Kimi produced no result and changed no file.
+  Sol completed the full security/integration review and will request Kimi again
+  against the published PR diff.
+- `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain unchanged. Android contains no
+  IFR/wallet verification. Browser IFR discount, Stripe fulfillment and fiscal
+  activation remain closed until the reviewed product commit is accepted by the
+  private VLABS operator and the version-bound finance gates pass.
+
+`PR 82 LOCAL REVIEW GATES GREEN — ONE REVIEWED PUSH, HOSTED CI AND VLABS SOURCE ACCEPTANCE NEXT`
+
+## 2026-09-19 19:01 EEST — CODEX SOL + KIMI K3 — PR #82 FOLLOW-UP HARDENING VERIFIED
+
+- **Ticket:** `STEALTHX-SALES-READINESS-20260919-B1`; **Type:** FIX / SECURITY /
+  TEST / RELEASE-GATE; **Status:** Follow-up implementation locally verified,
+  commit and reviewed push pending.
+- Kimi K3 independently reviewed the published PR diff and then implemented one
+  bounded, non-overlapping backend block: single-hop proxy-aware request
+  limiting, terminal reversal idempotency, canonical legacy sale revocation,
+  gift-code persistence rollback, focused limiter tests and the stale-lock
+  runbook heading correction. Kimi made no commit, push, deploy or external
+  change.
+- Codex Sol reviewed every changed line and tightened the result: forwarded
+  headers are trusted only under the explicit `TRUST_PROXY=true|1` deployment
+  contract; the shared IP helper uses the rightmost address appended by the one
+  trusted proxy; recovered Stripe session keys require the complete `cs_`
+  format; failed gift persistence restores the exact prior object state; and
+  contradictory legacy terminal tiers fail closed.
+- Changed files are limited to the signaling proxy/IP helper, fulfillment and
+  subscription handlers, their existing tests, and `docs/BACKUP_RESTORE.md`.
+  Android, website, product catalogue, prices and production configuration were
+  not changed in this follow-up.
+- Verification PASS after Sol integration: complete signaling `npm test`,
+  including startup, context, 47/47 handlers, 94/94 subscription/WebRTC,
+  payment, RTDN, entitlement and VLABS fulfillment suites; JavaScript syntax;
+  `git diff --check`; and a bounded live-secret-pattern diff scan with no hit.
+  The first sandboxed test attempt failed only because localhost listen was
+  denied (`EPERM`); the same full suite passed outside that socket sandbox.
+- The earlier exact Android CI-equivalent 183-task API-36 build remains valid
+  because no Android file changed after it. Hosted GitHub Actions have not
+  produced a new run for the pushed PR head because the account-level Actions
+  allowance is currently unavailable; no repeated dispatch or weakened gate is
+  permitted.
+- `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain unchanged. Sales, browser IFR
+  discount, Stripe fulfillment, fiscal activation, deployment and publishing
+  stay closed pending reviewed source acceptance, VLABS pairing and the normal
+  version-bound release gates.
+
+`PR 82 FOLLOW-UP LOCALLY GREEN — COMMIT/PUSH, THREAD RECONCILIATION AND VLABS ACCEPTANCE NEXT`
+
+### 2026-09-19 19:04 EEST — Dependency audit note
+
+- `npm ls --all --omit=dev` resolves successfully. `npm audit --omit=dev
+  --audit-level=high` exits `0`: no High/Critical advisory blocks this patch.
+  It reports three Moderate advisories in the transitive `qs` dependency via
+  Express/body-parser. That lockfile remediation is intentionally separated
+  from PR #82's fulfillment/security review diff and remains required before a
+  final `PRODUCT_READY` decision.
 ## 2026-09-07 — CODEX SOL — STARTUP REGRESSION REVIEW FOLLOW-UP
 
 - The process-level signaling startup test now binds to an operating-system-assigned
@@ -6077,3 +6160,1119 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-09-19 19:08 EEST — CODEX SOL — PR #82 MAIN SYNC AND ANDROID CI REPAIR
+
+- PR #82 was merged with current `origin/main` without rebase, force-push or
+  dropped history. The only textual conflict was append-only `BRIDGE.md`; both
+  histories were retained. Exact head `818a07c940128987f79ad994d7323104ad0120ed`
+  is mergeable, Draft and still requires normal review.
+- The complete signaling suite passed again after the integration. All eleven
+  previously open review threads were rechecked against source/tests and
+  resolved; no unrelated thread was changed.
+- Hosted Actions are running again, correcting the earlier allowance-blocked
+  observation. Signaling, Rust, Markdown/YAML and Dependency Review passed.
+  Both Android workflows failed before repository code because the pinned
+  `android-actions/setup-android` default still requests the removed legacy SDK
+  package `tools`.
+- Both workflows now override the pinned action with `packages:
+  platform-tools`; the existing next step continues to install API 36,
+  Build-Tools 36, CMake and NDK explicitly. The pinned action's official
+  `action.yml` confirms that `packages` is supported and its default is `tools
+  platform-tools`. Both edited workflows parse as YAML and `git diff --check`
+  passes.
+- No application behavior, Android source, product, payment, deployment,
+  provider or sales gate changed. A hosted rerun on the new exact head remains
+  required.
+
+`PR 82 MERGEABLE / 11 THREADS RESOLVED / ANDROID CI SETUP FIX READY FOR PUSH`
+
+## 2026-09-19 20:08 EEST — CODEX SOL + KIMI K3 — BROWSER IFR CONTRACT HARDENING START
+
+- **Ticket:** `STEALTHX-SALES-READINESS-20260919-B3`; **Type:** SECURITY / PAYMENT-GATE /
+  TEST; **Status:** In Progress.
+- This isolated branch starts from exact reviewed PR #82 head `20018e0`. Kimi K3 owns only the
+  source-side browser wallet-proof hardening and focused tests; Sol owns architecture, diff review,
+  integration, full test chains, VLABS coordination and all external actions.
+- Scope: EIP-4361-shaped domain/chain/URI/nonce/expiry binding, strict single-use verification,
+  HTTP negative tests, privacy-minimal logging/documentation and preservation of every closed gate.
+- Out of scope: Android wallet/IFR code, private VLABS offer definitions, production secrets,
+  deployment, Stripe/provider changes, invoices, Play changes and sales activation. Exact
+  discounted offer tuple remains with VLABS request `SECURECALL-VLABS-INPUT-01`.
+
+`B3 IMPLEMENTATION ACTIVE — PRODUCT_READY=NO / FINANCE_READY=NO / SALES CLOSED`
+
+## 2026-09-19 20:30 EEST — CODEX SOL + KIMI K3 — BROWSER IFR CONTRACT LOCAL GATES GREEN
+
+- **Ticket:** `STEALTHX-SALES-READINESS-20260919-B3`; **Type:** SECURITY / PAYMENT-GATE /
+  PRIVACY / TEST; **Status:** Ready for stacked review; no activation.
+- Kimi K3 implemented the bounded browser-proof extraction and negative HTTP matrix. Its first
+  correction attempt stopped before edits on restricted-network provider access; the approved
+  retry completed the same scope. Kimi made no commit, push, deployment or provider change.
+- Codex Sol reviewed the complete diff and added the final empty-body fail-closed boundary plus
+  the canonical `invalid_tier` response. The proof now binds domain, URI, Ethereum Mainnet,
+  product, normalized wallet, random nonce and exact five-minute timestamps; lookup-key drift,
+  expiry-at-boundary, temporal drift, wrong account/signature and replay all reject before Stripe.
+- Stripe metadata contains only a one-way proof digest/version and eligibility/price facts. Raw
+  wallet, signature and IFR balance are not persisted there; wallet logs are masked. The immediate
+  browser response retains the public balance only for the connected holder's eligibility UI.
+  Payment methods remain provider-configured.
+- Changed source is limited to the extracted IFR checkout module, signaling route wiring, IFR log
+  masking, focused tests, package test scripts, privacy copy and the historical WalletConnect note.
+  Android remains free of IFR/wallet logic.
+- Verification PASS: JavaScript syntax; focused IFR HTTP proof suite; website closed-gate test
+  `1/1`; complete signaling `npm test` including `47/47` handler and `94/94` subscription/WebRTC
+  assertions; complete `npm run test:payments`; `git diff --check`; modified-file secret-pattern
+  review (only an existing redacted `sk_live_*` documentation pattern matched).
+- Remaining gates: the legacy route stays default-off; VLABS must define and approve the exact
+  product/catalog/release/full-price/discounted-price/expiry tuples and the final proof-reference
+  contract. The process-local challenge store is not a multi-instance production store and is not
+  accepted as the eventual VLABS runtime. PR #82, PR #89, paired signer/runtime, artifact/device
+  evidence and finance lifecycle approval remain open.
+
+`B3 LOCAL GREEN — STACKED REVIEW NEXT / PRODUCT_READY=NO / FINANCE_READY=NO / SALES CLOSED`
+
+## 2026-09-19 20:33 EEST — CODEX SOL — BROWSER IFR CONTRACT PUBLISHED FOR REVIEW
+
+- Published commit `dd8b36b` and opened stacked PR
+  [#90](https://github.com/NeaBouli/stealth/pull/90) against PR #82's branch.
+- The stack boundary is explicit: PR #90 must not merge before PR #82. After #82 is integrated,
+  #90 may be retargeted to `main` and must pass its own exact-head CI plus normal review.
+- No gate was enabled and no production/provider/payment action occurred.
+
+`PR 90 OPEN / EXACT-HEAD CI + NORMAL REVIEW PENDING / SALES CLOSED`
+
+## 2026-09-19 22:01 EEST — CODEX SOL + KIMI K3 — PRODUCT TRUTH BLOCK START
+
+- **Ticket:** `STEALTHX-PRODUCT-TRUTH-20260919`; **Type:** SECURITY CLAIMS / CONTENT /
+  PRICING / RELEASE-GATE; **Status:** In Progress.
+- Work is isolated on `fix/stx22-stx37-stx38-product-truth-20260919` from exact closed-gate IFR
+  candidate `97d667b`. Kimi owns only the bounded STX-22/STX-37/STX-38 source implementation;
+  Sol owns contract validation, final diff review, integration, testing and external actions.
+- Correct SecureCall claims to the implemented per-call X25519/HKDF/XChaCha20-Poly1305 design
+  without claiming a Double Ratchet, authenticated key exchange or active-server resistance.
+  Preserve accurate SecureChat/Chameleon claims. Remove obsolete GhostNet product promises.
+- Align current direct-channel copy with the VLABS-accepted immutable offer tuple: Pro EUR 15.00
+  / IFR EUR 7.50 and Premium EUR 25.00 / IFR EUR 12.50, any positive verified IFR balance, no
+  threshold or lifetime cap. Remove stale EUR 49, USD/scarcity and mutable-price claims.
+- Add regression coverage for current public/store/app surfaces. Android must remain IFR/wallet-
+  free; all checkout controls and sales remain closed. No deployment, payment/provider mutation,
+  Play publishing or sale activation is authorized in this block.
+
+`PRODUCT_TRUTH ACTIVE — PRODUCT_READY=NO / FINANCE_READY=NO / SALES CLOSED`
+
+## 2026-09-19 22:52 EEST — CODEX SOL — PRODUCT TRUTH LOCAL REVIEW COMPLETE
+
+- **Ticket:** `STEALTHX-PRODUCT-TRUTH-20260919`; **Type:** FIX / SECURITY CLAIMS /
+  PRICING / RELEASE-GATE / TEST; **Status:** Local gates green; stacked review
+  publication pending.
+- Corrected current SecureCall security and architecture claims across README,
+  security/privacy/architecture documents, website/wiki, Play/Fastlane copy and
+  release guidance. Current text now states per-call X25519/HKDF-SHA256 plus
+  XChaCha20-Poly1305, the missing authenticated identity binding and active
+  signaling-service limitation, and separates GHOSTOS/GhostNet/multi-hop/QUIC/
+  SilentCarrier research from shipped functionality.
+- Removed the Android upgrade screen's simulated 100-license scarcity model and
+  retired hard-coded EUR 3.49/EUR 4.99/EUR 49 prices. The complete paid surface
+  stays hidden behind the closed billing gate; any future visible Play price must
+  come from Google `ProductDetails`.
+- Aligned current direct-sale copy with the accepted closed-gate VLABS tuple:
+  Pro EUR 15.00 / IFR EUR 7.50 and Premium EUR 25.00 / IFR EUR 12.50, 5000 bps,
+  any positive verified IFR balance, no threshold/cap, exact five-minute
+  single-use browser proof. Android remains wallet/IFR-free and all checkout
+  controls remain disabled.
+- Added `website/js/product-truth.test.cjs` and wired it into basic CI to guard
+  the current public/store/documentation surfaces against retired crypto,
+  GhostNet, wallet, scarcity and price claims, and to validate the closed IFR
+  offer plus landing JSON-LD.
+- Added the public-safe complete snapshot
+  `docs/agent-bridge/MASTER_STATUS_2026-09-19.md`, including the current PR
+  stack, 62-finding audit register, device/UI matrix, VLABS contract, release
+  order and exact definition of sellable completion.
+- Verification PASS:
+  - `node --check website/js/ifr-checkout.js`;
+  - `node --test website/js/ifr-checkout.test.cjs website/js/custom-id-gate.test.cjs website/js/product-truth.test.cjs` -> 7/7;
+  - Gradle with API 36 SDK: Pro and Premium Debug source compile, Free Debug and
+    Free Release unit tests/resources, and `verifyFreeReleaseBillingClosed` ->
+    BUILD SUCCESSFUL, 105 tasks;
+  - `xmllint --noout client_android/app/src/free/res/layout/activity_upgrade.xml`;
+  - workflow YAML parse with Ruby Psych;
+  - `git diff --check` and bounded added-line live-secret pattern scan -> no hit.
+- `yamllint` is not installed locally; YAML syntax was independently parsed, and
+  hosted CI remains required on the published exact head.
+- Kimi K3 received only the non-overlapping read-only full-diff review. The
+  provider returned HTTP 403 for its five-hour quota before analysis, so Kimi
+  changed no file and supplied no finding. The review prompt is retained for a
+  later retry against the published PR; Sol performed the current line/diff and
+  integration review.
+- Remaining risks are intentionally outside this block: STX-01/STX-21 identity
+  and key binding, STX-03 host verification, remaining audit waves, narrow-phone
+  UI/device QA, canonical durable VLABS checkout/fiscal lifecycle, exact final
+  artifact build and physical three-device release matrix.
+- No deploy, provider/payment mutation, Play action, artifact publication or
+  sale activation occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`, checkout and
+  sales remain closed.
+
+`PRODUCT TRUTH LOCALLY GREEN — STACKED PR + EXACT-HEAD CI + NORMAL REVIEW NEXT`
+
+## 2026-09-19 22:57 EEST — CODEX SOL — PRODUCT TRUTH PUBLISHED FOR REVIEW
+
+- Published commit `ec72fbf9` and opened stacked PR
+  [#94](https://github.com/NeaBouli/stealth/pull/94) against PR #90's exact
+  browser-IFR branch.
+- Stack rule: #82 and #90 must be integrated first. PR #94 must then be
+  retargeted/reconciled and its complete exact-head CI rerun on the final base;
+  independent review remains mandatory.
+- No commercial or runtime gate changed. `PRODUCT_READY=NO`,
+  `FINANCE_READY=NO`, checkout and sales remain closed.
+
+`PR 94 OPEN — HOSTED CI + NORMAL REVIEW PENDING / SALES CLOSED`
+## 2026-09-20 01:13 EEST — Tester-code first-use device binding  →  In Progress
+
+- **Branch:** `feat/tester-codes-complete-20260920`
+- **Baseline:** `464da48da0f70eb13c12dbca4d8a48fd1ab3c88e` (current SecureCall stacked candidate)
+- **Scope:** Direct Premium only. Complete the PR #82 tester-license path so a fresh install can
+  create a non-exportable P-256 Android Keystore key and atomically bind one active personal code
+  to proof of that key. Preserve same-key retry/renewal and reject other keys, copied app data,
+  replay and concurrent first activation.
+- **Security boundary:** No device identifier is trusted. Local hardware enforcement and remote
+  key-possession proof are distinct from Android Key Attestation and must not be described as
+  attestation. No recipient data, raw code, signer key or production registry enters Git or an
+  agent prompt.
+- **Ownership:** Kimi K3 receives the bounded implementation slice. Sol owns architecture,
+  line-by-line diff review, integration, full tests and every external action.
+- **Production:** No deployment, registry mutation, code activation, email delivery or release
+  authorization in this block.
+- **Risk:** High (auth/licensing and durable one-device binding).
+
+---
+
+## 2026-09-20 02:04 EEST — CODEX SOL — TESTER-CODE PATH LOCALLY COMPLETE
+
+- Completed the Direct Premium first-use path: a fresh install creates a P-256 Android
+  Keystore signing key, locally requires TEE/StrongBox backing, sends canonical public SPKI,
+  and proves possession before the server atomically stores the key and binds the active grant
+  to the registered session subject. The server derives the key hash and never trusts a device
+  ID or client-supplied activation hash.
+- Same-key retry and renewal remain supported. Other key/subject, replay, concurrent first
+  binding, revoked/corrupt state, invalid key/proof/token, lock contention and persistence
+  failure are covered by fail-closed tests. Renewal BEGIN now rechecks active grant, active key
+  and exact binding before issuing a challenge.
+- Added a separate private draft exporter. It atomically creates mode600 delivery CSV,
+  inactive hash-only runtime registry and checksum manifest in an owner-only directory outside
+  Git. Output is idempotent, conflict-safe and explicitly `draft_do_not_send_or_activate`.
+  No recipient, raw code, private signer or device data is present in this repository.
+- Read-only aggregate production inventory found no current tester registry and no redeemed or
+  recipient-linked legacy gift record. Unused generic legacy activation entries remain a
+  separate owner-disposition gate; no record was read, changed, revoked or imported.
+- Verification PASS:
+  - full signaling/backend suite including tester, payment, RTDN and fulfillment tests;
+  - private preparation/export suite: 25/25 synthetic tests;
+  - strict mypy: 4 files, zero issues;
+  - Premium Debug unit tests and AndroidTest compilation: BUILD SUCCESSFUL;
+  - S10 API31 Pro-Debug hardware-key instrumentation: 1/1;
+  - Tab S4 API29 Premium-Debug hardware-key instrumentation: 1/1;
+  - `git diff --check` and bounded added-line credential scan: no finding.
+- Independent Terra review found one Medium renewal-BEGIN fail-closed gap; it was fixed and the
+  focused/full suites rerun green. Kimi K3 and Claude Code were retried read-only but both
+  providers rejected startup on usage limits; neither changed files or supplied findings.
+- Remaining gates: publish this stacked branch and obtain exact-head CI/review; run the private
+  coordinator preparation/export on the separate recipient host; integrate the remaining
+  SecureCall audit/UI stack; build the exact configured signed Direct Premium candidate; then
+  perform end-to-end two-device activation/recovery/revocation acceptance before any production
+  import, activation or email delivery.
+- No deployment, runtime secret, production registry mutation, code activation, email delivery,
+  artifact publication, payment action or sale activation occurred. `PRODUCT_READY=NO`,
+  `FINANCE_READY=NO`, sales remain closed.
+
+`TESTER-CODE LOCAL IMPLEMENTATION GREEN — STACKED PR + PRIVATE COORDINATOR DRAFT NEXT`
+
+## 2026-09-20 02:08 EEST — CODEX SOL — TESTER-CODE PR PUBLISHED
+
+- Published implementation commit `6513505` and opened stacked PR
+  [#95](https://github.com/NeaBouli/stealth/pull/95) against PR #94's exact head.
+- Required stack order remains #82 -> #90 -> #94 -> #95, then complete exact-main CI.
+- Hosted exact-head checks and normal review are pending. No production or delivery gate changed.
+- The Basic CI signaling job now also runs all synthetic private staging/export tests so this
+  boundary is enforced on every candidate rather than only by the local verification record.
+
+`PR 95 OPEN — HOSTED CI/REVIEW PENDING — PRODUCTION AND DELIVERY CLOSED`
+
+## 2026-09-20 02:20 EEST — CODEX SOL — AUDIT-FIX INTEGRATION STARTED
+
+- Created isolated branch `integrate/securecall-audit-release-20260920` from immutable PR #95
+  candidate `2cb2aed9774eeb4d65e500e696fce01c9ec3b0a0`. The dirty/diverged canonical checkout remains
+  untouched.
+- This block may integrate only the independently reviewed implementation commits from PRs #89,
+  #91, #92 and #93 after conflict/staleness review. Historical Bridge-only commits are excluded.
+  Report-only PRs #83/#85/#88 remain a separate documentation decision.
+- Kimi K3 owns the non-writing conflict/risk review. Sol owns every applied diff, integration
+  decision and the full backend/web/Android/CI verification chain.
+- No merge to `main`, deployment, provider/payment/Play mutation, artifact publication, private
+  data handling or sale activation is authorized by this integration block.
+
+`AUDIT-FIX INTEGRATION IN PROGRESS — PR 95 CI PENDING — SALES CLOSED`
+
+## 2026-09-20 02:24 EEST — CODEX SOL — PR #95 EXACT-HEAD CI GREEN
+
+- GitHub Actions run `35475561291` passed on exact baseline `2cb2aed`: Markdown/YAML, Rust Core
+  Crypto, Signaling Tests including all 25 private staging/export tests, and Android Client.
+  Android completed in 8m12s.
+- CodeRabbit's check passed by skipping review on the stacked non-main base; it is not treated as
+  an independent review. Kimi K3 was retried for the next integration review, but its provider
+  returned the five-hour quota response before reading code or changing files.
+- Sequential gate satisfied: integration of the already reviewed #89/#91/#92/#93 implementation
+  commits may now proceed. Production, private delivery and sales gates remain closed.
+
+`PR 95 CI GREEN — AUDIT-FIX INTEGRATION ACTIVE — SALES CLOSED`
+
+## 2026-09-20 02:49 EEST — CODEX SOL — AUDIT-FIX INTEGRATION LOCALLY GREEN
+
+- **Ticket:** `STEALTHX-AUDIT-FIX-INTEGRATION-20260920`; **Type:** FIX / SECURITY /
+  PRIVACY / RELEASE-GATE / TEST; **Status:** exact-head local gates green; stacked PR and hosted
+  CI pending.
+- Integrated only the current implementation content from PRs #89, #91, #92 and #93 on top of
+  immutable tester-code candidate `2cb2aed`. This updates vulnerable request-parser dependencies,
+  removes per-client IP buckets from `/status/live`, replaces brittle leaf pinning with the live
+  Let's Encrypt YR2/ISRG Root YR policy plus controlled rollover pins, and removes unconsented GA4
+  loading from all 32 website HTML surfaces. New regression tests and CI wiring were preserved
+  alongside the newer IFR, product-truth and tester-license suites.
+- Deliberately excluded historical Bridge-only commits and report-only PRs #83/#85/#88. PR #85's
+  dialpad diagnosis is stale against the current source (`minHeight=64dp` already exists), and its
+  pin proposal required the live-chain validation now implemented here. Those audit documents must
+  be corrected/reconciled separately rather than copied into the release branch as fact.
+- Verification PASS on the exact local head:
+  - signaling/backend full suite and `npm audit --omit=dev` (zero vulnerabilities);
+  - website contract suite: 8/8, with no GA loader/property/`gtag` marker left in website HTML;
+  - synthetic private tester staging/export suite: 25/25; strict mypy: four files, zero issues;
+  - live TLS chain: leaf deliberately unpinned; YR2, ISRG Root YR and rollover root configured;
+  - Android API-36 release matrix: 185 tasks in 10m47s, including Free/Premium unit tests,
+    Premium source compile, Free lint/R8, VPN distribution guards, IFR/wallet guard, Free Debug,
+    signed Free Release APK and AAB;
+  - built metadata: `com.securecall.app.free`, `1.0.50-free`, versionCode `78017`, minSdk 24,
+    targetSdk 36; ZIP integrity and APK v2 signature verification passed; AAB JAR verification
+    returned `jar verified` and contained the expected manifest/SF/RSA entries;
+  - Rust core: 34/34 tests; `cargo clippy --locked --all-targets -- -D warnings` passed;
+  - `git diff --check` and bounded added-line credential-pattern scan passed.
+- The APK/AAB above used an ephemeral CI-only self-signed certificate and are verification
+  artifacts, not distributable release artifacts. Jarsigner reported the expected self-signed,
+  short-lived/no-timestamp warnings plus current JDK JarInputStream warnings; production signing
+  and final artifact checks remain a later exact-candidate gate.
+- Kimi K3 was assigned only the independent read-only integration review. Its provider returned
+  the five-hour quota response before reading or changing files, so it supplied no review and no
+  change. Sol performed the conflict, line, integration and complete local verification review.
+- Next sequential gate: publish this branch as a stacked PR against #95, run hosted exact-head CI
+  and obtain normal review. STX-01/STX-21 authentication/key binding, STX-03 host verification and
+  revalidated narrow-phone UI fixes remain separate later blocks.
+- No merge to `main`, deployment, provider/payment/Play mutation, private-data handling, artifact
+  publication, code activation or sale occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`, sales and
+  checkout remain closed.
+
+`AUDIT-FIX INTEGRATION LOCALLY GREEN — STACKED PR/CI/REVIEW NEXT — SALES CLOSED`
+
+## 2026-09-20 02:51 EEST — CODEX SOL — AUDIT-FIX PR #96 OPEN
+
+- Published exact integration head `41f0376fa1d9952f6692290fa3030db75d4010c9` as stacked
+  [PR #96](https://github.com/NeaBouli/stealth/pull/96) against PR #95's branch.
+- GitHub reports the PR open and mergeable. Basic CI run `35477233008` started; exact-head checks
+  and normal review remain required before integration. CodeRabbit's immediate success state is
+  not counted as an independent review unless it supplies an actual review of this stacked diff.
+- No production, deployment, Play, payment/provider, private-data, artifact-publication or sales
+  gate changed. `PRODUCT_READY=NO`, `FINANCE_READY=NO`, sales remain closed.
+
+`PR 96 OPEN — EXACT-HEAD CI/REVIEW RUNNING — SALES CLOSED`
+
+## 2026-09-20 03:01 EEST — CODEX SOL — INDEPENDENT REVIEW FINDINGS REMEDIATED
+
+- Terra completed the bounded read-only diff review after Kimi remained provider-quota blocked.
+  It confirmed the status redaction, dependency lock, code/XML pin parity and preserved CI suites,
+  and found one High release-gate gap plus two Medium residuals.
+- High gap fixed: `.github/scripts/run-android-smoke.sh` now accepts only the explicit
+  `securecallLivePinTest=true` option, and the existing API-24/API-36 instrumentation matrix now
+  passes it. The live pin test therefore becomes mandatory whenever the release-candidate
+  instrumentation workflow runs instead of silently skipping.
+- Analytics guard strengthened: it now scans executable HTML/JS/MJS/CJS/JSX/TS/TSX website
+  sources, excludes only its own pattern fixture, and requires every external script to use an
+  integrity hash plus anonymous CORS.
+- While validating that guard, the old QR dependency on `payment-success.html` returned HTTP 404.
+  It was replaced with immutable `qrcodejs@1.0.0`, protected by a verified SHA-384 SRI hash, and
+  the page was adapted to its API. A local real-browser check rendered the synthetic Custom-ID
+  QR and deep link successfully with all local assets returning HTTP 200.
+- Focused verification PASS: website contracts 9/9; runner `bash -n`; instrumentation workflow
+  YAML parse; QR CDN HTTP 200 plus matching SHA-384; `git diff --check`.
+- Remaining Medium design tradeoff: Android declarative pins expire on 2028-03-01 and Android
+  then stops enforcing that XML pin-set for already-installed clients. Current SecureCall API,
+  signaling, heartbeat and GhostNet paths also use the non-expiring OkHttp `CertificatePinner`,
+  and release builds are blocked inside the 180-day rotation window. Removing XML expiration
+  would deliberately trade fail-open risk for possible old-client outage and is not changed
+  silently in this integration block; it remains an explicit later security decision.
+- The API-24/API-36 workflow must now pass on the exact published head. No production, Play,
+  payment/provider, private-data, artifact-publication or sale gate changed.
+
+`REVIEW FIXES LOCAL GREEN — API 24/36 LIVE-PIN CI NEXT — SALES CLOSED`
+
+## 2026-09-20 03:21 EEST — CODEX SOL — INSTRUMENTATION KEYSTORE CONTRACT FIXED
+
+- Exact-head Basic CI run `35477703615` passed all four jobs on `5312029`: Android Client,
+  Signaling Tests, Rust Core Crypto and Markdown/YAML plus website gates.
+- The separately dispatched API-24/API-36 instrumentation run `35477710503` executed 25 tests
+  on each emulator. The live TLS-pin test and the other 23 tests passed; both jobs failed only at
+  `TesterDeviceKeyInstrumentedTest` because GitHub's software-only Android Keystore correctly
+  cannot satisfy SecureCall's hardware-backed tester-device requirement.
+- Corrected the test contract without weakening production behavior: it now creates an
+  independent EC-signing probe. On a software-only Keystore it verifies fail-closed behavior and
+  removal of the tester alias; where hardware-backed signing exists it still requires stable key
+  reuse, a valid key hash, challenge signing and independent ECDSA verification.
+- Focused local verification passed: Android test-source compilation, Free unit tests and Debug
+  plus AndroidTest APK assembly. The hardware-backed path then passed on both connected physical
+  devices, S10 and Tab S4 (`OK (1 test)` on each). Only temporary `com.securecall.app.free` and
+  test packages were installed and removed; the pre-existing S10 Premium and Tab S4 Pro packages
+  remain installed.
+- Next gate: commit/push the test correction and rerun exact-head Basic CI plus the complete
+  API-24/API-36 instrumentation matrix. No production, Play, payment/provider, private-data,
+  artifact-publication or sale gate changed. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain
+  closed.
+
+`BASIC CI GREEN — KEYSTORE TEST FIX LOCAL+DEVICE GREEN — CI RERUN NEXT — SALES CLOSED`
+
+## 2026-09-20 03:34 EEST — CODEX SOL — STX-01/STX-21 COUPLED AUTH BLOCK STARTED
+
+- **Ticket:** `STEALTHX-STX01-STX21-AUTH-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** FIX / AUTH / CRYPTO /
+  MIGRATION / TEST; **Status:** In Progress; **Risk:** High.
+- **Branch:** `fix/securecall-authenticated-registration-20260920`, created from exact verified
+  PR #96 head `a8f8f19094f3fd60ad77180a8557896f30abc200`. The older analysis worktree and the dirty
+  canonical checkout remain untouched.
+- **Bounded objective:** prevent unauthenticated WebSocket registration from claiming another
+  SecureID or overwriting its push/routing state, and bind call/key-exchange messages to an
+  authenticated long-term client identity. Preserve existing users through an explicit,
+  fail-closed compatibility/migration design; do not change communication cryptography beyond
+  what is required for authenticated identity binding.
+- **Acceptance gates:** concrete exploit regression tests; authenticated registration and replay,
+  takeover, concurrent-claim and reconnect tests; signed call/key-exchange validation including
+  tamper/wrong-identity rejection; Android migration and restore behavior; full signaling,
+  Android, Rust and instrumentation suites; no protocol downgrade that silently reopens the old
+  path.
+- Kimi K3 was retried for the preceding review but remains provider-quota blocked before code
+  access. It will not be repeatedly invoked until the quota window changes. Sol owns architecture
+  and implementation; an independent read-only reviewer will be used before approval.
+- No deployment, production data/schema mutation, key rotation, Play/provider/payment action,
+  private-data handling, artifact publication or sale is authorized in this block.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`STX-01/STX-21 AUTH BLOCK IN PROGRESS — HIGH RISK — SALES CLOSED`
+
+## 2026-09-20 04:18 EEST — CODEX SOL — STX-01/STX-21 protocol boundary fixed
+
+- The implementation sequence is now fixed before code changes: (1) self-certifying P-256
+  installation identity, (2) one-time registration challenge/proof, (3) persistent canonical
+  identity and legacy-alias registry, (4) FCM-only proof for an unbound legacy `android-*` alias,
+  (5) signed call/key-exchange transcripts, (6) transcript-bound session-key derivation and key
+  confirmation, then Android/backend/Rust/instrumentation regression gates.
+- A legacy alias is never migrated by first claimant. If the signaling service has no previously
+  persisted FCM route capable of delivering the migration challenge, the client must use its new
+  self-certifying identity; the old alias is not silently rebound. Existing alias routing is kept
+  only after a successful proof, so current contacts can migrate without making the old takeover
+  flaw permanent.
+- The protocol has an explicit `transition` mode for a bounded rollout and an `enforce` mode for
+  closure. The default implementation is fail-closed; no permanent unsigned downgrade path will
+  be accepted. Production mode selection and rollout remain a separate, explicitly authorized
+  deployment task.
+- The same block will also remove the discovered inbound-media fail-open branch that currently
+  passes raw binary data to the decoder when no session key exists. This is directly within the
+  authenticated-key-exchange trust boundary.
+- Kimi K3 could not perform the requested read-only review: the first run was blocked by local
+  DNS isolation and the network-enabled retry was denied because it would transfer private
+  project code to an external provider without a separate code-egress authorization. No source
+  was transferred and Kimi produced no result or change. Sol continues from the completed local
+  Terra analysis and remains responsible for design, implementation and verification.
+
+`DESIGN FIXED — BACKEND TRUST CHAIN FIRST — NO PRODUCTION ACTION — SALES CLOSED`
+
+## 2026-09-20 05:54 EEST — CODEX SOL — STX-01/STX-21 implementation and local gates complete
+
+- **Ticket:** `STEALTHX-STX01-STX21-AUTH-20260920`; **Status:** Implementation complete,
+  review and local verification green; stacked PR and hosted exact-head CI remain next.
+- Added a self-certifying P-256 installation identity with one-time registration proof, replay
+  protection and persistent canonical/legacy-alias registry. Call invite/accept transcripts and
+  FCM v2 invites are signed; X25519/HKDF derivation is bound to the authenticated transcript,
+  explicit key confirmation gates WebRTC, ICE and inbound media, and the old raw-media fail-open
+  path is removed.
+- Replaced first-claim legacy migration with an immutable, private pre-transition FCM-route
+  snapshot. The loader accepts only an absolute regular non-symlink mode-0600 file, enforces a
+  maximum 14-day expiry and fails closed when absent or expired. The operator preparation tool
+  uses exclusive/no-follow creation, mode 0600 and file/directory fsync and logs only aggregate
+  counts. Mutable runtime registration state can no longer authorize alias migration.
+- Canonical FCM persistence now completes before alias binding; failure restores memory and leaves
+  the alias unbound. Legacy clients cannot mutate FCM routes. Identity challenges are capped at
+  four pending requests per source IP and 1,024 globally. Android validates the complete migration
+  transcript and refuses cold, disconnected, stale or mismatched challenges instead of queuing a
+  proof; it reconnects for a fresh challenge.
+- Canonical entitlement migration is atomic and fail-closed. Obsolete parallel handshake/signal
+  classes were removed. Contact, dialer and in-call UI corrections in the stacked baseline remain
+  integrated, and public security documentation now describes the implemented static per-call
+  key model instead of unsupported Double-Ratchet/PFS claims.
+- **Independent review:** Terra's final bounded review reported no blocking finding after the
+  immutable-route fix. Its remaining availability observation (global challenge capacity) was
+  addressed with the tested per-source cap. Kimi K3 remained unavailable/provider-blocked and
+  made no change; Sol reviewed every diff and owns integration.
+- **Verification PASS:** complete signaling `npm test`, including authenticated-call, identity,
+  migration, 50/50 handler and 102/102 subscription/WebRTC assertions; Android Free/Pro/Premium
+  unit and compile matrix (91 tasks); Free/Pro/Premium lint and debug assembly (164 tasks, zero
+  lint errors; existing warnings Free 332, Pro 264, Premium 275); website JS plus 9/9 contract
+  tests; Rust 28 unit plus 6 E2E tests and strict Clippy; `git diff --check`; bounded added-line
+  credential-pattern scan. The server-start test required normal local socket permissions after
+  the sandbox correctly denied `0.0.0.0` binding.
+- **Physical verification PASS:** isolated `com.securecall.app.free.devtest` identity-keystore
+  instrumentation completed 1/1 on S10/Android 12 and 1/1 on Tab S4/Android 10. Gradle removed
+  the temporary packages; S10 Premium and Tab S4 Pro release packages remain installed.
+- **Remaining gate:** publish this branch as a stacked PR against PR #96 and obtain hosted
+  exact-head CI/review. A real authenticated two-device call requires a compatible isolated
+  signaling deployment; no production deployment is authorized. Production must create the
+  private snapshot with token writes stopped, use transition mode only under an explicit bounded
+  rollout decision, and end in enforce mode. Transition mode is not the final security state.
+- No production, Play, payment/provider, private-data, artifact-publication or sales action
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-01/STX-21 LOCAL GREEN — STACKED PR/CI NEXT — STAGING E2E STILL REQUIRED — SALES CLOSED`
+
+## 2026-09-20 05:56 EEST — CODEX SOL — STX-01/STX-21 PR #97 open
+
+- Published implementation commit `b3fb0f4d15bf1e6e94648a911f5e1e324dc956f8` as stacked
+  [PR #97](https://github.com/NeaBouli/stealth/pull/97) against the verified PR #96 branch.
+- GitHub reports the PR open and mergeable. Basic CI run `35485271637` started all four jobs;
+  exact-head results remain pending. No merge or external runtime action occurred.
+- `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`PR 97 OPEN — EXACT-HEAD CI RUNNING — SALES CLOSED`
+
+## 2026-09-20 06:15 EEST — CODEX SOL — PR #97 API-24 Keystore compatibility corrected
+
+- Basic CI run `35485271637` passed all four jobs on implementation commit `b3fb0f4`.
+- Manually dispatched Android Instrumentation run `35485509339` passed all 26 tests on API 36
+  but exposed one new compatibility failure on API 24: its software Android Keystore generated a
+  valid non-exportable signing key while failing to expose complete `KeyInfo` metadata, causing
+  `IdentitySigningKey.ensureIdentity()` to return null.
+- Corrected validation without weakening the trust boundary. Every supported API still requires
+  a non-exportable Android-Keystore EC key, a 256-bit P-256 public curve and a successful local
+  SHA256withECDSA sign/verify probe. Provider `KeyInfo` constraints are additionally enforced
+  whenever the platform exposes them reliably.
+- Focused Android unit/compile/test-APK build passed (71 tasks). The corrected isolated identity
+  instrumentation test passed 1/1 again on both Tab S4/Android 10 and S10/Android 12 (82-task
+  connected build). A hosted API-24/API-36 rerun remains required after publishing the correction.
+- Parallel read-only STX-03 host verification found the running coturn stable with zero restarts.
+  Its effective mounted configuration uses a concrete non-empty secret with `use-auth-secret`,
+  and the active signaling process has a matching value. No value or network identifier was
+  emitted. The live suspected literal-secret defect is therefore not present; the repository
+  compose/template remains misleading/non-functional for a fresh deployment and will be handled
+  as the next separate bounded block after PR #97 is green.
+- No production mutation, restart, deployment, Play, payment/provider or sales action occurred.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`PR 97 BASIC CI GREEN — API-24 FIX LOCAL+DEVICE GREEN — HOSTED MATRIX RERUN NEXT`
+
+## 2026-09-20 06:45 EEST — CODEX SOL — PR #97 API-24 root cause isolated and fixed
+
+- Correction to the preceding provisional diagnosis: API-24 `KeyInfo` was complete and valid.
+  The actual incompatibility was `AlgorithmParameters.getInstance("EC")`, which is unavailable
+  on the API-24 image and caused both P-256 checks to fail closed despite a valid key.
+- Diagnostic commit `e459b65` made the failure observable without exposing key material. Hosted
+  run `35486820761` then passed 26/26 tests on API 36 and 25/26 on API 24; the sole API-24 failure
+  showed a non-exportable 256-bit EC signing key with generated origin, sign-only purpose,
+  SHA-256 digest and successful ECDSA sign/verify.
+- Replaced the provider-dependent lookup with one shared comparison against the published NIST
+  P-256 domain parameters. Both Android-Keystore validation and imported-public-key validation use
+  the same implementation; a new P-384 regression assertion proves non-P-256 rejection remains
+  fail-closed.
+- Focused verification PASS: Free unit tests plus app/test APK assembly (88 tasks) and the exact
+  identity instrumentation test on a local Android-7/API-24 emulator. A subsequent full local run
+  passed the identity test and then the local emulator OS crashed during a later unrelated UI test;
+  therefore only a fresh hosted 26-test API-24/API-36 matrix will close this gate.
+- No production, deployment, Play, payment/provider, private-data, artifact-publication or sales
+  action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`API-24 ROOT CAUSE FIXED LOCALLY — EXACT-HEAD CI/MATRIX NEXT — SALES CLOSED`
+
+## 2026-09-20 07:07 EEST — CODEX SOL — PR #97 code and CI gates green
+
+- Published API-24 compatibility fix `fc5409691855436892658cfd92db4cb7d938c9af` to
+  [PR #97](https://github.com/NeaBouli/stealth/pull/97). GitHub reports the PR mergeable with
+  merge state `CLEAN`.
+- Exact-head Basic CI `35487954922` passed Android Client, Signaling Tests, Rust Core Crypto and
+  Markdown/YAML plus website gates. Exact-head Android Instrumentation `35487956777` passed all
+  26 tests on both API 24 and API 36, including live TLS-pin validation and the new identity key.
+- Local verification additionally passed the Free/Pro/Premium unit and compile matrix (91 tasks)
+  and Free/Pro/Premium lint (98 tasks). The isolated identity test passed 1/1 on S10/Android 12
+  and 1/1 on Tab S4/Android 10. The temporary `.devtest` app/test packages were removed; S10 still
+  has only Premium and Tab S4 only Pro.
+- Kimi K3 independently reviewed only the P-256 compatibility diff. It reported no blocking
+  finding and verified all P-256 constants against OpenSSL 3.6.3 explicit curve parameters.
+  Kimi made no file change. CodeRabbit did not provide a code review because the stacked PR's
+  base is not `main`; its status is a skip, not review evidence.
+- The implementation and hosted code gates for STX-01/STX-21 are green. The ticket remains open
+  only for an authenticated two-device call against an isolated compatible signaling runtime and
+  the later authorized transition-to-enforce rollout; neither is silently replaced by unit tests.
+- Next sequential repository block is the STX-03 fresh-deployment coturn template correction.
+  No production, deployment, Play, payment/provider, artifact-publication or sales action occurred.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`PR 97 CODE+CI GREEN — ISOLATED TWO-DEVICE E2E REMAINS — STX-03 NEXT — SALES CLOSED`
+
+## 2026-09-20 10:13 EEST — CODEX SOL — STX-03 repository correction started
+
+- **Ticket:** `STEALTHX-STX03-TURN-SECRET-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** FIX / DEPLOYMENT /
+  SECRET-HANDLING / TEST; **Status:** In Progress; **Risk:** High.
+- **Branch:** `fix/securecall-turn-secret-template-20260920`, stacked on exact green PR #97
+  head `e613b67513684b7b119149be1ba61c1fef2fc3c2`. The canonical checkout and earlier
+  worktrees remain untouched.
+- **Authorized scope:** repository-only correction of the fresh-deployment TURN template:
+  one Docker Compose secret file shared by signaling and coturn, a fail-closed
+  `TURN_SECRET_FILE` loader, private runtime configuration rendering without the secret in
+  process arguments or logs, and synthetic tests plus deployment documentation.
+- **Explicit exclusions:** no production access or mutation, no real secret, no secret
+  rotation, no deploy/restart, no payment/Play/provider action and no sales activation.
+  Existing raw `TURN_SECRET` runtime compatibility must remain for non-Compose deployments.
+- **Acceptance gates:** missing, malformed, ambiguous and unsafe secret inputs fail closed;
+  a valid synthetic secret reaches both consumers; generated config is private and contains
+  exactly one secret directive; no secret appears in stdout/stderr or argv; Compose renders;
+  full signaling tests, syntax checks, diff/secret scan and independent Kimi read-only review
+  pass. Sol retains integration and final review ownership.
+- `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-03 REPOSITORY BLOCK IN PROGRESS — NO RUNTIME ACTION — SALES CLOSED`
+
+## 2026-09-20 11:10 EEST — CODEX SOL — STX-03 repository fix locally green → Review
+
+- **Ticket:** `STEALTHX-STX03-TURN-SECRET-20260920`; **Issue:**
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Branch:**
+  `fix/securecall-turn-secret-template-20260920`; **Status:** Review; **Risk:** High
+  because signaling and coturn must always share one private value and malformed deployment
+  input must stop both paths safely.
+- Replaced the non-interpolating coturn configuration with a secret-free template. Docker
+  Compose now mounts one ignored file secret into both services. Signaling accepts the file
+  through a bounded fail-closed loader while retaining raw `TURN_SECRET` compatibility for
+  non-Compose runtimes.
+- The coturn entrypoint renders exactly one private `0600` runtime directive on tmpfs, does not
+  expose the value through arguments or output, ignores the inherited image command, validates
+  size/format/template/runtime paths, removes partial files on failure or signal and then execs
+  coturn with only `-c <runtime-config>`.
+- Backup and deployment material now excludes the TURN secret, documents encrypted external
+  custody or restore-time replacement, and removes the unsafe literal interpolation example.
+  No real secret, host value or customer data entered the repository or tests.
+- **Sol verification PASS:** final `npm test` in `backend/signaling` exited `0`, including the
+  tester entitlement tests, authenticated-call regression, TURN deployment test and full
+  signaling/payment suite. `sh` and `dash` syntax plus renderer runs passed; Node syntax and
+  `turn_secret.test.js` passed; YAML structural assertions, backup secret-exclusion/mode test,
+  bounded stale-reference/credential-pattern scans and `git diff --check` passed.
+- **Kimi K3 contribution:** independent read-only review first identified an inherited coturn
+  image-CMD startup defect and four low-risk gaps. Sol corrected all five. Kimi's focused
+  follow-up executed the renderer under `sh` and `dash`, boundary/CRLF/signal probes and the
+  loader test, found no remaining blocker and returned `APPROVE`. Kimi changed no file.
+- **Hosted gates still required:** this host has no Docker Compose or local gitleaks binary, so
+  exact-head CI must run Compose rendering and the repository secret scan before approval.
+  A real container/staging start remains separate from this repository-only authorization.
+- No production mutation, deployment, restart, secret rotation, Play/payment/provider action or
+  sales activation occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain
+  closed.
+
+`STX-03 LOCAL GREEN + KIMI APPROVED — STACKED PR/EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 11:26 EEST — CODEX SOL — STX-03 exact-head CI green
+
+- Published the bounded repository correction as stacked
+  [PR #98](https://github.com/NeaBouli/stealth/pull/98), based on the exact verified
+  PR #97 branch. The functional commit is `6254b2a`; the exact verified head after the
+  CI portability correction is `cec300cafee5596abbf2a84248878eb4f139f3fe`.
+- The first hosted run correctly exposed a test-only cross-platform defect: GNU `stat`
+  accepted the macOS-form command but did not return a permission mode. Commit `cec300c`
+  now tries the GNU form first and falls back to macOS. The security implementation and
+  runtime behavior were unchanged. The renderer test and the full signaling suite then
+  passed locally again.
+- Exact-head Basic CI run
+  [35499091700](https://github.com/NeaBouli/stealth/actions/runs/35499091700) passed all
+  four jobs: Android Client, Signaling Tests including private tester staging tools,
+  Rust Core Crypto and Markdown/YAML plus browser privacy/closed-checkout gates. GitHub
+  reports PR #98 `MERGEABLE` with merge state `CLEAN`.
+- CodeRabbit reports success only because reviews are disabled for the stacked base branch;
+  it is not counted as review evidence. The independent Kimi K3 `APPROVE` and Sol review
+  recorded above remain the actual review evidence.
+- STX-03 is fixed at repository/template level but remains open in the audit register until
+  the reviewed stack is integrated and a separately authorized fresh/staging container start
+  verifies both consumers. No production mutation, deployment, restart or secret rotation
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`PR 98 EXACT-HEAD CI GREEN — REPOSITORY FIX READY FOR STACK REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 11:45 EEST — CODEX SOL — STX-08 bounded PKD hardening started
+
+- **Ticket:** `STEALTHX-STX08-PKD-BOUNDS-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** SECURITY / FIX / TEST;
+  **Status:** In Progress; **Risk:** Medium because an unauthenticated registration endpoint can
+  currently grow process memory without a bound.
+- **Branch:** `fix/securecall-pkd-bounds-20260920`, isolated from the canonical checkout and
+  stacked on exact green PR #98 head `7f624127c33632ec323066bbe7a399bd8c628474`.
+- **Authorized scope:** bound the in-memory public-key directory with configurable safe defaults
+  for entry count and TTL, prune expired entries, evict the oldest entry before overflow, and
+  apply a bounded per-client registration limiter to both the effective inline route and the
+  modular route definition. Preserve 128-bit random key IDs, existing public response shapes and
+  the admin-protected rotate/delete behavior.
+- **Implementation ownership:** Kimi K3 receives the bounded backend implementation and focused
+  synthetic tests. Sol owns architecture, client-IP trust review, complete diff review, security
+  corrections, full signaling verification, commit/push/PR and closure. Claude Code is not used
+  on the same files, avoiding duplicate work.
+- **Acceptance gates:** the key store and limiter remain bounded under sustained unique input;
+  TTL and eviction are deterministic in tests; valid registration remains `201`; invalid or
+  oversized keys remain `400`; throttled creation is `429`; expired/evicted lookup is `404`;
+  rate-limit identity uses the existing trusted client-IP helper; full signaling tests,
+  syntax/diff/credential scans and an independent Kimi read-only final review pass.
+- **Explicit exclusions:** no authentication-protocol redesign, no PKD persistence/migration,
+  no client/API-shape change, no runtime/deployment/restart, no production data, no Play,
+  payment/provider, artifact-publication or sales action.
+- `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-08 IN PROGRESS — KIMI BOUNDED IMPLEMENTATION / SOL INTEGRATION — NO RUNTIME ACTION`
+
+
+## 2026-09-20 — KIMI K3 — STX-08 bounded PKD implementation handoff
+
+- **Ticket:** `STEALTHX-STX08-PKD-BOUNDS-20260920` (audit umbrella issue #84). Bounded local
+  implementation on branch `fix/securecall-pkd-bounds-20260920`, base `7f624127c33632ec323066bbe7a399bd8c628474`.
+- **Changed files:** `backend/signaling/src/pkd.js` (factory `createPkd` + env-configured
+  bounded singleton; entry cap with oldest-first FIFO eviction, TTL expiry pruned on every
+  access path, 128-bit key IDs and module API preserved), `backend/signaling/src/security/pkd_registration_limiter.js`
+  (new bounded per-client sliding-window limiter: hard bucket-map max with LRU eviction,
+  bucket TTL pruning, lazy env-configured default singleton, express middleware using the
+  trusted `middleware/ip` getClientIp), `backend/signaling/src/server.js` (inline
+  `POST /key/register` now applies `pkdRegistrationRateLimit`), `backend/signaling/src/routes/pkd.js`
+  (modular route applies the same limiter, injectable for tests, default = shared singleton),
+  `backend/signaling/src/__tests__/pkd_bounds.test.js` (new deterministic suite),
+  `backend/signaling/package.json` (`test:pkd-bounds` script + appended to `test` chain; no
+  dependency added, lockfile untouched).
+- **Config (safe defaults, clamped, never zero/infinite):** `PKD_MAX_ENTRIES` (default 10000,
+  1..1000000), `PKD_TTL_MS` (default 30d, 60000..1y), `PKD_REGISTER_WINDOW_MS` (default 1h),
+  `PKD_REGISTER_MAX_PER_WINDOW` (default 30), `PKD_REGISTER_MAX_BUCKETS` (default 10000),
+  `PKD_REGISTER_BUCKET_TTL_MS` (default 24h, >= window). Unparseable values fall back to defaults.
+- **Contract preserved:** 201 with exact `{keyId, publicKey, created}` shape, 400
+  `missing_public_key`/`public_key_too_large`, 404 after expiry/eviction/delete, admin-gated
+  rotate/delete unchanged; throttled registration returns stable `429 {error:"rate_limited"}`
+  and never writes to the store.
+- **Checks run (real results):** `node --check` on all five touched/new source files PASS;
+  `node src/__tests__/pkd_bounds.test.js` PASS (cap/eviction, TTL, rotate/delete, bounded
+  buckets under 1000-unique-client flood, per-client window, 201/400/404/429 contract,
+  spoofed-XFF rejection, env clamping, singleton API); `npm ci --no-audit --no-fund` clean,
+  lockfile unchanged; full `npm test` (pretest + 24-suite chain incl. server_startup) EXIT=0,
+  all suites PASS.
+- **Risks / remaining concerns:** TTL is measured from `created` — rotation does not extend
+  entry lifetime (deliberate, deterministic); expired entries are pruned lazily on access, so
+  idle-but-unread entries linger in memory until the next access, still hard-capped by
+  `PKD_MAX_ENTRIES`; limiter defaults (30/h per client IP) are a judgment call Sol may tune;
+  shared-NAT clients share one bucket, consistent with the existing WS/invite limiters.
+  No runtime, deployment, production-data, payment/provider or sales action was performed.
+- Sol owns diff review, client-IP trust review, full verification, commit/push/PR and closure.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-08 KIMI IMPLEMENTATION COMPLETE — LOCAL TESTS GREEN — SOL REVIEW/INTEGRATION PENDING — NO RUNTIME ACTION`
+
+## 2026-09-20 12:03 EEST — CODEX SOL — STX-08 first review → Changes Requested
+
+- Full line-by-line review confirmed the route wiring, trusted-IP boundary, public response
+  contracts, store cap and focused test coverage. Three bounded corrections are required before
+  approval.
+- `listKeys()` and `deleteKey()` must treat TTL-expired entries as logically absent, matching
+  `getKey()` and `rotateKey()`; the current lazy-prune claim otherwise overstates behavior.
+- Numeric configuration parsing must reject partially numeric strings instead of accepting values
+  such as `10junk` through `parseInt`; valid integer values remain clamped to explicit bounds.
+- Replace per-bucket timestamp arrays with constant-size fixed-window state. A hard bucket count
+  alone is insufficiently conservative when both bucket and per-window limits are configured near
+  their ceilings. Reduce operational hard ceilings to defensible values and extend regression
+  tests for malformed config and expired list/delete behavior.
+- No client, runtime, deployment or external system is affected. Kimi receives only these exact
+  review corrections; Sol will inspect the second diff and rerun the full suite.
+
+`STX-08 CHANGES REQUESTED — TTL CONSISTENCY / STRICT CONFIG / CONSTANT-MEMORY LIMITER`
+
+## 2026-09-20 12:17 EEST — KIMI K3 — STX-08 review response (second diff)
+
+- **Ticket:** `STEALTHX-STX08-PKD-BOUNDS-20260920` (audit umbrella issue #84). Bounded local
+  implementation on branch `fix/securecall-pkd-bounds-20260920`; prior blocks unchanged.
+- **Handoff correction:** the "sliding-window" wording in the 2026-09-20 Kimi handoff block above
+  is superseded. The limiter now keeps constant-size fixed-window state per client
+  (`{ windowStart, count, lastSeen }` — three numbers, independent of request volume) instead of
+  per-client timestamp arrays; per the append-only rule the earlier block is not rewritten and is
+  corrected by this notice.
+- **TTL consistency (finding 1):** `listKeys()` now prunes expired entries via the injected clock
+  before returning IDs, and `deleteKey()` treats an expired entry as logically absent (removes it,
+  returns `false`); live delete semantics (`true`/missing `false`) are unchanged. Deterministic
+  tests added in sections 2b and 3b of `pkd_bounds.test.js`.
+- **Strict integer config (finding 2):** both `pkd.js` and
+  `security/pkd_registration_limiter.js` now parse config strictly — partially numeric strings
+  (`"10junk"`), decimal strings, empty strings, `NaN` and infinities fall back to the documented
+  defaults; valid integers outside bounds remain clamped. Tests added for partial and decimal
+  strings (section 10).
+- **Constant-memory limiter (finding 3):** per-client fixed-window state replaces event arrays;
+  deterministic clock injection, per-client limit, exact-boundary reset, idle-TTL pruning, hard
+  bucket cap and LRU eviction are preserved. New test-only introspection `stats()` returns plain
+  aggregate counts (bucket count, counter sum) — no IPs or client data. Section 13 proves a
+  5000-request denied flood leaves per-client state unchanged. The 429 JSON
+  (`{error:"rate_limited"}`) and trusted `getClientIp` middleware behavior are unchanged.
+- **Defensible hard ceilings:** PKD entries ≤ 50,000 (was 1,000,000), limiter buckets ≤ 50,000
+  (was 1,000,000), max registrations per window ≤ 1,000 (was 10,000). Defaults unchanged:
+  10,000 entries, 10,000 buckets, 30 registrations/hour.
+- **Changed files (second diff):** `backend/signaling/src/pkd.js`,
+  `backend/signaling/src/security/pkd_registration_limiter.js`,
+  `backend/signaling/src/__tests__/pkd_bounds.test.js`, `BRIDGE.md`. `server.js`,
+  `routes/pkd.js` and `package.json` are untouched by this second diff.
+- **Checks run (real results):** `node --check` on `pkd.js`, `pkd_registration_limiter.js`,
+  `routes/pkd.js`, `server.js`, `pkd_bounds.test.js` — all PASS; focused
+  `node src/__tests__/pkd_bounds.test.js` PASS (incl. new sections 2b, 3b, 10, 13); full
+  `npm test` in `backend/signaling` EXIT=0, all suites PASS with `pkd_bounds` last in the chain.
+- **Risks / remaining concerns:** a fixed window permits up to `maxPerWindow` registrations per
+  client and window boundary (inherent fixed-window burst at the reset edge); idle-but-unread
+  expired PKD entries still linger until the next access, hard-capped by `PKD_MAX_ENTRIES`;
+  `stats()` exposes aggregate counts only. No runtime, deployment, production-data,
+  payment/provider or sales action was performed.
+- Sol owns second-diff review, full verification, commit/push/PR and closure.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-08 REVIEW RESPONSE COMPLETE — TTL CONSISTENCY / STRICT CONFIG / FIXED-WINDOW CONSTANT-MEMORY LIMITER — SOL RE-REVIEW PENDING — NO RUNTIME ACTION`
+
+## 2026-09-20 12:25 EEST — CODEX SOL — STX-08 integration review locally green
+
+- Sol completed the second-diff line review across the active inline route, modular route,
+  bounded PKD, bounded limiter, package test wiring and deterministic regression suite. Public
+  response shapes, admin protection, trusted client-IP resolution and the existing singleton API
+  remain intact.
+- Sol found and corrected one additional denial-of-service concern: both prune paths had scanned
+  their complete maps on every unauthenticated registration request. PKD expiry now removes only
+  the timestamp-ordered FIFO prefix and limiter expiry removes only the timestamp-ordered LRU
+  prefix, making normal pruning amortized O(1). Injected clocks are monotonic so both prefix
+  invariants remain valid even if a supplied clock moves backwards.
+- Numeric configuration values now follow the documented strict-integer rule for both strings
+  and numbers. Decimal numeric inputs fall back to safe defaults instead of being silently
+  rounded. Focused tests cover both parser forms and hard ceilings.
+- **Verification:** Node syntax checks and `node src/__tests__/pkd_bounds.test.js` pass after the
+  final correction. The first complete `npm test` attempt reached only the local sandbox's socket
+  bind restriction in `server_startup.test.js` (`EPERM` on `0.0.0.0`) before repository logic;
+  the identical complete suite was rerun outside that restriction and exited `0`. Tester,
+  authenticated-call, TURN, identity, startup/status/context, all handler/WebRTC, payment,
+  fulfillment and the new PKD regression suites passed.
+- `git diff --check`, ASCII checks for the new/rewritten JS files and the bounded credential
+  pattern scan pass. No dependency was added and the lockfile is unchanged.
+- **Kimi K3 contribution:** primary implementation plus the review-response corrections above.
+  Sol owns the final diff and integration result. One final independent Kimi read-only review of
+  the exact final diff remains before commit and stacked PR publication.
+- No runtime, deployment, restart, production-data, Play, payment/provider or sales action was
+  performed. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-08 LOCAL GREEN — FINAL KIMI REVIEW / STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 12:32 EEST — KIMI K3 / CODEX SOL — STX-08 final review approved
+
+- Kimi performed an independent read-only review of the exact final code diff and returned
+  `APPROVE`; no file was changed by the reviewer. The review covered hard entry/bucket bounds,
+  denied- and unique-client floods, FIFO/LRU prefix invariants, monotonic clocks, arbitrary
+  deletes and rotations, fixed-window resets, strict config parsing, all TTL paths, trusted-IP
+  handling, public response contracts, admin protection and package test wiring.
+- **Kimi verification:** Node syntax checks passed for all five touched/new JS files;
+  `git diff --check` passed; focused `pkd_bounds.test.js` passed; the complete signaling
+  `npm test` chain exited `0`, including `server_startup` and the PKD suite. Caller/wiring and
+  added-line credential-pattern scans were clean.
+- **Accepted residuals:** fixed-window boundary bursts, fail-open eviction once configured caps
+  are exhausted, lazy expiry until the next access and the pre-existing requirement that
+  `TRUST_PROXY=true` only be used behind the documented appending proxy. All state remains hard
+  bounded. Optional env overrides are described in source; adding them to deployment examples is
+  a non-blocking operational follow-up and is not required for safe defaults.
+- STX-08 is ready for commit, stacked PR and exact-head hosted CI. It remains open in the audit
+  register until the reviewed stack is integrated. No runtime, deployment, restart,
+  production-data, Play, payment/provider or sales action occurred. `PRODUCT_READY=NO`,
+  `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-08 APPROVED LOCALLY — STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 12:42 EEST — CODEX SOL — STX-08 stacked PR and hosted CI green
+
+- Published commit `24f323ca8668c67512fa2ed4a1729476f6db265f` as stacked
+  [PR #99](https://github.com/NeaBouli/stealth/pull/99), based on the reviewed PR #98
+  branch `fix/securecall-turn-secret-template-20260920`. GitHub reports the PR `MERGEABLE`
+  with merge state `CLEAN`.
+- Hosted Basic CI run
+  [35502674817](https://github.com/NeaBouli/stealth/actions/runs/35502674817) passed all
+  four jobs: Android Client, Signaling Tests including the new bounded-PKD regression, Rust Core
+  Crypto, and Markdown/YAML plus privacy/closed-checkout gates. CodeRabbit reports success only
+  because reviews are disabled for the stacked base branch; it is not counted as review evidence.
+- Independent review evidence remains Kimi K3's final read-only `APPROVE`, plus Sol's line review
+  and two complete local signaling-suite passes. The implementation now has local and hosted
+  verification without a runtime mutation.
+- STX-08 remains open in audit umbrella issue #84 until the dependency stack is reviewed and
+  integrated. No deployment, restart, production-data, Play, payment/provider, artifact or sales
+  action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`PR 99 HOSTED CI GREEN — STX-08 READY FOR STACK REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 13:04 EEST — CODEX SOL — STX-10 deploy secret-output hardening started
+
+- **Ticket:** `STEALTHX-STX10-DEPLOY-SECRET-OUTPUT-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** SECURITY / FIX / TEST;
+  **Status:** In Progress; **Risk:** Medium because the legacy PM2 deployment script prints
+  generated TURN and admin credentials to terminal/provisioner output.
+- **Branch:** `fix/securecall-deploy-secret-output-20260920`, isolated from the canonical
+  checkout and stacked on exact green PR #99 head
+  `bc533c2590ebbfe71888b0073b19dff6ab3f5df2`.
+- **Current evidence:** `deployment/deploy_signaling.sh` generates credentials before checking
+  whether `.env` already exists, writes new values only on first setup, but always prints the
+  generated values. Existing installations therefore expose newly generated, non-effective
+  values as well as leaking secret material into output. The production runbook explicitly asks
+  operators to retain that output.
+- **Authorized repository-only scope:** generate credentials only when creating `.env`; create
+  that file with owner-only permissions; never print secret values; print only the restricted
+  file path and safe custody guidance; update the matching runbook; add a deterministic static
+  guard limited to `deployment/*.sh`; wire it into Basic CI.
+- **Agent split:** Kimi K3 owns the bounded script/docs/guard implementation and focused local
+  checks. Sol owns secret-flow design, full diff review, negative-control verification,
+  integration checks, commit/push/stacked PR and final status. Claude Code remains available but
+  is not assigned overlapping files.
+- **Acceptance gates:** Bash syntax passes; first-create and preserve-existing branches never
+  print credential values; `.env` creation is mode `0600`; a synthetic unsafe output statement
+  makes the guard fail; current deployment scripts pass; documentation no longer asks operators
+  to save credential-bearing output; diff and credential scans pass; hosted exact-head CI passes.
+- **Explicit exclusions:** do not execute the deployment script against a host; no runtime,
+  server, service, credential rotation, production-data, Play, payment/provider, artifact or
+  sales action. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-10 IN PROGRESS — KIMI IMPLEMENTATION / SOL SECURITY REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 13:13 EEST — KIMI K3 — STX-10 deploy secret-output hardening implemented
+
+- **Files:** `deployment/deploy_signaling.sh` (credentials now generated only
+  inside the first-create `.env` branch; `.env` forced to mode `0600` in both
+  branches; all credential-value output removed and replaced with a path-only
+  message plus encrypted/restricted custody guidance), new guard
+  `deployment/check_deploy_secret_output.sh` (deterministic scan limited to
+  `deployment/*.sh` for echo/printf expansion of secret-bearing variable
+  names, path:line-only findings, synthetic unsafe negative control, static
+  assertions for `chmod 600` `.env` handling and no stale save-output
+  instruction), `docs/PRODUCTION_DEPLOYMENT.md` (Step 2 and Credential
+  Storage sections no longer ask operators to save credential-bearing
+  output), `.github/workflows/ci-basic.yml` (guard wired into the Basic CI
+  lint job). Legacy bare-metal path preserved; no modernization beyond the
+  ticket scope.
+- **Checks (all local, real results):** `bash -n` on all five
+  `deployment/*.sh` PASS; guard run PASS (exit 0, negative control detected
+  without reproducing the unsafe line); live-fire negative control PASS
+  (temporary unsafe `deployment/*.sh` file made the guard fail with exit 1,
+  findings printed path:line only, file removed); PyYAML parse of
+  `ci-basic.yml` PASS with the guard step present in the lint job (yamllint
+  is not installed locally — hosted CI runs it); runbook structure check
+  PASS (26 balanced fences, stale instruction absent, new guidance present);
+  `git diff --check` PASS; bounded credential-pattern scan of the diff found
+  no credential material; stale-instruction grep over `deployment/` and the
+  runbook found nothing.
+- **Residual risks:** the guard is a textual regex gate — obfuscated output
+  (indirection via intermediate variables) is out of scope and remains a
+  review responsibility; hosted exact-head CI, full diff review and the
+  release decision stay with Codex Sol.
+- **No-runtime statement:** the deployment script was never executed against
+  a host; no server, credential rotation, production-data, Play,
+  payment/provider, artifact or sales action occurred.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-10 IMPLEMENTED LOCALLY — SOL REVIEW / COMMIT / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 13:16 EEST — CODEX SOL — STX-10 integration review corrections
+
+- Sol reviewed the complete script, guard, runbook and CI diff. The bounded Kimi implementation
+  correctly removes credential output, avoids needless generation on existing installations and
+  preserves the legacy PM2 flow.
+- Sol corrected a creation-time permission gap: post-write `chmod 600` alone allowed a brief
+  default-umask window. New `.env` files are now opened inside a subshell with `umask 077`, then
+  explicitly kept at mode `0600`; existing files are also forced to `0600` without reading or
+  printing their values.
+- Sol made the guard fail closed on unreadable files or scan errors. Its synthetic unsafe control
+  must now return the exact finding status, and the static checks require both restrictive
+  creation and final mode enforcement. The new guard file is ASCII-only.
+- **Checks after correction:** Bash syntax for all `deployment/*.sh` passed; the guard and its
+  built-in unsafe negative control passed; PyYAML parsed Basic CI and confirmed the lint-job
+  wiring; `git diff --check` passed; bounded stale-instruction/output scans found no unsafe
+  deployment output outside the guard's quoted synthetic fixture.
+- No application runtime is changed by this repository-only block, so the signaling/Android
+  suites are not claimed as local evidence; exact-head hosted CI remains required. No host,
+  deployment, service, credential rotation, production-data, Play, payment/provider, artifact or
+  sales action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-10 SOL REVIEW CORRECTED — FINAL KIMI REVIEW / COMMIT / HOSTED CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 13:25 EEST — KIMI K3 / CODEX SOL — STX-10 final review approved
+
+- Kimi completed an independent read-only review of the exact five-file final diff and returned
+  `APPROVE`; the working tree was unchanged by the review. No Critical, High or Medium finding
+  remains in this block.
+- **Verified behavior:** credentials are generated only while creating a missing `.env`; creation
+  occurs under `umask 077` and mode `0600` is enforced for both new and existing files; no secret
+  value or newly generated non-effective value reaches stdout/stderr; the legacy PM2 deployment
+  flow otherwise remains intact.
+- **Guard and documentation:** the deployment guard fails closed on unreadable files and scan
+  errors, detects both historical unsafe output shapes, proves a synthetic unsafe control using
+  path-and-line-only findings, and excludes only its documented self-file. The runbook contains
+  path-only encrypted-custody guidance and no stale instruction to retain credential output.
+- **Independent checks:** Bash syntax passed for all five `deployment/*.sh` files; the guard
+  passed with exit `0`; Basic CI parsed structurally and contains the guard after checkout in the
+  lint job; `git diff --check` passed; the bounded added-line secret scan found no credential
+  material. Two scan hits were reviewed as benign: a documented commit SHA and the guard's own
+  regular-expression definition.
+- **Accepted residuals:** the guard is intentionally textual and cannot replace review for
+  indirection, lowercase variable names or deliberately unusual output expressions. Hosted
+  exact-head CI is still required, and no deployment script was run against a host.
+- No runtime, deployment, restart, production-data, credential rotation, Play, payment/provider,
+  artifact or sales action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales
+  remain closed.
+
+`STX-10 APPROVED LOCALLY — COMMIT / STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 13:35 EEST — CODEX SOL — STX-10 stacked PR and hosted CI green
+
+- Published implementation commit `3e717bb4e47e187091d5cb422281fb3ff1146ab5` as stacked
+  [PR #100](https://github.com/NeaBouli/stealth/pull/100), based on the exact green PR #99
+  branch `fix/securecall-pkd-bounds-20260920`. GitHub reports the PR mergeable.
+- Hosted Basic CI run
+  [35505130750](https://github.com/NeaBouli/stealth/actions/runs/35505130750) passed all
+  four jobs: Markdown/YAML plus privacy and deployment-secret guards, Signaling Tests including
+  private tester staging tools, Rust Core Crypto, and the complete Android Client verification.
+- The new deployment guard ran successfully in hosted CI. Independent Kimi review remains
+  `APPROVE`, and Sol repeated Bash syntax, guard/negative-control, YAML structure, diff and
+  redacted secret-pattern checks locally before publication.
+- STX-10 remains open in audit umbrella issue #84 until the reviewed dependency stack is
+  integrated. This append records evidence only; no runtime, deployment, restart,
+  production-data, credential rotation, Play, payment/provider, artifact or sales action
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`PR 100 HOSTED CI GREEN — STX-10 READY FOR STACK REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 14:30 EEST — CODEX SOL — STX-14 centralized admin-auth block started
+
+- **Ticket:** `STEALTHX-STX14-ADMIN-AUTH-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** SECURITY / AUTH / TEST;
+  **Status:** In Progress; **Risk:** High because the block changes the shared authorization
+  boundary for administrative and payment-adjacent diagnostic routes.
+- **Branch:** `fix/securecall-admin-auth-20260920`, isolated and stacked on exact green PR #100
+  head `2dbc741de68e69e5c9c2c46e5ef203b313190cb0`.
+- **Verified current defect:** the active server and modular context use duplicate direct-string
+  admin-key comparisons; `/api/subscription/:clientId` and `/stripe/test-email` reimplement the
+  check inline with divergent status behavior, and the latter is not fail-closed when both the
+  configured key and request header are absent. No shared failed-attempt throttle protects the
+  admin boundary.
+- **Owner-authorized repository-only scope:** centralize all listed routes on one timing-safe,
+  fail-closed middleware; reject non-string headers; apply a bounded per-client fixed-window
+  failed-auth limiter; preserve successful route payloads and business logic; add deterministic
+  unit/wiring regressions; run focused and complete signaling suites plus hosted exact-head CI.
+- **Agent split:** Kimi K3 may implement the bounded secret-free repository changes and run local
+  tests. Codex Sol retains architecture, secret handling, full diff/security review, integration,
+  commit/push/PR and all external actions. Claude Code is reserved for a distinct small helper
+  only if one emerges; it will not edit overlapping files.
+- **Data boundary:** only public repository code and synthetic test data may be delegated. No
+  password, API key, private key, token, customer data, production configuration or server access
+  is provided to any delegated agent despite the owner's broad operational request.
+- **Acceptance gates:** disabled admin API returns `403`; missing/wrong/malformed credentials
+  return a stable `401`; repeated failures receive bounded `429` handling without unbounded map
+  growth; a correct credential invokes `next`; all active admin routes use the same middleware;
+  Stripe test-mail wiring is verified without sending mail; no provider or payment call occurs;
+  full signaling and hosted CI remain green.
+- **Explicit non-goals:** no server/runtime/deployment/restart, no credential inspection or
+  rotation, no real email, checkout, webhook, Play, payment/provider, artifact or sales action.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-14 IN PROGRESS — KIMI IMPLEMENTATION / SOL SECURITY REVIEW — REPOSITORY ONLY`
+
+## 2026-09-20 14:53 EEST — KIMI K3 / CODEX SOL — STX-14 implementation reviewed and verified
+
+- **Status:** Local implementation approved; commit, stacked PR and exact-head hosted CI remain.
+  The shared `makeRequireAdmin` boundary now pre-hashes the configured credential and compares
+  fixed-size SHA-256 digests with `crypto.timingSafeEqual`. Missing configuration fails closed
+  with `403`; malformed, missing and wrong credentials receive stable `401` responses; bounded
+  repeated failures receive `429` plus `Retry-After`.
+- **Limiter:** failed attempts are keyed by a digest of the resolved client IP, use a monotonic
+  fixed window, enforce `bucketTtlMs >= windowMs`, prune stale entries, and keep a hard bucket
+  cap. Valid credentials are evaluated before the failure limiter so an attacker cannot lock an
+  administrator out by exhausting the same IP bucket. Only aggregate bucket/failure counts are
+  exposed; no credential, digest or raw IP is logged.
+- **Route integration:** the active server creates one shared middleware instance and uses it for
+  all in-file admin routes, `/api/subscription/:clientId`, activation administration, custom-ID
+  administration and Stripe setup. `/stripe/test-email` no longer performs a divergent direct
+  comparison; Stripe route setup fails closed before registration if the shared middleware is
+  absent. No payment, webhook or email business behavior was changed.
+- **Tests added:** `backend/signaling/src/__tests__/admin_auth.test.js` covers constant-time
+  matching, disabled/malformed/wrong credentials, exact throttle boundaries and retry guidance,
+  successful-key bypass of a saturated failure bucket, independent client budgets, TTL pruning,
+  backwards/non-finite clocks, hard bucket bounds, strict configuration clamping, source wiring,
+  and Stripe's missing-middleware fail-closed behavior using synthetic data only. The test is
+  wired into the normal signaling suite.
+- **Independent review:** Kimi K3 reviewed only the five public, secret-free task files in
+  read-only mode and returned `APPROVE`. No Critical, High or Medium finding remains. Accepted
+  low residuals are the documented bounded-map eviction trade-off under a very large distributed
+  source-IP spray, an existing admin-only test-email HTML/error-sanitization opportunity, and the
+  operational dependence on the documented one-trusted-proxy IP contract. No secret, server,
+  environment file, customer data or provider was exposed to the reviewer.
+- **Real verification:** `node src/__tests__/admin_auth.test.js` passed; `npm test` passed the
+  complete signaling chain including tester licenses, authenticated calls, TURN rendering,
+  identity registration/migration, startup, status, WebSocket handlers, subscriptions,
+  activations, email mocks, IFR checkout proof, Stripe, custom IDs, VLABS export/fulfillment,
+  Google Play Billing/RTDN, entitlements and PKD bounds; `node --check` passed for all four
+  changed JavaScript files; `git diff --check` passed; the final active-path scan found no direct
+  admin-key comparison outside the centralized middleware.
+- **Changed:** `backend/signaling/src/middleware/admin.js`, `backend/signaling/src/server.js`,
+  `backend/signaling/src/payments/stripe_handler.js`, new
+  `backend/signaling/src/__tests__/admin_auth.test.js`, `backend/signaling/package.json`, and this
+  append-only Bridge entry. No dependency or lockfile changed.
+- **No-runtime statement:** no server/runtime/deployment/restart, credential inspection or
+  rotation, real email, checkout, webhook, Play, payment/provider, artifact or sales action
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-14 APPROVED LOCALLY — COMMIT / STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 15:03 EEST — CODEX SOL — STX-14 stacked PR and hosted CI green
+
+- Published implementation commit `2d743041ec922b7b63248dd0d67e6e27d96cb359` as stacked
+  [PR #101](https://github.com/NeaBouli/stealth/pull/101), based on the exact green PR #100
+  branch `fix/securecall-deploy-secret-output-20260920`.
+- Hosted Basic CI run
+  [35509140597](https://github.com/NeaBouli/stealth/actions/runs/35509140597) passed all four
+  jobs: Markdown/YAML with privacy and deployment guards, the complete Signaling Tests including
+  private tester staging tools and the new admin-auth regressions, Rust Core Crypto, and the full
+  Android Client verification.
+- The exact published diff retains Kimi K3's independent `APPROVE` verdict and Sol's local full
+  signaling-suite pass. GitHub reports the stacked PR mergeable; STX-14 remains open in audit
+  umbrella issue #84 until the dependency stack is reviewed and integrated.
+- This append records repository and CI evidence only. No runtime, deployment, restart,
+  credential inspection or rotation, real email, checkout, webhook, Play, payment/provider,
+  artifact or sales action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales
+  remain closed.
+
+`PR 101 HOSTED CI GREEN — STX-14 READY FOR STACK REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 15:54 EEST — KIMI K3 / CODEX SOL — Audit/release stack integration review complete
+
+- **Ticket:** `STEALTHX-STACK-INTEGRATION-REVIEW-20260920`; **Scope:** read-only ancestry,
+  patch-equivalence, final-tree, CI and merge-order review for PRs #82, #90-#101. No merge,
+  retarget, branch deletion, deployment or runtime action was performed.
+- **Verdict:** `READY_TO_INTEGRATE` subject to normal review and controlled sequential merging.
+  Exact tip `495e11359e07e0768b0a6a58fcff4464493c3848` is 41 commits ahead and zero behind
+  `origin/main`; GitHub reports PRs #82, #90 and #94-#101 mergeable. All ten exact heads have
+  successful Basic CI for Android Client, Signaling Tests, Rust Core Crypto and lint/guards.
+- **Parallel PR reconciliation:** #96 deliberately re-applies the implementation content of #89,
+  #91, #92 and #93 on the newer stack base. Patch/content comparison found no lost fix, revert,
+  duplicate patch or conflicting overwrite. Those four PRs must be closed as superseded and not
+  merged separately; their audit trace remains in issue #84 and the retained branches.
+- **Required sequence:** regular merges only, in order #82 -> #90 -> #94 -> #95 -> #96 -> #97
+  -> #98 -> #99 -> #100 -> #101, checking the unique diff after each base retarget. After the
+  final merge, `origin/main` must have an empty tree diff against the reviewed final tip, followed
+  by the complete signaling, website-contract, Rust, Android flavor/policy and artifact checks.
+- **Independent review:** Kimi K3 inspected the complete public, secret-free stack read-only and
+  returned `READY_TO_INTEGRATE`; Sol independently verified current GitHub heads, mergeability and
+  exact-head CI, including the previously ambiguous #94 and #96 checks. No credential, private
+  data, server or provider access was delegated.
+- **Residual gates:** normal approving review remains required; stale post-merge status documents
+  must be refreshed; removed historical TURN credential material still requires separately
+  authorized runtime rotation before deployment; live status/privacy/TLS checks and two-device
+  E2E remain later gates. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STACK REVIEW COMPLETE — READY TO INTEGRATE AFTER EXPLICIT MERGE AUTHORIZATION — NO RUNTIME ACTION`

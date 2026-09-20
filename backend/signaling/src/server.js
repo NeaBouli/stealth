@@ -5,8 +5,6 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
-const { ethers } = require("ethers");
-
 // Resolve writable data dir — Railway volumes mount as root, overriding Dockerfile chown.
 // Falls back to /tmp/stealthx-data when the preferred path is not writable.
 const _DATA_PREFERRED = process.env.DATA_DIR || path.join(__dirname, "..", "data");
@@ -38,6 +36,9 @@ process.env.GIFT_CODES_FILE          = path.join(DATA_DIR, "gift_codes.json");
 process.env.STRIPE_PROCESSED_FILE   = path.join(DATA_DIR, "stripe_processed_events.json");
 process.env.SOLD_CODES_FILE         = path.join(DATA_DIR, "sold_codes.json");
 process.env.GOOGLE_PLAY_RTDN_FILE   = process.env.GOOGLE_PLAY_RTDN_FILE || path.join(DATA_DIR, "google_play_rtdn.json");
+process.env.IDENTITY_REGISTRY_FILE  = process.env.IDENTITY_REGISTRY_FILE || path.join(DATA_DIR, "identity_registry.json");
+process.env.IDENTITY_MIGRATION_ROUTES_FILE = process.env.IDENTITY_MIGRATION_ROUTES_FILE
+  || path.join(DATA_DIR, "identity_migration_routes.json");
 
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
@@ -65,38 +66,37 @@ const {
 } = require("./services/activation_store");
 const { loadWalletMappings } = require("./services/wallet_store");
 const { setupActivationAdminRoutes } = require("./services/activation_admin");
-const { getClientIp }                                               = require("./middleware/ip");
+const { getClientIp, isTrustProxyEnabled }                          = require("./middleware/ip");
+const { makeRequireAdmin }                                         = require("./middleware/admin");
+const { pkdRegistrationRateLimit }                                  = require("./security/pkd_registration_limiter");
 const { verifyIfrHolding }                                          = require("./services/ifr");
 const { buildContext, wireWs }                                      = require("./context");
+const statusRoutes                                                  = require("./routes/status");
 const { writeJsonAtomic }                                           = require("./utils/json_store");
 const { sanitize: sanitizeUtil }                                    = require("./utils/sanitize");
 const { issueEntitlementToken, verifyEntitlementToken, orderHash: entitlementOrderHash } = require("./payments/entitlement_tokens");
+const { createIdentityRegistry } = require("./services/identity_registry");
+const { loadIdentityMigrationRoutes } = require("./services/identity_migration_routes");
+const { readIdentityProtocolConfig } = require("./security/identity_protocol");
+const { resolveTurnSecret } = require("./security/turn_secret");
 
 // Hoisted so HTTP route handlers (defined below) can call ctx.sendToClient
 // after buildContext() runs at startup — before any request arrives.
 let ctx;
 
-function reconcileIpConnections() {
-  const rebuilt = new Map();
-  for (const [, client] of clients) {
-    if (!client || !client.ip) continue;
-    if (client.ws && client.ws.readyState !== WebSocket.OPEN) continue;
-    rebuilt.set(client.ip, (rebuilt.get(client.ip) || 0) + 1);
-  }
-  ipConnections.clear();
-  for (const [ip, count] of rebuilt) ipConnections.set(ip, count);
-}
+const IDENTITY_PROTOCOL_CONFIG = readIdentityProtocolConfig(process.env);
+const identityRegistry = createIdentityRegistry({ file: process.env.IDENTITY_REGISTRY_FILE });
 
 // Initialize Firebase Cloud Messaging
 fcm.initFcm();
 
 // --- STUN/TURN Configuration (BACKEND-02) ---
-const TURN_SECRET = process.env.TURN_SECRET || null;
+const TURN_SECRET = resolveTurnSecret(process.env);
 const TURN_HOST   = process.env.TURN_HOST   || null;
 const TURN_TTL    = 86400; // 24h
 
 if (process.env.NODE_ENV === "production" && !TURN_SECRET && (!process.env.TURN_USER || !process.env.TURN_PASS)) {
-  console.warn("[WARN] No TURN credentials configured — relay disabled. Set TURN_SECRET (own coturn) or TURN_USER+TURN_PASS (Metered.ca).");
+  console.warn("[WARN] No TURN credentials configured — relay disabled. Set TURN_SECRET or TURN_SECRET_FILE (own coturn), or TURN_USER+TURN_PASS (Metered.ca).");
 }
 
 // RFC 8489 REST API: time-limited HMAC-SHA1 credentials for own coturn (use-auth-secret mode).
@@ -141,6 +141,14 @@ const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 
 // --- App Setup ---
 const app = express();
+// Production topology is exactly one trusted nginx hop (deploy/nginx). Hop
+// count 1 lets Express derive req.ip from the rightmost X-Forwarded-For entry
+// nginx appended; client-supplied multi-hop prefixes are not trusted, so the
+// pre-HMAC fulfillment rate limiter buckets the real client, not a spoof.
+if (isTrustProxyEnabled()) {
+  app.set("trust proxy", 1);
+}
+const requireAdmin = makeRequireAdmin(ADMIN_API_KEY, { getClientIp });
 // Stripe webhook needs raw body for signature verification — must come BEFORE express.json()
 app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
@@ -178,6 +186,9 @@ const server = http.createServer(app);
 
 // Load persistent store-backed state from DATA_DIR-aligned paths
 loadFcmTokens();
+const identityMigrationRoutes = loadIdentityMigrationRoutes({
+  file: process.env.IDENTITY_MIGRATION_ROUTES_FILE,
+});
 
 loadActivationCodes();
 
@@ -194,19 +205,6 @@ app.get("/", (req, res) => {
     message: "SecureCall Signaling Server (Client IDs + Forwarding)"
   });
 });
-
-// --- Admin Auth Middleware ---
-function requireAdmin(req, res, next) {
-  if (!ADMIN_API_KEY) {
-    return res.status(403).json({ error: "admin_api_disabled" });
-  }
-  // BUG-076: Only accept admin key via header, not query param (prevents log leak)
-  const provided = req.headers["x-admin-key"];
-  if (provided !== ADMIN_API_KEY) {
-    return res.status(401).json({ error: "unauthorized" });
-  }
-  next();
-}
 
 // --- Routing Debug API (admin-only) ---
 app.get("/routing/list", requireAdmin, (req, res) => {
@@ -236,7 +234,8 @@ app.get("/clients/list", requireAdmin, (req, res) => {
 });
 
 // --- Public Key Directory API (BACKEND-05) ---
-app.post("/key/register", (req, res) => {
+// STX-08: registration is throttled per trusted client IP (bounded limiter).
+app.post("/key/register", pkdRegistrationRateLimit, (req, res) => {
   const { publicKey } = req.body || {};
   if (!publicKey || typeof publicKey !== "string") {
     return res.status(400).json({
@@ -290,11 +289,7 @@ app.delete("/key/:id", requireAdmin, (req, res) => {
 // --- Subscription Admin API ---
 // Fix HIGH-007 (2026-04-16): unified on ADMIN_API_KEY. The old ADMIN_KEY
 // variant is dropped — all admin routes now check a single env var.
-app.get("/api/subscription/:clientId", (req, res) => {
-  const adminKey = req.headers["x-admin-key"];
-  if (!ADMIN_API_KEY || adminKey !== ADMIN_API_KEY) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
+app.get("/api/subscription/:clientId", requireAdmin, (req, res) => {
   const sub = subscriptions.getSubscription(req.params.clientId);
   if (!sub) {
     return res.status(404).json({ error: "No subscription found" });
@@ -363,7 +358,7 @@ const wss = new WebSocket.Server({
     }
     // Per-IP connection limit
     const ip = getClientIp(info.req);
-    reconcileIpConnections();
+    statusRoutes.reconcileIpConnections(clients, ipConnections);
     const count = ipConnections.get(ip) || 0;
     if (count >= MAX_CONNS_PER_IP) {
       return done(false, 429, "Too many connections from this IP");
@@ -418,22 +413,14 @@ app.get("/status/last-broadcast", (req, res) => {
   res.json(lastBroadcast);
 });
 
-app.get("/status/live", (req, res) => {
-  reconcileIpConnections();
-  res.json({
-    server: "online",
-    uptime: Math.floor(process.uptime()),
-    connectedClients: clients ? clients.size : 0,
-    registeredIds: clientIds ? clientIds.size : 0,
-    fcmTokens: fcmTokens ? fcmTokens.size : 0,
-    ipConnectionBuckets: Array.from(ipConnections.entries()).map(([ip, count]) => ({ ip, count })),
-    wsLimits: {
-      maxConnectionsPerIp: MAX_CONNS_PER_IP,
-      maxAttemptsPerIp: MAX_WS_ATTEMPTS_PER_IP,
-      attemptWindowMs: WS_ATTEMPT_WINDOW_MS
-    },
-    timestamp: new Date().toISOString()
-  });
+// STX-02: public live-status — availability/count/limit facts only, no client IPs.
+statusRoutes.setup(app, {
+  clients, clientIds, fcmTokens, ipConnections,
+  wsLimits: {
+    maxConnectionsPerIp: MAX_CONNS_PER_IP,
+    maxAttemptsPerIp: MAX_WS_ATTEMPTS_PER_IP,
+    attemptWindowMs: WS_ATTEMPT_WINDOW_MS
+  }
 });
 
 app.post("/admin/broadcast", requireAdmin, (req, res) => {
@@ -498,8 +485,10 @@ function saveGiftCodes() {
   try {
     const obj = Object.fromEntries(giftCodes);
     writeJsonAtomic(GIFT_CODES_FILE, obj);
+    return true;
   } catch (e) {
     console.error("[GIFT] Failed to save gift_codes.json:", e.message);
+    return false;
   }
 }
 
@@ -764,7 +753,7 @@ setupActivationAdminRoutes(app, requireAdmin, revokeActivationCode);
 try {
   const stripeHandler = require('./payments/stripe_handler');
   // Pass activationCodes reference so new codes from purchases are usable immediately
-  stripeHandler.setupRoutes(app, activationCodes);
+  stripeHandler.setupRoutes(app, activationCodes, { requireAdmin });
 } catch (e) {
   console.warn("[STRIPE] Could not load stripe_handler:", e.message);
 }
@@ -809,171 +798,27 @@ app.post('/admin/reset-licenses', requireAdmin, (req, res) => {
   res.json({ ok: true, status: licenses.getStatus() });
 });
 
-app.post('/stripe/ifr-discount-challenge', checkoutRateLimit, (req, res) => {
-  if (process.env.LEGACY_STRIPE_CHECKOUT_ENABLED !== 'true') {
-    return res.status(410).json({ error: 'checkout_moved_to_vlabs' });
-  }
-  const tier = (req.body?.tier || '').trim();
-  const walletAddress = (req.body?.walletAddress || '').trim();
-  // Only catalog-allowlisted products may enter the IFR discount flow.
-  if (!getCheckoutProduct(tier)) {
-    return res.status(400).json({ error: 'invalid_tier' });
-  }
-  if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
-    return res.status(400).json({ error: 'invalid_wallet' });
-  }
-
-  const nonce = crypto.randomBytes(32).toString('hex');
-  const issuedAt = new Date().toISOString();
-  const message =
-    'StealthX IFR holder discount\n\n' +
-    'Wallet: ' + walletAddress.toLowerCase() + '\n' +
-    'Product: ' + tier + '\n' +
-    'Discount: 50% Stripe checkout\n' +
-    'Nonce: ' + nonce + '\n' +
-    'Issued At: ' + issuedAt + '\n\n' +
-    'Sign this message to prove wallet ownership. This does not transfer tokens or grant spending permission.';
-
-  siweChallenges.set(nonce, {
-    deviceId: 'stripe-checkout',
-    purpose: 'stripe_ifr_discount',
-    tier,
-    walletAddress: walletAddress.toLowerCase(),
-    message,
-    createdAt: Date.now()
-  });
-  res.json({ nonce, message });
-});
-
-// Rate limit: 5 checkout requests per IP per 10 minutes
-function checkoutRateLimit(req, res, next) {
-  const ip = getClientIp(req);
-  const now = Date.now();
-  if (!checkoutRateLimits.has(ip)) checkoutRateLimits.set(ip, []);
-  const attempts = checkoutRateLimits.get(ip);
-  while (attempts.length > 0 && now - attempts[0] > 600000) attempts.shift();
-  if (attempts.length >= 5) {
-    return res.status(429).json({ error: "rate_limited", retry_after_seconds: 600 });
-  }
-  attempts.push(now);
-  next();
-}
-
-app.post('/stripe/create-dynamic-checkout', checkoutRateLimit, async (req, res) => {
-  if (process.env.LEGACY_STRIPE_CHECKOUT_ENABLED !== 'true') {
-    return res.status(410).json({ error: 'checkout_moved_to_vlabs' });
-  }
-  const { tier } = req.body;
-  // Only catalog-allowlisted products may enter web checkout; the
-  // stealthx_suite_lifetime bundle is excluded until fulfillment is ready.
-  const checkoutProduct = getCheckoutProduct(tier);
-  if (!checkoutProduct) {
-    return res.status(400).json({ error: 'Invalid tier' });
-  }
-  const price = licenses.getCurrentPrice(tier);
-  if (price === null) {
-    return res.status(410).json({ error: 'Sold out' });
-  }
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    return res.status(503).json({ error: 'Stripe not configured' });
-  }
-  try {
-    const stripe = require('stripe')(secretKey);
-	    const lic = licenses.LICENSES[tier];
-	    const requestedIfrDiscount = req.body?.ifrDiscount === true || req.body?.ifrDiscount === 'true';
-	    const walletAddress = (req.body?.walletAddress || '').trim();
-	    const walletSignature = (req.body?.walletSignature || '').trim();
-	    const walletNonce = (req.body?.walletNonce || '').trim();
-	    let checkoutPrice = price;
-	    let ifrDiscountApplied = false;
-	    let ifrBalanceAmount = "";
-
-	    if (requestedIfrDiscount) {
-	      if (!walletAddress.match(/^0x[0-9a-fA-F]{40}$/)) {
-	        return res.status(400).json({ error: 'invalid_wallet' });
-	      }
-	      if (!walletSignature || !walletNonce) {
-	        return res.status(400).json({ error: 'wallet_signature_required' });
-	      }
-
-	      const challenge = siweChallenges.get(walletNonce);
-	      if (!challenge || challenge.purpose !== 'stripe_ifr_discount') {
-	        return res.status(403).json({ error: 'invalid_wallet_challenge' });
-	      }
-	      if (Date.now() - challenge.createdAt > SIWE_TTL_MS) {
-	        siweChallenges.delete(walletNonce);
-	        return res.status(403).json({ error: 'wallet_challenge_expired' });
-	      }
-	      if (challenge.tier !== tier || challenge.walletAddress !== walletAddress.toLowerCase()) {
-	        return res.status(403).json({ error: 'wallet_challenge_mismatch' });
-	      }
-	      siweChallenges.delete(walletNonce);
-
-	      try {
-	        const recovered = ethers.verifyMessage(challenge.message, walletSignature);
-	        if (recovered.toLowerCase() !== walletAddress.toLowerCase()) {
-	          return res.status(403).json({ error: 'wallet_signature_invalid' });
-	        }
-	      } catch (e) {
-	        return res.status(403).json({ error: 'wallet_signature_invalid' });
-	      }
-
-	      const ifr = await verifyIfrHolding(walletAddress);
-      ifrBalanceAmount = ifr.balanceAmount || ifr.lockedAmount || "";
-      if (!ifr.success) {
-        return res.status(403).json({ error: ifr.error || 'ifr_not_eligible', balanceAmount: ifrBalanceAmount });
-      }
-
-      checkoutPrice = Math.max(50, Math.round(price * 0.5));
-      ifrDiscountApplied = true;
-    }
-
-    const priceData = {
-      currency: 'eur',
-      unit_amount: checkoutPrice
-    };
-    if (lic.stripeProductId) {
-      priceData.product = lic.stripeProductId;
-    } else {
-      priceData.product_data = { name: lic.name || tier };
-    }
-    const session = await stripe.checkout.sessions.create({
-      line_items: [{
-        price_data: priceData,
-        quantity: 1
-      }],
-      mode: 'payment',
-      success_url: checkoutProduct.successUrl,
-      cancel_url: checkoutProduct.cancelUrl,
-	      metadata: {
-	        tier: checkoutProduct.activationTier,
-	        product: tier,
-	        licenseTier: tier,
-	        type: 'lifetime_dynamic',
-	        ifrDiscount: ifrDiscountApplied ? 'true' : 'false',
-	        ifrWallet: ifrDiscountApplied ? walletAddress.toLowerCase() : '',
-	        ifrHolder: ifrDiscountApplied ? 'true' : 'false',
-	        ifrBalanceAmount,
-	        originalPrice: String(price),
-	        checkoutPrice: String(checkoutPrice),
-	        discountPercent: ifrDiscountApplied ? '50' : '0'
-	      },
-	      payment_method_types: ['card', 'klarna', 'link']
-	    });
-	    res.json({ url: session.url, sessionId: session.id, price: checkoutPrice, originalPrice: price, ifrDiscountApplied, ifrHolder: ifrDiscountApplied, ifrBalanceAmount });
-	  } catch (err) {
-    console.error('[LICENSES] Checkout error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
+// --- IFR browser checkout (default-closed; wallet-proof contract in payments/ifr_checkout) ---
+const { setupIfrCheckoutRoutes, createCheckoutRateLimiter } = require('./payments/ifr_checkout');
+setupIfrCheckoutRoutes(app, {
+  challengeStore: siweChallenges,
+  licenses,
+  getCheckoutProduct,
+  verifyIfrHolding,
+  checkoutRateLimit: createCheckoutRateLimiter({ limits: checkoutRateLimits, getClientIp }),
 });
 
 // --- Wire modular WS context (replaces inline wss.on("connection",...) block) ---
 // All Maps/arrays passed here are the same singletons used by HTTP routes above,
 // so HTTP routes and WS handlers share one consistent state — no split-brain.
 ctx = buildContext({
+  testerLicenseRegistry: require("./services/tester_license_runtime").loadTesterLicenseRuntime(),
   pkd, subscriptions, fcm, customIds, licenses,
   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
+  identityRegistry,
+  identityMigrationRoutes,
+  identityProtocolMode: IDENTITY_PROTOCOL_CONFIG.mode,
+  identityTransitionDeadline: IDENTITY_PROTOCOL_CONFIG.transitionDeadline,
   rateLimit, hb,
   giftCodes, saveGiftCodes,
   issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,

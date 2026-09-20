@@ -105,9 +105,12 @@ function loadReversals() {
   return readStore().reversals;
 }
 
-function isReversed(stripeSessionId) {
-  if (!stripeSessionId) return false;
-  return loadReversals().some(entry => entry.stripeSessionId === stripeSessionId);
+function isReversed(stripeSessionId, paymentReference) {
+  const paymentReferenceHash = paymentReference ? hashReference(paymentReference) : null;
+  return loadReversals().some(entry => (
+    (stripeSessionId && entry.stripeSessionId === stripeSessionId)
+    || (paymentReferenceHash && entry.paymentIntentHash === paymentReferenceHash)
+  ));
 }
 
 function maskCode(value) {
@@ -172,7 +175,11 @@ function mergeIntoActivationCodes(entry, activationCodesRef) {
     currentUses: entry.currentUses,
     usedBy: entry.usedBy,
     productKey: entry.productKey || null,
-    stripeSessionId: entry.stripeSessionId || null
+    stripeSessionId: entry.stripeSessionId || null,
+    catalogVersion: entry.catalogVersion || null,
+    offerVersion: entry.offerVersion || null,
+    releaseId: entry.releaseId || null,
+    externalProductId: entry.externalProductId || null
   });
 }
 
@@ -182,24 +189,42 @@ function mergeIntoActivationCodes(entry, activationCodesRef) {
  * @param {string} params.code - Activation code (e.g. "PREM-XXXX-XXXX-XXXX")
  * @param {string} params.tier - "pro" or "premium"
  * @param {string} params.stripeSessionId - Stripe checkout session ID
+ * @param {string} [params.paymentReference] - Stripe payment intent ID (stored only as a hash)
  * @param {string} [params.productKey] - pro_monthly / premium_monthly / premium_lifetime
+ * @param {string} [params.catalogVersion] - Immutable sales contract catalog version
+ * @param {string} [params.offerVersion] - Immutable offer version for the product
+ * @param {string} [params.releaseId] - Immutable release identity for the product
+ * @param {string} [params.externalProductId] - External (VLABS) product identifier
  * @param {Array}  [params.activationCodesRef] - Live reference to server.js activationCodes array
  * @returns {Object} The stored entry (also in activationCodes format)
  */
-function recordSale({ code, tier, stripeSessionId, productKey, activationCodesRef }) {
+function recordSale({ code, tier, stripeSessionId, paymentReference, productKey, catalogVersion, offerVersion, releaseId, externalProductId, activationCodesRef }) {
   let entry;
   let reused = false;
   withStoreLock(lock => {
     const store = readStore();
     const existing = sanitizeCodes(store.codes);
-    if (stripeSessionId && store.reversals.some(item => item.stripeSessionId === stripeSessionId)) {
+    const paymentReferenceHash = paymentReference ? hashReference(paymentReference) : null;
+    if (store.reversals.some(item => (
+      (stripeSessionId && item.stripeSessionId === stripeSessionId)
+      || (paymentReferenceHash && item.paymentIntentHash === paymentReferenceHash)
+    ))) {
       throw new Error("payment_reversed");
     }
     if (stripeSessionId) {
       entry = existing.find(c => c.stripeSessionId === stripeSessionId);
       if (entry) {
         if (entry.revoked) throw new Error("payment_reversed");
-        if (entry.tier !== tier || (entry.productKey || null) !== (productKey || null)) {
+        // Any drift on the immutable contract tuple rejects the reuse, including
+        // against older entries that predate these fields (they are not
+        // immutable commercial evidence and cannot be upgraded by reuse).
+        if (entry.tier !== tier
+          || (entry.productKey || null) !== (productKey || null)
+          || (entry.catalogVersion || null) !== (catalogVersion || null)
+          || (entry.offerVersion || null) !== (offerVersion || null)
+          || (entry.releaseId || null) !== (releaseId || null)
+          || (entry.externalProductId || null) !== (externalProductId || null)
+          || (entry.paymentReferenceHash || null) !== paymentReferenceHash) {
           throw new Error("sale_binding_mismatch");
         }
         reused = true;
@@ -215,7 +240,12 @@ function recordSale({ code, tier, stripeSessionId, productKey, activationCodesRe
       usedBy: [],
       // Technical payment metadata only. Customer email remains transient in the delivery call.
       stripeSessionId: stripeSessionId || null,
+      paymentReferenceHash,
       productKey: productKey || null,
+      catalogVersion: catalogVersion || null,
+      offerVersion: offerVersion || null,
+      releaseId: releaseId || null,
+      externalProductId: externalProductId || null,
       createdAt: new Date().toISOString(),
       emailDelivery: {
         status: "pending",
@@ -279,7 +309,11 @@ function loadAsActivationCodes() {
     currentUses: c.currentUses || 0,
     usedBy: Array.isArray(c.usedBy) ? c.usedBy : [],
     productKey: c.productKey || null,
-    stripeSessionId: c.stripeSessionId || null
+    stripeSessionId: c.stripeSessionId || null,
+    catalogVersion: c.catalogVersion || null,
+    offerVersion: c.offerVersion || null,
+    releaseId: c.releaseId || null,
+    externalProductId: c.externalProductId || null
   }));
 }
 
@@ -294,16 +328,26 @@ function revokeByStripeSession(stripeSessionId, activationCodesRef, reversalData
     const store = readStore();
     const existing = sanitizeCodes(store.codes);
     const reversals = [...store.reversals];
-    entry = existing.find(item => item.stripeSessionId === stripeSessionId);
+    const paymentIntentHash = reversalData?.paymentIntent ? hashReference(reversalData.paymentIntent) : null;
+    entry = existing.find(item => (
+      (stripeSessionId && item.stripeSessionId === stripeSessionId)
+      || (paymentIntentHash && item.paymentReferenceHash === paymentIntentHash)
+    ));
     let reversalDuplicate = false;
     if (reversalData) {
-      const prior = reversals.find(item => item.stripeSessionId === stripeSessionId);
+      const prior = reversals.find(item => (
+        (stripeSessionId && item.stripeSessionId === stripeSessionId)
+        || (paymentIntentHash && item.paymentIntentHash === paymentIntentHash)
+      ));
       reversalDuplicate = Boolean(prior);
       if (!prior) {
         reversals.push({
-          stripeSessionId,
-          paymentIntentHash: hashReference(reversalData.paymentIntent),
+          stripeSessionId: stripeSessionId || null,
+          paymentIntentHash,
           productKey: reversalData.productKey || null,
+          catalogVersion: reversalData.catalogVersion || null,
+          offerVersion: reversalData.offerVersion || null,
+          releaseId: reversalData.releaseId || null,
           eventHash: hashReference(reversalData.eventId),
           reason: reversalData.reason,
           reversedAt: new Date().toISOString(),

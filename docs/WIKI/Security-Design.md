@@ -24,7 +24,7 @@ SecureCall protects against these attacker classes:
 | Attacker | Capability | Protection |
 |----------|-----------|------------|
 | **Network** | Passive eavesdropping, MITM | E2E encryption (XChaCha20-Poly1305), DTLS transport |
-| **Server Operator** | Access to signaling infrastructure | Zero-knowledge architecture, E2E encryption |
+| **Server Operator** | Access to signaling infrastructure | No call audio at the signaling service; connection metadata and public key material remain visible |
 | **Local (Device)** | Physical access, malware | FLAG_SECURE, key zeroization, anti-recording |
 | **App-Level** | Screen recording, mic hijacking | Active monitoring, spy app detection |
 

@@ -46,7 +46,7 @@ Critical points:
 | Level | Attacker | Protection Status |
 |-------|----------|-------------------|
 | L1 — Passive Observer | Network sniffing | Achieved (E2E) |
-| L2 — Active Relay Operator | IP, timing, partner | Partial (GhostNet) |
+| L2 — Active Relay Operator | IP, timing, partner | Not mitigated by a SecureCall relay layer in the current release |
 | L3 — State-Level Adversary | Global observation | Goal of this handbook |
 
 ## Four Architecture Options
@@ -82,9 +82,10 @@ Critical points:
 
 ## Compatibility with Existing Stack
 
-Both crypto stacks (SecureCall + SecureChat) are fully transport-agnostic.
-XChaCha20-Poly1305, X25519, Double Ratchet work identically over Tor, P2P, or onion routing.
-No changes to the crypto core required.
+The current SecureCall call-key and media-protection code is separate from transport selection.
+SecureCall uses X25519/HKDF-SHA256 per-call key material and XChaCha20-Poly1305 application-frame
+protection; it does not implement a Double Ratchet. SecureChat has its own messaging protocol and
+must be evaluated separately before any transport change.
 
 ## Recommendations per Product
 

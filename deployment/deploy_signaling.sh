@@ -29,11 +29,16 @@ npm ci --omit=dev
 # ─── Generate Environment Config ────────────────────────
 echo "[3/5] Generating environment config..."
 
-TURN_PASS=$(openssl rand -base64 32)
-ADMIN_KEY=$(openssl rand -base64 32)
-
 if [ ! -f "$SERVER_DIR/.env" ]; then
-    cat > "$SERVER_DIR/.env" << EOF
+    # Generate credentials only when first creating .env — never when
+    # preserving an existing file, and never print their values.
+    TURN_PASS=$(openssl rand -base64 32)
+    ADMIN_KEY=$(openssl rand -base64 32)
+    (
+        # The redirect creates .env under this restrictive umask, so there is
+        # no interval in which another local user can read fresh credentials.
+        umask 077
+        cat > "$SERVER_DIR/.env" << EOF
 # SecureCall Signaling Server — Production Config
 # Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
 
@@ -54,9 +59,13 @@ MAX_CONNS_PER_IP=10
 # Firebase (optional — set path to service account JSON)
 # FIREBASE_SERVICE_ACCOUNT_KEY=/opt/securecall/firebase-sa.json
 EOF
-    echo "  .env created with fresh credentials"
+    )
+    chmod 600 "$SERVER_DIR/.env"
+    echo "  .env created with fresh random credentials (owner-only, mode 0600)"
 else
-    echo "  .env already exists — skipping (preserving existing credentials)"
+    # Preserve existing credentials; only enforce owner-only permissions.
+    chmod 600 "$SERVER_DIR/.env"
+    echo "  .env already exists — preserving existing credentials (mode 0600 enforced)"
 fi
 
 # ─── PM2 Process Setup ──────────────────────────────────
@@ -104,11 +113,11 @@ echo " Signaling server deployed!"
 echo ""
 echo " Status: $(pm2 jlist 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['pm2_env']['status'])" 2>/dev/null || echo 'check with pm2 status')"
 echo ""
-echo " Credentials saved in: $SERVER_DIR/.env"
-echo "   TURN_PASS=${TURN_PASS}"
-echo "   ADMIN_API_KEY=${ADMIN_KEY}"
-echo ""
-echo " SAVE THESE CREDENTIALS SECURELY!"
+echo " Credentials file: $SERVER_DIR/.env (owner-only, mode 0600)"
+echo "   Credential values are never printed. Read them only from that"
+echo "   restricted file and transfer them into your encrypted secret"
+echo "   store; keep the file and every backup encrypted and"
+echo "   access-controlled."
 echo ""
 echo " Next: Run ./ssl_setup.sh"
 echo "═══════════════════════════════════════════"

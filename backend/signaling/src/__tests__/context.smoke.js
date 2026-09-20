@@ -84,8 +84,9 @@ for (const h of helpers) {
 // ── Assert: WS handlers ───────────────────────────────────────────────────────
 
 const expectedHandlers = [
-  "REGISTER", "DEREGISTER", "REGISTER_FCM_TOKEN",
-  "CALL_INVITE", "CALL_ACCEPT", "CALL_BUSY", "CALL_END",
+  "REGISTER", "IDENTITY_REGISTER_BEGIN", "IDENTITY_REGISTER_COMPLETE",
+  "DEREGISTER", "REGISTER_FCM_TOKEN",
+  "CALL_INVITE", "CALL_ACCEPT", "CALL_KEY_CONFIRM", "CALL_BUSY", "CALL_END",
   "WEBRTC_OFFER", "WEBRTC_ANSWER", "ICE_CANDIDATE", "GHOST_PREPARE",
   "PHONE_LOOKUP", "BATCH_PHONE_LOOKUP",
   "SUBSCRIPTION_VERIFY", "ACTIVATE_CODE", "REFRESH_ENTITLEMENT", "INVITE_ACCEPTED",
@@ -111,6 +112,32 @@ assert.strictEqual(
 assert.strictEqual(typeof ctx.requireAdmin, "function", "ctx.requireAdmin must be a function");
 assert.strictEqual(typeof ctx.corsMiddleware, "function", "ctx.corsMiddleware must be a function");
 assert.strictEqual(typeof ctx.getClientIp, "function", "ctx.getClientIp must be a function");
+
+const originalTrustProxy = process.env.TRUST_PROXY;
+const originalRailwayEnvironment = process.env.RAILWAY_ENVIRONMENT;
+try {
+  delete process.env.TRUST_PROXY;
+  process.env.RAILWAY_ENVIRONMENT = "production";
+  assert.strictEqual(
+    ctx.getClientIp({ headers: { "x-forwarded-for": "198.51.100.20" }, socket: { remoteAddress: "127.0.0.1" } }),
+    "127.0.0.1",
+    "platform metadata alone must not enable forwarded-header trust",
+  );
+  process.env.TRUST_PROXY = "true";
+  assert.strictEqual(
+    ctx.getClientIp({
+      headers: { "x-forwarded-for": "192.0.2.99, 198.51.100.20" },
+      socket: { remoteAddress: "127.0.0.1" },
+    }),
+    "198.51.100.20",
+    "single-hop proxy mode ignores client-supplied forwarded prefixes",
+  );
+} finally {
+  if (originalTrustProxy === undefined) delete process.env.TRUST_PROXY;
+  else process.env.TRUST_PROXY = originalTrustProxy;
+  if (originalRailwayEnvironment === undefined) delete process.env.RAILWAY_ENVIRONMENT;
+  else process.env.RAILWAY_ENVIRONMENT = originalRailwayEnvironment;
+}
 
 // ── Assert: store ops ─────────────────────────────────────────────────────────
 

@@ -580,7 +580,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val isUpgraded = effectiveTier != "FREE"
         val codePref = findPreference<EditTextPreference>("pref_activation_code")
         val activateButton = findPreference<Preference>("pref_activate_button")
-        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) {
+        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED &&
+            !com.securecall.app.BuildConfig.TESTER_LICENSE_ENABLED) {
             codePref?.isVisible = false
             activateButton?.isVisible = false
             return
@@ -621,7 +622,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun submitActivationCode(code: String) {
-        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED) return
+        if (!com.securecall.app.BuildConfig.ACTIVATION_CODE_ENABLED &&
+            !com.securecall.app.BuildConfig.TESTER_LICENSE_ENABLED) return
         val ctx = requireContext()
         val ws = com.securecall.app.net.WebSocketService.instance
         if (ws == null || !ws.isConnected) {
@@ -639,8 +641,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
             activity?.runOnUiThread {
                 if (!isAdded) return@runOnUiThread
                 if (success && tier.isNotEmpty()) {
-                    // Store activated tier
-                    TierManager.setActivatedTier(ctx, tier)
+                    // The signaling handler has already verified and persisted the proof.
+                    TierManager.applyTier(ctx)
                     android.widget.Toast.makeText(ctx, getString(R.string.activation_success, tier.uppercase()), android.widget.Toast.LENGTH_LONG).show()
                     // Restart app to apply new tier
                     android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
@@ -821,16 +823,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // Exclusive Microphone toggle
         findPreference<SwitchPreferenceCompat>("pref_exclusive_mic")?.apply {
+            isEnabled = !isPremium && !isFree
             if (isPremium) {
                 isChecked = true
-                isEnabled = false
                 summary = getString(R.string.always_on)
             } else if (isFree) {
                 isChecked = false
-                isEnabled = false
                 summary = getString(R.string.pref_pro_feature)
             } else {
-                isEnabled = true
                 if (!preferenceManager.sharedPreferences!!.contains("pref_exclusive_mic")) {
                     isChecked = true
                 }
@@ -839,16 +839,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // Detect Screen Recording toggle
         findPreference<SwitchPreferenceCompat>("pref_detect_recording")?.apply {
+            isEnabled = !isPremium && !isFree
             if (isPremium) {
                 isChecked = true
-                isEnabled = false
                 summary = getString(R.string.always_on)
             } else if (isFree) {
                 isChecked = false
-                isEnabled = false
                 summary = getString(R.string.pref_pro_feature)
             } else {
-                isEnabled = true
                 if (!preferenceManager.sharedPreferences!!.contains("pref_detect_recording")) {
                     isChecked = true
                 }

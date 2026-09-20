@@ -7,6 +7,7 @@ module.exports = function subscriptionHandlers(ctx) {
     saveActivationCodes, saveGiftCodes,
     subscriptions, fcm, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
+    identityRegistry,
   } = ctx;
 
   const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
@@ -34,6 +35,9 @@ module.exports = function subscriptionHandlers(ctx) {
             productKey: entry.productKey || "securecall_activation",
             tier: entry.tier,
             externalOrderId: entry.stripeSessionId || entry.code,
+            catalogVersion: entry.catalogVersion || undefined,
+            offerVersion: entry.offerVersion || undefined,
+            releaseId: entry.releaseId || undefined,
           })
         : null;
     } catch (error) {
@@ -53,6 +57,48 @@ module.exports = function subscriptionHandlers(ctx) {
       ...extra,
       ...(entitlementToken ? { entitlementToken } : {}),
     };
+  }
+
+  function authorizedSubjects(clientId) {
+    const subjects = [clientId];
+    if (!identityRegistry || typeof identityRegistry.aliasesFor !== "function") return subjects;
+    try {
+      for (const alias of identityRegistry.aliasesFor(clientId)) {
+        if (typeof alias === "string" && alias && !subjects.includes(alias)) subjects.push(alias);
+        if (subjects.length >= 9) break;
+      }
+    } catch {
+      // Canonical entitlements remain usable; legacy migration stays fail-closed.
+    }
+    return subjects;
+  }
+
+  function migrateActivationBinding(entry, sourceSubject, targetSubject) {
+    const previousHadUsedBy = Object.prototype.hasOwnProperty.call(entry, "usedBy");
+    const previousUsedBy = entry.usedBy;
+    const previousHadCurrentUses = Object.prototype.hasOwnProperty.call(entry, "currentUses");
+    const previousCurrentUses = entry.currentUses;
+    const devices = Array.isArray(previousUsedBy) ? [...previousUsedBy]
+      : (previousUsedBy ? [previousUsedBy] : []);
+    if (sourceSubject === targetSubject) return devices;
+    if (!devices.includes(sourceSubject)) return null;
+
+    const migrated = [];
+    for (const device of devices) {
+      const value = device === sourceSubject ? targetSubject : device;
+      if (!migrated.includes(value)) migrated.push(value);
+    }
+    entry.usedBy = migrated;
+    entry.currentUses = migrated.length;
+    let persisted = false;
+    try { persisted = saveActivationCodes() !== false; } catch { persisted = false; }
+    if (persisted) return migrated;
+
+    if (previousHadUsedBy) entry.usedBy = previousUsedBy;
+    else delete entry.usedBy;
+    if (previousHadCurrentUses) entry.currentUses = previousCurrentUses;
+    else delete entry.currentUses;
+    return null;
   }
 
   return {
@@ -166,70 +212,90 @@ module.exports = function subscriptionHandlers(ctx) {
     },
 
     ACTIVATE_CODE(ws, connId, msg) {
+      const requestId = typeof msg.requestId === "string" && /^[a-f0-9-]{36}$/i.test(msg.requestId)
+        ? msg.requestId : undefined;
+      const respond = result => ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", ...result,
+        ...(requestId ? { requestId } : {}) }));
+      const myClientId = getClientId(connId);
+      if (!myClientId) {
+        return respond({ success: false, error: "not_registered" });
+      }
       const code = (msg.code || "").trim().toUpperCase();
       if (!code) {
-        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "missing_code" }));
+        return respond({ success: false, error: "missing_code" });
       }
 
       if (BLOCKED_CODES.includes(code)) {
         console.log("[ACTIVATION] Blocked expired BETA code:", code);
-        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "expired", message: "This beta code has expired. Thank you for testing!" }));
+        return respond({ success: false, error: "expired", message: "This beta code has expired. Thank you for testing!" });
       }
 
       const entry = activationCodes.find(c => c.code === code);
 
       if (!entry && giftCodes.has(code)) {
         const gift = giftCodes.get(code);
-        if (gift.used) return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "already_used" }));
-        if (new Date(gift.expires) < new Date()) return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "expired" }));
+        if (gift.used) return respond({ success: false, error: "already_used" });
+        if (new Date(gift.expires) < new Date()) return respond({ success: false, error: "expired" });
+        const previousUsed = gift.used;
+        const hadUsedBy = Object.prototype.hasOwnProperty.call(gift, "usedBy");
+        const previousUsedBy = gift.usedBy;
         gift.used = true;
-        gift.usedBy = getClientId(connId);
-        saveGiftCodes();
-        const myClientId = getClientId(connId);
+        gift.usedBy = myClientId;
+        if (saveGiftCodes() === false) {
+          gift.used = previousUsed;
+          if (hadUsedBy) gift.usedBy = previousUsedBy;
+          else delete gift.usedBy;
+          return respond({ success: false, error: "entitlement_temporarily_unavailable" });
+        }
         console.log("[GIFT] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", gift.tier, "by:", myClientId);
-        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: true, tier: gift.tier }));
+        return respond({ success: true, tier: gift.tier });
       }
 
       if (!entry) {
         console.log("[ACTIVATION] Invalid code attempted:", code.substring(0, 4) + "****");
-        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "invalid" }));
+        return respond({ success: false, error: "invalid" });
       }
       if (entry.revoked === true) {
-        return ws.send(JSON.stringify({
-          type: "ACTIVATE_CODE_RESULT",
+        return respond({
           success: false,
           error: "entitlement_revoked",
-        }));
+        });
       }
 
-      const myClientId = getClientId(connId);
-      const devices = Array.isArray(entry.usedBy) ? entry.usedBy : (entry.usedBy ? [entry.usedBy] : []);
+      const devices = Array.isArray(entry.usedBy) ? [...entry.usedBy] : (entry.usedBy ? [entry.usedBy] : []);
+      const boundSubject = authorizedSubjects(myClientId).find(subject => devices.includes(subject));
 
-      if (devices.includes(myClientId)) {
-        console.log("[ACTIVATION] Code re-activated:", code.substring(0, 4) + "****", "by:", myClientId);
-        return ws.send(JSON.stringify(signedActivation(entry, myClientId, {
-          slot: devices.indexOf(myClientId) + 1,
+      if (boundSubject) {
+        const activation = signedActivation(entry, myClientId, {
+          slot: devices.indexOf(boundSubject) + 1,
           maxSlots: entry.maxUses,
-        })));
+        });
+        if (!activation.success) return respond(activation);
+        if (boundSubject !== myClientId
+            && !migrateActivationBinding(entry, boundSubject, myClientId)) {
+          return respond({ success: false, error: "entitlement_temporarily_unavailable" });
+        }
+        console.log("[ACTIVATION] Code re-activated:", code.substring(0, 4) + "****", "by:", myClientId);
+        return respond(activation);
       }
 
       if (entry.expires) {
         const expiresAt = Date.parse(entry.expires);
         if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) {
-          return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "expired" }));
+          return respond({ success: false, error: "expired" });
         }
       }
 
       if (devices.length >= entry.maxUses) {
         console.log("[ACTIVATION] Code exhausted:", code.substring(0, 4) + "****", "devices:", devices.length, "/", entry.maxUses, "attempted:", myClientId);
-        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "max_devices", message: `Code already used on ${entry.maxUses} devices` }));
+        return respond({ success: false, error: "max_devices", message: `Code already used on ${entry.maxUses} devices` });
       }
 
       const activation = signedActivation(entry, myClientId, {
         slot: devices.length + 1,
         maxSlots: entry.maxUses,
       });
-      if (!activation.success) return ws.send(JSON.stringify(activation));
+      if (!activation.success) return respond(activation);
 
       devices.push(myClientId);
       entry.usedBy = devices;
@@ -238,60 +304,91 @@ module.exports = function subscriptionHandlers(ctx) {
       if (saveActivationCodes() === false) {
         devices.pop();
         entry.currentUses = devices.length;
-        return ws.send(JSON.stringify({
-          type: "ACTIVATE_CODE_RESULT",
+        return respond({
           success: false,
           error: "entitlement_temporarily_unavailable",
-        }));
+        });
       }
       console.log("[ACTIVATION] Code redeemed:", code.substring(0, 4) + "****", "-> tier:", entry.tier, "by:", myClientId, "slot:", slot + "/" + entry.maxUses);
-      return ws.send(JSON.stringify(activation));
+      return respond(activation);
     },
 
     REFRESH_ENTITLEMENT(ws, connId, msg) {
+      const requestId = typeof msg.requestId === "string" && /^[a-f0-9-]{36}$/i.test(msg.requestId)
+        ? msg.requestId : undefined;
+      const respond = result => ws.send(JSON.stringify({ type: "ENTITLEMENT_REFRESH_RESULT", ...result,
+        ...(requestId ? { requestId } : {}) }));
       const myClientId = getClientId(connId);
       if (!myClientId || typeof msg.entitlementToken !== "string") {
-        return ws.send(JSON.stringify({ type: "ENTITLEMENT_REFRESH_RESULT", success: false, error: "invalid_entitlement" }));
+        return respond({ success: false, error: "invalid_entitlement" });
+      }
+      // Keep tester proofs out of commercial renewal until verified enrollment
+      // persistence and its dedicated renewal adapter are available.
+      if (msg.entitlementToken.startsWith("sct1.")) {
+        return respond({ success: false, error: "tester_enrollment_unavailable" });
       }
       try {
-        const claims = verifyEntitlementToken(msg.entitlementToken, {
-          expectedSubject: myClientId,
-          expiryGraceSeconds: 7 * 24 * 60 * 60,
-        });
+        let claims;
+        let verifiedSubject;
+        let verificationError;
+        for (const subject of authorizedSubjects(myClientId)) {
+          try {
+            claims = verifyEntitlementToken(msg.entitlementToken, {
+              expectedSubject: subject,
+              expiryGraceSeconds: 7 * 24 * 60 * 60,
+            });
+            verifiedSubject = subject;
+            break;
+          } catch (error) {
+            if (error && error.code === "ENTITLEMENT_SIGNING_UNAVAILABLE") throw error;
+            verificationError = error;
+          }
+        }
+        if (!claims || !verifiedSubject) throw verificationError || new Error("invalid entitlement");
         const entry = activationCodes.find(candidate => {
           const devices = Array.isArray(candidate.usedBy) ? candidate.usedBy : (candidate.usedBy ? [candidate.usedBy] : []);
           const reference = candidate.stripeSessionId || candidate.code;
-          return devices.includes(myClientId)
+          return candidate.revoked !== true
+            && devices.includes(verifiedSubject)
             && candidate.productKey === claims.product
-            && entitlementOrderHash(reference) === claims.order;
+            && entitlementOrderHash(reference) === claims.order
+            && (claims.v !== "2" || (
+              candidate.catalogVersion === claims.catalog
+              && candidate.offerVersion === claims.offer
+              && candidate.releaseId === claims.release
+            ));
         });
         if (!entry) {
-          return ws.send(JSON.stringify({ type: "ENTITLEMENT_REFRESH_RESULT", success: false, error: "entitlement_revoked" }));
+          return respond({ success: false, error: "entitlement_revoked" });
         }
         const refreshed = signedActivation(entry, myClientId, {});
         if (!refreshed.success || !refreshed.entitlementToken) {
-          return ws.send(JSON.stringify({
-            type: "ENTITLEMENT_REFRESH_RESULT",
+          return respond({
             success: false,
             error: "entitlement_temporarily_unavailable",
-          }));
+          });
         }
-        return ws.send(JSON.stringify({
-          type: "ENTITLEMENT_REFRESH_RESULT",
+        if (verifiedSubject !== myClientId
+            && !migrateActivationBinding(entry, verifiedSubject, myClientId)) {
+          return respond({
+            success: false,
+            error: "entitlement_temporarily_unavailable",
+          });
+        }
+        return respond({
           success: true,
           entitlementToken: refreshed.entitlementToken,
-        }));
+        });
       } catch (error) {
         if (error && error.code === "ENTITLEMENT_SIGNING_UNAVAILABLE") {
           console.warn("[ACTIVATION] Entitlement refresh deferred: signer unavailable");
-          return ws.send(JSON.stringify({
-            type: "ENTITLEMENT_REFRESH_RESULT",
+          return respond({
             success: false,
             error: "entitlement_temporarily_unavailable",
-          }));
+          });
         }
         console.warn("[ACTIVATION] Entitlement refresh rejected:", error.message);
-        return ws.send(JSON.stringify({ type: "ENTITLEMENT_REFRESH_RESULT", success: false, error: "invalid_entitlement" }));
+        return respond({ success: false, error: "invalid_entitlement" });
       }
     },
 

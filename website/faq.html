@@ -123,9 +123,6 @@
     </style>
     <link rel="icon" href="/assets/brand/stealthx-logo.png" type="image/x-icon">
     <link rel="shortcut icon" href="logo.png">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2L60E8E7R"></script>
-    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-V2L60E8E7R");</script>
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -185,7 +182,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        SecureCall is an Android app for end-to-end encrypted voice calls. Every call is encrypted using XChaCha20-Poly1305 with X25519 key exchange and Double Ratchet forward secrecy. The cryptographic engine is written in Rust, and the complete source code is publicly available on GitHub.
+                        SecureCall is an Android app for end-to-end encrypted voice calls. X25519 and HKDF-SHA256 derive per-call key material, and XChaCha20-Poly1305 protects application media frames. SecureCall does not implement a Double Ratchet. The cryptographic engine is written in Rust, and the complete source code is publicly available on GitHub.
                     </div>
                 </div>
             </div>
@@ -196,7 +193,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        No. Calls are encrypted end-to-end. Encryption keys are generated on your device and never sent to our servers. We are technically unable to decrypt your calls, even if compelled by a court order. Our signaling server only sees encrypted payloads and temporary identifiers.
+                        Call audio is protected between the clients and is not sent to the signaling service. A P-256 Android Keystore identity authenticates registration and the per-call X25519 exchange. The service still processes connection metadata, public keys and routing data. Alias, custom-ID and phone lookup remain server-resolved.
                     </div>
                 </div>
             </div>
@@ -296,7 +293,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        <strong>XChaCha20-Poly1305</strong> for symmetric encryption (256-bit AEAD with 192-bit nonce), <strong>X25519</strong> for key exchange (ECDH on Curve25519), and the <strong>Double Ratchet</strong> protocol for perfect forward secrecy. Keys are derived using HKDF-SHA256. See our <a href="security.html">Security Architecture</a> page for full details.
+                        <strong>XChaCha20-Poly1305</strong> for application-frame encryption, <strong>X25519</strong> for key exchange, <strong>HKDF-SHA256</strong> for per-call key derivation and <strong>P-256</strong> signatures for identity authentication. Key material is discarded when the call ends. SecureCall does not implement a Double Ratchet or post-compromise security. See our <a href="security.html">Security Architecture</a> page for details.
                     </div>
                 </div>
             </div>
@@ -335,7 +332,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        SecureCall Free is free forever with ads. <strong>Pro: &euro;3.49/month</strong> or &euro;15 lifetime (limited). <strong>Premium: &euro;4.99/month</strong> or &euro;25 lifetime (limited). IFR holders can verify a browser wallet for the seller-set discount displayed at checkout, not an in-app wallet unlock. Full comparison: <a href="./#pricing">Pricing</a>
+                        SecureCall Free is free forever with ads. The accepted direct lifetime prices are <strong>Pro: &euro;15</strong> and <strong>Premium: &euro;25</strong>. A browser wallet with any positive IFR balance qualifies for the 50% holder prices of <strong>&euro;7.50</strong> and <strong>&euro;12.50</strong>. Sales remain closed until matching product and finance readiness are approved. Planned Google Play subscriptions are a separate store contract. Full comparison: <a href="./#pricing">Pricing</a>
                     </div>
                 </div>
             </div>
@@ -346,7 +343,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        SecureChat Free is free forever. <strong>Pro: &euro;9 lifetime</strong> (launch price, max &euro;14.99). <strong>Elite: &euro;19 lifetime</strong> (launch price, max &euro;23.99). IFR holders can verify a browser wallet for the seller-set discount displayed at checkout. Chameleon uses the same tiers and prices. Details: <a href="https://securechat.stealthx.tech/#ifr">SecureChat Pricing</a>
+						                        SecureChat and Chameleon remain separate products with their own release and finance gates. Their historical candidate prices are not active offers. Any future IFR-holder discount will use browser verification before an approved checkout, never an in-app wallet unlock. Details: <a href="https://securechat.stealthx.tech/#ifr">SecureChat status</a>
                     </div>
                 </div>
             </div>
@@ -374,7 +371,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-	                        A Forever License is a <strong>one-time purchase</strong> for the named SecureCall tier. The giftable <strong>Premium Activation Code</strong> is currently listed at <strong>&euro;25</strong> in the VLABS shop. Access, supported versions, refunds, and updates follow the terms shown at checkout.
+	                        A Forever License is a <strong>one-time purchase</strong> for the named SecureCall tier. The accepted closed-gate direct prices are <strong>&euro;15 Pro</strong> and <strong>&euro;25 Premium</strong>; sales are not yet open. Access, supported versions, refunds, and updates follow the terms shown at an approved checkout.
                     </div>
                 </div>
             </div>
@@ -386,7 +383,7 @@
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
                         <strong>One-time license:</strong> Pay once for the tier and supported versions stated at checkout. Activation follows confirmed payment.<br>
-                        <strong>Subscription:</strong> Pay monthly (&euro;3.49 Pro / &euro;4.99 Premium) or yearly (&euro;34.99 Pro / &euro;49.99 Premium). Cancel anytime. Always available.
+                        <strong>Google Play subscription:</strong> A separate planned store offer. It remains unavailable until Play purchase, restore, refund and RTDN tests pass.
                     </div>
                 </div>
             </div>
@@ -397,7 +394,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-	                        Monthly and yearly subscriptions are managed through Google Play. Stripe activation-code purchases are one-time codes delivered after checkout. To cancel a subscription, go to Google Play &gt; Subscriptions &gt; SecureCall &gt; Cancel. Your Pro/Premium features remain active until the end of the billing period. Lifetime purchases never expire.
+	                        Purchases are currently disabled. When a direct lifetime offer is approved, the website will display the exact price, terms, IFR-holder option, and checkout status. If a Google Play subscription is later enabled, purchase, restoration, and cancellation will be managed through Google Play.
                     </div>
                 </div>
             </div>
@@ -408,7 +405,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-	                        No. Card and wallet details are handled by Google Play Billing or Stripe checkout. We do not receive your full card number or payment credentials.
+	                        No paid SecureCall checkout is currently active. Planned direct payments use Stripe through the VLABS finance boundary; any future Play offer uses Google Play Billing. SecureCall should receive only the minimum purchase and entitlement facts required for fulfilment, not full card details or raw wallet proof.
                     </div>
                 </div>
             </div>
@@ -419,7 +416,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        Open SecureCall Settings &gt; Delete All Data, then uninstall the app. Since we don't store data on our servers, uninstalling removes all traces. Your encryption keys, contacts, and call history are stored only on your device.
+                        Open SecureCall Settings &gt; Delete All Data, then uninstall the app to erase local keys, contacts, history, and settings. This does not automatically erase operational, entitlement, billing, security, or legally required records held by service providers. Server-side rights and deletion requests follow the current privacy policy.
                     </div>
                 </div>
             </div>
@@ -436,7 +433,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        StealthX is a privacy platform consisting of three products: <strong>SecureCall</strong> (encrypted voice calls), <strong>SecureChat</strong> (decentralized encrypted messaging), and <strong>Chameleon</strong> (context-aware privacy OS for Android). All three share the same XChaCha20-Poly1305 crypto stack. IFR holder benefits are available as browser-based wallet verification with the seller-set discount displayed at checkout instead of in-app wallet unlocking.
+                        StealthX is a privacy platform consisting of three separate products: <strong>SecureCall</strong> (encrypted voice calls), <strong>SecureChat</strong> (encrypted messaging), and <strong>Chameleon</strong> (an Android privacy utility). Each product has its own implementation, audit, distribution, and release gates. Planned IFR-holder benefits use browser verification before an approved checkout instead of in-app wallet unlocking.
                     </div>
                 </div>
             </div>
@@ -469,7 +466,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-			                        Not in the current app releases. WalletConnect and in-app IFR unlocking have been removed from the public app path. IFR holder benefits are available as browser wallet verification with the seller-set discount displayed at checkout.
+				                        Not in the current app releases. WalletConnect and in-app IFR unlocking have been removed from the public app path. The planned IFR holder benefit uses browser verification before an approved checkout; it is not currently active.
                     </div>
                 </div>
             </div>

@@ -14,7 +14,8 @@ SecureCall uses proven, peer-reviewed cryptographic algorithms:
 |-----------|-----------|---------|
 | **Symmetric Encryption** | XChaCha20-Poly1305 | 256-bit AEAD cipher with 192-bit extended nonce |
 | **Key Exchange** | X25519 | Elliptic Curve Diffie-Hellman on Curve25519 |
-| **Forward Secrecy** | Double Ratchet | Per-session key derivation with ratcheting |
+| **Identity Authentication** | P-256 / SHA-256 | Android Keystore identity signs registration and call transcripts |
+| **Session Key Lifecycle** | X25519 + HKDF-SHA256 | Separate key material for each call; discarded at call end |
 | **Key Derivation** | HKDF-SHA256 | HMAC-based key derivation function |
 | **Transport** | DTLS-SRTP | Encrypted peer-to-peer media transport |
 | **Audio Codec** | Opus | 48kHz, adaptive bitrate 6-510 kbps |
@@ -54,14 +55,14 @@ SecureCall uses proven, peer-reviewed cryptographic algorithms:
    2.  │                              │◄──── CALL_ACCEPT ─────────│
        │◄──── CALL_ACCEPTED ─────────│                            │
        │                              │                            │
-   3.  │◄═══════════════ X25519 Key Exchange ═══════════════════►│
+   3.  │◄════ Signed, transcript-bound X25519 exchange ═════════►│
        │  Alice: a (private), A (public)                          │
        │  Bob:   b (private), B (public)                          │
        │  Shared: S = X25519(a, B) = X25519(b, A)                │
        │                              │                            │
    4.  │          HKDF-SHA256(S) → session_key                    │
        │                              │                            │
-   5.  │          Double Ratchet initializes                       │
+   5.  │      HMAC key confirmation + 6-digit security code       │
        │                              │                            │
    6.  │◄═══════ WebRTC P2P connection (DTLS-SRTP) ══════════════►│
        │                              │                            │
@@ -72,30 +73,25 @@ SecureCall uses proven, peer-reviewed cryptographic algorithms:
 
 ### Step-by-Step
 
-1. **Call Initiation:** Alice sends an encrypted signaling message through the server
-2. **Call Accept:** Bob accepts; both parties now have each other's public key
+1. **Call Initiation:** Alice signs the invite transcript with her P-256 Android Keystore identity
+2. **Call Accept:** Bob verifies the invite and signs his identity and ephemeral X25519 key
 3. **Key Exchange:** X25519 Diffie-Hellman produces a shared secret
-4. **Key Derivation:** HKDF-SHA256 derives the session encryption key from the shared secret
-5. **Ratchet Init:** Double Ratchet protocol initializes with the session key
+4. **Key Derivation:** HKDF-SHA256 binds the key to both signed transcripts
+5. **Session Start:** Both clients verify HMAC confirmation before media starts
 6. **P2P Connection:** Direct WebRTC connection established (bypasses server)
-7. **Encrypted Audio:** Each voice frame is encrypted with a unique key from the ratchet
+7. **Encrypted Audio:** Each voice frame uses the per-call key with a unique nonce
 
 ---
-#### ████ PERFECT FORWARD SECRECY ████
+#### ████ PER-CALL KEY LIFECYCLE ████
 ---
 
-The **Double Ratchet** protocol ensures that:
-
-- Each call session uses **unique encryption keys**
-- Compromising one key does **not** expose past calls
-- Compromising one key does **not** expose future calls
-- Each voice frame uses a **fresh key** derived from the ratchet state
-
-```
-Session 1: Key_1 ─── cannot derive ──→ Key_2
-Session 2: Key_2 ─── cannot derive ──→ Key_3
-Session 3: Key_3 ─── cannot derive ──→ Key_1
-```
+SecureCall derives separate key material for each call using X25519 and HKDF-SHA256, then discards
+that material when the call ends. XChaCha20-Poly1305 protects the application media frames during
+the call. P-256 identity signatures authenticate the exchange for canonical
+key-derived SecureIDs. The implementation does **not** include a Double Ratchet,
+per-frame key ratcheting or post-compromise security. Human-readable aliases and
+phone/custom-ID lookups remain server-resolved and require canonical-ID or
+security-code verification when target authenticity matters.
 
 ---
 #### ████ WHAT THE SERVER CANNOT SEE ████
@@ -124,7 +120,7 @@ Each audio frame is processed as follows:
   Opus Encode (48kHz)
       │
       ▼
-  Ratchet → derive frame_key
+  Per-call key + unique frame nonce
       │
       ▼
   XChaCha20-Poly1305 Encrypt(frame, frame_key, nonce)
