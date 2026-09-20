@@ -6692,3 +6692,28 @@ Open next:
   action occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
 
 `API-24 ROOT CAUSE FIXED LOCALLY — EXACT-HEAD CI/MATRIX NEXT — SALES CLOSED`
+
+## 2026-09-20 07:07 EEST — CODEX SOL — PR #97 code and CI gates green
+
+- Published API-24 compatibility fix `fc5409691855436892658cfd92db4cb7d938c9af` to
+  [PR #97](https://github.com/NeaBouli/stealth/pull/97). GitHub reports the PR mergeable with
+  merge state `CLEAN`.
+- Exact-head Basic CI `35487954922` passed Android Client, Signaling Tests, Rust Core Crypto and
+  Markdown/YAML plus website gates. Exact-head Android Instrumentation `35487956777` passed all
+  26 tests on both API 24 and API 36, including live TLS-pin validation and the new identity key.
+- Local verification additionally passed the Free/Pro/Premium unit and compile matrix (91 tasks)
+  and Free/Pro/Premium lint (98 tasks). The isolated identity test passed 1/1 on S10/Android 12
+  and 1/1 on Tab S4/Android 10. The temporary `.devtest` app/test packages were removed; S10 still
+  has only Premium and Tab S4 only Pro.
+- Kimi K3 independently reviewed only the P-256 compatibility diff. It reported no blocking
+  finding and verified all P-256 constants against OpenSSL 3.6.3 explicit curve parameters.
+  Kimi made no file change. CodeRabbit did not provide a code review because the stacked PR's
+  base is not `main`; its status is a skip, not review evidence.
+- The implementation and hosted code gates for STX-01/STX-21 are green. The ticket remains open
+  only for an authenticated two-device call against an isolated compatible signaling runtime and
+  the later authorized transition-to-enforce rollout; neither is silently replaced by unit tests.
+- Next sequential repository block is the STX-03 fresh-deployment coturn template correction.
+  No production, deployment, Play, payment/provider, artifact-publication or sales action occurred.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`PR 97 CODE+CI GREEN — ISOLATED TWO-DEVICE E2E REMAINS — STX-03 NEXT — SALES CLOSED`
