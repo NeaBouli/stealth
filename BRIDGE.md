@@ -6635,3 +6635,38 @@ Open next:
   occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
 
 `STX-01/STX-21 LOCAL GREEN — STACKED PR/CI NEXT — STAGING E2E STILL REQUIRED — SALES CLOSED`
+
+## 2026-09-20 05:56 EEST — CODEX SOL — STX-01/STX-21 PR #97 open
+
+- Published implementation commit `b3fb0f4d15bf1e6e94648a911f5e1e324dc956f8` as stacked
+  [PR #97](https://github.com/NeaBouli/stealth/pull/97) against the verified PR #96 branch.
+- GitHub reports the PR open and mergeable. Basic CI run `35485271637` started all four jobs;
+  exact-head results remain pending. No merge or external runtime action occurred.
+- `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`PR 97 OPEN — EXACT-HEAD CI RUNNING — SALES CLOSED`
+
+## 2026-09-20 06:15 EEST — CODEX SOL — PR #97 API-24 Keystore compatibility corrected
+
+- Basic CI run `35485271637` passed all four jobs on implementation commit `b3fb0f4`.
+- Manually dispatched Android Instrumentation run `35485509339` passed all 26 tests on API 36
+  but exposed one new compatibility failure on API 24: its software Android Keystore generated a
+  valid non-exportable signing key while failing to expose complete `KeyInfo` metadata, causing
+  `IdentitySigningKey.ensureIdentity()` to return null.
+- Corrected validation without weakening the trust boundary. Every supported API still requires
+  a non-exportable Android-Keystore EC key, a 256-bit P-256 public curve and a successful local
+  SHA256withECDSA sign/verify probe. Provider `KeyInfo` constraints are additionally enforced
+  whenever the platform exposes them reliably.
+- Focused Android unit/compile/test-APK build passed (71 tasks). The corrected isolated identity
+  instrumentation test passed 1/1 again on both Tab S4/Android 10 and S10/Android 12 (82-task
+  connected build). A hosted API-24/API-36 rerun remains required after publishing the correction.
+- Parallel read-only STX-03 host verification found the running coturn stable with zero restarts.
+  Its effective mounted configuration uses a concrete non-empty secret with `use-auth-secret`,
+  and the active signaling process has a matching value. No value or network identifier was
+  emitted. The live suspected literal-secret defect is therefore not present; the repository
+  compose/template remains misleading/non-functional for a fresh deployment and will be handled
+  as the next separate bounded block after PR #97 is green.
+- No production mutation, restart, deployment, Play, payment/provider or sales action occurred.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
+
+`PR 97 BASIC CI GREEN — API-24 FIX LOCAL+DEVICE GREEN — HOSTED MATRIX RERUN NEXT`
