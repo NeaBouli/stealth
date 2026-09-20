@@ -6717,3 +6717,89 @@ Open next:
   `PRODUCT_READY=NO`, `FINANCE_READY=NO`; sales remain closed.
 
 `PR 97 CODE+CI GREEN — ISOLATED TWO-DEVICE E2E REMAINS — STX-03 NEXT — SALES CLOSED`
+
+## 2026-09-20 10:13 EEST — CODEX SOL — STX-03 repository correction started
+
+- **Ticket:** `STEALTHX-STX03-TURN-SECRET-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** FIX / DEPLOYMENT /
+  SECRET-HANDLING / TEST; **Status:** In Progress; **Risk:** High.
+- **Branch:** `fix/securecall-turn-secret-template-20260920`, stacked on exact green PR #97
+  head `e613b67513684b7b119149be1ba61c1fef2fc3c2`. The canonical checkout and earlier
+  worktrees remain untouched.
+- **Authorized scope:** repository-only correction of the fresh-deployment TURN template:
+  one Docker Compose secret file shared by signaling and coturn, a fail-closed
+  `TURN_SECRET_FILE` loader, private runtime configuration rendering without the secret in
+  process arguments or logs, and synthetic tests plus deployment documentation.
+- **Explicit exclusions:** no production access or mutation, no real secret, no secret
+  rotation, no deploy/restart, no payment/Play/provider action and no sales activation.
+  Existing raw `TURN_SECRET` runtime compatibility must remain for non-Compose deployments.
+- **Acceptance gates:** missing, malformed, ambiguous and unsafe secret inputs fail closed;
+  a valid synthetic secret reaches both consumers; generated config is private and contains
+  exactly one secret directive; no secret appears in stdout/stderr or argv; Compose renders;
+  full signaling tests, syntax checks, diff/secret scan and independent Kimi read-only review
+  pass. Sol retains integration and final review ownership.
+- `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-03 REPOSITORY BLOCK IN PROGRESS — NO RUNTIME ACTION — SALES CLOSED`
+
+## 2026-09-20 11:10 EEST — CODEX SOL — STX-03 repository fix locally green → Review
+
+- **Ticket:** `STEALTHX-STX03-TURN-SECRET-20260920`; **Issue:**
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Branch:**
+  `fix/securecall-turn-secret-template-20260920`; **Status:** Review; **Risk:** High
+  because signaling and coturn must always share one private value and malformed deployment
+  input must stop both paths safely.
+- Replaced the non-interpolating coturn configuration with a secret-free template. Docker
+  Compose now mounts one ignored file secret into both services. Signaling accepts the file
+  through a bounded fail-closed loader while retaining raw `TURN_SECRET` compatibility for
+  non-Compose runtimes.
+- The coturn entrypoint renders exactly one private `0600` runtime directive on tmpfs, does not
+  expose the value through arguments or output, ignores the inherited image command, validates
+  size/format/template/runtime paths, removes partial files on failure or signal and then execs
+  coturn with only `-c <runtime-config>`.
+- Backup and deployment material now excludes the TURN secret, documents encrypted external
+  custody or restore-time replacement, and removes the unsafe literal interpolation example.
+  No real secret, host value or customer data entered the repository or tests.
+- **Sol verification PASS:** final `npm test` in `backend/signaling` exited `0`, including the
+  tester entitlement tests, authenticated-call regression, TURN deployment test and full
+  signaling/payment suite. `sh` and `dash` syntax plus renderer runs passed; Node syntax and
+  `turn_secret.test.js` passed; YAML structural assertions, backup secret-exclusion/mode test,
+  bounded stale-reference/credential-pattern scans and `git diff --check` passed.
+- **Kimi K3 contribution:** independent read-only review first identified an inherited coturn
+  image-CMD startup defect and four low-risk gaps. Sol corrected all five. Kimi's focused
+  follow-up executed the renderer under `sh` and `dash`, boundary/CRLF/signal probes and the
+  loader test, found no remaining blocker and returned `APPROVE`. Kimi changed no file.
+- **Hosted gates still required:** this host has no Docker Compose or local gitleaks binary, so
+  exact-head CI must run Compose rendering and the repository secret scan before approval.
+  A real container/staging start remains separate from this repository-only authorization.
+- No production mutation, deployment, restart, secret rotation, Play/payment/provider action or
+  sales activation occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain
+  closed.
+
+`STX-03 LOCAL GREEN + KIMI APPROVED — STACKED PR/EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 11:26 EEST — CODEX SOL — STX-03 exact-head CI green
+
+- Published the bounded repository correction as stacked
+  [PR #98](https://github.com/NeaBouli/stealth/pull/98), based on the exact verified
+  PR #97 branch. The functional commit is `6254b2a`; the exact verified head after the
+  CI portability correction is `cec300cafee5596abbf2a84248878eb4f139f3fe`.
+- The first hosted run correctly exposed a test-only cross-platform defect: GNU `stat`
+  accepted the macOS-form command but did not return a permission mode. Commit `cec300c`
+  now tries the GNU form first and falls back to macOS. The security implementation and
+  runtime behavior were unchanged. The renderer test and the full signaling suite then
+  passed locally again.
+- Exact-head Basic CI run
+  [35499091700](https://github.com/NeaBouli/stealth/actions/runs/35499091700) passed all
+  four jobs: Android Client, Signaling Tests including private tester staging tools,
+  Rust Core Crypto and Markdown/YAML plus browser privacy/closed-checkout gates. GitHub
+  reports PR #98 `MERGEABLE` with merge state `CLEAN`.
+- CodeRabbit reports success only because reviews are disabled for the stacked base branch;
+  it is not counted as review evidence. The independent Kimi K3 `APPROVE` and Sol review
+  recorded above remain the actual review evidence.
+- STX-03 is fixed at repository/template level but remains open in the audit register until
+  the reviewed stack is integrated and a separately authorized fresh/staging container start
+  verifies both consumers. No production mutation, deployment, restart or secret rotation
+  occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`PR 98 EXACT-HEAD CI GREEN — REPOSITORY FIX READY FOR STACK REVIEW — NO RUNTIME ACTION`
