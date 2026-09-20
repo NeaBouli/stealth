@@ -6803,3 +6803,189 @@ Open next:
   occurred. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
 
 `PR 98 EXACT-HEAD CI GREEN — REPOSITORY FIX READY FOR STACK REVIEW — NO RUNTIME ACTION`
+
+## 2026-09-20 11:45 EEST — CODEX SOL — STX-08 bounded PKD hardening started
+
+- **Ticket:** `STEALTHX-STX08-PKD-BOUNDS-20260920`; **Issue:** audit umbrella
+  [#84](https://github.com/NeaBouli/stealth/issues/84); **Type:** SECURITY / FIX / TEST;
+  **Status:** In Progress; **Risk:** Medium because an unauthenticated registration endpoint can
+  currently grow process memory without a bound.
+- **Branch:** `fix/securecall-pkd-bounds-20260920`, isolated from the canonical checkout and
+  stacked on exact green PR #98 head `7f624127c33632ec323066bbe7a399bd8c628474`.
+- **Authorized scope:** bound the in-memory public-key directory with configurable safe defaults
+  for entry count and TTL, prune expired entries, evict the oldest entry before overflow, and
+  apply a bounded per-client registration limiter to both the effective inline route and the
+  modular route definition. Preserve 128-bit random key IDs, existing public response shapes and
+  the admin-protected rotate/delete behavior.
+- **Implementation ownership:** Kimi K3 receives the bounded backend implementation and focused
+  synthetic tests. Sol owns architecture, client-IP trust review, complete diff review, security
+  corrections, full signaling verification, commit/push/PR and closure. Claude Code is not used
+  on the same files, avoiding duplicate work.
+- **Acceptance gates:** the key store and limiter remain bounded under sustained unique input;
+  TTL and eviction are deterministic in tests; valid registration remains `201`; invalid or
+  oversized keys remain `400`; throttled creation is `429`; expired/evicted lookup is `404`;
+  rate-limit identity uses the existing trusted client-IP helper; full signaling tests,
+  syntax/diff/credential scans and an independent Kimi read-only final review pass.
+- **Explicit exclusions:** no authentication-protocol redesign, no PKD persistence/migration,
+  no client/API-shape change, no runtime/deployment/restart, no production data, no Play,
+  payment/provider, artifact-publication or sales action.
+- `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-08 IN PROGRESS — KIMI BOUNDED IMPLEMENTATION / SOL INTEGRATION — NO RUNTIME ACTION`
+
+
+## 2026-09-20 — KIMI K3 — STX-08 bounded PKD implementation handoff
+
+- **Ticket:** `STEALTHX-STX08-PKD-BOUNDS-20260920` (audit umbrella issue #84). Bounded local
+  implementation on branch `fix/securecall-pkd-bounds-20260920`, base `7f624127c33632ec323066bbe7a399bd8c628474`.
+- **Changed files:** `backend/signaling/src/pkd.js` (factory `createPkd` + env-configured
+  bounded singleton; entry cap with oldest-first FIFO eviction, TTL expiry pruned on every
+  access path, 128-bit key IDs and module API preserved), `backend/signaling/src/security/pkd_registration_limiter.js`
+  (new bounded per-client sliding-window limiter: hard bucket-map max with LRU eviction,
+  bucket TTL pruning, lazy env-configured default singleton, express middleware using the
+  trusted `middleware/ip` getClientIp), `backend/signaling/src/server.js` (inline
+  `POST /key/register` now applies `pkdRegistrationRateLimit`), `backend/signaling/src/routes/pkd.js`
+  (modular route applies the same limiter, injectable for tests, default = shared singleton),
+  `backend/signaling/src/__tests__/pkd_bounds.test.js` (new deterministic suite),
+  `backend/signaling/package.json` (`test:pkd-bounds` script + appended to `test` chain; no
+  dependency added, lockfile untouched).
+- **Config (safe defaults, clamped, never zero/infinite):** `PKD_MAX_ENTRIES` (default 10000,
+  1..1000000), `PKD_TTL_MS` (default 30d, 60000..1y), `PKD_REGISTER_WINDOW_MS` (default 1h),
+  `PKD_REGISTER_MAX_PER_WINDOW` (default 30), `PKD_REGISTER_MAX_BUCKETS` (default 10000),
+  `PKD_REGISTER_BUCKET_TTL_MS` (default 24h, >= window). Unparseable values fall back to defaults.
+- **Contract preserved:** 201 with exact `{keyId, publicKey, created}` shape, 400
+  `missing_public_key`/`public_key_too_large`, 404 after expiry/eviction/delete, admin-gated
+  rotate/delete unchanged; throttled registration returns stable `429 {error:"rate_limited"}`
+  and never writes to the store.
+- **Checks run (real results):** `node --check` on all five touched/new source files PASS;
+  `node src/__tests__/pkd_bounds.test.js` PASS (cap/eviction, TTL, rotate/delete, bounded
+  buckets under 1000-unique-client flood, per-client window, 201/400/404/429 contract,
+  spoofed-XFF rejection, env clamping, singleton API); `npm ci --no-audit --no-fund` clean,
+  lockfile unchanged; full `npm test` (pretest + 24-suite chain incl. server_startup) EXIT=0,
+  all suites PASS.
+- **Risks / remaining concerns:** TTL is measured from `created` — rotation does not extend
+  entry lifetime (deliberate, deterministic); expired entries are pruned lazily on access, so
+  idle-but-unread entries linger in memory until the next access, still hard-capped by
+  `PKD_MAX_ENTRIES`; limiter defaults (30/h per client IP) are a judgment call Sol may tune;
+  shared-NAT clients share one bucket, consistent with the existing WS/invite limiters.
+  No runtime, deployment, production-data, payment/provider or sales action was performed.
+- Sol owns diff review, client-IP trust review, full verification, commit/push/PR and closure.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-08 KIMI IMPLEMENTATION COMPLETE — LOCAL TESTS GREEN — SOL REVIEW/INTEGRATION PENDING — NO RUNTIME ACTION`
+
+## 2026-09-20 12:03 EEST — CODEX SOL — STX-08 first review → Changes Requested
+
+- Full line-by-line review confirmed the route wiring, trusted-IP boundary, public response
+  contracts, store cap and focused test coverage. Three bounded corrections are required before
+  approval.
+- `listKeys()` and `deleteKey()` must treat TTL-expired entries as logically absent, matching
+  `getKey()` and `rotateKey()`; the current lazy-prune claim otherwise overstates behavior.
+- Numeric configuration parsing must reject partially numeric strings instead of accepting values
+  such as `10junk` through `parseInt`; valid integer values remain clamped to explicit bounds.
+- Replace per-bucket timestamp arrays with constant-size fixed-window state. A hard bucket count
+  alone is insufficiently conservative when both bucket and per-window limits are configured near
+  their ceilings. Reduce operational hard ceilings to defensible values and extend regression
+  tests for malformed config and expired list/delete behavior.
+- No client, runtime, deployment or external system is affected. Kimi receives only these exact
+  review corrections; Sol will inspect the second diff and rerun the full suite.
+
+`STX-08 CHANGES REQUESTED — TTL CONSISTENCY / STRICT CONFIG / CONSTANT-MEMORY LIMITER`
+
+## 2026-09-20 12:17 EEST — KIMI K3 — STX-08 review response (second diff)
+
+- **Ticket:** `STEALTHX-STX08-PKD-BOUNDS-20260920` (audit umbrella issue #84). Bounded local
+  implementation on branch `fix/securecall-pkd-bounds-20260920`; prior blocks unchanged.
+- **Handoff correction:** the "sliding-window" wording in the 2026-09-20 Kimi handoff block above
+  is superseded. The limiter now keeps constant-size fixed-window state per client
+  (`{ windowStart, count, lastSeen }` — three numbers, independent of request volume) instead of
+  per-client timestamp arrays; per the append-only rule the earlier block is not rewritten and is
+  corrected by this notice.
+- **TTL consistency (finding 1):** `listKeys()` now prunes expired entries via the injected clock
+  before returning IDs, and `deleteKey()` treats an expired entry as logically absent (removes it,
+  returns `false`); live delete semantics (`true`/missing `false`) are unchanged. Deterministic
+  tests added in sections 2b and 3b of `pkd_bounds.test.js`.
+- **Strict integer config (finding 2):** both `pkd.js` and
+  `security/pkd_registration_limiter.js` now parse config strictly — partially numeric strings
+  (`"10junk"`), decimal strings, empty strings, `NaN` and infinities fall back to the documented
+  defaults; valid integers outside bounds remain clamped. Tests added for partial and decimal
+  strings (section 10).
+- **Constant-memory limiter (finding 3):** per-client fixed-window state replaces event arrays;
+  deterministic clock injection, per-client limit, exact-boundary reset, idle-TTL pruning, hard
+  bucket cap and LRU eviction are preserved. New test-only introspection `stats()` returns plain
+  aggregate counts (bucket count, counter sum) — no IPs or client data. Section 13 proves a
+  5000-request denied flood leaves per-client state unchanged. The 429 JSON
+  (`{error:"rate_limited"}`) and trusted `getClientIp` middleware behavior are unchanged.
+- **Defensible hard ceilings:** PKD entries ≤ 50,000 (was 1,000,000), limiter buckets ≤ 50,000
+  (was 1,000,000), max registrations per window ≤ 1,000 (was 10,000). Defaults unchanged:
+  10,000 entries, 10,000 buckets, 30 registrations/hour.
+- **Changed files (second diff):** `backend/signaling/src/pkd.js`,
+  `backend/signaling/src/security/pkd_registration_limiter.js`,
+  `backend/signaling/src/__tests__/pkd_bounds.test.js`, `BRIDGE.md`. `server.js`,
+  `routes/pkd.js` and `package.json` are untouched by this second diff.
+- **Checks run (real results):** `node --check` on `pkd.js`, `pkd_registration_limiter.js`,
+  `routes/pkd.js`, `server.js`, `pkd_bounds.test.js` — all PASS; focused
+  `node src/__tests__/pkd_bounds.test.js` PASS (incl. new sections 2b, 3b, 10, 13); full
+  `npm test` in `backend/signaling` EXIT=0, all suites PASS with `pkd_bounds` last in the chain.
+- **Risks / remaining concerns:** a fixed window permits up to `maxPerWindow` registrations per
+  client and window boundary (inherent fixed-window burst at the reset edge); idle-but-unread
+  expired PKD entries still linger until the next access, hard-capped by `PKD_MAX_ENTRIES`;
+  `stats()` exposes aggregate counts only. No runtime, deployment, production-data,
+  payment/provider or sales action was performed.
+- Sol owns second-diff review, full verification, commit/push/PR and closure.
+  `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-08 REVIEW RESPONSE COMPLETE — TTL CONSISTENCY / STRICT CONFIG / FIXED-WINDOW CONSTANT-MEMORY LIMITER — SOL RE-REVIEW PENDING — NO RUNTIME ACTION`
+
+## 2026-09-20 12:25 EEST — CODEX SOL — STX-08 integration review locally green
+
+- Sol completed the second-diff line review across the active inline route, modular route,
+  bounded PKD, bounded limiter, package test wiring and deterministic regression suite. Public
+  response shapes, admin protection, trusted client-IP resolution and the existing singleton API
+  remain intact.
+- Sol found and corrected one additional denial-of-service concern: both prune paths had scanned
+  their complete maps on every unauthenticated registration request. PKD expiry now removes only
+  the timestamp-ordered FIFO prefix and limiter expiry removes only the timestamp-ordered LRU
+  prefix, making normal pruning amortized O(1). Injected clocks are monotonic so both prefix
+  invariants remain valid even if a supplied clock moves backwards.
+- Numeric configuration values now follow the documented strict-integer rule for both strings
+  and numbers. Decimal numeric inputs fall back to safe defaults instead of being silently
+  rounded. Focused tests cover both parser forms and hard ceilings.
+- **Verification:** Node syntax checks and `node src/__tests__/pkd_bounds.test.js` pass after the
+  final correction. The first complete `npm test` attempt reached only the local sandbox's socket
+  bind restriction in `server_startup.test.js` (`EPERM` on `0.0.0.0`) before repository logic;
+  the identical complete suite was rerun outside that restriction and exited `0`. Tester,
+  authenticated-call, TURN, identity, startup/status/context, all handler/WebRTC, payment,
+  fulfillment and the new PKD regression suites passed.
+- `git diff --check`, ASCII checks for the new/rewritten JS files and the bounded credential
+  pattern scan pass. No dependency was added and the lockfile is unchanged.
+- **Kimi K3 contribution:** primary implementation plus the review-response corrections above.
+  Sol owns the final diff and integration result. One final independent Kimi read-only review of
+  the exact final diff remains before commit and stacked PR publication.
+- No runtime, deployment, restart, production-data, Play, payment/provider or sales action was
+  performed. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-08 LOCAL GREEN — FINAL KIMI REVIEW / STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
+
+## 2026-09-20 12:32 EEST — KIMI K3 / CODEX SOL — STX-08 final review approved
+
+- Kimi performed an independent read-only review of the exact final code diff and returned
+  `APPROVE`; no file was changed by the reviewer. The review covered hard entry/bucket bounds,
+  denied- and unique-client floods, FIFO/LRU prefix invariants, monotonic clocks, arbitrary
+  deletes and rotations, fixed-window resets, strict config parsing, all TTL paths, trusted-IP
+  handling, public response contracts, admin protection and package test wiring.
+- **Kimi verification:** Node syntax checks passed for all five touched/new JS files;
+  `git diff --check` passed; focused `pkd_bounds.test.js` passed; the complete signaling
+  `npm test` chain exited `0`, including `server_startup` and the PKD suite. Caller/wiring and
+  added-line credential-pattern scans were clean.
+- **Accepted residuals:** fixed-window boundary bursts, fail-open eviction once configured caps
+  are exhausted, lazy expiry until the next access and the pre-existing requirement that
+  `TRUST_PROXY=true` only be used behind the documented appending proxy. All state remains hard
+  bounded. Optional env overrides are described in source; adding them to deployment examples is
+  a non-blocking operational follow-up and is not required for safe defaults.
+- STX-08 is ready for commit, stacked PR and exact-head hosted CI. It remains open in the audit
+  register until the reviewed stack is integrated. No runtime, deployment, restart,
+  production-data, Play, payment/provider or sales action occurred. `PRODUCT_READY=NO`,
+  `FINANCE_READY=NO`; checkout and sales remain closed.
+
+`STX-08 APPROVED LOCALLY — STACKED PR / EXACT-HEAD CI NEXT — NO RUNTIME ACTION`
