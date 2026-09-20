@@ -37,7 +37,7 @@ TURN_CONFIG_RUNTIME="$runtime_config" \
   "$renderer" turnserver inherited-image-argument > "$stdout_file" 2> "$stderr_file"
 
 [ -s "$runtime_config" ] || fail "renderer did not create a runtime config"
-mode=$(stat -f '%Lp' "$runtime_config" 2>/dev/null || stat -c '%a' "$runtime_config")
+mode=$(stat -c '%a' "$runtime_config" 2>/dev/null || stat -f '%Lp' "$runtime_config")
 [ "$mode" = "600" ] || fail "runtime config mode is not 600"
 [ "$(grep -c '^static-auth-secret=' "$runtime_config")" -eq 1 ] \
   || fail "runtime config does not contain exactly one secret directive"
