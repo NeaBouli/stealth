@@ -1,0 +1,7 @@
+$ grok (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/grok-SC-BREVO-001)
+--- stdout ---
+
+--- stderr ---
+sandbox initialization failed: Operation not permitted
+error: could not apply the 'workspace' sandbox profile; see the warning above for the cause. Refusing to start with its protections missing.
+

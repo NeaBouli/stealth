@@ -6077,3 +6077,22 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-09-24 15:04 EEST — CODEX — Brevo SMTP inactivity warning triaged
+
+- The active SecureCall delivery hop is Stripe/VLABS fulfillment -> `sendActivationCode` ->
+  Brevo HTTP API with `BREVO_API_KEY`; it does not authenticate through SMTP.
+- The scheduled GitHub keepalive also exercises that API credential through `/v3/account`.
+  Its 2026-09-15 scheduled run passed, and repository-secret metadata confirms the API secret
+  remains configured without exposing its value.
+- No active Brevo SMTP transport was found in Stealth, SecureChat, Chameleon or the private VLABS
+  repository. `BREVO_SMTP_USER` is only reported as a boolean on an admin test route; the duplicate
+  root `backend/payments` implementation is not wired by the running signaling entrypoint.
+- Therefore the two SMTP credentials mentioned in the provider warning are not required by the
+  current repository code or CI keepalive. Their provider-side last-use and any external owner
+  still require redacted Brevo dashboard inspection before expiry or deletion is accepted.
+- Claude was unavailable and Fleet fallback exhausted Kimi/Grok without a report, so Codex
+  completed the bounded inventory in documented solo mode. Static checks and the email-template
+  test pass. No key value, email, provider mutation, deployment or production action occurred.
+
+`BREVO API PATH HEALTHY / SMTP CREDENTIALS UNREFERENCED / PROVIDER METADATA OPEN`
