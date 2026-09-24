@@ -1,0 +1,21 @@
+$ kimi (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/kimi-SC-COMPLETION-PLAN-001)
+--- stdout ---
+
+--- stderr ---
+kimi version 0.42.0
+node:events:487
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: EMFILE: too many open files, watch
+    at FSWatcher._handle.onchange (node:internal/fs/watchers:267:21)
+Emitted 'error' event on FSWatcher instance at:
+    at FSWatcher._handle.onchange (node:internal/fs/watchers:273:12) {
+  errno: -24,
+  syscall: 'watch',
+  code: 'EMFILE',
+  filename: null
+}
+
+Node.js v24.15.0
+

@@ -1,0 +1,21 @@
+$ claude (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/claude-SC-COMPLETION-PLAN-001)
+--- stdout ---
+SC-COMPLETION-PLAN-001 fertig, `status: ok`, committed auf `agent/claude/SC-COMPLETION-PLAN-001` (`beb46f1`). Kein Push, kein Merge.
+
+**Geliefert**
+- `.fleet/SECURECALL_COMPLETION_PLAN.md` — verifizierte Baseline mit Evidenz-Tabelle, 8 offene Widersprüche, Meilensteine M0–M11 (je Modul/Hop, Input, Owner, Dateien/externe Fläche, Acceptance-Kommandos, Abhängigkeiten, Rollback, Stop-Bedingung), One-Writer-Ownership-Tabelle mit erlaubten Parallel-Sets, Duplikationsschutz, Kimi-Aufträge inkl. verpflichtendem Crypto-Security-Review, und ein „next executable batch" ohne neue Credentials.
+- `.fleet/reports/SC-COMPLETION-PLAN-001.md` — 40 Zeilen, Standardformat.
+
+**Tests:** `backend/signaling` `npm ci && npm test` grün (exit 0, inkl. Payment/RTDN/Fulfillment/Entitlement). `git diff --check` PASS. `yamllint` lokal nicht installiert — irrelevant, da kein YAML geändert.
+
+**Die wichtigsten Befunde aus der Evidenz**
+1. PR #102 ist mergeable mit 11/11 grünen Exact-Head-Checks, hat aber **null Reviews** bei `REVIEW_REQUIRED`. Der im PR-Body behauptete Kimi/Sol-Review existiert auf GitHub nicht — das ist der einzige echte Blocker für M1.
+2. Issue #84: alle 62 Findings unangehakt, und die Reports (`docs/community-audits/`) liegen im unmerged PR #83, nicht auf `main`. Die tatsächliche Restmenge ist damit unbekannt, obwohl #96–#101 vieles bereits implementieren.
+3. BRIDGE 2026-09-06 meldet, dass die SecureCall-Test-Runtime keine Anwendungsantwort liefert; der Startup-Fix vom 07.09. ist auf `main`, aber ein Deploy-Nachweis fehlt. Grüne CI ist kein Runtime-Beweis.
+4. Cert-Pin-Set STX-23 ist seit 2026-08-14 abgelaufen — harter Release-Blocker, Fix-Status auf `main` unverifiziert.
+5. Brevo: repositoryseitig abgeschlossen (nur HTTP-API, kein SMTP-Transport). Nur Provider-Metadaten können die zwei gewarnten SMTP-Credentials disponieren — das kann ausschließlich Codex.
+
+`PRODUCT_READY=NO` und `FINANCE_READY=NO` sind unverändert und im Plan explizit festgeschrieben. Der Report liegt in meinem Worktree, nicht im im Brief genannten Schwester-Checkout — das habe ich im Feld `risks` vermerkt.
+
+--- stderr ---
+
