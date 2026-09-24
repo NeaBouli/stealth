@@ -1,6 +1,7 @@
 # SecureCall Completion Programme
 
-Task: SC-COMPLETION-PLAN-001 · Author: Claude Code (Worker A) · Date: 2026-09-24
+Task: SC-COMPLETION-PLAN-001, corrected under SC-COMPLETION-PLAN-002 · Author: Claude Code
+(Worker A) · Date: 2026-09-24
 Mode: planning/documentation only. No application code, no external write, no activation.
 Gate state preserved by this document: `PRODUCT_READY=NO`, `FINANCE_READY=NO`.
 
@@ -14,13 +15,15 @@ artifact/keystore hygiene).
 
 | Fact | Evidence |
 | --- | --- |
-| `main` head is `7ce4f01` (`docs: triage Brevo SMTP inactivity warning`), preceded by #81/#80/#79 | `git log --oneline` in this worktree |
+| Remote `main` head is `e06d018417bae5be16bf6b89d0a1887586a99d3b` (`fix: restore SecureCall signaling startup (#81)`), preceded by #80/#79 | `git rev-parse origin/main` |
+| `7ce4f01` (`docs: triage Brevo SMTP inactivity warning`) is an **unmerged task-branch commit**, not `main`; any plan step must resolve `main` from `origin/main`, never from a local worktree head | `git log --oneline origin/main` |
 | PR #102 integrates the reviewed stack #82→#90→#94→#95→#96→#97→#98→#99→#100→#101 as 41 linear commits, 224 files, +15472/-2650 | `gh pr view 102` |
 | PR #102 exact-head CI is fully green (Basic CI lint/signaling/Rust/Android, Instrumentation API 24 + API 36, Dependency Review, Secret Detection, Dependency Audit, Security Summary, CodeRabbit) at 2026-09-20 | `gh pr view 102 --json statusCheckRollup` |
 | PR #102 is `MERGEABLE`, `OPEN`, not draft, but `reviewDecision=REVIEW_REQUIRED` with **zero** reviews | `gh pr view 102 --json reviews,reviewDecision` |
 | Tree-equality proof against the reviewed stacked target `5f6398dd…` is claimed in the PR body (tree `0578362c…`, empty diff) — asserted, not re-verified in this task | PR #102 body |
 | Audit register issue #84 is OPEN with 62 findings: 0 Critical / 8 High / 28 Medium / 20 Low / 6 Info; **no checkbox is ticked** | `gh issue view 84` |
 | The audit reports themselves (`docs/community-audits/`) live in unmerged PR #83 and are absent from `main` | `ls docs/community-audits` → not found |
+| PR #102's tree contains **neither** `docs/community-audits/*` (PR #83) **nor** `docs/audits/SECURECALL_DEVICE_UI_AUDIT_2026-09-18.md` (PR #85). #83 and #85 are **independent evidence PRs**, not superseded by #102, and must be integrated separately | PR #102 tree inspection |
 | Tester Premium entitlement work is complete and verified inside PR #95 (device-bound P-256 key, server-side hash, atomic single-grant binding, fail-closed renewal; 25/25 synthetic, mypy clean, S10 API31 + Tab S4 API29 instrumentation 1/1) but unmerged | `gh pr view 95` |
 | CI blocker issue #87: `android-actions/setup-android@v4.0.1` defaults `packages: tools`, which no longer exists → `Android Client` job fails on audit PRs #83/#85 | `gh issue view 87` |
 | Device/UI defect issue #86 (narrow-phone dialer, bottom nav, clipped `+`, keyboard-obscured contact rows, Premium VPN settings expand) is open and explicitly separated from #84 | `gh issue view 86` |
@@ -28,7 +31,7 @@ artifact/keystore hygiene).
 | Brevo credentials `Master Password` and `securecall-production` have no proven external owner; provider-side last-use metadata is unverified | `.fleet/PLAN.md` (milestone PARTIAL) |
 | Finance is out of this repository: private VLABS operator owns it; `PRODUCT_READY` (repo) and `FINANCE_READY` (VLABS) are both required and both NO | BRIDGE.md 2026-09-04, 2026-09-06; `docs/GOOGLE_PLAY_BILLING_SETUP.md`; `docs/WIKI/FAQ.md:97` |
 | Distribution split is non-negotiable: Play = `freeRelease`/`com.securecall.app.free`/`app-free-release.aab`, VPN-free; direct Premium = `premiumRelease -Pinternal`; direct Pro = `proRelease -Pinternal`, VPN-free | `AGENTS.md`, `docs/DISTRIBUTION_MATRIX.md` |
-| 24 PRs are open, of which 10 are superseded by #102 and 3 are Dependabot (#76/#77/#78) | `gh pr list` |
+| 24 PRs are open: 10 stacked implementation PRs replayed into #102 (#82/#90/#94/#95/#96/#97/#98/#99/#100/#101), 2 independent evidence PRs (#83/#85), 3 Dependabot (#76/#77/#78), plus deferred docs PRs | `gh pr list` |
 
 ### Unresolved contradictions (must be closed, not narrated away)
 
@@ -36,8 +39,10 @@ artifact/keystore hygiene).
    runtime returns no application response; BRIDGE 2026-09-07 records a local startup fix that was
    never confirmed deployed. Green CI does not prove a live runtime. → M2.
 2. **Reviewed vs. approved.** PR #102 claims Kimi K3 reviewed the application-code parent and Sol
-   verified the stack, yet GitHub records zero reviews and requires one. The claim and the
-   branch-protection state disagree. → M1.
+   verified the stack, yet GitHub records zero reviews and requires one. Fleet review and GitHub
+   approval are two distinct requirements: Kimi can supply the first, but branch protection needs
+   an approving review from a trusted GitHub account other than `NeaBouli`, and no such
+   collaborator exists today. → M1.
 3. **Audit "fixed" vs. register state.** #96/#97/#98/#99/#100/#101 and #90/#93/#94 implement
    remediations for STX-01/02/21/22/23/29/37/38 and others, but every box in #84 is unticked, and
    #83 (the evidence base) is unmerged. The true remaining-finding count is unknown. → M3.
@@ -64,36 +69,52 @@ Every milestone lists module/hop so the diff boundary is fixed before the first 
 
 ### M0 — Repository serialization and single-writer lock
 - **Module/hop:** fleet coordination → `.fleet/` → GitHub PR queue.
-- **Input:** the 24 open PRs; PR #102 as the single integration vehicle.
+- **Input:** the 24 open PRs; PR #102 as the single integration vehicle for the *implementation*
+  stack only.
 - **Owner:** Codex (sole merge authority).
 - **Files / surface:** `.fleet/PLAN.md`, GitHub PR metadata only. No repository code.
-- **Acceptance:** `gh pr list --state open` shows #102 plus only Dependabot (#76/#77/#78) and
-  deliberately deferred docs PRs (#47/#48/#70/#72); #82/#83/#85/#88/#89/#90/#91/#92/#93/#94/#95/
-  #96/#97/#98/#99/#100/#101 carry a traceability comment naming #102.
-- **Depends on:** nothing.
+- **Acceptance (two phases — annotate now, close later):**
+  1. *Now:* the 10 stacked implementation PRs #82/#90/#94/#95/#96/#97/#98/#99/#100/#101 each carry a
+     traceability comment naming #102. **They stay open.** Nothing is closed at this point.
+  2. *Only after #102 has merged and its `main` tree and CI are verified (M1 acceptance 6 and 7
+     passed):* those same 10 PRs are closed, each closing comment citing the verified merge SHA.
+- **Never closed under M0:** evidence PRs **#83** (`docs/community-audits/*`) and **#85**
+  (`docs/audits/SECURECALL_DEVICE_UI_AUDIT_2026-09-18.md`) — their content is absent from #102 and
+  needs its own integration (see M3/M5) — and the Dependabot PRs #76/#77/#78, which carry
+  dependency changes #102 does not contain.
+- **Depends on:** nothing for phase 1; M1 for phase 2.
 - **Rollback:** reopen any PR closed in error; no code is touched.
-- **Stop:** if any superseded PR contains a commit absent from #102's 41-commit replay — then the
-  replay is incomplete and M1 must not proceed.
+- **Stop:** if any stacked implementation PR contains a commit absent from #102's 41-commit replay —
+  then the replay is incomplete and M1 must not proceed. Closing an evidence or Dependabot PR as
+  "superseded" is itself a stop condition: it destroys content that never landed.
 
 ### M1 — PR #102 integration
 - **Module/hop:** whole repository → `main`.
 - **Input:** PR #102 head `5f70b16`; reviewed target `5f6398dd…`; tree `0578362c…`.
-- **Owner:** Codex merges. **Independent review: Kimi** (large-context, whole-stack) — must be
-  recorded as a GitHub approving review, not only as a fleet report.
+- **Owner:** Codex merges. **Fleet review: Kimi** (large-context, whole-stack) — Kimi can and must
+  deliver the substantive security/stack review as `.fleet/reports/KIMI-102-REVIEW.md`.
+- **Branch protection is a separate, unmet requirement.** A fleet report does **not** satisfy it.
+  M1 additionally needs an approving GitHub review from a trusted GitHub account **other than
+  `NeaBouli`**. No such collaborator exists today, so M1 is blocked on a human/account decision by
+  Gio (add a trusted reviewer account) — not on Kimi's throughput. This blocker must be resolved
+  openly; it is never to be worked around.
 - **Files / surface:** 224 files; `main` branch protection.
 - **Acceptance (all required, in order):**
   1. `git diff 5f6398dd699e589e750f3a12def2dd2ed98d8c56 5f70b16` → empty output;
   2. `git rev-list --count --merges main..5f70b16` → `0`; `git rev-list --count main..5f70b16` → `41`;
-  3. `gh pr view 102 --json reviewDecision` → `APPROVED` from an account other than the author;
-  4. exact-head CI re-run green after any rebase;
-  5. post-merge: `git rev-parse main^{tree}` equals `0578362ce3c5b49ef0672eb116a03cd6471ee40d`;
-  6. post-merge full local chain: `cd backend/signaling && npm ci && npm test`,
+  3. Kimi's fleet review is delivered and its verdict is not "requesting changes";
+  4. `gh pr view 102 --json reviewDecision` → `APPROVED`, from a trusted GitHub account that is
+     **not** `NeaBouli` and not the PR author — obtained without relaxing branch protection;
+  5. exact-head CI re-run green after any rebase;
+  6. post-merge: `git rev-parse main^{tree}` equals `0578362ce3c5b49ef0672eb116a03cd6471ee40d`;
+  7. post-merge full local chain: `cd backend/signaling && npm ci && npm test`,
      `cd core_crypto && cargo test && cargo clippy -- -D warnings`,
      `cd client_android && ./gradlew --no-daemon testFreeDebugUnitTest lint`.
 - **Depends on:** M0.
 - **Rollback:** `main` is linear; revert the merge commit range and restore the pre-merge tag. Tag
   `pre-102-<sha>` **before** merging.
-- **Stop:** any non-empty tree diff, any admin bypass, any protection change, any self-approval.
+- **Stop:** any non-empty tree diff, any admin bypass, any protection change, any self-approval, or
+  any attempt to record a fleet report as if it were the GitHub approval.
 
 ### M2 — Runtime truth for signaling
 - **Module/hop:** signaling → `backend/signaling/server.js` startup → `/health` → deployed host.
@@ -117,8 +138,10 @@ Every milestone lists module/hop so the diff boundary is fixed before the first 
 - **Input:** issue #84's 62 findings; the merged implementations from #102; PR #83 reports.
 - **Owner:** Codex triages and ticks; **Kimi** performs the large-context sweep (see §5); Claude
   fixes bounded residuals; Grok takes single-file Low/Info items.
-- **Files / surface:** `docs/community-audits/*` must land on `main` (merge #83 or fold it in) so
-  the register links resolve.
+- **Files / surface:** `docs/community-audits/*` is **not** in #102 and must land on `main` through
+  a separate integration of PR #83 so the register links resolve. Likewise
+  `docs/audits/SECURECALL_DEVICE_UI_AUDIT_2026-09-18.md` from PR #85 (feeds M5). Both are evidence,
+  not duplicates; neither may be closed as superseded.
 - **Acceptance:** each of the 62 boxes is ticked with either a commit SHA or an explicit `wontfix`
   reason. Hard gates that must be *fixed*, never `wontfix`:
   STX-01 (unauthenticated REGISTER), STX-02 (IP exposure), STX-03 (coturn literal secret),
@@ -265,8 +288,8 @@ Exactly one agent may modify each surface at a time. Cross-surface reads are alw
 | `.fleet/PLAN.md`, `.fleet/tasks/*` | Codex | Workers write only their own report file. |
 | `.fleet/reports/<id>.md` | the assigned worker | One file per task id. |
 | `BRIDGE.md` | Codex | Append-only. Workers request entries via their report. |
-| `backend/signaling/**` | Codex (M2), Kimi (M3 sweep) | Never both in one window. |
-| `core_crypto/**` | Kimi (M3 STX-21/24/25/27) | Security review mandatory (§5). |
+| `backend/signaling/**` | Codex (M2) | Kimi's M3 sweep is read-only; never two writers in one window. |
+| `core_crypto/**` | writer assigned per finding by Codex; **not** the reviewer | Implementer and security reviewer are always different agents (§5). Kimi's first crypto assignment is read-only. |
 | `client_android/app/src/**` | Claude (M5 UI) | Excludes `build.gradle`. |
 | `client_android/app/build.gradle` | Codex (M9) | Version + signing. |
 | `.github/workflows/**` | Grok (M5 #87 only) | Single bounded override. |
@@ -276,7 +299,7 @@ Exactly one agent may modify each surface at a time. Cross-surface reads are alw
 
 **Safe parallel sets** (no shared writer, no shared file):
 - Set A: M5/#87 (Grok, workflows) ‖ M6 (Codex, provider console) ‖ M8 prep (Claude, website).
-- Set B: M3 crypto sweep (Kimi, `core_crypto/`) ‖ M5 UI (Claude, Android resources).
+- Set B: M3 crypto review (Kimi, read-only over `core_crypto/`) ‖ M5 UI (Claude, Android resources).
 - Never parallel: M1 with anything; M2 with M3 signaling work; M9 with M3 or M5.
 
 ---
@@ -300,12 +323,18 @@ Exactly one agent may modify each surface at a time. Cross-surface reads are alw
    requesting-changes review**, plus `.fleet/reports/KIMI-102-REVIEW.md`. Blocks M1.
 2. **KIMI-STX-SWEEP** — map all 62 findings of #84 against the post-#102 tree; output a table
    `finding → fixed-by-commit | still-open | wontfix-candidate`. Read-only, no edits. Feeds M3.
-3. **KIMI-SEC-CRYPTO (mandatory security review, not delegable)** — `core_crypto/src/ffi/mod.rs`
+3. **KIMI-SEC-CRYPTO (mandatory security review, read-only)** — `core_crypto/src/ffi/mod.rs`
    and `session/mod.rs` against STX-21 (unauthenticated key exchange, `HKDF salt=None`), STX-22
    (Double-Ratchet claim vs. implementation), STX-24 (replay/AAD/direction separation), STX-25
-   (unzeroized key copies), STX-27 (no `catch_unwind`). This touches crypto and key material, so
-   the fleet protocol requires a review regardless of status; it may **not** be silently replaced
-   by another worker — any handover is recorded under `risks`.
+   (unzeroized key copies), STX-27 (no `catch_unwind`). **No edits** — findings and proposed diffs
+   only. It may not be silently replaced by another worker; any handover is recorded under `risks`.
+
+**Crypto separation-of-duties rule (binding for all of M3):** the agent that implements a crypto
+change is never the agent that security-reviews it. No agent reviews its own crypto change. Because
+Kimi holds the read-only crypto review above, residual crypto *writes* may be assigned to Kimi only
+later, and only once Codex has named a different agent as the reviewer for those specific changes.
+Until Codex makes that assignment, crypto residuals stay unassigned rather than defaulting to the
+reviewer.
 4. **KIMI-ENTITLEMENT-REVIEW** — re-review the merged tester-license path (device binding
    atomicity, fail-closed renewal, revocation) because it touches auth and payments. Blocks M4.
 
@@ -330,6 +359,17 @@ Startable immediately, in parallel, by three different agents:
 
 Explicitly **not** in this batch: any merge, deploy, Brevo console access, Play upload, artifact
 build, tester code issuance, email send, or flag change.
+
+**Separate exact-authorization gate.** Each of the following is its own gate, requested and granted
+individually in writing by Gio for that one action, and is never carried by this plan, by a
+milestone being "green", or by a prior approval of a similar action:
+- issuing a real tester entitlement grant to a real device (M4);
+- any provider-console action at Brevo, Stripe, Play or VLABS, including read-only console access
+  (M6, M7, M10);
+- any deployment or redeploy of the signaling host (M2);
+- any sales-state mutation: `PRODUCT_READY`, `FINANCE_READY`, Checkout open/close (M7, M11).
+
+A granted gate authorizes exactly the one named action, once. It does not generalize.
 
 ---
 
