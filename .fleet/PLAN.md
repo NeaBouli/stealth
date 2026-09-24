@@ -1,6 +1,6 @@
 # SecureCall Fleet Plan
 
-## Milestone: BREVO-SMTP-INACTIVITY-20260924 — PARTIAL
+## Milestone: BREVO-SMTP-INACTIVITY-20260924 — COMPLETE
 
 Goal: determine whether the Brevo SMTP credentials labelled `Master Password` and
 `securecall-production` are still required, without exposing secrets or mutating production.
@@ -10,8 +10,13 @@ Goal: determine whether the Brevo SMTP credentials labelled `Master Password` an
 3. Codex records one disposition per credential: retain-and-validate, replace through a separately
    approved change, or allow deactivation after proving it is unused.
 
-Repository and CI ownership are mapped. Provider metadata remains open because the explicitly
-requested in-app browser was unavailable in this session.
+Repository, CI and provider ownership are mapped. The Brevo dashboard reports both warned SMTP
+credentials as active, non-expiring and never used. The separate SecureCall HTTP API credential is
+active and was last used on 2026-09-15, matching the successful scheduled keepalive.
+
+Disposition: allow Brevo's inactivity deactivation for the two unused SMTP credentials. Do not
+delete them and do not add an SMTP keepalive. Continue monitoring only the HTTP API credential used
+by SecureCall.
 
 No test email, secret readout, rotation, deletion, deployment or production mutation is in scope.
 

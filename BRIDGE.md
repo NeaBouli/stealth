@@ -6117,3 +6117,16 @@ Open next:
   changed. `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain binding.
 
 `M0-M11 READY / CLAUDE FLEET VERIFIED / KIMI LARGE-CONTEXT BATCH QUEUED`
+
+## 2026-09-24 20:32 EEST — CODEX — BREVO PROVIDER REVIEW COMPLETE
+
+- The Brevo SMTP/API dashboard was inspected read-only. Both warned SMTP credentials are active,
+  non-expiring and show no recorded use. No secret value was opened or recorded.
+- The separate `securecall-railway` API credential is active and was last used on 2026-09-15,
+  matching the successful scheduled API keepalive and the repository's HTTP API integration.
+- Final disposition: allow Brevo's inactivity process to deactivate the two unused SMTP
+  credentials. Do not delete them and do not create an SMTP keepalive. Continue the existing HTTP
+  API keepalive only.
+- No provider setting, credential, email, deployment or production state was changed.
+
+`BREVO REVIEW COMPLETE / UNUSED SMTP MAY DEACTIVATE / SECURECALL API REMAINS HEALTHY`
