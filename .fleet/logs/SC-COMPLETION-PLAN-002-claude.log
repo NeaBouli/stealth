@@ -1,0 +1,23 @@
+$ claude (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/claude-SC-COMPLETION-PLAN-002)
+--- stdout ---
+Fertig. Zwei Commits auf `agent/claude/SC-COMPLETION-PLAN-002`, kein Push, kein Code angefasst.
+
+**Architecture-Hop:** keine `docs/architecture/MAP.md` vorhanden — nur die betroffene Spur kartiert: Fleet-Koordination → `.fleet/` Planungsdokument → GitHub-PR-Queue / Milestone-Gates. Kein Codepfad, kein Wrapper, kein neues Flag.
+
+**Die sechs Korrekturen in `.fleet/SECURECALL_COMPLETION_PLAN.md` (+68/-28):**
+
+1. Baseline nennt jetzt `origin/main` = `e06d018417bae5be16bf6b89d0a1887586a99d3b`. `7ce4f01` steht explizit als **unmerged Task-Branch-Commit** in einer eigenen Zeile, samt Regel, `main` immer aus `origin/main` aufzulösen.
+2. Neue Baseline-Zeile: #102 enthält weder `docs/community-audits/*` (#83) noch `docs/audits/SECURECALL_DEVICE_UI_AUDIT_2026-09-18.md` (#85). Beide bleiben eigenständige Evidence-PRs; M3 fordert separate Integration. Die Zeile „10 superseded" ist auf die tatsächliche Aufteilung korrigiert.
+3. M0 ist zweiphasig: die 10 gestackten Implementierungs-PRs jetzt nur annotieren, schließen erst nach Merge von #102 und verifiziertem `main`-Tree/CI (M1-Akzeptanz 6+7). Evidence-PRs und Dependabot stehen unter „never closed"; ein Schließen ist selbst Stop-Bedingung.
+4. M1 trennt Kimis Fleet-Review von der Branch-Protection. Die Akzeptanz hat jetzt 7 geordnete Punkte; das Approval muss von einem vertrauenswürdigen GitHub-Account **außer `NeaBouli`** kommen — ein solcher Collaborator existiert nicht, M1 ist damit offen auf eine Entscheidung von Gio geblockt. Widerspruch #2 nachgezogen.
+5. Bindende Crypto-Gewaltenteilung: Implementierer nie Reviewer, kein Agent reviewt seine eigene Crypto-Änderung. `KIMI-SEC-CRYPTO` ist read-only; Crypto-Residuals bleiben unzugewiesen, bis Codex einen anderen Reviewer benennt. Ownership-Zeilen für `core_crypto/**` und `backend/signaling/**` entsprechend korrigiert.
+6. Neuer Exact-Authorization-Gate-Block in §6: echter Tester-Grant, Provider-Aktion, Deployment und Sales-Mutation brauchen je eine eigene schriftliche Freigabe pro Aktion — einmalig, nicht verallgemeinerbar.
+
+Milestone-Substanz, One-Writer-Regeln und `PRODUCT_READY=NO` / `FINANCE_READY=NO` sind unverändert.
+
+**Tests:** Docs-only-Diff, eine Markdown-Datei. Verifiziert: `git rev-parse origin/main` → `e06d018…`; `gh pr view 102 --json files` bestätigt, dass beide Evidence-Pfade in #102 fehlen; Dokument-Invarianten (Gate-Strings, genau eine kanonische main-SHA, 20 Headings / 12 Milestones) grün. Kein YAML geändert, `yamllint` ist hier nicht installiert.
+
+Report: `.fleet/reports/SC-COMPLETION-PLAN-002.md`, 39 Zeilen, `status: ok`.
+
+--- stderr ---
+
