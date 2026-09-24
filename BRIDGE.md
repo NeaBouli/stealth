@@ -6130,3 +6130,14 @@ Open next:
 - No provider setting, credential, email, deployment or production state was changed.
 
 `BREVO REVIEW COMPLETE / UNUSED SMTP MAY DEACTIVATE / SECURECALL API REMAINS HEALTHY`
+
+## 2026-09-24 20:48 EEST — CODEX — BREVO DIAGNOSTIC REMINDER ADDED
+
+- Added `docs/monitoring/BREVO_EMAIL_RUNBOOK.md` and linked it from the keepalive workflow and
+  payment setup documentation.
+- The runbook records that SecureCall uses the HTTP API credential, while the two legacy SMTP
+  credentials are not part of the deployed delivery path. Future delivery investigations start
+  with the API keepalive, runtime variable presence and redacted transactional logs.
+- No provider, secret, runtime or email state changed.
+
+`BREVO RUNBOOK DURABLE / LEGACY SMTP EXCLUDED FROM NORMAL DIAGNOSIS`

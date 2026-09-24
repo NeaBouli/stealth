@@ -1,6 +1,9 @@
 ---
 name: Brevo API Key Keepalive
 
+# This validates the HTTP API credential, not the legacy SMTP credentials.
+# Troubleshooting: docs/monitoring/BREVO_EMAIL_RUNBOOK.md
+
 on:
   schedule:
     - cron: '17 2 1,15 * *'

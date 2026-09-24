@@ -102,6 +102,10 @@ Response:
 3. **Verify domain:** stealthx.tech
 4. **API Key** → `BREVO_API_KEY=xkeysib-...`
 
+Operational note: this integration uses the Brevo HTTP API, not SMTP. Do not treat inactive legacy
+SMTP credentials as the cause of a delivery failure. Follow
+[`docs/monitoring/BREVO_EMAIL_RUNBOOK.md`](../../docs/monitoring/BREVO_EMAIL_RUNBOOK.md).
+
 ### Flow After Payment:
 ```
 User pays → Stripe webhook → Code generated
