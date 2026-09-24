@@ -6096,3 +6096,24 @@ Open next:
   test pass. No key value, email, provider mutation, deployment or production action occurred.
 
 `BREVO API PATH HEALTHY / SMTP CREDENTIALS UNREFERENCED / PROVIDER METADATA OPEN`
+
+## 2026-09-24 20:10 EEST — CODEX + CLAUDE CODE — COMPLETION PROGRAMME READY
+
+- Claude Code was verified available. Fleet authentication works when the dispatcher runs outside
+  the Codex sandbox boundary; the local dispatcher report-path bug was fixed and its full self-test
+  passes 52/52.
+- `.fleet/SECURECALL_COMPLETION_PLAN.md` is now the authoritative M0-M11 work programme. Codex
+  independently reviewed Claude's result and corrected two residual instructions: Kimi supplies a
+  Fleet report, not a GitHub approval, and stacked PRs close only after a verified #102 merge.
+- The first parallel batch has exclusive ownership: Kimi reviews PR #102 and maps STX-01..62;
+  Grok owns issue #87's narrow CI correction; Claude measures issue #86 on S10/Tab S4 and proposes
+  a minimal diff; Codex controls PR metadata, integration and every release gate.
+- PR #83 and #85 remain independent audit evidence and must be preserved. Dependabot PRs are not
+  part of the stacked implementation closure. Crypto implementation and security review remain
+  assigned to different agents.
+- Hard blockers: PR #102 needs an approving GitHub review from a trusted account other than
+  `NeaBouli`; redacted Brevo provider metadata is unavailable until the in-app browser can be used.
+- No app code, merge, deployment, provider state, tester grant, Play artifact or commerce state was
+  changed. `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain binding.
+
+`M0-M11 READY / CLAUDE FLEET VERIFIED / KIMI LARGE-CONTEXT BATCH QUEUED`

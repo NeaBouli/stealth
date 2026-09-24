@@ -319,8 +319,9 @@ Exactly one agent may modify each surface at a time. Cross-surface reads are alw
 
 1. **KIMI-102-REVIEW** — whole-stack review of PR #102 (224 files, 41 commits). Verify the replay
    is faithful: every commit from #82/#90/#94/#95/#96/#97/#98/#99/#100/#101 present, no extra
-   change smuggled in, tree equality independently recomputed. Deliver as a **GitHub approving or
-   requesting-changes review**, plus `.fleet/reports/KIMI-102-REVIEW.md`. Blocks M1.
+   change smuggled in, tree equality independently recomputed. Deliver the result as
+   `.fleet/reports/KIMI-102-REVIEW.md`. This Fleet review blocks M1 but does not satisfy the
+   separate GitHub branch-protection approval.
 2. **KIMI-STX-SWEEP** — map all 62 findings of #84 against the post-#102 tree; output a table
    `finding → fixed-by-commit | still-open | wontfix-candidate`. Read-only, no edits. Feeds M3.
 3. **KIMI-SEC-CRYPTO (mandatory security review, read-only)** — `core_crypto/src/ffi/mod.rs`
@@ -355,7 +356,8 @@ Startable immediately, in parallel, by three different agents:
    `adjustPan` vs. contact-match rows, settings row touch targets, Premium VPN section
    expand/collapse). Output an exact-source measurement table plus the minimal proposed diff — no
    resource edit until the measurement is reviewed.
-4. **Codex → M0**: close/annotate the superseded PRs and tag `pre-102-<sha>`. Metadata only.
+4. **Codex → M0**: annotate the ten stacked implementation PRs now. Close them only after #102 is
+   merged and the resulting `main` tree and CI are verified. Preserve #83, #85 and Dependabot PRs.
 
 Explicitly **not** in this batch: any merge, deploy, Brevo console access, Play upload, artifact
 build, tester code issuance, email send, or flag change.
