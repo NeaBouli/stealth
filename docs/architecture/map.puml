@@ -1,0 +1,28 @@
+@startmindmap
+* SecureCall Android main-screen UI (issue #86 lane)
+** Main shell
+*** built: MainActivity::onCreate
+*** built: MainActivity::updateContentBottomInset
+** Dialer
+*** built: DialerFragment::onViewCreated
+*** built: DialerFragment::filterContacts
+** Settings
+*** built: SettingsFragment
+*** built: CollapsiblePreferenceCategory
+** VPN feature (flavor)
+*** built: premium VpnFeature::configure
+*** built: free/pro VpnFeature (no-op)
+@endmindmap
+
+@startuml
+component "Main shell\nMainActivity" as Main
+component "Dialer\nDialerFragment" as Dialer
+component "Settings\nSettingsFragment" as Settings
+component "Collapsible section\nCollapsiblePreferenceCategory" as Coll
+component "VPN feature\nVpnFeature (flavor)" as Vpn
+Main --> Dialer : showFragment(nav_dialer)
+Main --> Settings : showFragment(nav_settings)
+Settings --> Coll : preferences.xml
+Settings --> Vpn : VpnFeature.configure
+Vpn --> Coll : premium_vpn_category
+@enduml

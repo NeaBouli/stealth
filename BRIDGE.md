@@ -7276,3 +7276,24 @@ Open next:
   E2E remain later gates. `PRODUCT_READY=NO`, `FINANCE_READY=NO`; checkout and sales remain closed.
 
 `STACK REVIEW COMPLETE — READY TO INTEGRATE AFTER EXPLICIT MERGE AUTHORIZATION — NO RUNTIME ACTION`
+
+## 2026-09-27 — CODEX + CLAUDE — SECURECALL ISSUE #86 EMULATOR GATE COMPLETE
+
+- Claude Code supplied a bounded partial implementation for the mapped Android main-screen UI
+  lane. Codex integrated it, replaced the remaining `adjustPan` behavior with `adjustResize`,
+  corrected deterministic test synchronization and completed the release-gate verification.
+- Fixed: all four bottom-navigation labels remain visible; dial keys retain minimum touch targets;
+  the `0` key shows an unclipped `+`; the ad banner remains separate from navigation; contact-match
+  rows remain fully above the IME; the Premium VPN settings category now collapses like its peers.
+- PASS: Free unit tests, Free/Pro/Premium compilation, Free/Premium debug assembly, Free lint and
+  the complete 25-test Free instrumentation suite on API 35 at 320x640 dp.
+- PASS: focused measurable UI assertions 3/3 at both 320x640 dp and 720x1280 dp. Stored synthetic
+  phone screenshots and detailed reports under `.fleet/evidence/SC-UI-086/` and `.fleet/reports/`.
+- The same diff was applied to exact PR #102 head `5f70b16` in an isolated integration worktree.
+  That combined tree passed Free unit tests, Pro/Premium compilation, Free lint and 29 connected
+  tests with zero failures; one existing conditional production-chain test self-skipped.
+- Physical S10/Tab S4 confirmation remains open. No release artifact, merge, deployment, provider
+  mutation or sales activation occurred. TURN/Admin production rotation still requires the root
+  operator block documented above.
+
+`ISSUE #86 SOURCE + EMULATOR GREEN / PHYSICAL DEVICE GATE OPEN`
