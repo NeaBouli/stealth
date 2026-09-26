@@ -6192,3 +6192,6 @@ Open next:
   operator block documented above.
 
 `ISSUE #86 SOURCE + EMULATOR GREEN / PHYSICAL DEVICE GATE OPEN`
+
+GitHub tracking: `https://github.com/NeaBouli/stealth/issues/86#issuecomment-5850573493` records
+commit `6c80134`, the exact emulator gates and the still-open physical-device confirmation.
