@@ -13,6 +13,7 @@ Current milestone: release/security remediation before final physical-device and
 4. VLABS IFR checkout PR #208 — rebase and test after npm toolchain recovery; status: BLOCKED
    after three reproducible npm CLI failures.
 5. Physical S10/S4 release matrix and tester-license binding — status: WAITING FOR DEVICES and
-   production signer/registry provisioning.
+   production signer/registry provisioning. Local API-35 instrumentation: 30 tests, zero failures,
+   one conditional live-chain skip.
 6. Release/Play/store activation — status: CLOSED until PRODUCT_READY and FINANCE_READY match
    the immutable release tuple.

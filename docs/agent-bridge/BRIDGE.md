@@ -3557,6 +3557,14 @@ Type: RELEASE / EXTERNAL / POLICY
   exact affected account/workspace token. No inferred token revocation or replacement occurred.
 
 `READ-ONLY CHECK COMPLETE — ROOT AND RAILWAY DASHBOARD OPERATOR STEPS OPEN`
+
+## 2026-09-27 — CODEX — Combined emulator regression gate passed
+
+- Complete Free API-35 instrumentation passed after the UI, tester-license and ICE changes:
+  30 tests, zero failures, one conditional live-chain skip.
+- Physical S10/Tab S4 testing remains open because neither device was visible to ADB.
+
+`EMULATOR GREEN — PHYSICAL DEVICE GATE OPEN`
 ## 2026-08-27 04:31 EEST — [CODEX TERMINAL] Pre-Sale Completion Candidate Verified
 
 - SecureCall `1.0.50` / base versionCode `78017` and the shared browser IFR-holder checkout block completed in isolated worktree `fix/presale-complete-20260826`.

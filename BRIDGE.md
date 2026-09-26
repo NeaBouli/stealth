@@ -7355,3 +7355,15 @@ Open next:
   occurred.
 
 `RUNTIME HEALTHY / WATCHDOG BROKEN / ROTATION AND EXACT RAILWAY TOKEN IDENTIFICATION OPEN`
+
+## 2026-09-27 — CODEX — COMBINED ANDROID EMULATOR GATE GREEN
+
+- Re-ran the complete Free instrumentation suite on the available API-35 emulator after the
+  Issue #86 UI integration, tester-license promotion tooling and ICE credential hardening.
+- Gradle finished successfully: 30 instrumentation tests executed, zero failures, one existing
+  conditional production-certificate-chain test skipped itself. The run also rebuilt the app and
+  exercised the VPN-service and app-wallet policy guards.
+- S10 and Tab S4 were not visible to ADB; the required physical two-device call, relay and UI
+  confirmation therefore remains open. No artifact, deployment, provider or store action occurred.
+
+`COMBINED EMULATOR GATE GREEN / PHYSICAL TWO-DEVICE GATE OPEN`

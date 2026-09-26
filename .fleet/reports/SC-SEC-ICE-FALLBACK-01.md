@@ -16,9 +16,9 @@ files:
 tests: |
   Focused Free unit + Pro/Premium compile -> PASS (BUILD SUCCESSFUL)
   Complete :app:testFreeDebugUnitTest + :app:lintFreeDebug -> PASS
+  Complete :app:connectedFreeDebugAndroidTest on API 35 -> PASS, 30 tests, 0 failed, 1 conditional skip
   Production-source OpenRelay marker scan -> PASS, zero matches
   git diff --check -> PASS
 risks: Physical two-device call validation remains a release gate.
 security: Embedded third-party TURN credentials removed; relay-only path now fails closed.
 next: Independent security review when a fleet worker is available; root operator runtime rotation remains separate.
-
