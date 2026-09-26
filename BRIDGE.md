@@ -6200,3 +6200,16 @@ PR #102 integration preparation: branch `agent/codex/SC-UI-086-PR102`, commit `2
 directly on exact #102 head `5f70b16`. The combined tree passed the local Android matrix with zero
 failures. No stacked PR was opened before the 2026-10-01 hosted-CI reset; the branch push triggered
 no workflow run. Tracking: `https://github.com/NeaBouli/stealth/issues/86#issuecomment-5850719112`.
+
+## 2026-09-27 — CODEX — PRIVATE FINANCE CONTRACT RECONCILED
+
+- The private VLABS operator record confirms the browser-only SecureCall IFR holder discount
+  contract. Android remains wallet/IFR-free and no parallel payment path will be added here.
+- The VLABS-owned durable checkout candidate exists in its private repository but is not yet
+  integrated into current VLABS main. A local current-main integration was conflict-resolved, then
+  stopped fail-closed because the dependency installer failed reproducibly before authoritative
+  tests could run. No untested commit or push was made.
+- No checkout, product gate, payment, invoice, provider, database, deployment or production state
+  changed. SecureCall remains PRODUCT_READY=NO and FINANCE_READY=NO; sales remain closed.
+
+`PRIVATE FINANCE CONTRACT CONFIRMED / VLABS INTEGRATION TEST BLOCKED / NO ACTIVATION`

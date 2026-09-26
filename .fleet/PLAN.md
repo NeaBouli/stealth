@@ -57,6 +57,13 @@ The UI diff is also rebased on exact PR #102 head `5f70b16` as commit `24fe19e` 
 `agent/codex/SC-UI-086-PR102`; its combined-tree local Android gate is green. No stacked PR was
 opened, intentionally preserving hosted CI capacity until the 2026-10-01 reset.
 
+Finance coordination (2026-09-27): the private VLABS operator contract confirms the SecureCall
+browser-only IFR 50% direct-lifetime offers for any positive verified IFR balance, without a token
+threshold or redemption cap. The durable canonical-checkout implementation exists in private VLABS
+PR #208 but is not on current VLABS main. Its current-main merge is locally conflict-resolved; the
+required verification is blocked by a reproducible npm CLI installation failure, so no untested
+merge commit or push was made. PRODUCT_READY=NO, FINANCE_READY=NO and sales remain closed.
+
 ## Milestone: BREVO-SMTP-INACTIVITY-20260924 — COMPLETE
 
 Goal: determine whether the Brevo SMTP credentials labelled `Master Password` and
