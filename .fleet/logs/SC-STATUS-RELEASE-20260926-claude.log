@@ -1,0 +1,46 @@
+$ claude (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/claude-SC-STATUS-RELEASE-20260926)
+--- stdout ---
+Der Report ist geschrieben und liegt unter `.fleet/reports/SC-STATUS-RELEASE-20260926.md` (18 Zeilen, Commit `d4b185e`, nicht gepusht). Status `ok`: Es war reine Planung, der Code blieb unverändert. Der Test für den geschlossenen IFR-Checkout läuft grün (1/1), die Syntaxprüfung von `ifr-checkout.js` besteht. Gradle-, Signaling- und Rust-Tests habe ich nicht ausgeführt, weil nichts am Code geändert wurde.
+
+Alle geschlossenen Gates bleiben zu: `PRODUCT_READY=NO`, `FINANCE_READY=NO`, IFR-Checkout aus, Play-Billing geschlossen, Custom-ID-Checkout aus. Die Brevo-Frage (M6) ist erledigt.
+
+**Reihenfolge bis zum Verkauf (R1–R10):**
+1. PR #102 mergen.
+2. Prüfen, dass der Signaling-Server wirklich läuft.
+3. Alle 62 Audit-Befunde aus #84 abschließen.
+4. Tester-Freischaltungen und Geräte-/UI-Tests.
+5. Signierte Builds mit einheitlicher Version.
+6. Website/Wiki/GitHub inhaltlich angleichen.
+7. Veröffentlichung über Play und als Direkt-APK.
+8. Zahlungsweg über Stripe, VLABS, IFR-Rabatt und Play mit Erstattung/Widerruf.
+9. `PRODUCT_READY`, danach `FINANCE_READY`.
+
+Für jeden Schritt stehen Abhängigkeiten, Abnahmekriterien und ein fester Verantwortlicher im Report.
+
+**Was den Fortschritt konkret blockiert:**
+- **Freigabe für #102:** Es fehlt ein vertrauenswürdiges GitHub-Konto außer `NeaBouli`, das den PR freigibt. Das kannst nur du lösen.
+- **Signierte Builds:** Das Passwort für den Release-Keystore ist lokal nicht verfügbar. Vor dem 01.10. geht deshalb kein signierter Build, das hängt am gehosteten CI.
+- **Zertifikats-Pinning (STX-23):** Die Pin-Liste ist seit dem 14.08. abgelaufen. Ohne Fix kein Release.
+- **Preise widersprechen sich:**
+  - App: 49 € (laut Audit-Befund STX-38)
+  - Website: Aktivierungscode 25 €, Pro Lifetime 15 €, Premium Lifetime 25 €
+  - VLABS: Pro 15 €, Premium 25 €
+
+  Die Werte können erst angeglichen werden, wenn du eine verbindliche Preisliste festlegst.
+- **Hosting:** Railway oder Hetzner ist ungeklärt. Solange das offen ist, gibt es kein Deploy.
+
+**Möglich vor dem 01.10. ohne gehostetes CI:**
+- Kimi: die drei Nur-Lese-Reviews.
+- Grok: die Workflow-Korrektur für #87 lokal (der Nachweis im CI kommt später).
+- Ich: Vermessung für #86 und Vorbereitung der Website-Texte auf einem Branch.
+- Codex: die komplette lokale Testkette auf dem Stand von #102, ohne Signatur.
+- Physische Geräte-QA auf S10/Tab S4, falls die Geräte nicht mehr von Woizz belegt sind.
+
+**Weitere Freigaben, die noch fehlen:** Deploy, einzelne Tester-Freischaltungen, in der Play Console RTDN/Pub/Sub, reduzierte Rechte für das Service-Konto, Lizenztester und UMP-Hinweis, Stripe-Tests im Testmodus, steuerliche Behandlung von Direkt-Krypto-Zahlungen, B2B-Quellensteuer und OSS-Einordnung durch den Steuerberater.
+
+Der VLABS-Eintrag zu SecureCall war nur im Handoff-Worktree vom 08.09. zu finden. Er ist möglicherweise veraltet und sollte vor dem Zahlungsschritt aus dem echten VLABS-Repo neu gelesen werden.
+
+Die MCP-Verbindungen zu Stripe, Linear, PayPal, Cloudflare und WordPress sind nicht autorisiert. Für Live-Abfragen dort müsstest du sie in den claude.ai-Connector-Einstellungen freischalten; diese Inventur brauchte sie nicht.
+
+--- stderr ---
+

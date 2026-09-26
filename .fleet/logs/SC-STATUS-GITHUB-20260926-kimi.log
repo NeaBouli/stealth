@@ -1,0 +1,1029 @@
+$ kimi (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/kimi-SC-STATUS-GITHUB-20260926)
+--- stdout ---
+• Ich lese zuerst die Fleet-Skills und die im Brief genannten Kernpfade, prüfe Branch und GitHub-Zugang.
+
+• Branch und GitHub-Auth stehen. Jetzt lese ich die Kernpfade aus dem Brief.
+
+• Plan gelesen. Jetzt revalidiere ich PR #102, Evidence-PRs #83/#85, Issues und CI-Zustand live auf GitHub.
+
+• Alle Daten beisammen. Kurzer Blick auf das etablierte Report-Format, dann schreibe ich den Report.
+
+• Report geschrieben (37 Zeilen, nur diese eine Datei, kein Commit/Push — Read-only-Modus). Zusammenfassung der Lage:
+
+  **Revalidierung PR #102 (head `5f70b16`)**
+  - Lokal nachgerechnet: 41 Commits, 0 Merge-Commits, Tree `0578362c…` **identisch** zum Review-Target `5f6398dd` (=#101-Spitze), Diff leer — die Tree-Equality-Behauptung im PR-Body stimmt.
+  - Exact-head CI vom 2026-09-20 komplett grün (inkl. Instrumentation API 24/36), `MERGEABLE`, aber `REVIEW_REQUIRED` mit **0 Reviews**.
+  - Branch-Protection `main`: 1 Approval + lineare History, **keine Required Status Checks**, `enforce_admins=false`. Einziger Collaborator ist `NeaBouli` → der Approval-Blocker gilt für **alle 13 main-PRs**, nicht nur #102. Das ist der kritische Pfad (Gio-Account-Entscheidung).
+
+  **Sonstiger Bestand**
+  - 25 offene PRs, 7 offene Issues. Issue #84: weiterhin **0/62** Boxen angehakt; die Kommentare mappen STX-01/02/03/08/10/14/21/22/23/29/37/38 auf PRs, die alle in #102 enthalten sind.
+  - Evidence-PRs #83/#85/#88 scheitern **nur** am `Android Client`-Job (SDK-Bootstrap, Issue #87) — der Fix existiert bereits doppelt: in #89 **und** in #102. Groks SC-CI-087 als Standalone wäre ein Duplikat → im Report als storniert geführt.
+  - Keine neueren Items seit dem Plan (letztes PR #102 vom 20.09., letztes Issue #87 vom 19.09.).
+
+  **Sicherheitsbefund (daher `status: partial`)**
+  - Der scheduled Security Audit auf `main` **failt seit 2026-09-21** im gitleaks-Job: 3× `generic-api-key` in BRIDGE.md im historischen Commit `845a1a0e` (in main-History; aktueller Head per grep-Approximation sauber) und 2× `turn-credentials` in server.js in Commits, die **nicht** in main liegen (Stack-Branch-Historie). Keine Werte gelesen oder ausgegeben. Triage + Allowlist/Rotations-Entscheid als Queue-Item Q2 (Codex, lokal jetzt machbar).
+
+  **Queue (Q1–Q10)** steht im Report: Q1 Reviewer-Account (Gio, blockiert alles) → Q2 Secret-Triage, Q3 Kimi-Reviews, Q4 Claude-Messung, Q5 Traceability-Kommentare, Q6 lokale Verifikationskette (npm/cargo/gradle/yamllint — jetzt lauffähig) → Q7 Merge #102 (hosted Re-Run deferred ≥2026-10-01) → Q8 14 Closures + #87 → Q9 Evidence-PRs → Q10 Dependabot/Alt-PRs.
+
+  Report: `.fleet/reports/SC-STATUS-GITHUB-20260926.md`
+
+
+--- stderr ---
+kimi version 0.42.0
+• Let me start by understanding the task. I'm working as Fleet-Worker 'kimi' on a read-only planning task: SC-STATUS-GITHUB-20260926 — GitHub, audits and integration inventory.
+
+  Key constraints:
+  - Read-only planning mode
+  - Work only in this worktree on branch agent/kimi/SC-STATUS-GITHUB-20260926
+  - Only open paths mentioned in the brief
+  - Write only `.fleet/reports/SC-STATUS-GITHUB-20260926.md`
+  - Do not modify code, GitHub, branches, issues or PRs
+
+  First, I should:
+  1. Read the skills (fleet-orchestration, fleet-developer) — actually, I have the AGENTS.md content which covers much of this. The skill files are at /Users/gio/.kimi-code/skills/. Let me read them quickly.
+  2. Read AGENTS.md (already provided), BRIDGE.md, .fleet/PLAN.md, .fleet/SECURECALL_COMPLETION_PLAN.md, relevant docs/agent-bridge/*
+  3. Get live GitHub metadata via `gh` CLI
+  4. Produce inventory of open PRs, issues, audit findings, branch relationships, review requirements, merge dependencies
+  5. Revalidate PR #102, evidence PRs #83/#85, stacked PRs, issues #84/#86/#87, and newer items
+  6. Write the report
+
+  The brief is located at /Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924/.fleet/tasks/SC-STATUS-GITHUB-20260926.md (in the main worktree, not my worktree). My worktree is /Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/kimi-SC-STATUS-GITHUB-20260926.
+
+  The report must go to /Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/kimi-SC-STATUS-GITHUB-20260926/.fleet/reports/SC-STATUS-GITHUB-20260926.md (my worktree).
+
+  Note: The brief says "Write only `.fleet/reports/SC-STATUS-GITHUB-20260926.md`". So I can only write that one file.
+
+  Since this is a read-only inventory task with lots of GitHub queries and file reading, I could delegate some exploration. But the task requires careful synthesis. Let me do the key reading myself since I need to understand the material deeply to produce the task queue.
+
+  Let me plan:
+  1. Check current branch (should be agent/kimi/SC-STATUS-GITHUB-20260926)
+  2. Read skills: fleet-orchestration, fleet-developer (maybe quickly)
+  3. Read BRIDGE.md, .fleet/PLAN.md, .fleet/SECURECALL_COMPLETION_PLAN.md
+  4. Read relevant docs/agent-bridge/* files
+  5. Run gh commands: gh pr list, gh issue list, gh pr view 102, 83, 85, issues 84, 86, 87, etc.
+  6. Check branch relationships: git branch -a, git log
+  7. Write the report
+
+  Let me start with parallel calls:
+  - git branch --show-current
+  - Read BRIDGE.md
+  - Read .fleet/PLAN.md
+  - Read .fleet/SECURECALL_COMPLETION_PLAN.md
+
+  Actually first let me verify the branch and check gh availability.
+
+  Since this is read-only inventory, I don't need architecture-map (no code changes). The brief says "Mode: read-only planning" — no code edits, so architecture-map isn't needed for changed lines. The report field 'summary' should mention module/hop only if code changes happen. Since none, I'll note that.
+
+  Let me begin.
+
+agent/kimi/SC-STATUS-GITHUB-20260926
+/usr/local/bin/gh
+github.com
+  ✓ Logged in to github.com account NeaBouli (keyring)
+  - Active account: true
+  - Git operations protocol: https
+  - <redigiert>
+• Good. Branch is correct: agent/kimi/SC-STATUS-GITHUB-20260926. gh is authenticated as NeaBouli.
+
+  Now let me read the key files in parallel:
+  - BRIDGE.md (in my worktree)
+  - .fleet/PLAN.md
+  - .fleet/SECURECALL_COMPLETION_PLAN.md
+  - docs/agent-bridge/ — list files first
+
+  Also the brief itself is in the other worktree: /Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924/.fleet/tasks/SC-STATUS-GITHUB-20260926.md — already provided in the prompt.
+
+  Note: the brief says use "the current repository, AGENTS.md, BRIDGE.md, .fleet/PLAN.md, .fleet/SECURECALL_COMPLETION_PLAN.md, relevant docs/agent-bridge/*, and live GitHub metadata."
+
+  Also I should check /Users/gio/BRIDGE.md per AGENTS.md ("Read /Users/gio/BRIDGE.md, this file, BRIDGE.md, and relevant files under docs/agent-bridge/"). Hmm, the project AGENTS.md says read /Users/gio/BRIDGE.md — that's the user's home bridge. The brief limits paths: "Use the current repository, AGENTS.md, BRIDGE.md, .fleet/PLAN.md, .fleet/SECURECALL_COMPLETION_PLAN.md, relevant docs/agent-bridge/*, and live GitHub metadata." The rule "Oeffne nur die im Brief genannten Pfade" — the brief mentions BRIDGE.md (repo one). The AGENTS.md mentions /Users/gio/BRIDGE.md as coordination read. Reading it is cheap; let me check if it exists. Actually, to stay strictly within the brief, I'll focus on repo files. But AGENTS.md explicitly says to read /Users/gio/BRIDGE.md before material work. Hmm — the project AGENTS.md says "Read `/Users/gio/BRIDGE.md`, this file, `BRIDGE.md`, and relevant files under `docs/agent-bridge/`". Wait, that could be a typo: maybe it means /Users/gio/AGENTS.md. Let me just try reading /Users/gio/BRIDGE.md; if it doesn't exist, no problem.
+
+  Let me do parallel reads now.
+
+.fleet/:
+PLAN.md
+SECURECALL_COMPLETION_PLAN.md
+logs
+reports
+tasks
+
+.fleet/reports/:
+SC-BREVO-001-review.md
+SC-BREVO-001.md
+SC-BREVO-002.md
+SC-COMPLETION-PLAN-001.md
+SC-COMPLETION-PLAN-002-review.md
+SC-COMPLETION-PLAN-002.md
+
+.fleet/tasks/:
+SC-BREVO-001.md
+SC-COMPLETION-PLAN-001.md
+SC-COMPLETION-PLAN-002.md
+SC-STATUS-GITHUB-20260926.md
+SC-STATUS-RELEASE-20260926.md
+ACTION_LOG.md
+BACKEND_MODULARIZATION.md
+BRIDGE.md
+BUGS.md
+CC_DEV_HANDOVER.md
+CC_FULL_AUDIT_PROMPT_2026-06-13.md
+CC_RESPONSE.md
+CLAUDE_CODE_README.md
+CODEX_FINDINGS.md
+CODEX_FINDINGS_ARCHIVE_20260504.md
+COOPERATION_RULES.md
+MIGRATION_PLAN.md
+PROJECT_STATE.md
+QUESTIONS.md
+README.md
+RELEASE_CLEARANCE.md
+RESTART_STATUS_2026-06-21.md
+RESUME_NEXT_SESSION.md
+ROLES.md
+S10_DISCONNECT_INVESTIGATION_2026-07-07.md
+TODO.md
+• Now let me read the SECURECALL_COMPLETION_PLAN.md and check the .fleet/reports for recent context, plus docs/agent-bridge relevant files. The bridge is huge (6143 lines) — I've seen the newest entries at the top. The most recent entries are from 2026-09-07, 2026-09-06, 2026-09-04. That's recent enough context.
+
+  Let me now:
+  1. Read .fleet/SECURECALL_COMPLETION_PLAN.md
+  2. Check .fleet/reports/ recent reports (SC-COMPLETION-PLAN-001, SC-COMPLETION-PLAN-002) for context on PR #102 and findings STX-01..62
+  3. Query GitHub live: PRs, issues, branches
+
+  Then also look at docs/agent-bridge relevant files — maybe ACTION_LOG.md or RESTART_STATUS. But brief says "relevant docs/agent-bridge/*". The fleet reports are probably more relevant. Let me check AUDIT_MUST_READ/stealth_MASTER_AUDIT_20260503.md maybe? That's the audit with STX-01..62 findings perhaps. The PLAN mentions "STX-01..62 finding sweep".
+
+  Let me read SECURECALL_COMPLETION_PLAN.md and the fleet reports in parallel, and run gh queries in parallel too.[{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"main","createdAt":"2026-09-20T13:14:02Z","headRefName":"integrate/securecall-linear-stack-20260920","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":102,"reviewDecision":"REVIEW_REQUIRED","title":"Integrate reviewed SecureCall audit and release stack","updatedAt":"2026-09-20T13:14:10Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"fix/securecall-deploy-secret-output-20260920","createdAt":"2026-09-20T11:54:49Z","headRefName":"fix/securecall-admin-auth-20260920","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":101,"reviewDecision":"","title":"fix: centralize and throttle admin authentication","updatedAt":"2026-09-20T12:55:15Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"fix/securecall-pkd-bounds-20260920","createdAt":"2026-09-20T10:27:36Z","headRefName":"fix/securecall-deploy-secret-output-20260920","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":100,"reviewDecision":"","title":"fix: stop deployment credential output","updatedAt":"2026-09-20T10:35:51Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"fix/securecall-turn-secret-template-20260920","createdAt":"2026-09-20T09:34:14Z","headRefName":"fix/securecall-pkd-bounds-20260920","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":99,"reviewDecision":"","title":"fix: bound public key registration state","updatedAt":"2026-09-20T09:43:20Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"fix/securecall-authenticated-registration-20260920","createdAt":"2026-09-20T08:13:09Z","headRefName":"fix/securecall-turn-secret-template-20260920","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":98,"reviewDecision":"","title":"fix: render shared TURN secret safely","updatedAt":"2026-09-20T08:26:15Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"integrate/securecall-audit-release-20260920","createdAt":"2026-09-20T02:55:59Z","headRefName":"fix/securecall-authenticated-registration-20260920","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":97,"reviewDecision":"","title":"fix: authenticate SecureCall signaling identities","updatedAt":"2026-09-20T04:08:00Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"feat/tester-codes-complete-20260920","createdAt":"2026-09-19T23:51:20Z","headRefName":"integrate/securecall-audit-release-20260920","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":96,"reviewDecision":"","title":"fix: integrate SecureCall audit remediations","updatedAt":"2026-09-20T00:33:09Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"fix/stx22-stx37-stx38-product-truth-20260919","createdAt":"2026-09-19T23:06:02Z","headRefName":"feat/tester-codes-complete-20260920","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":95,"reviewDecision":"","title":"Complete device-bound Direct Premium tester licenses","updatedAt":"2026-09-19T23:24:13Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"fix/ifr-browser-contract-20260919","createdAt":"2026-09-19T19:54:35Z","headRefName":"fix/stx22-stx37-stx38-product-truth-20260919","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":94,"reviewDecision":"","title":"Fix SecureCall security claims and pricing truth","updatedAt":"2026-09-19T19:55:11Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"codex/vlabs-sales-integration-20260905","createdAt":"2026-09-19T18:57:42Z","headRefName":"fix/stx29-remove-google-analytics-20260919","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":93,"reviewDecision":"","title":"fix(web): remove unconsented analytics","updatedAt":"2026-09-19T18:58:31Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"codex/vlabs-sales-integration-20260905","createdAt":"2026-09-19T18:47:41Z","headRefName":"fix/stx23-certificate-pin-rotation-20260919","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":92,"reviewDecision":"","title":"fix(android): rotate certificate pin policy","updatedAt":"2026-09-19T18:48:32Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"codex/vlabs-sales-integration-20260905","createdAt":"2026-09-19T17:47:00Z","headRefName":"fix/stx02-status-privacy-20260919","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":91,"reviewDecision":"","title":"fix: redact client IPs from public status","updatedAt":"2026-09-19T17:47:41Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"codex/vlabs-sales-integration-20260905","createdAt":"2026-09-19T17:32:57Z","headRefName":"fix/ifr-browser-contract-20260919","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":90,"reviewDecision":"","title":"Harden browser-only IFR discount proof","updatedAt":"2026-09-19T18:34:53Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"main","createdAt":"2026-09-19T16:24:46Z","headRefName":"deps/signaling-qs-20260919","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":89,"reviewDecision":"REVIEW_REQUIRED","title":"Fix signaling request-parser dependency advisories","updatedAt":"2026-09-19T16:49:40Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"main","createdAt":"2026-09-19T09:30:26Z","headRefName":"docs/audit-intake-20260919","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":88,"reviewDecision":"REVIEW_REQUIRED","title":"docs: catalog SecureCall audit remediation backlog","updatedAt":"2026-09-19T09:38:08Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"main","createdAt":"2026-09-18T01:49:45Z","headRefName":"audit/securecall-device-ui-2026-09-18","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":85,"reviewDecision":"REVIEW_REQUIRED","title":"Audit: SecureCall device, package and UI review (2026-09-18)","updatedAt":"2026-09-19T09:31:27Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"main","createdAt":"2026-09-15T06:48:47Z","headRefName":"docs/stx-full-audit-2026-09-15","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":83,"reviewDecision":"REVIEW_REQUIRED","title":"docs: Collateral Web3 Open Audits — full audit series 2026-09-15 (STX-01…STX-62)","updatedAt":"2026-09-19T09:31:23Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"main","createdAt":"2026-09-12T21:22:22Z","headRefName":"codex/vlabs-sales-integration-20260905","isDraft":false,"labels":[],"mergeable":"MERGEABLE","number":82,"reviewDecision":"REVIEW_REQUIRED","title":"Verify direct entitlement lifecycle with closed release gates","updatedAt":"2026-09-19T16:35:01Z"},{"author":{"is_bot":true,"login":"app/dependabot"},"baseRefName":"main","createdAt":"2026-09-01T02:31:34Z","headRefName":"dependabot/gradle/client_android/gradle-minor-patch-71225be80a","isDraft":false,"labels":[{"id":"LA_kwDOQWJlRs8AAAACwOVCcQ","name":"dependencies","description":"Pull requests that update a dependency file","color":"0366d6"},{"id":"LA_kwDOQWJlRs8AAAACwOVGEw","name":"java","description":"Pull requests that update java code","color":"ffa221"}],"mergeable":"MERGEABLE","number":78,"reviewDecision":"REVIEW_REQUIRED","title":"chore(deps): bump the gradle-minor-patch group in /client_android with 17 updates","updatedAt":"2026-09-01T02:31:35Z"},{"author":{"is_bot":true,"login":"app/dependabot"},"baseRefName":"main","createdAt":"2026-09-01T02:28:50Z","headRefName":"dependabot/npm_and_yarn/backend/signaling/npm-minor-patch-7ab698461b","isDraft":false,"labels":[{"id":"LA_kwDOQWJlRs8AAAACwOVCcQ","name":"dependencies","description":"Pull requests that update a dependency file","color":"0366d6"},{"id":"LA_kwDOQWJlRs8AAAACwOVHHg","name":"javascript","description":"Pull requests that update javascript code","color":"168700"}],"mergeable":"MERGEABLE","number":77,"reviewDecision":"REVIEW_REQUIRED","title":"chore(deps): bump the npm-minor-patch group across 1 directory with 5 updates","updatedAt":"2026-09-06T23:12:47Z"},{"author":{"is_bot":true,"login":"app/dependabot"},"baseRefName":"main","createdAt":"2026-09-01T02:28:03Z","headRefName":"dependabot/cargo/core_crypto/cargo-minor-patch-0b83b103da","isDraft":false,"labels":[{"id":"LA_kwDOQWJlRs8AAAACwOVCcQ","name":"dependencies","description":"Pull requests that update a dependency file","color":"0366d6"},{"id":"LA_kwDOQWJlRs8AAAACwOVCdQ","name":"rust","description":"Pull requests that update rust code","color":"000000"}],"mergeable":"MERGEABLE","number":76,"reviewDecision":"REVIEW_REQUIRED","title":"chore(deps): bump the cargo-minor-patch group in /core_crypto with 2 updates","updatedAt":"2026-09-01T02:28:05Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"main","createdAt":"2026-08-23T07:56:45Z","headRefName":"docs/vpn-release-closeout-20260823","isDraft":false,"labels":[],"mergeable":"CONFLICTING","number":72,"reviewDecision":"REVIEW_REQUIRED","title":"docs: record SecureCall v1.0.48 release closeout","updatedAt":"2026-08-26T16:30:50Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"main","createdAt":"2026-08-20T15:59:45Z","headRefName":"docs/vpn-release-deployed-20260820","isDraft":false,"labels":[],"mergeable":"CONFLICTING","number":70,"reviewDecision":"REVIEW_REQUIRED","title":"docs: record VPN release deployment","updatedAt":"2026-08-22T21:36:06Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"main","createdAt":"2026-08-13T09:38:00Z","headRefName":"security/audit-handoff-20260813","isDraft":false,"labels":[],"mergeable":"CONFLICTING","number":48,"reviewDecision":"REVIEW_REQUIRED","title":"Add private-operator security audit handoff","updatedAt":"2026-08-13T11:22:44Z"},{"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"baseRefName":"main","createdAt":"2026-08-12T14:46:39Z","headRefName":"docs/private-finance-pointer-20260812","isDraft":false,"labels":[],"mergeable":"CONFLICTING","number":47,"reviewDecision":"REVIEW_REQUIRED","title":"docs: refresh private finance ownership pointer","updatedAt":"2026-08-12T20:51:36Z"}]
+[{"assignees":[],"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"createdAt":"2026-09-19T09:29:08Z","labels":[],"number":87,"title":"CI: Android setup requests removed SDK package tools","updatedAt":"2026-09-19T09:38:02Z"},{"assignees":[],"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"createdAt":"2026-09-19T09:29:08Z","labels":[],"number":86,"title":"Android UI: narrow-phone dialer, navigation and Premium VPN settings","updatedAt":"2026-09-19T09:31:14Z"},{"assignees":[],"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"createdAt":"2026-09-15T06:49:59Z","labels":[],"number":84,"title":"Audit register: Collateral Web3 Open Audits series 2026-09-15 — STX-01…STX-62 (0C/8H/28M/20L/6I)","updatedAt":"2026-09-20T13:29:42Z"},{"assignees":[],"author":{"id":"MDQ6VXNlcjg2NjU1NzQ4","is_bot":false,"login":"NeaBouli","name":"True Republic"},"createdAt":"2026-05-29T19:21:39Z","labels":[{"id":"LA_kwDOQWJlRs8AAAACPz0wCA","name":"enhancement","description":"New feature or request","color":"a2eeef"},{"id":"LA_kwDOQWJlRs8AAAACfp6K2Q","name":"priority-high","description":"High priority — address before next release","color":"D93F0B"}],"number":29,"title":"NEA-WEB-01: Finalize localization and theme behavior on stealthx.tech","updatedAt":"2026-08-05T23:46:00Z"},{"assignees":[],"author":{"id":"U_kgDOEDGmmg","is_bot":false,"login":"zig-VS-python","name":""},"createdAt":"2026-05-21T16:23:51Z","labels":[{"id":"LA_kwDOQWJlRs8AAAACPz0wCA","name":"enhancement","description":"New feature or request","color":"a2eeef"}],"number":28,"title":"[Feature]: Send a text message","updatedAt":"2026-07-05T01:58:33Z"},{"assignees":[],"author":{"id":"U_kgDOEDGmmg","is_bot":false,"login":"zig-VS-python","name":""},"createdAt":"2026-04-10T00:29:19Z","labels":[{"id":"LA_kwDOQWJlRs8AAAACPz0wCA","name":"enhancement","description":"New feature or request","color":"a2eeef"}],"number":14,"title":"[Feature]: SecureCall SOS","updatedAt":"2026-04-10T00:29:19Z"},{"assignees":[],"author":{"id":"U_kgDOEDGmmg","is_bot":false,"login":"zig-VS-python","name":""},"createdAt":"2026-04-10T00:21:37Z","labels":[{"id":"LA_kwDOQWJlRs8AAAACPz0wCA","name":"enhancement","description":"New feature or request","color":"a2eeef"}],"number":13,"title":"[Feature]: Area Code Name","updatedAt":"2026-04-10T00:21:37Z"}]
+Good. Now I have a lot of context. Note interesting differences vs. the completion plan baseline:
+
+  1. The plan said "24 PRs are open" — now the list shows: #102, #101, #100, #99, #98, #97, #96, #95, #94, #93, #92, #91, #90, #89, #88, #85, #83, #82, #78, #77, #76, #72, #70, #48, #47. That's 25 PRs. The plan listed 24: 10 stacked (#82/#90/#94/#95/#96/#97/#98/#99/#100/#101), 2 evidence (#83/#85), 3 Dependabot (#76/#77/#78), plus deferred docs PRs. The current list adds #88 (docs: catalog SecureCall audit remediation backlog), #89 (Fix signaling request-parser dependency advisories), #91, #92, #93 (individual STX fix PRs: #91 stx02, #92 stx23, #93 stx29). Wait — the plan §4 says "PRs #89/#91/#92/#93 are already contained in #96; do not re-fix STX-02/23/29 separately." Hmm, it says #89/#91/#92/#93 contained in #96. But #89 is "Fix signaling request-parser dependency advisories" (deps/signaling-qs) — that's a dependency PR, not STX-02. Hmm, wait, the plan says "PRs #89/#91/#92/#93 are already contained in #96; do not re-fix STX-02/23/29 separately." So #91 (stx02-status-privacy), #92 (stx23-certificate-pin-rotation), #93 (stx29-remove-google-analytics) are the STX fix PRs contained in #96. #89 might be a mistake in the plan or refers to something else. Also #88 is a docs PR "catalog SecureCall audit remediation backlog".
+
+  2. Note the stack: #97's base is `integrate/securecall-audit-release-20260920` and #96's head is `integrate/securecall-audit-release-20260920`. So the chain: #82 (head codex/vlabs-sales-integration-20260905, base main) ← #90 (head fix/ifr-browser-contract, base codex/vlabs...) ← #94 (head fix/stx22-stx37-stx38, base fix/ifr-browser-contract) ← #95 (head feat/tester-codes-complete, base fix/stx22...) ← #96 (head integrate/securecall-audit-release, base feat/tester-codes) ← #97 (head fix/securecall-authenticated-registration, base integrate/securecall-audit-release) ← #98 (head fix/securecall-turn-secret-template, base fix/securecall-authenticated-registration) ← #99 (head fix/securecall-pkd-bounds, base fix/securecall-turn-secret-template) ← #100 (head fix/securecall-deploy-secret-output, base fix/securecall-pkd-bounds) ← #101 (head fix/securecall-admin-auth, base fix/securecall-deploy-secret-output).
+
+  And #91/#92/#93 are based on codex/vlabs-sales-integration-20260905 (same base as #90) — separate small fix PRs now contained in #96 per the plan.
+
+  #102 head: integrate/securecall-linear-stack-20260920, base main, MERGEABLE, REVIEW_REQUIRED.
+
+  3. Issues open: #87, #86, #84, #29, #28, #14, #13.
+
+  4. Also there are newer PRs beyond what the plan lists: #88 (docs audit intake), #89 (deps/signaling-qs). And old conflicting docs PRs: #72, #70, #48, #47 (CONFLICTING).
+
+  Now the brief asks:
+  - Current inventory of open PRs, issues, audit findings, branch relationships, review requirements, merge dependencies
+  - Revalidate PR #102, evidence PRs #83/#85, the stacked PRs, issues #84/#86/#87, and any newer relevant items
+  - Treat hosted CI capacity as unavailable until 2026-10-01; distinguish local verification possible now from hosted checks deferred until reset
+  - Return an ordered, non-overlapping task queue with exact dependencies, acceptance gates and recommended worker ownership
+  - Write only .fleet/reports/SC-STATUS-GITHUB-20260926.md
+
+  Let me now dig deeper:
+  1. PR #102: check statusCheckRollup, reviews, commits count, head SHA. Also verify mergeable state.
+  2. Issues #84: check checkbox state (updated 2026-09-20T13:29:42Z — after plan was written; maybe boxes got ticked?). Let me check.
+  3. Issue #87, #86 details.
+  4. PRs #83/#85 status checks (CI failing due to #87?).
+  5. Newer items: #88, #89 — and check for anything newer than the plan date 2026-09-24. The pr list shows updated dates; #102 updated 2026-09-20. Let me also check closed PRs/issues recently, and any PR > 102.
+  6. Check branches: git branch -r to see agent branches, and check origin/main head.
+  7. Check reviews on #102 (reviewDecision REVIEW_REQUIRED, zero reviews per plan — revalidate).
+  8. Check CI runs: hosted CI capacity unavailable until 2026-10-01 — meaning GitHub Actions quota exhausted. Let me check recent workflow runs to confirm.
+
+  Also the .fleet/reports/SC-COMPLETION-PLAN-001.md and 002 + review may have more context. And tasks SC-STATUS-RELEASE-20260926.md is a sibling task (probably for another worker). Let me read the sibling task briefly to avoid overlap, plus reports.
+
+  Let me run a batch of commands:
+  - gh pr view 102 --json statusCheckRollup (summarized), reviews, headRefOid, commits count
+  - gh issue view 84 --json body (check ticked boxes count)
+  - gh pr view 83, 85 status checks
+  - gh run list --limit 15
+  - git fetch? No — read-only mode but fetching is a local git operation that mutates .git... "Do not modify code, GitHub, branches, issues or PRs." A git fetch updates remote refs — technically modifies local git state, not GitHub. Hmm, to be safe I can use gh api to get branch heads instead of fetching. Let me use `gh api repos/NeaBouli/stealth/branches` or git ls-remote (read-only, no local mutation). git ls-remote is fine.
+
+  Let me also check the merge state of #102 with fresh data and whether there are any newer PRs beyond #102 (there aren't — list shows max 102).
+
+  Let me read the sibling task file and fleet reports too. Actually the reports: SC-COMPLETION-PLAN-002.md is the corrected plan (already read via SECURECALL_COMPLETION_PLAN.md). SC-COMPLETION-PLAN-001.md and its review, SC-BREVO-001/002. The BREVO milestone is COMPLETE per PLAN.md. I have enough on Brevo.
+
+  Priority now: GitHub live data. Let me batch:
+
+  1. `gh pr view 102 --json number,title,headRefOid,baseRefName,mergeable,mergeStateStatus,reviewDecision,reviews,statusCheckRollup,commits --jq ...` — might be large; use jq to summarize.
+  2. `gh issue view 84 --json body --jq .body | grep -c '\[x\]'` etc.
+  3. `gh pr checks 83` and `gh pr checks 85` — or view statusCheckRollup.
+  4. `gh run list --limit 20 --json ...`
+  5. `git ls-remote origin` for branch heads (main, integrate branch, etc.)
+  6. `gh api repos/{owner}/{repo}/branches --paginate` maybe too much. ls-remote is enough.
+  7. `gh pr view 88/89` for the newer items.
+  8. Check CODEOWNERS / branch protection: `gh api repos/NeaBouli/stealth/branches/main/protection` to revalidate review requirements.
+
+  Also check issues list for anything newer: done — max is #87. And PRs: max #102.
+
+  Also need "any newer relevant items" — check recently closed PRs/issues since 2026-09-20: `gh pr list --state closed --limit 10` and `gh issue list --state closed`. And `gh pr list --state all --search "created:>2026-09-24"`.
+
+  Let me also check the sibling task SC-STATUS-RELEASE-20260926.md to know its scope (to keep queues non-overlapping).
+
+  Batch the commands now. Note: gh commands hit api.github.com — fine.
+
+  Also I should verify local git state: current worktree branch, whether origin/main head matches e06d018. Use `git ls-remote origin main` and `git rev-parse HEAD`.
+
+  Let me be careful with output sizes — use jq to extract compact fields.
+
+{"base":"main","commitCount":41,"head":"integrate/securecall-linear-stack-20260920","headOid":"5f70b1677d277c10601942176fe1312a81537017","isDraft":false,"lastCommit":"5f70b1677d277c10601942176fe1312a81537017","mergeState":"BLOCKED","mergeable":"MERGEABLE","number":102,"reviewDecision":"REVIEW_REQUIRED","title":"Integrate reviewed SecureCall audit and release stack"}
+{"checks":[{"conclusion":"SUCCESS","name":"Instrumented Tests API 24","status":"COMPLETED"},{"conclusion":"SUCCESS","name":"Lint Markdown \u0026 YAML","status":"COMPLETED"},{"conclusion":"SUCCESS","name":"Dependency Review","status":"COMPLETED"},{"conclusion":"SUCCESS","name":"Secret Detection","status":"COMPLETED"},{"conclusion":"SUCCESS","name":"Instrumented Tests API 36","status":"COMPLETED"},{"conclusion":"SUCCESS","name":"Signaling Tests","status":"COMPLETED"},{"conclusion":"SUCCESS","name":"Dependency Audit","status":"COMPLETED"},{"conclusion":"SUCCESS","name":"Rust Core Crypto","status":"COMPLETED"},{"conclusion":"SUCCESS","name":"Security Summary","status":"COMPLETED"},{"conclusion":"SUCCESS","name":"Android Client","status":"COMPLETED"},{"conclusion":"SUCCESS","name":"CodeRabbit","status":null}],"reviewCount":0,"reviews":[]}
+      86 /tmp/issue84.md
+0
+62
+• PR #102 revalidated:
+  - head 5f70b1677d277c10601942176fe1312a81537017 (matches plan's 5f70b16)
+  - 41 commits, base main, MERGEABLE, mergeState BLOCKED (due to review requirement), REVIEW_REQUIRED, 0 reviews
+  - All checks SUCCESS (from 2026-09-20) — but hosted CI capacity is now unavailable until 2026-10-01, so re-runs are deferred.
+
+  Issue #84: 62 unchecked boxes, 0 ticked. Confirmed.
+
+  Now let me check:
+  1. PRs #83/#85 status checks + mergeable
+  2. Issue #87 and #86 bodies (brief)
+  3. Newer PRs #88/#89 details and their relationship (are they in #102? #89 is deps/signaling-qs — not in the stack list. #88 docs audit intake — not in stack.)
+  4. Branch protection on main
+  5. CI runs status (hosted CI capacity)
+  6. Closed PRs/issues since 2026-09-20 for newer relevant items
+  7. git ls-remote for main head and branch heads
+
+  Let me batch.=== PR 83 ===
+{"additions":719,"changedFiles":6,"deletions":0,"head":"docs/stx-full-audit-2026-09-15","mergeState":"BLOCKED","mergeable":"MERGEABLE","number":83,"oid":"2672781ca5d920e692ac3040f55cc85873f0a1ae","reviewDecision":"REVIEW_REQUIRED","title":"docs: Collateral Web3 Open Audits — full audit series 2026-09-15 (STX-01…STX-62)"}
+=== PR 85 ===
+{"additions":200,"changedFiles":1,"deletions":0,"head":"audit/securecall-device-ui-2026-09-18","mergeState":"BLOCKED","mergeable":"MERGEABLE","number":85,"oid":"d609e97874021dd8b3be1fb756b5d4d16a980ab3","reviewDecision":"REVIEW_REQUIRED","title":"Audit: SecureCall device, package and UI review (2026-09-18)"}
+=== PR 88 ===
+{"additions":252,"changedFiles":2,"deletions":0,"head":"docs/audit-intake-20260919","mergeState":"BLOCKED","mergeable":"MERGEABLE","number":88,"oid":"7f6a40bc5fed28b7fbb80616c48b71cde1db2096","reviewDecision":"REVIEW_REQUIRED","title":"docs: catalog SecureCall audit remediation backlog"}
+=== PR 89 ===
+{"additions":70,"changedFiles":4,"deletions":18,"head":"deps/signaling-qs-20260919","mergeState":"BLOCKED","mergeable":"MERGEABLE","number":89,"oid":"3e1f4d2038953d60f61457f283b032b2ab6cf1a7","reviewDecision":"REVIEW_REQUIRED","title":"Fix signaling request-parser dependency advisories"}
+=== PR 83 checks ===
+[{"conclusion":"SUCCESS","name":"Lint Markdown \u0026 YAML"},{"conclusion":"SUCCESS","name":"Dependency Review"},{"conclusion":"SUCCESS","name":"Secret Detection"},{"conclusion":"SUCCESS","name":"Signaling Tests"},{"conclusion":"SUCCESS","name":"Dependency Audit"},{"conclusion":"SUCCESS","name":"Rust Core Crypto"},{"conclusion":"SUCCESS","name":"Security Summary"},{"conclusion":"FAILURE","name":"Android Client"},{"conclusion":"SUCCESS","name":"CodeRabbit"}]
+=== PR 85 checks ===
+[{"conclusion":"SUCCESS","name":"Lint Markdown \u0026 YAML"},{"conclusion":"SUCCESS","name":"Dependency Review"},{"conclusion":"SUCCESS","name":"Secret Detection"},{"conclusion":"SUCCESS","name":"Signaling Tests"},{"conclusion":"SUCCESS","name":"Dependency Audit"},{"conclusion":"SUCCESS","name":"Rust Core Crypto"},{"conclusion":"SUCCESS","name":"Security Summary"},{"conclusion":"FAILURE","name":"Android Client"},{"conclusion":"SUCCESS","name":"CodeRabbit"}]
+=== PR 88 checks ===
+[{"conclusion":"SUCCESS","name":"Lint Markdown \u0026 YAML"},{"conclusion":"SUCCESS","name":"Dependency Review"},{"conclusion":"SUCCESS","name":"Secret Detection"},{"conclusion":"SUCCESS","name":"Signaling Tests"},{"conclusion":"SUCCESS","name":"Dependency Audit"},{"conclusion":"SUCCESS","name":"Rust Core Crypto"},{"conclusion":"SUCCESS","name":"Security Summary"},{"conclusion":"FAILURE","name":"Android Client"},{"conclusion":"SUCCESS","name":"CodeRabbit"}]
+=== PR 89 checks ===
+[{"conclusion":"SUCCESS","name":"Instrumented Tests API 24"},{"conclusion":"SUCCESS","name":"Lint Markdown \u0026 YAML"},{"conclusion":"SUCCESS","name":"Dependency Review"},{"conclusion":"SUCCESS","name":"Secret Detection"},{"conclusion":"SUCCESS","name":"Instrumented Tests API 36"},{"conclusion":"SUCCESS","name":"Signaling Tests"},{"conclusion":"SUCCESS","name":"Dependency Audit"},{"conclusion":"SUCCESS","name":"Rust Core Crypto"},{"conclusion":"SUCCESS","name":"Security Summary"},{"conclusion":"SUCCESS","name":"Android Client"},{"conclusion":"SUCCESS","name":"CodeRabbit"}]
+cannot iterate over: null
+Key findings so far:
+
+  - PR #83, #85, #88: Android Client check FAILURE — this matches issue #87 (setup-android `packages: tools` removed). All other checks SUCCESS. All MERGEABLE but BLOCKED + REVIEW_REQUIRED.
+  - PR #89: ALL checks SUCCESS including Android Client and instrumentation. Interesting — #89 includes "Instrumented Tests API 24/36" and "Android Client" green. Wait, why does #89 pass Android Client while #83/#85/#88 fail? #89 is deps/signaling-qs (npm dependency fix). Maybe it has the CI fix? Or maybe the Android Client job only fails on docs-only PRs due to... no wait. Let me think: #87 says setup-android v4.0.1 defaults packages: tools which no longer exists → Android Client job fails. If #89 passes, maybe #89 was created before the breakage or includes a fix. #89 created 2026-09-19T16:24, #83 created 2026-09-15, #85 2026-09-18, #88 2026-09-19T09:30. Hmm, #89 is newer than #88 but passes. Maybe #89 contains the workflow fix itself (4 changed files, +70/-18 — a dependency PR changing package.json/lock + maybe workflows?). Let me check PR #89 files.
+
+  - Branch protection API returned an error (cannot iterate over null) — maybe required_status_checks is null or the protection endpoint failed. Let me re-check with a different jq.
+
+  Also need:
+  - gh run list to see recent CI capacity status
+  - git ls-remote for main head + stack branch heads
+  - issue #86/#87 bodies (already have titles; maybe skim)
+  - closed PRs/issues recently
+  - PR #89 files
+
+  Let me batch these.{"url":"https://api.github.com/repos/NeaBouli/stealth/branches/main/protection","required_pull_request_reviews":{"url":"https://api.github.com/repos/NeaBouli/stealth/branches/main/protection/required_pull_request_reviews","dismiss_stale_reviews":true,"require_code_owner_reviews":false,"require_last_push_approval":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/NeaBouli/stealth/branches/main/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/NeaBouli/stealth/branches/main/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"block_creations":{"enabled":false},"required_conversation_resolution":{"enabled":false},"lock_branch":{"enabled":false},"allow_fork_syncing":{"enabled":false}}
+{"commits":[{"msg":"fix: update signaling request parser dependencies","oid":"3cf73b6c"},{"msg":"ci: use supported Android SDK setup packages","oid":"3e1f4d20"}],"files":[".github/workflows/android-instrumentation.yml",".github/workflows/ci-basic.yml","BRIDGE.md","backend/signaling/package-lock.json"]}
+5f70b1677d277c10601942176fe1312a81537017	refs/heads/integrate/securecall-linear-stack-20260920
+e06d018417bae5be16bf6b89d0a1887586a99d3b	refs/heads/main
+---
+{"branch":"main","conclusion":"failure","created":"2026-09-21T08:39:59Z","event":"schedule","id":35579087031,"status":"completed","wf":"Security Audit"}
+{"branch":"integrate/securecall-linear-stack-20260920","conclusion":"success","created":"2026-09-20T13:14:05Z","event":"pull_request","id":35512897743,"status":"completed","wf":"Android Instrumentation"}
+{"branch":"integrate/securecall-linear-stack-20260920","conclusion":"success","created":"2026-09-20T13:14:05Z","event":"pull_request","id":35512897733,"status":"completed","wf":"Dependency Review"}
+{"branch":"integrate/securecall-linear-stack-20260920","conclusion":"success","created":"2026-09-20T13:14:05Z","event":"pull_request","id":35512897724,"status":"completed","wf":"Security Audit"}
+{"branch":"integrate/securecall-linear-stack-20260920","conclusion":"success","created":"2026-09-20T13:14:05Z","event":"pull_request","id":35512897707,"status":"completed","wf":"Basic CI"}
+{"branch":"fix/securecall-admin-auth-20260920","conclusion":"success","created":"2026-09-20T12:55:14Z","event":"pull_request","id":35511996214,"status":"completed","wf":"Basic CI"}
+{"branch":"fix/securecall-admin-auth-20260920","conclusion":"success","created":"2026-09-20T12:03:58Z","event":"pull_request","id":35509561583,"status":"completed","wf":"Basic CI"}
+{"branch":"fix/securecall-admin-auth-20260920","conclusion":"success","created":"2026-09-20T11:54:53Z","event":"pull_request","id":35509140597,"status":"completed","wf":"Basic CI"}
+{"branch":"fix/securecall-deploy-secret-output-20260920","conclusion":"success","created":"2026-09-20T10:35:50Z","event":"pull_request","id":35505517378,"status":"completed","wf":"Basic CI"}
+{"branch":"fix/securecall-deploy-secret-output-20260920","conclusion":"success","created":"2026-09-20T10:27:38Z","event":"pull_request","id":35505130750,"status":"completed","wf":"Basic CI"}
+{"branch":"fix/securecall-pkd-bounds-20260920","conclusion":"success","created":"2026-09-20T09:43:19Z","event":"pull_request","id":35503091297,"status":"completed","wf":"Basic CI"}
+{"branch":"fix/securecall-pkd-bounds-20260920","conclusion":"success","created":"2026-09-20T09:34:16Z","event":"pull_request","id":35502674817,"status":"completed","wf":"Basic CI"}
+Excellent. Key facts:
+
+  **Branch protection on main:**
+  - required_approving_review_count: 1, dismiss_stale_reviews: true, require_code_owner_reviews: false
+  - required_linear_history: true
+  - enforce_admins: false (admins CAN bypass — but the plan forbids admin bypass)
+  - No required status checks configured! (`required_status_checks` key absent — the earlier jq failed because it's null). So merge blocking is via review requirement only. Interesting.
+
+  **PR #89** contains the CI fix for #87! Commit 3e1f4d20 "ci: use supported Android SDK setup packages" modifies both workflow files. That's why its Android Client check passes. So the fix for issue #87 exists inside PR #89 (which also bumps qs). This changes the queue: Grok's SC-CI-087 task may conflict with #89's workflow change. Important finding for the task queue — the #87 fix already exists in #89 (unmerged, REVIEW_REQUIRED). A separate Grok PR would duplicate it. Need to note: either merge #89 (contains qs dep fix + CI fix) or extract. #89 is a candidate for closure of #87.
+
+  Wait — but the plan §4 says "PRs #89/#91/#92/#93 are already contained in #96". Hmm, that listed #89 as contained in #96. Let me check whether #89's commits are inside #102's 41 commits. #102 has 41 commits replaying #82/#90/#94/#95/#96/#97/#98/#99/#100/#101. If #96 contains #89/#91/#92/#93, then #102 should contain the qs fix and CI fix. Let me verify: search #102 commits for "request parser" or "ci: use supported Android SDK setup packages". Also check #91/#92/#93's commits.
+
+  Actually let me check the commit list of #102 and look for those messages. Also check whether #102's tree contains the workflow fix — if yes, then evidence PRs #83/#85 failing Android Client is only a matter of their base not having the fix; after #102 merges, #83/#85 rebase would fix CI. And a standalone Grok fix would then conflict/be redundant.
+
+  **CI runs:** Latest run on main: Security Audit scheduled 2026-09-21 FAILURE. Then nothing after 2026-09-20/21 — consistent with hosted CI capacity exhausted (no runs since). Actually wait — the "hosted CI capacity unavailable until 2026-10-01" is asserted in the brief. The run list shows the last run on 2026-09-21 (scheduled Security Audit failure). Let me look at that failure briefly? It's the scheduled security audit on main. Could be npm audit findings. Might be worth one look at the conclusion/what failed. Let me check run 35579087031.
+
+  Also note: main head e06d018417bae5be16bf6b89d0a1887586a99d3b — matches the plan baseline.
+
+  **Remaining to gather:**
+  1. #102 commit list — verify the 41 commits replay #82..#101, check whether #89's qs+CI fix is inside (plan says #96 contains #89). Also whether tree matches 0578362c... — I can verify tree equality locally? I'd need the branches locally. The worktree has origin? Let me check git log locally — the worktree was created from the repo, so objects may exist. I can do `git cat-file -t 5f70b1677d277c10601942176fe1312a81537017` to see if object exists locally, and compute `git rev-parse 5f70b16^{tree}`. Without fetching, objects might not be present. Let me check.
+
+  Actually "Do not modify code, GitHub, branches, issues or PRs" — git fetch modifies only local .git refs/objects, not GitHub, not branches in the repo-working sense... but to be conservative, I can avoid fetch and use gh api to compare. Tree equality check: `gh api repos/NeaBouli/stealth/compare/5f6398dd699e589e750f3a12def2dd2ed98d8c56...5f70b1677d277c10601942176fe1312a81537017` — gives ahead/behind and files. That's a clean read-only API check of the claimed empty diff.
+
+  2. Issue #86 and #87 bodies — skim for acceptance details.
+  3. Check for newer items: search PRs created after 2026-09-24, issues created after 2026-09-24. From lists: latest PR is #102 (created 2026-09-20), latest issue #87 (2026-09-19). So no newer items since the plan. But let me also check closed PRs merged recently and any closed issues to make sure nothing moved. Also check comments on #84 (updated 2026-09-20T13:29:42Z — after plan 2026-09-24? no, plan date 2026-09-24; issue updated 09-20). Fine.
+
+  4. The sibling task SC-STATUS-RELEASE-20260926.md — read it to keep the queue non-overlapping.
+
+  5. Issue #84 body — I have it in /tmp/issue84.md; let me look at the high findings list to reference in the queue. 86 lines only — read it.
+
+  6. Check the failing scheduled Security Audit run on main (35579087031) — what failed.
+
+  7. Verify tree-equality claim via compare API.
+
+  8. Check collaborators (to assess "trusted GitHub account other than NeaBouli"): `gh api repos/NeaBouli/stealth/collaborators`. This is relevant to M1 blocker. Let me check.
+
+  Also check the stack PRs' mergeable status — all MERGEABLE, BLOCKED (from earlier list). #82 has REVIEW_REQUIRED. Others in stack (#90, #94-#101) have reviewDecision "" — because their base isn't main (protected branch rules only apply to main-based PRs). #89, #88, #85, #83 target main → REVIEW_REQUIRED.
+
+  Dependabot #76/#77/#78 REVIEW_REQUIRED, MERGEABLE.
+
+  Old conflicting docs PRs #47, #48, #70, #72 CONFLICTING, REVIEW_REQUIRED — deferred docs.
+
+  Let me batch the next round.{"ahead_by":41,"behind_by":42,"files":224,"status":"diverged","total_commits":41}
+["fix: checkpoint closed-gate direct entitlement candidate","docs: record scoped candidate verification","test: prepare inactive tester staging with transactional safeguards","fix: separate community recipient intake from license preparation","feat: add gated tester license challenge transport","docs: record tester runtime verification and remaining gates","fix: close entitlement fulfillment review gates","fix: harden fulfillment proxy and revoke retries","ci: stop requesting removed Android SDK tools","fix: harden browser IFR discount proof","docs: record IFR proof review handoff","fix: align SecureCall product truth and pricing gates","docs: record product truth review handoff","fix: complete device-bound tester licenses","docs: record tester license review handoff","ci: test private tester staging tools","docs: start SecureCall audit fix integration","docs: record tester code CI verification","fix: update signaling request parser dependencies","fix: redact client IPs from public status","fix(android): rotate certificate pin policy","fix(web): remove unconsented analytics","docs: record audit fix verification","docs: record audit integration PR","fix: enforce live pin and website integrity gates","test(android): handle software-only CI keystore","fix: authenticate signaling identities and call setup","fix(android): validate identity keys on API 24","test(android): diagnose API 24 identity keystore","fix(android): support P-256 validation on API 24","docs: record authenticated signaling verification","fix: render shared TURN secret safely","test: make TURN mode check portable","docs: record STX-03 CI verification","fix: bound public key registration state","docs: record STX-08 hosted verification","fix: stop deployment credential output","docs: record STX-10 verification","fix: centralize and throttle admin authentication","docs: record STX-14 hosted verification","docs: record stack integration review"]
+[{"login":"NeaBouli","permissions":{"admin":true,"maintain":true,"pull":true,"push":true,"triage":true}}]
+Critical findings:
+
+  1. **Tree-equality claim NOT verified**: compare `5f6398dd...5f70b16` shows "diverged", ahead_by 41, behind_by 42, files: 224. Hmm wait — that means the two commits have different trees? No wait. ahead_by 41 means 5f70b16 has 41 commits not in 5f6398dd, behind_by 42 means 5f6398dd has 42 commits not in 5f70b16. files: 224 — the number of files that DIFFER between the two commits. If trees were equal, files would be 0. So the tree-equality claim in the PR body appears FALSE per this API call... 
+
+  Wait, let me think. `gh api repos/.../compare/base...head` — files lists files different between base and head. If it lists 224 files, the trees differ. Hmm, but maybe I mixed up the direction. The claim: "Tree-equality proof against the reviewed stacked target 5f6398dd… is claimed in the PR body (tree 0578362c…, empty diff)". So PR body claims `git diff 5f6398dd 5f70b16` is empty (tree equality). The compare API shows 224 differing files — CONTRADICTION. Unless 5f6398dd is an older base... Actually if 5f6398dd is the tip of the reviewed stack (i.e., #101's head fix/securecall-admin-auth-20260920), and 5f70b16 is the linear replay onto main, then the diff between them would be: everything in the stack (already in both) plus... hmm. If the stack target 5f6398dd sits on top of some old main and 5f70b16 sits on current main e06d018, then the diff = diff between old base of stack and current main = the commits on main since the stack diverged (42 commits behind). That would produce a non-empty diff of files changed on main between stack base and e06d018.
+
+  Hold on — behind_by 42 means base (5f6398dd) has 42 commits not in head (5f70b16). If 5f70b16 is a replay of the stack onto e06d018, and the stack was built on some older main, then 5f6398dd contains older-main commits not in the replay... but those older commits would be ancestors of e06d018, hence in 5f70b16's history too. Unless the stack base wasn't main at all, or history was rewritten.
+
+  Let me get more info: what is 5f6398dd? Check the PR body of #102 and the commits. Also compare e06d018...5f70b16 to confirm ahead_by=41, behind_by=0.
+
+  Actually the M1 acceptance says: `git diff 5f6398dd699e589e750f3a12def2dd2ed98d8c56 5f70b16` → empty output; `git rev-list --count --merges main..5f70b16` → 0; `git rev-list --count main..5f70b16` → 41.
+
+  The compare API shows ahead 41 / behind 42 with 224 files differing — so acceptance criterion 1 would currently FAIL via API. BUT: caveat — maybe I should verify locally with git if objects exist. The API compare between arbitrary commits uses merge-base semantics? No — `compare/base...head` (three-dot) compares the merge-base... Actually GitHub compare with `...` compares base and head directly (diff between the two tips), and reports ahead/behind relative to merge base. files = diff between the two tips. So files=224 means the tips' trees differ in 224 files.
+
+  Hmm wait, that's suspicious: 224 files is exactly the number of files changed in PR #102 (224 files changed vs main). Coincidence? If diff(5f6398dd, 5f70b16) has 224 files, same as diff(main, 5f70b16), that would suggest 5f6398dd's tree ≈ main's tree?? That can't be right either — 5f6398dd is the reviewed stack target which should contain the whole stack.
+
+  Let me check: maybe 5f6398dd is a commit ON main? If 5f6398dd were main~something... behind_by 42: 5f6398dd has 42 commits not in 5f70b16. If 5f6398dd were an ancestor of e06d018 (main), those 42 commits would also be ancestors of 5f70b16 (since 5f70b16 is main+41 linear). Unless 5f70b16 does NOT contain main's history! ahead_by 41 = exactly the 41 replay commits; behind_by 42 = ... if 5f70b16 contains e06d018 (main) as parent, then behind should be 0 relative to any ancestor of main.
+
+  So behind_by 42 implies 5f6398dd has 42 commits not reachable from 5f70b16. And ahead_by 41 = 41 replay commits. That means the merge-base of the two is 41 commits before 5f70b16 = e06d018 (main). So 5f6398dd diverges from main at e06d018 with 42 own commits. That means 5f6398dd IS a stack branch tip containing 42 commits on top of main. Hmm, then diff between tips would show... if the replay is faithful, the trees should be identical and files=0. files=224 ≠ 0.
+
+  But wait — 42 commits on 5f6398dd vs 41 on the replay. One extra commit! The stack (#82→…→#101) has 10 PRs; the replay has 41 commits. If the original stack had 42 commits, the replay dropped one commit → trees differ. Hmm, that would mean the replay is NOT faithful (M0 stop condition!). Or 5f6398dd is not the tip of #101.
+
+  Let me check PR #101's head OID: earlier list didn't show OIDs. Let me get #101's headRefOid and compare with 5f6398dd. Also read PR #102's body to see the claim text. And compute diff file list to see what differs (which 224 files — is it the full PR content or just some?).
+
+  Also possible: my interpretation of `files` is wrong — `files` in compare API is the list of files changed between base...head — yes it's the diff. 224 files differ.
+
+  Hmm wait, actually let me reconsider: maybe diff(base=5f6398dd, head=5f70b16) = the 224 files of the stack IF 5f6398dd's tree equals main's tree. When would that happen? If 5f6398dd is... no.
+
+  Alternatively — 5f6398dd could be the MERGE-BASE-ish "reviewed target" from BEFORE main got the startup fix #81? If 5f6398dd sits on an older main (pre-#81), then diff between 5f6398dd and 5f70b16 = (stack content cancels) + (difference between old main and current main e06d018). The #81 fix + #80 + #79 commits touched some files (signaling server.js etc.), maybe a handful — not 224.
+
+  OK let me just gather data: PR #102 body, #101 head OID, and the compare file list (first 20 paths + total). Also compare main...5f70b16 to confirm ahead 41 behind 0.
+
+  2. **#102 commit list confirms**: includes "ci: stop requesting removed Android SDK tools" (the #87 fix!) at position 9, and "fix: update signaling request parser dependencies" (qs fix, #89 content) at position 19, plus "fix: redact client IPs from public status" (#91), "fix(android): rotate certificate pin policy" (#92), "fix(web): remove unconsented analytics" (#93). So #102 contains the #87 CI fix AND #89's dependency fix AND #91/#92/#93. Confirmed plan §4.
+
+  That means: after #102 merges, main's workflows have the CI fix; #83/#85 rebased onto main would pass Android Client. Grok's SC-CI-087 standalone fix would duplicate #89's commit 3e1f4d20 (already in #102) — task-queue implication: SC-CI-087 is redundant post-#102; the standalone fix is only needed if evidence PRs must go green BEFORE #102 merges. But evidence PRs #83/#85 can also be rebased onto the integrate branch? No — simpler: merge order should be #102 first, then rebase #83/#85/#88. Alternatively GitHub merge queue... no.
+
+  Also issue #87 can be closed once #102 merges (fix included), or earlier by merging #89. But #89 vs #102: #89 contains qs bump + CI fix on main directly. If #102 merges first, #89 becomes redundant (conflict or empty). Note in queue.
+
+  3. **Collaborators**: ONLY NeaBouli (admin). Confirms M1 blocker: no trusted second account exists to approve. Branch protection requires 1 approving review; dismiss_stale_reviews=true; enforce_admins=false (admin bypass technically possible but forbidden by plan). Also required status checks: NONE configured (required_status_checks absent from protection response). Interesting — the "BLOCKED" merge state comes from review requirement, not checks. Required linear history enabled → squash/rebase merge only, no merge commits. PR #102 is a linear 41-commit stack → rebase-merge compatible.
+
+  4. **CI runs**: last hosted run 2026-09-21 (scheduled Security Audit on main → failure). Nothing since — consistent with CI capacity exhaustion. Let me quickly check what that Security Audit failure was (npm audit?). One call: gh run view 35579087031 --json conclusion,jobs... Maybe worth it for the report. Let me check briefly.
+
+  5. Tree check: let me do the compare of main...head too.
+
+  6. Read issue #86, #87 bodies quickly (skim for acceptance), and #84 body (I have it at /tmp/issue84.md — 86 lines; read it to cite high findings). 
+
+  7. Read sibling task SC-STATUS-RELEASE-20260926.md to keep queues non-overlapping.
+
+  8. Check recently closed/merged PRs (since 2026-09-19) to catch "any newer relevant items": gh pr list --state closed --limit 8.
+
+  9. Also verify local worktree: HEAD branch is agent/kimi/... — check git log to see what commit the worktree is at (task branches off what?). For the report, branch field is agent/kimi/SC-STATUS-GITHUB-20260926.
+
+  Let me batch the next set.## Purpose
+
+Integrates the owner-authorized SecureCall stack in the reviewed order while complying with `main`'s required linear history. The original stacked PRs cannot be merged with merge commits, and PR #82 is blocked by the required independent approval.
+
+## Included order
+
+#82 -> #90 -> #94 -> #95 -> #96 -> #97 -> #98 -> #99 -> #100 -> #101
+
+The 41 non-merge commits were replayed chronologically from current `main`. PR #96 already contains the reviewed implementation content from superseded PRs #89/#91/#92/#93; those PRs are not duplicated here.
+
+## Integrity evidence
+
+- Reviewed stacked target: `5f6398dd699e589e750f3a12def2dd2ed98d8c56`
+- Linear candidate head: `5f70b16`
+- Tree hash on both: `0578362ce3c5b49ef0672eb116a03cd6471ee40d`
+- `git diff 5f6398dd... HEAD`: empty
+- 41 commits ahead of `main`, zero merge commits
+- Application-code parent was independently reviewed by Kimi K3; Sol verified the complete stack and GitHub exact-head CI.
+
+## Gates
+
+This PR must receive the repository-required independent approving review and pass its own exact-head CI. No admin bypass, protection change, deployment, runtime action, credential rotation, Play action, payment/provider action, artifact publication or sales activation is included. `PRODUCT_READY=NO`; `FINANCE_READY=NO`.
+
+After merge: verify final `main` tree equality, rerun the complete combined verification chain, then close the original stacked/superseded PRs with traceability comments.
+5f6398dd699e589e750f3a12def2dd2ed98d8c56
+---
+{"ahead_by":41,"behind_by":0,"files":224,"status":"ahead","total_commits":41}
+[".github/scripts/run-android-smoke.sh",".github/workflows/android-instrumentation.yml",".github/workflows/ci-basic.yml",".gitignore","BRIDGE.md","README.md","backend/signaling/README.md","backend/signaling/package-lock.json","backend/signaling/package.json","backend/signaling/scripts/COMMUNITY_HANDOFF.md","backend/signaling/scripts/TESTER_STAGING.md","backend/signaling/scripts/export_tester_staging.py","backend/signaling/scripts/prepare_identity_migration_routes.js","backend/signaling/scripts/prepare_tester_staging.py","backend/signaling/scripts/test_export_tester_staging.py"]
+---
+{"msg":"docs: record stack integration review","parents":["495e11359e07e0768b0a6a58fcff4464493c3848"],"sha":"5f6398dd699e589e750f3a12def2dd2ed98d8c56"}
+Now it's clear:
+
+  - #101's head OID IS `5f6398dd699e589e750f3a12def2dd2ed98d8c56` — the reviewed stacked target = tip of the stack chain.
+  - Compare main(e06d018)...5f70b16: ahead 41, behind 0, 224 files, status "ahead". ✔ faithful linear replay on current main.
+  - Compare 5f6398dd...5f70b16: ahead 41, behind 42 — WAIT. behind_by 42? If 5f6398dd is the tip of the stack chain built on... let me think again. If the stack chain (#82 base main ← #90 ... ← #101) was built ON e06d018 (current main), then 5f6398dd contains main's history + 41 stack commits. Compare 5f6398dd...5f70b16: merge-base should be e06d018; ahead = 41 (replay commits), behind = 41 (original stack commits). But API says behind 42, total_commits 41 (ahead commits shown).
+
+  Hmm, behind 42 vs 41. And the files diff between tips = 224 files — the same count as the whole PR diff vs main. That means the two trees differ by the equivalent of the entire stack content?! That can't be. Unless... the stack branch was built on an OLDER main (before #81 startup fix e06d018), and main has moved: e06d018 is "fix: restore SecureCall signaling startup (#81)" — merged 2026-09-20? Actually PR #81 merged into main at some point. The stack PRs were created 2026-09-19/20. Hmm.
+
+  Wait, actually let me recompute. If the original stack branched off main BEFORE e06d018 (i.e., off main~1 = 7ce4f01? no, plan says 7ce4f01 is an unmerged task-branch commit)... 
+
+  Let me not over-speculate: the diff between the two tips is 224 files — virtually the entire stack payload. That means one of the two tips does NOT contain the stack content in the same form. Possibilities:
+  (a) The replay on main cherry-picked 41 commits, but the original 5f6398dd contains 42 commits on a base that differs → trees differ by exactly the files the 42nd commit touched plus base drift. But 224 files is the whole PR payload, not one commit's worth.
+
+  Hmm wait, actually — is it? What if 5f6398dd's tree equals main's tree?? That happens if the stack chain ended with a commit that REVERTED everything, or if the stack was a series that cancels out. "docs: record stack integration review" is the tip. Unlikely.
+
+  Let me test directly: get tree hashes via API for both commits: gh api repos/NeaBouli/stealth/commits/<sha> --jq .commit.tree.sha. If both equal 0578362c..., then the API compare "files" output is misleading (maybe because of the divergence, GitHub shows the symmetric difference...). Actually no — GitHub's three-dot compare shows the diff between the merge base and head, NOT tip-to-tip! That's the key: `compare/base...head` on GitHub diffs merge-base(base,head)..head and lists commits on head not in base. So files = files changed by the 41 ahead commits relative to merge-base. That matches: 41 commits touching 224 files, ahead_by 41. behind_by 42 = commits in 5f6398dd not in 5f70b16 = the original 41 stack commits + 1? Or 42 original commits.
+
+  So the compare API does NOT tell me tree equality directly. I need .commit.tree.sha for both commits. Let me fetch tree hashes:
+  - 5f6398dd tree
+  - 5f70b16 tree
+  Both should equal 0578362ce3c5b49ef0672eb116a03cd6471ee40d per the PR body.
+
+  behind_by 42 is still notable: 42 commits on the original stack chain not in the replay (41). So the original chain has 42 commits, replay has 41. If trees match, the 42 vs 41 difference is a commit whose net tree effect is nil or was consolidated (e.g., an empty commit or a revert pair). Actually wait — replay of 41 commits: maybe one original commit was empty (pure docs checkpoint) or two commits were squashed. If final trees match, the payload is identical regardless. Let me verify tree hashes — that's the decisive check.
+
+  Then remaining items:
+  1. Issue #86/#87 bodies (skim).
+  2. Issue #84 body (already saved to /tmp/issue84.md — read it).
+  3. Sibling task SC-STATUS-RELEASE-20260926.md (avoid overlap).
+  4. Closed PRs recently (check nothing merged since).
+  5. Security Audit scheduled failure on main (2026-09-21) — quick look at which job failed.
+  6. Local verification possible now: I should verify what's locally verifiable — e.g., run the quick local checks? The brief says "distinguish local verification possible now from hosted checks deferred until reset" — that's about the task queue content, not necessarily me running tests. Mode is read-only planning. Running tests locally is allowed (read-only-ish, no file writes... npm test may write caches). The brief says don't modify code/GitHub/branches/issues/PRs. Running `npm test` writes to node_modules/.cache maybe; and "Write only .fleet/reports/..." — hmm, strictly "Write only" refers to deliverables. Running tests is standard for fleet work ("Tests ausfuehren"). But for a read-only planning inventory task, the deliverable is the report; tests = the gh/git verification commands I ran. I'll treat the inventory queries as the verification evidence and cite them in the report's tests field. That's consistent with "Mode: read-only planning".
+
+  Actually, wait — the fleet rule says "'status: ok' nur bei gruenen Tests". For a planning/inventory task, the "tests" are the verification commands. I ran gh queries successfully. I could additionally run cheap local checks like `git rev-parse` on the worktree... The worktree HEAD — let me check what's here: git log --oneline -3. The worktree branch agent/kimi/SC-STATUS-GITHUB-20260926 — based on what? Let me check quickly.
+
+  Also: can I verify the tree equality locally? Only if objects are present. git cat-file -t 5f70b16... — the worktree repo likely has origin refs from clone time. Let me check `git cat-file -t 0578362ce3c5b49ef0672eb116a03cd6471ee40d`. If present, `git rev-parse 5f70b16^{tree}` locally. If not present, use the API: gh api repos/NeaBouli/stealth/commits/5f70b16... --jq .commit.tree.sha. I'll use the API — read-only and exact.
+
+  Batch now:
+  1. Tree hashes via API for 5f6398dd and 5f70b16.
+  2. gh issue view 86, 87 bodies (truncate).
+  3. Read /tmp/issue84.md.
+  4. Read .fleet/tasks/SC-STATUS-RELEASE-20260926.md (sibling).
+  5. gh pr list --state closed --limit 6; gh issue list --state closed --limit 6 (recent).
+  6. gh run view 35579087031 --json jobs (failed job name).
+  7. git log --oneline -3 (worktree state).tree(5f6398dd stack target):
+0578362ce3c5b49ef0672eb116a03cd6471ee40d
+tree(5f70b16 PR102 head):
+0578362ce3c5b49ef0672eb116a03cd6471ee40d
+tree(main e06d018):
+199ce807da6c856047f2cb92c4b6e5786ef04866
+{"conclusion":"failure","jobs":[{"conclusion":"success","name":"Dependency Audit"},{"conclusion":"failure","name":"Secret Detection"},{"conclusion":"success","name":"Security Summary"}]}
+Tree equality VERIFIED independently: both `5f6398dd` (stack target, = #101 head) and `5f70b16` (PR #102 head) have tree `0578362ce3c5b49ef0672eb116a03cd6471ee40d`. The PR body's claim is true. main's tree is `199ce807...` (different, as expected).
+
+  New finding: scheduled Security Audit on main (2026-09-21) failed in "Secret Detection" job. That's worth flagging in the report — needs triage (could be gitleaks finding something on main). Let me quickly check what Secret Detection reported. One call: gh run view 35579087031 --log-failed maybe heavy. Let me try `gh run view 35579087031 --json jobs --jq` with steps, or fetch the failed job log tail. It's relevant for the inventory (audit findings / repo hygiene). Let me try to get the log tail of the failed job.
+
+  Also remaining:
+  - Issue #86, #87 bodies (skim).
+  - Sibling task SC-STATUS-RELEASE-20260926.md.
+  - Recent closed PRs/issues.
+  - git worktree state (git log --oneline -3).
+  - Check reviews/approvals possibility: collaborators only NeaBouli — done.
+  - Check PR #102 reviewDecision BLOCKED state: mergeStateStatus BLOCKED due to review requirement; no required status checks configured.
+
+  Also, are there newer relevant items? Latest PR #102 (2026-09-20), latest issue #87 (2026-09-19). Nothing newer. Let me confirm no closed/merged PRs since 2026-09-20 and check for any comments on #102 (review requests?). Quick: gh pr list --state closed --limit 5; gh issue list --state closed --limit 5; gh pr view 102 --json comments.
+
+  Also the Dependabot PRs #76/#77/#78 — still open, MERGEABLE, REVIEW_REQUIRED.
+
+  Old docs PRs #47, #48, #70, #72 — CONFLICTING. #70/#72 docs release records; #47 finance pointer; #48 security audit handoff.
+
+  Let me also quickly skim issue #86 and #87 bodies for acceptance details.## Context
+
+The `Android Client` job on audit PRs #83 and #85 receives a runner and starts normally, but
+fails in `android-actions/setup-android@v4.0.1` before any repository Gradle task runs.
+
+The pinned action's `action.yml` defaults `packages` to `tools platform-tools`. The legacy SDK
+package `tools` is no longer available, so `sdkmanager` exits with `Failed to find package
+'tools'`. This is not a GitHub API or Actions run-rate-limit failure.
+
+## Scope
+
+- `.github/workflows/ci-basic.yml`
+- `.github/workflows/android-instrumentation.yml`
+
+## Proposed bounded correction
+
+- Override the action input with `packages: platform-tools` in both workflows.
+- Retain the existing explicit install of API 36, Build Tools 36, CMake, and NDK.
+- Do not change Gradle, Android source, signing, deployment, or release behavior in this task.
+
+## Acceptance criteria
+
+- [ ] Both workflows complete `Set up Android SDK` without requesting package `tools`.
+- [ ] The jobs reach the repository Gradle commands.
+- [ ] Basic CI Android Client passes on an exact candidate head.
+- [ ] Instrumentation reaches and passes the API 24/API 36 matrix, or any later failure is
+      separately demonstrated to be repository/test behavior rather than SDK bootstrap.
+- [ ] Existing security and dependency checks remain green.
+- [ ] The audit PRs are rerun only after the workflow correction is merged.
+
+=====
+## Context
+
+PR #85 contains useful real-device measurements from a 320dp S10 and a Tab S4, and the owner
+reported three additional S10 defects. This issue groups the later UI implementation without
+mixing it into the security/crypto findings in #84.
+
+Important correction: current source already defines `android:minHeight=64dp` for dial keys.
+The measured 42dp key height may still be real in the shipped 1.0.48 artifact, but adding a
+48dp minimum is not the correct diagnosis. The fix must start with exact-source measurement.
+
+## Scope
+
+- Bottom navigation labels and touch height on narrow phones.
+- Dial-pad measurement and the clipped/invisible `+` below key 0.
+- Contact-match rows obscured while the software keyboard is open.
+- Settings row touch targets.
+- Responsive phone/tablet/landscape constraints and automated viewport checks.
+- Direct-Premium standalone VPN settings should expand and collapse like peer sections.
+- Release logging/direct-APK ABI hygiene remains a separate informational subtask.
+
+## Source facts already confirmed
+
+- `MainActivity` uses `windowSoftInputMode="adjustPan"`.
+- Bottom navigation has no explicit label visibility mode or stable minimum height.
+- The dial pad is height/row-weight driven and key 0 uses a two-line `0\n+` label.
+- The Premium VPN block is dynamically appended as a plain `PreferenceCategory`, while the
+  normal settings sections use `CollapsiblePreferenceCategory`.
+- No screen-size or landscape layout/value qualifiers exist.
+
+## Acceptance criteria
+
+- [ ] At 320dp width, all four bottom-navigation labels remain readable and all targets are
+      at least 48dp.
+- [ ] All twelve dial keys measure at least 48x48dp on an exact-source build; the existing
+      64dp source floor is not reduced without measurement evidence.
+- [ ] `0` and `+` remain visible at default and enlarged font scales.
+- [ ] With the keyboard shown, complete contact-match rows remain visible and tappable.
+- [ ] Every selectable settings row is at least 48dp high.
+- [ ] The Direct-Premium VPN category follows the same accessible expand/collapse behavior
+      as peer settings and preserves programmatic child visibility.
+{"closedAt":"2026-09-06T23:10:14Z","mergedAt":"2026-09-06T23:10:14Z","number":81,"title":"fix: restore SecureCall signaling startup"}
+{"closedAt":"2026-09-04T17:45:56Z","mergedAt":"2026-09-04T17:45:56Z","number":80,"title":"fix: harden entitlement lifecycle fail closed"}
+{"closedAt":"2026-09-03T22:52:02Z","mergedAt":"2026-09-03T22:52:02Z","number":79,"title":"docs: refresh private VLABS finance handoff"}
+{"closedAt":"2026-08-29T07:22:51Z","mergedAt":"2026-08-29T07:22:50Z","number":75,"title":"Synchronize public SecureCall content"}
+{"closedAt":"2026-08-27T07:20:50Z","mergedAt":"2026-08-27T07:20:49Z","number":74,"title":"fix: complete pre-sale readiness hardening"}
+{"closedAt":"2026-08-26T19:41:40Z","mergedAt":"2026-08-26T19:41:40Z","number":73,"title":"fix: prepare VPN-free Play release 78016"}
+---
+[{"author":"coderabbitai","createdAt":"2026-09-20T13:14:10Z"}]
+Secret Detection	UNKNOWN STEP	﻿2026-09-21T08:40:03.1105936Z Current runner version: '2.337.0'
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1135343Z ##[group]Runner Image Provisioner
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1136590Z Hosted Compute Agent
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1137720Z Version: 20260828.587
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1138891Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1140259Z Build Date: 2026-08-28T16:44:25Z
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1141497Z Worker ID: {ece353c9-b93a-45e0-a2db-fd41ceddb7b4}
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1143037Z Azure Region: eastus2
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1144199Z ##[endgroup]
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1146653Z ##[group]Operating System
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1147899Z Ubuntu
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1148829Z 24.04.5
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1149637Z LTS
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1150521Z ##[endgroup]
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.1151493Z ##[group]Runner Image
+The grep didn't show the actual secret detection finding. Let me look at the actual failure lines — search for "gitleaks" or "leak" or "##[error]". Let me try again with a different filter. Actually the earlier grep pattern included 'secret|leak|finding|error|file' but matched mostly runner boilerplate containing "Worker"... hmm no, it matched lines with those keywords case-insensitively. Let me grep for '##\[error\]' or 'gitleaks' or 'WRN'/'INF'.
+
+  Also note: issue #87's acceptance includes "The audit PRs are rerun only after the workflow correction is merged" and the fix exists in both #89 and #102 (commit "ci: stop requesting removed Android SDK tools").
+
+  Issue #86 details confirmed: measurement-first, no 48dp assumption.
+
+  Now remaining checks:
+  1. Secret Detection failure detail on main.
+  2. Sibling task file read.
+  3. Worktree git state.
+  4. Confirm no newer issues/PRs (confirmed: max issue #87 09-19, max PR #102 09-20; nothing closed since #81 on 09-06... wait #81 merged 2026-09-06, main head e06d018 = #81. OK).
+
+  Actually the closed list shows most recent merge #81 on 2026-09-06. main head = #81. Consistent.
+
+  One more thing: the brief says "hosted CI capacity unavailable until 2026-10-01". The last hosted run was 2026-09-21 (scheduled). So since then no runs — consistent. Also PR #102's checks are from 2026-09-20 — still valid on exact head, but if anything needs re-run (e.g., after rebase), it must wait until 2026-10-01. Local verification alternatives: npm test, cargo test, gradle testFreeDebugUnitTest/lint, yamllint, bash -n — all local-possible.
+
+  Let me get the secret detection error lines and read the sibling task.Secret Detection	UNKNOWN STEP	2026-09-21T08:40:03.5409293Z Download action repository 'gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e' (SHA:e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e)
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:05.8305955Z ##[group]Run gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:06.2105388Z gitleaks version: 8.24.3
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:06.2107422Z Version to install: 8.24.3 (target directory: /tmp/gitleaks-8.24.3)
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:06.2819760Z Cache hit for: gitleaks-cache-8.24.3-linux-x64
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:06.5165194Z Gitleaks restored from cache
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:06.5171440Z gitleaks cmd: gitleaks detect --redact -v --exit-code=2 --report-format=sarif --report-path=results.sarif --log-level=debug
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:06.5193584Z [command]/tmp/gitleaks-8.24.3/gitleaks detect --redact -v --exit-code=2 --report-format=sarif --report-path=results.sarif --log-level=debug
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:06.7902817Z     ░    gitleaks
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:06.7908590Z ^[[90m8:40AM^[[0m DBG using existing gitleaks config .gitleaks.toml from `(--source)/.gitleaks.toml`
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:06.9793230Z <redigiert>
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:06.9808678Z Fingerprint: 876b9c61073cd5ad5cb4a08332b2a16a021eb66a:backend/signaling/src/server.js:turn-credentials:92
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:07.1472439Z <redigiert>
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:07.1494230Z Fingerprint: 6254b2a294361dfc87632e768c73aa9790a023f1:backend/signaling/src/server.js:turn-credentials:92
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:07.8498122Z <redigiert>
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:07.8505091Z Fingerprint: 845a1a0ebca6d1772f588ac91ce3d69f84b16b73:BRIDGE.md:generic-<redigiert>
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:07.8591348Z <redigiert>
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:07.8745346Z Fingerprint: 845a1a0ebca6d1772f588ac91ce3d69f84b16b73:BRIDGE.md:generic-<redigiert>
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:07.8749695Z <redigiert>
+Secret Detection	UNKNOWN STEP	2026-09-21T08:40:07.8756181Z Fingerprint: 845a1a0ebca6d1772f588ac91ce3d69f84b16b73:BRIDGE.md:generic-<redigiert>
+4715e18 chore: queue SecureCall completion status inventory
+49148b9 docs: add Brevo email diagnostic runbook
+d4d3eac docs: resolve Brevo SMTP credential disposition
+SC-BREVO-001-review.md
+SC-BREVO-001.md
+SC-BREVO-002.md
+SC-COMPLETION-PLAN-001.md
+SC-COMPLETION-PLAN-002-review.md
+SC-COMPLETION-PLAN-002.md
+Now I understand the Secret Detection failure: gitleaks flags:
+  1. `backend/signaling/src/server.js:92` — rule `turn-credentials` (two commits: 876b9c61, 6254b2a2)
+  2. `BRIDGE.md:1295,1296,1372` — rule `generic-api-key` (commit 845a1a0e)
+
+  These are findings in the git history scan of main (gitleaks detect scans git history). The BRIDGE.md hits are probably old BRIDGE lines (1295/1296/1372 — in my local read, line 1295 area is "### DEADLINE: ASAP" — the fingerprint says commit 845a1a0e, which is a historical commit; those lines might have contained an API-key-looking string historically). The server.js:92 turn-credentials hits relate to STX-03-adjacent content (TURN secret in server.js?).
+
+  Let me check the current worktree's server.js line 92 and BRIDGE.md lines 1295-1296, 1372 to see if they're still live on main's head. Note: gitleaks scans full history; fingerprints reference specific commits. If the flagged strings are still in current main files, that's a live finding; if only in history, it's a history finding. Important distinction for the report.
+
+  I can check locally: the worktree is at 4715e18 "chore: queue SecureCall completion status inventory" — that's not main; it's a task branch. Let me check what main files contain. The worktree may have origin/main available. Let me check `git rev-parse origin/main` and then `git show origin/main:backend/signaling/src/server.js | sed -n '88,96p'` and `git show origin/main:BRIDGE.md | sed -n '1290,1300p'`. These are read-only git operations.
+
+  Careful about secrets: I must not print secrets into the report. I'll check whether the lines look like real secrets and describe them generically. The gitleaks output is already redacted. I should NOT print the actual matched content. Let me view those lines carefully — risk: printing a real secret into the conversation. The instruction says never output secrets. Gitleaks flagged them; the content could be a real TURN secret. STX-03 says coturn conf has `static-auth-<redigiert> likely literal. server.js:92 turn-credentials — let me check the shape without echoing the value. I can grep for the structure: e.g., `sed -n '92p' | cut -c1-20`? Even partial output could leak part of a secret. Safer: check whether line 92 contains a hardcoded literal vs env reference, using a regex test that outputs only YES/NO:
+
+  `git show origin/main:backend/signaling/src/server.js | sed -n '85,95p' | grep -nE 'process\.env|TURN' ` — hmm, this prints the line content. Alternative: count matches without printing:
+
+  - `git show origin/main:backend/signaling/src/server.js | awk 'NR==92' | grep -c 'process.env'` → tells if it references env.
+
+  Let me do minimal disclosure: check if line 92 matches /process\.env/ and print only "env-ref" or "literal". Similarly for BRIDGE.md lines: those are docs; a "generic-api-key" hit in BRIDGE.md at commit 845a1a0e — the fingerprint commit 845a1a0e is the commit where the blob was introduced. Current BRIDGE.md (4715e18 worktree) lines 1295/1296/1372: from my read earlier, line 1295 = "### DEADLINE: ASAP" — but that was the current worktree version, which has 6143 lines; the fingerprint lines were from the historical commit's version. Since BRIDGE.md is append-mostly, line numbers shifted. The safest: check if the flagged content persists in current main's BRIDGE.md by running gitleaks locally? Gitleaks binary may not be installed. Alternative: use `git grep` on origin/main for typical patterns? That prints content...
+
+  Better approach: describe at metadata level only. The report can state: "Scheduled Security Audit on main fails at Secret Detection since 2026-09-21: gitleaks flags turn-credentials in backend/signaling/src/server.js:92 (2 history commits) and generic-api-key in BRIDGE.md (3 lines, 1 history commit). Triage needed: verify whether current-head content or only history; remediation likely STX-03-adjacent (TURN secret templating already fixed in #102 commit 'fix: render shared TURN secret safely' — but the scan ran on main which lacks #102)."
+
+  Actually — key insight: #102 includes "fix: render shared TURN secret safely" and "fix: stop deployment credential output". PR #102's Secret Detection check PASSED on 2026-09-20. So the gitleaks findings on main are likely resolved in #102's tree (or at least not triggered there — gitleaks on PR scans PR commits maybe). The scheduled run scans main's full history. So merging #102 may not fix history findings (history is immutable), but current-head findings would be resolved. The BRIDGE.md hits: #102 modifies BRIDGE.md too.
+
+  Let me verify minimally whether current main head still contains the flagged patterns, without printing secrets:
+
+  For server.js line 92 on origin/main vs on 5f70b16 (#102 head):
+  - `git show <ref>:backend/signaling/src/server.js | sed -n '92p' | grep -q 'process.env' && echo env || echo literal`
+
+  Wait — does the local repo have these objects? The worktree was forked from the main worktree repo. git rev-parse origin/main will tell. Let me check object availability. If missing, use gh api to fetch the file at ref and check the line... that would print content into my context though. I could fetch and pipe through grep -c without printing. `gh api repos/NeaBouli/stealth/contents/backend/signaling/src/server.js?ref=...` returns base64 blob — decoding and grepping locally without echoing is doable but the API response itself passes through the shell only, not into my context if I pipe. Fine: pipe to base64 -d | sed -n '92p' | grep -q pattern → echo result. That keeps the secret out of the transcript as long as I don't echo the line. grep -q prints nothing. Good.
+
+  Actually simpler: local git. Let me first check if origin/main objects exist locally.
+
+  Also I want to confirm: does the failing Secret Detection also fail on PRs? PR checks showed Secret Detection SUCCESS on #83/#85/#88/#89/#102. So it's only the scheduled full-history scan on main that fails. That means the flagged secrets exist in git history (always will, unless rewritten) OR on main's current head. Gitleaks `detect` without --log-opts scans... in the action, default scans the commits in the event; for schedule events it scans the full history of the default branch. So findings reference specific commits. The BRIDGE.md generic-api-key at 845a1a0e — could be an old commit where BRIDGE contained something looking like an API key (maybe a SHA or token in docs). These history findings will persist unless allowlisted in .gitleaks.toml (repo has .gitleaks.toml). So the fix is: verify each fingerprint, and either confirm live secret → rotate (operator gate) or false-positive/historical → extend .gitleaks.toml allowlist. That's a task-queue item.
+
+  I think I should do the minimal local verification to determine "current head vs history only" for server.js:92 and BRIDGE.md — that's decision-relevant for the queue (rotate vs allowlist). Let me check object availability first, then run the content-free checks.
+
+  Also let me check the scheduled Security Audit on the integrate branch run (35512897724, 2026-09-20, success) — that was event=pull_request so scanned only PR commits; success means the 41 replay commits introduced no NEW secrets. Good sign.
+
+  Next steps:
+  1. Local object check + content-free pattern checks for server.js:92 (main vs 5f70b16) and BRIDGE.md flagged lines.
+  2. Check .gitleaks.toml current allowlist (repo root has .gitleaks.toml).
+  3. Then I have enough to write the report.
+
+  Also quickly confirm Dependabot PR details (#76 cargo, #77 npm signaling, #78 gradle) — already have titles. And old docs PRs #47/#48/#70/#72 CONFLICTING — deferred; recommendation: triage/close-or-rebase decision by Codex (their content: finance pointer, security audit handoff, release records — likely superseded by time; suggest Codex decision, not in critical path).
+
+  Review requirements summary:
+  - main protection: 1 approving review required, dismiss stale, no code-owner requirement, no required status checks, linear history required, no force push, enforce_admins=false.
+  - Only collaborator: NeaBouli (admin). PR author = NeaBouli. GitHub does not count self-approval. So approval must come from a non-author account — currently none exists. M1 blocker confirmed: Gio must add a trusted reviewer account (or accept alternative). This is a human/account decision.
+
+  Merge dependencies:
+  - #102 → main (blocked: review + (deferred) CI re-run capacity).
+  - Stack PRs #82/#90/#94/#95/#96/#97/#98/#99/#100/#101: annotate now (M0 phase 1), close only after #102 merge verified.
+  - #91/#92/#93: superseded by content inside #96/#102 — close after #102 merge with traceability (they're not in M0's list of 10, but plan §4 says contained; the PR body of #102 says "#96 already contains the reviewed implementation content from superseded PRs #89/#91/#92/#93; those PRs are not duplicated here"). Wait — the PR body says #89 content is in #96, meaning qs dep fix is inside #102? But #102's commit list includes "fix: update signaling request parser dependencies" — yes! And "ci: stop requesting removed Android SDK tools" — the #87 fix. So #89 (both its commits) is effectively inside #102. After #102 merges, #89 becomes redundant → close with traceability. And #91/#92/#93 likewise.
+
+  So the close-after-#102 set: 10 stacked + #89/#91/#92/#93 (superseded) = 14 PRs. Evidence #83/#85 stay open → then rebase (their Android Client failure is fixed on main post-#102; rebase triggers CI — deferred until capacity reset 2026-10-01) → review → merge. #88 (docs audit intake) also open, Android Client FAILURE (same SDK bootstrap cause) → same treatment. Dependabot #76/#77/#78: rebased post-merge; check conflicts with #102's package-lock changes (signaling package-lock is touched by #102's qs fix — #77 bumps npm signaling deps → likely conflict → Dependabot rebase needed after #102).
+
+  #89's relation: since its content is fully in #102, the standalone Grok task SC-CI-087 is redundant — UNLESS fleet wants #83/#85 green before #102 merges (they can't merge before anyway per plan ordering? Actually the plan M3 says PR #83 must land through separate integration; ordering #102 first is implied since #83's rebase depends on the CI fix which is inside #102). Circular: #83 needs CI fix; CI fix is in #102; #102 is blocked on approval. Alternative: merge the small #89 first (it fixes CI + qs) — but #89 also needs an approving review (REVIEW_REQUIRED, base main). Same blocker. OR Grok's SC-CI-087 as an even smaller standalone PR — also needs approval. All merges to main need the approval blocker resolved. So the reviewer-account blocker gates EVERYTHING merge-wise. That's the single critical path item.
+
+  Wait — is that true? required_approving_review_count=1 on main. All PRs targeting main need 1 approval from a non-author. No non-author collaborator exists. So indeed, nothing can merge until Gio adds a trusted reviewer account. This confirms and sharpens the plan's M1 blocker: it gates not just #102 but all 25 open PRs. (Admin bypass technically possible since enforce_admins=false, but plan explicitly forbids.)
+
+  Local verification possible now (no hosted CI):
+  - Kimi: KIMI-102-REVIEW (read-only, local git + GitHub API; can recompute tree equality — I already verified tree equality via API: both = 0578362c...).
+  - KIMI-STX-SWEEP: needs #102 tree locally — can work from a local worktree of the integrate branch (read-only).
+  - KIMI-SEC-CRYPTO: read-only.
+  - Claude: SC-UI-086-MEASURE (read-only source measurement).
+  - Grok: SC-CI-087 — writing workflows is a code change; yamllint can run locally; but the CI acceptance requires hosted runs → deferred. Actually the plan says Grok's task acceptance includes yamllint green locally + Android Client reaching Gradle (hosted → deferred). But since #102 already contains the fix, SC-CI-087 standalone is duplicative — recommend rescoping: Grok instead verifies #89's fix content vs #87 acceptance (read-only review) — hmm, but that's Kimi/Claude territory. I'll recommend: cancel/redirect SC-CI-087 since fix exists in #89 and #102; keep #89 for traceability closure after #102.
+
+  Local runs possible: `npm ci && npm test` (signaling), `cargo test/clippy` (core_crypto), `./gradlew testFreeDebugUnitTest lint` (Android), `node --test website/js/ifr-checkout.test.cjs`, `yamllint .`, `bash -n tools/brevo_keepalive.sh`. These are the post-merge verification chain (M1 acceptance 7) — locally runnable now on the integrate branch, but formal acceptance is post-merge on main.
+
+  Deferred until 2026-10-01 (hosted CI): exact-head CI re-runs, evidence PR rebase checks, instrumentation matrix on new heads, Dependabot rebase checks.
+
+  New findings to report:
+  1. Tree equality independently verified TRUE (0578362c on both tips) — strengthens M1 acceptance criterion 1 (pending final git-level check at merge time).
+  2. Secret Detection scheduled scan on main FAILS (2026-09-21): gitleaks fingerprints in server.js (turn-credentials, line 92) and BRIDGE.md (generic-api-key, 3 lines). Needs triage task — likely resolved on #102 head for server.js (STX-03 fix) but history findings persist; may need .gitleaks.toml allowlist or rotation decision. This is a security-relevant item → mention in security field? It's a repo-hygiene finding; the actual secrets are redacted and I haven't seen them. I'll put it in security as an item needing triage, with status partial? Hmm — status: the task itself (inventory) is complete. The security field: "none | Befund". I found a failing secret-detection scan — that's a Befund in the inventory sense, not a new vulnerability I introduced. The fleet rule: "Bei Sicherheitsbefund: Feld 'security' konkret ausfuellen und status auf partial setzen." Hmm, that would force status=partial. But wait — is this a Sicherheitsbefund of my work or an inventory finding? The task IS to inventory audit findings. The instruction "Bei Sicherheitsbefund ... status auf partial" refers to security problems discovered in the course of the work that need escalation. The gitleaks failure is precisely such a finding (potential live credentials in repo history). To be safe and compliant: fill security concretely and set status... The brief says produce inventory; I can complete it fully. But the fleet protocol says security finding → partial. Hmm. Let me think: the finding is already tracked indirectly (STX-03/STX-10) and the failing scan is a fact of the repo, now inventoried. But the rule is explicit: "Bei Sicherheitsbefund: Feld 'security' konkret ausfuellen und status auf partial setzen." I'll follow it — status: partial with security filled, since a failing secret scan with untriaged fingerprints is a genuine security finding that requires escalation/triage. Wait, but that would misrepresent the deliverable completeness... Actually `partial` here signals "task done, but open security point requires attention" — the protocol deliberately couples them so review triggers. Given the explicit instruction in the task prompt ("Bei Sicherheitsbefund: Feld 'security' konkret ausfuellen und status auf partial setzen"), I must set partial if I report a Befund. 
+
+  Hmm, but let me first verify whether the flagged content is still live at current main head vs only historical. If it's history-only and content already remediated, the finding is weaker. Let me do the content-free check. Decision after verification: if server.js:92 on main head still contains a literal credential-shaped string → genuine live finding → security field + partial. If it's env reference and only history blobs flagged → still a history finding needing allowlist/rotation decision → I'd still note it in security (concrete) and set partial per instruction. Actually the instruction is unconditional once there's a Befund. A failing security scan on main with untriaged fingerprints IS a Befund. OK: status partial, security concrete.
+
+  Hmm wait — but one nuance: the plan's PR #102 already fixes "render shared TURN secret safely" and "stop deployment credential output". The gitleaks fingerprints reference commits 876b9c61, 6254b2a2 (server.js:92) — historical. Let me check if those commits are in main's history and whether current main server.js:92 still has the pattern. Content-free check via git.
+
+  3. #89 contains the #87 CI fix (commit "ci: use supported Android SDK setup packages") — so issue #87 has TWO implementations (in #89 standalone and inside #102). Grok's SC-CI-087 standalone task would be a third duplicate. Queue must dedupe.
+
+  4. Branch protection details: no required status checks configured — merge gate is review-only (+ linear history). Implication: after approval, merges aren't blocked by checks, but fleet policy still requires green CI — note as process requirement, not GitHub-enforced. Also enforce_admins=false.
+
+  5. Only collaborator is NeaBouli → approval blocker gates ALL main-targeting PRs (17 of 25), not just #102.
+
+  6. behind_by 42 on the stack target: the original stack chain has 42 commits (41 replayed + presumably 1 extra). Let me quickly check: rev-list count main..5f6398dd. Via API compare main...5f6398dd: ahead_by should be 42. The extra commit is probably a merge or a superseded one. With trees identical, content is equal regardless. For the M1 acceptance "41 commits, 0 merges" — the replay satisfies it. The original chain count difference is worth a footnote: replay faithful by tree equality; commit count difference (42→41) likely a merge commit or empty commit dropped. Let me verify quickly: compare e06d018...5f6398dd ahead_by and check for merge commits in that range... can't easily rev-list via API. I can check parents of commits via compare's commits list (includes parents). Let me fetch compare main...5f6398dd --jq '{ahead_by, merges:[.commits[]|select(.parents|length>1)|.sha]}'.
+
+  Let me batch the final verification round:
+  1. Compare main...5f6398dd: ahead_by, merge commits.
+  2. Content-free check of server.js:92 at origin/main and at 5f70b16 (local objects? try git first, fallback gh api piping to grep -q).
+  3. .gitleaks.toml allowlist content (read file — it's in repo root, safe).
+  4. Check whether commits 876b9c61/6254b2a2/845a1a0e are ancestors of main (local: git merge-base --is-ancestor; fallback gh api).commit
+commit
+commit
+{"ahead_by":42,"behind_by":0,"count":42,"merges":["818a07c9"]}
+Local objects exist. Now let me check:
+
+  1. server.js line 92 at main head and at #102 head — content-free check (literal vs env reference).
+  2. BRIDGE.md flagged lines — the fingerprints point to commit 845a1a0e. Check if that commit is an ancestor of main, and whether the current main BRIDGE.md still contains a matching "generic-api-key" pattern. Gitleaks default rules include "generic-api-key". I can run a local scan? gitleaks binary probably not installed. Check: which gitleaks.
+  3. Verify locally: git rev-list --count --merges e06d018..5f70b16 (should be 0) and git rev-list --count (should be 41), and tree equality locally `git rev-parse 5f70b16^{tree}` — all local, exact, better than API.
+
+  The stack chain 5f6398dd has 42 commits including ONE merge commit 818a07c9. The replay is 41 non-merge commits. So the difference 42→41 = the merge commit (which carries no tree change beyond its merged content — and tree equality confirms content identical). M1 acceptance: `rev-list --count --merges main..5f70b16` = 0 ✔ (need to verify), `count` = 41 ✔ (verified via API). Let me verify locally for rigor.
+
+  Also check the merge commit 818a07c9: what did it merge? Not critical — tree equality is the decisive evidence.
+
+  Local verification commands:
+  - git rev-list --count e06d018..5f70b16 → expect 41
+  - git rev-list --count --merges e06d018..5f70b16 → expect 0
+  - git rev-parse 5f70b16^{tree} 5f6398dd^{tree} → both 0578362c...
+  - git diff --stat 5f6398dd 5f70b16 → expect empty
+
+  For server.js:92:
+  - git show e06d018:backend/signaling/src/server.js | sed -n '92p' | grep -qE 'process\.env' && echo "main head: env reference" || echo "main head: literal candidate"
+  - Same for 5f70b16.
+  - Also test whether the line matches the turn-credentials regex shape without printing: grep -qE '(?i)(turn[_-]?(password|secret|credential))\s*[=:]\s*["']?[^\s"']{8,}' — grep -E doesn't support (?i); use grep -qiE.
+
+  For BRIDGE.md: check commit 845a1a0e ancestry: git merge-base --is-ancestor 845a1a0ebca6d1772f588ac91ce3d69f84b16b73 e06d018 && echo ancestor. And check whether current main BRIDGE.md has generic-api-key-shaped lines: grep -qiE 'api[_-]?key...' — but that prints nothing with -q; count only. Also the allowlist regexes might already cover them (e.g., Authorization Bearer patterns). Gitleaks ran with this config and still flagged — so they're NOT covered. Fine.
+
+  Also which gitleaks — if installed, I could run `gitleaks detect` locally on main head (no-git scan of files) to see if current head still has findings. That would write results.sarif maybe — avoid; use --no-git? Local run: `gitleaks detect --source . --no-git`? Hmm, detect --no-git scans files at head. But it may write a report only if flag set. Default stdout. But do I even have gitleaks? Check. If yes, run against origin/main worktree? My worktree is at 4715e18 (task branch off main + queue commits). Close enough? The flagged paths server.js/BRIDGE.md differ between my worktree head and main (BRIDGE.md has extra entries locally? Actually the worktree head 4715e18 is "chore: queue SecureCall completion status inventory" — a fleet commit; the tree differs from main). For precision, scan exact main head would need a separate worktree — heavy. The line-level checks suffice.
+
+  Let me also check the two server.js fingerprint commits ancestry and whether the current line 92 content shape matches the regex.commits main..102head: 41
+merges: 0
+tree 102head: 0578362ce3c5b49ef0672eb116a03cd6471ee40d
+tree stacktarget: 0578362ce3c5b49ef0672eb116a03cd6471ee40d
+diff lines:        0
+e06d018417bae5be16bf6b89d0a1887586a99d3b server.js:92 -> other/no-match
+5f70b1677d277c10601942176fe1312a81537017 server.js:92 -> other/no-match
+876b9c61073cd5ad5cb4a08332b2a16a021eb66a: not in main (or unknown)
+6254b2a294361dfc87632e768c73aa9790a023f1: not in main (or unknown)
+845a1a0ebca6d1772f588ac91ce3d69f84b16b73: in main history
+---
+0
+0
+Results:
+
+  1. **Local replay verification PASS**: 41 commits, 0 merges, identical trees (0578362c...), empty diff between stack target and #102 head. M1 acceptance criteria 1 and 2 are now pre-verified locally (to be re-confirmed at merge time).
+
+  2. **server.js:92 on both main head and #102 head: no match** to the turn-credentials rule shape. The two flagged server.js commits (876b9c61, 6254b2a2) are NOT in main's history — interesting! They must be in some other branch's history (gitleaks on schedule scans... hmm, actually the gitleaks-action on schedule scans only the default branch; but maybe it scans all refs? The action default scans the full git history of the checked-out ref. If those commits aren't ancestors of main, they may have been reachable via the checkout's fetch depth including PR refs? Unclear — but the key operational fact: the flagged server.js content is not in main's history and not at head. Possibly the fingerprints reference commits from the stacked branches (the action may have scanned with fetch-depth 0 which fetches all branches?). Anyway: current main head does not contain the flagged turn-credentials string at server.js:92.
+
+  3. **845a1a0e IS in main history** — BRIDGE.md generic-api-key findings (3 lines at that historical version). Current main BRIDGE.md has 0 lines matching the generic-api-key shape (grep count 0 — my regex approximates the gitleaks generic rule). So: historical-only finding in BRIDGE.md. Current head clean by my approximation. Gitleaks history findings persist → remediation = allowlist entry in .gitleaks.toml for that fingerprint/commit, after confirming it's not a live credential (needs owner confirmation since I can't and shouldn't inspect the secret value — actually the value is redacted in logs; triage needs to look at the historical line, which is in the repo... it's public repo history. The triage task: view the line at that commit, decide: if real credential → rotate + allowlist; if false positive → allowlist).
+
+  Wait — should I check what that BRIDGE.md line actually is? It's in the public repo history; reading it isn't "accessing ~/.ssh" etc. But rule: "Secrets nie ausgeben" — I must not print it. I could classify it content-free... To classify whether it's a real key I'd need to see its shape. I can check shape characteristics without printing: length, prefix pattern (e.g., starts with known prefixes like "sk_", "ghp_", "xox"...). Let me do a prefix-only check: extract the matched token and print only its first 4 chars and length? Even a prefix could be sensitive-ish, but prefixes like "sk_l" / "ghp_" are standard classifications, not secrets. Hmm, careful. Alternatively: check if the line matches any allowlist regex already (no — gitleaks flagged it with this config). 
+
+  Actually, minimal-risk classification: at commit 845a1a0e, BRIDGE.md lines 1295,1296,1372. Print only whether the token looks like a known test/placeholder (e.g., contains "smoke-test", "YOUR_", "example"). Let me grep those lines for placeholder keywords without printing the line:
+
+  git show 845a1a0e:BRIDGE.md | sed -n '1295,1296p;1372p' | grep -ciE 'smoke-test|YOUR_|example|test' 
+
+  That returns a count. If >0, likely the smoke-test admin key pattern (which is allowlisted as `ADMIN_API_KEY:\s*"smoke-test-admin-key"` — but maybe the historical line had a different format not matching). Let me check.
+
+  Actually — let me look at the shape more precisely but safely: compute which gitleaks default rule "generic-api-key" matched. The line likely contains something like `<redigiert> Given BRIDGE.md history around line 1295 in an old version... The safest sufficient statement for the report: "3 generic-api-key findings in BRIDGE.md at historical commit 845a1a0e (in main's history); current head BRIDGE.md contains no matching pattern (grep-verified); triage: inspect historical lines, rotate if real, else extend .gitleaks.toml allowlist so the scheduled scan returns green."
+
+  Hmm, but wait — I should double check my grep-approximation against the actual gitleaks generic-api-key rule, which is more complex. My check is indicative, not authoritative. The authoritative check is gitleaks itself. Is gitleaks installed locally? Let me check `which gitleaks`. If yes, run `gitleaks detect --source <main worktree?>...` — needs the main checkout. I could run gitleaks on the current worktree dir with --no-git (scans current files at 4715e18 — close to main + fleet docs). Not exact main. Or create no new worktree (read-only constraint — creating a worktree writes .git metadata; borderline. I'll avoid).
+
+  Actually, let me just try: gitleaks installed? If yes, run `gitleaks git` (v8: `gitleaks git`) on this repo's origin/main... it scans history of the checked-out branch by default; can pass --log-opts="e06d018" hmm. `gitleaks git --log-opts="--all"`? Too heavy maybe (6000+ commits). Time-box: skip local gitleaks; the line-level evidence suffices for an inventory. The queue item will include the authoritative local re-scan (possible now, no hosted CI).
+
+  4. The two server.js fingerprint commits not being in main: likely from stack branches fetched during the scheduled scan? Odd but not blocking. Actually wait — maybe the scheduled workflow checks out with fetch-depth: 0 and the gitleaks action scans... For schedule events, gitleaks-action scans the repo's full history (all fetched refs?). If fetch included PR refs (fetch-depth 0 fetches all branches by default in actions/checkout), then commits from PR branches are included. 876b9c61/6254b2a2 could be pre-replay commits on stack branches where server.js:92 still had the TURN credential literal (STX-03 fix changed it). That matches: the stack fixed it; the old commits remain in branch history. Since those branches will be deleted after the stack PRs close post-merge, the finding source disappears from the default view, but scheduled scans of main only matter for main's own history.
+
+  Hmm — but the failing run 35579087031 was on branch main (schedule). The checkout fetches main's history only (actions/checkout fetches the ref that triggered... with fetch-depth 0 it fetches all history for all tags/branches? No — actions/checkout with fetch-depth: 0 fetches "all history for all tags and branches"? Actually fetch-depth 0 fetches all history of all refs? The doc: "Number of commits to fetch. 0 indicates all history for all branches and tags." Yes — all branches and tags.) So the scan covers stack branch commits too. Hence server.js findings from stack-branch history (876b9c61 etc.). After the stack branches are deleted post-closure, those disappear. But BRIDGE.md finding 845a1a0e is in main's own history → persists → needs allowlist or accepted-failure.
+
+  For the queue: add task "SC-SEC-SCAN-TRIAGE": classify 3 fingerprints, extend .gitleaks.toml allowlist (or escalate rotation if a live credential is confirmed), verify via local gitleaks run (possible now), hosted scheduled scan green deferred to post-2026-10-01. Owner: Codex (secret-adjacent) or Kimi read-only triage + Codex writes. Per ownership table: deploy/** and secret-adjacent = Codex. .gitleaks.toml isn't in the ownership table explicitly; repo root config → Codex. I'll recommend Codex with read-only triage support.
+
+  5. Now let me also double-check the "newer relevant items": none newer than 2026-09-20. The sibling task (Claude) covers release/commerce readiness — my queue must not overlap: I focus on GitHub/PR/issue/CI/audit-register mechanics and the ordered integration queue; Claude covers product/release/commerce content. My queue = the git/GitHub-facing integration ordering, which is exactly my brief.
+
+  6. Check issue #84 comment state (updated 2026-09-20T13:29:42Z) — a comment was added after plan? Let me check comments on #84 quickly. Also check labels on #84 (none). Let me view comments count.
+
+  7. Also verify #83's changedFiles=6 (docs/community-audits/*), #85=1 file, #88=2 files (docs). These need integration post-#102 with rebase (CI fix) — hosted re-check deferred.
+
+  8. Dependabot #76/#77/#78: #77 (npm signaling) will conflict with #102's package-lock changes (qs fix). Recommend: after #102 merge, `@dependabot rebase` / recreate; local verification of npm ci+test possible on the rebased branch... hosted Dependabot rebase is a GitHub action (not Actions CI) — dependabot rebase runs on Dependabot infrastructure, should work regardless of Actions quota. Note that.
+
+  9. Also old docs PRs #47/#48/#70/#72 (CONFLICTING): recommend Codex triage: close as superseded (their content predates later BRIDGE states) or extract. They're docs-only; likely closeable. But closing PRs = GitHub mutation → Gio/Codex action, not mine. Queue item.
+
+  10. Issue #29 (NEA-WEB-01 localization/theme) — old, relates to website; deferred behind M8. Issues #28/#14/#13 feature requests (zig-VS-python) — backlog, not blocking.
+
+  Now — one more check: comments on issue #84 and PR #102 review requests. And confirm there are no milestones/projects. Quick batch:
+  - gh issue view 84 --json comments --jq length + last comment author/date
+  - gh api repos/NeaBouli/stealth/issues/84/timeline? overkill. Just comments.
+
+  Then write the report. Also BRIDGE.md per AGENTS.md should be kept current — but the brief explicitly says "Write only .fleet/reports/SC-STATUS-GITHUB-20260926.md" and BRIDGE.md sole writer is Codex. So no BRIDGE write. Good.
+
+  Report format (max 40 lines!):
+  id / status / worker / branch / summary (max 5 lines) / files / tests / risks / security / next.
+
+  40 lines max is tight for this inventory. The report must contain: inventory + ordered non-overlapping task queue with dependencies, acceptance gates, worker ownership. 40 lines is hard but the format is mandatory ("mit genau diesen Feldern (max. 40 Zeilen)"). I'll write compact lines, semicolon-separated. Let me draft:
+
+  ```
+  id: SC-STATUS-GITHUB-20260926
+  status: partial
+  worker: kimi
+  branch: agent/kimi/SC-STATUS-GITHUB-20260926
+  summary: |
+    Inventory revalidated against live GitHub (kein Code geaendert, kein Modul/Hop — read-only).
+    main=e06d018; PR #102 head 5f70b16: 41 commits, 0 merges, tree 0578362c identisch zum
+    Review-Target 5f6398dd (lokal re-verifiziert: diff leer). Checks vom 2026-09-20 gruen;
+    REVIEW_REQUIRED, 0 Reviews; einziger Collaborator ist NeaBouli → Approval-Blocker fuer ALLE
+    17 main-PRs. #84: 62/62 Boxen offen. Neu: scheduled Secret Detection auf main rot (21.09.).
+  ```
+
+  Hmm, summary max 5 lines. Then files: the report itself. tests: the verification commands. risks, security, next: the queue.
+
+  The queue is big — 40 lines total. Let me compress the queue into `next` with numbered compact items. The brief demands "ordered, non-overlapping task queue with exact dependencies, acceptance gates and recommended worker ownership" — I'll encode as `Q1: ... | deps: ... | gate: ... | owner: ...` per line. Maybe 12-15 lines for queue. Plus inventory lines. 40 lines total — I'll aim ~40.
+
+  Let me structure:
+
+  ```
+  id: SC-STATUS-GITHUB-20260926
+  status: partial
+  worker: kimi
+  branch: agent/kimi/SC-STATUS-GITHUB-20260926
+  summary: Read-only Inventory; kein Code, kein Modul/Hop (architecture-map entfaellt: keine Aenderung).
+   main=e06d018 (unveraendert seit #81). PR#102 lokal re-verifiziert: 41 Commits, 0 Merges,
+   Tree 0578362c == Review-Target 5f6398dd, Diff leer; Checks gruen (20.09.), REVIEW_REQUIRED,
+   0 Reviews; main-Protection: 1 Approval noetig, einziger Collaborator NeaBouli → Blocker fuer alle
+   17 main-PRs. Issue #84: 0/62 ticked. #87-Fix existiert bereits in #89 UND #102.
+  files: .fleet/reports/SC-STATUS-GITHUB-20260926.md (nur Report)
+  tests: git rev-list/diff/tree-Checks -> PASS (s.o.); gh pr/issue/run/api-Abfragen -> PASS;
+   kein Build noetig (read-only); hosted CI bis 2026-10-01 nicht verfuegbar (letzter Run 21.09.).
+  risks: ...
+  security: Scheduled Security Audit auf main FAILT seit 21.09. (Job Secret Detection/gitleaks):
+   BRIDGE.md generic-api-key x3 in Commit 845a1a0e (in main-History; aktueller Head clean per
+   grep-Approximation); server.js:92 turn-credentials x2 in Commits 876b9c61/6254b2a2 (NICHT in
+   main-History, vermutlich Stack-Branch-Historie). Triage+Allowlist/Rotation noetig (Q2).
+  next: Queue:
+   Q1 Gio: trusted Reviewer-Account hinzufuegen (blockiert ALLE Merges; gate: gh api collaborators >1)
+   Q2 Codex: Secret-Scan-Triage + .gitleaks.toml-Allowlist; lokal verifizierbar JETZT; dep: -
+   Q3 Kimi: KIMI-102-REVIEW + KIMI-STX-SWEEP (lokal, read-only); dep: -; gate: Report verdict
+   Q4 Claude: SC-UI-086-MEASURE (read-only); dep: -
+   Q5 Codex: M0 phase1 Traceability-Kommentare auf 10 Stack-PRs; dep: Q1 nicht noetig
+   Q6 Codex: #102 mergen nach Gate Q1+gruenem Re-Run (Re-Run deferred bis 01.10.; lokal: npm test,
+   cargo test, gradle lint JETZT moeglich); danach 10 Stack-PRs + #89/#91/#92/#93 schliessen (in #102 enthalten)
+   Q7 Codex: #83/#85/#88 rebase (CI-Fix dann in main) -> Review -> Merge; hosted Checks deferred
+   Q8 Codex: Dependabot #76/#77/#78 rebase nach #102 (#77 Lock-Konflikt erwartet)
+   Q9 Codex: alte Docs-PRs #47/#48/#70/#72 (CONFLICTING) schliessen-oder-extrahieren Entscheidung
+   Q10 Grok: SC-CI-087 STREICHEN (Fix bereits in #89/#102); Issue #87 nach #102-Merge schliessen
+  ```
+
+  Hmm, 40 lines. Let me count and compress. Also mention that PR#102 mergeState=BLOCKED only due to review (no required status checks configured). And #83/#85/#88 Android Client FAILURE = SDK-bootstrap (#87), not content.
+
+  Also the "non-overlapping" requirement vs sibling Claude task SC-STATUS-RELEASE-20260926 (product/release/commerce): my queue avoids product/commerce surfaces.
+
+  One more check I should do: issue #84 comments (was updated 20.09. 13:29 — after PR #102 creation 13:14). Let me check what that comment says — might be a traceability comment (M0 phase 1 already started?). Let me check comments on #84 and on the stack PRs (whether traceability comments exist). Quick: gh issue view 84 --json comments; gh pr view 82 --json comments. Let me do that.
+
+  Also verify the claim "24 PRs open" vs my count of 25: list shows 25 PRs (#102,101,100,99,98,97,96,95,94,93,92,91,90,89,88,85,83,82,78,77,76,72,70,48,47) = 25. The plan's "24" predates... whatever, I'll state 25. Let me double check the list length: 102,101,100,99,98,97,96,95,94,93,92,91,90,89,88 (15), 85,83,82 (18), 78,77,76 (21), 72,70,48,47 (25). Yes 25.
+
+  Wait, is there a PR #86/87 confusion? No, those are issues. PRs #79/#80/#81 merged. OK.
+
+  Batch: comments check on #84 + #82 + count open PRs via API.[{"author":"NeaBouli","createdAt":"2026-09-19T09:31:13Z","head":"Triage update: #88 catalogs every STX-01 through STX-62 identifier exactly once into six\nbounded work packages and defin"},{"author":"NeaBouli","createdAt":"2026-09-19T17:47:11Z","head":"STX-02 implementation is ready for review in PR #91 (commit 73dad5d). The public status response no longer serializes ra"},{"author":"NeaBouli","createdAt":"2026-09-19T18:48:05Z","head":"STX-23 implementation is now available for review in stacked PR #92: https://github.com/NeaBouli/stealth/pull/92\n\nVerifi"},{"author":"NeaBouli","createdAt":"2026-09-19T18:57:58Z","head":"STX-29 implementation is available in stacked PR #93: https://github.com/NeaBouli/stealth/pull/93\n\nThe current PR #82 we"},{"author":"NeaBouli","createdAt":"2026-09-19T19:55:33Z","head":"Product-truth follow-up is now in stacked PR #94.\n\nScope:\n- STX-22: current SecureCall surfaces no longer claim Double R"},{"author":"NeaBouli","createdAt":"2026-09-20T04:08:17Z","head":"STX-01 / STX-21 implementation update (2026-09-20)\n\n- Stacked PR: #97\n- Verified code commit: fc5409691855436892658cfd92"},{"author":"NeaBouli","createdAt":"2026-09-20T08:40:45Z","head":"STX-03 repository-side correction is ready in stacked PR #98: https://github.com/NeaBouli/stealth/pull/98\n\n- exact head:"},{"author":"NeaBouli","createdAt":"2026-09-20T09:52:03Z","head":"STX-08 repository correction is ready in stacked PR #99.\n\n- Exact reviewed head: `bc533c2590ebbfe71888b0073b19dff6ab3f5d"},{"author":"NeaBouli","createdAt":"2026-09-20T10:45:18Z","head":"STX-10 repository remediation is ready for stack review in PR #100.\n\n- Final head: `2dbc741de68e69e5c9c2c46e5ef203b31319"},{"author":"NeaBouli","createdAt":"2026-09-20T12:13:22Z","head":"STX-14 repository block is ready for stack review in [PR #101](https://github.com/NeaBouli/stealth/pull/101), stacked on"},{"author":"NeaBouli","createdAt":"2026-09-20T13:04:12Z","head":"Stack integration review completed (2026-09-20).\n\n- Final reviewed PR #101 head: `5f6398dd699e589e750f3a12def2dd2ed98d8c"},{"author":"NeaBouli","createdAt":"2026-09-20T13:29:42Z","head":"Integration status (2026-09-20): the owner-authorized stack was replayed into linear PR #102 because main requires linea"}]
+---
+[{"author":"coderabbitai","createdAt":"2026-09-12T21:22:29Z"},{"author":"NeaBouli","createdAt":"2026-09-12T22:05:55Z"},{"author":"coderabbitai","createdAt":"2026-09-12T22:06:08Z"}]
+---
+[{"author":"coderabbitai","createdAt":"2026-09-19T23:06:08Z"},{"author":"NeaBouli","createdAt":"2026-09-19T23:24:13Z"}]
+classification-only (no values printed)
+1
+The placeholder classification grep found no matches (the first grep output was empty before the echo — only "classification-only" and then count 1 for ADMIN_API_KEY|api.key). So the historical BRIDGE.md lines contain "ADMIN_API_KEY"-like references (1 of the 3 lines matches ADMIN_API_KEY pattern) but NOT obvious placeholders like smoke-test/YOUR_/example. Note: the current .gitleaks.toml allowlists `ADMIN_API_KEY:\s*"smoke-test-admin-key"` and `Authorization: Bearer ${ADMIN_API_KEY}` forms. The historical lines may have a different format (e.g., `ADMIN_API_KEY=<something>` or curl examples) that isn't allowlisted. Whether the historical value is a real key or a placeholder cannot be determined without reading it — that's exactly the triage task. I will NOT print it. Classification: unresolved → triage task Q2 stands.
+
+  Also interesting: issue #84 has detailed triage comments from NeaBouli documenting each remediation PR — the register is actively maintained via comments, but no boxes ticked. M0 phase 1 (traceability comments) appears partially done informally on #84, and PR #102's creation was recorded there (2026-09-20T13:29). The stack PRs themselves: #82/#95 only have coderabbit + owner comments, no #102 traceability comment on each yet. Actually the plan M0 phase 1 says each of the 10 stacked PRs should carry a traceability comment naming #102 — let me spot-check whether they do. #82: 3 comments (coderabbit, NeaBouli, coderabbit) from 2026-09-12 — before #102 existed → no #102 reference. #95: coderabbit + NeaBouli 2026-09-19 23:24 — before #102 (created 09-20 13:14) → no. So M0 phase 1 annotations are NOT yet done on the individual PRs (only documented in #84 comments and #102 body). Queue item confirmed.
+
+  I now have everything needed. Additional inventory notes:
+  - No PRs/issues newer than the plan date (2026-09-24); latest activity 2026-09-21 (scheduled scan).
+  - 25 open PRs (plan said 24).
+  - PR #102: mergeState BLOCKED (review only; no required status checks on main protection), MERGEABLE, exact-head CI green 2026-09-20 (all 11 checks incl. instrumentation API 24/36).
+  - Stack PRs #82/#90/#94–#101: open, MERGEABLE, only #82 REVIEW_REQUIRED (others target non-main bases → no review requirement), all annotated implicitly via #84 but not via per-PR #102 traceability comments.
+  - #91/#92/#93 (STX-02/23/29 single fixes, base codex/vlabs-sales-integration-20260905): superseded by #96 content inside #102 → close after #102 merge with SHA citation. Wait — #91/#92/#93 target codex/vlabs-... branch, which is #82's head branch. If #82 closes after #102 merge, these become base-less... GitHub retargets or they close. Anyway: queue item to close with traceability.
+  - #89 (qs deps + CI fix): content fully inside #102 (commits "fix: update signaling request parser dependencies" + "ci: stop requesting removed Android SDK tools") → close after #102 merge; issue #87 close then too. Grok SC-CI-087 redundant.
+  - #83 (6 files, docs/community-audits), #85 (1 file, docs/audits device UI audit), #88 (2 files, audit intake catalog): evidence/docs, Android Client FAILURE from SDK bootstrap (#87) only; other checks green. After #102 merges (contains CI fix), rebase → hosted checks deferred to ≥2026-10-01 → review → merge. Note: no required status checks on main means GitHub won't block merge on the failing check, but fleet policy requires green — record as policy gate.
+  - Dependabot #76 (cargo), #77 (npm signaling — conflicts expected with #102 package-lock qs change), #78 (gradle): post-#102 rebase via dependabot command; dependabot infrastructure independent of Actions quota for rebasing; verification runs on Actions → deferred.
+  - Legacy docs PRs #47/#48/#70/#72: CONFLICTING, stale since Aug → Codex disposition (close/extract), not release-blocking.
+  - Branch protection main: 1 approval, dismiss-stale, linear history, no required checks, enforce_admins=false, no force-push. Single collaborator NeaBouli → universal approval blocker.
+  - Issue #84: 0/62 ticked; triage comments map findings→PRs (#91→STX-02, #92→STX-23, #93→STX-29, #94→STX-22/37/38, #97→STX-01/21, #98→STX-03, #99→STX-08, #100→STX-10, #101→STX-14). All in #102. Ticking gates on #102 merge + M3 sweep verification.
+  - Issue #86: measurement-first, Claude. Issue #87: fixed-in-#102/#89, close after merge.
+  - Issues #29/#28/#14/#13: old feature/backlog, non-blocking.
+  - Secret Detection scheduled failure: fingerprints triage needed (Q2).
+  - Hosted CI: last run 2026-09-21; capacity unavailable until 2026-10-01 per brief. All re-runs deferred. Local chain available now: signaling npm ci+test, core_crypto cargo test+clippy, Android gradle testFreeDebugUnitTest+lint, yamllint, node --test ifr-checkout, local gitleaks.
+
+  Non-overlap with Claude's sibling task (release/product/commerce): my queue covers GitHub integration mechanics only; product/commerce gates (M4/M6/M7/M9/M10/M11) referenced as out-of-scope-here.
+
+  Now the report, max 40 lines, fields exactly:
+  id / status / worker / branch / summary / files / tests / risks / security / next.
+
+  Status decision: The instruction says "Bei Sicherheitsbefund: Feld 'security' konkret ausfuellen und status auf partial setzen." I have a concrete security finding (failing scheduled secret scan with untriaged fingerprints, one in main's own history). So status: partial. The deliverable itself (inventory + queue) is complete; partial signals the security escalation per protocol. This also correctly triggers cross-review per fleet-orchestration rules.
+
+  Line budget: aim ≤40 lines. Let me write compactly in German (communication with Gio auf Deutsch; report fields are internal — previous reports? Let me check SC-BREVO-001.md quickly for style? Not necessary; German fine, matching PLAN style which is English. Hmm — the .fleet docs are in English. fleet-developer says "Code, Kommentare, Commits und Doku auf Englisch; Kommunikation mit Gio auf Deutsch." Reports are Doku → English. SC-BREVO reports are likely English. I'll write the report in English, my chat reply in German.
+
+  Draft report:
+
+  ```
+  id: SC-STATUS-GITHUB-20260926
+  status: partial
+  worker: kimi
+  branch: agent/kimi/SC-STATUS-GITHUB-20260926
+  summary: Read-only GitHub/audit inventory; no code changed, no module/hop applies.
+   main=e06d018 unchanged since #81; 25 open PRs, 7 open issues. PR #102 (head 5f70b16)
+   locally re-verified: 41 commits, 0 merges, tree 0578362c identical to reviewed target
+   5f6398dd, diff empty; exact-head CI green 2026-09-20; REVIEW_REQUIRED, 0 reviews.
+   main protection: 1 approval, linear history, no required checks; sole collaborator is
+   NeaBouli -> approval blocks ALL 17 main-facing PRs, not only #102 (Gio account decision).
+  files: .fleet/reports/SC-STATUS-GITHUB-20260926.md (only file written)
+  tests: git rev-list/diff/tree equality on #102 -> PASS; gh pr/issue/run/api queries -> PASS;
+   issue #84 checkbox count 0/62 via gh -> confirmed; no build needed (read-only);
+   hosted CI unavailable until 2026-10-01 (last run 2026-09-21), all re-runs deferred.
+  ```
+
+  That's already ~18 lines. Then risks, security, next with the queue. Need: inventory of evidence PRs, issues, dependabot, legacy. Then queue Q1..Q10. Compress:
+
+  ```
+  risks: #83/#85/#88 fail only the Android Client job (issue #87 SDK bootstrap; fix already
+   inside #89 and #102); #77 Dependabot lockfile conflict expected post-#102; legacy docs PRs
+   #47/#48/#70/#72 CONFLICTING since Aug; sibling task SC-STATUS-RELEASE-20260926 (Claude)
+   owns product/release/commerce - this queue deliberately avoids those surfaces.
+  security: Scheduled Security Audit on main FAILS since 2026-09-21 (gitleaks Secret
+   Detection): BRIDGE.md generic-api-key x3 at historical commit 845a1a0e (in main history;
+   current head shows no matching pattern by grep approximation; values never printed);
+   server.js:92 turn-credentials x2 in commits 876b9c61/6254b2a2 NOT in main history
+   (stack-branch history; heads are clean). Triage -> Q2; no rotation done.
+  next: Ordered queue (deps | gate | owner):
+   Q1 add trusted non-NeaBouli reviewer account | - | gh api collaborators >1 | Gio (blocks every merge)
+   Q2 triage 5 gitleaks fingerprints, extend .gitleaks.toml allowlist or escalate rotation | - | local gitleaks re-scan clean | Codex (secret-adjacent)
+   Q3 KIMI-102-REVIEW + KIMI-STX-SWEEP (read-only, local) | - | fleet reports delivered | Kimi
+   Q4 SC-UI-086-MEASURE (read-only source measurement) | - | measurement table + proposed diff | Claude
+   Q5 M0 phase-1: traceability comment naming #102 on #82/#90/#94-#101 (keep open) | - | 10 comments visible | Codex
+   Q6 local verification chain on #102 head: npm ci+test (signaling), cargo test+clippy, gradle testFreeDebugUnitTest lint, yamllint | - | all green locally | Kimi/Claude
+   Q7 merge #102 after approval + CI re-run green (re-run deferred >=2026-10-01) | Q1,Q3,Q6 | tree 0578362c post-merge | Codex
+   Q8 close with merge-SHA citation: 10 stacked + superseded #89/#91/#92/#93; close #87 | Q7 | 15 closures | Codex
+   Q9 rebase+review+merge evidence #83/#85/#88 (hosted checks deferred) | Q7 | checks green, docs/community-audits on main | Codex
+   Q10 Dependabot #76/#77/#78 rebase+merge; disposition legacy docs #47/#48/#70/#72 | Q7 | CI green | Codex
+   Cancelled: Grok SC-CI-087 standalone (fix exists in #89/#102 - would duplicate).
+  ```
+
+  Count lines: id(1) status(2) worker(3) branch(4) summary(5-10) files(11) tests(12-14) risks(15-19) security(20-25) next(26-38ish). ~38-40 lines. OK, tight but feasible. Multi-line fields use continuation lines — the format examples are single-line, but previous reports? Let me check SC-BREVO-001.md format quickly to match conventions (it's in .fleet/reports/). Actually worth one quick read to match house style.
+
+  Also issue #84 mentions "0/62 ticked" and comments map findings to PRs. Could add one line in summary/risks: "#84 register: 0/62 ticked; comments map STX-01/02/03/08/10/14/21/22/23/29/37/38 to PRs now inside #102."
+
+  Let me check SC-BREVO-001.md for report style, then write the file. Also verify line count after writing.
+
+• OK, reports are English and compact. Now write my report. The required fields per the task prompt: id / status / worker / branch / summary / files / tests / risks / security / next, max 40 lines.
+
+  Let me finalize content decisions:
+
+  - status: partial (security finding present per protocol).
+  - security: concrete gitleaks finding.
+  - next: ordered queue Q1..Q10 + cancellation note.
+
+  Line count must be ≤40. Let me write it carefully.
+
+  Draft:
+
+  ```
+  id: SC-STATUS-GITHUB-20260926
+  status: partial
+  worker: kimi
+  branch: agent/kimi/SC-STATUS-GITHUB-20260926
+  summary: Read-only GitHub/audit inventory, no code touched (no module/hop applies). main=e06d018
+   unchanged since #81; 25 open PRs, 7 open issues. PR #102 (head 5f70b16) re-verified locally:
+   41 commits, 0 merges, tree 0578362c identical to reviewed target 5f6398dd, diff empty;
+   exact-head CI green 2026-09-20; REVIEW_REQUIRED, 0 reviews. main protection: 1 approval +
+   linear history, no required checks, enforce_admins=false; sole collaborator is NeaBouli, so
+   the approval blocker gates ALL 17 main-facing PRs, not just #102. Issue #84: 0/62 ticked,
+   comments map STX-01/02/03/08/10/14/21/22/23/29/37/38 to PRs fully contained in #102.
+   #87 CI fix already exists in #89 and inside #102 - standalone fix PR would duplicate.
+  files: .fleet/reports/SC-STATUS-GITHUB-20260926.md (only file written)
+  tests: git rev-list/diff/tree-equality on #102 -> PASS; gh pr/issue/run/api inventory -> PASS;
+   gh issue view 84 -> 0 ticked / 62 open confirmed; gitleaks log inspection (redacted) -> see
+   security; no builds needed (read-only). Hosted CI unavailable until 2026-10-01 (last run
+   2026-09-21); every re-run below is deferred, local alternatives named per item.
+  risks: Evidence PRs #83/#85/#88 fail only the Android Client job (issue #87 SDK bootstrap, not
+   content); Dependabot #77 lockfile conflict with #102 expected; legacy docs PRs #47/#48/#70/#72
+   CONFLICTING since Aug. Sibling task SC-STATUS-RELEASE-20260926 (Claude) owns product/release/
+   commerce; this queue avoids those surfaces. M1 GitHub approval remains a human/account decision.
+  security: Scheduled Security Audit on main FAILS since 2026-09-21 (gitleaks Secret Detection):
+   BRIDGE.md generic-api-key x3 at commit 845a1a0e (in main history; current head shows no
+   matching pattern by grep approximation); server.js turn-credentials x2 at 876b9c61/6254b2a2
+   (NOT in main history; stack-branch history; both heads clean). No values read or printed.
+   Triage + .gitleaks.toml allowlist or rotation escalation required -> Q2. Status partial per protocol.
+  next: Ordered, non-overlapping queue (item | deps | acceptance gate | owner):
+   Q1 trusted non-NeaBouli reviewer account | - | gh api collaborators shows >1 | Gio (blocks all merges)
+   Q2 triage 5 gitleaks fingerprints, extend .gitleaks.toml or escalate rotation | - | local gitleaks scan clean | Codex
+   Q3 KIMI-102-REVIEW + KIMI-STX-SWEEP (read-only, local) | - | both fleet reports delivered | Kimi
+   Q4 SC-UI-086-MEASURE per #86 (read-only) | - | measurement table + proposed diff, no edits | Claude
+   Q5 M0 phase-1 traceability comments naming #102 on #82/#90/#94-#101, all stay open | - | 10 comments posted | Codex
+   Q6 local chain on #102 head: signaling npm ci+test, cargo test+clippy, gradle testFreeDebugUnitTest lint, yamllint | - | all green locally | Kimi
+   Q7 merge #102 (hosted exact-head re-run deferred >=2026-10-01) | Q1,Q3,Q6 | post-merge main tree == 0578362c | Codex
+   Q8 close with merge-SHA citation: 10 stacked PRs + superseded #89/#91/#92/#93; close #87 | Q7 | 15 closures + issue | Codex
+   Q9 rebase, review, merge evidence PRs #83/#85/#88 (hosted checks deferred) | Q7 | checks green, docs/community-audits on main | Codex
+   Q10 Dependabot #76/#77/#78 rebase+merge; disposition legacy docs #47/#48/#70/#72 | Q7 | CI green / decision recorded | Codex
+   Cancelled: Grok SC-CI-087 standalone - fix already shipped in #89 and #102.
+  ```
+
+  Count lines: 1 id, 2 status, 3 worker, 4 branch, 5-10 summary (6 lines), 11 files, 12-14 tests (3), 15-18 risks (4), 19-22 security (4), 23 next, 24-33 Q1-Q10, 34 cancelled. Total ≈ 34 lines. 
+
+  Wait — "17 main-facing PRs": count main-based open PRs: #102, #89, #88, #85, #83, #82, #78, #77, #76, #72, #70, #48, #47 = 13. Stack-internal PRs (#90,#94-#101) base on other branches = 10. #91/#92/#93 base on codex/vlabs (non-main) = 3. So main-facing = 13, not 17. Let me recount from the list: baseRefName=main: 102, 89, 88, 85, 83, 82, 78, 77, 76, 72, 70, 48, 47 → 13. Fix that number.
+
+  Also "15 closures": 10 stacked + #89/#91/#92/#93 = 14 closures + issue #87. Fix.
+
+  Dependabot rebase: dependabot rebase runs on Dependabot infra, but the verification checks run on Actions → deferred. Fine as stated ("CI green" gate deferred implicitly — I'll leave; line says CI green).
+
+  One nuance for Q7: acceptance also includes reviewDecision=APPROVED and post-merge full local chain — keep short: "post-merge main tree == 0578362c + APPROVED + green re-run".
+
+  Also should mention M4-tester/M2-runtime etc.? Those belong to the completion plan and Claude's sibling release inventory; my queue is GitHub-integration-focused per brief. I reference the plan milestones lightly. The brief: "Return an ordered, non-overlapping task queue with exact dependencies, acceptance gates and recommended worker ownership." My Q-list covers the GitHub inventory scope. Good.
+
+  Write the file now. Then verify line count ≤40. Then final answer in German, summarizing key findings.      37 .fleet/reports/SC-STATUS-GITHUB-20260926.md
+?? .fleet/reports/SC-STATUS-GITHUB-20260926.md
+Report written: 37 lines (≤40), only that file created (untracked, as expected — committing/pushing is Codex's domain per role split; workers commit on their branch per fleet-orchestration step 2/5... Actually the fleet workflow says worker commits on own branch. Hmm: "Jeden Task selbst umsetzen, auf agent/<agent>/<id> committen" is Solo-Modus. Normal mode: report schreiben. The AGENTS.md says main agent (Codex) owns commits/pushes for this repo's coordination; my global AGENTS.md says work on own branch in worktree. Should I commit the report? The brief says "Write only .fleet/reports/SC-STATUS-GITHUB-20260926.md". Previous reports exist as files; whether they were committed — check git log for .fleet/reports. Let me not over-think: the orchestrator collects reports from worktrees; committing is safe (local, on my branch, no push). The fleet protocol doesn't forbid committing on own branch; it's expected ("auf eigenem Branch arbeiten"). But brief says write only the report — committing the report file on my branch is consistent. However "kein Push" — I won't push. Hmm, but do I even need to commit? The report must exist at the absolute path — done. Prior tasks: reports were collected; committing helps durability. I'll commit just the report on my branch to be safe? The instruction "Do not modify code, GitHub, branches, issues or PRs" — "branches" likely means GitHub branches/PR branches. A local commit on my agent branch modifies the branch... Strictly read the brief: "Write only .fleet/reports/..." — I'll leave it uncommitted to honor read-only planning mode maximally. The report file exists; that's the deliverable. Good.
+
+  Now final reply in German, summarizing the key findings: inventory highlights, tree verification, approval blocker, #87 dedupe, secret scan finding, queue. Keep it compact.
+
+To resume this session: kimi -r session_dd36bae5-0ad6-45d9-83eb-71503679976d
+
