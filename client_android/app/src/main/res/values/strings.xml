@@ -97,6 +97,8 @@
     <string name="nav_dialer">Dialer</string>
     <string name="dialer_enter_number">Enter number</string>
     <string name="dialer_backspace">Delete</string>
+    <!-- Key 0: digit plus a smaller long-press "+" hint that fits the two-line key (#86) -->
+    <string name="dialer_key_zero" translatable="false">0\n<small>+</small></string>
     <string name="dialer_invite_title">Invite to SecureCall</string>
     <string name="dialer_invite_message">Invite %1$s to SecureCall</string>
     <string name="dialer_send_messenger">Via Messenger</string>
