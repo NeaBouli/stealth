@@ -49,6 +49,11 @@ owner decision below. Hosted GitHub CI is conserved until its 2026-10-01 reset.
 Exclusive ownership: Codex integration/release; Kimi large-context review; Claude implementation
 and security/UI; Grok narrow tasks; Gio/VLABS consoles, credentials, finance and activation.
 
+Wave A progress (2026-09-27): issue #86 implementation is locally complete and emulator-verified
+at 320x640 dp and 720x1280 dp. Claude supplied the partial implementation; Codex corrected IME
+window handling, added deterministic contact-row assertions and completed the full 25-test gate.
+Physical S10/Tab S4 confirmation remains a release gate. Public truth/price work has not started.
+
 ## Milestone: BREVO-SMTP-INACTIVITY-20260924 — COMPLETE
 
 Goal: determine whether the Brevo SMTP credentials labelled `Master Password` and

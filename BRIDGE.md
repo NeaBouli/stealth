@@ -6174,3 +6174,21 @@ Open next:
 - No credential value, provider setting, service, deployment or sales state changed.
 
 `RAILWAY HISTORICAL TOKEN NOT ACTIVE / TURN+ADMIN ROOT OPERATOR REQUIRED`
+
+## 2026-09-27 — CODEX + CLAUDE — SECURECALL ISSUE #86 EMULATOR GATE COMPLETE
+
+- Claude Code supplied a bounded partial implementation for the mapped Android main-screen UI
+  lane. Codex integrated it, replaced the remaining `adjustPan` behavior with `adjustResize`,
+  corrected deterministic test synchronization and completed the release-gate verification.
+- Fixed: all four bottom-navigation labels remain visible; dial keys retain minimum touch targets;
+  the `0` key shows an unclipped `+`; the ad banner remains separate from navigation; contact-match
+  rows remain fully above the IME; the Premium VPN settings category now collapses like its peers.
+- PASS: Free unit tests, Free/Pro/Premium compilation, Free/Premium debug assembly, Free lint and
+  the complete 25-test Free instrumentation suite on API 35 at 320x640 dp.
+- PASS: focused measurable UI assertions 3/3 at both 320x640 dp and 720x1280 dp. Stored synthetic
+  phone screenshots and detailed reports under `.fleet/evidence/SC-UI-086/` and `.fleet/reports/`.
+- Physical S10/Tab S4 confirmation remains open. No release artifact, merge, deployment, provider
+  mutation or sales activation occurred. TURN/Admin production rotation still requires the root
+  operator block documented above.
+
+`ISSUE #86 SOURCE + EMULATOR GREEN / PHYSICAL DEVICE GATE OPEN`

@@ -11,8 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp">
+        android:layout_marginTop="8dp">
 
         <EditText
             android:id="@+id/phoneNumberDisplay"
@@ -45,7 +44,8 @@
             android:visibility="gone" />
     </FrameLayout>
 
-    <!-- Contact suggestions (shown when typing) -->
+    <!-- Contact suggestions (shown when typing). Weight 1:4 against the dial pad keeps
+         keys at 48dp+ on 320x640dp phones with ad banner and 3-button navigation (#86). -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/contactSuggestions"
         android:layout_width="match_parent"
@@ -60,7 +60,7 @@
         android:id="@+id/dialPad"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="3"
+        android:layout_weight="4"
         android:columnCount="3"
         android:rowCount="4"
         android:paddingHorizontal="24dp"
@@ -95,35 +95,52 @@
         <Button android:id="@+id/btnStar" style="@style/Widget.SecureCall.DialButton"
             android:text="*" android:tag="*" />
         <Button android:id="@+id/btn0" style="@style/Widget.SecureCall.DialButton"
-            android:text="0\n+" android:tag="0" />
+            android:text="@string/dialer_key_zero" android:tag="0" />
         <Button android:id="@+id/btnHash" style="@style/Widget.SecureCall.DialButton"
             android:text="#" android:tag="#" />
 
     </GridLayout>
 
-    <!-- ABC/123 toggle — OUTSIDE GridLayout so it stays visible in both modes -->
-    <Button android:id="@+id/btnToggleAlpha"
+    <!-- ABC/123 toggle and call button share one row so the weighted dial pad keeps
+         48dp+ keys on 320dp-wide phones. MainActivity already lifts the fragment above the
+         bottom navigation, so no extra bottom margin is reserved here (#86). -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginHorizontal="24dp"
-        android:text="ABC"
-        android:textSize="16sp"
-        android:textColor="#FFD700"
-        android:textStyle="bold"
-        android:background="@android:color/transparent"
-        android:contentDescription="Switch to text input for Custom Call IDs" />
-
-    <!-- Call button -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabCall"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="96dp"
-        android:src="@drawable/ic_call"
-        android:contentDescription="@string/call_start"
-        app:backgroundTint="@color/call_active_green"
-        app:tint="@android:color/white"
-        app:fabSize="normal" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="24dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="8dp">
+
+        <!-- ABC/123 toggle — OUTSIDE GridLayout so it stays visible in both modes -->
+        <Button android:id="@+id/btnToggleAlpha"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="ABC"
+            android:textSize="16sp"
+            android:textColor="#FFD700"
+            android:textStyle="bold"
+            android:background="@android:color/transparent"
+            android:contentDescription="Switch to text input for Custom Call IDs" />
+
+        <!-- Call button -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabCall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_call"
+            android:contentDescription="@string/call_start"
+            app:backgroundTint="@color/call_active_green"
+            app:tint="@android:color/white"
+            app:fabSize="normal" />
+
+        <!-- Balances the toggle so the call button stays centred -->
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+    </LinearLayout>
 
 </LinearLayout>

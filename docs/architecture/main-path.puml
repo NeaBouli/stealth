@@ -1,0 +1,14 @@
+@startuml
+actor User
+participant "Main shell\nMainActivity" as Main
+participant "Dialer\nDialerFragment" as Dialer
+participant "IME" as Ime
+User -> Main : tap bottomNav nav_dialer
+Main -> Main : updateContentBottomInset()
+Main -> Dialer : onViewCreated(fragment_dialer)
+User -> Dialer : tap dial keys / ABC
+Dialer -> Ime : showSoftInput(phoneNumberDisplay)
+Ime --> Dialer : WindowInsets(ime)
+Dialer -> Dialer : filterContacts() -> contactSuggestions
+User -> Dialer : tap fabCall / match row
+@enduml
