@@ -85,6 +85,27 @@ unsafe path, invalid staging record or concurrent export fails without replacing
 data. This step does not confirm recipients, activate grants, import production
 state, build an APK or authorize email delivery.
 
+## Exact owner-approved promotion
+
+After the owner approves the exact private handoff, calculate the SHA-256 of
+`tester-handoff-manifest.json` locally and promote only that immutable bundle:
+
+```sh
+python3 -B backend/signaling/scripts/promote_tester_staging.py \
+  --inactive-registry "$PRIVATE_HANDOFF_DIRECTORY/tester-runtime-registry-inactive.json" \
+  --handoff-manifest "$PRIVATE_HANDOFF_DIRECTORY/tester-handoff-manifest.json" \
+  --private-output-directory "$PRIVATE_PROMOTION_DIRECTORY" \
+  --approved-manifest-sha256 "$OWNER_APPROVED_MANIFEST_SHA256"
+```
+
+The output directory must already be owner-only mode700. The tool revalidates
+the manifest digest, registry digest, count, schema, uniqueness and fully
+inactive state. It emits an address/code-free active registry plus a promotion
+manifest, both mode600. It is deterministic, atomic and idempotent; changed,
+partial, already-active or unsafe inputs fail closed. Promotion still does not
+deploy the registry, provision a signer, enable the runtime, build an APK or
+authorize email delivery. Those remain separate exact-version gates.
+
 No physical-device guarantee, signed entitlement, ownership recovery, expiration
 policy, commercial product binding or license import is implemented by staging.
 Those require the current verified runtime contract and separately reviewed tests.
@@ -101,8 +122,10 @@ python3 -B -m unittest discover -s backend/signaling/scripts -p test_prepare_tes
 python3 -B -m unittest discover -s backend/signaling/scripts -p 'test_*tester_staging.py' -v
 mypy --strict backend/signaling/scripts/prepare_tester_staging.py \
   backend/signaling/scripts/export_tester_staging.py \
+  backend/signaling/scripts/promote_tester_staging.py \
   backend/signaling/scripts/test_prepare_tester_staging.py \
-  backend/signaling/scripts/test_export_tester_staging.py
+  backend/signaling/scripts/test_export_tester_staging.py \
+  backend/signaling/scripts/test_promote_tester_staging.py
 ```
 
 Tests use only synthetic addresses and ephemeral secrets. Temporary fixture

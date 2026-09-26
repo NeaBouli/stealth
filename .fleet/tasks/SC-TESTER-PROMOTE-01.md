@@ -1,0 +1,6 @@
+id: SC-TESTER-PROMOTE-01
+goal: Add a fail-closed private operator promotion step between inactive tester staging and the disabled-by-default SecureCall tester runtime.
+context: Architecture node docs/architecture/MAP.md section 8. Reuse private_path, digest and publish_bundle from the existing staging/export scripts. The promoted registry must contain no email or raw activation code and must be bound to an owner-approved exact handoff manifest digest.
+constraints: Repository tooling and synthetic tests only. No real recipients, codes, devices, secrets, production registry, deployment, activation or email. Do not weaken inactive staging. Output remains private and not deployed. Preserve unrelated PR #102 plus issue #86 work.
+acceptance: Exact manifest digest required; manifest/registry hashes, count, schema and inactive state validated; deterministic owner-only active registry and promotion manifest emitted atomically/idempotently; unsafe, tampered, partial, already-active and conflicting inputs fail closed; docs and tests updated.
+out-of-scope: Production import, signer generation/provisioning, APK release signing, physical-device tests, recipient communication and runtime enablement.

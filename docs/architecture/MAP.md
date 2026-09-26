@@ -83,3 +83,19 @@ mindmap
 Modules Main shell (hop 1 layout attribute), Dialer (hops 3–5) and VPN feature (hop 6).
 Untouched: networking, call, crypto, billing, `MainActivity.java`, `SettingsFragment.kt`,
 free/pro `VpnFeature.kt`.
+
+## 8. Direct Premium tester-license lane
+
+1. Private recipient staging creates random codes and an inactive SQLite record.
+2. The private exporter emits a delivery draft, an address-free inactive registry
+   and a manifest binding both payload hashes.
+3. The operator promotion tool requires the exact approved manifest SHA-256,
+   validates the inactive registry and emits an address/code-free active registry.
+4. The disabled-by-default signaling runtime loads that registry and an isolated
+   Ed25519 signer only after separate operator provisioning.
+5. Direct Premium binds the first activation atomically to an Android Keystore
+   P-256 key and accepts only a matching signed 30-day renewable entitlement.
+
+Module boundary: `backend/signaling/scripts/*tester_staging.py` prepares private
+operator artifacts; `services/tester_license_*` and `payments/tester_entitlement_tokens.js`
+own runtime issuance. Deployment, recipient approval and email delivery stay outside.

@@ -7297,3 +7297,22 @@ Open next:
   operator block documented above.
 
 `ISSUE #86 SOURCE + EMULATOR GREEN / PHYSICAL DEVICE GATE OPEN`
+
+## 2026-09-27 — CODEX — TESTER LICENSE PRIVATE PROMOTION LANE CLOSED
+
+- Revalidated the Direct Premium tester-license candidate without accessing real recipient data:
+  backend entitlement/registry/transport 3/3 PASS, private staging/export baseline 25/25 PASS,
+  focused Android unit build PASS and API 35 hardware-key instrumentation 1/1 PASS.
+- Added a controlled private promotion step between inactive handoff and runtime registry. It
+  requires the exact owner-approved handoff-manifest SHA-256, revalidates every bound payload and
+  emits only an address/code-free active registry plus promotion manifest. It does not deploy,
+  enable the runtime, provision a signer, build an APK or send mail.
+- Updated the architecture map and operator documentation. The expanded private staging suite is
+  30/30 PASS; Python compile and diff checks pass. `mypy` was not run because it is unavailable on
+  this machine. Fleet workers were unavailable, so the required security review was completed in
+  documented solo mode and must receive an independent repeat when worker capacity returns.
+- Remaining gates: complete private inventory/recipient approval on the coordinator machine,
+  exact configured signed Direct Premium artifact, isolated signer/runtime pairing, physical
+  two-device acceptance, bounded production import approval and only then private delivery.
+
+`PROMOTION TOOL GREEN / NO REAL CODES GENERATED / PRODUCTION AND DELIVERY GATES OPEN`
