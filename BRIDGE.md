@@ -6195,3 +6195,8 @@ Open next:
 
 GitHub tracking: `https://github.com/NeaBouli/stealth/issues/86#issuecomment-5850573493` records
 commit `6c80134`, the exact emulator gates and the still-open physical-device confirmation.
+
+PR #102 integration preparation: branch `agent/codex/SC-UI-086-PR102`, commit `24fe19e`, is based
+directly on exact #102 head `5f70b16`. The combined tree passed the local Android matrix with zero
+failures. No stacked PR was opened before the 2026-10-01 hosted-CI reset; the branch push triggered
+no workflow run. Tracking: `https://github.com/NeaBouli/stealth/issues/86#issuecomment-5850719112`.

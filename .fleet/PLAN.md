@@ -53,6 +53,9 @@ Wave A progress (2026-09-27): issue #86 implementation is locally complete and e
 at 320x640 dp and 720x1280 dp. Claude supplied the partial implementation; Codex corrected IME
 window handling, added deterministic contact-row assertions and completed the full 25-test gate.
 Physical S10/Tab S4 confirmation remains a release gate. Public truth/price work has not started.
+The UI diff is also rebased on exact PR #102 head `5f70b16` as commit `24fe19e` on branch
+`agent/codex/SC-UI-086-PR102`; its combined-tree local Android gate is green. No stacked PR was
+opened, intentionally preserving hosted CI capacity until the 2026-10-01 reset.
 
 ## Milestone: BREVO-SMTP-INACTIVITY-20260924 — COMPLETE
 
