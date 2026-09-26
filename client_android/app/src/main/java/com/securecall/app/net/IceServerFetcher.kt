@@ -22,7 +22,8 @@ object IceServerFetcher {
      * Returns cached ICE servers if available and not expired.
      * Servers are populated by [injectFromRegistered] after WS REGISTER.
      *
-     * @return List of IceServer or null (caller should use STUN-only fallback)
+     * @return List of IceServer or null. Direct calls may use the configured STUN fallback;
+     * relay-only calls must fail closed until REGISTERED supplies TURN credentials.
      */
     fun fetch(): List<PeerConnection.IceServer>? {
         val cached = cachedServers

@@ -1152,7 +1152,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         webRtcManager = mgr
         // Fetch TURN credentials from backend (removes hardcoded secrets from APK)
         val dynamicIce = IceServerFetcher.fetch()
-        mgr.init(dynamicIce)
+        if (!mgr.init(dynamicIce)) {
+            Log.e("WS_SERVICE", "WebRTC initialization rejected: relay credentials unavailable")
+            webRtcManager = null
+            sendCallEnd(sessionId, "ice_credentials_unavailable")
+            _onCallEnded?.invoke(sessionId)
+            return
+        }
         if (isOfferer) mgr.createOffer()
     }
 
