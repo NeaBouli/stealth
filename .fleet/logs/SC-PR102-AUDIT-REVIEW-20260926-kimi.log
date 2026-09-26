@@ -1,0 +1,8 @@
+$ kimi (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/kimi-SC-PR102-AUDIT-REVIEW-20260926)
+--- stdout ---
+
+--- stderr ---
+kimi version 0.42.0
+error: failed to run prompt: provider.auth_error: 403 You've reached your 5-hour usage limit. Your quota will reset when the current 5-hour window ends. To continue now, purchase extra usage or upgrade your plan: https://www.kimi.com/membership/subscription?tab=quota
+See log: /Users/gio/.kimi-code/logs/kimi-code.log
+

@@ -1,0 +1,30 @@
+$ claude (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/claude-SC-GITLEAKS-FP-20260926)
+--- stdout ---
+Fertig: Die Code-Zeile in PR #102, die gitleaks fälschlich als Secret meldete, wird jetzt unterdrückt, und echte TURN- und API-Key-Leaks schlagen weiter an. Der neue Test läuft lokal mit 8 von 8 grün. Commit `9232dc4` liegt auf `agent/claude/SC-GITLEAKS-FP-20260926`, nicht gepusht.
+
+**Änderung** (CI-Security-Pipeline: `security-audit.yml` → gitleaks → `.gitleaks.toml`; eine `MAP.md` gibt es nicht, kartiert habe ich nur diese Spur):
+- `.gitleaks.toml`: In die globale Allowlist kommt genau eine Regex, am Zeilenanfang und -ende verankert:
+  `^\s*const TURN_SECRET = resolveTurnSecret\(process\.env\);\s*$`
+  Regeln, Fingerprints und Pfade bleiben unverändert, die Historie wird nicht umgeschrieben.
+- `tools/test_gitleaks_config.sh` (neu): Das Skript erzeugt seine Testdateien erst zur Laufzeit in einem Temp-Verzeichnis, mit Zufallswerten. Dadurch liegt nichts Secret-Ähnliches im Repo, und ein Scan des Skripts selbst findet nichts.
+
+**Tests** mit lokalem gitleaks:
+- Die gemeldete Zeile, auch eingerückt, bleibt sauber.
+- Diese Fälle schlagen weiter an:
+  - ein TURN-Secret als Literal;
+  - `|| "<wert>"` als Fallback;
+  - die erlaubte Zeile mit angehängtem Secret in derselben Zeile;
+  - eine `.env`-Zeile;
+  - ein generischer API-Key.
+- Die Historie `origin/main..pr-102` hatte vorher 1 Treffer bei `876b9c6`, jetzt 0. Einzeln geprüft ging auch Commit `6254b2a` von 1 auf 0 Treffer, ebenso der Kopf von #102 (`server.js:94`).
+- Gegenprobe mit der alten Config: Die drei Fälle der gemeldeten Zeile schlagen fehl, alle Leak-Fälle bleiben rot. Der Test unterscheidet also wirklich.
+
+**Offen:**
+- Ein Scan des ganzen Worktrees meldet noch 5 Treffer derselben Regel. Alle stehen in `.fleet`-Texten, die die Zeile wörtlich zitieren: dieser Brief sowie Triage-Report und Triage-Log. Keine dieser Dateien ist auf `main`. Werden sie gemergt, werden die Push- und Schedule-Scans auf `main` rot. Ich habe sie bewusst nicht in die Allowlist aufgenommen, weil der Brief nur diese eine Code-Zeile abdeckt. Codex muss entscheiden: die Zitate umformulieren oder `.fleet/` per Pfad freigeben.
+- Die alten Credential-Funde bleiben absichtlich rot: TURN_SECRET und ADMIN_API_KEY in `BRIDGE.md` sowie RAILWAY_TOKEN in `tools/monitor-rollout.sh`. Die Bestätigung, dass sie rotiert wurden, fehlt weiterhin.
+- Der Test braucht gitleaks lokal und ist nicht in die CI eingebunden.
+
+Der Report steht in `.fleet/reports/SC-GITLEAKS-FP-20260926.md` mit `status: ok`; das Feld `security` ist ausgefüllt.
+
+--- stderr ---
+

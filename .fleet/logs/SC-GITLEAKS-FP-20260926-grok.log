@@ -1,0 +1,49 @@
+$ grok (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/grok-SC-GITLEAKS-FP-20260926)
+--- stdout ---
+
+--- stderr ---
+[2m2026-09-26T21:00:31.601865Z[0m [33m WARN[0m failed to remove managed config file [3mfile[0m[2m=[0m/Users/gio/.grok/managed_config.toml [3merror[0m[2m=[0mOperation not permitted (os error 1)
+[2m2026-09-26T21:00:31.601937Z[0m [33m WARN[0m failed to remove managed config file [3mfile[0m[2m=[0m/Users/gio/.grok/requirements.toml [3merror[0m[2m=[0mOperation not permitted (os error 1)
+[2m2026-09-26T21:00:31.612927Z[0m [33m WARN[0m pin GC: grove data dir sweep failed [3mdir[0m[2m=[0m/Users/gio/.local/share/grove [3merror[0m[2m=[0mOperation not permitted (os error 1) at path "/Users/gio/.local/share/grove/.tmpMQ64w1"
+[2m2026-09-26T21:00:31.722779Z[0m [33m WARN[0m permissions.allow: MultiEdit(*) -- unknown tool prefix: MultiEdit [3mpath[0m[2m=[0m/Users/gio/.claude/settings.json
+[2m2026-09-26T21:00:31.768901Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.grok/skills/codebase-risk-map/SKILL.md [3mdeclared_name[0m[2m=[0mvlabs-codebase-risk-map [3mexpected_name[0m[2m=[0mcodebase-risk-map
+[2m2026-09-26T21:00:31.770355Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.grok/skills/github-pr-review/SKILL.md [3mdeclared_name[0m[2m=[0mvlabs-github-pr-review [3mexpected_name[0m[2m=[0mgithub-pr-review
+[2m2026-09-26T21:00:31.770674Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.grok/skills/release-handover/SKILL.md [3mdeclared_name[0m[2m=[0mvlabs-release-handover [3mexpected_name[0m[2m=[0mrelease-handover
+[2m2026-09-26T21:00:31.770996Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.grok/skills/root-cause-debugger/SKILL.md [3mdeclared_name[0m[2m=[0mvlabs-root-cause-debugger [3mexpected_name[0m[2m=[0mroot-cause-debugger
+[2m2026-09-26T21:00:31.771904Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.grok/skills/test-plan-generator/SKILL.md [3mdeclared_name[0m[2m=[0mvlabs-test-plan-generator [3mexpected_name[0m[2m=[0mtest-plan-generator
+[2m2026-09-26T21:00:31.772187Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.claude/skills/chat-komprimieren/SKILL.md [3mdeclared_name[0m[2m=[0mchat-compaction [3mexpected_name[0m[2m=[0mchat-komprimieren
+[2m2026-09-26T21:00:31.772430Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.claude/skills/codebase-risk-map/SKILL.md [3mdeclared_name[0m[2m=[0mvlabs-codebase-risk-map [3mexpected_name[0m[2m=[0mcodebase-risk-map
+[2m2026-09-26T21:00:31.773834Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.claude/skills/github-pr-review/SKILL.md [3mdeclared_name[0m[2m=[0mvlabs-github-pr-review [3mexpected_name[0m[2m=[0mgithub-pr-review
+[2m2026-09-26T21:00:31.774327Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.claude/skills/release-handover/SKILL.md [3mdeclared_name[0m[2m=[0mvlabs-release-handover [3mexpected_name[0m[2m=[0mrelease-handover
+[2m2026-09-26T21:00:31.774382Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.claude/skills/root-cause-debugger/SKILL.md [3mdeclared_name[0m[2m=[0mvlabs-root-cause-debugger [3mexpected_name[0m[2m=[0mroot-cause-debugger
+[2m2026-09-26T21:00:31.775125Z[0m [33m WARN[0m skill name does not match expected name from path [3mpath[0m[2m=[0m/Users/gio/.claude/skills/test-plan-generator/SKILL.md [3mdeclared_name[0m[2m=[0mvlabs-test-plan-generator [3mexpected_name[0m[2m=[0mtest-plan-generator
+[2m2026-09-26T21:00:32.785876Z[0m [31mERROR[0m responses API error [3mstatus[0m[2m=[0m402 Payment Required [3merror_message[0m[2m=[0mGrok Build usage balance exhausted [3mbody_preview[0m[2m=[0m{"error":"Grok Build usage balance exhausted"} [3mmodel_id[0m[2m=[0mgrok-4.6
+[2m2026-09-26T21:00:32.786054Z[0m [33m WARN[0m session title generation failed, falling back to truncated user text [3mmodel[0m[2m=[0mgrok-4.6 [3merror[0m[2m=[0mAPI error (status 402 Payment Required): Grok Build usage balance exhausted
+[2m2026-09-26T21:00:32.945282Z[0m [31mERROR[0m worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer realm=\"OAuth\", resource_metadata=\"https://mcp.linear.app/.well-known/oauth-protected-resource/mcp\", scope=\"read write\"" })
+[2m2026-09-26T21:00:33.055642Z[0m [31mERROR[0m worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer realm=\"OAuth\", resource_metadata=\"https://mcp.linear.app/.well-known/oauth-protected-resource/mcp\", scope=\"read write\"" })
+[2m2026-09-26T21:00:33.055783Z[0m [33m WARN[0m both handshake phases failed (surfacing the legacy error) [3mserver[0m[2m=[0mlinear [3mprobe_error[0m[2m=[0mSend message error Transport [rmcp::transport::worker::WorkerTransport<rmcp::transport::streamable_http_client::StreamableHttpClientWorker<xai_grok_mcp::mcp_http_client::McpHttpClient<reqwest::async_impl::client::Client>>>] error: Auth required, when send discover request [3mlegacy_error[0m[2m=[0mMCP server 'linear' handshake failed: Send message error Transport [rmcp::transport::worker::WorkerTransport<rmcp::transport::streamable_http_client::StreamableHttpClientWorker<xai_grok_mcp::mcp_http_client::McpHttpClient<reqwest::async_impl::client::Client>>>] error: Auth required, when send initialize request
+[2m2026-09-26T21:00:33.055845Z[0m [33m WARN[0m MCP server init failed [3mserver[0m[2m=[0mlinear [3merror[0m[2m=[0mMCP server 'linear' handshake failed: Send message error Transport [rmcp::transport::worker::WorkerTransport<rmcp::transport::streamable_http_client::StreamableHttpClientWorker<xai_grok_mcp::mcp_http_client::McpHttpClient<reqwest::async_impl::client::Client>>>] error: Auth required, when send initialize request
+[2m2026-09-26T21:00:33.055863Z[0m [33m WARN[0m MCP server failed to initialize [3mserver[0m[2m=[0m"linear" [3melapsed_ms[0m[2m=[0m759 [3mtimeout_sec[0m[2m=[0m30 [3merror[0m[2m=[0mMCP server 'linear' handshake failed: Send message error Transport [rmcp::transport::worker::WorkerTransport<rmcp::transport::streamable_http_client::StreamableHttpClientWorker<xai_grok_mcp::mcp_http_client::McpHttpClient<reqwest::async_impl::client::Client>>>] error: Auth required, when send initialize request [3mneeds_auth[0m[2m=[0mtrue
+[2m2026-09-26T21:00:35.104133Z[0m [31mERROR[0m responses API error [3mstatus[0m[2m=[0m402 Payment Required [3merror_message[0m[2m=[0mGrok Build usage balance exhausted [3mbody_preview[0m[2m=[0m{"error":"Grok Build usage balance exhausted"} [3mmodel_id[0m[2m=[0mgrok-4.7
+[2m2026-09-26T21:00:35.104888Z[0m [31mERROR[0m [3merror[0m[2m=[0mInternal error: {
+  "message": "API error (status 402 Payment Required): Grok Build usage balance exhausted",
+  "http_status": 402
+}
+[2m2026-09-26T21:00:35.104910Z[0m [31mERROR[0m [3merror[0m[2m=[0mInternal error: {
+  "message": "API error (status 402 Payment Required): Grok Build usage balance exhausted",
+  "http_status": 402
+}
+Internal error: {
+  "message": "API error (status 402 Payment Required): Grok Build usage balance exhausted",
+  "http_status": 402
+}
+[2m2026-09-26T21:00:35.674118Z[0m [33m WARN[0m tokenize-text failed [3mstatus[0m[2m=[0m403 Forbidden
+[2m2026-09-26T21:00:35.675990Z[0m [33m WARN[0m tokenize-text failed [3mstatus[0m[2m=[0m403 Forbidden
+[2m2026-09-26T21:00:35.677258Z[0m [33m WARN[0m tokenize-text failed [3mstatus[0m[2m=[0m403 Forbidden
+[2m2026-09-26T21:00:35.679684Z[0m [33m WARN[0m tokenize-text failed [3mstatus[0m[2m=[0m403 Forbidden
+[2m2026-09-26T21:00:35.680173Z[0m [33m WARN[0m tokenize-text failed [3mstatus[0m[2m=[0m403 Forbidden
+Error: Internal error: {
+  "message": "API error (status 402 Payment Required): Grok Build usage balance exhausted",
+  "http_status": 402
+}
+

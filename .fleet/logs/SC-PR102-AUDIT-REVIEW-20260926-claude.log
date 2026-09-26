@@ -1,0 +1,50 @@
+$ claude (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/claude-SC-PR102-AUDIT-REVIEW-20260926)
+--- stdout ---
+Die Prüfung von PR #102 und dem STX-Register ist fertig, Status `partial`: Etliche Sicherheitsbefunde aus Issue #84 sind am PR-Head noch offen. Neu eingeführt hat #102 keinen. Der Report ist auf dem Branch committet (`6544087`), nicht gepusht; auf GitHub habe ich nichts verändert.
+
+**PR #102**
+- Der Stack ist linear: 41 Commits direkt auf main `e06d0184`, das ist genau der Stand, gegen den Issue #84 geprüft wurde. Keine Merge-Commits, 0 Commits hinter main.
+- `core_crypto` ist in #102 gar nicht verändert.
+
+**Die anderen PRs**
+- #83, #85 und #88 enthalten nur Dokumentation und sitzen alle auf demselben main-Stand.
+- #83 und #85 lassen sich konfliktfrei mit #102 zusammenführen.
+- #88 kollidiert mit #102 in `BRIDGE.md`. Das muss vor dem Merge von #88 gelöst werden.
+
+**STX-01..62 am Head von #102:** 11 behoben, 13 teilweise, 34 offen, 4 brauchen eine Entscheidung.
+- **Behoben (mit Commit):** 01, 02, 03, 08, 10, 14, 21, 22, 23, 29, 37. Bei 03 steht die Prüfung auf dem Server noch aus, bei 37 die Veröffentlichung des Live-Wikis.
+- **Auth/Krypto an der Quelle geprüft:**
+  - STX-01 und STX-21 sind in der App behoben. Einladung und Annahme sind signiert. Die Identität ist ein Hash des Schlüssels selbst. Der signierte Sitzungsschlüssel ist genau der, der in die Schlüsselableitung geht.
+  - `HKDF salt=None` steht weiter in `ffi/mod.rs:267`. Das gleicht die Bindung an den Gesprächsverlauf (`SessionKeyBinding`) aus.
+  - Es bleibt ein Rest: Es gibt keine Safety-Number, mit der Nutzer die angerufene ID außerhalb der App bestätigen können.
+- **Pinning (STX-23):** 4 Pins, gültig bis 2028-03-01. Gegen das Live-Zertifikat habe ich sie nicht abgeglichen; das deckt nur der Prüfschritt aus Commit `ddc8dd9` ab.
+- **Offene Sicherheitsbefunde (Medium):**
+  - STX-13: fest eingetragene Zugangsdaten für den öffentlichen OpenRelay-TURN-Server (`WebRtcManager.kt:147-149`)
+  - STX-24: kein Replay-Schutz und keine AAD auf dem Medienpfad
+  - STX-05: Gutscheincodes mit nur 32 Bit Zufall
+  - STX-04: Telefonnummern lassen sich abfragen
+  - STX-07 zum Teil: `reportRoute.js:129` vertraut weiter dem ersten `X-Forwarded-For`-Eintrag
+  - außerdem STX-06, 09, 11, 31 und 33
+- **Offen (Low):** STX-15, die WebSocket-Origin wird nur geprüft, wenn `ALLOWED_ORIGINS` gesetzt ist.
+- **Entscheidung nötig:**
+  - STX-34: lineare Preissteigerung, derzeit hinter einem geschlossenen Schalter
+  - STX-36: nachweislich harmlos, kann als Info geschlossen werden
+  - STX-38: USD- gegenüber EUR-Preisen
+  - STX-55: Lizenz gegenüber Nachprüfbarkeit
+  - `security.html:169-170` nennt noch „Double Ratchet“ für SecureChat und Chameleon
+
+**Tests** (in einem temporären Worktree des PR-Heads, danach gelöscht):
+- Backend: `npm test` und `test:tester` grün.
+- Python-Skripte: 25 Tests OK.
+- coturn-Test und Secret-Guard: bestanden.
+- Die 4 Website-Tests: grün.
+- Nicht ausgeführt: Android/Gradle, gehostete CI (laut Brief verboten) und Live-Endpunkte.
+
+Die Einordnung von STX-29..62 (Web und Doku) stammt aus einem Hilfsagenten, der den Code nur gelesen hat, jeweils mit Belegstelle. Welcher Commit die 49 € bei STX-38 entfernt hat, ist nur abgeleitet. Zugewiesen war der Brief an Kimi; ich habe ihn als Worker A bearbeitet und das im Report vermerkt.
+
+Die MCP-Server Linear, Stripe, PayPal, Cloudflare und WordPress.com müssen noch autorisiert werden (in den claude.ai-Connector-Einstellungen bzw. über `/mcp`), sonst stehen sie nicht zur Verfügung.
+
+Report: `.fleet/reports/SC-PR102-AUDIT-REVIEW-20260926.md`
+
+--- stderr ---
+
