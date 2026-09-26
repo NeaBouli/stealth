@@ -6141,3 +6141,19 @@ Open next:
 - No provider, secret, runtime or email state changed.
 
 `BREVO RUNBOOK DURABLE / LEGACY SMTP EXCLUDED FROM NORMAL DIAGNOSIS`
+
+## 2026-09-26 — CODEX + KIMI + CLAUDE — COMPLETION PLAN REBASELINED
+
+- Kimi inventoried live GitHub/audit state; Claude inventoried release, distribution and commerce.
+  Their non-overlapping reports are stored under `.fleet/reports/SC-STATUS-*20260926.md`.
+- `.fleet/PLAN.md` now defines Wave A local work through 30 September, Wave B hosted integration
+  after the 1 October CI reset, and Wave C product/publication/sales gates with exclusive ownership.
+- Security triage found credible historical exposure of three production credential classes in
+  public history. Current `main` and PR #102 heads do not contain their values. Rotation/revocation
+  and provider-log review require Gio's separate authorization; no history rewrite is planned.
+- PR #102 remains tree-verified and CI-green at its previous exact head but blocked by a trusted
+  non-`NeaBouli` approval. Issue #87's fix is already in #102/#89, so no duplicate Grok patch starts.
+- No product code, GitHub metadata, provider, credential, deployment or sales state changed.
+  `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain binding.
+
+`PLAN REBASELINED / SECURITY OWNER GATE S0 / LOCAL WAVE A NEXT`

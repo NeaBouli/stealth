@@ -1,0 +1,23 @@
+$ claude (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/claude-SC-SEC-GITLEAKS-TRIAGE-20260926)
+--- stdout ---
+Die Triage ist fertig und der Report liegt vor. **Status: partial**, weil zwei der Befunde echte Sicherheitsprobleme sind. Es gibt nicht 5, sondern **7 Treffer**: Kimi hat einen BRIDGE-Treffer und den in `tools/monitor-rollout.sh` übersehen. Außerdem schlägt der geplante Scan nicht erst seit dem 21.09. fehl, sondern schon mindestens seit dem 17.08.
+
+**Einordnung der Treffer** (kein Secret-Wert gelesen oder ausgegeben):
+- **A – Fehlalarm** (`turn-credentials` ×2, `backend/signaling/src/server.js`): Die Zeile `const TURN_SECRET = resolveTurnSecret(process.env);` liest nur die Umgebungsvariable. Auf dem Kopf von PR #102 (`server.js:94`) steht dieselbe Zeile, und sie ist dort nicht in der Allowlist. Nach dem Merge von #102 bleibt der Scan auf main deshalb rot, bis die Allowlist ergänzt ist.
+- **B – wahrscheinlich kompromittiert** (`generic-api-key` ×4, `BRIDGE.md` in Commit `845a1a0e`, seit 16.05. auf main): zwei 64-stellige Hex-Werte mit der Beschriftung `TURN_SECRET` und `ADMIN_API_KEY` für den hetzner-Server. **Das Repo ist öffentlich.**
+- **C – wahrscheinlich kompromittiert** (`RAILWAY_TOKEN`, `tools/monitor-rollout.sh:8`, seit 17.04. auf main): Commit `076c629` (#40) hat den Wert zwar entfernt, aber in BRIDGE.md steht die Rotation weiter als offener Blocker. Eine Bestätigung, dass rotiert wurde, habe ich nicht gefunden.
+- **Aktuelle Stände:** Weder main (`e06d018`) noch PR #102 (`5f70b16`) enthalten einen der markierten Werte. In der Git-History stehen sie weiter.
+
+**Was ich empfehle:**
+1. **Du:** `TURN_SECRET` und `ADMIN_API_KEY` auf hetzner rotieren, den Railway-Token widerrufen und neu ausstellen, die Zugriffslogs der Anbieter prüfen und das in BRIDGE.md ohne Werte bestätigen. Die History neu zu schreiben bringt nichts, weil das Repo öffentlich ist und die Werte schon kopiert sein können.
+2. **Vor dem Merge von #102:** in `.gitleaks.toml` eine eng gefasste Allowlist-Regel für genau diese Zeile ergänzen: `const TURN_SECRET = resolveTurnSecret\(process\.env\);`
+3. **Erst nach bestätigter Rotation:** eine `.gitleaksignore` mit den 5 Fingerprints von B und C anlegen. Die Fingerprints enthalten keine Secrets.
+
+Nicht klären ließ sich ohne Zugriff auf die Secrets und Anbieter-Konsolen, ob die Werte aus B und C noch aktiv sind oder schon benutzt wurden. Einen lokalen Gitleaks-Scan gibt es nicht, weil das Programm hier nicht installiert ist. Ich habe keinen Code und keine Konfiguration geändert, also auch keine Tests ausgeführt. Stattdessen habe ich die CI-Logs nur über die Metadaten-Felder ausgewertet, für jeden Commit geprüft, ob er in main bzw. #102 enthalten ist, und die Regeln samt Allowlist auf `server.js` nachgeprüft.
+
+Der Report ist auf `agent/claude/SC-SEC-GITLEAKS-TRIAGE-20260926` als `e4e6b87` committet, nicht gepusht. Er enthält nachweislich keine secret-förmigen Strings.
+
+Datei: `.fleet/reports/SC-SEC-GITLEAKS-TRIAGE-20260926.md`
+
+--- stderr ---
+
