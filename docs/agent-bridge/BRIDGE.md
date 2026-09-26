@@ -3534,6 +3534,18 @@ Type: RELEASE / EXTERNAL / POLICY
   signaling server path. No backend deployment, release artifact or production change occurred.
 
 `REMOTE HANGUP FIX SOURCE GREEN — TWO-DEVICE RETEST BLOCKED`
+
+## 2026-09-27 — CODEX — Android ICE credential boundary hardened
+
+- Removed the embedded public OpenRelay TURN fallback from Android production sources.
+- TURN now comes only from the authenticated REGISTERED signaling payload; direct mode retains
+  configured first-party STUN, while relay-only mode fails closed without dynamic TURN.
+- Full Free unit suite, Free lint and Pro/Premium compilation passed. No runtime, provider,
+  deployment or secret mutation occurred.
+- First-party TURN/Admin rotation remains an authorized but root-operator-blocked external gate;
+  no active matching Railway token consumer was found, so no unrelated token was changed.
+
+`SOURCE GREEN — PHYSICAL CALL AND ROOT ROTATION GATES OPEN`
 ## 2026-08-27 04:31 EEST — [CODEX TERMINAL] Pre-Sale Completion Candidate Verified
 
 - SecureCall `1.0.50` / base versionCode `78017` and the shared browser IFR-holder checkout block completed in isolated worktree `fix/presale-complete-20260826`.

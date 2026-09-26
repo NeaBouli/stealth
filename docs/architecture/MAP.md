@@ -99,3 +99,16 @@ free/pro `VpnFeature.kt`.
 Module boundary: `backend/signaling/scripts/*tester_staging.py` prepares private
 operator artifacts; `services/tester_license_*` and `payments/tester_entitlement_tokens.js`
 own runtime issuance. Deployment, recipient approval and email delivery stay outside.
+
+## 9. Android ICE credential lane
+
+1. The authenticated signaling registration returns an `iceServers` payload.
+2. `IceServerFetcher::injectFromRegistered` parses and caches that payload in memory.
+3. `WebSocketService::startWebRtc` passes the cached servers to `WebRtcManager::init`.
+4. Direct mode may fall back to the configured first-party `BuildConfig.STUN_URL`.
+5. External-VPN and one-shot relay-retry modes require a dynamically supplied TURN server and
+   fail before PeerConnection creation when it is absent.
+
+Module boundary: `IceServerFetcher` owns in-memory signaling input; `WebRtcManager` owns ICE
+policy and PeerConnection configuration; `WebSocketService` owns call teardown after rejected
+initialization. Public relay services and embedded TURN credentials are outside this lane.

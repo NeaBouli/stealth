@@ -7316,3 +7316,23 @@ Open next:
   two-device acceptance, bounded production import approval and only then private delivery.
 
 `PROMOTION TOOL GREEN / NO REAL CODES GENERATED / PRODUCTION AND DELIVERY GATES OPEN`
+
+## 2026-09-27 — CODEX — ANDROID PUBLIC TURN FALLBACK REMOVED
+
+- Mapped and fixed the Android ICE lane `REGISTERED -> IceServerFetcher -> WebRtcManager ->
+  PeerConnection`. The authenticated signaling response is now the only source of TURN
+  credentials; embedded OpenRelay hosts and credentials were removed from production sources.
+- Direct calls retain only the configured first-party STUN fallback. External-VPN and one-shot
+  relay-retry modes fail closed before offer creation when the REGISTERED cache has no TURN
+  server. WebSocketService sends a bounded call-end reason instead of continuing unusably.
+- PASS: focused policy tests, complete Free unit suite, Free lint, Pro/Premium Kotlin compilation,
+  production-source marker scan and `git diff --check`.
+- Claude, Kimi and Grok were unavailable through the automatic fallback chain. Codex completed
+  the task in documented Solo Mode and performed the required security self-review; an independent
+  repeat remains queued when worker capacity returns.
+- No runtime, provider, secret, deployment, release, payment or sales action occurred. The
+  separately authorized first-party TURN/Admin rotation still requires the root operator because
+  the Hetzner `fleet` account is intentionally read-only. No unrelated Railway token was revoked:
+  no active matching consumer or token was proven.
+
+`ANDROID ICE FALLBACK SOURCE GREEN / ROOT RUNTIME ROTATION STILL OPERATOR-BLOCKED`

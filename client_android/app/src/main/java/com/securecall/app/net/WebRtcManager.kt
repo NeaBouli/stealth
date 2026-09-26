@@ -20,6 +20,8 @@ class WebRtcManager(
     private val isExternalVpnActive: () -> Boolean
 ) {
 
+    internal enum class IceSourceDecision { DYNAMIC, STUN_FALLBACK, REJECT }
+
     companion object {
         private const val TAG = "WEBRTC"
         private const val DC_LABEL = "audio"
@@ -27,6 +29,21 @@ class WebRtcManager(
 
         internal fun shouldUseRelayOnly(externalVpnActive: Boolean, relayRetry: Boolean): Boolean =
             externalVpnActive || relayRetry
+
+        internal fun decideIceSource(
+            dynamicIceServers: List<PeerConnection.IceServer>?,
+            relayOnly: Boolean
+        ): IceSourceDecision {
+            val supplied = dynamicIceServers.orEmpty()
+            if (supplied.isEmpty()) {
+                return if (relayOnly) IceSourceDecision.REJECT else IceSourceDecision.STUN_FALLBACK
+            }
+            if (relayOnly && supplied.none(::isTurnServer)) return IceSourceDecision.REJECT
+            return IceSourceDecision.DYNAMIC
+        }
+
+        private fun isTurnServer(server: PeerConnection.IceServer): Boolean =
+            server.urls.any { url -> url.startsWith("turn:", true) || url.startsWith("turns:", true) }
     }
 
     private var factory: PeerConnectionFactory? = null
@@ -73,20 +90,27 @@ class WebRtcManager(
     private var pendingAnswer: String? = null
     private val pendingIceCandidates = CopyOnWriteArrayList<JSONObject>()
 
-    fun init(dynamicIceServers: List<PeerConnection.IceServer>? = null) {
+    fun init(dynamicIceServers: List<PeerConnection.IceServer>? = null): Boolean {
         lastIceServers = dynamicIceServers
         isClosed = false
+        val externalVpnActive = isExternalVpnActive()
+        val relayOnly = shouldUseRelayOnly(externalVpnActive, forceRelayOnly)
+        val sourceDecision = decideIceSource(dynamicIceServers, relayOnly)
+        if (sourceDecision == IceSourceDecision.REJECT) {
+            Log.e(TAG, "TURN credentials unavailable for RELAY-only ICE mode")
+            com.securecall.app.debug.SecLogManager.log("ICE", "Init rejected: TURN unavailable for RELAY-only mode")
+            return false
+        }
+
         factory = PeerConnectionFactory.builder()
             .setOptions(PeerConnectionFactory.Options())
             .createPeerConnectionFactory()
 
-        val externalVpnActive = isExternalVpnActive()
-        val relayOnly = shouldUseRelayOnly(externalVpnActive, forceRelayOnly)
-        val iceServers = if (relayOnly) {
-            prioritizeRelayServers(dynamicIceServers ?: buildFallbackIceServers())
-        } else {
-            dynamicIceServers ?: buildFallbackIceServers()
-        }
+        val iceServers = when (sourceDecision) {
+            IceSourceDecision.DYNAMIC -> dynamicIceServers.orEmpty()
+            IceSourceDecision.STUN_FALLBACK -> buildStunFallback()
+            IceSourceDecision.REJECT -> error("Handled above")
+        }.let { servers -> if (relayOnly) prioritizeRelayServers(servers) else servers }
         Log.d(TAG, "Using ${iceServers.size} ICE servers (dynamic=${dynamicIceServers != null})")
         com.securecall.app.debug.SecLogManager.log("ICE", "Init: ${iceServers.size} servers (dynamic=${dynamicIceServers != null})")
         if (relayOnly) {
@@ -130,29 +154,17 @@ class WebRtcManager(
             pendingIceCandidates.clear()
             candidates.forEach { onRemoteIceCandidate(it) }
         }
+        return true
     }
 
     /**
-     * Fallback ICE servers when dynamic fetch fails.
-     * Includes STUN + public TURN relay to ensure calls work even without
-     * backend-fetched credentials. Without TURN, calls between devices
-     * on different networks (mobile/WiFi) will fail.
+     * First-party STUN fallback for direct connectivity only. TURN credentials must be
+     * supplied by the authenticated REGISTERED signaling response.
      */
-    private fun buildFallbackIceServers(): List<PeerConnection.IceServer> {
-        Log.w(TAG, "Dynamic ICE fetch failed — using hardcoded fallback (STUN + TURN)")
-        com.securecall.app.debug.SecLogManager.log("ICE", "Fallback: hardcoded STUN + public TURN")
-        return listOf(
-            PeerConnection.IceServer.builder(BuildConfig.STUN_URL).createIceServer(),
-            PeerConnection.IceServer.builder("stun:stun.relay.metered.ca:80").createIceServer(),
-            PeerConnection.IceServer.builder("turn:openrelay.metered.ca:80")
-                .setUsername("openrelayproject")
-                .setPassword("openrelayproject")
-                .createIceServer(),
-            PeerConnection.IceServer.builder("turn:openrelay.metered.ca:443?transport=tcp")
-                .setUsername("openrelayproject")
-                .setPassword("openrelayproject")
-                .createIceServer()
-        )
+    private fun buildStunFallback(): List<PeerConnection.IceServer> {
+        Log.w(TAG, "Dynamic ICE fetch unavailable — using configured STUN fallback")
+        com.securecall.app.debug.SecLogManager.log("ICE", "Fallback: configured STUN only")
+        return listOf(PeerConnection.IceServer.builder(BuildConfig.STUN_URL).createIceServer())
     }
 
     private fun prioritizeRelayServers(
@@ -348,7 +360,12 @@ class WebRtcManager(
         peerConnection = null
         factory = null
 
-        init(lastIceServers)
+        if (!init(lastIceServers)) {
+            Log.e(TAG, "BUG-029: Relay retry aborted — TURN credentials unavailable")
+            com.securecall.app.debug.SecLogManager.log("ICE", "BUG-029 retry aborted — TURN unavailable")
+            onPeerDisconnect?.invoke()
+            return false
+        }
         if (isOfferer) {
             createOffer()
         } else {
