@@ -7336,3 +7336,22 @@ Open next:
   no active matching consumer or token was proven.
 
 `ANDROID ICE FALLBACK SOURCE GREEN / ROOT RUNTIME ROTATION STILL OPERATOR-BLOCKED`
+
+## 2026-09-27 — CODEX — AUTHORIZED RUNTIME READ-ONLY RECHECK
+
+- Repeated the authorized production check through the intentionally restricted `fleet` account.
+  Public signaling health returns `200`; an unauthenticated admin route returns `401`; signaling,
+  coturn and the TURN listeners are active. No classified fatal/DNS/register error was found in
+  the most recent 5,000 signaling error-log lines.
+- The process start times remain unchanged, proving the authorized TURN/Admin credential rotation
+  has not yet been applied. The watchdog is still broken: all 5,000 sampled recent lines report
+  its known permission failure. Root access is required for the atomic config edit, permissions,
+  coturn restart, PM2 reload and rollback-safe verification.
+- Railway OAuth identity is reachable, but this SecureCall checkout has no linked Railway project
+  and the CLI exposes no safe token-name/scope/last-used mapping. No unidentified account/workspace
+  token was revoked and no replacement was created. Dashboard identification remains mandatory;
+  issue no replacement unless an active consumer is proven.
+- No secret value was read or printed, and no provider, runtime, deployment or account mutation
+  occurred.
+
+`RUNTIME HEALTHY / WATCHDOG BROKEN / ROTATION AND EXACT RAILWAY TOKEN IDENTIFICATION OPEN`

@@ -3546,6 +3546,17 @@ Type: RELEASE / EXTERNAL / POLICY
   no active matching Railway token consumer was found, so no unrelated token was changed.
 
 `SOURCE GREEN — PHYSICAL CALL AND ROOT ROTATION GATES OPEN`
+
+## 2026-09-27 — CODEX — Runtime security gate rechecked
+
+- Production read-only verification: health `200`, unauthenticated admin access `401`, signaling
+  and TURN active, zero classified recent signaling errors.
+- Rotation is not yet applied; process starts are unchanged. The watchdog remains broken with
+  repeated permission failures and requires the prepared root-operator action.
+- Railway CLI authentication works, but this checkout is unlinked and cannot safely identify the
+  exact affected account/workspace token. No inferred token revocation or replacement occurred.
+
+`READ-ONLY CHECK COMPLETE — ROOT AND RAILWAY DASHBOARD OPERATOR STEPS OPEN`
 ## 2026-08-27 04:31 EEST — [CODEX TERMINAL] Pre-Sale Completion Candidate Verified
 
 - SecureCall `1.0.50` / base versionCode `78017` and the shared browser IFR-holder checkout block completed in isolated worktree `fix/presale-complete-20260826`.
