@@ -1,0 +1,39 @@
+$ claude (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/claude-SC-SEC-RUNTIME-ROTATION-MAP-20260926)
+--- stdout ---
+Der Report ist fertig (`status: partial`, weil es Sicherheitsbefunde gibt): `.fleet/reports/SC-SEC-RUNTIME-ROTATION-MAP-20260926.md`, 40 Zeilen. Er ist auf dem Branch `agent/claude/SC-SEC-RUNTIME-ROTATION-MAP-20260926` in zwei Commits gespeichert (8b59b78, 811a14d); gepusht habe ich nicht. Auf dem Server habe ich nur gelesen, nirgends etwas geschrieben, und keinen Secret-Wert gelesen, ausgegeben oder verglichen. Tests gab es keine, weil kein Code geändert wurde; die Prüfung lief über SSH-Lesebefehle und zwei GET-Anfragen.
+
+**Wer die Secrets in Produktion nutzt (hetzner):**
+- **Signaling-Server (nutzt `ADMIN_API_KEY` und `TURN_SECRET`):** läuft unter PM2 als root aus `/opt/stealthx/signaling`, seit 01.08. Die Werte kommen beim Start oder Reload aus `/opt/stealthx/.env.production`. Nach einer Änderung braucht es `pm2 reload ecosystem.config.js --update-env`; ein einfaches `pm2 restart` reicht nicht.
+- **coturn (nutzt `TURN_SECRET`):** Container `stealthx-coturn`. In `/opt/stealthx/coturn/turnserver.conf` steht der Secret direkt als Wert, nicht als Verweis auf eine Umgebungsvariable. Nur die `.env` zu ändern, rotiert coturn also nicht; beide Dateien müssen denselben neuen Wert bekommen.
+- Die Deploy-Dateien im Repo (`deploy/docker-compose.yml`, `deployment/deploy_signaling.sh`) sind veraltet und entsprechen nicht mehr dem Serverstand.
+- **Health-Checks:** `/health` antwortet mit 200, `/routing/list` ohne Schlüssel mit 401, TURN hört auf 3478 und 5349.
+- **Reihenfolge:** Beide Dateien sichern, neue Werte eintragen, coturn neu starten, dann PM2 neu laden, dann Health- und TURN-Test. Rollback in umgekehrter Reihenfolge. Die alten Sicherungen der `.env` enthalten noch die offengelegten Werte und dürfen nicht zurückgespielt werden; sie sollten gelöscht werden.
+
+**Sicherheitsbefunde:**
+- **F1:** `turnserver.conf` ist für jeden Nutzer auf dem Host lesbar (Rechte 644). Auf dem Server laufen auch andere Dienste (GitHub-Runner, vlabs, vlc-tunnel), deren Nutzer den TURN-Secret damit lesen können. Nach der Rotation sollten die Rechte auf `root:65534` mit 0640 gesetzt werden.
+- **F2:** Die Datei wurde zuletzt am 16.05. geändert, am Tag der Offenlegung. Der aktive TURN-Secret ist also fast sicher der offengelegte. Für `ADMIN_API_KEY` lässt sich das nicht bestätigen, ohne Werte zu vergleichen. Beide Secrets sollten als kompromittiert gelten.
+
+**Logs:** Das Signaling-Log vom 21.05. bis heute enthält keine Spuren von Admin-Änderungen (keine Broadcasts, keine Gift-Codes, kein Lizenz-Reset). Die 113 „unauthorized“-Einträge sind abgelehnte Registrierungen, keine Admin-Zugriffe. Missbrauch ist damit aber nicht ausgeschlossen:
+- Lesende Admin-Routen schreiben nichts ins Log.
+- Traefik führt kein Access-Log.
+- Die Logs von coturn und PM2 kann nur root lesen.
+- Für die Zeit vom 16.05. bis 21.05. gibt es keine lesbaren Logs.
+
+Nebenbefund: Das Watchdog-Skript scheitert seit 09.06. jede Minute mit „Permission denied“. Der Dienst wird also nicht automatisch neu gestartet, wenn er ausfällt.
+
+**Wer was machen kann:**
+- **Codex** hat auf dem Server nur Leserechte (Nutzer `fleet`, kein sudo, kein Docker). Es kann die Health-Checks, die Startzeiten der Prozesse und `/var/log/stealthx` prüfen und danach die Repo-Nacharbeiten erledigen (gitleaks-Ausnahmen, veraltete Deploy-Dateien markieren).
+- **Du oder ein Operator mit root** müssen alles Schreibende übernehmen:
+  - neue Werte erzeugen und in beide Dateien eintragen
+  - die Dateirechte setzen
+  - coturn und PM2 neu starten
+  - die alten Sicherungen löschen
+  - das Traefik-Access-Log einschalten
+  - den Watchdog reparieren
+
+Die Rotation bestätigst du danach in BRIDGE, ohne die Werte zu nennen.
+
+Die Konnektoren Linear, Cloudflare, Stripe, PayPal und WordPress sind nicht autorisiert. Für diesen Auftrag wurden sie nicht gebraucht; freischalten lassen sie sich in den claude.ai-Connector-Einstellungen.
+
+--- stderr ---
+

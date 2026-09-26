@@ -1,0 +1,33 @@
+$ claude (cwd=/Users/gio/Desktop/repos/.worktrees/stealth-brevo-audit-20260924-wt/claude-SC-SEC-RAILWAY-ROTATION-MAP-20260926)
+--- stdout ---
+Der Report liegt unter `.fleet/reports/SC-SEC-RAILWAY-ROTATION-MAP-20260926.md` (39 Zeilen, Commit `945eb95` auf `agent/claude/SC-SEC-RAILWAY-ROTATION-MAP-20260926`). Status ist **partial**, weil es einen Sicherheitsbefund gibt. Ich habe keinen Code und keinen Anbieter-Zustand geändert. Token-Werte habe ich weder gelesen noch ausgegeben oder verglichen.
+
+**Token-Typ:** Es ist ein Account- oder Workspace-Token, kein Projekt-Token. Das Skript schickt ihn als `Authorization: Bearer` an die Railway-API, und laut Rollout-Log hat das am 17.04. funktioniert. Ein Projekt-Token hätte einen anderen Header gebraucht. Ob er für den ganzen Account oder nur für den Workspace gilt, sieht man nur im Dashboard. Gilt er für den Account, reicht er auch in das Inferno-Projekt `ifr-ai-copilot`.
+
+**Wo der Token-Name vorkommt:**
+- `tools/monitor-rollout.sh` liest ihn seit `076c629` nur noch aus der Umgebung. Das Skript war der Monitor für v1.0.22 und wird nicht mehr gebraucht.
+- `~/Desktop/repos/inferno/.env` enthält genau die vier Variablen, die das Skript erwartet (Token plus Projekt-, Service- und Environment-ID). Das ist vermutlich die „private operator environment“. Ob es derselbe Token ist, habe ich wie im Brief verlangt nicht geprüft; das ist Inferno-Kontext.
+- Eine Kopie dieser `.env` liegt unter `~/agent-fleet/backup/20260921-235741/`.
+
+**Nicht betroffen:** GitHub Actions (dort gibt es nur `BREVO_API_KEY`), VLABS, Shell-Profile, die lokale Railway-CLI (sie nutzt eine eigene Anmeldung) und die Deploys, die über die GitHub-Integration laufen.
+
+**Missbrauchsspuren:** Seit dem 17.04. gab es 492 Deploys. Bis auf einen kommen alle aus `NeaBouli/stealth@main` mit Commits, die es im Repo gibt. Die Ausnahme ist ein fehlgeschlagener Deploy am 31.07. um 22:19 UTC ohne Repo- und Commit-Angaben; der lässt sich nur im Audit-Log einordnen. Audit-Log, Variablen-Zugriffe und die Token-Liste kann ich über die CLI nicht einsehen.
+
+**Befund:** Mit diesem Token-Typ lassen sich alle Variablen des Services lesen. Zeigt das Audit-Log fremde Nutzung, müssen auch alle Variablen im Railway-Projekt `disciplined-flexibility` rotiert werden, darunter `ADMIN_API_KEY`, `TURN_SECRET`, die Stripe-Keys und der Firebase-Service-Account. Außerdem ist `~/.railway/config.json.bak` für alle lesbar und enthält einen alten Refresh-Token der CLI-Anmeldung.
+
+**Was du im Browser machen musst:**
+1. Unter Railway Account Settings → Tokens (und bei den Workspace-Tokens) alle Tokens suchen, die am oder vor dem 17.04.2026 erstellt wurden, und widerrufen. Einen Ersatz brauchst du nicht, weil der Monitor nicht mehr läuft.
+2. Im Audit-Log den Zeitraum seit dem 17.04. prüfen: Token-Zugriffe, Variablen-Zugriffe, den Deploy vom 31.07. und unbekannte IPs.
+3. Die `RAILWAY_*`-Zeilen aus `inferno/.env` und aus der Backup-Kopie entfernen.
+4. Den Widerruf in `BRIDGE.md` bestätigen, ohne Werte.
+
+**Was Codex danach prüfen kann:** ob die CLI-Anmeldung noch geht (`railway whoami`), ob der nächste GitHub-Deploy in der Deploy-Liste auftaucht und ob die Variablennamen aus `inferno/.env` verschwunden sind. Danach kommt der `.gitleaksignore`-Schritt aus dem Gitleaks-Triage-Report.
+
+**Rollback:** Widerrufen ist endgültig. Deploys, CLI und Actions hängen nicht an diesem Token, also braucht es dort keinen Rollback. Braucht Inferno ihn doch, bleibt nur ein neuer Token.
+
+Tests liefen keine, weil sich kein Code geändert hat; die Prüfbefehle stehen im Report.
+
+Einige MCP-Verbindungen (Linear, Stripe, Cloudflare, PayPal, WordPress) sind nicht angemeldet. Das kannst du in den claude.ai-Connector-Einstellungen bzw. über `/mcp` nachholen; für diesen Auftrag hat es nicht gefehlt.
+
+--- stderr ---
+

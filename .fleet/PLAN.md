@@ -13,6 +13,10 @@ owner decision below. Hosted GitHub CI is conserved until its 2026-10-01 reset.
 - Gio decides and separately authorizes rotation/revocation plus provider-log review. No history
   rewrite. After confirmed rotation, Claude owns the gitleaks false-positive/ignore correction and
   Kimi independently reviews it. Acceptance: all-ref local `gitleaks detect --redact` is clean.
+- Authorization granted 2026-09-26. Railway inventory shows the exposed historical token is absent
+  from all active account tokens; no unrelated token was revoked. Available Railway audit history
+  is too short for exposure-period attribution. TURN/Admin rotation remains blocked on a root
+  operator: Fleet production access is intentionally read-only and must not be bypassed.
 
 ### Wave A — local work through 2026-09-30 (no hosted CI or merge)
 

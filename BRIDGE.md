@@ -6157,3 +6157,20 @@ Open next:
   `PRODUCT_READY=NO` and `FINANCE_READY=NO` remain binding.
 
 `PLAN REBASELINED / SECURITY OWNER GATE S0 / LOCAL WAVE A NEXT`
+
+## 2026-09-26 — CODEX + CLAUDE — CREDENTIAL ROTATION PRECHECK PARTIAL
+
+- Gio authorized TURN/Admin rotation, affected Railway-token revocation and read-only log review.
+- Production truth: signaling is a root-owned PM2 service on Hetzner; coturn is a root-owned Docker
+  container. Both consume the TURN secret from different root-owned files and require an atomic
+  root rotation/reload. Fleet access is diagnosis-only, so no write or restart was attempted.
+- The exposed historical Railway token does not match any currently active account token. No
+  unrelated token was deleted. Railway's available audit view retained only recent activity and
+  cannot prove or exclude misuse during the exposure period.
+- Read-only Hetzner checks: public health is 200, unauthenticated admin access is 401 and TURN ports
+  listen. Logs show no positive admin-action marker, but access logging gaps prevent full exclusion.
+- Additional security debt: coturn secret file permissions are too broad; watchdog auto-recovery is
+  broken. Both belong in the root-operator rotation block.
+- No credential value, provider setting, service, deployment or sales state changed.
+
+`RAILWAY HISTORICAL TOKEN NOT ACTIVE / TURN+ADMIN ROOT OPERATOR REQUIRED`
