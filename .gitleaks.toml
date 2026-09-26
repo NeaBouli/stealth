@@ -19,6 +19,7 @@ title = "StealthX Custom Gitleaks Config"
     '''Firebase.*AIza[0-9A-Za-z_-]+''',
     '''ADMIN_API_KEY:\s*"smoke-test-admin-key"''',
     '''process\.env\.TURN_SECRET''',
+    '''^\s*const TURN_SECRET = resolveTurnSecret\(process\.env\);\s*$''',
     '''TURN_SECRET=\$\{TURN_SECRET\}''',
     '''(?i)CHANGE_ME_TO_A_SECURE_RANDOM_[A-Z0-9_]+''',
     '''TURN_SECRET=\[TURN_SECRET\]''',
