@@ -64,6 +64,13 @@ PR #208 but is not on current VLABS main. Its current-main merge is locally conf
 required verification is blocked by a reproducible npm CLI installation failure, so no untested
 merge commit or push was made. PRODUCT_READY=NO, FINANCE_READY=NO and sales remain closed.
 
+Tester entitlement progress (2026-09-27): source/synthetic readiness is green, including backend
+challenge/binding/restart/revoke tests, private staging/export tests, Android unit tests and the
+hardware-key emulator test. A fail-closed exact-manifest promotion tool now removes the prior need
+for manual registry editing on branch `agent/codex/SC-UI-086-PR102`. Real recipients remain only on
+the coordinator machine; actual code staging, signer/runtime provisioning, a configured signed
+Direct Premium APK, two-device tests, production import approval and delivery remain open.
+
 ## Milestone: BREVO-SMTP-INACTIVITY-20260924 — COMPLETE
 
 Goal: determine whether the Brevo SMTP credentials labelled `Master Password` and

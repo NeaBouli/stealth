@@ -6213,3 +6213,17 @@ no workflow run. Tracking: `https://github.com/NeaBouli/stealth/issues/86#issuec
   changed. SecureCall remains PRODUCT_READY=NO and FINANCE_READY=NO; sales remain closed.
 
 `PRIVATE FINANCE CONTRACT CONFIRMED / VLABS INTEGRATION TEST BLOCKED / NO ACTIVATION`
+
+## 2026-09-27 — CODEX — TESTER LICENSE PROMOTION TOOL VERIFIED
+
+- Revalidated the existing Direct Premium tester-license path with synthetic data only. Backend
+  entitlement/registry/transport 3/3, private staging/export baseline 25/25, focused Android unit
+  build and API 35 hardware-key instrumentation all pass.
+- Added an exact-manifest-approved, fail-closed private promotion tool on the PR #102 integration
+  branch. The expanded private staging suite is 30/30 PASS. The output contains no recipient address
+  or raw activation code and cannot deploy, enable the runtime or send mail.
+- Real code preparation remains on the separate coordinator machine after complete inventory and
+  recipient approval. Signed Direct Premium artifact, isolated signer/runtime pairing, physical
+  two-device acceptance and bounded production import/delivery approval remain mandatory.
+
+`TESTER SOURCE + PRIVATE PROMOTION GREEN / REAL CODES AND DELIVERY STILL GATED`
