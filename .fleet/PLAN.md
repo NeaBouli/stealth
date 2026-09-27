@@ -2,8 +2,8 @@
 
 Current milestone: release/security remediation before final physical-device and sales gates.
 
-1. `SC-SEC-ICE-FALLBACK-01` — remove public TURN fallback; status: SOURCE GREEN, independent
-   worker review queued because all workers were unavailable.
+1. `SC-SEC-ICE-FALLBACK-01` — remove public TURN fallback; status: SOURCE GREEN and independently
+   reviewed by Claude in `SC-PREOCT-INDEPENDENT-REVIEW-01` with no blocking finding.
 2. Runtime credential rotation — owner-deferred until all projects are complete. Preserve the
    prepared TURN/Admin/Railway runbooks; do not rotate or repeatedly treat this as an immediate
    project gate. Read-only recheck: health 200, unauth admin 401, services/listeners active;
@@ -24,8 +24,8 @@ Current milestone: release/security remediation before final physical-device and
 2. Prepare one coherent PR update from `agent/codex/SC-UI-086-PR102`, including the UI, tester
    promotion and ICE fixes; status: PREPARED in `SC-PR102-PREP-01`. Current merge-tree is clean
    and PR #102 can be fast-forwarded once on/after 2026-10-01 without force-push.
-3. Queue the required independent security review; run the mandatory fleet probes at the next
-   review task boundary before declaring workers unavailable.
+3. Independent security review: COMPLETE. Claude verified tester promotion (30/30), Python
+   lint/typecheck and ICE policy (6/6); no vulnerability or private-data/credential leak found.
 4. Do not build final signed release artifacts before integration, physical QA and immutable
    PRODUCT_READY/FINANCE_READY release coordinates are complete.
 

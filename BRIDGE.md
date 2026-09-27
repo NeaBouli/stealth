@@ -7418,3 +7418,17 @@ Open next:
 - No code, issue, PR, CI, runtime, provider, payment, store or deployment mutation occurred.
 
 `PR UPDATE PREPARED — SINGLE EXACT-HEAD CI RUN QUEUED FOR 2026-10-01`
+
+## 2026-09-27 — CODEX + CLAUDE — PRE-OCTOBER SECURITY REVIEW COMPLETE
+
+- Claude independently reviewed the two security-sensitive Solo-Mode commits: controlled tester
+  registry promotion (`d686b85`) and removal of embedded public TURN fallback (`4cde4e5`).
+- PASS: private staging/promotion tests 30/30, Python lint and typecheck, Android ICE policy tests
+  6/6, plus added-lines scans for recipient data and embedded credentials.
+- Verdict: no vulnerability, no medium/blocking finding, no unauthenticated relay fallback and no
+  private recipient data in Git or logs. Low optional hardening notes are retained in
+  `.fleet/reports/SC-PREOCT-INDEPENDENT-REVIEW-01.md` without expanding the release scope.
+- Hosted PR/CI state remains deliberately unchanged until the one-shot October 1 update. No
+  runtime, provider, credential, deployment, payment, store or sales action occurred.
+
+`PRE-OCTOBER WORK COMPLETE — EXACT-HEAD CI UPDATE REMAINS DATE-GATED`
