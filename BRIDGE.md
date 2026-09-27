@@ -7390,3 +7390,18 @@ Open next:
   VLABS, payment, server or security-detail context was sent to the external decision service.
 
 `PRE-RESET PRIORITY: AUDIT RECONCILIATION — AVOID CI CHURN`
+
+## 2026-09-27 — CODEX — PUBLIC AUDIT REGISTER RECONCILED
+
+- Reconciled all 62 public STX findings against PRs #82, #90, #94-#102 and the current candidate
+  through `1042af5`. Result: 16 fixed in the candidate, one repository-fixed/runtime-deferred,
+  six partial, one informational no-action/superseded and 38 open.
+- Issue #84 was deliberately not mutated: no checkbox should claim remediation before the exact
+  candidate is independently reviewed, CI-green and merged to `main`. The report contains the
+  exact post-merge checkbox list and keeps every partial/open item unchecked.
+- Required fleet probes for Kimi, Claude and Grok all failed to return a valid report. Codex
+  completed this public documentation task in Solo Mode. No private VLABS or runtime information
+  was sent to an external worker or JEV.
+- No code, CI, runtime, provider, payment, store or deployment action occurred.
+
+`62/62 FINDINGS CLASSIFIED — ISSUE UPDATE WAITS FOR EXACT-MAIN INTEGRATION`

@@ -19,7 +19,8 @@ Current milestone: release/security remediation before final physical-device and
 ## Work before the 2026-10-01 hosted-CI reset
 
 1. Reconcile public audit issue #84 against the already-green PR stack and the current integration
-   branch; record fixed, superseded and genuinely open findings without changing runtime state.
+   branch; status: COMPLETE in `SC-AUDIT-RECONCILE-01` (`16 fixed`, `1 runtime-deferred`,
+   `6 partial`, `1 superseded`, `38 open`). Issue mutation waits for exact candidate merge.
 2. Prepare one coherent PR update from `agent/codex/SC-UI-086-PR102`, including the UI, tester
    promotion and ICE fixes, but avoid hosted-CI churn before the reset.
 3. Queue the required independent security review; run the mandatory fleet probes at the next
