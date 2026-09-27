@@ -7378,3 +7378,15 @@ Open next:
 - The known watchdog permission defect is retained for that maintenance window.
 
 `ROTATION DEFERRED BY OWNER — CONTINUE NON-RUNTIME PROJECT COMPLETION`
+
+## 2026-09-27 — CODEX — PRE-CI-RESET PRIORITY SET
+
+- Until the hosted-CI budget resets on 2026-10-01, the next useful block is public audit-register
+  reconciliation against the already-green PR stack and the current integration branch.
+- Then prepare one coherent PR update without triggering repeated hosted runs. Final signed
+  artifacts remain intentionally deferred until integration, physical QA and matching product /
+  finance release coordinates are complete.
+- JEV was used only with public GitHub status; it selected `audit-reconciliation`. No private
+  VLABS, payment, server or security-detail context was sent to the external decision service.
+
+`PRE-RESET PRIORITY: AUDIT RECONCILIATION — AVOID CI CHURN`

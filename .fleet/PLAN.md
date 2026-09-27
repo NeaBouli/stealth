@@ -15,3 +15,17 @@ Current milestone: release/security remediation before final physical-device and
    one conditional live-chain skip.
 6. Release/Play/store activation — status: CLOSED until PRODUCT_READY and FINANCE_READY match
    the immutable release tuple.
+
+## Work before the 2026-10-01 hosted-CI reset
+
+1. Reconcile public audit issue #84 against the already-green PR stack and the current integration
+   branch; record fixed, superseded and genuinely open findings without changing runtime state.
+2. Prepare one coherent PR update from `agent/codex/SC-UI-086-PR102`, including the UI, tester
+   promotion and ICE fixes, but avoid hosted-CI churn before the reset.
+3. Queue the required independent security review; run the mandatory fleet probes at the next
+   review task boundary before declaring workers unavailable.
+4. Do not build final signed release artifacts before integration, physical QA and immutable
+   PRODUCT_READY/FINANCE_READY release coordinates are complete.
+
+JEV public-status prioritization selected `audit-reconciliation`; no private VLABS context was
+sent to the external decision service.
