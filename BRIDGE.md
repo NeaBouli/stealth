@@ -7367,3 +7367,14 @@ Open next:
   confirmation therefore remains open. No artifact, deployment, provider or store action occurred.
 
 `COMBINED EMULATOR GATE GREEN / PHYSICAL TWO-DEVICE GATE OPEN`
+
+## 2026-09-27 — OWNER DECISION — RUNTIME ROTATION DEFERRED
+
+- Gio directed that no TURN, Admin API or Railway credential rotation is to occur yet. Rotation
+  will be handled later in one coordinated maintenance window after all projects are complete.
+- Preserve the existing redacted rotation, verification and rollback runbooks. Do not mutate
+  server/provider credentials and do not keep reporting rotation as an immediate SecureCall
+  release blocker. Routine read-only health monitoring remains allowed.
+- The known watchdog permission defect is retained for that maintenance window.
+
+`ROTATION DEFERRED BY OWNER — CONTINUE NON-RUNTIME PROJECT COMPLETION`

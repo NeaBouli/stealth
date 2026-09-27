@@ -3565,6 +3565,15 @@ Type: RELEASE / EXTERNAL / POLICY
 - Physical S10/Tab S4 testing remains open because neither device was visible to ADB.
 
 `EMULATOR GREEN — PHYSICAL DEVICE GATE OPEN`
+
+## 2026-09-27 — OWNER DECISION — Runtime rotation deferred
+
+- No TURN/Admin/Railway credential rotation until all projects are complete. Keep the prepared
+  runbooks and handle rotation plus watchdog repair in the later coordinated maintenance window.
+- Continue all non-runtime SecureCall completion work; do not treat the deferred rotation as an
+  immediate release blocker.
+
+`ROTATION DEFERRED — NON-RUNTIME WORK CONTINUES`
 ## 2026-08-27 04:31 EEST — [CODEX TERMINAL] Pre-Sale Completion Candidate Verified
 
 - SecureCall `1.0.50` / base versionCode `78017` and the shared browser IFR-holder checkout block completed in isolated worktree `fix/presale-complete-20260826`.
