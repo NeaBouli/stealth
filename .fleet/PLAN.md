@@ -22,7 +22,8 @@ Current milestone: release/security remediation before final physical-device and
    branch; status: COMPLETE in `SC-AUDIT-RECONCILE-01` (`16 fixed`, `1 runtime-deferred`,
    `6 partial`, `1 superseded`, `38 open`). Issue mutation waits for exact candidate merge.
 2. Prepare one coherent PR update from `agent/codex/SC-UI-086-PR102`, including the UI, tester
-   promotion and ICE fixes, but avoid hosted-CI churn before the reset.
+   promotion and ICE fixes; status: PREPARED in `SC-PR102-PREP-01`. Current merge-tree is clean
+   and PR #102 can be fast-forwarded once on/after 2026-10-01 without force-push.
 3. Queue the required independent security review; run the mandatory fleet probes at the next
    review task boundary before declaring workers unavailable.
 4. Do not build final signed release artifacts before integration, physical QA and immutable
