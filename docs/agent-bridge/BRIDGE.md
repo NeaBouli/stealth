@@ -3556,3 +3556,21 @@ Type: RELEASE / EXTERNAL / POLICY
 - PR remains mergeable but blocked by required independent approving review. External release gates remain unchanged.
 
 `CI GREEN — REVIEW REQUIRED`
+
+## 2026-09-28 07:34 EEST — CODEX — ISSUE #87 ISOLATED LOCAL FIX
+
+Type: CI / FIX / LOCAL VERIFICATION
+
+- T-474 mapped and cross-reviewed the Android SDK bootstrap on exact main base
+  `e06d018417bae5be16bf6b89d0a1887586a99d3b`; map commit `e011bd6` bounds the change to the
+  two `Set up Android SDK` steps.
+- T-475 commit `fb4ab95` adds only `with: packages: platform-tools` to those two steps. The
+  pinned setup-android SHA and explicit API 36, Build Tools 36.0.0, CMake 3.22.1 and NDK
+  27.0.12077973 installs remain unchanged.
+- PASS: targeted PyYAML assertions, `yamllint` for both workflows and `git diff --check`.
+- The same hunk also exists in broad, review-blocked PR #102; this branch is intentionally the
+  narrow #87 path and does not integrate that audit stack.
+- No push, PR, hosted-CI trigger, merge, deploy, secret, device or production action occurred.
+  Hosted Android Client and Instrumentation evidence remains required before #87 can close.
+
+`ISSUE #87 IMPLEMENTED LOCALLY — HOSTED CI OPEN`
