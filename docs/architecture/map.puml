@@ -26,7 +26,7 @@
 *** gebaut: cmake;3.22.1
 *** gebaut: ndk;27.0.12077973
 ** Luecken
-*** offen: with: packages: platform-tools in beiden Workflows (auf main fehlt)
+*** gebaut auf PR #103: with: packages: platform-tools in beiden Workflows
 *** offen: explizite Stufe nutzt cmdline-tools/latest (12.0), Action nutzt 20.0
 @endmindmap
 
@@ -48,8 +48,8 @@ SA ..> EXP : (nicht erreicht) exportVariable ANDROID_HOME
 EXP ..> GR : (nicht erreicht) ./gradlew / android-emulator-runner
 
 note right of SA
-  offen: with: packages: platform-tools
-  (Override fehlt auf main;
-   liegt nur im offenen PR #102)
+  gebaut auf PR #103: with: packages: platform-tools
+  (Hosted Android Client und API 24/36 gruen;
+   Merge nach main offen)
 end note
 @enduml

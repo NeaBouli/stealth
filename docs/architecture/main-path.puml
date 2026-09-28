@@ -1,7 +1,7 @@
 ' SecureCall CI / Android-SDK-Bootstrap (Issue #87) — gebaute Spur auf main
 ' Basis: origin/main e06d018417bae5be16bf6b89d0a1887586a99d3b
 ' Beleg: Actions-Run 35434962963, Job "Android Client".
-' Der Override "packages: platform-tools" ist auf main nicht gebaut und wird nicht simuliert.
+' Historische Fehlerbaseline auf main; PR #103 baut und verifiziert den Override separat.
 
 @startuml
 title Basic CI / Instrumentation — Set up Android SDK bricht vor SDK-Install und Gradle ab

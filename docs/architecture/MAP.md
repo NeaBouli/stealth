@@ -1,7 +1,7 @@
 # Architektur-Karte — SecureCall CI / Android-SDK-Bootstrap (Issue #87)
 
-Basis: `origin/main` `e06d018417bae5be16bf6b89d0a1887586a99d3b`. Kartierungslauf T-474, kein
-Workflow- oder Produktcode geändert. Die Karte ist die Grenze des anschließenden #87-Fixes.
+Basis: `origin/main` `e06d018417bae5be16bf6b89d0a1887586a99d3b`. Kartierungslauf T-474; der
+anschließende #87-Fix ist auf PR #103 Head `e6be3e0` gebaut und Hosted-CI-verifiziert.
 
 Diagramme: `docs/architecture/map.puml` (Mindmap + Komponenten),
 `docs/architecture/main-path.puml` (Sequenz der gebauten Spur).
@@ -19,8 +19,9 @@ Diagramme: `docs/architecture/map.puml` (Mindmap + Komponenten),
   (`ci-basic.yml:118-127`, `android-instrumentation.yml:45-54`).
 - Grenze dieser Karte: nur dieser Bootstrap bis zum Übergang an Gradle bzw. Emulator-Runner.
   Gradle, Android-Source, Signing und Release sind Nachbarn, nicht Spur.
-- Issue #87 (offen): Bootstrap bricht mit `Failed to find package 'tools'` ab, bevor ein
+- Issue #87: Der Main-Basisstand bricht mit `Failed to find package 'tools'` ab, bevor ein
   Repository-Gradle-Schritt läuft (Beleg: Actions-Run `35434962963`, Job `Android Client`).
+  PR #103 schließt den Bootstrap-Hop; Merge nach `main` bleibt offen.
 
 ## 2. Spur (Hop-Liste, nur geöffnete Hops)
 
@@ -46,7 +47,7 @@ Diagramme: `docs/architecture/map.puml` (Mindmap + Komponenten),
 | sdkmanager (Google SDK-Repository) | SDK-Pakete auflösen und installieren | `cmdline-tools/20.0/bin/sdkmanager` | `gebaut`; Paket `tools`: `quarantäne` (vom Repository entfernt, Auflösung scheitert) |
 | Explizite SDK-Installation | API 36, Build Tools 36.0.0, CMake 3.22.1, NDK 27.0.12077973 installieren | `…::Install Android build dependencies` | `gebaut` (auf main nicht erreicht; muss unverändert bleiben) |
 | Gradle / Emulator-Runner | Repository-Build und Tests | `…::Verify Android client` / `…::Run Free instrumented tests` | `gebaut` (Nachbar, nicht Spur, nicht erreicht) |
-| Packages-Override | Default-Input der Action auf `platform-tools` setzen | `with: packages: platform-tools` | `offen` (fehlt auf main in beiden Workflows) |
+| Packages-Override | Default-Input der Action auf `platform-tools` setzen | `with: packages: platform-tools` | `gebaut` auf PR #103; Merge nach `main` offen |
 
 ## 4. Verdrahtung
 
@@ -56,7 +57,7 @@ Diagramme: `docs/architecture/map.puml` (Mindmap + Komponenten),
 - `sdkmanager` ⇢ `setup-android::run`: exit 1 für `tools`; die unbehandelte Rejection beendet den Step.
 - `setup-android` ⇢ Explizite SDK-Installation: Übergabe von `ANDROID_HOME` findet nie statt, weil `exportVariable` erst nach der Paketschleife steht.
 - Explizite SDK-Installation ⇢ Gradle/Emulator-Runner: nicht erreicht.
-- Offene Kante (gestrichelt, nicht gebaut): `with: packages: platform-tools` an beiden `Set up Android SDK`-Steps.
+- Gebaute Kante auf PR #103: `with: packages: platform-tools` an beiden `Set up Android SDK`-Steps; auf dem kartierten Main-Basisstand noch nicht enthalten.
 
 ```mermaid
 mindmap
@@ -83,19 +84,18 @@ mindmap
       gebaut: cmake;3.22.1
       gebaut: ndk;27.0.12077973
     Luecken
-      offen: with packages platform-tools in beiden Workflows fehlt auf main
+      gebaut auf PR 103: with packages platform-tools in beiden Workflows
       offen: explizite Stufe nutzt cmdline-tools/latest 12.0, Action nutzt 20.0
 ```
 
 ## 5. Widerspruch und Lücken
 
-- **Fix existiert bereits außerhalb von main.** Der offene PR #102 („Integrate reviewed SecureCall
-  audit and release stack“, Head `5f70b16`) enthält genau `with: packages: platform-tools` in
-  `ci-basic.yml:129-131` und `android-instrumentation.yml:46-47`. Instrumentation-Run
-  `35512897743` auf diesem Head zeigt `packages: platform-tools` und `sdkmanager platform-tools`
-  und endete `success`. Ein separater #87-Fix auf main würde denselben Hunk ein zweites Mal
-  bauen; Codex entscheidet, ob #87 isoliert gemergt oder über #102 geschlossen wird
-  (Audit-PR-Integration ist out-of-scope für T-474).
+- **Fix ist isoliert gebaut; Doppelung bleibt zu koordinieren.** PR #103 Head `e6be3e0` enthält
+  genau `with: packages: platform-tools` in beiden Workflows. Basic-CI-Run `36378439630`
+  (Android Client) und Instrumentation-Run `36378439647` (API 24/36) zeigen den Override,
+  erfolgreiche SDK-Setup-/Dependency-Install-Schritte und vollständig grüne Jobs. Der breite,
+  review-blockierte PR #102 enthält denselben Hunk weiterhin; vor dessen Integration muss die
+  Doppelung aufgelöst werden.
 - **Zwei sdkmanager-Versionen.** Die Action lädt `cmdline-tools/20.0` und setzt diese in den
   `PATH`; der explizite Schritt ruft dagegen hart `$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager`
   (auf dem Runner vorinstalliert `12.0`, laut Run-Log 35434962963). Kein Teil von #87, auf dem
@@ -119,11 +119,11 @@ mindmap
 - `docs/architecture/main-path.puml` — Sequenzdiagramm der gebauten (abbrechenden) Spur
 - PlantUML lokal nicht installiert: Quellen geschrieben, nicht gerendert.
 
-## 7. Nächster Schritt (genau ein #87-Fix)
+## 7. Nächster Schritt (Merge-Gate für den gebauten #87-Fix)
 
 - **Modul:** setup-android-Aufruf in beiden Workflow-Jobs.
 - **Hop:** 1 / 1' — `Set up Android SDK` → `action.yml::inputs.packages`.
-- **Änderung:** an beiden Steps `with:` + `packages: platform-tools` ergänzen; Action-Pin
+- **Gebaut:** an beiden Steps `with:` + `packages: platform-tools`; Action-Pin
   `40fd30fb… # v4.0.1` unverändert.
   - `.github/workflows/ci-basic.yml` nach Zeile 119
   - `.github/workflows/android-instrumentation.yml` nach Zeile 46
@@ -131,7 +131,8 @@ mindmap
   `platforms;android-36`, `build-tools;36.0.0`, `cmake;3.22.1`, `ndk;27.0.12077973`; alle
   Gradle-/Android-Dateien unter `client_android/`; Signing-, Emulator-, Upload-Steps; andere
   Workflows; Action-Versionen.
-- **Vorher klären (Codex):** isolierter Fix vs. Übernahme aus PR #102 (siehe §5), damit kein
-  zweiter Pfad entsteht.
-- **Nachweis:** Basic-CI-Log zeigt `packages: platform-tools`, kein `sdkmanager tools`, Gradle
-  startet; Instrumentation erreicht die API-24/36-Matrix.
+- **Offen:** PR #103 aus dem Draft nehmen, unabhängige Review-/Branch-Protection-Gates erfüllen
+  und erst dann mergen; PR #102 muss den bereits integrierten Hunk bei seiner Rebase übernehmen.
+- **Nachweis:** Basic-CI-Run `36378439630` und Instrumentation-Run `36378439647` sind auf Head
+  `e6be3e0` vollständig grün; die Logs zeigen `packages: platform-tools`, erfolgreichen
+  SDK-Setup/Dependency-Install, Gradle sowie die API-24/36-Matrix.

@@ -3574,3 +3574,19 @@ Type: CI / FIX / LOCAL VERIFICATION
   Hosted Android Client and Instrumentation evidence remains required before #87 can close.
 
 `ISSUE #87 IMPLEMENTED LOCALLY — HOSTED CI OPEN`
+
+## 2026-09-28 07:45 EEST — CODEX — ISSUE #87 HOSTED CI GREEN
+
+Type: CI / VERIFICATION / MERGE GATE
+
+- Draft PR #103 ran on exact head `e6be3e02dde9c22af04829423e8152c7a9cda997`.
+- Basic-CI run `36378439630` shows `packages: platform-tools`, successful Android SDK setup,
+  explicit dependency installation and a green Android Client job (8m19s).
+- Instrumentation run `36378439647` passed both API 24 (6m34s) and API 36 (7m40s), including
+  the same SDK setup and explicit dependency-install steps.
+- Dependency Review, YAML/Markdown, Secret Detection, Dependency Audit, Security Summary, Rust
+  and Signaling also passed. CodeRabbit skipped review because PR #103 remains a draft.
+- No merge or deploy occurred. Required independent review/branch protection remains open; PR
+  #102 still contains the duplicate hunk and must reconcile it before later integration.
+
+`ISSUE #87 HOSTED CI GREEN — REVIEW REQUIRED`
