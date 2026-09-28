@@ -1,0 +1,26 @@
+' SecureCall CI / Android-SDK-Bootstrap (Issue #87) — gebaute Spur auf main
+' Basis: origin/main e06d018417bae5be16bf6b89d0a1887586a99d3b
+' Beleg: Actions-Run 35434962963, Job "Android Client".
+' Der Override "packages: platform-tools" ist auf main nicht gebaut und wird nicht simuliert.
+
+@startuml
+title Basic CI / Instrumentation — Set up Android SDK bricht vor SDK-Install und Gradle ab
+
+participant "Workflow-Job\nci-basic.yml::android-client\nandroid-instrumentation.yml::instrumented-tests" as JOB
+participant "setup-android v4.0.1\ndist/index.js::run" as SA
+participant "sdkmanager\ncmdline-tools/20.0" as SDK
+participant "Install Android build dependencies\n(cmdline-tools/latest/bin/sdkmanager)" as EXP
+participant "Gradle / Emulator-Runner" as GR
+
+JOB -> SA : Set up Android SDK (kein with:)
+note right of SA : action.yml::inputs.packages\ndefault = "tools platform-tools"
+SA -> SA : installSdkManager()\npreinstalled latest = 12.0 != 20.0\n-> download 14742923 -> cmdline-tools/20.0
+SA -> SDK : callSdkManager("--licenses")
+SDK --> SA : exit 0
+SA -> SDK : callSdkManager("tools")
+SDK --> SA : exit 1 — Warning: Failed to find package 'tools'
+SA --> JOB : unbehandelte Rejection -> Step failure
+note over SA : exportVariable(ANDROID_HOME) und\ncallSdkManager("platform-tools") laufen nicht
+JOB -[#gray]x EXP : nicht erreicht\n(platforms;android-36, build-tools;36.0.0,\ncmake;3.22.1, ndk;27.0.12077973)
+JOB -[#gray]x GR : nicht erreicht
+@enduml

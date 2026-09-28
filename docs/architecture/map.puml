@@ -1,0 +1,55 @@
+' SecureCall CI / Android-SDK-Bootstrap (Issue #87)
+' Basis: origin/main e06d018417bae5be16bf6b89d0a1887586a99d3b
+' Nur geoeffnete Hops. Siehe docs/architecture/MAP.md.
+
+@startmindmap
+* SecureCall CI prueft den Android-Client\nauf ubuntu-latest bis Gradle (#87)
+** Basic CI / android-client
+*** gebaut: ci-basic.yml::android-client/Set up Android SDK (ohne with:)
+*** gebaut: ci-basic.yml::android-client/Install Android build dependencies
+*** gebaut: ci-basic.yml::android-client/Verify Android client (nicht erreicht)
+** Instrumentation / instrumented-tests
+*** gebaut: android-instrumentation.yml::instrumented-tests/Set up Android SDK (ohne with:)
+*** gebaut: android-instrumentation.yml::instrumented-tests/Install Android build dependencies
+*** gebaut: android-instrumentation.yml::instrumented-tests/Run Free instrumented tests (nicht erreicht)
+** setup-android v4.0.1 (40fd30fb)
+*** gebaut: action.yml::inputs.packages default "tools platform-tools"
+*** gebaut: dist/index.js::installSdkManager -> cmdline-tools/20.0
+*** gebaut: dist/index.js::run -> callSdkManager je Paket
+*** gebaut: dist/index.js::run -> exportVariable ANDROID_HOME (erst nach Paketschleife)
+** sdkmanager (Google SDK-Repository)
+*** quarantäne: Paket "tools" (entfernt; Failed to find package 'tools')
+*** gebaut: Paket "platform-tools"
+** Explizite SDK-Installation
+*** gebaut: platforms;android-36
+*** gebaut: build-tools;36.0.0
+*** gebaut: cmake;3.22.1
+*** gebaut: ndk;27.0.12077973
+** Luecken
+*** offen: with: packages: platform-tools in beiden Workflows (auf main fehlt)
+*** offen: explizite Stufe nutzt cmdline-tools/latest (12.0), Action nutzt 20.0
+@endmindmap
+
+@startuml
+title SecureCall CI / Android-SDK-Bootstrap — Komponenten (nur geoeffnete Hops)
+
+component "Basic CI\nci-basic.yml::android-client" as CIB
+component "Instrumentation\nandroid-instrumentation.yml::instrumented-tests" as INS
+component "setup-android v4.0.1\naction.yml + dist/index.js::run" as SA
+component "sdkmanager\ncmdline-tools/20.0" as SDK20
+component "Explizite SDK-Installation\nInstall Android build dependencies\n(cmdline-tools/latest)" as EXP
+component "Gradle / Emulator-Runner\n(Folge-Schritte)" as GR
+
+CIB --> SA : Set up Android SDK
+INS --> SA : Set up Android SDK
+SA --> SDK20 : callSdkManager("tools")
+SDK20 ..> SA : exit 1 Failed to find package 'tools'
+SA ..> EXP : (nicht erreicht) exportVariable ANDROID_HOME
+EXP ..> GR : (nicht erreicht) ./gradlew / android-emulator-runner
+
+note right of SA
+  offen: with: packages: platform-tools
+  (Override fehlt auf main;
+   liegt nur im offenen PR #102)
+end note
+@enduml
