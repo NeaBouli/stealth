@@ -7480,3 +7480,16 @@ Open next:
 - PR source head 694f5d6 has all hosted checks green. Independent approving review and product/finance release gates remain open; no main merge, deployment or activation.
 
 `57 PHYSICAL INSTRUMENTATION PASSES — FULL RELEASE MATRIX STILL OPEN`
+
+## 2026-10-01 — CLAUDE — SC-OCT01-SETTINGS PATCH (VISUAL GATE PENDING)
+
+- Settings module, MAP hop 6 (`preferences.xml` → `CollapsiblePreferenceCategory`): clickable
+  section headers now get `minimumHeight = @dimen/touch_target_min` (48dp) in `onBindViewHolder`.
+  This covers the Premium VPN category too, since it uses the same class.
+- Section titles: added DE for Advanced/Anti-Recording/Calls/Network and moved the hardcoded
+  Custom Call ID/Support Development/Diagnostics titles into EN+DE string resources.
+- PASS: xmllint, resource parity script (11/11 section titles resolve in EN and DE), kotlinc compile
+  of the changed class against android-36 + preference 1.2.1. No Gradle build and no APK because
+  only 4.2 GiB is free (< 15 GiB gate). No ADB. Physical/visual revalidation is PENDING.
+
+`SETTINGS PATCH COMMITTED — DEVICE/VISUAL REVALIDATION PENDING`

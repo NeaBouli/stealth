@@ -41,6 +41,9 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_about">About</string>
+    <string name="settings_custom_call_id">Custom Call ID</string>
+    <string name="settings_support_development">Support Development</string>
+    <string name="settings_diagnostics">Diagnostics</string>
     <string name="settings_dark_mode">Dark Mode</string>
     <string name="settings_version">Version</string>
     <string name="settings_build">Build</string>

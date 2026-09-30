@@ -42,7 +42,7 @@
 
     <com.securecall.app.ui.CollapsiblePreferenceCategory
         android:key="pref_category_custom_id"
-        android:title="Custom Call ID">
+        android:title="@string/settings_custom_call_id">
         <Preference
             android:key="pref_custom_id_status"
             android:title="Current ID"
@@ -245,7 +245,7 @@
     </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
     <com.securecall.app.ui.CollapsiblePreferenceCategory
-        android:title="Support Development">
+        android:title="@string/settings_support_development">
         <Preference
             android:title="Voluntary crypto support"
             android:summary="No purchase, feature access or tax-exempt donation status is promised. Transfers require recipient/accounting review."
@@ -269,7 +269,7 @@
     </com.securecall.app.ui.CollapsiblePreferenceCategory>
 
     <com.securecall.app.ui.CollapsiblePreferenceCategory
-        android:title="Diagnostics">
+        android:title="@string/settings_diagnostics">
         <SwitchPreferenceCompat
             android:key="pref_seclog_enabled"
             android:title="Enable Diagnostic Logs"

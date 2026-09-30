@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceViewHolder
+import com.securecall.app.R
 
 /**
  * Custom PreferenceCategory that supports both expand AND collapse.
@@ -46,6 +47,9 @@ class CollapsiblePreferenceCategory @JvmOverloads constructor(
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
+        // Clickable header: enforce the 48dp accessibility touch target
+        holder.itemView.minimumHeight =
+            context.resources.getDimensionPixelSize(R.dimen.touch_target_min)
         holder.itemView.isClickable = true
         holder.itemView.isFocusable = true
         holder.itemView.setOnClickListener {
