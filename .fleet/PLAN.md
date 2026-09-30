@@ -6,7 +6,7 @@ Current milestone: release/security remediation before final physical-device and
 
 - Original SC-OCT01-DEVICE-QA timed out after APK assembly, with no physical-test report. Its automatic fallback was stopped to prevent duplicate device work; evidence recovered in SC-OCT01-QA-RECOVER.
 - Physical smoke COMPLETE/PARTIAL: 57 passes, zero failures, two conditional skips; tablet dialer/navigation measurements passed. Phone UI is keyguard-blocked; full calls/audio/license matrix remains open.
-- Settings follow-up: source patch delivered for 48dp category headers and EN/DE section resources; static checks passed, physical/visual revalidation remains blocked by storage and phone lockscreen.
+- Settings follow-up: d92016c integrated; complete diff reviewed, XML and 11/11 resource parity checks passed, worker isolated Kotlin compile passed. Physical/visual revalidation remains pending; no FLAG_SECURE override. Hosted full checks are queued with this checkpoint.
 - Integration: SC-OCT01-INTEGRATION-CHECK COMPLETE via Claude fallback; no source conflict, approval required, known scanner false positive assigned separately. Kimi's external probe reports token_limited.
 - Dependency: SC-OCT01-DEPENDENCY COMPLETE via Claude fallback; four-line patch integrated as 34c6283. Lead full backend tests/audit passed; hosted Dependency Audit and Secret Detection passed on the exact source head.
 - Scanner: SC-OCT01-SCANNER COMPLETE; Claude 89ff909 integrated as 694f5d6. Lead config diff review and 16/16 synthetic regressions passed with CI scanner version. Historical real findings remain unchanged and owner-deferred.
@@ -26,6 +26,13 @@ Current milestone: release/security remediation before final physical-device and
    provisioning remain open. Phone UI requires owner unlock; final builds need >=15 GiB free.
 6. Release/Play/store activation — status: CLOSED until PRODUCT_READY and FINANCE_READY match
    the immutable release tuple.
+
+### Next bounded validation blocks
+
+- Owner action: unlock Galaxy A21s and provide >=15 GiB local free space for final builds; no unrelated cleanup was performed.
+- Rebuild/stamp the patched isolated QA artifacts, verify Settings header heights/alignment and EN/DE expand-collapse on both devices; preserve FLAG_SECURE and use privacy-safe visual evidence.
+- Verify live pin chain with working network, then explicitly scoped real call/audio/background/reconnect and license/restore matrix. Existing 57 instrumentation passes do not cover these.
+- Resume the existing private VLABS handoff/IFR checkout validation; old npm tooling failure must be rechecked, not assumed to persist. No finance activation inferred.
 
 ## Work before the 2026-10-01 hosted-CI reset
 

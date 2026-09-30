@@ -3607,3 +3607,9 @@ Type: RELEASE / EXTERNAL / POLICY
 
 - PR #102 advanced normally to reviewed candidate ff5d99f; hosted CI is running. One dependency-audit repair and physical phone/tablet QA are active, separately owned.
 - Full status and exact evidence remain in root BRIDGE.md and .fleet/PLAN.md. Required review and product release gates are preserved; no deployment or sales activation.
+
+## 2026-10-01 — CODEX + CLAUDE — CI and physical smoke checkpoint
+
+- Full hosted checks passed on source 694f5d6. Physical isolated instrumentation: 57 passed, zero failed, two conditional live-chain skips; original apps/data retained.
+- Settings touch-target/localization source patch integrated as d92016c, with XML/resource parity and isolated Kotlin verification. New physical/visual validation is pending; phone keyguard and local build capacity are concrete blockers.
+- Full call/audio/license and finance/release gates remain open. All exact exclusions, reports and next bounded cases are in root Bridge and .fleet/PLAN.md. No activation or deployment.

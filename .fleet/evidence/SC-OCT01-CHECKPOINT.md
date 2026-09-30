@@ -30,3 +30,14 @@
 - Current Android source tree equals the CI-green 34c6283 Android tree exactly.
 - Full-history real findings were not suppressed or modified; deferred maintenance
   remains separately owned. The scanner fix is not a claim of historical clearance.
+
+## Final physical/source checkpoint
+
+- See SC-OCT01-PHYSICAL-SMOKE evidence: 57 physical instrumentation passes,
+  zero failures, two live-chain skips. This is not full call/audio/license QA.
+- Settings patch integrated as d92016c, reviewed completely; lead XML and
+  11/11 section-resource checks passed. Worker isolated Kotlin compile passed.
+- Source-level correction only: patched APK/physical/visual checks are pending.
+  FLAG_SECURE must remain intact; no override is authorized by this checkpoint.
+- Latest fully green hosted source head was 694f5d6. A final coherent PR update
+  queues the settings patch and the sanitized reports for fresh exact-head checks.
