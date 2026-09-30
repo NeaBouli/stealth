@@ -7493,3 +7493,14 @@ Open next:
   only 4.2 GiB is free (< 15 GiB gate). No ADB. Physical/visual revalidation is PENDING.
 
 `SETTINGS PATCH COMMITTED — DEVICE/VISUAL REVALIDATION PENDING`
+
+## 2026-10-01 — CODEX — FINAL OCTOBER CHECKPOINT CI VERIFIED
+
+- PR #102 exact head 95c6a154f85ba82ef37c7b599c0247a146c2fbb6: every hosted check passed, including the Settings patch, Android build and API24/API36 instrumentation.
+- Lead full diff review, XML/localization verification and new-commit secret scan passed. Claude delivered the bounded implementation/QA blocks; Kimi quota was verified by external probe rather than assumed from sandbox errors.
+- Existing physical-test APKs yielded 57 passes, zero failures, two conditional skips. This does not validate the new Settings visuals or complete call/audio/license functionality.
+- Required independent approving review remains open; CodeRabbit skipped the oversized diff. The task branch stores the updated checkpoint without moving the tested PR head for a documentation-only follow-up.
+- Next concrete prerequisites: unlocked test phone and >=15 GiB free local storage, then stamped patched QA artifacts and privacy-safe visual/physical revalidation. Full feature and separate product/finance release gates remain open.
+- No main merge, deployment, runtime rotation, real tester-code issuance, payment or sales activation.
+
+`EXACT-HEAD CI GREEN — SOURCE FIXES SAVED — RELEASE NOT DECLARED READY`

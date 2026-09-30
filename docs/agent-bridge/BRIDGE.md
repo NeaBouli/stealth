@@ -3613,3 +3613,8 @@ Type: RELEASE / EXTERNAL / POLICY
 - Full hosted checks passed on source 694f5d6. Physical isolated instrumentation: 57 passed, zero failed, two conditional live-chain skips; original apps/data retained.
 - Settings touch-target/localization source patch integrated as d92016c, with XML/resource parity and isolated Kotlin verification. New physical/visual validation is pending; phone keyguard and local build capacity are concrete blockers.
 - Full call/audio/license and finance/release gates remain open. All exact exclusions, reports and next bounded cases are in root Bridge and .fleet/PLAN.md. No activation or deployment.
+
+## 2026-10-01 — CODEX — Final exact-head CI
+
+- All hosted checks passed on PR102 head 95c6a154f85ba82ef37c7b599c0247a146c2fbb6, including Settings source fix, Android build and API24/API36 instrumentation.
+- Physical/visual revalidation, full call/audio/license matrix and independent approving review remain open. Updated task branch retains exact evidence and owner-action prerequisites; no production or sales action.

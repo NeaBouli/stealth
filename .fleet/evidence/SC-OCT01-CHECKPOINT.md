@@ -41,3 +41,11 @@
   FLAG_SECURE must remain intact; no override is authorized by this checkpoint.
 - Latest fully green hosted source head was 694f5d6. A final coherent PR update
   queues the settings patch and the sanitized reports for fresh exact-head checks.
+
+## Final hosted verification
+
+- All checks PASS on exact PR102 head 95c6a154f85ba82ef37c7b599c0247a146c2fbb6,
+  including Settings patch, Android build and API24/API36 instrumentation.
+- PR remains mergeable but REVIEW_REQUIRED. CodeRabbit skipped the large diff.
+- Documentation-only follow-up stays on the task branch to avoid another identical
+  product CI run; tested source head remains unchanged on the PR.

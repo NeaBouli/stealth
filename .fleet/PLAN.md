@@ -6,7 +6,7 @@ Current milestone: release/security remediation before final physical-device and
 
 - Original SC-OCT01-DEVICE-QA timed out after APK assembly, with no physical-test report. Its automatic fallback was stopped to prevent duplicate device work; evidence recovered in SC-OCT01-QA-RECOVER.
 - Physical smoke COMPLETE/PARTIAL: 57 passes, zero failures, two conditional skips; tablet dialer/navigation measurements passed. Phone UI is keyguard-blocked; full calls/audio/license matrix remains open.
-- Settings follow-up: d92016c integrated; complete diff reviewed, XML and 11/11 resource parity checks passed, worker isolated Kotlin compile passed. Physical/visual revalidation remains pending; no FLAG_SECURE override. Hosted full checks are queued with this checkpoint.
+- Settings follow-up: d92016c integrated; complete diff reviewed, XML and 11/11 resource parity checks passed, worker isolated Kotlin compile passed. Full hosted checks PASS on 95c6a154f85ba82ef37c7b599c0247a146c2fbb6 including Android build and API24/API36 instrumentation. Physical/visual revalidation remains pending; no FLAG_SECURE override.
 - Integration: SC-OCT01-INTEGRATION-CHECK COMPLETE via Claude fallback; no source conflict, approval required, known scanner false positive assigned separately. Kimi's external probe reports token_limited.
 - Dependency: SC-OCT01-DEPENDENCY COMPLETE via Claude fallback; four-line patch integrated as 34c6283. Lead full backend tests/audit passed; hosted Dependency Audit and Secret Detection passed on the exact source head.
 - Scanner: SC-OCT01-SCANNER COMPLETE; Claude 89ff909 integrated as 694f5d6. Lead config diff review and 16/16 synthetic regressions passed with CI scanner version. Historical real findings remain unchanged and owner-deferred.
