@@ -7432,3 +7432,51 @@ Open next:
   runtime, provider, credential, deployment, payment, store or sales action occurred.
 
 `PRE-OCTOBER WORK COMPLETE — EXACT-HEAD CI UPDATE REMAINS DATE-GATED`
+
+## 2026-10-01 — CODEX — CI RESET AND PHYSICAL QA STARTED
+
+- PR #102 normally fast-forwarded to ff5d99f3bca92849de042b15fb76a88c70f8c9bb; no force-push or main merge. Hosted checks execute again.
+- Backend, Rust, documentation, dependency-review and secret checks passed at this head. Dependency Audit identified a newly reported transitive dependency advisory; a minimal isolated repair is assigned. Android build/instrumentation checks remain pending at this checkpoint.
+- Claude exclusively owns connected phone/tablet QA using synthetic data and preserving installed application data. Integration verification and dependency repair have separate ownership and no device access.
+- Review remains required. Automated CodeRabbit output explicitly skipped the oversized diff and is not an independent approval.
+- Runtime rotations remain owner-deferred. No deployment, payment, tester activation, final artifact publication or sales activation occurred. Financial coordination is separate with the VLABS operator.
+
+`CI ACTIVE — QA IN PROGRESS — RELEASE GATES PRESERVED`
+
+## 2026-10-01 — CODEX + CLAUDE — EXACT-HEAD CI RESTORED
+
+- Newly reported transitive dependency advisories resolved with a four-line patch; worker commit 5cff6fa reviewed and integrated as 34c6283.
+- Lead verification: full synthetic backend suite PASS and npm audit zero vulnerabilities. Reused the complete worker installation because fresh local npm ci hit insufficient disk space; sandbox DNS/local-port failures passed on bounded external reruns.
+- All hosted checks are green on exact source head 34c62838ebacc7190bb994a98adaf04ff14be0b2: Android build, API24/API36 instrumentation, backend, Rust, lint, dependency audit/review and secret/security checks.
+- CodeRabbit skipped the oversized diff; independent approving review remains required. Physical QA and the narrow known scanner-false-positive regression task remain in progress.
+- No main merge, deployment, actual tester entitlement, payment or sales activation. Less than approximately 2 GiB local free space is a build-capacity blocker; no unrelated data was deleted.
+
+`EXACT-HEAD CI GREEN — REVIEW AND PHYSICAL RELEASE GATES OPEN`
+
+## 2026-10-01 — CODEX + CLAUDE — NARROW SCANNER REGRESSION COMPLETE
+
+- Claude delivered a rule-scoped, exact-path AND exact-line exception for a known non-secret function-call false positive. No whole-file, rule, commit or historical-credential bypass.
+- Lead reviewed the complete diff and repeated 16/16 synthetic scanner regressions with CI scanner version 8.24.3; benign statements are ignored, representative actual-secret patterns still fail.
+- Worker tested both scanner versions 8.24.3 and 8.30.1. Real historical findings remain unchanged for the owner-deferred maintenance window; no raw findings were exposed or stored.
+- Integrated source commit 694f5d6. Android source tree is identical to the prior CI-green candidate; this changes scanner configuration and synthetic tooling only.
+
+`SCANNER FALSE POSITIVE RESOLVED — REAL FINDINGS NOT SUPPRESSED`
+
+## 2026-10-01 — CODEX + CLAUDE — DEVICE QA EVIDENCE RECOVERED
+
+- Original broad device worker timed out without a report. Its automatic fallback was stopped; only our own identified processes were terminated, no other project process.
+- Independent read-only recovery found assembled isolated Free/Premium debug and test APKs and a passing no-VPN source guard, but no completed physical instrumentation/UI evidence. Build completion is not a device pass.
+- Recovery report integrated as be92d03. A separate short no-build physical smoke uses existing isolated test packages and preserves original app data; counts will be recorded only from completed results.
+- Runtime, tester entitlements, payments and release gates remain unchanged. Final builds still require sufficient local capacity.
+
+`BUILD OUTPUTS RECOVERED — NO FALSE PHYSICAL PASS CLAIM`
+
+## 2026-10-01 — CODEX + CLAUDE — PHYSICAL SMOKE RESULTS
+
+- Existing isolated Free and Premium test packages installed without uninstalling or altering original apps/data. Galaxy A21s: 28 passed, zero failed, one skipped; Tab S4: 29 passed, zero failed, one skipped. Both skips are conditional live certificate-chain checks, not successful pinning verification.
+- Tablet dialer/navigation hierarchy checks passed for labelled, on-screen >=48dp controls. Settings headers measured below touch-target minimum; localized section titles were mixed. Phone UI remains blocked by keyguard.
+- Full calls/audio/background/reconnect, license/restore and VPN runtime cases are not inferred from instrumentation. Exact exclusions and sanitized evidence are retained in .fleet/reports/SC-OCT01-PHYSICAL-SMOKE.md.
+- Settings source correction is prepared separately; final build and physical/visual revalidation are pending. No FLAG_SECURE weakening is authorized or implemented.
+- PR source head 694f5d6 has all hosted checks green. Independent approving review and product/finance release gates remain open; no main merge, deployment or activation.
+
+`57 PHYSICAL INSTRUMENTATION PASSES — FULL RELEASE MATRIX STILL OPEN`

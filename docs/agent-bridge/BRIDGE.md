@@ -3602,3 +3602,8 @@ Type: RELEASE / EXTERNAL / POLICY
 - Authoritative task branch source checkpoint: 2b15b7350189f8c42bc4fbc104eaaffee5455f21. Dedicated, default-disabled Direct Premium tester activation/renewal transport implemented; commercial/Play gates unchanged.
 - Full backend suite PASS. Full JVM suites: Free 206, Pro 206, Premium 213, zero errors/failures. Debug lint all three variants PASS. Source/staged Gitleaks and whitespace checks PASS. Kimi registry and transport reviews completed; lead integrated and retested corrections.
 - Not a release or delivery approval. Hardware enrollment, private provisioning/inventory, signed-update and two-device acceptance remain open. No actual tester codes, emails or production changes. See root Bridge and docs/TESTER_LICENSE_RUNTIME.md for scoped evidence and next gates.
+
+## 2026-10-01 — CODEX — October CI/device checkpoint
+
+- PR #102 advanced normally to reviewed candidate ff5d99f; hosted CI is running. One dependency-audit repair and physical phone/tablet QA are active, separately owned.
+- Full status and exact evidence remain in root BRIDGE.md and .fleet/PLAN.md. Required review and product release gates are preserved; no deployment or sales activation.
