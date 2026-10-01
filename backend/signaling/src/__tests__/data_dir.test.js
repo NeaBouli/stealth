@@ -65,7 +65,7 @@ function sources(directory) {
 }
 const unaligned = [];
 for (const file of sources(sourceRoot)) {
-  for (const match of fs.readFileSync(file, "utf8").matchAll(/process\.env\.([A-Z0-9_]+_FILE)\b/g)) {
+  for (const match of fs.readFileSync(file, "utf8").matchAll(/\benv\.([A-Z0-9_]+_FILE)\b/g)) {
     if (!NON_STORE_FILE_VARIABLES.has(match[1]) && !Object.hasOwn(STORE_FILES, match[1])) {
       unaligned.push(`${path.relative(sourceRoot, file)}: ${match[1]}`);
     }
