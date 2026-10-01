@@ -14,6 +14,9 @@ services:
       - ADMIN_API_KEY=${ADMIN_API_KEY}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://signal.securecall.app,https://neabouli.github.io/stealth}
       - MAX_CONNS_PER_IP=${MAX_CONNS_PER_IP:-10}
+      # Signaling is only reachable through the nginx service below, which appends
+      # the peer address to X-Forwarded-For; ip.js reads the rightmost entry.
+      - TRUST_PROXY=true
       - STUN_URL=${STUN_URL:-stun:stun.l.google.com:19302}
       - TURN_HOST=${TURN_HOST:-turn.stealthx.tech}
       - TURN_SECRET_FILE=/run/secrets/turn_secret
@@ -88,7 +91,8 @@ services:
     secrets:
       - turn_secret
     tmpfs:
-      - /run/turn:rw,noexec,nosuid,nodev,size=64k,mode=0700
+      # coturn/coturn runs as nobody:nogroup (65534); the renderer writes here.
+      - /run/turn:rw,noexec,nosuid,nodev,size=64k,mode=0700,uid=65534,gid=65534
     networks:
       - securecall-net
     logging:

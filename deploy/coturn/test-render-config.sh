@@ -145,6 +145,12 @@ if grep -F "$legacy_env_assignment" "$compose_file" >/dev/null; then
 fi
 grep -F 'turn_secret:' "$compose_file" >/dev/null \
   || fail "compose secret declaration is missing"
+grep -F '/run/turn:rw,noexec,nosuid,nodev,size=64k,mode=0700,uid=65534,gid=65534' "$compose_file" >/dev/null \
+  || fail "coturn runtime tmpfs is not writable by the coturn user"
+grep -E '^      - TRUST_PROXY=true$' "$compose_file" >/dev/null \
+  || fail "compose signaling does not declare the nginx proxy contract"
+grep -F 'chown 65534:65534 secrets/turn_secret' "$(dirname "$compose_file")/.env.example" >/dev/null \
+  || fail "secret ownership instruction for coturn is missing"
 
 if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
   docker compose -f "$compose_file" config --quiet \
