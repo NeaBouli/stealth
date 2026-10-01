@@ -10,7 +10,7 @@
 
 - [x] End-to-End Encryption (XChaCha20-Poly1305 + X25519)
 - [x] Rust Crypto Engine with JNI bridge
-- [x] Double Ratchet forward secrecy
+- [x] Per-call ephemeral X25519/HKDF session keys (Double Ratchet not implemented)
 - [x] Node.js Signaling Server
 - [x] WebRTC peer-to-peer audio
 - [x] Opus audio codec (48kHz)

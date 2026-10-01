@@ -157,7 +157,7 @@
                     </button>
                     <div class="faq-answer">
                         <div class="faq-answer-inner">
-                            SecureCall is an Android app for end-to-end encrypted voice calls. Every call is encrypted using <strong>XChaCha20-Poly1305</strong> with <strong>X25519</strong> key exchange and <strong>Double Ratchet</strong> forward secrecy. The cryptographic engine is written entirely in Rust for memory safety, and the complete source code is publicly available on <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>. No accounts, no phone numbers, no personal data required.
+                            SecureCall is an Android app for end-to-end encrypted voice calls. Every call is encrypted using <strong>XChaCha20-Poly1305</strong> with <strong>X25519</strong> key exchange: a fresh X25519 key pair per call (per-call forward secrecy); no Double Ratchet, no in-call rekeying. The cryptographic engine is written entirely in Rust for memory safety, and the complete source code is publicly available on <a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a>. No accounts, no phone numbers, no personal data required.
                         </div>
                     </div>
                 </div>
@@ -280,7 +280,7 @@
                             SecureCall uses a modern, layered cryptographic stack:<br><br>
                             <strong>Symmetric Encryption:</strong> XChaCha20-Poly1305 &mdash; 256-bit AEAD cipher with 192-bit extended nonce<br>
                             <strong>Key Exchange:</strong> X25519 &mdash; Elliptic Curve Diffie-Hellman on Curve25519<br>
-                            <strong>Forward Secrecy:</strong> Double Ratchet protocol &mdash; per-session key derivation with ratcheting<br>
+                            <strong>Forward Secrecy:</strong> per-call ephemeral X25519 + HKDF session key &mdash; no Double Ratchet, no in-call rekeying<br>
                             <strong>Key Derivation:</strong> HKDF-SHA256 &mdash; HMAC-based key derivation function<br>
                             <strong>Implementation:</strong> Native Rust via JNI &mdash; memory-safe, zero buffer overflows<br><br>
                             See the <a href="security-design.html">Security Design</a> page for the full architecture.

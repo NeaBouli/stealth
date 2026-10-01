@@ -1,89 +1,66 @@
-# SecureCall Ecosystem – Architekturüberblick
+# SecureCall Architecture Overview
 
-## 1. Ziel dieses Dokuments
+## 1. Scope
 
-Dieses Dokument bietet eine kompakte technische Übersicht über die Architektur.
-Es beschreibt die Komponenten, ihre Funktionen und die Integrationspunkte.
+This document describes the current SecureCall Android 1.0.50 candidate. Research concepts such
+as GHOSTOS, QUIC transport, SilentCarrier and multi-hop GhostNet routing are not implemented,
+distributed or sold as current SecureCall functionality.
 
-## 2. Systemübersicht
+## 2. Current Components
 
-Das SecureCall Ecosystem besteht aus:
+1. **Android client**
+   - user interface, contacts, calling and local preferences;
+   - WebSocket signaling and FCM notification handling;
+   - WebRTC media transport with direct ICE or TURN fallback;
+   - Rust/JNI application-frame cryptography;
+   - build-flavor and entitlement gates.
+2. **Signaling service**
+   - pseudonymous SecureID registration;
+   - call invites, answers, ICE candidates and call-end messages;
+   - push-delivery coordination;
+   - entitlement verification and revocation paths.
+3. **STUN/TURN providers**
+   - network discovery and NAT traversal;
+   - TURN forwards encrypted media when a direct WebRTC route is unavailable.
 
-1. SecureCall Client (Android)
-2. Backend / GhostNet Infrastruktur
-3. GHOSTOS BlackRoot (gehärtetes Spezialbetriebssystem)
+## 3. Current Trust Boundary
 
-## 3. High-Level Architekturdiagramm
+- X25519 and HKDF-SHA256 derive per-call key material.
+- XChaCha20-Poly1305 protects application media frames in the Rust crypto path.
+- Per-call material is discarded after the call.
+- SecureCall does not currently implement a Double Ratchet, authenticated long-term identity-key
+  binding or post-compromise security.
+- The signaling service is not designed to receive call plaintext, but an actively malicious
+  signaling service remains outside the current cryptographic protection boundary.
+- The service and network providers process the operational metadata documented in the privacy
+  policy; SecureCall must not be described as zero-metadata or zero-knowledge.
 
-+---------------------------+
-| GHOSTOS BlackRoot |
-+-------------+-------------+
-|
-+-------------v-------------+
-| SecureCall Client |
-+-------------+-------------+
-|
-+-------------v-------------+
-| Backend & GhostNet Relays |
-+---------------------------+
+## 4. Current Data Flow
 
-markdown
-Code kopieren
+```text
+Client A                 Signaling service                 Client B
+   | -- register/invite/ICE/public key material ----------> |
+   | <---------- answer/ICE/public key material ----------- |
+   |                                                        |
+   | ===== encrypted application media over WebRTC ======== |
+   |          direct ICE where possible, TURN fallback      |
+```
 
-## 4. Komponentenliste
+The signaling service coordinates setup. Media does not traverse the signaling service. A TURN
+provider may forward encrypted media packets but is not given the per-call private key material.
 
-### 4.1 Core Crypto Engine (Rust)
-- Identitätsschlüssel
-- Session-Keys
-- Frame-Verschlüsselung
-- zeroize Memory
+## 5. Distribution Boundary
 
-### 4.2 GhostNet Communication Layer
-- WebRTC/QUIC Audio
-- Opus Codec
-- Jitter-Buffer
-- Multi-Hop (Premium/OS)
+- **Google Play Free AAB:** no app-owned VPN or WireGuard implementation; it may follow an
+  independently managed Android VPN and display the active-route state.
+- **Direct Pro APK:** no app-owned VPN; external Android VPN compatibility only.
+- **Direct Premium APK:** may include the separately reviewed optional app-only WireGuard runtime,
+  activated only after Android user consent and local configuration.
+- No Android variant contains WalletConnect, SIWE or IFR entitlement logic. Any IFR holder benefit
+  is a browser-only pre-purchase discount and remains launch-gated.
 
-### 4.3 Signaling & Identity Layer
-- pseudonyme Registrierung
-- Call-Invites / Antworten
-- ICE-Kandidaten
-- WS-basierte Signalisierung
+## 6. Research Roadmap
 
-### 4.4 Security Monitor
-- Root-/Magisk-Erkennung
-- Emulator-/Hooking-Erkennung
-- Screen-Recording Detection
-- Policy-basierte Reaktion
-
-### 4.5 Policy Engine
-- Profile: Free / Pro / Premium / OS
-- Netzregeln
-- Geräte- und Systemrestriktionen
-- Freischaltung sicherheitskritischer Features
-
-### 4.6 UI & Call Control
-- Call-Steuerung
-- Sicherheitsanzeigen
-- Stealth-UI (Premium/OS)
-
-## 5. Integrationspunkte & Datenfluss
-
-### 5.1 Integrationspunkte
-
-1. Crypto Engine ↔ Android App (JNI/FFI)
-2. Android App ↔ Signaling Backend (REST/WS)
-3. Android App ↔ GhostNet (WebRTC/QUIC)
-4. Policy Engine ↔ Security Monitor
-5. Premium/OS ↔ Management API
-
-
-## 5.2 Datenfluss (korrekt)
-
-Client A        Backend/Relays        Client B
-
-Signaling  →    Call Invite    →      Signaling
-Keys       ←   Public Key DB   →      Keys
-Audio Out  →      GhostNet     →     Audio In
-Audio In   ←      GhostNet     ←     Audio Out
-
+GHOSTOS, multi-hop relays, QUIC, SilentCarrier, authenticated identity-key binding and alternative
+federated signaling are research or future work. They require separate architecture, security,
+compatibility and release review before any product claim.

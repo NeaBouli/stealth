@@ -83,7 +83,7 @@ Critical points:
 ## Compatibility with Existing Stack
 
 Both crypto stacks (SecureCall + SecureChat) are fully transport-agnostic.
-XChaCha20-Poly1305, X25519, Double Ratchet work identically over Tor, P2P, or onion routing.
+XChaCha20-Poly1305 and the per-call X25519/HKDF session key work identically over Tor, P2P, or onion routing. (SecureCall does not implement a Double Ratchet.)
 No changes to the crypto core required.
 
 ## Recommendations per Product
