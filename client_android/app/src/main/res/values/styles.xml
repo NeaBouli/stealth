@@ -47,5 +47,9 @@
         <item name="android:insetBottom">0dp</item>
         <item name="android:minHeight">64dp</item>
         <item name="android:padding">4dp</item>
+        <!-- Shrink the label instead of clipping it (two-line "0 +" key, large font scales) -->
+        <item name="autoSizeTextType">uniform</item>
+        <item name="autoSizeMinTextSize">10sp</item>
+        <item name="autoSizeMaxTextSize">18sp</item>
     </style>
 </resources>

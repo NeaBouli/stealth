@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "$#" -ne 3 ]]; then
-  echo "usage: $0 <app-apk> <test-apk> <instrumentation-component>" >&2
+if [[ "$#" -lt 3 || "$#" -gt 4 ]]; then
+  echo "usage: $0 <app-apk> <test-apk> <instrumentation-component> [securecallLivePinTest=true]" >&2
   exit 2
 fi
 
@@ -45,6 +45,14 @@ resolve_apk() {
 app_apk="$(resolve_apk "$1")"
 test_apk="$(resolve_apk "$2")"
 instrumentation="$3"
+instrumentation_args=()
+if [[ -n "${4:-}" ]]; then
+  if [[ "$4" != "securecallLivePinTest=true" ]]; then
+    echo "unsupported instrumentation option: $4" >&2
+    exit 2
+  fi
+  instrumentation_args=(-e securecallLivePinTest true)
+fi
 
 du -h "$app_apk" "$test_apk"
 
@@ -53,5 +61,5 @@ timeout 600 adb install --no-streaming -r -t -g "$test_apk"
 
 result="${GITHUB_WORKSPACE:?}/client_android/app/build/outputs/androidTest-results/instrumentation/result.txt"
 mkdir -p "$(dirname "$result")"
-adb shell am instrument -w -r "$instrumentation" | tee "$result"
+adb shell am instrument -w -r "${instrumentation_args[@]}" "$instrumentation" | tee "$result"
 grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$result"

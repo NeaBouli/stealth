@@ -3,6 +3,7 @@ package com.securecall.app.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -10,6 +11,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.Button
 import android.text.Editable
 import android.text.TextWatcher
@@ -36,6 +38,7 @@ class DialerFragment : Fragment() {
     private lateinit var dialPad: View
     private var phoneNumber = StringBuilder()
     private var allContacts: List<Contact> = emptyList()
+    private var imeLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
     // T9 mapping: digit → letters
     private val t9Map = mapOf(
@@ -164,6 +167,35 @@ class DialerFragment : Fragment() {
         view.findViewById<FloatingActionButton>(R.id.fabCall).setOnClickListener {
             handleCall()
         }
+
+        keepContentAboveKeyboard(view)
+    }
+
+    override fun onDestroyView() {
+        imeLayoutListener?.let { view?.viewTreeObserver?.removeOnGlobalLayoutListener(it) }
+        imeLayoutListener = null
+        super.onDestroyView()
+    }
+
+    /**
+     * Keep a fallback for edge-to-edge devices where adjustResize reports the IME through the
+     * visible frame without resizing the fragment. The normal resize path yields zero overlap.
+     */
+    private fun keepContentAboveKeyboard(root: View) {
+        val basePaddingBottom = root.paddingBottom
+        val visibleFrame = Rect()
+        val location = IntArray(2)
+        val listener = ViewTreeObserver.OnGlobalLayoutListener {
+            root.getWindowVisibleDisplayFrame(visibleFrame)
+            root.getLocationOnScreen(location)
+            val overlap = (location[1] + root.height - visibleFrame.bottom).coerceAtLeast(0)
+            val paddingBottom = basePaddingBottom + overlap
+            if (root.paddingBottom != paddingBottom) {
+                root.setPadding(root.paddingLeft, root.paddingTop, root.paddingRight, paddingBottom)
+            }
+        }
+        root.viewTreeObserver.addOnGlobalLayoutListener(listener)
+        imeLayoutListener = listener
     }
 
     override fun onResume() {
