@@ -1,1 +1,1 @@
-End-to-end encrypted voice calls. Zero metadata.
+End-to-end encrypted one-to-one voice calls through a SecureID.
