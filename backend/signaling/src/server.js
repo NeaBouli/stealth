@@ -36,6 +36,9 @@ process.env.GIFT_CODES_FILE          = path.join(DATA_DIR, "gift_codes.json");
 process.env.STRIPE_PROCESSED_FILE   = path.join(DATA_DIR, "stripe_processed_events.json");
 process.env.SOLD_CODES_FILE         = path.join(DATA_DIR, "sold_codes.json");
 process.env.GOOGLE_PLAY_RTDN_FILE   = process.env.GOOGLE_PLAY_RTDN_FILE || path.join(DATA_DIR, "google_play_rtdn.json");
+process.env.IDENTITY_REGISTRY_FILE  = process.env.IDENTITY_REGISTRY_FILE || path.join(DATA_DIR, "identity_registry.json");
+process.env.IDENTITY_MIGRATION_ROUTES_FILE = process.env.IDENTITY_MIGRATION_ROUTES_FILE
+  || path.join(DATA_DIR, "identity_migration_routes.json");
 
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
@@ -70,10 +73,16 @@ const statusRoutes                                                  = require(".
 const { writeJsonAtomic }                                           = require("./utils/json_store");
 const { sanitize: sanitizeUtil }                                    = require("./utils/sanitize");
 const { issueEntitlementToken, verifyEntitlementToken, orderHash: entitlementOrderHash } = require("./payments/entitlement_tokens");
+const { createIdentityRegistry } = require("./services/identity_registry");
+const { loadIdentityMigrationRoutes } = require("./services/identity_migration_routes");
+const { readIdentityProtocolConfig } = require("./security/identity_protocol");
 
 // Hoisted so HTTP route handlers (defined below) can call ctx.sendToClient
 // after buildContext() runs at startup — before any request arrives.
 let ctx;
+
+const IDENTITY_PROTOCOL_CONFIG = readIdentityProtocolConfig(process.env);
+const identityRegistry = createIdentityRegistry({ file: process.env.IDENTITY_REGISTRY_FILE });
 
 // Initialize Firebase Cloud Messaging
 fcm.initFcm();
@@ -173,6 +182,9 @@ const server = http.createServer(app);
 
 // Load persistent store-backed state from DATA_DIR-aligned paths
 loadFcmTokens();
+const identityMigrationRoutes = loadIdentityMigrationRoutes({
+  file: process.env.IDENTITY_MIGRATION_ROUTES_FILE,
+});
 
 loadActivationCodes();
 
@@ -815,6 +827,10 @@ ctx = buildContext({
   testerLicenseRegistry: require("./services/tester_license_runtime").loadTesterLicenseRuntime(),
   pkd, subscriptions, fcm, customIds, licenses,
   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
+  identityRegistry,
+  identityMigrationRoutes,
+  identityProtocolMode: IDENTITY_PROTOCOL_CONFIG.mode,
+  identityTransitionDeadline: IDENTITY_PROTOCOL_CONFIG.transitionDeadline,
   rateLimit, hb,
   giftCodes, saveGiftCodes,
   issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,

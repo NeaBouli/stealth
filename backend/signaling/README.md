@@ -1,5 +1,37 @@
 SecureCall Signaling Server
 
+Identity protocol rollout
+-------------------------
+
+Authenticated registration and call setup protocol v2 is enforced by default.
+The temporary legacy compatibility mode is deliberately deployment-bounded:
+
+- `IDENTITY_PROTOCOL_MODE=enforce` (default) rejects legacy registration and calls.
+- `IDENTITY_PROTOCOL_MODE=transition` also requires
+  `IDENTITY_TRANSITION_DEADLINE_EPOCH_SECONDS`.
+- The deadline must be in the future and no more than 14 days after server start.
+- An expired or invalid transition configuration fails closed. Restart with
+  `IDENTITY_PROTOCOL_MODE=enforce` after the migration window.
+
+Do not use transition mode as a permanent operating configuration. It permits
+old clients temporarily, so final enforcement remains a release gate. Alias
+migration itself never trusts an FCM token submitted by a legacy session. It
+uses only a separate, immutable pre-transition snapshot:
+
+1. Stop legacy token writes for the snapshot operation.
+2. Set absolute `FCM_TOKENS_FILE` and `IDENTITY_MIGRATION_ROUTES_FILE` paths.
+3. Run `npm run prepare:identity-migration-routes` once. The command refuses to
+   overwrite an existing snapshot, writes mode `0600`, logs only a count, and
+   expires the snapshot after at most 14 days. An earlier deadline can be set
+   with `IDENTITY_MIGRATION_DEADLINE_EPOCH_SECONDS`.
+4. Start the new server. If no snapshot exists, alias migration fails closed
+   and updated clients fall back to their key-derived `sc-...` identity.
+
+Protocol-v1 sessions cannot create or replace FCM routes after this candidate
+starts. On successful migration the canonical route is durably stored before
+the alias is bound. Do not copy the snapshot into Git, logs, tickets, backups
+without access controls, or build artifacts; it contains private push tokens.
+
 BACKEND-19 – Session Cleanup (automatic deletion of expired sessions)
 
 This update introduces a server-side cleanup module that automatically removes
