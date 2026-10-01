@@ -48,6 +48,9 @@ jobs:
       - name: Guard deployment scripts against secret output
         run: bash deployment/check_deploy_secret_output.sh
 
+      - name: Require digest-pinned deploy images
+        run: bash deploy/check_image_pins.sh
+
   signaling-tests:
     name: Signaling Tests
     runs-on: ubuntu-latest
