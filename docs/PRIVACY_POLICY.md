@@ -58,9 +58,9 @@ with Android Keystore.
 
 - All voice calls are encrypted end-to-end using **XChaCha20-Poly1305** (AEAD encryption)
 - Key exchange uses **X25519** (Elliptic Curve Diffie-Hellman)
-- **Perfect Forward Secrecy** ensures past communications remain secure even if keys are compromised
+- X25519 and HKDF-SHA256 derive separate key material for each call; SecureCall does not implement a Double Ratchet
 - Encryption keys are generated on your device and never transmitted to our servers
-- We have **zero ability** to decrypt your calls
+- The signaling service is designed not to receive call audio; it processes connection metadata and relays public key material
 
 ## Data That Reaches Our Servers
 

@@ -185,7 +185,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        SecureCall is an Android app for end-to-end encrypted voice calls. Every call is encrypted using XChaCha20-Poly1305 with X25519 key exchange and Double Ratchet forward secrecy. The cryptographic engine is written in Rust, and the complete source code is publicly available on GitHub.
+                        SecureCall is an Android app for end-to-end encrypted voice calls. Every call is encrypted using XChaCha20-Poly1305 with a fresh X25519 key pair per call (per-call forward secrecy); no Double Ratchet, no in-call rekeying. The cryptographic engine is written in Rust, and the complete source code is publicly available on GitHub.
                     </div>
                 </div>
             </div>
@@ -296,7 +296,7 @@
                 </button>
                 <div class="faq-answer">
                     <div class="faq-answer-inner">
-                        <strong>XChaCha20-Poly1305</strong> for symmetric encryption (256-bit AEAD with 192-bit nonce), <strong>X25519</strong> for key exchange (ECDH on Curve25519), and the <strong>Double Ratchet</strong> protocol for perfect forward secrecy. Keys are derived using HKDF-SHA256. See our <a href="security.html">Security Architecture</a> page for full details.
+                        <strong>XChaCha20-Poly1305</strong> for symmetric encryption (256-bit AEAD with 192-bit nonce), <strong>X25519</strong> for key exchange (ECDH on Curve25519), with a fresh X25519 key pair per call (per-call forward secrecy); no Double Ratchet, no in-call rekeying. Keys are derived using HKDF-SHA256. See our <a href="security.html">Security Architecture</a> page for full details.
                     </div>
                 </div>
             </div>

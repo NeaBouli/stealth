@@ -368,7 +368,7 @@
                     <article class="feature-card reveal"><div class="feature-icon">⌘</div><h3>Source-Available Client</h3><p>The client source is available for review. Official services and distribution still require Vendetta Labs permission.</p></article>
                     <article class="feature-card reveal"><div class="feature-icon">🧱</div><h3>Rust Crypto Engine</h3><p>Memory-safe crypto code, independently inspectable and designed to avoid buffer-overflow classes of bugs.</p></article>
                     <article class="feature-card reveal"><div class="feature-icon">🎧</div><h3>Crystal-Clear Audio</h3><p>Opus at 48kHz with adaptive bitrate for WiFi and cellular conditions.</p></article>
-                    <article class="feature-card reveal"><div class="feature-icon">🔑</div><h3>Perfect Forward Secrecy</h3><p>Double Ratchet session behavior limits blast radius if any single key is compromised.</p></article>
+                    <article class="feature-card reveal"><div class="feature-icon">🔑</div><h3>Per-call Forward Secrecy</h3><p>End-to-end encrypted with a fresh X25519 key pair per call (per-call forward secrecy); no Double Ratchet, no in-call rekeying.</p></article>
                     <article class="feature-card reveal"><div class="feature-icon">⌫</div><h3>Emergency Delete</h3><p>Five taps wipe contacts, keys and call history, returning the app to factory state.</p></article>
                     <article class="feature-card reveal"><div class="feature-icon">▦</div><h3>QR Code & Deep Link Invite</h3><p>Share SecureCall identity with QR or deep link. One tap adds a contact without manual ID entry.</p></article>
                     <article class="feature-card reveal"><div class="feature-icon">◉</div><h3>Diagnostic Logs</h3><p>Pro/Premium SecLog captures connection, call and network events locally for CSV troubleshooting.</p></article>
@@ -406,7 +406,7 @@
                 <div class="spec-grid">
                     <div class="spec"><small>Encryption</small><strong>XChaCha20-Poly1305</strong><span>256-bit AEAD cipher with 192-bit nonce.</span></div>
                     <div class="spec"><small>Key exchange</small><strong>X25519 ECDH</strong><span>Curve25519 elliptic curve Diffie-Hellman.</span></div>
-                    <div class="spec"><small>Forward secrecy</small><strong>Double Ratchet</strong><span>Per-session key derivation and zero key reuse.</span></div>
+                    <div class="spec"><small>Forward secrecy</small><strong>Per-call X25519</strong><span>Fresh key pair per call; no Double Ratchet, no in-call rekeying.</span></div>
                     <div class="spec"><small>Audio codec</small><strong>Opus at 48kHz</strong><span>Adaptive bitrate from 6 to 510 kbps.</span></div>
                     <div class="spec"><small>Transport</small><strong>WebRTC + DTLS-SRTP</strong><span>Peer-to-peer encrypted transport.</span></div>
                     <div class="spec"><small>Crypto engine</small><strong>Rust memory safety</strong><span>Designed to avoid buffer overflows and use-after-free.</span></div>
