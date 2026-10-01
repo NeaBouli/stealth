@@ -6,17 +6,19 @@
         <domain includeSubdomains="true">127.0.0.1</domain>
     </domain-config>
 
-    <!-- Certificate pinning for signaling server (H-09) -->
-    <!-- api.stealthx.tech leaf + Let's Encrypt R12 intermediate. Rotate before 2026-08-14. -->
+    <!-- Certificate pinning for signaling server (H-09 / STX-23). -->
+    <!-- Current YR2/Root YR and previous R12/ISRG Root X1 overlap. Rotate before 2028-03-01. -->
     <domain-config>
         <domain includeSubdomains="false">api.stealthx.tech</domain>
         <trust-anchors>
             <certificates src="system" />
             <certificates src="@raw/isrg_root_x1" />
         </trust-anchors>
-        <pin-set expiration="2026-08-14">
-            <pin digest="SHA-256">1e85xNSEj+dcImOJS0iNkfMZOrZdvJJzzPCqT1/CZDc=</pin>
+        <pin-set expiration="2028-03-01">
+            <pin digest="SHA-256">nWN7PSep5XDQdge5zK24CnCRXHr3KvzhKEGxsdqCX9E=</pin>
+            <pin digest="SHA-256">fk6IOKit1ild5647BH06ujSIq5XbCgqlbYl6ANhhi88=</pin>
             <pin digest="SHA-256">kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ=</pin>
+            <pin digest="SHA-256">C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=</pin>
         </pin-set>
     </domain-config>
 </network-security-config>

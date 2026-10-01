@@ -86,7 +86,7 @@ object TierManager {
         override val maxContacts: Int get() = if (isPro) 0 else FeatureFlags.MAX_CONTACTS
         override val deviceAttestationRequired: Boolean get() = isPro
         override val rootDetectionBlocks: Boolean get() = isPro
-        override val certificatePinning: Boolean get() = isPro
+        override val certificatePinning: Boolean get() = true
         override val callRecordingAllowed: Boolean get() = !isPro
         override val telemetryEnabled: Boolean get() = !isPro
         override val thirdPartyAnalytics: Boolean get() = !isPro
