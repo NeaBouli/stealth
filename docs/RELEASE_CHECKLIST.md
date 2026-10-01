@@ -1,6 +1,6 @@
 # StealthX Release Checklist
 
-Last updated: 2026-06-11
+Last updated: 2026-09-19
 
 ## Blocking Before Live
 
@@ -27,6 +27,9 @@ Last updated: 2026-06-11
 - [ ] Chameleon accessibility service opens the correct settings/app entry point.
 - [ ] Activation-code redemption tested against live `api.stealthx.tech`.
 - [ ] No active v1 UI button points to an unavailable or placeholder feature.
+- [ ] `verifyCertificatePinPolicy` and `verifyCertificatePinFreshness` pass on the exact release.
+- [ ] Explicit live pin test passes on API 24 and API 36 with instrumentation argument
+  `securecallLivePinTest=true`.
 
 ## Website Verification
 
@@ -58,7 +61,8 @@ Last updated: 2026-06-11
 - [ ] Play Store AAB uploaded.
 - [ ] Store listing and privacy policy links point to current production URLs.
 - [ ] Version names/codes match release notes.
-- [ ] Certificate pinning rotation reminder tracked for `api.stealthx.tech` before 2026-08-14.
+- [ ] Certificate pin rotation is scheduled before 2028-03-01; release builds fail once the
+  180-day rotation window opens.
 
 ## Post-Live Smoke
 
