@@ -9,23 +9,13 @@ const { ethers } = require("ethers");
 
 // Resolve writable data dir — Railway volumes mount as root (non-root images
 // need RAILWAY_RUN_UID=0 there). Production refuses the ephemeral fallback.
-const { resolveDataDir } = require("./data_dir");
+const { resolveDataDir, alignStoreFiles } = require("./data_dir");
 const _DATA_PREFERRED = process.env.DATA_DIR || path.join(__dirname, "..", "data");
 const DATA_DIR = resolveDataDir({ preferred: _DATA_PREFERRED });
 
 // Align ALL store module file paths to the resolved writable data directory.
-// Must be set BEFORE requiring any module whose top-level code reads these env vars.
-process.env.FCM_TOKENS_FILE   = path.join(DATA_DIR, "fcm_tokens.json");
-process.env.CODES_FILE        = path.join(DATA_DIR, "activation_codes.json");
-process.env.WALLETS_FILE      = path.join(DATA_DIR, "wallets.json");
-process.env.SUBS_FILE         = path.join(DATA_DIR, "subscriptions.json");
-process.env.LICENSES_FILE     = path.join(DATA_DIR, "licenses.json");
-process.env.IDS_FILE          = path.join(DATA_DIR, "custom_ids.json");
-process.env.PENDING_FILE      = path.join(DATA_DIR, "pending_activations.json");
-process.env.GIFT_CODES_FILE          = path.join(DATA_DIR, "gift_codes.json");
-process.env.STRIPE_PROCESSED_FILE   = path.join(DATA_DIR, "stripe_processed_events.json");
-process.env.SOLD_CODES_FILE         = path.join(DATA_DIR, "sold_codes.json");
-process.env.GOOGLE_PLAY_RTDN_FILE   = process.env.GOOGLE_PLAY_RTDN_FILE || path.join(DATA_DIR, "google_play_rtdn.json");
+// Must run BEFORE requiring any module whose top-level code reads these env vars.
+alignStoreFiles(DATA_DIR);
 
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");

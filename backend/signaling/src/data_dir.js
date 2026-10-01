@@ -34,4 +34,31 @@ function resolveDataDir({ preferred, env = process.env, fallback = EPHEMERAL_FAL
   return fallback;
 }
 
-module.exports = { resolveDataDir, EPHEMERAL_FALLBACK };
+// Every file-backed store. All of them are pinned into the validated data
+// directory so no store can silently fall back to a module-relative default
+// (e.g. ../../data) outside DATA_DIR. data_dir.test.js fails when a module
+// reads a *_FILE variable that is missing here.
+const STORE_FILES = Object.freeze({
+  FCM_TOKENS_FILE: "fcm_tokens.json",
+  CODES_FILE: "activation_codes.json",
+  WALLETS_FILE: "wallets.json",
+  SUBS_FILE: "subscriptions.json",
+  LICENSES_FILE: "licenses.json",
+  IDS_FILE: "custom_ids.json",
+  PENDING_FILE: "pending_activations.json",
+  GIFT_CODES_FILE: "gift_codes.json",
+  STRIPE_PROCESSED_FILE: "stripe_processed_events.json",
+  SOLD_CODES_FILE: "sold_codes.json",
+  GOOGLE_PLAY_RTDN_FILE: "google_play_rtdn.json",
+  VLABS_FULFILLMENT_ORDERS_FILE: "vlabs_fulfillment_orders.json",
+});
+
+// Must run before any store module is required (several read their path at
+// module load time).
+function alignStoreFiles(dataDir, env = process.env) {
+  for (const [key, file] of Object.entries(STORE_FILES)) {
+    env[key] = path.join(dataDir, file);
+  }
+}
+
+module.exports = { resolveDataDir, alignStoreFiles, STORE_FILES, EPHEMERAL_FALLBACK };
