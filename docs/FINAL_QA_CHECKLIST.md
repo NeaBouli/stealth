@@ -90,7 +90,7 @@ Mark each item with `[x]` when verified.
 - [ ] Key exchange (X25519) completes successfully
 - [ ] XChaCha20-Poly1305 encryption applied to audio frames
 - [ ] Nonce uniqueness verified (no reuse)
-- [ ] Perfect Forward Secrecy — each call uses unique session key
+- [ ] Fresh per-call key material — each call derives and discards its own session key
 - [ ] Tampered frames detected and rejected
 - [ ] Encryption indicator shows in CallActivity
 

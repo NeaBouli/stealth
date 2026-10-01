@@ -21,9 +21,6 @@
     <link rel="stylesheet" href="../css/wiki-v2.css">
     <link rel="icon" href="/assets/brand/stealthx-logo.png" type="image/x-icon">
     <link rel="shortcut icon" href="../logo.png">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2L60E8E7R"></script>
-    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-V2L60E8E7R");</script>
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -163,7 +160,7 @@
             <ul class="checklist">
                 <li class="done">End-to-End Encryption (XChaCha20-Poly1305 + X25519 key exchange)</li>
                 <li class="done">Rust Crypto Engine with JNI bridge for native performance</li>
-                <li class="done">Double Ratchet forward secrecy protocol</li>
+                <li class="done">Per-call ephemeral X25519/HKDF session keys (Double Ratchet not implemented)</li>
                 <li class="done">Node.js Signaling Server with WebSocket transport</li>
                 <li class="done">WebRTC peer-to-peer audio with ICE/STUN/TURN</li>
                 <li class="done">Opus audio codec (48kHz, high-fidelity voice)</li>

@@ -14,7 +14,7 @@ SecureCall uses proven, peer-reviewed cryptographic algorithms:
 |-----------|-----------|---------|
 | **Symmetric Encryption** | XChaCha20-Poly1305 | 256-bit AEAD cipher with 192-bit extended nonce |
 | **Key Exchange** | X25519 | Elliptic Curve Diffie-Hellman on Curve25519 |
-| **Forward Secrecy** | Double Ratchet | Per-session key derivation with ratcheting |
+| **Forward Secrecy** | Per-call ephemeral X25519 + HKDF | Fresh key pair and session key for every call; no Double Ratchet, no in-call rekeying |
 | **Key Derivation** | HKDF-SHA256 | HMAC-based key derivation function |
 | **Transport** | DTLS-SRTP | Encrypted peer-to-peer media transport |
 | **Audio Codec** | Opus | 48kHz, adaptive bitrate 6-510 kbps |
@@ -61,7 +61,7 @@ SecureCall uses proven, peer-reviewed cryptographic algorithms:
        │                              │                            │
    4.  │          HKDF-SHA256(S) → session_key                    │
        │                              │                            │
-   5.  │          Double Ratchet initializes                       │
+   5.  │          Per-call session key in use (no ratchet)         │
        │                              │                            │
    6.  │◄═══════ WebRTC P2P connection (DTLS-SRTP) ══════════════►│
        │                              │                            │
@@ -76,20 +76,20 @@ SecureCall uses proven, peer-reviewed cryptographic algorithms:
 2. **Call Accept:** Bob accepts; both parties now have each other's public key
 3. **Key Exchange:** X25519 Diffie-Hellman produces a shared secret
 4. **Key Derivation:** HKDF-SHA256 derives the session encryption key from the shared secret
-5. **Ratchet Init:** Double Ratchet protocol initializes with the session key
+5. **Session Key:** The per-call session key is used for the whole call (SecureCall does not implement a Double Ratchet)
 6. **P2P Connection:** Direct WebRTC connection established (bypasses server)
-7. **Encrypted Audio:** Each voice frame is encrypted with a unique key from the ratchet
+7. **Encrypted Audio:** Voice frames are encrypted with the per-call session key
 
 ---
 #### ████ PERFECT FORWARD SECRECY ████
 ---
 
-The **Double Ratchet** protocol ensures that:
+Per-call ephemeral X25519 key pairs ensure that:
 
 - Each call session uses **unique encryption keys**
 - Compromising one key does **not** expose past calls
 - Compromising one key does **not** expose future calls
-- Each voice frame uses a **fresh key** derived from the ratchet state
+- There is **no** in-call rekeying: all frames of one call share the per-call session key
 
 ```
 Session 1: Key_1 ─── cannot derive ──→ Key_2
@@ -124,10 +124,10 @@ Each audio frame is processed as follows:
   Opus Encode (48kHz)
       │
       ▼
-  Ratchet → derive frame_key
+  per-call session key (no ratchet)
       │
       ▼
-  XChaCha20-Poly1305 Encrypt(frame, frame_key, nonce)
+  XChaCha20-Poly1305 Encrypt(frame, session_key, nonce)
       │
       ▼
   WebRTC/DTLS-SRTP Send

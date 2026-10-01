@@ -19,7 +19,8 @@ edition may detect an independently managed system VPN, but it does not create o
 # SecureCall <version>
 
 End-to-end encrypted voice calls for Android.
-No phone number. No account. Zero metadata.
+No phone number or account is required. Metadata is minimized according to the published privacy
+and security documentation; do not describe the release as zero-metadata.
 
 ## Downloads
 - **Google Play:** Free edition without an app-managed VPN

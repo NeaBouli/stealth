@@ -35,13 +35,18 @@ jobs:
         with:
           node-version: 22
 
-      - name: Verify closed browser checkout gate
+      - name: Verify browser privacy and closed checkout gates
         run: |
           node --check website/js/ifr-checkout.js
-          node --test website/js/ifr-checkout.test.cjs
+          node --test \
+            website/js/ifr-checkout.test.cjs \
+            website/js/no-google-analytics.test.cjs
 
       - name: Run YAML Lint
         run: yamllint .
+
+      - name: Guard deployment scripts against secret output
+        run: bash deployment/check_deploy_secret_output.sh
 
   signaling-tests:
     name: Signaling Tests
