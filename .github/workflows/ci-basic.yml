@@ -49,7 +49,9 @@ jobs:
         run: bash deployment/check_deploy_secret_output.sh
 
       - name: Require digest-pinned deploy images
-        run: bash deploy/check_image_pins.sh
+        run: |
+          bash deploy/test_check_image_pins.sh
+          bash deploy/check_image_pins.sh
 
   signaling-tests:
     name: Signaling Tests
