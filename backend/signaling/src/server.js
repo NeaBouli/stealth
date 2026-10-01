@@ -7,23 +7,11 @@ const path = require("path");
 
 const { ethers } = require("ethers");
 
-// Resolve writable data dir — Railway volumes mount as root, overriding Dockerfile chown.
-// Falls back to /tmp/stealthx-data when the preferred path is not writable.
+// Resolve writable data dir — Railway volumes mount as root (non-root images
+// need RAILWAY_RUN_UID=0 there). Production refuses the ephemeral fallback.
+const { resolveDataDir } = require("./data_dir");
 const _DATA_PREFERRED = process.env.DATA_DIR || path.join(__dirname, "..", "data");
-const DATA_DIR = (() => {
-  try {
-    fs.mkdirSync(_DATA_PREFERRED, { recursive: true });
-    const probe = path.join(_DATA_PREFERRED, ".write_test");
-    fs.writeFileSync(probe, "1");
-    fs.unlinkSync(probe);
-    return _DATA_PREFERRED;
-  } catch {
-    const fallback = "/tmp/stealthx-data";
-    console.warn(`[DATA] ${_DATA_PREFERRED} not writable — using ${fallback}`);
-    fs.mkdirSync(fallback, { recursive: true });
-    return fallback;
-  }
-})();
+const DATA_DIR = resolveDataDir({ preferred: _DATA_PREFERRED });
 
 // Align ALL store module file paths to the resolved writable data directory.
 // Must be set BEFORE requiring any module whose top-level code reads these env vars.
