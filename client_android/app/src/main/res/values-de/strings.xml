@@ -38,6 +38,13 @@
     <string name="settings_notifications">Benachrichtigungen</string>
     <string name="settings_appearance">Darstellung</string>
     <string name="settings_about">\u00DCber</string>
+    <string name="settings_advanced">Erweitert</string>
+    <string name="settings_custom_call_id">Eigene Anruf-ID</string>
+    <string name="settings_anti_recording">Aufnahmeschutz</string>
+    <string name="settings_privacy_calls">Anrufe</string>
+    <string name="settings_anon_network">Netzwerk</string>
+    <string name="settings_support_development">Entwicklung unterst\u00FCtzen</string>
+    <string name="settings_diagnostics">Diagnose</string>
     <string name="settings_dark_mode">Dunkler Modus</string>
     <string name="settings_version">Version</string>
     <string name="settings_tier">Aktueller Plan</string>
