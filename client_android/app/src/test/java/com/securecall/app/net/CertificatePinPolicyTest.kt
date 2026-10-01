@@ -18,7 +18,7 @@ class CertificatePinPolicyTest {
     fun `pin policy covers current and previous lets encrypt hierarchies`() {
         assertEquals("api.stealthx.tech", CertificatePinPolicy.HOST)
         assertEquals(
-            setOf(CURRENT_YR2, CURRENT_ROOT_YR, PREVIOUS_R12, ISRG_ROOT_X1),
+            setOf(CURRENT_YR2, CURRENT_ROOT_YR, PREVIOUS_R12, ISRG_ROOT_X1, ECDSA_ROOT_YE, ISRG_ROOT_X2),
             CertificatePinPolicy.PINS.toSet()
         )
     }
@@ -45,5 +45,7 @@ class CertificatePinPolicyTest {
         const val CURRENT_ROOT_YR = "sha256/fk6IOKit1ild5647BH06ujSIq5XbCgqlbYl6ANhhi88="
         const val PREVIOUS_R12 = "sha256/kZwN96eHtZftBWrOZUsd6cA4es80n3NzSk/XtYz2EqQ="
         const val ISRG_ROOT_X1 = "sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M="
+        const val ECDSA_ROOT_YE = "sha256/sCkq5UWXjg+7mKu9lMhhYF5bGLsy7VI/UNW3tccdR7w="
+        const val ISRG_ROOT_X2 = "sha256/diGVwiVYbubAI3RW4hB9xU8e/CH2GnkuvVFZE8zmgzI="
     }
 }
