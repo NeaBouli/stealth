@@ -7,6 +7,11 @@ on:
       - "client_android/**"
       - ".github/workflows/android-instrumentation.yml"
   workflow_dispatch:
+    inputs:
+      live_pin_test:
+        description: "Run the network-dependent live certificate-pin test (SecureCall endpoints)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -81,6 +86,7 @@ jobs:
             "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/free/debug/app-free-debug.apk"
             "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/androidTest/free/debug/app-free-debug-androidTest.apk"
             com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner
+            ${{ (github.event_name == 'workflow_dispatch' && inputs.live_pin_test) && 'securecallLivePinTest=true' || '' }}
 
       - name: Upload instrumentation results
         if: always()
