@@ -63,11 +63,45 @@ function sources(directory) {
     return entry.name.endsWith(".js") ? [full] : [];
   });
 }
+// Every static way a module can read a *_FILE variable: env.X_FILE,
+// env["X_FILE"] (any quote style) and destructuring from (process.)env,
+// including renamed and defaulted bindings. A fully dynamic env[name] cannot
+// be resolved statically and is not used for file stores.
+function fileVariableReads(source) {
+  const names = new Set();
+  for (const match of source.matchAll(/\benv\s*(?:\.\s*([A-Z0-9_]+_FILE)\b|\[\s*(["'`])([A-Z0-9_]+_FILE)\2\s*\])/g)) {
+    names.add(match[1] || match[3]);
+  }
+  for (const match of source.matchAll(/\{([^{}]*)\}\s*=\s*(?:process\s*\.\s*)?env\b/g)) {
+    for (const binding of match[1].split(",")) {
+      const key = binding.trim().replace(/^\.\.\./, "").split(/[:=]/)[0].trim().replace(/^(["'`])(.*)\1$/, "$2");
+      if (/^[A-Z0-9_]+_FILE$/.test(key)) names.add(key);
+    }
+  }
+  return [...names];
+}
+
+for (const [snippet, expected] of [
+  ["const a = process.env.ALPHA_FILE;", ["ALPHA_FILE"]],
+  ["const a = env.ALPHA_FILE || x;", ["ALPHA_FILE"]],
+  ["const a = process.env[\"BRAVO_FILE\"];", ["BRAVO_FILE"]],
+  ["const a = env['CHARLIE_FILE'];", ["CHARLIE_FILE"]],
+  ["const a = env[`DELTA_FILE`];", ["DELTA_FILE"]],
+  ["const { ECHO_FILE } = process.env;", ["ECHO_FILE"]],
+  ["const { FOX_FILE: fox, GOLF_FILE = '/tmp/x', OTHER } = env;", ["FOX_FILE", "GOLF_FILE"]],
+  ["let { 'HOTEL_FILE': h } = process.env", ["HOTEL_FILE"]],
+  ["const { a, b } = config; const c = env.PORT;", []],
+  ["const x = env[name];", []],
+  ["const { INDIA_FILE } = settings;", []],
+]) {
+  assert.deepEqual(fileVariableReads(snippet).sort(), expected.sort(), snippet);
+}
+
 const unaligned = [];
 for (const file of sources(sourceRoot)) {
-  for (const match of fs.readFileSync(file, "utf8").matchAll(/\benv\.([A-Z0-9_]+_FILE)\b/g)) {
-    if (!NON_STORE_FILE_VARIABLES.has(match[1]) && !Object.hasOwn(STORE_FILES, match[1])) {
-      unaligned.push(`${path.relative(sourceRoot, file)}: ${match[1]}`);
+  for (const name of fileVariableReads(fs.readFileSync(file, "utf8"))) {
+    if (!NON_STORE_FILE_VARIABLES.has(name) && !Object.hasOwn(STORE_FILES, name)) {
+      unaligned.push(`${path.relative(sourceRoot, file)}: ${name}`);
     }
   }
 }
