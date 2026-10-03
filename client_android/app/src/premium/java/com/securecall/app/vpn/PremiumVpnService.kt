@@ -11,6 +11,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.securecall.app.R
+import com.securecall.app.config.TierManager
 import com.wireguard.android.backend.GoBackend
 import com.wireguard.android.backend.Tunnel
 import com.wireguard.config.Config
@@ -46,12 +47,20 @@ class PremiumVpnService : VpnService() {
             return Service.START_NOT_STICKY
         }
 
-        startAsForeground(buildNotification(R.string.premium_vpn_notification_connecting))
         if (PremiumVpnState.status == PremiumVpnState.Status.ACTIVE ||
             PremiumVpnState.status == PremiumVpnState.Status.CONNECTING
         ) {
+            // License changes must not silently remove an existing protection tunnel.
             return Service.START_STICKY
         }
+
+        if (!TierManager.isPremium(this)) {
+            VpnConfigStore.setEnabled(this, false)
+            stopSelf()
+            return Service.START_NOT_STICKY
+        }
+
+        startAsForeground(buildNotification(R.string.premium_vpn_notification_connecting))
 
         PremiumVpnState.status = PremiumVpnState.Status.CONNECTING
         worker.execute {
