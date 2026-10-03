@@ -40,6 +40,9 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_about">About</string>
+    <string name="settings_custom_call_id">Custom Call ID</string>
+    <string name="settings_support_development">Support Development</string>
+    <string name="settings_diagnostics">Diagnostics</string>
     <string name="settings_dark_mode">Dark Mode</string>
     <string name="settings_version">Version</string>
     <string name="settings_build">Build</string>
@@ -97,6 +100,8 @@
     <string name="nav_dialer">Dialer</string>
     <string name="dialer_enter_number">Enter number</string>
     <string name="dialer_backspace">Delete</string>
+    <!-- Key 0: digit plus a smaller long-press "+" hint that fits the two-line key (#86) -->
+    <string name="dialer_key_zero" translatable="false">0\n<small>+</small></string>
     <string name="dialer_invite_title">Invite to SecureCall</string>
     <string name="dialer_invite_message">Invite %1$s to SecureCall</string>
     <string name="dialer_send_messenger">Via Messenger</string>

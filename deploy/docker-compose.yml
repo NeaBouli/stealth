@@ -37,7 +37,7 @@ services:
 
   # ─── Nginx Reverse Proxy + SSL ──────────────────────────────
   nginx:
-    image: nginx:1.25-alpine
+    image: nginx:1.31-alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
     container_name: securecall-nginx
     restart: unless-stopped
     ports:
@@ -61,7 +61,7 @@ services:
 
   # ─── Certbot (Let's Encrypt) ────────────────────────────────
   certbot:
-    image: certbot/certbot:latest
+    image: certbot/certbot:v5.8.0@sha256:f70ad0adbb7e117f0fe42a63c553f28ea451edabc0148757b6efcd9735acaa20
     container_name: securecall-certbot
     volumes:
       - ./certbot/conf:/etc/letsencrypt
@@ -70,7 +70,7 @@ services:
 
   # ─── TURN Server (coturn) ──────────────────────────────────
   coturn:
-    image: coturn/coturn:latest
+    image: coturn/coturn:4.18.0@sha256:bbefd3e1fdfdc0d58770fe01b581fd8b00d9f3a5580d00acb77cf719a6bc78e3
     container_name: securecall-turn
     restart: unless-stopped
     environment:

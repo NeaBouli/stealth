@@ -13,6 +13,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.SwitchPreferenceCompat
 import com.securecall.app.R
+import com.securecall.app.ui.CollapsiblePreferenceCategory
 import com.securecall.app.ui.SettingsFragment
 
 object VpnFeature {
@@ -32,7 +33,8 @@ object VpnFeature {
             return
         }
 
-        val category = PreferenceCategory(context).apply {
+        // Same expand/collapse behaviour as the peer sections in preferences.xml (#86).
+        val category = CollapsiblePreferenceCategory(context).apply {
             key = KEY_CATEGORY
             title = context.getString(R.string.premium_vpn_category)
             isIconSpaceReserved = false
