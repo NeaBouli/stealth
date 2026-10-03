@@ -2,6 +2,7 @@
 // Add to your existing Railway backend: require('./reportRoute')(app);
 
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
+const { getClientIp } = require('./middleware/ip');
 
 // In-memory rate limit store (resets on server restart — fine for abuse prevention)
 const rateLimitStore = new Map();
@@ -125,8 +126,9 @@ module.exports = function registerReportRoute(app) {
             return res.status(500).json({ error: 'Server misconfiguration' });
         }
 
-        // --- Get real IP (Railway sits behind a proxy) ---
-        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+        // --- Client IP: same trusted-proxy contract as every other limiter.
+        // The leftmost X-Forwarded-For entry is client-controlled and must not key the limit.
+        const ip = getClientIp(req) || 'unknown';
 
         // --- Honeypot check (hidden field must be empty) ---
         if (req.body.website || req.body._trap) {
