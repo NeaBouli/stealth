@@ -124,10 +124,10 @@
 ## 2026-05-09 — Neustart-Resume nach Play-Console-Free-Geraeteangleichung
 
 - Resume-Dateien:
-  - Global: `/Users/gio/.codex/memories/stealth_resume_2026-05-09.md`
+  - Global: `~/.codex/memories/stealth_resume_2026-05-09.md`
   - Projekt: `docs/agent-bridge/RESUME_NEXT_SESSION.md`
 - Aktuelle Upload-AAB:
-  - `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - `~/Desktop/SecureCall-FINAL-UPLOAD.aab`
   - package: `com.securecall.app.free`
   - versionCode: `53002`
   - versionName: `1.0.31-free`
@@ -151,7 +151,7 @@
 - HEAD vor Rechnerwechsel:
   - `bb9c719` auf `main` / `origin/main`
 - Aktuelle Play-Console-AAB:
-  - `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - `~/Desktop/SecureCall-FINAL-UPLOAD.aab`
   - package: `com.securecall.app.free`
   - versionCode: `54002`
   - versionName: `1.0.32-free`
@@ -184,10 +184,10 @@ ersetzt. Fuer Neustart/Fortsetzung gilt der neuere Stand mit
 auf allen drei Geraeten.
 
 - Codex-Resume-Dateien:
-  - Global: `/Users/gio/.codex/memories/stealth_resume_2026-05-09.md`
+  - Global: `~/.codex/memories/stealth_resume_2026-05-09.md`
   - Projekt: `docs/agent-bridge/RESUME_NEXT_SESSION.md`
 - Aktuelle Upload-AAB:
-  - `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - `~/Desktop/SecureCall-FINAL-UPLOAD.aab`
   - package: `com.securecall.app.free`
   - versionCode: `52002`
   - versionName: `1.0.30-free`
@@ -211,7 +211,7 @@ auf allen drei Geraeten.
 ## 2026-05-03
 
 - Projekt: Stealth / SecureCall / StealthX
-- Lokaler Pfad: `/Users/gio/Desktop/repo/stealth`
+- Lokaler Pfad: `~/Desktop/repo/stealth`
 - GitHub Remote: `https://github.com/NeaBouli/stealth.git`
 - Website: `stealthx.tech`
 - Rollout-Hinweis: Play Store, APK und F-Droid sind bereits im Verifizierungs-/Rollout-Prozess. Aenderungen sollen deshalb klein und kompatibel bleiben.

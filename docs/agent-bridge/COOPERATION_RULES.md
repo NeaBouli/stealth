@@ -1,7 +1,7 @@
 # Agent Cooperation Rules
 
 Projekt: stealth
-Lokaler Pfad: /Users/gio/Desktop/repo/stealth
+Lokaler Pfad: ~/Desktop/repo/stealth
 Angelegt: 2026-05-08
 
 Dieser Ordner ist der gemeinsame Kommunikations- und Arbeitsordner fuer Claude Code, Codex und Gio.

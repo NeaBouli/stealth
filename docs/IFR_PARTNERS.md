@@ -11,22 +11,21 @@
 **Developer:** Vendetta Labs
 **Website:** TBA
 
-### IFR Integration
-- **Game Main Token (GHIFR):** 1 GHIFR = 1 IFR (1:1 parity, fixed exchange rate)
-- **Voucher System:** Players exchange GHIFR for IFR vouchers on ifrunit.tech
-- **Fee Sharing:** 10% of game fees go to the IFR buyback pool
-- **No token trading in-game:** Only external voucher exchange via ifrunit.tech
+### IFR Integration (proposal — not implemented)
+Status 2026-10-03: none of the following exists. These are ideas for a future integration and need an
+agreement with the IFR project; current IFR status: https://ifrunit.tech/wiki/transparency.html
+- **Game token (GHIFR):** a GHIFR/IFR exchange rate is not defined; no fixed 1:1 parity is promised.
+- **Voucher exchange:** there is no GHIFR→IFR voucher exchange on ifrunit.tech.
+- **Fee sharing:** there is no IFR "buyback pool" that accepts partner fees. A contribution would need its own
+  approved mechanism.
+- **No token trading in-game.**
 
 ### Revenue Model
 - Entry: €1 one-time (permanent faction, starting pattern)
 - Layer ascent: €0.50–€2.00 per layer
 - Cosmetics: €0.25–€1.00 (cell colors, trails, pattern skins)
 
-| Player Base | Monthly IFR Buyback |
-|---|---|
-| 1,000 | ~€370 → ~46,000 IFR |
-| 10,000 | ~€3,700 → ~462,000 IFR |
-| 100,000 | ~€37,000 → ~4.6M IFR |
+No IFR buyback amounts are projected: the fee-sharing mechanism above does not exist.
 
 ### Game Mechanics
 - **Entry:** €1 one-time → permanent faction, place starting pattern
@@ -37,14 +36,14 @@
 
 ### Legal Classification
 - **No gambling:** Conway's rules are deterministic — no randomness
-- **No token trading in-game:** Only external voucher exchange via ifrunit.tech
+- **No token trading in-game.**
 - **GDPR-compliant:** Hetzner (EU), PostgreSQL, no US data transfer
 
 ### Technical Infrastructure
 - Conway Engine: Rust (1 CPU core → 1,000x1,000 grid @ 10 ticks/s)
 - WebSocket Server: Node.js (delta updates, no full grid)
 - Redis: Grid state in RAM
-- PostgreSQL: User accounts, GHIFR balances, voucher log
+- PostgreSQL: User accounts, GHIFR balances
 - Visualization: Three.js / WebGL (client-side)
 - Hosting: Hetzner CX21 (up to 1,000 users) → CX41 (up to 10,000 users)
 
@@ -62,6 +61,8 @@
 - **Holder eligibility:** Any positive IFR balance qualifies; no minimum token threshold
 - **Discount:** The seller-displayed holder discount applies to the selected checkout product
 - **Android app status:** No WalletConnect, no in-app IFR unlock in the public app line
+- **Eligibility rule:** IFR wallet balance (hold model), as implemented in
+  `backend/signaling/src/services/ifr.js` (`balanceOf` on the IFR token). Locked IFR in IFRLock is not required.
 
 ---
 

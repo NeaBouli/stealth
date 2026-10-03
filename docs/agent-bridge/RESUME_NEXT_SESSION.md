@@ -98,7 +98,7 @@ wscat -c ws://localhost:8080/signal
 
 Nach `gh auth refresh -s workflow`:
 ```bash
-cd /Users/gio/Desktop/repos/stealth
+cd ~/Desktop/repos/stealth
 git stash pop   # WIP: workflow Node.js 24 fix
 git push origin main
 ```

@@ -2,7 +2,7 @@
 
 - **Datum:** 2026-05-03
 - **Auditor:** Codex
-- **Scope:** lokales Repo `/Users/gio/Desktop/repo/stealth`, GitHub `NeaBouli/stealth`, Website `https://stealthx.tech`, local docs/wiki/website, Android client, Rust crypto, Node signaling backend
+- **Scope:** lokales Repo `~/Desktop/repo/stealth`, GitHub `NeaBouli/stealth`, Website `https://stealthx.tech`, local docs/wiki/website, Android client, Rust crypto, Node signaling backend
 - **Nicht gelesen:** `.env`, `.env.*`, `.gitignore`, keystores, keys, secret files
 - **Keine Aktionen:** kein Commit, kein Push, kein Deployment, keine Serveränderung
 

@@ -108,7 +108,7 @@
 
 **Codex Subagent Role Split Added**
 - User requested a durable role split so the main GPT-5.6 agent can keep architecture, security, release judgment, and final verification while delegating small bounded work to faster subagents.
-- Official Codex manual was refreshed locally with `/Users/gio/.codex/skills/.system/openai-docs/scripts/fetch-codex-manual.mjs`; status: local manual current.
+- Official Codex manual was refreshed locally with `~/.codex/skills/.system/openai-docs/scripts/fetch-codex-manual.mjs`; status: local manual current.
 - Added project-scoped Codex configuration:
   - `.codex/config.toml`
     - `[agents] max_threads = 6`
@@ -154,11 +154,11 @@
   - `versionName 1.0.45`
   - Universal APK override now produces `versionCode 78012009`.
 - Build:
-  - `cd /Users/gio/Desktop/repos/stealth/client_android`
+  - `cd ~/Desktop/repos/stealth/client_android`
   - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleRelease bundleRelease --console=plain`
   - Result: `BUILD SUCCESSFUL in 10m 35s`
   - `verifyNoAppIfrWalletCode` ran.
-- Desktop artifacts refreshed in `/Users/gio/Desktop/aab apk/`:
+- Desktop artifacts refreshed in `~/Desktop/aab apk/`:
   - `SecureCall-LATEST.aab`
   - `SecureCall-Free-v1.0.45-vc78012.aab`
   - `SecureCall-Pro-v1.0.45-vc78012.aab`
@@ -181,7 +181,7 @@
   - S7 `ce10160adc00152604`: Pro `1.0.45-pro` / `78012009`, UI showed `StealthX` / `Disconnected`; same known S7 network route/gateway blocker.
   - Tab S4 `ce12182c68644439037e`: Free `1.0.45-free` / `78012009`, UI showed `StealthX` / `Connected`.
 - QA report updated:
-  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+  - `~/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
 - Remaining gaps / next actions:
   - Clean manual or coordinate-stable S10 -> Tab incoming-call accept retest is still required for the new 1.0.45 Free-Ad pause fix; automated retest attempts were rejected as evidence because S10 repeatedly left SecureCall and landed in Samsung launcher/app drawer before the call tap.
   - S7 call/signaling/call-matrix remains blocked until S7 has validated Internet or the user approves temporary roaming/mobile-data fallback.
@@ -199,11 +199,11 @@
   - `versionName 1.0.44`
   - Universal APK override now produces `versionCode 78011009`.
 - Full release build:
-  - `cd /Users/gio/Desktop/repos/stealth/client_android`
+  - `cd ~/Desktop/repos/stealth/client_android`
   - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleRelease bundleRelease --console=plain`
   - Result: `BUILD SUCCESSFUL in 13m 28s`
   - `verifyNoAppIfrWalletCode` ran.
-- Desktop artifacts refreshed in `/Users/gio/Desktop/aab apk/`:
+- Desktop artifacts refreshed in `~/Desktop/aab apk/`:
   - `SecureCall-LATEST.aab`
   - `SecureCall-Free-v1.0.44-vc78011.aab`
   - `SecureCall-Pro-v1.0.44-vc78011.aab`
@@ -226,7 +226,7 @@
   - S7 `ce10160adc00152604`: Pro `1.0.44-pro` / `78011009`, focused in `MainActivity`, UI still showed `Disconnected` due the already documented S7 network route/gateway blocker.
   - Tab S4 `ce12182c68644439037e`: Free `1.0.44-free` / `78011009`, focused in `MainActivity`, UI showed `StealthX` / `Connected`.
 - QA report updated:
-  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+  - `~/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
 - Commit context:
   - Previous pushed API hardening commit: `cd0a7d3 fix: harden SecureCall startup across Android APIs`.
   - This entry documents the subsequent 1.0.44 version bump, rebuild, Desktop artifact refresh, and physical install smoke.
@@ -264,7 +264,7 @@
   - API 35 fresh-install re-test: onboarding visible; no targeted `WindowLeaked`; no Android 15 FGS `SecurityException`; after prompts, main UI showed `StealthX` / `Connected`; free ad banner did not overlap bottom nav.
   - API 30 fresh-install re-test: onboarding visible; package metadata verified as Free `1.0.43-free` / `78010009`; targeted crash/security scan clean.
   - API 24 fresh-install re-test: after onboarding/phone/battery prompts, main UI showed `StealthX` / `Connected`; targeted TLS/security scan had no `SSLHandshakeException`, `Trust anchor`, `CertPathValidator`, `WindowLeaked`, or app `FATAL EXCEPTION`.
-  - QA report updated: `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+  - QA report updated: `~/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
 - Still open:
   - Rebuild all final APK/AAB artifacts; existing Desktop artifacts predate these Android 15/API24 fixes.
   - Install rebuilt variants on S10/S7/Tab and rerun physical smoke.
@@ -277,7 +277,7 @@
 ### 2026-07-11 10:21 EEST — CODEX TERMINAL — RELEASE
 
 **SecureCall 1.0.42 Build Artifacts**
-- User requested the new AAB/APK files in `/Users/gio/Desktop/aab apk/`.
+- User requested the new AAB/APK files in `~/Desktop/aab apk/`.
 - Bumped SecureCall Android version in `client_android/app/build.gradle`:
   - Base `versionCode`: `78`
   - Base `versionName`: `1.0.42`
@@ -285,13 +285,13 @@
 - Built with:
   - `cd client_android && ./gradlew --no-daemon --max-workers=1 -Pinternal assembleFreeRelease assembleProRelease assemblePremiumRelease bundleFreeRelease`
   - Result: `BUILD SUCCESSFUL in 8m 34s`
-- Copied artifacts to `/Users/gio/Desktop/aab apk/`:
+- Copied artifacts to `~/Desktop/aab apk/`:
   - `SecureCall-Free-v1.0.42-vc78.aab` — Google Play Free AAB, 37 MB
   - `SecureCall-Free-v1.0.42-universal-vc78009.apk` — 63 MB
   - `SecureCall-Pro-v1.0.42-universal-vc78009.apk` — 61 MB
   - `SecureCall-Premium-v1.0.42-universal-vc78009.apk` — 61 MB
   - `SecureCall-v1.0.42-release-notes.txt`
-- Verified APK metadata with `/Users/gio/Library/Android/sdk/build-tools/35.0.0/aapt dump badging`:
+- Verified APK metadata with `~/Library/Android/sdk/build-tools/35.0.0/aapt dump badging`:
   - Free: `com.securecall.app.free`, `versionCode=78009`, `versionName=1.0.42-free`, `targetSdkVersion=35`
   - Pro: `com.securecall.app.pro`, `versionCode=78009`, `versionName=1.0.42-pro`, `targetSdkVersion=35`
   - Premium: `com.securecall.app.premium`, `versionCode=78009`, `versionName=1.0.42-premium`, `targetSdkVersion=35`
@@ -314,7 +314,7 @@
 ### 2026-07-11 09:44 EEST — CODEX TERMINAL — FIX / STATUS
 
 **SecureCall Device QA: S10 Audio Route Fix**
-- Continued the three-device SecureCall QA run from `/Users/gio/Desktop/securecall-qa-20260711-082933`.
+- Continued the three-device SecureCall QA run from `~/Desktop/securecall-qa-20260711-082933`.
 - Built and installed the target release APKs after the audio fix:
   - S10 `RF8N313QMFL`: `com.securecall.app.premium` `1.0.41-premium` / `versionCode=77009`
   - S7 `ce10160adc00152604`: `com.securecall.app.pro` `1.0.41-pro` / `versionCode=77009`
@@ -357,7 +357,7 @@
 - Packaged commit:
   - `4820d02` `fix: make phone number prompt one-shot`
 - Build command:
-  - `cd /Users/gio/Desktop/repos/stealth/client_android`
+  - `cd ~/Desktop/repos/stealth/client_android`
   - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleRelease bundleRelease --console=plain`
 - Result:
   - `BUILD SUCCESSFUL in 20m 27s`
@@ -365,7 +365,7 @@
 
 **Desktop Artifacts Refreshed**
 - Folder:
-  - `/Users/gio/Desktop/aab apk/`
+  - `~/Desktop/aab apk/`
 - Current upload candidate:
   - `SecureCall-LATEST.aab` — refreshed at 12:08 EEST, alias of Free AAB.
 - AABs:
@@ -395,7 +395,7 @@
 - Device:
   - S10 `RF8N313QMFL`
 - Installed:
-  - `/Users/gio/Desktop/aab apk/SecureCall-Premium-LATEST.apk`
+  - `~/Desktop/aab apk/SecureCall-Premium-LATEST.apk`
 - Result:
   - `adb install -r` succeeded.
   - Package verified: `versionCode=78010009`, `versionName=1.0.43-premium`.
@@ -451,7 +451,7 @@
   - `ping api.stealthx.tech` returns `unknown host`.
   - App log: `Unable to resolve host "api.stealthx.tech": No address associated with hostname`.
 - QA report updated:
-  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+  - `~/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
 - Still open:
   - S7 network/DNS must be fixed before S7 call/signaling QA can be completed.
   - Fresh-install phone-confirm test requires explicit approval to clear app data.
@@ -3247,25 +3247,25 @@ Fix: Replace all SecureCall user-visible IFR threshold copy with 2,000 IFR for P
 Linear: NEW
 
 **[HIGH] FINDING: Chameleon IFR verifier calls obsolete lockedAmount contract method**
-File: `/Users/gio/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/verifier/IFRLockVerifier.kt:51`
+File: `~/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/verifier/IFRLockVerifier.kt:51`
 Description: Chameleon encodes `lockedAmount(address)` and throws `All RPC endpoints failed for lockedAmount(...)`. The required IFR contract method is `lockedBalance(address)`, and SecureChat/backend already use `lockedBalance`. This will break on-chain tier verification.
 Fix: Change verifier function name and error text to `lockedBalance`; update `IFRConstants.IFRLOCK_ABI` line 61 and tests to assert the live method name.
 Linear: NEW
 
 **[HIGH] FINDING: SecureChat/Chameleon sx_ IDs are not derived from Ed25519 public keys**
-File: `/Users/gio/Desktop/repos/securechat/data/src/main/java/com/stealthx/data/identity/StealthXIdentity.kt:76`
+File: `~/Desktop/repos/securechat/data/src/main/java/com/stealthx/data/identity/StealthXIdentity.kt:76`
 Description: SecureChat and Chameleon `getOrCreateWithSeed()` paths create a random seed and derive the `sx_` ID from that seed. The required platform rule is deterministic derivation from Ed25519 public key. Both repos do produce `sx_` + 9 Base58 chars, but the source material is wrong.
 Fix: Generate/load the Ed25519 identity key before ID creation, derive from Ed25519 public key bytes, and add tests for `sx_` + 9 Base58 chars and total length 12.
 Linear: NEW
 
 **[HIGH] FINDING: SecureChat sx_ validation only checks prefix**
-File: `/Users/gio/Desktop/repos/securechat/domain/src/main/java/com/stealthx/domain/keyexchange/KeyExchangeManager.kt:71`
+File: `~/Desktop/repos/securechat/domain/src/main/java/com/stealthx/domain/keyexchange/KeyExchangeManager.kt:71`
 Description: Incoming bundle validation only checks `startsWith("sx_")`. It does not enforce total length 12 or Base58 charset, so malformed IDs can pass validation.
 Fix: Add a shared validator for `^sx_[1-9A-HJ-NP-Za-km-z]{9}$` and use it in key exchange, QR parsing, and contact import.
 Linear: NEW
 
 **[HIGH] FINDING: Chameleon Settings tier promises diverge from enforcement**
-File: `/Users/gio/Desktop/repos/chameleon/presentation/src/main/java/com/stealthx/presentation/screen/SettingsScreen.kt:140`
+File: `~/Desktop/repos/chameleon/presentation/src/main/java/com/stealthx/presentation/screen/SettingsScreen.kt:140`
 Description: Settings lists "Decoy Profile" under Pro while both row lock and nav require Elite. Settings also claims Free "Manual Geofencing (3 rules max)" while the geofencing route and engine require Elite.
 Fix: Move Decoy Profile to Elite or lower all gates to Pro. Add a real Free manual-geofencing path with a 3-rule cap, or change Settings copy to Elite-only.
 Linear: NEW
@@ -3277,13 +3277,13 @@ Fix: Centralize SecureCall HTTP/WebSocket client construction and apply `Network
 Linear: NEW
 
 **[MEDIUM] FINDING: SecureChat IFR ABI constant still references lockedAmount**
-File: `/Users/gio/Desktop/repos/securechat/stealthx-ifr/src/main/java/com/stealthx/ifr/IFRConstants.kt:61`
+File: `~/Desktop/repos/securechat/stealthx-ifr/src/main/java/com/stealthx/ifr/IFRConstants.kt:61`
 Description: The live verifier calls `lockedBalance`, but the `IFRLOCK_ABI` constant still declares `lockedAmount`. This is stale and contradicts the required backend/contract field name.
 Fix: Update `IFRLOCK_ABI` to `lockedBalance`, or remove the unused ABI string to prevent future callers from reintroducing the wrong method.
 Linear: NEW
 
 **[MEDIUM] FINDING: SecureChat Settings lists Phase 2/3 features as ordinary gated rows**
-File: `/Users/gio/Desktop/repos/securechat/presentation/src/main/java/com/stealthx/presentation/screens/SettingsScreen.kt:90`
+File: `~/Desktop/repos/securechat/presentation/src/main/java/com/stealthx/presentation/screens/SettingsScreen.kt:90`
 Description: Group Messaging, Encrypted File Transfer, Kaspa Identity Anchor, Chameleon Integration, Onion Routing, Decoy Chat Profiles, Advanced Threat Detection, and Emergency Broadcast are displayed as tier-gated feature rows. Several are not implemented or are explicit Phase 2/3 stubs.
 Fix: Label unavailable items as "Coming soon" or route only to locked/roadmap UI until implementations exist and are gated at service/domain level.
 Linear: NEW
@@ -3296,7 +3296,7 @@ Linear: NEW
 
 **[LOW] FINDING: Gradle build verification blocked by sandbox filesystem permissions**
 File: `client_android/gradlew`
-Description: SecureCall, SecureChat, and Chameleon Gradle commands failed before configuration because the sandbox cannot create Gradle wrapper `.zip.lck` files under `/Users/gio/.gradle`.
+Description: SecureCall, SecureChat, and Chameleon Gradle commands failed before configuration because the sandbox cannot create Gradle wrapper `.zip.lck` files under `~/.gradle`.
 Fix: Re-run build verification outside this sandbox or with `GRADLE_USER_HOME` pointed to a writable cache with the required Gradle distributions available.
 Linear: NEW
 
@@ -3316,49 +3316,49 @@ Linear: NEW
 ### TYPE: REVIEW
 
 **[CRITICAL] FINDING: SecureCall can send plaintext when native crypto is unavailable or encryption returns null**
-File: `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt:348`
+File: `~/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt:348`
 Description: `sendBinary()` falls back to raw `data` when there is no session key, native crypto is unavailable, or `CoreCrypto.encrypt()` returns null. Outgoing setup also logs that calls continue unencrypted when native crypto is unavailable. This violates the platform requirement for XChaCha20-Poly1305 everywhere.
 Fix: Fail closed. Abort send/call with a visible secure-call error if native crypto/session key/encryption output is unavailable. Reuse `SessionCipherEngine` fail-closed behavior.
 Linear: NEW
 
 **[HIGH] FINDING: SecureCall IFR UI still advertises obsolete 1,000/5,000 IFR thresholds**
-File: `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/res/values/strings.xml:199`
+File: `~/Desktop/repos/stealth/client_android/app/src/main/res/values/strings.xml:199`
 Description: SecureCall strings, upgrade layout, and WalletConnect insufficient-balance copy still say Pro=1,000 IFR and Premium=5,000 IFR. Required platform thresholds are Pro=2,000 and Elite/Premium=6,000.
 Fix: Replace all user-visible SecureCall IFR threshold copy with 2,000 IFR for Pro and 6,000 IFR for Premium/Elite, including `strings.xml`, `activity_upgrade.xml`, and `WalletConnectManager.kt`.
 Linear: NEW
 
 **[HIGH] FINDING: Several SecureCall api.stealthx.tech OkHttp clients bypass certificate pinning**
-File: `/Users/gio/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/billing/SubscriptionManager.kt:30`
+File: `~/Desktop/repos/stealth/client_android/app/src/main/java/com/securecall/app/billing/SubscriptionManager.kt:30`
 Description: `SubscriptionManager`, `MainActivity`, `SettingsFragment`, and `GhostNetWebSocketClient` construct raw OkHttp clients for platform endpoints derived from `BuildConfig.SIGNAL_WS_URL`. Only `HeartbeatClient` applies `NetworkManager.buildCertificatePinner()`.
 Fix: Centralize SecureCall HTTP/WebSocket client creation and apply `NetworkManager.buildCertificatePinner()` whenever `BuildConfig.CERTIFICATE_PINNING` is true. Keep Free intentionally unpinned.
 Linear: NEW
 
 **[HIGH] FINDING: Chameleon IFR verifier calls obsolete lockedAmount contract method**
-File: `/Users/gio/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/verifier/IFRLockVerifier.kt:51`
+File: `~/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/verifier/IFRLockVerifier.kt:51`
 Description: Chameleon encodes `lockedAmount(address)` and throws `All RPC endpoints failed for lockedAmount(...)`. The required contract method is `lockedBalance(address)`, already used by SecureChat and backend.
 Fix: Change Chameleon verifier function name and error text to `lockedBalance`; update ABI/tests to prevent regression.
 Linear: NEW
 
 **[HIGH] FINDING: SecureChat/Chameleon sx_ IDs are not derived from Ed25519 public keys**
-File: `/Users/gio/Desktop/repos/securechat/data/src/main/java/com/stealthx/data/identity/StealthXIdentity.kt:76`
+File: `~/Desktop/repos/securechat/data/src/main/java/com/stealthx/data/identity/StealthXIdentity.kt:76`
 Description: SecureChat and Chameleon create a random `identity_seed` and derive the `sx_` ID from that seed. Required rule is deterministic derivation from the Ed25519 public key.
 Fix: Generate/load Ed25519 identity keys before ID creation, derive `sx_` from Ed25519 public key bytes, and add exact format tests.
 Linear: NEW
 
 **[HIGH] FINDING: SecureChat accepts malformed sx_ IDs**
-File: `/Users/gio/Desktop/repos/securechat/domain/src/main/java/com/stealthx/domain/keyexchange/KeyExchangeManager.kt:71`
+File: `~/Desktop/repos/securechat/domain/src/main/java/com/stealthx/domain/keyexchange/KeyExchangeManager.kt:71`
 Description: Incoming bundles only require `startsWith("sx_")`; contact import accepts any `sx_` length >= 10. This violates exact 12-character Base58 platform format.
 Fix: Add shared validator `^sx_[1-9A-HJ-NP-Za-km-z]{9}$` and use it in key exchange, QR parsing, and contact import.
 Linear: NEW
 
 **[HIGH] FINDING: Chameleon Settings tier promises diverge from enforcement**
-File: `/Users/gio/Desktop/repos/chameleon/presentation/src/main/java/com/stealthx/presentation/screen/SettingsScreen.kt:140`
+File: `~/Desktop/repos/chameleon/presentation/src/main/java/com/stealthx/presentation/screen/SettingsScreen.kt:140`
 Description: Settings lists Decoy Profile under Pro but the row and route require Elite. It also presents Manual Geofencing and Private Zone as Free while navigation gates Geofencing to Elite and Private Zone to Pro.
 Fix: Align UI copy and gates: either implement Free capped paths and Pro Decoy/Geofencing, or move/copy features to the tier actually enforced.
 Linear: NEW
 
 **[MEDIUM] FINDING: Firebase google-services API key is committed without visible restriction proof**
-File: `/Users/gio/Desktop/repos/stealth/client_android/app/google-services.json:18`
+File: `~/Desktop/repos/stealth/client_android/app/google-services.json:18`
 Description: A Firebase API key is committed in `google-services.json` and repeated for all flavors. Firebase mobile API keys are often publishable, but release should prove API/package/SHA restrictions.
 Fix: Verify Google Cloud/Firebase restrictions for application IDs and signing cert fingerprints, or rotate and commit only restricted config.
 Linear: NEW
@@ -3481,7 +3481,7 @@ Client-Fix (HeartbeatClient 429-Backoff) ist in neuem SecureCall-Premium-Build (
 
 **Stand der Prüfung:**
 
-- Repo geprüft: `/Users/gio/Desktop/repos/k-9`
+- Repo geprüft: `~/Desktop/repos/k-9`
 - Kontaktformular-Plugin identifiziert: Forminator `1.53.2`, nicht WPForms.
 - Forminator Form ID `195` enthält die Siebrecht-Einträge.
 - Eintrag `#17`: `2026-05-10 15:08:51 UTC` / WP-Anzeige `May 10, 2026 @ 6:08 PM`
@@ -3497,7 +3497,7 @@ Der in Codex verfügbare Tool-Satz enthält aktuell keinen echten Browser-Contro
 
 **Nächster sinnvoller Schritt:**
 
-Aus KIS/GoDaddy die Webserver-Accesslogs für `k-9.agency` um diese UTC-Zeitfenster herunterladen und in `/Users/gio/Desktop/repos/k-9/logs/` ablegen:
+Aus KIS/GoDaddy die Webserver-Accesslogs für `k-9.agency` um diese UTC-Zeitfenster herunterladen und in `~/Desktop/repos/k-9/logs/` ablegen:
 
 - `2026-05-10 15:05-15:12 UTC`
 - `2026-05-20 06:10-06:18 UTC`
@@ -3812,9 +3812,9 @@ GitHub/Linear:
 ### STATUS: DONE
 ### EMPFÄNGER: CC|GIO
 
-**SecureCall App Icon aus `/Users/gio/Desktop/icons` platziert**
+**SecureCall App Icon aus `~/Desktop/icons` platziert**
 
-- Quelle: `/Users/gio/Desktop/icons/SecureCall-Icon.png` (1024x1024)
+- Quelle: `~/Desktop/icons/SecureCall-Icon.png` (1024x1024)
 - Ziel:
   - `client_android/app/src/main/res/drawable/ic_launcher_bitmap.png` (432x432 adaptive foreground)
   - `client_android/app/src/main/res/mipmap-*/ic_launcher.png`
@@ -3837,7 +3837,7 @@ Hinweis:
 
 **SecureCall Website Designvorlage ins Projekt übernommen**
 
-- Quelle: `/Users/gio/Desktop/securecall`
+- Quelle: `~/Desktop/securecall`
 - Ziel: `website/design-template/securecall/`
 - Enthält:
   - Platform-/Produkt-HTML-Vorlagen
@@ -3861,8 +3861,8 @@ Hinweis:
 
 Umgesetzt:
 - `website/index.html` vollständig neu strukturiert: klarere Navigation, Hero, Platform, Features, Flow, Security, Audit, Source, Compare, Pricing, IFR, Lifetime, FAQ, Download und Broadcast.
-- Designsystem aus `/Users/gio/Desktop/securecall` in `website/css/landing.css` übertragen und für Desktop/Mobile responsiv gemacht.
-- Neue Brand-Assets aus `/Users/gio/Desktop/icons` in `website/assets/brand/` abgelegt.
+- Designsystem aus `~/Desktop/securecall` in `website/css/landing.css` übertragen und für Desktop/Mobile responsiv gemacht.
+- Neue Brand-Assets aus `~/Desktop/icons` in `website/assets/brand/` abgelegt.
 - Sichtbare Logos/Icon-Nutzung ersetzt:
   - StealthX Logo in Navigation/Footer
   - SecureCall Icon im Hero/Download/Favicon/schema image
@@ -3955,7 +3955,7 @@ Zwischenbefund:
 - Lokale `.env*`-Dateien im aktuellen `stealth`-Repo enthielten beim sicheren Pfad-Check keinen Treffer fuer `BREVO_API_KEY`/`xkeysib`; der aktive Wert liegt vermutlich bei Railway/Provider-Secrets oder Server-Env, nicht lokal im Repo.
 
 Gesicherte externe Restart-Notiz:
-- `/Users/gio/Desktop/API_KEY_DEACTIVATION_NOTICE_2026-07-07.md`
+- `~/Desktop/API_KEY_DEACTIVATION_NOTICE_2026-07-07.md`
 
 Naechste Schritte nach Neustart:
 1. Entscheiden, ob Railway/SecureCall-Mailpfad noch gebraucht wird.
@@ -3973,7 +3973,7 @@ Naechste Schritte nach Neustart:
 **SecureCall S10 Disconnect / "zu Hause ploetzlich connected" — Restart-Follow-up**
 
 Repo:
-- `/Users/gio/Desktop/repos/stealth`
+- `~/Desktop/repos/stealth`
 
 Git-Stand:
 - S10-Investigationsnotiz erweitert und nach `origin/main` gepusht.
@@ -4016,7 +4016,7 @@ Aktuelle Einschaetzung:
 Naechste Befehle sobald S10 angeschlossen ist:
 
 ```bash
-cd /Users/gio/Desktop/repos/stealth
+cd ~/Desktop/repos/stealth
 adb devices -l
 adb -s RF8N313QMFL shell getprop ro.product.model
 adb -s RF8N313QMFL shell pm list packages | rg -i 'securecall|stealth|ghost|nea'
@@ -4051,7 +4051,7 @@ GitHub Issue #28:
 **SecureCall S10 Disconnect — ADB-Follow-up mit angeschlossenem S10**
 
 Repo:
-- `/Users/gio/Desktop/repos/stealth`
+- `~/Desktop/repos/stealth`
 
 Bridge-Kontext:
 - `BRIDGE.md` war bereits lokal modified mit den uncommitted Eintraegen:
@@ -4195,7 +4195,7 @@ Empfohlene Code-Follow-ups:
 **GitHub Actions / CI Workflows geprueft und Audit-Coverage nachgezogen**
 
 Repo:
-- `/Users/gio/Desktop/repos/stealth`
+- `~/Desktop/repos/stealth`
 
 Remote CI-Status:
 - Aktueller HEAD:
@@ -4310,7 +4310,7 @@ Rules for all dev agents:
 - Do not use the Anthropic API, Anthropic SDK, `ANTHROPIC_API_KEY`, or direct HTTP calls for Codex -> Claude Code handoff.
 - Do not use `claude --bare`; bare mode does not read the local claude.ai OAuth/keychain session and will report not logged in.
 - Do not use `cc` for Claude Code; on this machine `cc` is the C compiler.
-- The Claude Code CLI command is `claude`; the stable wrapper is `/Users/gio/.local/bin/claude-code-terminal`.
+- The Claude Code CLI command is `claude`; the stable wrapper is `~/.local/bin/claude-code-terminal`.
 - If a probe returns `401 Invalid authentication credentials`, the integration is using the wrong path: API instead of terminal.
 - Keep secrets, tokens, passwords, private keys, and keychain material out of bridge files.
 <!-- /CODEX_CLAUDE_CODE_TERMINAL_BRIDGE_V1 -->
@@ -4441,9 +4441,9 @@ Rules for all dev agents:
 
 **Scope Covered**
 - Repos:
-  - `/Users/gio/Desktop/repos/stealth` → `NeaBouli/stealth`
-  - `/Users/gio/Desktop/repos/securechat` → `NeaBouli/securechat`
-  - `/Users/gio/Desktop/repos/chameleon` → `NeaBouli/chameleon`
+  - `~/Desktop/repos/stealth` → `NeaBouli/stealth`
+  - `~/Desktop/repos/securechat` → `NeaBouli/securechat`
+  - `~/Desktop/repos/chameleon` → `NeaBouli/chameleon`
 - Focus:
   - Android manifests/build variants.
   - Tier/activation-code flow.
@@ -4772,7 +4772,7 @@ Rules for all dev agents:
   - S10 `RF8N313QMFL`: `com.securecall.app.premium`
   - S7 `ce10160adc00152604`: `com.securecall.app.pro`
   - Tab S4 `ce12182c68644439037e`: `com.securecall.app.free`
-- QA artifact folder: `/Users/gio/Desktop/securecall-qa-20260711-082933`.
+- QA artifact folder: `~/Desktop/securecall-qa-20260711-082933`.
 - Device findings:
   - S10 can ping `api.stealthx.tech`, but app stayed `Disconnected`.
   - S10 manual reconnect produced WebSocket upgrade failure: `429 Too Many Requests`.
@@ -4817,7 +4817,7 @@ Rules for all dev agents:
   - chameleon `BRIDGE.md` — same 38-line block.
 - Decision:
   - Product/app/web functionality does not need these duplicate blocks.
-  - Keep one canonical coordination note in `/Users/gio/Desktop/repos/stealth/BRIDGE.md`.
+  - Keep one canonical coordination note in `~/Desktop/repos/stealth/BRIDGE.md`.
   - Treat the duplicated dirty blocks as cleanup candidates, not release blockers.
   - Do not commit or remove them unless the user explicitly approves cleanup, because they may have been produced by another agent/session.
 
@@ -4927,7 +4927,7 @@ Rules for all dev agents:
 **SecureCall QA Continuation: S7 Proven Network/TCP Blocker, Emulator Toolchain Missing**
 - Continued the active SecureCall QA goal after final 1.0.43 artifact handoff.
 - Updated QA report:
-  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+  - `~/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
 
 **S7 Pro 1.0.43 Retest**
 - Device:
@@ -4963,7 +4963,7 @@ Rules for all dev agents:
 - Protocol requires emulator API 24/30/35 phone/tablet passes.
 - Current machine cannot run this matrix:
   - No AVDs listed.
-  - No `/Users/gio/Library/Android/sdk/system-images` directory.
+  - No `~/Library/Android/sdk/system-images` directory.
   - SDK tree contains platforms/build-tools/NDK/platform-tools only.
   - No local `emulator`, `sdkmanager`, or `avdmanager` in the SDK tree.
 - Emulator matrix is therefore BLOCKED until Android emulator tooling and system images are installed.
@@ -4989,7 +4989,7 @@ Rules for all dev agents:
   - AAB/base `versionCode=78010`
   - Universal APK `versionCode=78010009`
 - Rebuild command:
-  - `cd /Users/gio/Desktop/repos/stealth/client_android`
+  - `cd ~/Desktop/repos/stealth/client_android`
   - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleRelease bundleRelease`
 - Result:
   - `BUILD SUCCESSFUL in 11m 9s`
@@ -4997,7 +4997,7 @@ Rules for all dev agents:
 
 **Final Desktop Artifacts**
 - Folder:
-  - `/Users/gio/Desktop/aab apk/`
+  - `~/Desktop/aab apk/`
 - AABs:
   - `SecureCall-Free-v1.0.43-vc78010.aab` — 37M
   - `SecureCall-Pro-v1.0.43-vc78010.aab` — 33M
@@ -5046,27 +5046,27 @@ Rules for all dev agents:
 **SecureCall 1.0.42 Final Universal APKs Installed From Desktop Artifacts**
 - Installed the newly rebuilt Desktop APKs after commit `56727eb`:
   - S10 `RF8N313QMFL`:
-    - Installed `/Users/gio/Desktop/aab apk/SecureCall-Premium-v1.0.42-universal-vc78009.apk`
+    - Installed `~/Desktop/aab apk/SecureCall-Premium-v1.0.42-universal-vc78009.apk`
     - Result: `Success`
     - Package verified: `com.securecall.app.premium`, `versionCode=78009`, `versionName=1.0.42-premium`
     - Launch verified: focused `com.securecall.app.premium/com.securecall.app.MainActivity`
   - Tab S4 `ce12182c68644439037e`:
-    - Installed `/Users/gio/Desktop/aab apk/SecureCall-Free-v1.0.42-universal-vc78009.apk`
+    - Installed `~/Desktop/aab apk/SecureCall-Free-v1.0.42-universal-vc78009.apk`
     - Result: `Success`
     - Package verified: `com.securecall.app.free`, `versionCode=78009`, `versionName=1.0.42-free`
     - Launch delivered to `com.securecall.app.free/com.securecall.app.MainActivity`
   - S7 `ce10160adc00152604`:
-    - Installed `/Users/gio/Desktop/aab apk/SecureCall-Pro-v1.0.42-universal-vc78009.apk`
+    - Installed `~/Desktop/aab apk/SecureCall-Pro-v1.0.42-universal-vc78009.apk`
     - Result: `Success`
     - Package verified: `com.securecall.app.pro`, `versionCode=78009`, `versionName=1.0.42-pro`
     - Launch is blocked by Android Package Installer permission UI / StatusBar focus, matching earlier S7 device-state blocker.
 
 **Current Release Artifact Location**
-- `/Users/gio/Desktop/aab apk/SecureCall-LATEST.aab`
-- `/Users/gio/Desktop/aab apk/SecureCall-Free-LATEST.apk`
-- `/Users/gio/Desktop/aab apk/SecureCall-Pro-LATEST.apk`
-- `/Users/gio/Desktop/aab apk/SecureCall-Premium-LATEST.apk`
-- `/Users/gio/Desktop/aab apk/SecureCall-v1.0.42-release-notes.txt`
+- `~/Desktop/aab apk/SecureCall-LATEST.aab`
+- `~/Desktop/aab apk/SecureCall-Free-LATEST.apk`
+- `~/Desktop/aab apk/SecureCall-Pro-LATEST.apk`
+- `~/Desktop/aab apk/SecureCall-Premium-LATEST.apk`
+- `~/Desktop/aab apk/SecureCall-v1.0.42-release-notes.txt`
 
 **Remaining Blockers**
 - S7 cannot be marked green until device display/permission UI and network validation are stable.
@@ -5079,7 +5079,7 @@ Rules for all dev agents:
 
 **SecureCall 1.0.42 Artifacts Rebuilt After Banner Fix**
 - Build command:
-  - `cd /Users/gio/Desktop/repos/stealth/client_android`
+  - `cd ~/Desktop/repos/stealth/client_android`
   - `./gradlew --no-daemon --max-workers=1 -Pinternal assembleRelease bundleRelease`
 - Result:
   - `BUILD SUCCESSFUL in 10m 8s`
@@ -5088,7 +5088,7 @@ Rules for all dev agents:
 
 **Desktop Artifacts**
 - Folder:
-  - `/Users/gio/Desktop/aab apk/`
+  - `~/Desktop/aab apk/`
 - AABs:
   - `SecureCall-Free-v1.0.42-vc78.aab` — 37M
   - `SecureCall-Pro-v1.0.42-vc78.aab` — 33M
@@ -5122,7 +5122,7 @@ Rules for all dev agents:
 
 **SecureCall Three-Device QA: S10 ↔ Tab Verified, S7 Blocked**
 - QA report written:
-  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+  - `~/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
 - Devices visible:
   - S10 `RF8N313QMFL` — `com.securecall.app.premium` `1.0.42-premium` / `78009`
   - S7 `ce10160adc00152604` — `com.securecall.app.pro` `1.0.42-pro` / `78009`
@@ -5171,7 +5171,7 @@ Rules for all dev agents:
 
 **SecureCall Three-Device QA: Free Banner Overlap**
 - Continuing the full SecureCall S10/S7/Tab S4 QA run under:
-  `/Users/gio/Desktop/securecall-full-qa-20260711-102458`
+  `~/Desktop/securecall-full-qa-20260711-102458`
 - Found a confirmed Free-tier tablet UI blocker:
   - Device: Tab S4 `ce12182c68644439037e`
   - Package: `com.securecall.app.free`
@@ -5221,7 +5221,7 @@ Rules for all dev agents:
   - Confirm now preserves raw input if phone-number normalization fails.
   - Confirm now falls back to `apply()` if synchronous `commit()` returns false.
 - QA report updated:
-  - `/Users/gio/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
+  - `~/Desktop/securecall-full-qa-20260711-102458/reports/SecureCall-Three-Device-QA-Report.md`
 
 **Build Status**
 - First full release rebuild reached Java compile for the changed code, then stalled in `lintVitalAnalyzePremiumRelease`; aborted after no progress.
@@ -5230,7 +5230,7 @@ Rules for all dev agents:
 - Current status:
   - Code fix is present locally.
   - New final AAB/APK artifacts have NOT been regenerated after this phone-confirm fix.
-  - Existing `/Users/gio/Desktop/aab apk/` artifacts still represent the prior `1.0.43` build before this local phone-confirm fix.
+  - Existing `~/Desktop/aab apk/` artifacts still represent the prior `1.0.43` build before this local phone-confirm fix.
 
 **Open Next**
 - Restart Gradle/host build cleanly and regenerate Store/Desktop artifacts after the phone-confirm fix.
@@ -5250,10 +5250,10 @@ Rules for all dev agents:
   - `BUILD SUCCESSFUL in 20m 27s`
   - Build included `verifyNoAppIfrWalletCode`.
 - Desktop artifacts refreshed after the phone-confirm fix:
-  - `/Users/gio/Desktop/aab apk/SecureCall-LATEST.aab`
-  - `/Users/gio/Desktop/aab apk/SecureCall-Free-LATEST.apk`
-  - `/Users/gio/Desktop/aab apk/SecureCall-Pro-LATEST.apk`
-  - `/Users/gio/Desktop/aab apk/SecureCall-Premium-LATEST.apk`
+  - `~/Desktop/aab apk/SecureCall-LATEST.aab`
+  - `~/Desktop/aab apk/SecureCall-Free-LATEST.apk`
+  - `~/Desktop/aab apk/SecureCall-Pro-LATEST.apk`
+  - `~/Desktop/aab apk/SecureCall-Premium-LATEST.apk`
 - Current APK metadata:
   - Free: `com.securecall.app.free`, `versionCode=78010009`, `versionName=1.0.43-free`
   - Pro: `com.securecall.app.pro`, `versionCode=78010009`, `versionName=1.0.43-pro`
@@ -5956,7 +5956,7 @@ Open next:
 - Scope completed locally for SecureCall plus the shared browser checkout: Android IFR/wallet code remains absent; browser discount requires signed wallet ownership and any positive IFR balance; raw periodic phone discovery was removed; Free limits, reason-aware call termination, UMP consent and Crashlytics preferences were implemented and tested.
 - Kimi K3 completed an independent read-only deep review. Sol fixed the review findings: phone `00`/`+` normalization parity, stale comments, old displayed IFR contract, shadowed legacy SIWE handlers, release-copy consistency and staging hazards.
 - Verification: signaling full test suites PASS; production `npm audit --omit=dev` 0 vulnerabilities; JS syntax PASS; Rust 28 unit + 6 E2E PASS; strict Clippy PASS; SecureCall Android 188-task debug/release policy gate PASS; signed Free/Pro/Premium release builds PASS; local browser checks PASS with no horizontal overflow.
-- Signed candidate: `1.0.50` / base versionCode `78017`, target/compile API 36. Candidate aliases and hashes are stored under `/Users/gio/Desktop/aab apk/presale-2026-08-27/`; no private signing material is in Git.
+- Signed candidate: `1.0.50` / base versionCode `78017`, target/compile API 36. Candidate aliases and hashes are stored under `~/Desktop/aab apk/presale-2026-08-27/`; no private signing material is in Git.
 - Device evidence: SecureChat base v15 installed and launched on S10 without crash before S10 disconnected. SecureCall 1.0.50 and Chameleon v14 could not receive new physical smoke tests after that disconnect. S7/S4 remained untouched because Woizz occupied them.
 - Release gates still open: Stripe + VAT/AADE/myDATA/e-timologio (explicit standby); controlled signaling deployment and two-device call matrix; Google VPN-policy review/active-track cleanup; AdMob UMP console message; GitHub Release assets/site deployment; normal PR review.
 - Formal report: `CODEX_AUDIT.md` (`1 FAIL / 6 WARN / 10 PASS`). Status remains READY FOR REVIEW, not market-live.
@@ -5982,7 +5982,7 @@ Open next:
 - CodeRabbit and Kimi findings were independently checked. Valid issues are fixed: client-supplied call-end reasons can no longer spoof server-owned recovery states; flavor initialization now occurs in `Application`; legacy batch phone lookups are serialized with send-failure and callback-failure recovery.
 - Public privacy, published/candidate version and IFR discount copy now match the actual release state and seller-set checkout model. `CODEX_AUDIT.md` records the complete pre-sale gate state.
 - Verification PASS: signaling full test suite including the spoof regression; SecureCall Android compile/lint/policy matrix; focused batch-queue unit tests; signed Free AAB plus Free/Pro/Premium APK rebuild. Final signed build: 182 tasks, API 36, version `1.0.50` / `78017`.
-- Final AAB SHA-256: `d7f9ec6d41237155e762efc59dd8e0939282154cdc5c8796479957b26f8fae41`. Desktop candidates are refreshed under `/Users/gio/Desktop/aab apk/presale-2026-08-27/`.
+- Final AAB SHA-256: `d7f9ec6d41237155e762efc59dd8e0939282154cdc5c8796479957b26f8fae41`. Desktop candidates are refreshed under `~/Desktop/aab apk/presale-2026-08-27/`.
 - S7 and Tab S4 are connected but actively running the Woizz audit package; they were inspected read-only and not disturbed. S10 is absent. No physical SecureCall result is claimed for this correction.
 - Remaining gates: normal PR approval/merge and exact-head CI rerun; controlled signaling deployment plus two-device call matrix; Google VPN-policy review; AdMob UMP console verification; GitHub Release/site publication. Stripe and Greek VAT/AADE/myDATA/e-timologio stay on explicit standby.
 
@@ -6077,3 +6077,25 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-10-03 — CLAUDE CODE — IFR PARTNER CLAIMS CORRECTED (docs only)
+
+- `docs/IFR_PARTNERS.md`: the ORIGO IFR integration (fixed 1:1 GHIFR/IFR parity, voucher exchange on
+  ifrunit.tech, 10 % of game fees to an IFR buyback pool, buyback table) is marked as a proposal that does
+  not exist; no IFR amounts are projected.
+- SecureCall eligibility documented as the hold model (`balanceOf` on the IFR token), matching
+  `backend/signaling/src/services/ifr.js`. Other ecosystem docs describe an IFRLock locked-balance rule;
+  that discrepancy is open for an owner decision.
+- No code, pricing logic, deployment or product activation changed.
+
+## 2026-10-03 — CLAUDE CODE — IFR ELIGIBILITY RULE DECIDED (hold model)
+
+- Decision (owner delegated): StealthX keeps the **hold model**. Any positive IFR token balance
+  (`balanceOf`, 9 decimals) qualifies for the seller-set discount, verified only in the browser
+  checkout with a signed nonce. The checkout stays launch-gated. The Android apps contain no IFR or wallet logic, and PRO/ELITE
+  access comes only from signed activation credentials.
+- Retired: the 2,000 / 6,000 IFR tier thresholds and IFRLock lookups. Remaining mentions are marked as
+  historical. This resolves the open question in the previous entry.
+- Launch gate added: because a dust balance qualifies, the seller documents a minimum-balance or
+  per-wallet limit decision before the discounted checkout is enabled.
+- Files: docs/PRICING.md, docs/agent-bridge/CODEX_FINDINGS.md, backend/signaling/src/services/ifr.js (comment marking the unused legacy classifier; no logic change). Signaling npm test PASS.

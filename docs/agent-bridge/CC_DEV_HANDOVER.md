@@ -110,7 +110,7 @@ Bitte zuerst die Bridge und diesen Handover lesen. Danach:
 
 Du arbeitest im lokalen Repository:
 
-`/Users/gio/Desktop/repo/stealth`
+`~/Desktop/repo/stealth`
 
 Lies zuerst die Agent Bridge unter:
 

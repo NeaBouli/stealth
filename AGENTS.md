@@ -1,10 +1,10 @@
 # Stealth Agent Instructions
 
-These rules extend `/Users/gio/AGENTS.md` for work inside this repository.
+These rules extend `~/AGENTS.md` for work inside this repository.
 
 ## Coordination
 
-- Read `/Users/gio/BRIDGE.md`, this file, `BRIDGE.md`, and relevant files under `docs/agent-bridge/` before material work.
+- Read `~/BRIDGE.md`, this file, `BRIDGE.md`, and relevant files under `docs/agent-bridge/` before material work.
 - Keep `BRIDGE.md` append-only and current after meaningful checks, fixes, releases, or decisions.
 - Do not overwrite or clean unrelated dirty files, especially existing `docs/agent-bridge/*` changes.
 - Never write secrets, full API keys, passwords, private keys, or unredacted production credentials to code, logs, commits, or bridge files.

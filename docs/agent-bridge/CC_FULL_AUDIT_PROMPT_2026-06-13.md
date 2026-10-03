@@ -2,15 +2,15 @@
 
 Datum: 2026-06-13  
 Rolle: CC ist AGENT-B / Co-Auditor. Codex ist AGENT-A / Hauptauditor und orchestriert.  
-Bridge: `/Users/gio/Desktop/repos/stealth/docs/agent-bridge/BRIDGE.md` ist Source of Truth.
+Bridge: `~/Desktop/repos/stealth/docs/agent-bridge/BRIDGE.md` ist Source of Truth.
 
 ## Ziel
 
 Fuehre einen vollstaendigen Pre-Live-Audit aller drei StealthX-Projekte durch und fixe alle belastbar reproduzierbaren Findings gemeinsam mit Codex:
 
-- SecureCall: `/Users/gio/Desktop/repos/stealth`
-- SecureChat: `/Users/gio/Desktop/repos/securechat`
-- Chameleon: `/Users/gio/Desktop/repos/chameleon`
+- SecureCall: `~/Desktop/repos/stealth`
+- SecureChat: `~/Desktop/repos/securechat`
+- Chameleon: `~/Desktop/repos/chameleon`
 
 Audit umfasst:
 
@@ -34,8 +34,8 @@ Audit umfasst:
 ## Start
 
 ```bash
-cd /Users/gio/Desktop/repos
-export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:$PATH:/Users/gio/Library/Android/sdk/platform-tools"
+cd ~/Desktop/repos
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:$PATH:~/Library/Android/sdk/platform-tools"
 
 tail -160 stealth/docs/agent-bridge/BRIDGE.md
 tail -80 securechat/BRIDGE.md
@@ -142,7 +142,7 @@ PY
 Pruefe:
 
 ```bash
-cd /Users/gio/Desktop/repos/stealth
+cd ~/Desktop/repos/stealth
 rg -n "TODO|FIXME|mock|dummy|placeholder|rateLimit|stripe|webhook|activation|wallet|verify-ifr|lockedBalance|balanceOf|ETH_RPC_URL|JSON|writeJsonAtomic|fs.writeFile" backend/signaling/src -S
 curl -s https://api.stealthx.tech/health
 curl -s https://api.stealthx.tech/licenses/status | python3 -m json.tool
@@ -164,7 +164,7 @@ Pflichtpruefungen:
 Tests:
 
 ```bash
-cd /Users/gio/Desktop/repos/stealth/backend/signaling
+cd ~/Desktop/repos/stealth/backend/signaling
 npm test
 ```
 
@@ -180,7 +180,7 @@ Scope:
 Check:
 
 ```bash
-cd /Users/gio/Desktop/repos/stealth/client_android
+cd ~/Desktop/repos/stealth/client_android
 rg -n "TODO|FIXME|mock|dummy|placeholder|lockedBalance|Lock IFR|stake|BillingClient|WalletConnect|MetaMask|IncomingCall|CALL_ACCEPT|verify-ifr|versionCode|versionName" app/src/main app/build.gradle -S
 ./gradlew testFreeDebugUnitTest assembleFreeDebug assembleFreeRelease bundleFreeRelease
 ```
@@ -204,7 +204,7 @@ Scope:
 Check:
 
 ```bash
-cd /Users/gio/Desktop/repos/securechat
+cd ~/Desktop/repos/securechat
 rg -n "TODO|FIXME|mock|dummy|placeholder|0\\.1\\.0-alpha|lockedBalance|Lock IFR|stake|WalletConnect|MetaMask|comingSoon|SOON|Group Messaging|File Transfer|Kaspa|Onion|Decoy|Threat" . -S
 ./gradlew --no-daemon --max-workers=1 testDebugUnitTest assembleRelease
 ```
@@ -230,7 +230,7 @@ Scope:
 Check:
 
 ```bash
-cd /Users/gio/Desktop/repos/chameleon
+cd ~/Desktop/repos/chameleon
 rg -n "TODO|FIXME|mock|dummy|placeholder|0\\.1\\.0-alpha|No central server|encrypted messenger|lockedBalance|Lock IFR|stake|WalletConnect|MetaMask|comingSoon|SOON|Advanced Threat Detection|Decoy Profile" . -S
 ./gradlew --no-daemon --max-workers=1 testDebugUnitTest assembleRelease
 ```

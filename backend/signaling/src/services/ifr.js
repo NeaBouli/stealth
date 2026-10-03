@@ -22,6 +22,8 @@ const ETH_RPC_URLS = Array.from(new Set(
 
 console.log(`[IFR] Configured ${ETH_RPC_URLS.length} Ethereum RPC endpoints for IFR token ${IFR_TOKEN_ADDRESS}`);
 
+// LEGACY, unused by any route: retired 2,000 / 6,000 IFR tier classifier. Current eligibility is
+// classifyHolderEligibility (any positive balance, seller-set checkout discount, launch-gated).
 function classifyLegacyTier(balance) {
   const humanAmount = (balance / BigInt(10 ** IFR_DECIMALS)).toString();
   if (balance >= IFR_ELITE_THRESHOLD) return { success: true, tier: "premium", lockedAmount: humanAmount, balanceAmount: humanAmount };

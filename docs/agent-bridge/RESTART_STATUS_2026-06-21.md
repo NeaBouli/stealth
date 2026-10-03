@@ -10,9 +10,9 @@ Terminal command execution was unavailable during this save pass: even minimal s
 
 ## Latest Known SecureCall State
 
-- Repo: `/Users/gio/Desktop/repos/stealth`
+- Repo: `~/Desktop/repos/stealth`
 - Latest known release commit: `e3b6747 fix: bump SecureCall bundle code and handle Android 15 insets`
-- Desktop upload artifact: `/Users/gio/Desktop/SecureCall-LATEST.aab`
+- Desktop upload artifact: `~/Desktop/SecureCall-LATEST.aab`
 - Package: `com.securecall.app.free`
 - versionCode: `73009`
 - versionName: `1.0.40-free`
@@ -22,10 +22,10 @@ Terminal command execution was unavailable during this save pass: even minimal s
 
 ### SecureChat
 
-- Repo: `/Users/gio/Desktop/repos/securechat`
+- Repo: `~/Desktop/repos/securechat`
 - Code commit: `1344c1a fix: align SecureChat package name for Play upload`
 - Bridge verification commit: `6e6db9f docs: record SecureChat v0.1.3 release verification`
-- Desktop upload artifact: `/Users/gio/Desktop/SecureChat-LATEST.aab`
+- Desktop upload artifact: `~/Desktop/SecureChat-LATEST.aab`
 - Package: `securechat.app`
 - versionCode: `4`
 - versionName: `0.1.3-alpha`
@@ -33,10 +33,10 @@ Terminal command execution was unavailable during this save pass: even minimal s
 
 ### Chameleon
 
-- Repo: `/Users/gio/Desktop/repos/chameleon`
+- Repo: `~/Desktop/repos/chameleon`
 - Code commit: `1cb7b11 fix: align Chameleon package name for Play upload`
 - Bridge verification commit: `55d61de docs: record Chameleon v0.1.4 release verification`
-- Desktop upload artifact: `/Users/gio/Desktop/Chameleon-LATEST.aab`
+- Desktop upload artifact: `~/Desktop/Chameleon-LATEST.aab`
 - Package: `chameleon24.app`
 - versionCode: `5`
 - versionName: `0.1.4-alpha`
@@ -51,16 +51,16 @@ Terminal command execution was unavailable during this save pass: even minimal s
 
 ## Also Written
 
-- `/Users/gio/Desktop/STEALTHX_RESTART_STATUS_2026-06-21.md`
-- `/Users/gio/Desktop/repos/securechat/BRIDGE.md` received a restart status entry.
-- `/Users/gio/Desktop/repos/chameleon/BRIDGE.md` received a restart status entry.
+- `~/Desktop/STEALTHX_RESTART_STATUS_2026-06-21.md`
+- `~/Desktop/repos/securechat/BRIDGE.md` received a restart status entry.
+- `~/Desktop/repos/chameleon/BRIDGE.md` received a restart status entry.
 
 ## Next Startup Checks
 
 After reboot:
 
 ```bash
-cd /Users/gio/Desktop/repos
+cd ~/Desktop/repos
 git -C stealth status --short && git -C stealth log -3 --oneline
 git -C securechat status --short && git -C securechat log -3 --oneline
 git -C chameleon status --short && git -C chameleon log -3 --oneline

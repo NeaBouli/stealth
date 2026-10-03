@@ -83,7 +83,7 @@
     - `4b3f783` — Version-Bump `v1.0.32` / `vC54`
     - `bb9c719` — Bridge/TODO Session State
 - Aktuelle Upload-/Play-Console-AAB:
-  - Datei: `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - Datei: `~/Desktop/SecureCall-FINAL-UPLOAD.aab`
   - package: `com.securecall.app.free`
   - versionCode: `54002`
   - versionName: `1.0.32-free`
@@ -246,7 +246,7 @@
 - Anlass:
   - Gio wollte explizit die Version testen, die auch in der Google Play Console laeuft.
 - Referenz-Artefakt:
-  - `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - `~/Desktop/SecureCall-FINAL-UPLOAD.aab`
   - package: `com.securecall.app.free`
   - versionCode: `53002`
   - versionName: `1.0.31-free`
@@ -380,7 +380,7 @@
 - Anlass:
   - Gio bezweifelte CCs Aussage, dass alle drei Geraete die neue AAB installiert haben.
 - Aktuelle Desktop-AAB:
-  - Datei: `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - Datei: `~/Desktop/SecureCall-FINAL-UPLOAD.aab`
   - package: `com.securecall.app.free`
   - versionCode: `53002`
   - versionName: `1.0.31-free`
@@ -459,7 +459,7 @@
   - `./gradlew :app:testFreeDebugUnitTest`: PASS
   - `./gradlew :app:bundleFreeRelease`: PASS
   - `bundletool validate --bundle=client_android/app/build/outputs/bundle/freeRelease/app-free-release.aab`: PASS
-  - Desktop-Upload-Artefakt wurde aus dem neuen Build aktualisiert: `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - Desktop-Upload-Artefakt wurde aus dem neuen Build aktualisiert: `~/Desktop/SecureCall-FINAL-UPLOAD.aab`
   - Desktop-AAB:
     - package: `com.securecall.app.free`
     - versionCode: `52002`
@@ -526,7 +526,7 @@
   - `client_android/app/src/main/AndroidManifest.xml`
   - `client_android/app/src/main/java/com/securecall/app/MainActivity.java`
   - `client_android/app/src/main/java/com/securecall/app/net/WebSocketService.kt`
-  - neues AAB: `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`
+  - neues AAB: `~/Desktop/SecureCall-FINAL-UPLOAD.aab`
 - Verifiziert:
   - Manifest-Permission ist im Source vorhanden:
     - `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
@@ -995,7 +995,7 @@
 - Build-Artefakte:
   - Debug APKs erzeugt/aktualisiert unter `client_android/app/build/outputs/apk/free/debug/`.
 - Grenzen:
-  - `adb` war nicht im Shell-`PATH` (`command not found`); spaeter wurde ADB ueber `/Users/gio/Library/Android/sdk/platform-tools/adb` genutzt, siehe Geraete-Gegencheck unten.
+  - `adb` war nicht im Shell-`PATH` (`command not found`); spaeter wurde ADB ueber `~/Library/Android/sdk/platform-tools/adb` genutzt, siehe Geraete-Gegencheck unten.
   - `backend/signaling/data/activation_codes.json` wurde wegen potentiell sensibler Aktivierungscode-Inhalte nicht gelesen.
   - `cargo test` hat die getrackte Build-Metadatei `core_crypto/target/.rustc_info.json` lokal veraendert; Produktcode wurde dadurch nicht geaendert.
   - Keine `.env`, Secret-, Key-, Keystore-, Wallet- oder Dump-Dateien gelesen.
