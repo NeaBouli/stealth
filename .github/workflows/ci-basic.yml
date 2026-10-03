@@ -40,7 +40,8 @@ jobs:
           node --check website/js/ifr-checkout.js
           node --test \
             website/js/ifr-checkout.test.cjs \
-            website/js/no-google-analytics.test.cjs
+            website/js/no-google-analytics.test.cjs \
+            website/js/launch-copy.test.cjs
 
       - name: Run YAML Lint
         run: yamllint .

@@ -232,6 +232,17 @@
       }
     }
     </script>
+    <style>
+        .price-badge:not([style]) { color: #fff; }
+        .btn[aria-disabled="true"], .btn[aria-disabled="true"]:hover,
+        .ifr-box button:disabled, .ifr-box button:disabled:hover {
+            background: #e2e8f0 !important;
+            color: #334155 !important;
+            border-color: #cbd5e1 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body class="landing-redesign">
     <nav class="sx-nav" id="navbar">
