@@ -432,6 +432,12 @@ androidComponents {
         if (!allowInternalFlavors && (flavorNames.contains('pro') || flavorNames.contains('premium'))) {
             variantBuilder.enable = false
         }
+        // AGP 9 creates host unit tests only for the tested (debug) build type.
+        // verifyFreeReleaseBillingClosed must also run the release unit tests,
+        // because the closed-billing gate is about the release configuration.
+        if (variantBuilder.name == 'freeRelease') {
+            variantBuilder.hostTests[com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
+        }
     }
 
     if (!buildingAppBundle) {
