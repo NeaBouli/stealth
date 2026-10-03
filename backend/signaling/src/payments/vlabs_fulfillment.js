@@ -4,6 +4,7 @@ const path = require("path");
 const { writeJsonAtomic } = require("../utils/json_store");
 const { generateActivationCode } = require("./stripe_handler");
 const soldCodes = require("./sold_codes");
+const activationStore = require("../services/activation_store");
 const { sendActivationCode } = require("./email_handler");
 
 const MAX_CLOCK_SKEW_SECONDS = 300;
@@ -338,7 +339,9 @@ function configuredSecret() {
   return typeof secret === "string" && secret.length >= MIN_FULFILLMENT_SECRET_LENGTH ? secret : null;
 }
 
-function setupVlabsFulfillmentRoute(app, activationCodesRef) {
+function setupVlabsFulfillmentRoute(app, activationCodesRef, {
+  persistActivationCodes = activationStore.saveActivationCodes,
+} = {}) {
   const requestRateLimiter = createRequestRateLimiter();
   app.post("/internal/vlabs/fulfill", async (req, res) => {
     if (!requestRateLimiter.allow(req)) {
@@ -585,6 +588,13 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef) {
           offerVersion: product.offerVersion,
           releaseId: product.releaseId,
         });
+        // sold_codes.json now records the revocation. Drop every live activation
+        // copy and persist before the order turns terminal, so a failed write is
+        // retried by the caller instead of surviving a restart as an active code.
+        if (Array.isArray(activationCodesRef)) {
+          activationStore.reconcileSoldRevocations(activationCodesRef);
+          if (persistActivationCodes() === false) throw new Error("activation_revocation_persistence_failed");
+        }
 
         if (!existing) {
           // Revoke-before-fulfill: tombstone so a later fulfillment fails closed.
