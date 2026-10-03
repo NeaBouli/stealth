@@ -44,12 +44,15 @@ const {
 const { loadWalletMappings } = require("./services/wallet_store");
 const { setupActivationAdminRoutes } = require("./services/activation_admin");
 const { getClientIp }                                               = require("./middleware/ip");
+const { makeRequireAdmin }                                         = require("./middleware/admin");
+const { pkdRegistrationRateLimit }                                  = require("./security/pkd_registration_limiter");
 const { verifyIfrHolding }                                          = require("./services/ifr");
 const { buildContext, wireWs }                                      = require("./context");
 const statusRoutes                                                  = require("./routes/status");
 const { writeJsonAtomic }                                           = require("./utils/json_store");
 const { sanitize: sanitizeUtil }                                    = require("./utils/sanitize");
 const { issueEntitlementToken, verifyEntitlementToken, orderHash: entitlementOrderHash } = require("./payments/entitlement_tokens");
+const { resolveTurnSecret } = require("./security/turn_secret");
 
 // Hoisted so HTTP route handlers (defined below) can call ctx.sendToClient
 // after buildContext() runs at startup — before any request arrives.
@@ -59,12 +62,12 @@ let ctx;
 fcm.initFcm();
 
 // --- STUN/TURN Configuration (BACKEND-02) ---
-const TURN_SECRET = process.env.TURN_SECRET || null;
+const TURN_SECRET = resolveTurnSecret(process.env);
 const TURN_HOST   = process.env.TURN_HOST   || null;
 const TURN_TTL    = 86400; // 24h
 
 if (process.env.NODE_ENV === "production" && !TURN_SECRET && (!process.env.TURN_USER || !process.env.TURN_PASS)) {
-  console.warn("[WARN] No TURN credentials configured — relay disabled. Set TURN_SECRET (own coturn) or TURN_USER+TURN_PASS (Metered.ca).");
+  console.warn("[WARN] No TURN credentials configured — relay disabled. Set TURN_SECRET or TURN_SECRET_FILE (own coturn), or TURN_USER+TURN_PASS (Metered.ca).");
 }
 
 // RFC 8489 REST API: time-limited HMAC-SHA1 credentials for own coturn (use-auth-secret mode).
@@ -109,6 +112,7 @@ const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 
 // --- App Setup ---
 const app = express();
+const requireAdmin = makeRequireAdmin(ADMIN_API_KEY, { getClientIp });
 // Stripe webhook needs raw body for signature verification — must come BEFORE express.json()
 app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
@@ -163,19 +167,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// --- Admin Auth Middleware ---
-function requireAdmin(req, res, next) {
-  if (!ADMIN_API_KEY) {
-    return res.status(403).json({ error: "admin_api_disabled" });
-  }
-  // BUG-076: Only accept admin key via header, not query param (prevents log leak)
-  const provided = req.headers["x-admin-key"];
-  if (provided !== ADMIN_API_KEY) {
-    return res.status(401).json({ error: "unauthorized" });
-  }
-  next();
-}
-
 // --- Routing Debug API (admin-only) ---
 app.get("/routing/list", requireAdmin, (req, res) => {
   res.json({
@@ -204,7 +195,8 @@ app.get("/clients/list", requireAdmin, (req, res) => {
 });
 
 // --- Public Key Directory API (BACKEND-05) ---
-app.post("/key/register", (req, res) => {
+// STX-08: registration is throttled per trusted client IP (bounded limiter).
+app.post("/key/register", pkdRegistrationRateLimit, (req, res) => {
   const { publicKey } = req.body || {};
   if (!publicKey || typeof publicKey !== "string") {
     return res.status(400).json({
@@ -258,11 +250,7 @@ app.delete("/key/:id", requireAdmin, (req, res) => {
 // --- Subscription Admin API ---
 // Fix HIGH-007 (2026-04-16): unified on ADMIN_API_KEY. The old ADMIN_KEY
 // variant is dropped — all admin routes now check a single env var.
-app.get("/api/subscription/:clientId", (req, res) => {
-  const adminKey = req.headers["x-admin-key"];
-  if (!ADMIN_API_KEY || adminKey !== ADMIN_API_KEY) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
+app.get("/api/subscription/:clientId", requireAdmin, (req, res) => {
   const sub = subscriptions.getSubscription(req.params.clientId);
   if (!sub) {
     return res.status(404).json({ error: "No subscription found" });
@@ -724,7 +712,7 @@ setupActivationAdminRoutes(app, requireAdmin, revokeActivationCode);
 try {
   const stripeHandler = require('./payments/stripe_handler');
   // Pass activationCodes reference so new codes from purchases are usable immediately
-  stripeHandler.setupRoutes(app, activationCodes);
+  stripeHandler.setupRoutes(app, activationCodes, { requireAdmin });
 } catch (e) {
   console.warn("[STRIPE] Could not load stripe_handler:", e.message);
 }
