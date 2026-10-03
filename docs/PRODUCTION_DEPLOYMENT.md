@@ -25,6 +25,55 @@ Two deployment options are available:
 - **Option A: Bare-metal (PM2)** — `deployment/` directory (this guide)
 - **Option B: Docker** — `deploy/` directory (see `docs/DEPLOYMENT_GUIDE.md`)
 
+The Docker path is authoritative for new deployments and keeps the shared TURN
+secret out of environment interpolation and the committed coturn template. The
+bare-metal path remains a legacy option and must place the same private secret
+in signaling and `/etc/turnserver.conf` through the operator's secret workflow.
+
+### Client IP contract (`TRUST_PROXY`)
+
+Per-IP connection and rate limits use `getClientIp()` in
+`backend/signaling/src/middleware/ip.js`. With `TRUST_PROXY=true` (or `1`) it
+reads the **rightmost** `X-Forwarded-For` entry; otherwise it uses the socket
+peer address. `RAILWAY_ENVIRONMENT` no longer enables proxy trust.
+
+Set `TRUST_PROXY=true` only when exactly one trusted reverse proxy sits in front
+of signaling, appends the real peer address (nginx:
+`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`), and signaling
+is not reachable around that proxy.
+
+- **Docker (`deploy/`):** set in `docker-compose.yml`; signaling is only
+  `expose`d to the bundled nginx (`deploy/nginx/conf.d/signaling.conf`).
+- **Bare-metal (PM2 + nginx):** set `TRUST_PROXY: "true"` in the PM2 environment;
+  `deployment/nginx_config/*.conf` appends the peer address. Without it every
+  client shares the nginx loopback bucket and hits `MAX_CONNS_PER_IP`.
+- **Railway:** Railway documents only `X-Real-IP` as the client address
+  (docs.railway.com, Public Networking → Specs & Limits); whether its edge
+  appends the client as the rightmost `X-Forwarded-For` hop is not documented.
+  Do not enable `TRUST_PROXY` there until that contract is verified.
+
+TURN credentials are runtime configuration too: signaling needs exactly one of
+`TURN_SECRET` / `TURN_SECRET_FILE` (plus `TURN_HOST`); without them NAT-traversed
+calls fail.
+
+### TURN secret file ownership (Docker)
+
+Compose (non-swarm) bind-mounts `deploy/secrets/turn_secret` with its host
+ownership and mode. `coturn/coturn` runs as `nobody:nogroup` (65534), so the
+file must be readable by that UID:
+
+```bash
+(umask 077 && openssl rand -hex 32 > deploy/secrets/turn_secret)
+sudo chown 65534:65534 deploy/secrets/turn_secret
+sudo chmod 0400 deploy/secrets/turn_secret
+```
+
+The renderer writes the runtime config to the `/run/turn` tmpfs, which is
+mounted `mode=0700,uid=65534,gid=65534`; the rendered file is `0600` and owned
+by the coturn user. The signaling image currently runs as root and can read the
+same file; if it is moved to a non-root UID, switch to a shared group with
+`group_add` and mode `0440`.
+
 ## Server Requirements
 
 | Spec | Minimum | Recommended |
@@ -161,7 +210,11 @@ sudo nano /etc/turnserver.conf
 
 Set:
 - `external-ip=YOUR_VPS_IP`
-- `static-auth-secret=YOUR_TURN_PASS` (from Step 2 output)
+- `static-auth-secret=<same private 64-hex value configured for signaling>`
+
+Do not write `$TURN_SECRET` literally into the coturn file. For new systems,
+prefer the Docker flow in `docs/DEPLOYMENT_GUIDE.md`, which renders this value
+from `deploy/secrets/turn_secret` at container startup.
 
 Uncomment TLS lines after SSL cert is obtained:
 - `cert=/etc/letsencrypt/live/turn.securecall.app/fullchain.pem`
@@ -234,6 +287,9 @@ The signaling server is stateless (in-memory only). Back up:
 - `/opt/securecall/signaling/.env` (credentials)
 - `/etc/letsencrypt/` (SSL certs)
 - `/etc/turnserver.conf` (TURN config)
+
+These contain private material. Store backups encrypted and access-controlled;
+the Docker backup script intentionally excludes `deploy/secrets/turn_secret`.
 
 ### Security Hardening
 

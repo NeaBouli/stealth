@@ -486,7 +486,7 @@ function generateActivationCode(tier) {
 
 /**
  * Express route setup — call from server.js:
- *   require('./payments/stripe_handler').setupRoutes(app, activationCodesRef);
+ *   require('./payments/stripe_handler').setupRoutes(app, activationCodesRef, { requireAdmin });
  *
  * @param {Object} app  Express app
  * @param {Array}  activationCodesRef  Live reference to server.js activationCodes array
@@ -497,8 +497,11 @@ function setupRoutes(app, activationCodesRef, deps = {}) {
     console.warn("[STRIPE] STRIPE_SECRET_KEY not set — Stripe routes disabled");
     return;
   }
+  if (typeof deps.requireAdmin !== "function") {
+    throw new TypeError("requireAdmin middleware is required when Stripe routes are enabled");
+  }
 
-  const stripe = require("stripe")(secretKey);
+  const stripe = deps.stripe || require("stripe")(secretKey);
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   // Rate limit: 5 per IP per 10 minutes
@@ -554,11 +557,7 @@ function setupRoutes(app, activationCodesRef, deps = {}) {
   });
 
   // Test email endpoint (admin only)
-  app.post("/stripe/test-email", async (req, res) => {
-    const adminKey = req.headers["x-admin-key"];
-    if (adminKey !== process.env.ADMIN_API_KEY) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+  app.post("/stripe/test-email", deps.requireAdmin, async (req, res) => {
     const { email, code } = req.body;
     if (!email) return res.status(400).json({ error: "Missing email" });
 

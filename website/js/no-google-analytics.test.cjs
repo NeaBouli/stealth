@@ -58,11 +58,23 @@ const DYNAMIC_LOADERS = [
     ['HTML injection of script', /(?:innerHTML|outerHTML|insertAdjacentHTML)[^;]*<\s*script/i],
     ['importScripts', /\bimportScripts\s*\(/],
     ['remote dynamic import', /\bimport\s*\(\s*["'`](?:[a-z][a-z0-9+.-]*:|\/\/)/i],
-    ['remote script src assignment', /\.src\s*=\s*["'`](?:[a-z][a-z0-9+.-]*:|\/\/)/i]
+    ['remote script src assignment', /\.src\s*=\s*["'`](?:[a-z][a-z0-9+.-]*:|\/\/)/i],
+    ['remote static ES import', /\b(?:import|export)\b[^;"'`]*?\bfrom\s*["'`](?:[a-z][a-z0-9+.-]*:|\/\/)/i],
+    ['remote side-effect ES import', /\bimport\s*["'`](?:[a-z][a-z0-9+.-]*:|\/\/)/i],
+    ['remote worker', /\bnew\s+(?:Shared)?Worker\s*\(\s*(?:new\s+URL\s*\(\s*)?["'`](?:[a-z][a-z0-9+.-]*:|\/\/)/i],
+    ['remote service worker or worklet', /\b(?:serviceWorker\.register|addModule)\s*\(\s*["'`](?:[a-z][a-z0-9+.-]*:|\/\/)/i]
 ];
+const LAZY_SCRIPT_SOURCE = /<script\b[^>]*\bdata-[a-z-]*src\s*=\s*["']?(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
+const REMOTE_PRELOAD = /<link\b[^>]*\brel\s*=\s*["']?(?:modulepreload|preload)\b[^>]*\bhref\s*=\s*["']?(?:[a-z][a-z0-9+.-]*:|\/\/)[^>]*>/gi;
 
 function scriptSourceOffences(html) {
     const offences = [];
+    if (LAZY_SCRIPT_SOURCE.test(html)) offences.push('remote lazy data-*src on script');
+    for (const link of html.match(REMOTE_PRELOAD) || []) {
+        if (/\bas\s*=\s*["']?(?:script|worker)\b/i.test(link) || /modulepreload/i.test(link)) {
+            offences.push(`remote script preload: ${link}`);
+        }
+    }
     for (const tag of html.match(SCRIPT_TAG) || []) {
         const match = tag.match(SRC_ATTRIBUTE);
         if (!match) continue;
@@ -113,10 +125,34 @@ test('script checker rejects unpinned, unquoted, protocol-relative and dynamic l
         "el.innerHTML = '<script src=x></script>';",
         "importScripts('https://cdn.example/x.js')",
         "await import('https://cdn.example/x.mjs')",
-        "img.src = '//cdn.example/x.js'"
+        "img.src = '//cdn.example/x.js'",
+        "import { q } from 'https://cdn.example/q.mjs';",
+        "import q from \"//cdn.example/q.mjs\"",
+        "import 'https://cdn.example/side-effect.mjs';",
+        "export * from 'https://cdn.example/q.mjs';",
+        "new Worker('https://cdn.example/w.js')",
+        "new SharedWorker(new URL('https://cdn.example/w.js'))",
+        "navigator.serviceWorker.register('https://cdn.example/sw.js')",
+        "CSS.paintWorklet.addModule('//cdn.example/p.js')"
     ]) {
         assert.notDeepEqual(dynamicLoaderOffences(snippet), [], snippet);
     }
+    for (const snippet of [
+        "import { local } from './local.mjs';",
+        "new Worker('js/worker.js')",
+        "navigator.serviceWorker.register('/sw.js')"
+    ]) {
+        assert.deepEqual(dynamicLoaderOffences(snippet), [], snippet);
+    }
+    for (const html of [
+        '<script data-src="https://cdn.jsdelivr.net/npm/q@1.0.0/q.min.js"></script>',
+        "<script type=\"text/plain\" data-lazy-src=//cdn.example/q.js></script>",
+        '<link rel="modulepreload" href="https://cdn.example/q.mjs">',
+        '<link rel=preload as=script href="https://cdn.example/q.js">'
+    ]) {
+        assert.notDeepEqual(scriptSourceOffences(html), [], html);
+    }
+    assert.deepEqual(scriptSourceOffences('<link rel="preload" as="font" href="https://fonts.example/f.woff2">'), []);
 });
 
 test('external website scripts are https, exact-version, SRI-pinned and statically declared', () => {

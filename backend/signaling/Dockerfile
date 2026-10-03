@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS base
 
 WORKDIR /app
 
@@ -21,9 +21,12 @@ COPY data/ ./data/
 RUN addgroup -g 1001 -S securecall && \
     adduser -S securecall -u 1001 -G securecall
 
-# Seed data owned by securecall in the image layer.
-# entrypoint.sh re-chowns at runtime to handle Railway volume mounts (root-owned).
+# Seed data owned by securecall in the image layer. A mounted volume must be
+# writable by UID 1001 (Railway: RAILWAY_RUN_UID=0); production refuses the
+# ephemeral /tmp fallback (src/data_dir.js). entrypoint.sh is not used.
 RUN chown -R securecall:securecall /app/data
+
+USER securecall
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
