@@ -6077,3 +6077,18 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-10-04 — CODEX — Coordinated release-candidate completion
+
+- Current task plan is .fleet/PLAN.md. Existing Claude owns PR119 sync and shared-device tests; Kimi separately owns read-only119 security review and isolated120 integration; Grok owns a bounded public website truth check. No duplicate implementation or device access.
+- PR133/135 combined source7600ec37 and evidence7b076525 are saved on a separate task branch. Additive test/import conflicts resolved; full backend suite PASS, npm install audit0, diff check PASS. Original PRs/main unchanged; hosted combined checks and normal approval are not inferred.
+- Release candidates and direct-versus-Play distribution must be verified before publication. Existing product/security/device gates remain open; financial coordination is handled separately by the VLABS operator.
+- No main merge, production rollout, secret change, provider request or sales activation performed in this checkpoint.
+
+## 2026-10-04 — CODEX — Candidate review checkpoint
+
+- PR119 synchronization reviewed separately from the commercial lifecycle; broader release approval remains pending.
+- A bounded commercial correction is preserved on an isolated candidate branch; security review performed, integration verification remains required. No production data changed.
+- Website launch-status correction and closed-control styling verified: 11 website tests and 12 responsive page/viewports passed; contrast, disabled-state assertions, workflow parsing and diff checks passed. Local secret scanner unavailable; scanning gate remains open.
+- Device verification remains assigned to the existing Claude worker. Product release gates remain open; financial coordination is handled separately by the VLABS operator. No sales activation or deployment.
+- Verification completion: full backend suite rerun passed on the isolated correction candidate, dependency audit reported zero vulnerabilities, patch whitespace check passed. Combined-head verification and required reviews remain open.
