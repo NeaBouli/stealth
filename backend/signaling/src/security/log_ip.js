@@ -10,7 +10,9 @@ const net = require("net");
 //   - IPv6                          -> first 48 bits, e.g. 2001:db8:1::/48
 // With a pepper (LOG_IP_PEPPER, else ID_HASH_PEPPER) a short domain-separated
 // HMAC tag is appended so operators can correlate lines of the same client
-// without the full address being recoverable from the log.
+// without the full address being recoverable from the log. This holds only
+// while the pepper stays secret: with the pepper, the reduced network plus the
+// tag narrows an IPv4 client to at most 256 candidates.
 
 function expandIpv6(address) {
   const [head, tail = ""] = address.split("::");

@@ -37,6 +37,34 @@ assert.notEqual(logIp("203.0.113.57", { LOG_IP_PEPPER: "other" }), a1, "LOG_IP_P
 
 // Source guard: no console output in the signaling sources may print a raw client IP.
 // Rate limiting and connection buckets keep the real IP; only log output is reduced.
+// Covered forms: bare argument, template interpolation and string concatenation of
+// ip/clientIp/remoteAddress, including member access such as client.ip or
+// req.socket.remoteAddress. Values wrapped in logIp(...) are allowed.
+const IP_NAME = String.raw`(?:[\w$]+(?:\?)?\.)*(?:ip|clientIp|remoteAddress)`;
+const RAW_IP_PATTERN = new RegExp(
+  String.raw`\$\{\s*${IP_NAME}\s*\}|[,(+]\s*${IP_NAME}\s*(?=[,)+]|$)`
+);
+function printsRawIp(line) {
+  if (!/console\.(log|warn|error|info|debug)\s*\(/.test(line)) return false;
+  return RAW_IP_PATTERN.test(line.replace(/logIp\([^)]*\)/g, ""));
+}
+for (const [snippet, expected] of [
+  ['console.log("ip:", ip);', true],
+  ["console.warn(`from ${clientIp}`);", true],
+  ['console.log("from " + ip);', true],
+  ['console.log("from " + ip + " now");', true],
+  ['console.log("x", client.ip);', true],
+  ["console.log(`x ${req.socket.remoteAddress}`);", true],
+  ['console.log("x", req.ip, 1);', true],
+  ['console.log("x", logIp(ip));', false],
+  ["console.log(`x ${logIp(client.ip)}`);", false],
+  ['console.log("tier:", tier);', false],
+  ['console.log("x", description);', false],
+  ['const ip = getClientIp(req);', false],
+]) {
+  assert.equal(printsRawIp(snippet), expected, snippet);
+}
+
 const srcRoot = path.join(__dirname, "..");
 const offenders = [];
 (function walk(dir) {
@@ -48,11 +76,7 @@ const offenders = [];
     }
     if (!entry.name.endsWith(".js") || full.endsWith(path.join("security", "log_ip.js"))) continue;
     fs.readFileSync(full, "utf8").split("\n").forEach((line, index) => {
-      if (!/console\.(log|warn|error|info|debug)\s*\(/.test(line)) return;
-      const withoutWrapped = line.replace(/logIp\([^)]*\)/g, "");
-      if (/(\$\{\s*(ip|clientIp|remoteAddress)\s*\}|[,(]\s*(ip|clientIp|remoteAddress|req\.ip)\s*[,)])/.test(withoutWrapped)) {
-        offenders.push(`${path.relative(srcRoot, full)}:${index + 1}`);
-      }
+      if (printsRawIp(line)) offenders.push(`${path.relative(srcRoot, full)}:${index + 1}`);
     });
   }
 })(srcRoot);
