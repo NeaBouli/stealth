@@ -11,6 +11,12 @@ add_compile_options(
         "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=."
         "-ffile-prefix-map=${CMAKE_BINARY_DIR}=."
 )
+# The NDK location (e.g. under the build user's home) ends up in the debug info
+# via sysroot/clang header paths. The GNU build ID hashes the unstripped output,
+# so map it too, otherwise builds on different machines get different build IDs.
+if(ANDROID_NDK)
+    add_compile_options("-ffile-prefix-map=${ANDROID_NDK}=/android-ndk")
+endif()
 
 # ---- libopus (static) ----
 set(OPUS_BUILD_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
