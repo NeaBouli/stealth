@@ -79,6 +79,7 @@
             line-height: 1.5;
         }
         .notice strong { display: block; margin-bottom: 4px; }
+        .notice a { color: inherit; font-weight: 700; text-decoration: underline; }
         .tier-section { margin-bottom: 28px; }
         .tier-header {
             display: flex;
@@ -185,7 +186,7 @@
 <header>
     <a class="logo" href="/">← stealthx.tech</a>
     <h1>SecureCall APK Download</h1>
-    <p class="subtitle">Choose the edition that matches your purchase and distribution preference. The optional built-in WireGuard feature is exclusive to the direct Premium APK.</p>
+    <p class="subtitle">Choose the edition that matches your access level and distribution preference. The optional built-in WireGuard feature is exclusive to the direct Premium APK.</p>
     <span class="version-badge">Published v1.0.48 · v1.0.50 candidate under review</span>
 </header>
 
@@ -199,6 +200,11 @@
     <div class="notice" style="background:rgba(0,230,118,0.08);border-color:rgba(0,230,118,0.25);color:#7dffb7">
         <strong>Google Play and direct Premium differ by design</strong>
         The Google Play edition contains no app-owned VPN service so this listing meets Google Play's VpnService distribution requirements. It can still use and indicate a VPN managed by Android or another installed provider. Pro/Premium features unlocked inside the Play package remain VPN-service-free. The direct Premium APK additionally offers an optional app-managed WireGuard tunnel after Android consent. SecureCall does not supply a VPN endpoint; use a valid configuration from your VPN provider.
+    </div>
+
+    <div class="notice" data-sales-closed>
+        <strong>Pro/Premium purchases are currently closed</strong>
+        Subscriptions, one-time licenses, activation codes and the browser-only IFR holder discount are planned and not yet available. SecureCall Free is available now on <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener">Google Play</a> and as a direct APK below.
     </div>
 
     <!-- DIRECT BUILDS -->
@@ -234,7 +240,7 @@
             </a>
         </div>
         <p class="subtitle" style="margin-top:18px">
-            Download the APK matching your purchased tier. Free, Pro, and Premium use separate Android package identities. Premium's WireGuard setting requires Android VPN consent and a valid provider configuration stored locally on the device.
+            Download the APK matching your access level; the Pro and Premium APKs require valid paid access, which cannot be purchased yet. Free, Pro, and Premium use separate Android package identities. Premium's WireGuard setting requires Android VPN consent and a valid provider configuration stored locally on the device.
         </p>
     </div>
 
@@ -245,7 +251,7 @@
         <dl>
             <div class="faq-item">
                 <dt>Which APK should I download?</dt>
-                <dd>Use Google Play for the Free store edition. For a direct purchase, download the APK matching your Free, Pro, or Premium entitlement. Each APK supports the packaged Android CPU variants.</dd>
+                <dd>Use <a href="https://play.google.com/store/apps/details?id=com.securecall.app.free" target="_blank" rel="noopener">Google Play</a> for the Free store edition, or download the direct Free APK. The direct Pro and Premium APKs require a matching entitlement; paid sales are currently closed. Each APK supports the packaged Android CPU variants.</dd>
             </div>
             <div class="faq-item">
                 <dt>Why does only the direct Premium APK include WireGuard?</dt>
@@ -253,7 +259,7 @@
             </div>
             <div class="faq-item">
                 <dt>Do I need a Pro/Premium license key?</dt>
-                <dd>Pro and Premium are activated through a valid subscription or activation code. IFR holders can verify a browser wallet for the seller-set discount displayed at checkout, not an in-app wallet unlock.</dd>
+                <dd>Pro and Premium are planned to be activated through a valid subscription or activation code; sales are currently closed. A browser-only IFR holder discount is also planned but currently disabled; there is no in-app wallet unlock.</dd>
             </div>
             <div class="faq-item">
                 <dt>How do I verify the APK signature?</dt>
