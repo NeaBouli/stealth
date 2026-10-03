@@ -14,7 +14,7 @@
 
 ## Rules
 - VLABS is the canonical source for current price, discount and availability.
-- Any positive IFR balance qualifies for the seller-defined holder discount shown at browser checkout; no token-amount tier threshold applies.
+- Any positive IFR balance qualifies for the seller-defined holder discount shown at browser checkout; no token-amount tier threshold applies. Before enabling, the seller documents a minimum-balance or per-wallet limit decision, because a dust balance would otherwise qualify.
 - IFR is not an in-app unlock in the current release line.
 - Payment, fiscal reporting and bundle fulfillment remain launch-gated.
 - A lifetime license is a perpetual right to use the purchased supported version; product terms shown before checkout control the exact scope.

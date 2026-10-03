@@ -6087,3 +6087,15 @@ Open next:
   `backend/signaling/src/services/ifr.js`. Other ecosystem docs describe an IFRLock locked-balance rule;
   that discrepancy is open for an owner decision.
 - No code, pricing logic, deployment or product activation changed.
+
+## 2026-10-03 — CLAUDE CODE — IFR ELIGIBILITY RULE DECIDED (hold model)
+
+- Decision (owner delegated): StealthX keeps the **hold model**. Any positive IFR token balance
+  (`balanceOf`, 9 decimals) qualifies for the seller-set discount, verified only in the browser
+  checkout with a signed nonce. The checkout stays launch-gated. The Android apps contain no IFR or wallet logic, and PRO/ELITE
+  access comes only from signed activation credentials.
+- Retired: the 2,000 / 6,000 IFR tier thresholds and IFRLock lookups. Remaining mentions are marked as
+  historical. This resolves the open question in the previous entry.
+- Launch gate added: because a dust balance qualifies, the seller documents a minimum-balance or
+  per-wallet limit decision before the discounted checkout is enabled.
+- Files: docs/PRICING.md, docs/agent-bridge/CODEX_FINDINGS.md, backend/signaling/src/services/ifr.js (comment marking the unused legacy classifier; no logic change). Signaling npm test PASS.

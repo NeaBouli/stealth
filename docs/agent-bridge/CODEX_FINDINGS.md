@@ -19,6 +19,7 @@ Scope: `~/Desktop/repos/stealth`, `~/Desktop/repos/securechat`, `~/Desktop/repos
 ### Task 1 — IFR Tier Consistency
 
 - Required thresholds are 2,000/6,000 IFR. Backend is aligned: `~/Desktop/repos/stealth/backend/signaling/src/services/ifr.js:9` and `:10` use `2000` and `6000`, contract address `~/Desktop/repos/stealth/backend/signaling/src/services/ifr.js:7` is correct, and backend calls `lockedBalance` at `:39`.
+  - Superseded 2026-10-03: hold model, any positive IFR balance for the seller-set checkout discount; no tier thresholds. The 2,000/6,000 classifier in `backend/signaling/src/services/ifr.js` is legacy and unused.
 - SecureChat app constants are numerically aligned: `~/Desktop/repos/securechat/stealthx-ifr/src/main/java/com/stealthx/ifr/IFRConstants.kt:29` and `:30`; chainId is mainnet at `:25`; contract address is correct at `:20`.
 - Chameleon app constants are numerically aligned: `~/Desktop/repos/chameleon/stealthx-ifr/src/main/java/com/stealthx/ifr/IFRConstants.kt:29` and `:30`; chainId is mainnet at `:25`; contract address is correct at `:20`.
 - Discrepancies: SecureCall UI still says 1,000/5,000 in `~/Desktop/repos/stealth/client_android/app/src/main/res/values/strings.xml:199`, `:201`, `:204`, `~/Desktop/repos/stealth/client_android/app/src/free/res/layout/activity_upgrade.xml:220`, and `~/Desktop/repos/stealth/client_android/app/src/withWalletConnect/java/com/securecall/app/wallet/WalletConnectManager.kt:243`.
