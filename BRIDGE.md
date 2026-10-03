@@ -6077,3 +6077,13 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-10-03 — CLAUDE CODE — IFR PARTNER CLAIMS CORRECTED (docs only)
+
+- `docs/IFR_PARTNERS.md`: the ORIGO IFR integration (fixed 1:1 GHIFR/IFR parity, voucher exchange on
+  ifrunit.tech, 10 % of game fees to an IFR buyback pool, buyback table) is marked as a proposal that does
+  not exist; no IFR amounts are projected.
+- SecureCall eligibility documented as the hold model (`balanceOf` on the IFR token), matching
+  `backend/signaling/src/services/ifr.js`. Other ecosystem docs describe an IFRLock locked-balance rule;
+  that discrepancy is open for an owner decision.
+- No code, pricing logic, deployment or product activation changed.
