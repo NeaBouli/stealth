@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
+const { logIp } = require("../security/log_ip");
 
 /**
  * Wire up WebSocket connection lifecycle and message dispatch.
@@ -31,7 +32,7 @@ function setup(wss, ctx) {
   wss.on("connection", (ws, req) => {
     const connId = crypto.randomUUID();
     const ip = getClientIp(req);
-    console.log("[SIGNAL] connected:", connId, "ip:", ip);
+    console.log("[SIGNAL] connected:", connId, "ip:", logIp(ip));
 
     ipConnections.set(ip, (ipConnections.get(ip) || 0) + 1);
     clients.set(connId, { ws, lastSeen: Date.now(), clientId: null, ip });
