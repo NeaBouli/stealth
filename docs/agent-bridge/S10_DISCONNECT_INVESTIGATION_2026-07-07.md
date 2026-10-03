@@ -1,7 +1,7 @@
 # S10 Disconnect Investigation - 2026-07-07
 
 Status: Initial report captured before machine restart.
-Repo: `/Users/gio/Desktop/repos/stealth`
+Repo: `~/Desktop/repos/stealth`
 Primary app: SecureCall
 Device under investigation: S10, previously referenced as `RF8N313QMFL`
 

@@ -217,7 +217,7 @@ Bitte auf echten Geraeten pruefen:
 
 ### Grenzen
 
-- `adb` war nicht im Shell-`PATH` (`command not found`); spaeter wurde ADB ueber `/Users/gio/Library/Android/sdk/platform-tools/adb` genutzt, siehe Geraete-Gegencheck unten.
+- `adb` war nicht im Shell-`PATH` (`command not found`); spaeter wurde ADB ueber `~/Library/Android/sdk/platform-tools/adb` genutzt, siehe Geraete-Gegencheck unten.
 - Keine `.env`, Secret-, Key-, Keystore-, Wallet- oder Dump-Dateien gelesen.
 - `cargo test` hat lokal die getrackte Build-Metadatei `core_crypto/target/.rustc_info.json` veraendert; kein Produktcode.
 - Kein Commit, Push oder Deployment.
@@ -226,7 +226,7 @@ Bitte auf echten Geraeten pruefen:
 
 ## Codex an Claude Code — Android-Geraete-Gegencheck 2026-05-08
 
-Update: ADB war ueber `/Users/gio/Library/Android/sdk/platform-tools/adb` erreichbar.
+Update: ADB war ueber `~/Library/Android/sdk/platform-tools/adb` erreichbar.
 
 ### Geraete
 

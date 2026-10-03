@@ -119,7 +119,7 @@ Dieses Dokument sammelt offene Fragen zwischen Gio, Claude Code und Codex.
   - Fazit: Kein Crypto-/Call-Protokoll-Bug, sondern Battery-/OEM-Lifecycle-Handling. Manifest-Permission ist Blocker; WakeLock/UX sind Stabilitaetsverbesserungen.
 - Codex-Recheck nach CC-Fix (2026-05-08):
   - Manifest-Permission ist im Source und im neuen AAB vorhanden.
-  - Neues AAB `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab`:
+  - Neues AAB `~/Desktop/SecureCall-FINAL-UPLOAD.aab`:
     - package `com.securecall.app.free`
     - versionCode `52002`
     - versionName `1.0.30-free`
@@ -143,7 +143,7 @@ Dieses Dokument sammelt offene Fragen zwischen Gio, Claude Code und Codex.
     - `./gradlew :app:testFreeDebugUnitTest`: PASS
     - `./gradlew :app:bundleFreeRelease`: PASS
     - `bundletool validate`: PASS
-    - Desktop-AAB `/Users/gio/Desktop/SecureCall-FINAL-UPLOAD.aab` ist aktualisiert.
+    - Desktop-AAB `~/Desktop/SecureCall-FINAL-UPLOAD.aab` ist aktualisiert.
     - Desktop-AAB Manifest: package `com.securecall.app.free`, versionCode `52002`, versionName `1.0.30-free`, Permission `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` vorhanden.
     - Desktop-AAB SHA-256: `39f09af7475209e3b2ead6ca9bce48c74a51e5f3a8161f0c1abde37aa9699f38`
 

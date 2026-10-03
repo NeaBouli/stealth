@@ -84,7 +84,7 @@ Do not start user-flow tests until this is green.
 Commands:
 
 ```bash
-cd /Users/gio/Desktop/repos/stealth
+cd ~/Desktop/repos/stealth
 git log -1 --oneline
 git status --short
 cd client_android

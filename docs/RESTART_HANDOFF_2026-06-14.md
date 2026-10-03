@@ -2,7 +2,7 @@
 
 ## Current Project State
 
-- Repo: `/Users/gio/Desktop/repos/stealth`
+- Repo: `~/Desktop/repos/stealth`
 - Last known pushed commit before AAB work: `2921f6e`
 - Commit `2921f6e` fixed SecureCall incoming-call UI race:
   - S7 accept now switches from `Incoming Secure Call` to active call UI.
@@ -24,10 +24,10 @@
 - New vC71 AAB was NOT produced.
 - Do not upload the existing Desktop AAB as vC71.
 - Existing old bundle observed:
-  - `/Users/gio/Desktop/repos/stealth/client_android/app/build/outputs/bundle/freeRelease/app-free-release.aab`
+  - `~/Desktop/repos/stealth/client_android/app/build/outputs/bundle/freeRelease/app-free-release.aab`
   - timestamp: `Jun 13 23:20`
   - size: `37M`
-- `/Users/gio/Desktop/SecureCall-LATEST.aab` was not confirmed/replaced during the failed build attempts.
+- `~/Desktop/SecureCall-LATEST.aab` was not confirmed/replaced during the failed build attempts.
 
 ## Build Blocker Before Restart
 
@@ -47,7 +47,7 @@ Gradle/Java local process state became unstable:
 Run exactly:
 
 ```bash
-cd /Users/gio/Desktop/repos/stealth/client_android
+cd ~/Desktop/repos/stealth/client_android
 
 ./gradlew --stop
 ./gradlew --no-daemon --max-workers=1 bundleFreeRelease
@@ -64,7 +64,7 @@ git push origin main
 
 Expected result:
 
-- New `/Users/gio/Desktop/SecureCall-LATEST.aab`
+- New `~/Desktop/SecureCall-LATEST.aab`
 - Play Console versionCode: `71`
 - Bundle version for split APKs remains derived by Play/Gradle, but base AAB versionCode should be `71`.
 

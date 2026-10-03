@@ -84,7 +84,7 @@ The three Android codebases compile against and target API 36, pass their reposi
   - Fix: Merge through normal review, publish the three release asset sets, deploy the sites, and verify every public URL with HTTP 200.
 
 ### Signed artifacts — PASS
-- **[LOW] Candidate identity and integrity verified** — `/Users/gio/Desktop/aab apk/presale-2026-08-27`
+- **[LOW] Candidate identity and integrity verified** — `~/Desktop/aab apk/presale-2026-08-27`
   - What: AAB/APK package names, version codes, API 36 metadata, release certificates and SHA-256 hashes were checked.
   - Path: SecureCall 1.0.50/78017, SecureChat 0.1.11/15 and Chameleon 0.1.13/14 were built from the audited worktrees.
   - Fix: Publish only these checksummed candidates after PR merge.

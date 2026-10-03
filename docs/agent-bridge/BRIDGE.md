@@ -750,13 +750,13 @@ Empfohlene Reihenfolge:
 **.DS_Store + Zip Cleanup**
 
 Aktion:
-- Entfernt: `/Users/gio/Desktop/repos/stealth/.DS_Store`
-- Entfernt: `/Users/gio/Desktop/repos/stealth/securecall.zip`
-- Entfernt: `/Users/gio/Desktop/repos/stealth/securecall Kopie.zip`
+- Entfernt: `~/Desktop/repos/stealth/.DS_Store`
+- Entfernt: `~/Desktop/repos/stealth/securecall.zip`
+- Entfernt: `~/Desktop/repos/stealth/securecall Kopie.zip`
 
 Nicht entfernt:
-- `/Users/gio/Desktop/repos/stealth/securecall/`
-- `/Users/gio/Desktop/repos/stealth/securecall v2 /`
+- `~/Desktop/repos/stealth/securecall/`
+- `~/Desktop/repos/stealth/securecall v2 /`
 
 Grund: Prompt nennt untracked Zips; die beiden Ordner sind keine Zips und koennten Arbeitskopien enthalten. Sie bleiben untracked.
 
@@ -852,7 +852,7 @@ Ergebnis BUG-029 Retest:
 - Next: add .kotlin/ to securechat .gitignore and push hygiene commit.
 
 ## 2026-06-11 Codex — SecureChat hygiene committed
-- Added .kotlin/ to /Users/gio/Desktop/repos/securechat/.gitignore.
+- Added .kotlin/ to ~/Desktop/repos/securechat/.gitignore.
 - Commit pushed in securechat: cbb38d0 chore: add .kotlin/ to gitignore.
 - Next: mark BUG-029 blocked in Linear because SecureCall WireGuard config is missing; current device VPN is external Mullvad and does not activate GhostVpnService.
 
@@ -1014,10 +1014,10 @@ Ergebnis BUG-029 Retest:
   - SecureChat `./gradlew assembleRelease` ✅ BUILD SUCCESSFUL
   - Chameleon `./gradlew assembleRelease` ✅ BUILD SUCCESSFUL
 - Desktop artifacts created:
-  - `/Users/gio/Desktop/SecureCall-LATEST.aab` (37 MB)
-  - `/Users/gio/Desktop/SecureCall-LATEST.apk` (21 MB, free arm64-v8a)
-  - `/Users/gio/Desktop/SecureChat-LATEST.apk` (13 MB)
-  - `/Users/gio/Desktop/Chameleon-LATEST.apk` (11 MB)
+  - `~/Desktop/SecureCall-LATEST.aab` (37 MB)
+  - `~/Desktop/SecureCall-LATEST.apk` (21 MB, free arm64-v8a)
+  - `~/Desktop/SecureChat-LATEST.apk` (13 MB)
+  - `~/Desktop/Chameleon-LATEST.apk` (11 MB)
 - GitHub releases created:
   - SecureChat: `v0.1.1-alpha-securechat`
   - Chameleon: `v0.1.1-alpha-chameleon`
@@ -1112,12 +1112,12 @@ Ergebnis BUG-029 Retest:
   - Contacts invite flow, dialer invite strings, invite landing pages and beta docs updated.
 - Store/app icons:
   - Website brand icons from `website/assets/brand/` injected into Android launcher resources.
-  - Play Console 512x512 icons exported to `/Users/gio/Desktop/StealthX-PlayStore-Icons/`.
+  - Play Console 512x512 icons exported to `~/Desktop/StealthX-PlayStore-Icons/`.
   - SecureChat and Chameleon release APKs rebuilt and existing GitHub release assets clobbered with icon-aligned builds.
 - SecureCall final build:
   - versionName `1.0.39`, versionCode `62`.
-  - `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `87e828cbc087ed2726de954f47c899a1e4e9252861d70a544c0ff065fa778edb`.
-  - `/Users/gio/Desktop/SecureCall-LATEST.apk` SHA256 `cd8d488347ee33f62bdc01d3a2db7bf2851363e54c241f5d430aa099cdacbd42`.
+  - `~/Desktop/SecureCall-LATEST.aab` SHA256 `87e828cbc087ed2726de954f47c899a1e4e9252861d70a544c0ff065fa778edb`.
+  - `~/Desktop/SecureCall-LATEST.apk` SHA256 `cd8d488347ee33f62bdc01d3a2db7bf2851363e54c241f5d430aa099cdacbd42`.
   - GitHub release created: https://github.com/NeaBouli/stealth/releases/tag/v1.0.39
 - Verification:
   - `curl -I https://stealthx.tech/invite/?id=android-test` returns HTTP 200.
@@ -1135,7 +1135,7 @@ Ergebnis BUG-029 Retest:
 - Verification:
   - `./gradlew --no-daemon assembleFreeDebug` ✅ BUILD SUCCESSFUL.
   - `./gradlew --no-daemon bundleFreeRelease` ✅ BUILD SUCCESSFUL.
-  - New AAB copied to `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+  - New AAB copied to `~/Desktop/SecureCall-LATEST.aab`.
 
 ## 2026-06-12 08:20 UTC — Codex: Play Deep Link Domain Still Failing
 - User still sees Play Console Deep Links warning for `stealthx.tech` and exact `/invite/`, selectedVersionCode `62002`.
@@ -1203,8 +1203,8 @@ Next user action:
 
 Actions:
 - Bumped SecureCall `versionCode` from 63 to 64, keeping `versionName` 1.0.40.
-- Built Free release AAB and copied to `/Users/gio/Desktop/SecureCall-LATEST.aab`.
-- Built Free release APK and copied arm64 artifact to `/Users/gio/Desktop/SecureCall-LATEST.apk`.
+- Built Free release AAB and copied to `~/Desktop/SecureCall-LATEST.aab`.
+- Built Free release APK and copied arm64 artifact to `~/Desktop/SecureCall-LATEST.apk`.
 - Built internal Premium release APK and installed it on connected devices S7 + Tab S4.
 
 Device verification:
@@ -1222,12 +1222,12 @@ Verification:
 - `./gradlew --no-daemon bundleFreeRelease` ✅ BUILD SUCCESSFUL.
 - `./gradlew --no-daemon assembleFreeRelease` ✅ BUILD SUCCESSFUL.
 - Python ELF program-header check: all 64-bit Free release native libs have `LOAD p_align >= 0x4000`.
-- `zipalign -c -P 16 -v 4 /Users/gio/Desktop/SecureCall-LATEST.apk` ✅ Verification successful.
+- `zipalign -c -P 16 -v 4 ~/Desktop/SecureCall-LATEST.apk` ✅ Verification successful.
 
 Artifacts:
-- `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `2e0ea7a58cc37e12d09009ee80e86d189d238ced323e3bd1984f6cd035abde6f`.
-- `/Users/gio/Desktop/SecureCall-LATEST.apk` SHA256 `6a6f0b28d1d8d1a64125e94235bc1bf4d53968618ff03d7085cea848562893d3`.
-- `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `5d0d6f3b01aff48af999508b6bc1b32d76a6e5e2188af97048de5116452cdb23`.
+- `~/Desktop/SecureCall-LATEST.aab` SHA256 `2e0ea7a58cc37e12d09009ee80e86d189d238ced323e3bd1984f6cd035abde6f`.
+- `~/Desktop/SecureCall-LATEST.apk` SHA256 `6a6f0b28d1d8d1a64125e94235bc1bf4d53968618ff03d7085cea848562893d3`.
+- `~/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `5d0d6f3b01aff48af999508b6bc1b32d76a6e5e2188af97048de5116452cdb23`.
 
 Play Console manual item:
 - Production countries/regions still need to be added in Play Console UI.
@@ -1239,7 +1239,7 @@ Play rejected previous AAB because split versionCode `64002` was already used in
 Action:
 - Bumped SecureCall base `versionCode` from 64 to 65, keeping `versionName` 1.0.40.
 - Rebuilt Free release AAB with existing Billing v7.1.1, App Links, and 16KB page-size fixes.
-- Copied new AAB to `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+- Copied new AAB to `~/Desktop/SecureCall-LATEST.aab`.
 
 Verification:
 - `./gradlew --no-daemon bundleFreeRelease` ✅ BUILD SUCCESSFUL.
@@ -1250,7 +1250,7 @@ Verification:
   - armeabi-v7a: `65002`
   - x86_64: `65003`
 
-Upload this file now: `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+Upload this file now: `~/Desktop/SecureCall-LATEST.aab`.
 
 ## 2026-06-12 10:35 UTC — Codex: APK Download Links Updated + S7/S4 SecureChat/Chameleon Installed
 
@@ -1280,10 +1280,10 @@ Device installs during Play precheck wait:
   - Chameleon reinstalled from latest release APK: `versionCode=2`, `versionName=0.1.1-alpha`.
 
 Desktop artifacts:
-- `/Users/gio/Desktop/SecureCall-LATEST.apk` SHA256 `bf2b92c80753c30702f75cf5ec190489c30a027584415e36e09bad17bb5a4f3d`.
-- `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `4a9ee9db4001d14410d7f9627ae20d22017b18b46ea48bfa7847f8e40e34bde6`.
-- `/Users/gio/Desktop/SecureChat-LATEST.apk` SHA256 `e2821c4e52ccc3a105b006cb37818c1358cf4d5e4e1de3a991a553993b8d4e83`.
-- `/Users/gio/Desktop/Chameleon-LATEST.apk` SHA256 `4d6827ca6a96c82df007be5d3cc760161c32610c357588cb60812efb5e2fc5ff`.
+- `~/Desktop/SecureCall-LATEST.apk` SHA256 `bf2b92c80753c30702f75cf5ec190489c30a027584415e36e09bad17bb5a4f3d`.
+- `~/Desktop/SecureCall-LATEST.aab` SHA256 `4a9ee9db4001d14410d7f9627ae20d22017b18b46ea48bfa7847f8e40e34bde6`.
+- `~/Desktop/SecureChat-LATEST.apk` SHA256 `e2821c4e52ccc3a105b006cb37818c1358cf4d5e4e1de3a991a553993b8d4e83`.
+- `~/Desktop/Chameleon-LATEST.apk` SHA256 `4d6827ca6a96c82df007be5d3cc760161c32610c357588cb60812efb5e2fc5ff`.
 
 ## 2026-06-12 10:45 UTC — Codex: S10 Apps Updated
 
@@ -1291,8 +1291,8 @@ Device: S10 `RF8N313QMFL` (`SM_G973F`).
 
 Installed via ADB:
 - SecureCall Premium from `client_android/app/build/outputs/apk/premium/release/app-premium-arm64-v8a-release.apk`.
-- SecureChat from `/Users/gio/Desktop/SecureChat-LATEST.apk`.
-- Chameleon from `/Users/gio/Desktop/Chameleon-LATEST.apk`.
+- SecureChat from `~/Desktop/SecureChat-LATEST.apk`.
+- Chameleon from `~/Desktop/Chameleon-LATEST.apk`.
 
 Verified installed versions:
 - `com.securecall.app.premium`: `versionCode=65001`, `versionName=1.0.40-premium`.
@@ -1388,7 +1388,7 @@ Will build/install Premium on S10 `RF8N313QMFL`, then post S10 retest results he
 
 ## 2026-06-12 18:46 UTC — Agent-A test blocker
 
-[AGENT-A] S7 + Tab S4 final vC66 installiert. Free AAB liegt auf /Users/gio/Desktop/SecureCall-LATEST.aab; Premium Test APK auf /Users/gio/Desktop/SecureCall-Premium-LATEST.apk.
+[AGENT-A] S7 + Tab S4 final vC66 installiert. Free AAB liegt auf ~/Desktop/SecureCall-LATEST.aab; Premium Test APK auf ~/Desktop/SecureCall-Premium-LATEST.apk.
 [AGENT-A] Zweiter E2E-Repro blockiert: Tab S4 ist Pattern-locked und per ADB nicht entsperrbar; S7 als Sender bleibt Disconnected. Logcat zeigt WebSocket Reconnect Fehler: HTTP 429 Too Many Requests.
 [AGENT-A] Untersuche jetzt Backend Rate-Limit, weil Reconnect/FCM Accept sonst CALL_ACCEPT und Incoming-Call-Flows destabilisiert.
 
@@ -1397,7 +1397,7 @@ Will build/install Premium on S10 `RF8N313QMFL`, then post S10 retest results he
 [AGENT-A] Agent-B stale Railway finding aufgegriffen: server_url_production auf wss://api.stealthx.tech/signal gesetzt.
 [AGENT-A] network_security_config Domain auf api.stealthx.tech aktualisiert; Pins aus Live-Zertifikat berechnet: Leaf + Let's Encrypt R12, Rotation/Expiration 2026-08-14.
 [AGENT-A] Finaler Build: bundleFreeRelease + assemblePremiumRelease erfolgreich. S7 + Tab S4 final vC66001 installiert.
-[AGENT-A] Desktop final: /Users/gio/Desktop/SecureCall-LATEST.aab SHA256 a2e4baa8de8f10aa4ba336a801d8ce8c61b102fa8fcdc1a0b2ec138b9d1a5f2e; /Users/gio/Desktop/SecureCall-Premium-LATEST.apk SHA256 df531077541ab4ca6de27539756abaca055195f2e65bd4c33bb3c3e82439e120.
+[AGENT-A] Desktop final: ~/Desktop/SecureCall-LATEST.aab SHA256 a2e4baa8de8f10aa4ba336a801d8ce8c61b102fa8fcdc1a0b2ec138b9d1a5f2e; ~/Desktop/SecureCall-Premium-LATEST.apk SHA256 df531077541ab4ca6de27539756abaca055195f2e65bd4c33bb3c3e82439e120.
 
 ## 2026-06-12 18:55 UTC — Agent-A Hetzner deploy + reconnect retest
 
@@ -1422,8 +1422,8 @@ Will build/install Premium on S10 `RF8N313QMFL`, then post S10 retest results he
   - PM2 signaling reload: PASS
   - Android build: `./gradlew -Pinternal bundleFreeRelease assemblePremiumRelease`: PASS
   - Desktop artifacts replaced:
-    - `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `1ed655218c97558425ec9a69e802cb2fec2f5ccc4b8bdf14b5fdc36b26e302a6`
-    - `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `ff7feeb7dcad051a64cea442434af53608cdaede42782ee908d3e1d4c34951dd`
+    - `~/Desktop/SecureCall-LATEST.aab` SHA256 `1ed655218c97558425ec9a69e802cb2fec2f5ccc4b8bdf14b5fdc36b26e302a6`
+    - `~/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `ff7feeb7dcad051a64cea442434af53608cdaede42782ee908d3e1d4c34951dd`
   - S7 + Tab S4 installed: `versionCode=67001`, `versionName=1.0.40-premium`
   - Tab S4 -> S7 using correct contact `android-8856189f`: S7 IncomingCallActivity displayed while S7 was backgrounded
   - S7 accept: Tab S4 changed from `Klingelt…` to `Anruf aktiv`
@@ -1440,7 +1440,7 @@ Implemented locally:
 - BUG-4: SIWE backend URL moved to `https://api.stealthx.tech`; stale Android Railway resource/config entries updated to `api.stealthx.tech`.
 
 Build verification:
-- `./gradlew -Pinternal :app:assemblePremiumRelease` reached code/native build but failed at signing because local release keystore is absent in this fresh clone: `Keystore file '/Users/gio/Desktop/stealth/securecall-release-key.jks' not found`.
+- `./gradlew -Pinternal :app:assemblePremiumRelease` reached code/native build but failed at signing because local release keystore is absent in this fresh clone: `Keystore file '~/Desktop/stealth/securecall-release-key.jks' not found`.
 - `./gradlew -Pinternal :app:assemblePremiumDebug` ✅ BUILD SUCCESSFUL.
 - S10 retest APK: `client_android/app/build/outputs/apk/premium/debug/app-premium-arm64-v8a-debug.apk`.
 
@@ -1448,12 +1448,12 @@ Next: install Premium debug APK on S10 and retest logs.
 
 [AGENT-A] 2026-06-12 19:25 UTC — SecureCall v1.0.40/vC67 distribution update
 - Local devices on this machine:
-  - S7 `ce10160adc00152604`: installed `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`, verified `versionCode=67001`, `versionName=1.0.40-premium`.
-  - Tab S4 `ce12182c68644439037e`: installed `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`, verified `versionCode=67001`, `versionName=1.0.40-premium`.
+  - S7 `ce10160adc00152604`: installed `~/Desktop/SecureCall-Premium-LATEST.apk`, verified `versionCode=67001`, `versionName=1.0.40-premium`.
+  - Tab S4 `ce12182c68644439037e`: installed `~/Desktop/SecureCall-Premium-LATEST.apk`, verified `versionCode=67001`, `versionName=1.0.40-premium`.
 - Desktop artifacts:
-  - `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `1ed655218c97558425ec9a69e802cb2fec2f5ccc4b8bdf14b5fdc36b26e302a6` — ready for Play Console.
-  - `/Users/gio/Desktop/SecureCall-LATEST.apk` SHA256 `2df75099453f18e5c37959ce64ec035e3d6cba1c202fc715cfad234fe2817ac1`.
-  - `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `ff7feeb7dcad051a64cea442434af53608cdaede42782ee908d3e1d4c34951dd`.
+  - `~/Desktop/SecureCall-LATEST.aab` SHA256 `1ed655218c97558425ec9a69e802cb2fec2f5ccc4b8bdf14b5fdc36b26e302a6` — ready for Play Console.
+  - `~/Desktop/SecureCall-LATEST.apk` SHA256 `2df75099453f18e5c37959ce64ec035e3d6cba1c202fc715cfad234fe2817ac1`.
+  - `~/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `ff7feeb7dcad051a64cea442434af53608cdaede42782ee908d3e1d4c34951dd`.
 - GitHub Release `v1.0.40` assets replaced with vC67 builds via `gh release upload --clobber`.
 - Verified download URLs HTTP 200:
   - `app-free-arm64-v8a-release.apk`
@@ -1464,7 +1464,7 @@ Next: install Premium debug APK on S10 and retest logs.
 [AGENT-A -> AGENT-B] ACTION REQUIRED — S10 install latest SecureCall APK
 - S10 is not visible on Agent-A machine (`adb devices` shows only S7 + Tab S4).
 - Please pull latest `main`, download/install the new vC67 Premium APK on S10:
-  - Source: GitHub release `v1.0.40`, asset `app-premium-arm64-v8a-release.apk`, or copy `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk` if available on that machine.
+  - Source: GitHub release `v1.0.40`, asset `app-premium-arm64-v8a-release.apk`, or copy `~/Desktop/SecureCall-Premium-LATEST.apk` if available on that machine.
   - Command pattern:
     `adb -s RF8N313QMFL install -r app-premium-arm64-v8a-release.apk`
   - Verify:
@@ -1581,10 +1581,10 @@ Outstanding for Agent-A / other Codex:
 - Fixed SecureCall fresh-install blocker: phone-number prompt `Skip` now persists `phone_number_skipped=true` and no longer intercepts every launch/deep link.
 - Bumped SecureCall base `versionCode` 67 → 68; arm64 split installed as `versionCode=68001`.
 - New desktop artifacts:
-  - `/Users/gio/Desktop/SecureCall-LATEST.aab` SHA256 `e027a516c1f11b43c6a5fc17abed28778855407dab33e6a938038fbcccba1b9c`
-  - `/Users/gio/Desktop/SecureCall-LATEST.apk` SHA256 `b0d64a6bed4372385adafa02fd5138feab753c48241c5cbb5941bed54f03163c`
-  - `/Users/gio/Desktop/SecureCall-Pro-LATEST.apk` SHA256 `4913d95ed1b03bbe1cd7e0af35ef403167faf8f13c2451d94ab4dd028cf63be9`
-  - `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `f97540cf95bf86ba7523fef4f846a88e519758d7aa1cdf6911cfa67457892c4b`
+  - `~/Desktop/SecureCall-LATEST.aab` SHA256 `e027a516c1f11b43c6a5fc17abed28778855407dab33e6a938038fbcccba1b9c`
+  - `~/Desktop/SecureCall-LATEST.apk` SHA256 `b0d64a6bed4372385adafa02fd5138feab753c48241c5cbb5941bed54f03163c`
+  - `~/Desktop/SecureCall-Pro-LATEST.apk` SHA256 `4913d95ed1b03bbe1cd7e0af35ef403167faf8f13c2451d94ab4dd028cf63be9`
+  - `~/Desktop/SecureCall-Premium-LATEST.apk` SHA256 `f97540cf95bf86ba7523fef4f846a88e519758d7aa1cdf6911cfa67457892c4b`
 - Installed and verified:
   - Tab S4 `ce12182c68644439037e`: `com.securecall.app.free` `versionCode=68001`, `versionName=1.0.40-free`
   - S7 `ce10160adc00152604`: `com.securecall.app.pro` `versionCode=68001`, `versionName=1.0.40-pro`
@@ -1633,11 +1633,11 @@ Outstanding for Agent-A / other Codex:
   - Installed arm64 split reports `versionCode=68001`.
   - `versionName` remains `1.0.40` with flavor suffixes.
 - Desktop artifacts ready:
-  - `/Users/gio/Desktop/SecureCall-LATEST.aab`
-  - `/Users/gio/Desktop/SecureCall-LATEST.apk`
-  - `/Users/gio/Desktop/SecureCall-Pro-LATEST.apk`
-  - `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`
-  - `/Users/gio/Desktop/securecall_v1.0.40_v68_checksums.txt`
+  - `~/Desktop/SecureCall-LATEST.aab`
+  - `~/Desktop/SecureCall-LATEST.apk`
+  - `~/Desktop/SecureCall-Pro-LATEST.apk`
+  - `~/Desktop/SecureCall-Premium-LATEST.apk`
+  - `~/Desktop/securecall_v1.0.40_v68_checksums.txt`
 - SHA256:
   - AAB: `e027a516c1f11b43c6a5fc17abed28778855407dab33e6a938038fbcccba1b9c`
   - Free APK: `b0d64a6bed4372385adafa02fd5138feab753c48241c5cbb5941bed54f03163c`
@@ -1732,10 +1732,10 @@ Outstanding for Agent-A / other Codex:
 - Hetzner deploy: `ifr.js`, `server.js`, `subscription.js` kopiert und PM2 reload erfolgreich; Live-Read fuer `0x80fF32c5441cBCbFa5c3ce0dC70359BDD05B6958` ergab `33,333,333 IFR` und Tier `premium`.
 - Tests: `backend/signaling npm test` gruen; SecureCall Android `assembleFreeRelease bundleFreeRelease assembleProRelease assemblePremiumRelease` gruen.
 - Desktop-Artefakte aktualisiert:
-  - `/Users/gio/Desktop/SecureCall-LATEST.aab`
-  - `/Users/gio/Desktop/SecureCall-LATEST.apk`
-  - `/Users/gio/Desktop/SecureCall-Pro-LATEST.apk`
-  - `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`
+  - `~/Desktop/SecureCall-LATEST.aab`
+  - `~/Desktop/SecureCall-LATEST.apk`
+  - `~/Desktop/SecureCall-Pro-LATEST.apk`
+  - `~/Desktop/SecureCall-Premium-LATEST.apk`
 - Device refresh:
   - Tab S4 `ce12182c68644439037e`: SecureCall Free + SecureChat + Chameleon frisch installiert.
   - S7 `ce10160adc00152604`: SecureCall Pro + SecureChat + Chameleon frisch installiert.
@@ -1869,8 +1869,8 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 - Base `versionCode` bumped `68 -> 69` after BUG-1/BUG-2 fix so the next Play artifact has a fresh code.
 - Build PASS: `./gradlew -Pinternal bundleFreeRelease assembleFreeRelease assembleProRelease assemblePremiumRelease`.
 - Desktop artifacts replaced:
-  - `/Users/gio/Desktop/SecureCall-LATEST.aab` — Free release bundle, timestamp 2026-06-13 03:06 PT.
-  - `/Users/gio/Desktop/SecureCall-LATEST.apk` — Free arm64 release APK, timestamp 2026-06-13 03:06 PT.
+  - `~/Desktop/SecureCall-LATEST.aab` — Free release bundle, timestamp 2026-06-13 03:06 PT.
+  - `~/Desktop/SecureCall-LATEST.apk` — Free arm64 release APK, timestamp 2026-06-13 03:06 PT.
 - Installed on devices:
   - S4 Free: `versionCode=69001`, `versionName=1.0.40-free`.
   - S7 Pro: `versionCode=69001`, `versionName=1.0.40-pro`.
@@ -2122,8 +2122,8 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 
 - Built `:app:bundleFreeRelease :app:assembleFreeRelease` successfully after IFR/Subscription tier fixes.
 - Desktop artifacts replaced:
-  - `/Users/gio/Desktop/SecureCall-LATEST.aab` (37M, timestamp Jun 13 15:55)
-  - `/Users/gio/Desktop/SecureCall-LATEST.apk` (arm64-v8a, 21M, timestamp Jun 13 15:55)
+  - `~/Desktop/SecureCall-LATEST.aab` (37M, timestamp Jun 13 15:55)
+  - `~/Desktop/SecureCall-LATEST.apk` (arm64-v8a, 21M, timestamp Jun 13 15:55)
 - Release metadata:
   - applicationId `com.securecall.app.free`
   - versionName `1.0.40-free`
@@ -2136,7 +2136,7 @@ Nach 24h: WalletConnect/MetaMask Flow erneut testen.
 - Play Console rejected vC69 as already used.
 - Bumped SecureCall `versionCode` from `69` to `70`; `versionName` remains `1.0.40`.
 - Built `:app:bundleFreeRelease` successfully.
-- Replaced `/Users/gio/Desktop/SecureCall-LATEST.aab` with new vC70 AAB.
+- Replaced `~/Desktop/SecureCall-LATEST.aab` with new vC70 AAB.
 - Desktop AAB timestamp: Jun 13 23:20, size 37M.
 - This AAB includes the IFR Hold/Premium feature-gate fix.
 
@@ -2242,15 +2242,15 @@ Safe state:
 - Local `client_android/app/build.gradle` has `versionCode 71`.
 - vC71 AAB has NOT been built.
 - Existing project AAB observed: `client_android/app/build/outputs/bundle/freeRelease/app-free-release.aab`, timestamp `Jun 13 23:20`, size `37M`.
-- `/Users/gio/Desktop/SecureCall-LATEST.aab` was not replaced during failed attempts.
+- `~/Desktop/SecureCall-LATEST.aab` was not replaced during failed attempts.
 
 Saved handoff files:
-- `/Users/gio/Desktop/repos/stealth/docs/RESTART_HANDOFF_2026-06-14.md`
-- `/Users/gio/Desktop/STEALTHX_RESTART_STATUS_2026-06-14.md`
+- `~/Desktop/repos/stealth/docs/RESTART_HANDOFF_2026-06-14.md`
+- `~/Desktop/STEALTHX_RESTART_STATUS_2026-06-14.md`
 
 After Mac restart:
 ```bash
-cd /Users/gio/Desktop/repos/stealth/client_android
+cd ~/Desktop/repos/stealth/client_android
 ./gradlew --stop
 ./gradlew --no-daemon --max-workers=1 bundleFreeRelease
 cp app/build/outputs/bundle/freeRelease/app-free-release.aab ~/Desktop/SecureCall-LATEST.aab
@@ -2599,8 +2599,8 @@ Builds:
 - SecureCall Pro/Premium are internal-only variants and require `-Pinternal`; both were built explicitly:
   - `-Pinternal :app:assembleProRelease :app:bundleProRelease` succeeded.
   - `-Pinternal :app:assemblePremiumRelease :app:bundlePremiumRelease` succeeded after a retry; first retry hit an AAPT2 daemon link failure, second retry completed.
-- Desktop artifacts refreshed under `/Users/gio/Desktop/StealthX-Release-2026-06-20`.
-- Latest AAB copied to `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+- Desktop artifacts refreshed under `~/Desktop/StealthX-Release-2026-06-20`.
+- Latest AAB copied to `~/Desktop/SecureCall-LATEST.aab`.
 
 GitHub release / downloads:
 - Created `https://github.com/NeaBouli/stealth/releases/tag/v1.0.40-vC72`.
@@ -2634,7 +2634,7 @@ User clarified the distribution model:
 Decision:
 - SecureCall public distribution uses the Free/Public package only.
 - Pro/Premium APKs and AABs can remain internal/testing artifacts, but they should not be offered to customers on the download page.
-- Google Play upload target remains `/Users/gio/Desktop/SecureCall-LATEST.aab`, which is the public Free bundle.
+- Google Play upload target remains `~/Desktop/SecureCall-LATEST.aab`, which is the public Free bundle.
 
 Fix:
 - `client_android/app/build.gradle` now enables a universal APK output for direct website downloads while keeping ABI splits for technical/internal artifacts.
@@ -2646,7 +2646,7 @@ Fix:
 
 Verification:
 - Built `:app:assembleFreeRelease` successfully after enabling `universalApk true`.
-- Produced `/Users/gio/Desktop/SecureCall-LATEST.apk`:
+- Produced `~/Desktop/SecureCall-LATEST.apk`:
   - APK: `com.securecall.app.free`
   - versionCode: `72009`
   - versionName: `1.0.40-free`
@@ -2663,7 +2663,7 @@ Verification:
 
 ## 2026-06-20 14:44 PDT — CODEX TERMINAL FIX/RELEASE
 
-User reported Google Play rejected `/Users/gio/Desktop/SecureCall-LATEST.aab` because generated versionCode `72002` had already been used.
+User reported Google Play rejected `~/Desktop/SecureCall-LATEST.aab` because generated versionCode `72002` had already been used.
 
 Fix:
 - Bumped SecureCall `versionCode` from `72` to `73`.
@@ -2681,9 +2681,9 @@ Fix:
 
 Build:
 - `./gradlew --no-daemon --no-watch-fs --max-workers=1 :app:bundleFreeRelease` succeeded.
-- Refreshed `/Users/gio/Desktop/SecureCall-LATEST.aab`.
+- Refreshed `~/Desktop/SecureCall-LATEST.aab`.
 - Copied archival artifact:
-  - `/Users/gio/Desktop/StealthX-Release-2026-06-20/SecureCall-Free-v1.0.40-vC73.aab`
+  - `~/Desktop/StealthX-Release-2026-06-20/SecureCall-Free-v1.0.40-vC73.aab`
 
 Verification:
 - New AAB package: `com.securecall.app.free`
@@ -2714,11 +2714,11 @@ Build verification:
 - Chameleon `./gradlew --no-daemon --max-workers=1 app:bundleRelease` succeeded.
 
 Desktop AABs refreshed:
-- `/Users/gio/Desktop/SecureCall-LATEST.aab`
+- `~/Desktop/SecureCall-LATEST.aab`
   - SHA256 `05d7af68e16c721730a15a12ae42e901b221daabaec284f112e02e89d90f0f65`
-- `/Users/gio/Desktop/SecureChat-LATEST.aab`
+- `~/Desktop/SecureChat-LATEST.aab`
   - SHA256 `de3992d84ffd12b7e08f8c9697d7fcba5e610140a1697e8aeb831efdee284c43`
-- `/Users/gio/Desktop/Chameleon-LATEST.aab`
+- `~/Desktop/Chameleon-LATEST.aab`
   - SHA256 `ba298d1b05ee2b2c4efc78636ad6835e0e771b4ad33233d8b38a62f10bcc87ed`
 
 Device install reminder:
@@ -2761,13 +2761,13 @@ Build verification:
 - `./gradlew --no-daemon --max-workers=1 bundleFreeRelease` succeeded.
 
 Desktop artifacts refreshed:
-- `/Users/gio/Desktop/SecureCall-LATEST.aab`
+- `~/Desktop/SecureCall-LATEST.aab`
   - SHA256 `14e4b4a9bf4a2c6f3ccc2ea1b1ecd30d864c111407de230235176e681a0e0aa8`
-- `/Users/gio/Desktop/SecureCall-Free-LATEST.aab`
+- `~/Desktop/SecureCall-Free-LATEST.aab`
   - SHA256 `14e4b4a9bf4a2c6f3ccc2ea1b1ecd30d864c111407de230235176e681a0e0aa8`
-- `/Users/gio/Desktop/SecureCall-Pro-LATEST.apk`
+- `~/Desktop/SecureCall-Pro-LATEST.apk`
   - SHA256 `3566209c9a6f4603bfaa34e519a22bc2fa0bf7cbe5833c142b3bfb34aae4d94c`
-- `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`
+- `~/Desktop/SecureCall-Premium-LATEST.apk`
   - SHA256 `fd4caeeabb0eb5610b5b3bfe8a4dad61d49b2e5243ba3874a9eec8698c0ce42b`
 
 Device installs:
@@ -2859,18 +2859,18 @@ Build verification:
 - `./gradlew --no-daemon --max-workers=1 bundleRelease bundleFreeRelease` succeeded.
 
 Desktop artifacts refreshed:
-- `/Users/gio/Desktop/SecureCall-LATEST.aab`
+- `~/Desktop/SecureCall-LATEST.aab`
   - SHA256 `e334f975dd25202ac43b79b30031caa367b71677eddb8d2388693f8bb8872dad`
-- `/Users/gio/Desktop/SecureCall-Free-LATEST.aab`
+- `~/Desktop/SecureCall-Free-LATEST.aab`
   - SHA256 `e334f975dd25202ac43b79b30031caa367b71677eddb8d2388693f8bb8872dad`
-- `/Users/gio/Desktop/SecureCall-Pro-LATEST.apk`
+- `~/Desktop/SecureCall-Pro-LATEST.apk`
   - SHA256 `1aa9a47979ca3efc1e7e553ffb23d4a6d2c40fe6bb771b8d4be9c553fd7b7970`
-- `/Users/gio/Desktop/SecureCall-Premium-LATEST.apk`
+- `~/Desktop/SecureCall-Premium-LATEST.apk`
   - SHA256 `45480f3029d389245a22092cd0611067f27d670e7806d5a20fbf25ac348f3769`
 
 Artifact note:
 - Gradle exposes a fresh AAB task for Free only (`bundleFreeRelease`/`bundleRelease`).
-- Old Desktop aliases `/Users/gio/Desktop/SecureCall-Pro-LATEST.aab` and `/Users/gio/Desktop/SecureCall-Premium-LATEST.aab` were removed because they were stale and not regenerated by the current project tasks.
+- Old Desktop aliases `~/Desktop/SecureCall-Pro-LATEST.aab` and `~/Desktop/SecureCall-Premium-LATEST.aab` were removed because they were stale and not regenerated by the current project tasks.
 
 Device installs:
 - S7 (`ce10160adc00152604`) updated with SecureCall Free/Pro/Premium and verified at `versionCode=75001`, `targetSdk=35`.
@@ -2899,14 +2899,14 @@ Build verification:
 - `./gradlew --no-daemon --max-workers=1 bundleFreeRelease` succeeded.
 
 Desktop AABs refreshed:
-- `/Users/gio/Desktop/SecureCall-LATEST.aab`
+- `~/Desktop/SecureCall-LATEST.aab`
   - SHA256 `29ad9dc6c7b861337ab5f1022fde2d670caf2d0031e534f0fa667f7e20dd4d41`
-- `/Users/gio/Desktop/SecureCall-Free-LATEST.aab`
+- `~/Desktop/SecureCall-Free-LATEST.aab`
   - SHA256 `29ad9dc6c7b861337ab5f1022fde2d670caf2d0031e534f0fa667f7e20dd4d41`
-- `/Users/gio/Desktop/SecureCall-Pro-LATEST.aab`
+- `~/Desktop/SecureCall-Pro-LATEST.aab`
   - SHA256 `8dd7a14c9cd810b3a07c447d5cbb62a32bc57d961b6dd7148fdf48d6f03a3c84`
   - Superseded 2026-06-21 10:10 PDT: alias removed because it was stale and not regenerated by current Gradle tasks.
-- `/Users/gio/Desktop/SecureCall-Premium-LATEST.aab`
+- `~/Desktop/SecureCall-Premium-LATEST.aab`
   - SHA256 `66e3b2a626e7fe2f21617153346ad49ade9d5113889c7684cdcdc3f340e25307`
   - Superseded 2026-06-21 10:10 PDT: alias removed because it was stale and not regenerated by current Gradle tasks.
 
@@ -2993,7 +2993,7 @@ Rules for all dev agents:
 - Do not use the Anthropic API, Anthropic SDK, `ANTHROPIC_API_KEY`, or direct HTTP calls for Codex -> Claude Code handoff.
 - Do not use `claude --bare`; bare mode does not read the local claude.ai OAuth/keychain session and will report not logged in.
 - Do not use `cc` for Claude Code; on this machine `cc` is the C compiler.
-- The Claude Code CLI command is `claude`; the stable wrapper is `/Users/gio/.local/bin/claude-code-terminal`.
+- The Claude Code CLI command is `claude`; the stable wrapper is `~/.local/bin/claude-code-terminal`.
 - If a probe returns `401 Invalid authentication credentials`, the integration is using the wrong path: API instead of terminal.
 - Keep secrets, tokens, passwords, private keys, and keychain material out of bridge files.
 <!-- /CODEX_CLAUDE_CODE_TERMINAL_BRIDGE_V1 -->
@@ -3219,8 +3219,8 @@ Type: FIX / SECURITY / STATUS
   - Added the new public upload-certificate fingerprint to all three SecureCall entries in
     `website/.well-known/assetlinks.json`, preserving old-upload compatibility and the Free
     Google app-signing certificate; JSON validation PASS.
-- Desktop candidate refreshed at `/Users/gio/Desktop/SecureCall-LATEST.aab`; previous `78013`
-  preserved as `/Users/gio/Desktop/SecureCall-v1.0.46-vC78013-before-upload-key-reset.aab`.
+- Desktop candidate refreshed at `~/Desktop/SecureCall-LATEST.aab`; previous `78013`
+  preserved as `~/Desktop/SecureCall-v1.0.46-vC78013-before-upload-key-reset.aab`.
 - Google approval of the pending upload-key reset remains the external gate. No AAB was uploaded,
   no active track changed and no production rollout occurred.
 
@@ -3314,7 +3314,7 @@ Type: FIX / REVIEW / TEST / RELEASE / STATUS
 - Full signed chain passed after the initial review fixes: VPN/IFR guards, Free release unit
   tests, lint-vital, R8, four native ABIs and `bundleFreeRelease`. A subsequent focused release
   unit/guard run passed after the dynamic VPN watcher addition; final remote CI follows on push.
-- Desktop AAB `/Users/gio/Desktop/SecureCall-LATEST.aab` is `1.0.47` / `78014`, 32 MB, SHA-256
+- Desktop AAB `~/Desktop/SecureCall-LATEST.aab` is `1.0.47` / `78014`, 32 MB, SHA-256
   `7c9ced79667d3dabae56fa0603135876168294f198f5ac183c8e0221c86292b3`, signed by the new upload
   certificate (`83:18:36:CF:...:49:D2`) and free of VPN/WireGuard package entries.
 - Play Console still shows the upload-key reset as pending and the prior upload certificate as
@@ -3330,7 +3330,7 @@ Type: RELEASE / TEST / STATUS
 - Re-ran the complete signed Free release chain after the dynamic external-VPN watcher change:
   `verifyNoVpnServiceSource`, `verifyNoAppIfrWalletCode`, `testFreeReleaseUnitTest`,
   `lintVitalFreeRelease`, R8, four native ABI builds and `bundleFreeRelease` all passed.
-- Final desktop artifact `/Users/gio/Desktop/SecureCall-LATEST.aab` has SHA-256
+- Final desktop artifact `~/Desktop/SecureCall-LATEST.aab` has SHA-256
   `5257c4cea245d0fadf6b098ffe98c0bc2446e8d899ff7c9ff676e5a1c92feaeb`; signer remains the new
   upload certificate (`83:18:36:CF:...:49:D2`). The earlier `7c9ced...` artifact hash recorded
   above is superseded because it predates the final VPN lifecycle fix.
@@ -3538,7 +3538,7 @@ Type: RELEASE / EXTERNAL / POLICY
 
 - SecureCall `1.0.50` / base versionCode `78017` and the shared browser IFR-holder checkout block completed in isolated worktree `fix/presale-complete-20260826`.
 - Full backend, Rust, Android, policy-guard, signed-build and local browser verification passed. Kimi K3 performed an independent review; Sol integrated and retested all findings.
-- Signed AAB and Free/Pro/Premium APK aliases are in `/Users/gio/Desktop/aab apk/presale-2026-08-27/` with package/certificate/hash verification.
+- Signed AAB and Free/Pro/Premium APK aliases are in `~/Desktop/aab apk/presale-2026-08-27/` with package/certificate/hash verification.
 - Physical limitation: S10 disconnected after SecureChat smoke; S7/S4 were reserved for Woizz and not touched. SecureCall two-device tests remain open.
 - External gates: payment/tax standby; signaling deploy; Google review/track cleanup; UMP console; release assets/site deploy; PR review. See root `CODEX_AUDIT.md`.
 
