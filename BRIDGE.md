@@ -6092,3 +6092,8 @@ Open next:
 - Website launch-status correction and closed-control styling verified: 11 website tests and 12 responsive page/viewports passed; contrast, disabled-state assertions, workflow parsing and diff checks passed. Local secret scanner unavailable; scanning gate remains open.
 - Device verification remains assigned to the existing Claude worker. Product release gates remain open; financial coordination is handled separately by the VLABS operator. No sales activation or deployment.
 - Verification completion: full backend suite rerun passed on the isolated correction candidate, dependency audit reported zero vulnerabilities, patch whitespace check passed. Combined-head verification and required reviews remain open.
+
+## 2026-10-04 — CODEX — Interrupted device QA handover
+- Claude paused at usage limit. Reported frozen-candidate tablet instrumentation retained: Free29/29 with2 assumption skips and Premium30/30; settings verification remains partial.
+- Bounded continuation assigned to Kimi timed out without report; no new passed device test inferred. No source changes in that isolated worktree. Remaining settings checks, locked-phone access and two-device call/audio tests remain open.
+- Device coordination returned to lead; no release or sales-readiness decision changed.
