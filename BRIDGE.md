@@ -6097,3 +6097,4 @@ Open next:
 - Claude paused at usage limit. Reported frozen-candidate tablet instrumentation retained: Free29/29 with2 assumption skips and Premium30/30; settings verification remains partial.
 - Bounded continuation assigned to Kimi timed out without report; no new passed device test inferred. No source changes in that isolated worktree. Remaining settings checks, locked-phone access and two-device call/audio tests remain open.
 - Device coordination returned to lead; no release or sales-readiness decision changed.
+- Claude resumed and explicitly reclaimed the device block exclusively on frozen PR119 3f3fa055: remaining tablet Free/Premium settings, then phone/call-audio if unlocked. No additional device agent will be dispatched; results remain pending.
