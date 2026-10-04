@@ -6098,3 +6098,9 @@ Open next:
 - Bounded continuation assigned to Kimi timed out without report; no new passed device test inferred. No source changes in that isolated worktree. Remaining settings checks, locked-phone access and two-device call/audio tests remain open.
 - Device coordination returned to lead; no release or sales-readiness decision changed.
 - Claude resumed and explicitly reclaimed the device block exclusively on frozen PR119 3f3fa055: remaining tablet Free/Premium settings, then phone/call-audio if unlocked. No additional device agent will be dispatched; results remain pending.
+
+## 2026-10-04 — CODEX — Full-screen settings fix review receipt
+- Separate Draft PR136 @7251998b integrates the supplied settings navigation fix against main after duplicate check. Platform action corrected, both launches guarded, app-details fallback continues startup; targeted manifest queries support resolution visibility. Permissions/call/flavor behavior unchanged. Lead reviewed source/tests/manifest with no scoped blocker.
+- Free7/7 and Premium7/7 regression tests passed; plural-action negative control fails7/7. Free/Premium release Java compile and debug lint passed (0 errors, existing warnings remain); diff check and changed-file secret scan passed.
+- Hosted checks at readback:5 completed jobs green,4 still running; Draft and independent review requirement remain. No merge or rollout performed.
+- Original Crashlytics action/stack still required for historical attribution. Actual API33/API34+ grant/deny/missing-handler startup and locked/unlocked incoming calls NOT VERIFIED; existing PR119 device evidence is not evidence for this fix. Separately approved versioned release, R8 mapping and actual-usage fatal monitoring remain future checks.
