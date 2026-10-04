@@ -2,6 +2,9 @@
 
 These rules extend `/Users/gio/AGENTS.md` for work inside this repository.
 
+## Additional Codex Security Gate
+For security-relevant candidates, follow `docs/CODEX_SECURITY_GATE.md` before integration. This project-local owner directive does not change the frozen global Fleet workflow or authorize installation, code transfer or spending. The project lead owns triage, exceptions and final acceptance.
+
 ## Coordination
 
 - Read `/Users/gio/BRIDGE.md`, this file, `BRIDGE.md`, and relevant files under `docs/agent-bridge/` before material work.
