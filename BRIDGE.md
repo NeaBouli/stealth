@@ -6149,3 +6149,8 @@ Open next:
 ## 2026-10-10 - CODEX - Dependency ownership reconciliation
 - Delayed worker notice matched existing PR138: exact head624b3fa7, hosted checks all green. Combined137@bfd37cd4 also green, entire signaling lockfile identical. No second implementation, repeated suite or new dependency PR; main unchanged, normal review/security gates retained.
 - Existing terminal continues its separate Android34+ runtime assignment. Private operator coordination checked separately; no private findings or financial details published and no cross-project lockfile copying or gate changes.
+
+## 2026-10-10 - CODEX - Complete-project and sales-readiness target
+- Owner extended the project target through verified completion and sales acceptance: SecureCall first, then SecureChat and Chameleon. docs/PROJECT_COMPLETION_PLAN.md defines M1-M11, unresolved gates, exclusive ownership and evidence requirements; existing accepted work is preserved, not restarted.
+- Started bounded public web-only IFR sales-route mapping separately from the existing Android runtime worker. No Android wallet/IFR mechanism, duplicate dependency fix, purchase activation or readiness claim. Financial coordination occurs separately through the private VLABS operator.
+- App goal replacement was rejected because the previous QA goal remains unfinished. The expanded target is recorded in the local PLAN; no false completion or claimed automation activation. Normal security/review/release and distribution-split gates remain unchanged.
