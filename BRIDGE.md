@@ -6115,3 +6115,14 @@ Open next:
 - PR119 release HOLD: reported unlicensed direct Pro/Premium now evaluate as Free. A bounded read-only migration analysis is assigned before any update release; existing legitimate rights must be preserved without bypassing signed entitlement/revocation checks.
 - Call/audio/background/reconnect remain open due to tablet lock; paid-tier/license tests require authorized test entitlement. Existing device-worker ownership remains exclusive; no production issuance, release or sales activation. Codex Security NOT RUN.
 - Migration triage NOT RUN: three dispatcher starts failed before producing a report. Canonical probe confirmed Kimi token limit and Claude available; dispatcher refusal is not proof of Claude outage. No product or global workflow changes. Release hold stays active pending completed migration analysis/decision and upgrade evidence.
+
+## 2026-10-09 — CODEX — Owner-paused Claude and continued coordination
+- Owner explicitly paused Claude; no new Claude assignments or device work authorized. Existing test reports/source/artifacts preserved; pause is not worker unavailability.
+- Product completion remains unproven: legacy entitlement preservation, paid-tier lifecycle, call/audio tests and release/security gates stay open. Financial coordination is handled separately by the VLABS operator; no sales activation or provider changes.
+
+## 2026-10-09 — CODEX — Bounded Claude resume and release hold
+- Owner relayed Claude resume. OK for the existing terminal to own SC-OCT09-PR136-API24-TRIAGE exclusively: diagnose the failed API24 instrumentation job, reproduce and minimally correct if necessary. No duplicate agent/device run. Other completed checks are green; the cause is not yet established.
+- PR119 remains release HOLD for verified preservation of existing legitimate Direct Pro/Premium rights, signed license lifecycle and remaining device acceptance. No blanket flavor unlock or production issuance/migration approved by this checkpoint.
+- Grok transfer initially rejected before startup; owner subsequently authorized read-only public119 scope only. Unpublished corrections, private operator records and extra costs excluded. Codex Security NOT RUN; no merge, rollout or sale activation.
+- Coordination handoff published through the separate private operator workflow. No provider changes or sale grant; this checkpoint changes no app source and asserts no new client runtime PASS. Existing unrelated local work preserved.
+- Approved public-only adapter inventory completed with no source edits. Existing contract presence is not runtime or product proof; unverified lifecycle/device/release gates remain open. No app tests or Codex Security scan performed in the inventory task.
