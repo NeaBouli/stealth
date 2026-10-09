@@ -260,6 +260,48 @@ function attach(ctx, connId, identity) {
     assert.strictEqual(pushes[0].payload.fromIdentityId, alice.identityId);
     assert.strictEqual(pushes[0].payload.requestedTo, bob.identityId);
 
+    // Stale invites (outside the 120s skew window, both directions) are rejected
+    // even with a valid signature, and neither route nor push is touched.
+    for (const issuedAt of [now - 121, now + 121]) {
+      const staleFields = { ...pushFields, sessionId: crypto.randomUUID(), nonce: randomNonce(), issuedAt };
+      ctx.handlers.CALL_INVITE(wsAlice, "conn-alice", {
+        protocol: 2, sessionId: staleFields.sessionId, to: staleFields.to,
+        ephemeralPublicKey: staleFields.ephemeralPublicKey, issuedAt, nonce: staleFields.nonce,
+        signature: sign(alice.pair, callInviteTranscript(staleFields)),
+      });
+      assert.strictEqual(last(wsAlice).error, "stale_call_invite");
+      assert.strictEqual(ctx.routingTable.has(staleFields.sessionId), false);
+    }
+    assert.strictEqual(pushes.length, 1);
+
+    // Replaying the already pushed invite is rejected without a second push.
+    ctx.handlers.CALL_INVITE(wsAlice, "conn-alice", {
+      protocol: 2, sessionId: pushFields.sessionId, to: pushFields.to,
+      ephemeralPublicKey: pushFields.ephemeralPublicKey, issuedAt: now, nonce: pushFields.nonce,
+      signature: sign(alice.pair, callInviteTranscript(pushFields)),
+    });
+    assert.strictEqual(last(wsAlice).error, "invalid_call_invite");
+    assert.strictEqual(pushes.length, 1);
+
+    // FCM negatives: provider uninitialised or no stored route -> no push, no
+    // session, peer_not_found for an offline callee.
+    const sendNegativeInvite = () => {
+      const fields = { ...pushFields, sessionId: crypto.randomUUID(), nonce: randomNonce() };
+      ctx.handlers.CALL_INVITE(wsAlice, "conn-alice", {
+        protocol: 2, sessionId: fields.sessionId, to: fields.to,
+        ephemeralPublicKey: fields.ephemeralPublicKey, issuedAt: now, nonce: fields.nonce,
+        signature: sign(alice.pair, callInviteTranscript(fields)),
+      });
+      assert.strictEqual(last(wsAlice).error, "peer_not_found");
+      assert.strictEqual(ctx.routingTable.has(fields.sessionId), false);
+    };
+    fcm.isInitialized = () => false;
+    sendNegativeInvite();
+    fcm.isInitialized = () => true;
+    ctx.fcmTokens.delete("bob-legacy");
+    sendNegativeInvite();
+    assert.strictEqual(pushes.length, 1);
+
     console.log("authenticated_call.test.js: PASS");
   } finally {
     fs.rmSync(root, { recursive: true, force: true });

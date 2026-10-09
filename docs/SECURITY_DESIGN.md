@@ -181,6 +181,14 @@ read-only FCM route snapshot captured before the protocol transition; a legacy
 session cannot create or replace that route. Ephemeral X25519 call keys and both
 endpoint identities are covered by signed call transcripts.
 
+Migration acceptance remains pending. Independently verified ownership and
+legitimate-right evidence is required before provisioning or using migration
+routes or enabling transition mode. Default protocol enforcement does not replace
+that prerequisite; this is an acceptance condition, not a newly implemented
+ownership guarantee. Recovery requires a separately approved operator runbook
+and exclusive-writer verification; no automatic cleanup or recovery is authorized.
+Detailed acceptance evidence remains with the project lead and designated operator.
+
 4.2 Session Setup
 
 Each call uses X25519 and HKDF-SHA256 to derive per-call key material. That

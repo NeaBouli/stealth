@@ -21,6 +21,7 @@ module.exports = function registerHandlers(ctx) {
   const nowSeconds = ctx.nowSeconds || (() => Math.floor(Date.now() / 1000));
   const challenges = new Map();
   const maxChallengesPerIp = 4;
+  const closeWatched = new WeakSet();
 
   function legacyTransitionActive() {
     return isLegacyTransitionActive(protocolMode, transitionDeadline, nowSeconds());
@@ -192,6 +193,12 @@ module.exports = function registerHandlers(ctx) {
     // A connection gets one live proof at a time. Reissuing invalidates the
     // previous nonce and prevents a single socket from filling the challenge map.
     clearChallengesForConnection(connId);
+    // Release this connection's pending proof when its socket closes so
+    // reconnect loops cannot hold the per-IP cap until expiry.
+    if (typeof ws.once === "function" && !closeWatched.has(ws)) {
+      closeWatched.add(ws);
+      ws.once("close", () => clearChallengesForConnection(connId));
+    }
     const needsMigration = msg.clientId !== msg.identityId && !resolved;
     if (!needsMigration) {
       let pending;
@@ -337,6 +344,15 @@ module.exports = function registerHandlers(ctx) {
       if (!msg.clientId || typeof msg.clientId !== "string") return sendError(ws, "missing_client_id");
       if (!CLIENT_ID.test(msg.clientId)) return sendError(ws, "invalid_client_id");
       if (!validateAppSignature(ws, msg.clientId, msg.appSignature)) return;
+      // Canonical identity ids and registry-bound aliases are owned by their
+      // authenticated key and must never be claimed through legacy REGISTER.
+      if (IDENTITY_ID.test(msg.clientId)) return sendError(ws, "identity_alias_conflict");
+      if (identityRegistry) {
+        let bound;
+        try { bound = identityRegistry.resolve(msg.clientId); }
+        catch { return sendError(ws, "identity_service_unavailable"); }
+        if (bound) return sendError(ws, "identity_alias_conflict");
+      }
       if (clientIds.has(msg.clientId) && clientIds.get(msg.clientId) !== connId) {
         return sendError(ws, "duplicate_client_id", "Legacy identity is already online");
       }

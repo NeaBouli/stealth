@@ -14,6 +14,9 @@ function mockWs() {
     readyState: 1, messages: [], closed: false,
     send(value) { this.messages.push(JSON.parse(value)); },
     close(code, reason) { this.closed = true; this.closeCode = code; this.closeReason = reason; },
+    onceClose: [],
+    once(event, listener) { if (event === "close") this.onceClose.push(listener); },
+    emitClose() { const run = this.onceClose.splice(0); for (const listener of run) listener(); },
   };
 }
 function last(ws) { return ws.messages.at(-1); }
@@ -293,6 +296,87 @@ async function flushPromises() { await new Promise(resolve => setImmediate(resol
       signature: sign(expiring.pair, expiredChallenge.challenge),
     });
     assert.strictEqual(last(wsExpired).error, "invalid_identity_proof");
+
+    // F1: legacy REGISTER in transition mode must not claim canonical ids or
+    // registry-bound aliases (owner offline); unbound legacy ids still work.
+    const transitionCtx = makeContext(registry, fcm, () => now, {
+      identityProtocolMode: "transition", identityTransitionDeadline: now + 1000,
+    });
+    transitionCtx.clientIds.clear(); // shared singleton state: owners go offline
+    for (const [name, claimed] of [
+      ["canonical", alice.identityId], ["bound-alias", legacyId],
+    ]) {
+      assert.strictEqual(transitionCtx.clientIds.has(claimed), false, "owner must be offline");
+      const wsClaim = mockWs();
+      transitionCtx.clients.set(`legacy-${name}`, { ws: wsClaim, clientId: null, lastSeen: Date.now() });
+      transitionCtx.handlers.REGISTER(wsClaim, `legacy-${name}`, { clientId: claimed });
+      assert.strictEqual(last(wsClaim).error, "identity_alias_conflict", name);
+      assert.strictEqual(transitionCtx.clientIds.has(claimed), false, name);
+      assert.strictEqual(transitionCtx.clients.get(`legacy-${name}`).clientId, null, name);
+    }
+    const wsUnbound = mockWs();
+    transitionCtx.clients.set("legacy-unbound", { ws: wsUnbound, clientId: null, lastSeen: Date.now() });
+    transitionCtx.handlers.REGISTER(wsUnbound, "legacy-unbound", { clientId: "android-unbound01" });
+    assert.strictEqual(last(wsUnbound).type, "REGISTERED");
+    assert.strictEqual(last(wsUnbound).protocol, 1);
+
+    // F2: pending challenges are released when their socket closes; repeated
+    // disconnecting clients from one IP never exhaust the cap, and an unrelated
+    // live connection keeps its pending proof.
+    const closeCtx = makeContext(registry, fcm, () => now);
+    const liveMaterial = keyMaterial();
+    const wsLive = mockWs();
+    closeCtx.clients.set("close-live", { ws: wsLive, clientId: null, lastSeen: Date.now(), ip: "192.0.2.77" });
+    closeCtx.handlers.IDENTITY_REGISTER_BEGIN(wsLive, "close-live", {
+      protocol: 2, clientId: liveMaterial.identityId, identityId: liveMaterial.identityId,
+      publicKey: liveMaterial.publicKeyBase64Url,
+    });
+    const liveChallenge = last(wsLive);
+    assert.strictEqual(liveChallenge.type, "IDENTITY_REGISTER_CHALLENGE");
+    for (let index = 0; index < 12; index++) {
+      const material = keyMaterial();
+      const ws = mockWs();
+      const connId = `close-loop-${index}`;
+      closeCtx.clients.set(connId, { ws, clientId: null, lastSeen: Date.now(), ip: "192.0.2.77" });
+      closeCtx.handlers.IDENTITY_REGISTER_BEGIN(ws, connId, {
+        protocol: 2, clientId: material.identityId, identityId: material.identityId,
+        publicKey: material.publicKeyBase64Url,
+      });
+      assert.strictEqual(last(ws).type, "IDENTITY_REGISTER_CHALLENGE", `loop ${index}`);
+      closeCtx.handlers.IDENTITY_REGISTER_BEGIN(ws, connId, {
+        protocol: 2, clientId: material.identityId, identityId: material.identityId,
+        publicKey: material.publicKeyBase64Url,
+      });
+      assert.strictEqual(ws.onceClose.length, 1, "one close listener per socket");
+      ws.emitClose();
+      closeCtx.clients.delete(connId);
+    }
+    closeCtx.handlers.IDENTITY_REGISTER_COMPLETE(wsLive, "close-live", {
+      challengeId: liveChallenge.challengeId,
+      signature: sign(liveMaterial.pair, liveChallenge.challenge),
+    });
+    assert.strictEqual(last(wsLive).type, "REGISTERED");
+    // Single use still holds after a close.
+    closeCtx.handlers.IDENTITY_REGISTER_COMPLETE(wsLive, "close-live", {
+      challengeId: liveChallenge.challengeId,
+      signature: sign(liveMaterial.pair, liveChallenge.challenge),
+    });
+    assert.strictEqual(last(wsLive).error, "invalid_identity_proof");
+    // A closed socket's challenge cannot be completed afterwards.
+    const wsGone = mockWs();
+    const goneMaterial = keyMaterial();
+    closeCtx.clients.set("close-gone", { ws: wsGone, clientId: null, lastSeen: Date.now(), ip: "192.0.2.78" });
+    closeCtx.handlers.IDENTITY_REGISTER_BEGIN(wsGone, "close-gone", {
+      protocol: 2, clientId: goneMaterial.identityId, identityId: goneMaterial.identityId,
+      publicKey: goneMaterial.publicKeyBase64Url,
+    });
+    const goneChallenge = last(wsGone);
+    wsGone.emitClose();
+    closeCtx.handlers.IDENTITY_REGISTER_COMPLETE(wsGone, "close-gone", {
+      challengeId: goneChallenge.challengeId,
+      signature: sign(goneMaterial.pair, goneChallenge.challenge),
+    });
+    assert.strictEqual(last(wsGone).error, "invalid_identity_proof");
 
     console.log("identity_registration.test.js: PASS");
   } finally {
