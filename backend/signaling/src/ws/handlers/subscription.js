@@ -294,7 +294,7 @@ module.exports = function subscriptionHandlers(ctx) {
               && candidate.releaseId === claims.release
             ));
         });
-        if (!entry) {
+        if (!entry || entry.revoked === true) {
           return respond({ success: false, error: "entitlement_revoked" });
         }
         const refreshed = signedActivation(entry, myClientId, {});
