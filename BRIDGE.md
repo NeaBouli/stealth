@@ -6212,3 +6212,8 @@ Open next:
 ## 2026-10-10 02:48 EEST - CODEX - Supplementary120 Handoff Recorded
 - Incoming120570829ef details recorded as an unchanged historical candidate, not a new replacement for canonical Draft144e9de0a28. Reported individual tests are distinct from the reported local startup failure; earlier exact-head CI evidence remains separately recorded. No duplicate implementation, review or test run.
 - Canonical migration-path handling verified read-only and retained; no automatic file movement or runtime mode change. ABI split APK codes and base AAB codes remain distinct; proposed78018 Play-wide availability remains UNVERIFIED. Existing136 runtime ownership, draft states and all release/readiness gates unchanged.
+
+## 2026-10-10 02:57 EEST - CODEX - Exact120 Source Review Completed
+- Explicit review of120570829efd8c5ffb1ca82ba77888c8a780703aaab against1193f3fa055 completed with independent read-only source review and lead verification. Verdict: CHANGES REQUIRED; keep Draft.144 is comparison/corrected successor, not substituted evidence for approval of570.
+- Required corrections and dependency maintenance already exist in144; reuse them without duplicate implementation or tickets. Sensitive source findings retained privately; public decision generic. No new target-code/test execution or runtime PASS; existing CI/source evidence remains separately scoped.
+- No approving GitHub review, Codex Security scan, admin exception, merge, deployment or readiness grant. Existing136 runtime ownership and migration/release/finance holds remain unchanged.
