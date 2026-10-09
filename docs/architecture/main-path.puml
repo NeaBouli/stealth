@@ -1,0 +1,22 @@
+@startuml
+title Built visitor path — static platform catalog
+actor Visitor
+participant "website/index.html" as HTML
+participant "website/css/landing.css" as CSS
+participant "website/js/main.js (read-only)" as JS
+Visitor -> HTML : Open landing page / #platform
+HTML -> CSS : product-grid / product-card DOM classes
+CSS --> Visitor : Existing responsive card surfaces
+HTML -> JS : Existing revealEls registration
+Visitor -> JS : Scroll platform cards into viewport
+JS -> CSS : revealObserver adds visible
+CSS --> Visitor : Existing revealed product cards
+opt Existing mobile navigation neighbor
+  Visitor -> JS : Click navToggle / navLinks
+  JS -> CSS : Toggle / remove active and open
+  CSS --> Visitor : Existing mobile menu state
+end
+note over HTML,JS
+No ASPIDA runtime, checkout or Android path is simulated.
+end note
+@enduml

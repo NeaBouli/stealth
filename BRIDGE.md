@@ -6077,3 +6077,15 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+## 2026-10-10 01:24 EEST — ASPIDA-WEBSITE-001 — In Progress
+
+- Branch/path: `agent/codex/ASPIDA-WEBSITE-001`, `/Users/gio/Documents/Codex/ASPIDA-website-20261010`; accepted website baseline296866f4, direct descendants of mainf8c969b1 through096f5a2c. No extra source history or cherry-pick.
+- Changed by preparation: scoped architecture documents, task-local PLAN and Claude Fleet brief only. Website source remains unchanged from accepted296 baseline; its existing CI wiring is inherited, not a new task change.
+- Claim: Claude alone implements `website/index.html`, `website/css/landing.css`, `website/js/launch-copy.test.cjs` for `WEB.PLATFORM.ASPIDA`; existing reveal/mobile-nav remains read-only. Other-product terms, public company/footer/Impressum and all sales gates stay unchanged.
+- Coordination: current IFR trace/client-state and bLocX website tasks retain their owners in separate worktrees. Do not reproduce their implementations or touch devices; root resolves future overlap during integration.
+- Risk: medium, public product/commerce wording. ASPIDA is in development; one planned license without sales/download/activation or unsupported price/term/device/Suite promises. Owner-provided rollout23%, PRODUCT_READY empty and FINANCE_READY absent remain unchanged.
+- Tests: preparation validates documentation/brief and unchanged source checks only; implementation and root responsive visual QA remain queued. PlantUML SVG rendering NOT RUN, executable unavailable.
+- Codex Security NOT RUN; access/payload/destination/exclusions/cost authorization pending. Static tests or independent review are not a scan. No dispatcher, push, merge, deployment, payment or scan performed.
+- Ready for: root dispatch, then exact-candidate scoped security and in-app-browser responsive QA. Preparation supplies no implementation or visual PASS.
+- Preparation checks completed: Fleet brief YAML PASS (13 string instructions); `node --test --test-reporter=dot website/js/ifr-checkout.test.cjs website/js/no-google-analytics.test.cjs website/js/launch-copy.test.cjs`11/11 PASS; Node syntax checks for main.js, ifr-checkout.js and launch-copy.test.cjs PASS. `git diff --exit-code 296866f4 -- website .github` PASS/empty; only six owned prep-document paths are pending commit.

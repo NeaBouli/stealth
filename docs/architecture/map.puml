@@ -1,0 +1,22 @@
+@startmindmap
+* Static StealthX product overview
+** website/index.html
+*** built: #platform > .product-grid > .product-card
+*** open: ASPIDA informational listing
+** website/css/landing.css
+*** built: .product-grid and .product-card
+*** built: .js .reveal.visible
+** website/js/main.js (read-only)
+*** built: revealEls / revealObserver
+*** built: navToggle / navLinks
+@endmindmap
+
+@startuml
+title Existing static website path — ASPIDA-WEBSITE-001
+component "website/index.html\n#platform / product-grid" as HTML
+component "website/css/landing.css\nproduct-card / responsive rules" as CSS
+component "website/js/main.js\nreveal / mobile navigation\nREAD-ONLY" as JS
+HTML --> CSS : product-grid / product-card classes
+HTML --> JS : revealEls / navToggle / navLinks
+JS --> CSS : visible / active class state
+@enduml
