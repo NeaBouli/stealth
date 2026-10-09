@@ -94,3 +94,34 @@ test('ASPIDA listing has no commerce, download, activation or unsupported promis
     const jsonLd = (pages.index.match(/<script type="application\/ld\+json">[\s\S]*?<\/script>/g) || []).join('');
     assert.doesNotMatch(jsonLd, /aspida/i);
 });
+
+// Bounded guards for concrete ASPIDA promises (duration, device count, variant coverage, shared crypto core).
+const flatCopy = (html) => html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/gi, ' ').replace(/\s+/g, ' ').trim();
+const ASPIDA_PROMISES = {
+    duration: /\d+\s*-?\s*(?:days?|weeks?|months?|years?)\b/i,
+    deviceCount: /\d+\s*-?\s*devices?\b|\b(?:two|three|four|five|multiple|several|unlimited)\s+devices?\b/i,
+    variantCoverage: /\bCore\b.{0,24}\bShield\b|\bShield\b.{0,24}\bCore\b|\b(?:Core|Shield)\b.{0,40}\bcover(?:s|ed|age)?\b/i,
+    sharedCrypto: /\b(?:shared|common|same)\s*crypto(?:graphic)?\s*core\b|\bcrypto(?:graphic)?\s*core\b/i,
+};
+const promisesIn = (html) => Object.keys(ASPIDA_PROMISES).filter((k) => ASPIDA_PROMISES[k].test(flatCopy(html)));
+
+test('ASPIDA guards reject concrete duration, device-count, variant and shared-crypto promises', () => {
+    const fixtures = {
+        duration: ['valid for 12 months', 'valid for12months', 'valid for&nbsp;12&nbsp;months','valid for\n  12\tmonths', 'a 1-year license'],
+        deviceCount: ['covers 3 devices', 'covers3devices', 'covers\n3 devices', 'up to three devices'],
+        variantCoverage: ['Core+Shield coverage', 'Core + Shield coverage', 'Core and\n Shield', 'Shield covers every variant'],
+        sharedCrypto: ['shared cryptographic core', 'shared\n  cryptographic   core', 'sharedcryptographiccore', 'common crypto core'],
+    };
+    for (const [kind, samples] of Object.entries(fixtures)) {
+        for (const sample of samples) {
+            const tampered = aspidaCard.replace('</ul>', `<li>${sample}</li></ul>`);
+            assert.notEqual(tampered, aspidaCard, 'fixture injection failed');
+            assert.ok(promisesIn(tampered).includes(kind), `${kind} promise not rejected: ${JSON.stringify(sample)}`);
+        }
+    }
+});
+
+test('current ASPIDA card and planned one-license wording pass the promise guards', () => {
+    assert.deepEqual(promisesIn(aspidaCard), []);
+    assert.deepEqual(promisesIn('<li>Planned: one license, terms to be announced</li><li>no subscription</li>'), []);
+});
