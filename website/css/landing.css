@@ -448,6 +448,20 @@ body.landing-redesign {
   height: 3px;
   background: var(--accent, var(--sx-blue));
 }
+.product-card-aspida { grid-column: 1 / -1; scroll-margin-top: 10rem; }
+.product-card-aspida ul { margin-bottom: 20px; }
+.product-card-aspida .tag { color: var(--sx-muted); }
+.aspida-mark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--sx-line-strong);
+  border-radius: 16px;
+  color: var(--sx-text);
+  font: 800 16px/1 var(--sx-font-display);
+  letter-spacing: .08em;
+}
 .product-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .tag {
   display: inline-flex;
