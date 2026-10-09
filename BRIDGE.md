@@ -6186,3 +6186,11 @@ Open next:
 - Read-only recognition through the existing ADB daemon found two authorized physical devices: Samsung SM-A217F (Android12/API31) and SM-T835 (Android10/API29); no unauthorized device and no active physical QA command identified. Sanitized process attribution was bounded, not exhaustive.
 - No ADB start/restart, install, instrumentation, app launch, logs/user-data access, boot/flash/unlock or emulator work. No identifiers emitted. Temporary metadata observation released; other QA ownership unchanged.
 - Exact supported SKU/baseline/unlock-relock rights/disposable allocation remain UNVERIFIED; PRODUCT_READY NOT_READY. Private evidence: workspace outputs/private/attached-device-recognition-2026-10-10.md.
+
+## 2026-10-10 02:30 EEST - CODEX - Recovered Identity And RC Preparation
+- Draft144 head e9de0a2882524d9a40d5e06b438ae9ef2f789e21 on frozen119: preserved identity work, one accepted dependency correction and bounded reviewed registration fixes. Full backend suite and negative controls PASS; migration/runtime acceptance remains separate.
+- Draft143 head3e2666c598d71ae1c4831e868d4707d1a0c27de9: exactly two version fields plus DE/EN handoff, provisional1.0.51/base78018; all5 current Basic CI/bot contexts SUCCESS. No customer artifacts built or signed.
+- Public approval package docs/RELEASE_APPROVAL_PACKAGE_2026-10-10.md records138->137->134->136 exact green snapshot; normal required reviews and scoped security gates remain, no main merge.
+- New144 Basic CI38004420256 was IN_PROGRESS at02:30; previousf590e277 Basic CI passed, including real Free release unit/billing tasks. No inherited exact-head or runtime PASS claimed.
+- Play-wide version-code history UNVERIFIED (no connected browser). Existing terminal retains136/device/emulator ownership; no local heavyweight build, upload, rollout, codes or sales activation by this block.
+- Financial coordination occurs separately through the VLABS operator. Codex Security NOT RUN; product/release acceptance remains HOLD. Reports and source retained; four owned completed worktrees SHA-verified archived, foreign work preserved.
