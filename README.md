@@ -35,6 +35,7 @@ Application media frames are protected with XChaCha20-Poly1305 using per-call X2
 
 - **End-to-End Encryption** -- Every voice call is encrypted using XChaCha20-Poly1305 (AEAD). Per-call private key material stays on the participating devices.
 - **Per-call Key Exchange** -- X25519 and HKDF-SHA256 derive fresh key material for each call. SecureCall does not implement a Double Ratchet.
+- **Authenticated Call Setup** -- A P-256 Android Keystore identity signs registration and both call-key transcripts; media starts only after transcript-bound peer confirmation.
 - **Data-minimized Signaling** -- The service is designed not to receive call audio. It processes connection metadata and relays public key material required to establish calls.
 - **Anti-Recording Protection** -- Active detection of screen recording, microphone hijacking, and spy apps (Pro/Premium).
 - **VPN-aware routing** -- Every edition follows Android's active VPN route and shows a green status LED while SecureCall traffic uses it. The Google Play edition contains no VPN service. The direct-download Premium APK additionally supports an optional, consent-gated WireGuard configuration stored locally with its private key encrypted by Android Keystore.
@@ -62,7 +63,7 @@ For technical details, see the [Architecture Overview](docs/ARCHITECTURE_OVERVIE
 Security is not a feature -- it's the foundation. Our approach:
 
 - **Independently auditable** -- All source code is publicly available.
-- **Trust boundaries documented** -- The current unauthenticated identity-key-exchange limitation and server boundary are stated explicitly.
+- **Trust boundaries documented** -- Canonical identities are key-derived; alias, custom-ID and phone resolution remain inside the signaling-server trust boundary.
 - **Audit status** -- Read the [Security Audit Report](docs/SECURITY_AUDIT_REPORT.md), current community-audit register, and open findings before relying on release claims.
 - **Security design** -- Review our [Security Design Document](docs/SECURITY_DESIGN.md).
 
@@ -164,7 +165,7 @@ The complete source code is publicly available in this repository. We have condu
 <details>
 <summary><strong>What data does the server see?</strong></summary>
 
-The signaling server facilitates connection establishment and relays public key material and signaling data. Call audio is protected between the clients and is not sent to the signaling service. No persistent call history or call recordings are stored. Signaling metadata (connection IDs, session IDs) is processed transiently. FCM tokens may be stored for push delivery and cleared on deregistration. STUN/TURN providers may see network-level IPs required for WebRTC connectivity.
+The signaling server facilitates connection establishment and relays public key material and signaling data. Call audio is protected between the clients and is not sent to the signaling service. No persistent call history or call recordings are stored. Signaling metadata (connection IDs, session IDs) is processed transiently. FCM tokens may be stored for push delivery and retained across ordinary deregistration so offline incoming calls can still wake the app. STUN/TURN providers may see network-level IPs required for WebRTC connectivity.
 
 </details>
 
@@ -172,6 +173,7 @@ The signaling server facilitates connection establishment and relays public key 
 <summary><strong>What cryptographic algorithms are used?</strong></summary>
 
 - **Key Exchange:** X25519 (Curve25519 Diffie-Hellman)
+- **Identity Authentication:** P-256 signatures with a non-exportable Android Keystore private key
 - **Key Derivation:** HKDF-SHA256
 - **Encryption:** XChaCha20-Poly1305 (AEAD)
 - **Session Key Lifecycle:** X25519 + HKDF-SHA256 derive per-call key material, which is discarded when the call ends; no Double Ratchet is implemented

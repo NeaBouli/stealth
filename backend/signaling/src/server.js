@@ -14,6 +14,10 @@ const DATA_DIR = resolveDataDir({ preferred: _DATA_PREFERRED });
 // Align ALL store module file paths to the resolved writable data directory.
 // Must run BEFORE requiring any module whose top-level code reads these env vars.
 alignStoreFiles(DATA_DIR);
+// Operator-provisioned immutable migration authority: an explicit env path wins,
+// the DATA_DIR default only covers the absent-file (empty routes) case.
+process.env.IDENTITY_MIGRATION_ROUTES_FILE = process.env.IDENTITY_MIGRATION_ROUTES_FILE
+  || path.join(DATA_DIR, "identity_migration_routes.json");
 
 const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
@@ -51,10 +55,16 @@ const { writeJsonAtomic }                                           = require(".
 const { sanitize: sanitizeUtil }                                    = require("./utils/sanitize");
 const { issueEntitlementToken, verifyEntitlementToken, orderHash: entitlementOrderHash } = require("./payments/entitlement_tokens");
 const { resolveTurnSecret } = require("./security/turn_secret");
+const { createIdentityRegistry } = require("./services/identity_registry");
+const { loadIdentityMigrationRoutes } = require("./services/identity_migration_routes");
+const { readIdentityProtocolConfig } = require("./security/identity_protocol");
 
 // Hoisted so HTTP route handlers (defined below) can call ctx.sendToClient
 // after buildContext() runs at startup — before any request arrives.
 let ctx;
+
+const IDENTITY_PROTOCOL_CONFIG = readIdentityProtocolConfig(process.env);
+const identityRegistry = createIdentityRegistry({ file: process.env.IDENTITY_REGISTRY_FILE });
 
 // Initialize Firebase Cloud Messaging
 fcm.initFcm();
@@ -156,6 +166,9 @@ const server = http.createServer(app);
 
 // Load persistent store-backed state from DATA_DIR-aligned paths
 loadFcmTokens();
+const identityMigrationRoutes = loadIdentityMigrationRoutes({
+  file: process.env.IDENTITY_MIGRATION_ROUTES_FILE,
+});
 
 loadActivationCodes();
 
@@ -782,6 +795,10 @@ ctx = buildContext({
   testerLicenseRegistry: require("./services/tester_license_runtime").loadTesterLicenseRuntime(),
   pkd, subscriptions, fcm, customIds, licenses,
   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
+  identityRegistry,
+  identityMigrationRoutes,
+  identityProtocolMode: IDENTITY_PROTOCOL_CONFIG.mode,
+  identityTransitionDeadline: IDENTITY_PROTOCOL_CONFIG.transitionDeadline,
   rateLimit, hb,
   giftCodes, saveGiftCodes,
   issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
