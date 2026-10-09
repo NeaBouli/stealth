@@ -1,0 +1,20 @@
+{
+  "status": "PARTIAL",
+  "integration_candidate": "2282a8ef5d78215bec26b5e252ead3d70688e5fb",
+  "screenshots": "Retained pre-final screenshots; not evidence of final visual acceptance",
+  "contrast_source_commit": "55759c9422218ce92998f61f55e43cb3b8e7ad0a",
+  "badge_foreground_rgb": [82, 96, 113],
+  "normal_background_rgb": [255, 255, 255],
+  "hover_background_rgb": [234, 244, 255],
+  "normal_contrast_ratio": 6.42,
+  "hover_contrast_ratio": 5.77,
+  "aspida_active_controls_observed": 0,
+  "unavailable_status": {"tag": "SPAN", "aria_disabled": "true", "href": null, "click_navigation": false},
+  "before_anchor_fix_1180x820": {"heading_y": 80.8828125, "navbar_bottom": 126.5234375, "result": "FAIL_OCCLUDED"},
+  "anchor_fix_commit": "995944160d806f16d7f9068c633ce80dfc23a6e3",
+  "final_anchor_verification": "NOT RUN",
+  "final_viewports": {"1440x1000": "NOT RUN", "1180x820": "NOT RUN", "820x1180": "NOT RUN", "390x844": "NOT RUN", "320x640": "NOT RUN"},
+  "final_mobile_menu": "NOT RUN",
+  "blocker": "Browser execution timeout reset the runtime; documented discovery recovery returned no available browser",
+  "codex_security": "NOT RUN"
+}
