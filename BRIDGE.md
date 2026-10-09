@@ -6208,3 +6208,7 @@ Open next:
 - New Claude120 sync claim checked against PLAN and GitHub: old120 remains570829efd8c5ffb1ca82ba77888c8a780703aaab; canonical Draft144 remains e9de0a2882524d9a40d5e06b438ae9ef2f789e21 on119. Already accepted full backend/negative controls and exact-head four-job CI are retained; no duplicate sync, implementation or test run requested.
 - Handoff to existing terminal Claude: do not restart120; retain136 API34+ runtime check exclusively and report its exact candidate/evidence when finished. Preserve old120 history and any local work; no process termination, branch deletion or merge.
 - Draft144 remains source checkpoint only, with migration/runtime and separate integration/readiness gates open. Unversioned repeated claim does not supersede PLAN; no new worker/device claim or release action.
+
+## 2026-10-10 02:48 EEST - CODEX - Supplementary120 Handoff Recorded
+- Incoming120570829ef details recorded as an unchanged historical candidate, not a new replacement for canonical Draft144e9de0a28. Reported individual tests are distinct from the reported local startup failure; earlier exact-head CI evidence remains separately recorded. No duplicate implementation, review or test run.
+- Canonical migration-path handling verified read-only and retained; no automatic file movement or runtime mode change. ABI split APK codes and base AAB codes remain distinct; proposed78018 Play-wide availability remains UNVERIFIED. Existing136 runtime ownership, draft states and all release/readiness gates unchanged.
