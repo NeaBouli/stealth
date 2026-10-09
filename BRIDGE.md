@@ -6145,3 +6145,7 @@ Open next:
 - Remaining: Android34+ startup runtime, authoritative legacy-right recovery, licensed lifecycle/physical call-audio, immutable release/distribution and matching product/financial readiness. No codes/provider changes/Play release/sale activation.
 -139 exact8a8c0c02 final current hosted rollup all5 SUCCESS including Android; these are Basic CI and bot contexts, not a new hosted security/Codex Security scan. Draft against119 remains unmerged; required lead/independent gates retained.
 - Cleanup complete: six own finished source/audit worktrees archived with verified checksums, reports/commits/local evidence retained; own synthetic scratch removed. Shared Mac25GiB before/26GiB after (no task-specific attribution). Foreign worktrees/devices and original dirty changes untouched. Private detailed coordination stays local; no bulk staging.
+
+## 2026-10-10 - CODEX - Dependency ownership reconciliation
+- Delayed worker notice matched existing PR138: exact head624b3fa7, hosted checks all green. Combined137@bfd37cd4 also green, entire signaling lockfile identical. No second implementation, repeated suite or new dependency PR; main unchanged, normal review/security gates retained.
+- Existing terminal continues its separate Android34+ runtime assignment. Private operator coordination checked separately; no private findings or financial details published and no cross-project lockfile copying or gate changes.
