@@ -448,7 +448,7 @@ body.landing-redesign {
   height: 3px;
   background: var(--accent, var(--sx-blue));
 }
-.product-card-aspida { grid-column: 1 / -1; }
+.product-card-aspida { grid-column: 1 / -1; scroll-margin-top: 10rem; }
 .product-card-aspida ul { margin-bottom: 20px; }
 .product-card-aspida .tag { color: var(--sx-muted); }
 .aspida-mark {
