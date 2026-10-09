@@ -1,0 +1,12 @@
+@startmindmap
+* Product overview
+** WEB.PLATFORM
+*** Built: website/index.html::#platform
+** WEB.PLATFORM.STYLE
+*** Built: website/css/landing.css::.product-grid
+** WEB.PLATFORM.BLOCX
+*** Open: planned card
+@endmindmap
+@startuml
+[WEB.PLATFORM] --> [WEB.PLATFORM.STYLE] : product-grid / product-card
+@enduml

@@ -1,0 +1,10 @@
+@startuml
+actor Visitor
+participant "WEB.PLATFORM
+website/index.html" as Page
+participant "WEB.PLATFORM.STYLE
+landing.css" as Style
+Visitor -> Page : Open product overview
+Page -> Style : Render product-grid and existing cards
+Style --> Visitor : Responsive product overview
+@enduml
