@@ -260,6 +260,7 @@
     try {
       var payload = { tier: button.dataset.ifrTier, ifrDiscount: true };
       Object.assign(payload, await walletProof(payload.tier, token));
+      assertSession(token);
       setStatus("Checking IFR balance on Ethereum Mainnet...");
       var checkoutResult = await fetchJson(API + "/stripe/create-dynamic-checkout", {
         method: "POST",

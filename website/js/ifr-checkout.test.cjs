@@ -172,3 +172,18 @@ test("stale signature result after account change is ignored", async () => {
   assert.ok(h.tiers.every((tier) => tier.disabled));
   assert.equal(h.address.value, "");
 });
+
+test("account change between proof completion and checkout prevents submission", async () => {
+  const h = harness(true);
+  await h.click(h.connect);
+  h.wallet.signGate = {
+    then(resolve) {
+      resolve("0xsig");
+      queueMicrotask(() => h.events.accountsChanged([]));
+    },
+  };
+  await h.click(h.tiers[0]);
+  assert.equal(h.calls.filter((url) => url.endsWith("/create-dynamic-checkout")).length, 0);
+  assert.equal(h.assigned(), null);
+  assert.ok(h.tiers.every((tier) => tier.disabled));
+});
