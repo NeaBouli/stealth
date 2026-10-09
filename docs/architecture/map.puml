@@ -2,7 +2,7 @@
 * Static StealthX product overview
 ** website/index.html
 *** built: #platform > .product-grid > .product-card
-*** open: ASPIDA informational listing
+*** built: ASPIDA informational listing #aspida (visual HOLD)
 ** website/css/landing.css
 *** built: .product-grid and .product-card
 *** built: .js .reveal.visible
@@ -12,7 +12,7 @@
 @endmindmap
 
 @startuml
-title Existing static website path — ASPIDA-WEBSITE-001
+title Built static website candidate — ASPIDA-WEBSITE-001 (visual HOLD)
 component "website/index.html\n#platform / product-grid" as HTML
 component "website/css/landing.css\nproduct-card / responsive rules" as CSS
 component "website/js/main.js\nreveal / mobile navigation\nREAD-ONLY" as JS

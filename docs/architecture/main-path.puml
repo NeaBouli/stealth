@@ -1,5 +1,5 @@
 @startuml
-title Built visitor path — static platform catalog
+title Built visitor path — static platform catalog with ASPIDA (visual HOLD)
 actor Visitor
 participant "website/index.html" as HTML
 participant "website/css/landing.css" as CSS
@@ -18,5 +18,6 @@ opt Existing mobile navigation neighbor
 end
 note over HTML,JS
 No ASPIDA runtime, checkout or Android path is simulated.
+Final responsive, mobile-menu and anchor verification NOT RUN.
 end note
 @enduml

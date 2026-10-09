@@ -1,6 +1,6 @@
 # ASPIDA website boundary
 
-Task: `ASPIDA-WEBSITE-001`; inspected 2026-10-10. Accepted baseline: `296866f4189fe697d4a1af3e0aa226e252f2601a`.
+Task: `ASPIDA-WEBSITE-001`; inspected 2026-10-10. Accepted baseline: `296866f4189fe697d4a1af3e0aa226e252f2601a`. Built local candidate: `2282a8ef5d78215bec26b5e252ead3d70688e5fb`; visual acceptance PARTIAL/HOLD.
 
 ## 1. Ground idea
 
@@ -24,11 +24,11 @@ Opened hops, all inspected 2026-10-10:
 
 | Existing file/node | One responsibility | Entry | State |
 | --- | --- | --- | --- |
-| `website/index.html` / platform catalog | Present the static product overview | `#platform > .product-grid` | Built; ASPIDA listing absent |
-| `website/css/landing.css` / product surfaces | Style existing cards and responsive grids | `.product-grid`, `.product-card` | Built |
+| `website/index.html` / platform catalog | Present the static product overview | `#platform > .product-grid` | Built; ASPIDA informational listing present at `#aspida`; final visual gate HOLD |
+| `website/css/landing.css` / product surfaces | Style existing cards and responsive grids | `.product-grid`, `.product-card` | Built; scoped ASPIDA contrast/anchor corrections present; final responsive/anchor proof pending |
 | `website/js/main.js` / reveal and navigation | Apply existing reveal and mobile-menu state | `revealObserver`, `navToggle` | Built; read-only |
 
-`website/js/launch-copy.test.cjs` is the existing static regression neighbor, not a new runtime module. Its bounded ASPIDA assertions may be extended.
+`website/js/launch-copy.test.cjs` is the existing static regression neighbor, not a new runtime module. Bounded ASPIDA guards are built; root verified 15 Node cases and 17 negative fixtures. This status update reruns no source tests.
 
 ## 4. Wiring
 
@@ -45,6 +45,7 @@ No new JavaScript, provider, checkout route, Android module or product-runtime h
 - Owner-provided ASPIDA evidence is a static capability catalog only. Planned capabilities must remain planned; manually enabling Android system Sensors Off through OEM/developer settings is not an automatic ASPIDA master switch.
 - Owner-provided project rollout is 23%; `PRODUCT_READY` is empty, `FINANCE_READY` is absent. None is changed by a static listing.
 - Codex Security is NOT RUN. Access, destination/payload, exclusions and cost authorization remain pending; static tests or an independent review are not a scan.
+- Final visual gate is PARTIAL/HOLD: retained pre-final contrast screenshots and the pre-fix 1180 anchor failure do not prove the final anchor correction, five-viewport matrix or mobile menu. Browser recovery returned no available browser; see [acceptance report](../../.fleet/reports/ASPIDA-WEBSITE-ACCEPTANCE-001.md).
 - PlantUML is unavailable in PATH; sources are supplied, SVG rendering is NOT RUN.
 
 ## 6. Diagram paths
@@ -57,7 +58,7 @@ mindmap
   root((Static StealthX product overview))
     website/index.html
       Built platform product-grid product-card
-      Open ASPIDA informational listing
+      Built ASPIDA informational listing - visual HOLD
     website/css/landing.css
       Built product-card and responsive grid
     website/js/main.js read-only
@@ -67,4 +68,4 @@ mindmap
 
 ## 7. Next step
 
-Claude implements node `WEB.PLATFORM.ASPIDA` at hop 1 in `website/index.html` and `website/css/landing.css`, with bounded regressions in `website/js/launch-copy.test.cjs`. `website/js/main.js`, other product terms, footer/company/Impressum, IFR controller, backend, Android, CI and configuration remain untouched. Root Codex owns exact-candidate scoped public-commerce gating review and the local in-app-browser responsive visual gate; no deployment or visual PASS is authorized by this preparation.
+Node `WEB.PLATFORM.ASPIDA` at hop 1 is built in the local candidate; scoped static review and guard remediation are accepted, not a Codex Security scan. Root Codex must resume the final in-app-browser responsive/anchor/menu gate before final integration or publication. `website/js/main.js`, other product terms, footer/company/Impressum, IFR controller, backend, Android, CI and configuration remain untouched. No deployment or visual PASS is authorized by this status update.
