@@ -20,6 +20,7 @@ client_android/app/build/outputs/mapping/
 
 # Deployment secrets
 deploy/.env
+deploy/secrets/
 deploy/certbot/
 deploy/backups/
 deployment/.env

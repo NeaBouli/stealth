@@ -43,6 +43,16 @@ title = "StealthX Custom Gitleaks Config"
   tags = ["credential", "turn"]
   severity = "HIGH"
 
+  # Known false positive: the signaling server resolves the TURN secret from the
+  # runtime environment. Only this exact statement in this exact file is exempt;
+  # any literal value on the line, or the same text elsewhere, still fails.
+  [[rules.allowlists]]
+    description = "TURN secret resolved from process.env (non-secret function call)"
+    condition = "AND"
+    regexTarget = "line"
+    paths = ['''(^|/)backend/signaling/src/server\.js$''']
+    regexes = ['''^\s*const TURN_SECRET = resolveTurnSecret\(process\.env\);\s*$''']
+
 [[rules]]
   description = "Hardcoded API Key"
   id = "hardcoded-api-key"
