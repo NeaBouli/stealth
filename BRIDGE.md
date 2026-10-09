@@ -6197,3 +6197,9 @@ Open next:
 
 ## 2026-10-10 - CODEX - Exact CI Completion
 - Draft144 e9de0a2882524d9a40d5e06b438ae9ef2f789e21 Basic CI38004420256 COMPLETED/SUCCESS: Android Client, Signaling Tests, Rust Core Crypto and Lint all passed. Migration/runtime/required-review/Codex Security and separate readiness gates remain open; no main merge, rollout or sale.
+
+## 2026-10-10 02:41 EEST - CODEX - Merge Authorization Reconciliation
+- Read-only GitHub snapshot confirms138/137 have9 successful statuses each,134/136 have11 each; exact heads unchanged from docs/RELEASE_APPROVAL_PACKAGE_2026-10-10.md. All remain OPEN/REVIEW_REQUIRED/BLOCKED;137/134/136 remain drafts.
+- The required review cannot be supplied by the sole current collaborator approving their own PR. Administrator technical capability is not a documented exception to current project gates; a bounded owner decision is pending. No protection setting or PR state changed.
+- Plugin discovery confirms Codex Security available but not installed. Scan NOT RUN; no installation, code transfer, spending, gate exception, merge or deployment performed. Existing source reviews and CI are not renamed as a scan.
+- Existing136 runtime ownership and separate migration/readiness holds remain. Financial coordination occurs separately through the VLABS operator. Foreign working-tree changes preserved; only this generic receipt is intended for task-branch publication.
