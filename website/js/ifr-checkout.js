@@ -10,6 +10,9 @@
   var RPC_URL = "https://eth.llamarpc.com";
   var provider = null;
   var address = "";
+  var session = 0;
+  var pending = false;
+  var listening = null;
 
   var connectButton = root.querySelector("[data-ifr-connect]");
   var disconnectButton = root.querySelector("[data-ifr-disconnect]");
@@ -28,6 +31,20 @@
 
   function setStatus(message) {
     if (status) status.textContent = message;
+  }
+
+  function setCheckoutDisabled(disabled) {
+    checkoutButtons.forEach(function (button) { button.disabled = disabled; });
+  }
+
+  function staleError() {
+    var error = new Error("Wallet session changed.");
+    error.stale = true;
+    return error;
+  }
+
+  function assertSession(token) {
+    if (token !== session) throw staleError();
   }
 
   function balanceText(value) {
@@ -142,6 +159,7 @@
       connectButton.disabled = false;
     }
     if (disconnectButton) disconnectButton.disabled = false;
+    setCheckoutDisabled(pending);
     setStatus("Connected: " + address.slice(0, 6) + "..." + address.slice(-4) + ". Select a discount checkout to verify the IFR balance.");
   }
 
@@ -154,12 +172,16 @@
       if (error && error.code === 4001) throw error;
     }
     if (!address) address = await connectWalletConnect();
+    attachWalletEvents(provider);
     renderConnected();
     return address;
   }
 
-  async function disconnect() {
+  function resetWallet(message) {
     var current = provider;
+    detachWalletEvents();
+    session += 1;
+    pending = false;
     provider = null;
     address = "";
     if (addressField) addressField.value = "";
@@ -168,61 +190,108 @@
       connectButton.disabled = false;
     }
     if (disconnectButton) disconnectButton.disabled = true;
+    setCheckoutDisabled(true);
+    setStatus(message);
+    return current;
+  }
+
+  function onWalletChanged() {
+    resetWallet("Wallet account or network changed. Connect the wallet again to verify the IFR balance.");
+  }
+
+  function attachWalletEvents(candidate) {
+    detachWalletEvents();
+    if (!candidate || !candidate.on) return;
+    candidate.on("accountsChanged", onWalletChanged);
+    candidate.on("chainChanged", onWalletChanged);
+    candidate.on("disconnect", onWalletChanged);
+    listening = candidate;
+  }
+
+  function detachWalletEvents() {
+    var candidate = listening;
+    listening = null;
+    if (!candidate) return;
+    var off = candidate.removeListener || candidate.off;
+    if (!off) return;
+    ["accountsChanged", "chainChanged", "disconnect"].forEach(function (name) {
+      try { off.call(candidate, name, onWalletChanged); } catch (_) {}
+    });
+  }
+
+  async function disconnect() {
+    var current = resetWallet("Wallet disconnected. No wallet state is stored in the Android app.");
     try {
       if (current && current.disconnect) await current.disconnect();
     } catch (_) {}
-    setStatus("Wallet disconnected. No wallet state is stored in the Android app.");
   }
 
-  async function walletProof(tier) {
-    var walletAddress = await connect();
+  async function walletProof(tier, token) {
+    var walletAddress = address;
+    var signer = provider;
     var challengeResult = await fetchJson(API + "/stripe/ifr-discount-challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tier: tier, walletAddress: walletAddress })
     });
+    assertSession(token);
     var challenge = challengeResult.data;
     if (!challengeResult.response.ok || !challenge.message || !challenge.nonce) throw new Error(checkoutError(challenge));
     setStatus("Sign the message to prove wallet ownership. This cannot move tokens.");
     var signature;
     try {
-      signature = await provider.request({ method: "personal_sign", params: [challenge.message, walletAddress] });
+      signature = await signer.request({ method: "personal_sign", params: [challenge.message, walletAddress] });
     } catch (error) {
+      assertSession(token);
       if (!canRetryPersonalSign(error)) throw error;
-      signature = await provider.request({ method: "personal_sign", params: [walletAddress, challenge.message] });
+      signature = await signer.request({ method: "personal_sign", params: [walletAddress, challenge.message] });
     }
+    assertSession(token);
     return { walletAddress: walletAddress, walletNonce: challenge.nonce, walletSignature: signature };
   }
 
   async function checkout(button) {
+    if (pending || !provider || !address) return;
+    var token = session;
     var original = button.textContent;
-    button.disabled = true;
+    pending = true;
+    setCheckoutDisabled(true);
     button.textContent = "Verifying...";
     try {
       var payload = { tier: button.dataset.ifrTier, ifrDiscount: true };
-      Object.assign(payload, await walletProof(payload.tier));
+      Object.assign(payload, await walletProof(payload.tier, token));
       setStatus("Checking IFR balance on Ethereum Mainnet...");
       var checkoutResult = await fetchJson(API + "/stripe/create-dynamic-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
+      assertSession(token);
       var data = checkoutResult.data;
       if (!checkoutResult.response.ok || !data.url) throw new Error(checkoutError(data));
       setStatus("Holder verified" + balanceText(data.ifrBalanceAmount) + " Opening Stripe with the displayed discount...");
       window.location.assign(data.url);
     } catch (error) {
-      setStatus(error && error.message ? error.message : "Checkout unavailable");
-      button.disabled = false;
       button.textContent = original;
+      if (token !== session) return;
+      pending = false;
+      setCheckoutDisabled(false);
+      setStatus(error && error.message ? error.message : "Checkout unavailable");
     }
   }
 
+  if (connectButton) connectButton.disabled = false;
+  if (disconnectButton) disconnectButton.disabled = true;
+  setCheckoutDisabled(true);
+  setStatus("Connect a wallet to verify IFR holder eligibility.");
+
   if (connectButton) connectButton.addEventListener("click", function () {
+    if (provider && address) return;
     connectButton.disabled = true;
     connect().catch(function (error) {
       connectButton.disabled = false;
       connectButton.textContent = "Connect wallet";
+      setCheckoutDisabled(true);
       setStatus(error && error.message ? error.message : "Wallet connection failed.");
     });
   });
