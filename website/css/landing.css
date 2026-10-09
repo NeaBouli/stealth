@@ -450,6 +450,7 @@ body.landing-redesign {
 }
 .product-card-aspida { grid-column: 1 / -1; }
 .product-card-aspida ul { margin-bottom: 20px; }
+.product-card-aspida .tag { color: var(--sx-muted); }
 .aspida-mark {
   display: inline-flex;
   align-items: center;
