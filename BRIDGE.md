@@ -6203,3 +6203,8 @@ Open next:
 - The required review cannot be supplied by the sole current collaborator approving their own PR. Administrator technical capability is not a documented exception to current project gates; a bounded owner decision is pending. No protection setting or PR state changed.
 - Plugin discovery confirms Codex Security available but not installed. Scan NOT RUN; no installation, code transfer, spending, gate exception, merge or deployment performed. Existing source reviews and CI are not renamed as a scan.
 - Existing136 runtime ownership and separate migration/readiness holds remain. Financial coordination occurs separately through the VLABS operator. Foreign working-tree changes preserved; only this generic receipt is intended for task-branch publication.
+
+## 2026-10-10 02:45 EEST - CODEX - Identity Sync Claim Reconciliation
+- New Claude120 sync claim checked against PLAN and GitHub: old120 remains570829efd8c5ffb1ca82ba77888c8a780703aaab; canonical Draft144 remains e9de0a2882524d9a40d5e06b438ae9ef2f789e21 on119. Already accepted full backend/negative controls and exact-head four-job CI are retained; no duplicate sync, implementation or test run requested.
+- Handoff to existing terminal Claude: do not restart120; retain136 API34+ runtime check exclusively and report its exact candidate/evidence when finished. Preserve old120 history and any local work; no process termination, branch deletion or merge.
+- Draft144 remains source checkpoint only, with migration/runtime and separate integration/readiness gates open. Unversioned repeated claim does not supersede PLAN; no new worker/device claim or release action.
