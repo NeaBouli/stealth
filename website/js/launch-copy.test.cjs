@@ -72,3 +72,25 @@ test('IFR checkout stays closed and release labels are preserved', () => {
 test('FAQ emphasis on light answer cards uses a readable dark colour', () => {
     assert.match(pages.faq, /\.faq-refresh \.faq-answer-inner strong \{ color: #111827; \}/);
 });
+
+const aspidaCard = (pages.index.match(/<article class="product-card product-card-aspida[^"]*"[\s\S]*?<\/article>/) || [''])[0];
+
+test('ASPIDA listing is informational, in development and planned-only', () => {
+    assert.ok(aspidaCard, 'ASPIDA card missing');
+    assert.match(aspidaCard, /<span class="tag">In development<\/span>/);
+    assert.match(aspidaCard, /Planned: one license/);
+    assert.match(aspidaCard, /Planned: sensor-privacy controls/);
+    assert.match(aspidaCard, /manually in device or OEM developer settings, not by ASPIDA/);
+    assert.match(aspidaCard, /<span class="btn line block" aria-disabled="true">Not available yet<\/span>/);
+});
+
+test('ASPIDA listing has no commerce, download, activation or unsupported promise', () => {
+    assert.doesNotMatch(aspidaCard, /<(?:a|button|form|input)\b|\son[a-z]+=|href=|data-/i);
+    assert.doesNotMatch(aspidaCard, /<img/i);
+    assert.doesNotMatch(aspidaCard, /\b(?:buy|purchase|checkout|download|activate|activation|subscription|lifetime|tiers?|plans?|Suite|InStock|Offer)\b/i);
+    assert.doesNotMatch(aspidaCard, /[€$£]\s?\d|\d\s?(?:EUR|USD)|\bdevices?\s+(?:count|limit)|\bper device\b/i);
+    assert.doesNotMatch(aspidaCard, /\b(?:blocks? (?:all )?sensors|automatic(?:ally)?|master switch|guarantee[ds]?|all devices|every device)\b/i);
+    assert.doesNotMatch(pages.index, /aspida\.license|aspida[^"\n]*(?:checkout|download|\.apk)/i);
+    const jsonLd = (pages.index.match(/<script type="application\/ld\+json">[\s\S]*?<\/script>/g) || []).join('');
+    assert.doesNotMatch(jsonLd, /aspida/i);
+});
