@@ -6154,3 +6154,35 @@ Open next:
 - Owner extended the project target through verified completion and sales acceptance: SecureCall first, then SecureChat and Chameleon. docs/PROJECT_COMPLETION_PLAN.md defines M1-M11, unresolved gates, exclusive ownership and evidence requirements; existing accepted work is preserved, not restarted.
 - Started bounded public web-only IFR sales-route mapping separately from the existing Android runtime worker. No Android wallet/IFR mechanism, duplicate dependency fix, purchase activation or readiness claim. Financial coordination occurs separately through the private VLABS operator.
 - App goal replacement was rejected because the previous QA goal remains unfinished. The expanded target is recorded in the local PLAN; no false completion or claimed automation activation. Normal security/review/release and distribution-split gates remain unchanged.
+
+## 2026-10-10 - CODEX - First completion block delivered
+- Public browser-state correction published as Draft PR141 at3ddb60e8 against the coordinator task branch, exactly2 source/test files. Lead review and targeted regression verification completed; checkout6/6, launch copy7/7 and script/analytics integrity3/3 PASS, syntax/diff PASS. Closed purchase gates and existing eligibility policy unchanged.
+- All16 synthetic responsive screenshots inspected; mobile address layout remains a bounded follow-up. Live wallet/payment/runtime, asset-cache and release acceptance remain unverified; local full secret scanner and Codex Security NOT RUN. No main merge, production, sales activation or finished-project claim.
+- Full-project milestones remain in docs/PROJECT_COMPLETION_PLAN.md, detailed owners/results in local PLAN. Financial coordination occurs separately through the private VLABS operator. Existing Android runtime worker retains exclusive ownership; no duplicated work.
+
+
+## 2026-10-10 — SC-BLOCX-SITE-01 — Scoped owner request
+
+- Codex owns the mapped WEB.PLATFORM.BLOCX architecture/integration gate; Claude owns the isolated product-card HTML/CSS/copy checks only. Base f8c969b1436cb65c13a6c85e73abe179191245f1.
+- Present bLocX OS as in development, separately from Suite. No purchase/download, price, licence terms, availability, supported hardware or security claims. No app/QA/payment-flow changes or deployment.
+- Visual gate required at desktop/tablet/mobile viewports before review; public reports contain no private operator/finance details.
+
+
+## 2026-10-10 — BLOCX-DEVICE-METADATA-01 — Bounded physical observation
+
+- Owner explicitly requests recognition of the two attached devices. Current Stealth coordination records suspend physical QA; active Claude SC-136 ownership is emulator-only. Codex assigns a temporary read-only physical-metadata observation; this is not app QA reclaim.
+- Check active physical task/process metadata first; then, only through an already running ADB server, read model/manufacturer/Android API and connection authorization state. No install, instrumentation, logcat, app launch, filesystem/user-data access, boot/flash/unlock, server restart or emulator query.
+- Never emit/store serials, transport identifiers, addresses, keys or personal data. Release the observation after the sanitized report; other Stealth task ownership remains intact. If active physical ownership is found, stop device commands and report contention.
+
+## 2026-10-10 — ASPIDA-WEBSITE-001 — Isolated website claim
+
+- Separate preparation at `/Users/gio/Documents/Codex/ASPIDA-website-20261010`, branch `agent/codex/ASPIDA-WEBSITE-001`, accepted296866f4 website baseline. Claude will own only `website/index.html`, `website/css/landing.css`, `website/js/launch-copy.test.cjs` for the mapped informational ASPIDA catalog node; reveal/mobile-nav and other product/commerce behavior are read-only.
+- SC-WEB-IFR-SALES-TRACE-20261010/client-state and SC-BLOCX-SITE-01 retain their isolated owners; no duplicate source work, physical/device/emulator access or foreign staging/commit. Root coordinates future same-file integration and owns local responsive/security gates.
+- ASPIDA remains in development with one planned license, no purchase/download/activation or Suite/price/term/device promises. Codex Security NOT RUN; no deployment, main merge, payment or readiness change. This neutral claim is append-only and is not committed with foreign coordinator edits.
+
+
+## 2026-10-10 — BLOCX-DEVICE-METADATA-01 — Observation complete/released
+
+- Read-only recognition through the existing ADB daemon found two authorized physical devices: Samsung SM-A217F (Android12/API31) and SM-T835 (Android10/API29); no unauthorized device and no active physical QA command identified. Sanitized process attribution was bounded, not exhaustive.
+- No ADB start/restart, install, instrumentation, app launch, logs/user-data access, boot/flash/unlock or emulator work. No identifiers emitted. Temporary metadata observation released; other QA ownership unchanged.
+- Exact supported SKU/baseline/unlock-relock rights/disposable allocation remain UNVERIFIED; PRODUCT_READY NOT_READY. Private evidence: workspace outputs/private/attached-device-recognition-2026-10-10.md.
