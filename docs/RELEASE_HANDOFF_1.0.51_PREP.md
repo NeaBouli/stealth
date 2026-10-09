@@ -35,7 +35,7 @@ binding duplicated in `build.gradle`, three Android unit tests, one instrumentat
 `backend/signaling/src/payments/vlabs_fulfillment.js`. Changing it is payment/entitlement scope
 and was excluded. Before any direct Pro/Premium APK or sale: decide whether 1.0.51 keeps the
 1.0.50 ID or all of those places move together under a finance-reviewed change.
-The Play freeRelease AAB keeps `BILLING_ENABLED=false`, so this does not affect the Play upload.
+The Play freeRelease AAB keeps `BILLING_ENABLED=false`; paid activation still needs its own verified binding and gates. No upload decision is made here.
 Public website/README strings still say "candidate v1.0.50"; update only after a release decision.
 
 ## 2. Release notes (PROPOSED — depend on the final integrated candidate; edit before use)
@@ -72,7 +72,7 @@ Fill in at the final candidate (all blank until built and verified):
 - [ ] Final commit hash: `________` (integrated queue 138/137/134/136/119/139/120 on reviewed base)
 - [ ] versionName `1.0.51`, versionCode `78018` read from the built AAB (not from source)
 - [ ] Package `com.securecall.app.free`; targetSdk `36`
-- [ ] Signing certificate SHA-256 of the AAB matches the documented upload/app-signing certificate (`docs/PLAY_STORE_UPLOAD_CHECKLIST.md`)
+- [ ] AAB signing certificate SHA-256 matches the current Play **upload certificate**, not the separately managed Google app-signing certificate; do not change either key
 - [ ] AAB SHA-256: `________`
 - [ ] R8 mapping: `client_android/app/build/outputs/mapping/freeRelease/mapping.txt` archived per version, uploaded to Play and Crashlytics
 - [ ] Policy: `verifyFreeReleaseVpnPolicy` PASS; AAB has zero `VpnService`, `wireguard`, `libwg` entries
@@ -80,12 +80,12 @@ Fill in at the final candidate (all blank until built and verified):
 - [ ] Data Safety re-verified against this exact AAB (no reuse of historical answers)
 - [ ] Latest Play code-history confirmation: versionCode `78018` unused on every track
 - [ ] All-track VPN cleanup: no earlier VpnService-bearing artifact remains active on any track (Internal/Closed/Open/Production)
-- [ ] Rollout: intended `100%` only after a separately approved rollout decision; no percentage chosen here
-- [ ] Exact clicks (owner): Play Console > SecureCall > Release > Testing > Internal testing > Create new release > upload `app-free-release.aab` > paste reviewed EN/DE notes > Save > Review release > Start rollout. Production promotion is a separate approval.
+- [ ] Track and rollout percentage: UNDECIDED; record separately approved destination and percentage before submission
+- [ ] Later upload clicks: Play Console > SecureCall > approved testing track (or separately authorized Production) > Create new release > upload verified `app-free-release.aab` > paste reviewed EN/DE notes > Save. Review and submit/start rollout only under the exact track-specific approval; no track or rollout is selected here.
 
 Gates required on the FINAL candidate (all NOT RUN here):
 
-- [ ] Android: `./gradlew --no-daemon --max-workers=1 -Pinternal testFreeDebugUnitTest testPremiumDebugUnitTest verifyNoVpnServiceSource verifyFreeReleaseVpnPolicy verifyProReleaseVpnPolicy verifyPremiumReleaseVpnRuntime lintFreeRelease assembleFreeRelease bundleFreeRelease assembleProRelease assemblePremiumRelease`
+- [ ] Android: `./gradlew --no-daemon --max-workers=1 -Pinternal testFreeDebugUnitTest testPremiumDebugUnitTest testFreeReleaseUnitTest verifyFreeReleaseBillingClosed verifyNoVpnServiceSource verifyFreeReleaseVpnPolicy verifyProReleaseVpnPolicy verifyPremiumReleaseVpnRuntime lintFreeRelease assembleFreeRelease bundleFreeRelease assembleProRelease assemblePremiumRelease`
 - [ ] Backend: signaling full `npm test` (tester/TURN/backend suites), lint
 - [ ] Native: Rust `cargo test`/clippy, NDK/Opus JNI build
 - [ ] Instrumentation and physical-device/runtime smoke (existing terminal owns all devices/emulators)
@@ -93,5 +93,8 @@ Gates required on the FINAL candidate (all NOT RUN here):
 - [ ] Open: original Crashlytics action attribution, versioned R8 mapping and fatal-crash monitoring
 - [ ] Open: PR120 migration, real-call test and paid-entitlement test remain pending
 
-Stop conditions: any red gate, unverified Play version history, undecided release ID, or missing
-`PRODUCT_READY`/`FINANCE_READY` blocks upload. This document grants none of them.
+Commercial activation requires matching `PRODUCT_READY` and `FINANCE_READY` plus explicit release approval; neither is granted. An isolated, noncommercial test upload does not itself require sales authorization, but still requires its own approved track, verified code/signing/policy and applicable security/test acceptance. Any applicable red or unverified gate blocks the corresponding action. This preparation document authorizes no upload, rollout or sale.
+
+## 4. Rollback and post-release checks (later, separately authorized)
+- Preserve the last reviewed source/artifacts and versioned mapping. Stop a failing rollout through the authorized operator; Android cannot install a lower versionCode as a normal update. An approved forward-fix uses a new higher code and full gates; do not revert license records or rotate keys as a rollback shortcut.
+- Recheck exact installed package/version, API34+ startup and incoming calls, distribution/policy guards and fatal events against this version's mapping. Keep old1.0.48 events separate. Sales/license checks require the approved isolated evidence and matching operator gate before activation.
