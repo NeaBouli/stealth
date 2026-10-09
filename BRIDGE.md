@@ -6154,3 +6154,8 @@ Open next:
 - Owner extended the project target through verified completion and sales acceptance: SecureCall first, then SecureChat and Chameleon. docs/PROJECT_COMPLETION_PLAN.md defines M1-M11, unresolved gates, exclusive ownership and evidence requirements; existing accepted work is preserved, not restarted.
 - Started bounded public web-only IFR sales-route mapping separately from the existing Android runtime worker. No Android wallet/IFR mechanism, duplicate dependency fix, purchase activation or readiness claim. Financial coordination occurs separately through the private VLABS operator.
 - App goal replacement was rejected because the previous QA goal remains unfinished. The expanded target is recorded in the local PLAN; no false completion or claimed automation activation. Normal security/review/release and distribution-split gates remain unchanged.
+
+
+## 2026-10-10 — SC-BLOCX-SITE-01-FIX — Current predecessor compatibility
+- Codex assigns Claude bounded reuse of the existing bLocX card on published eff64c8b launch base. Earlier unrelated-change attribution was withdrawn: old/new baseline difference, not worker edits. Closed-sales/Suite/launch regression predecessor remains intact.
+- Dedicated bLocX test plus one invocation in existing website check; no new CI/jobs/permissions. Simple stylesheet version and actual-layout screenshots at5 viewports. Root owns draft stacked PR against existing launch branch only; no main merge or deployment.
