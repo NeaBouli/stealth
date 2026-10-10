@@ -6272,3 +6272,19 @@ Open next:
 ## 2026-10-10 06:03 EEST - CODEX - SecureChat Audit Coordination
 - SecureChat Draft45 delivered at75bf8a96be605a62d3357e65ca890f0ad7f509d2 with successful hosted checks; reported visuals have an existing narrow-viewport exception. No merge, full visual acceptance or release claimed. Existing terminal Claude remains sole source owner; no duplicate worker.
 - Lead assigned a bounded compatibility-preserving import follow-up with mandatory security/negative-test/visual gates, no identity migration. Shared authenticated server contract remains an unverified integration/runtime dependency, not fixed. Four-Stealth-PR scan hold and all separate product/release gates unchanged; financial coordination remains separately with VLABS.
+
+## 2026-10-10 10:07 EEST - CODEX - Owner-Scoped Integration Exception
+- Owner selected "Ohne Scan mergen": admin squash/linear integration authorized only138 ->137 ->134 ->136 on unchanged green exact heads, rechecked before each merge; changed/red head stops the queue. This bounded exception replaces the scan-before-merge condition for these four only, not global workflow, branch policies or unrelated release gates.
+- Codex Security: POSTPONED, run after merge. Prior actual run remains INCOMPLETE / NOT ACCEPTED, never PASS. A generic follow-up ticket will retain exact scope and acceptance criteria; private diagnostics remain outside Git. No deployment, release/signing/upload, payments or other PR integration authorized by this checkpoint.
+
+## 2026-10-10 10:08 EEST - CODEX - Queue First Merge And Follow-Up
+- Scoped Codex Security follow-up created: issue146, POSTPONED, run after merge; prior scan remains incomplete.138 merged after unchanged exact-head/all-success check as a4ceb8fce2aeb7b53d789f16b322066c4315845f.137 is ready for review with unchanged head/eight successful CI jobs; bot check pending, merge waits. Authorized134/136 review preparation does not change merge order.
+- No other PR merge, source rewrite or manual deployment/release/activation. Exact checks and incremental integration evidence tracked in PLAN; independent readiness/runtime/financial gates remain unchanged.
+
+## 2026-10-10 10:14 EEST - CODEX - Four-PR Integration Verified
+- Authorized admin squash order completed:138 a4ceb8fc ->137095f6d88 ->13491e9565d ->136c02146a8. Each original head unchanged and all checks successful immediately before its merge. Final main c02146a8cfae092d1cdb1c42c32f0dc0eb4e86ed has the same complete source tree as accepted combined preview ed77a747; git diff --quiet PASS, linear parent chain verified. No other PR merge or source rewrite.
+- Automatic exact-main Basic CI and Security Audit are running, not yet PASS. Codex Security remains POSTPONED, run after merge in issue146; prior partial scan is not accepted. No manual deployment/signing/upload/sale activation or branch-policy change. Independent runtime/readiness/financial gates and source owners preserved.
+
+## 2026-10-10 10:22 EEST - CODEX - Integration CI Complete
+- Exact main c02146a8cfae092d1cdb1c42c32f0dc0eb4e86ed: Basic CI38033637585 SUCCESS and GitHub Security Audit38033637652 SUCCESS, all seven hosted jobs successful. Accepted preview/full-tree equality remains PASS; no duplicate local builds or tests. Only the authorized four-PR integration milestone is complete.
+- Official Codex Security remains POSTPONED, run after merge under follow-up146, not PASS. No manual deployment, release/signing/upload, financial activation or extra PR merge. Independent runtime/identity/entitlement/product/finance/release gates remain open; existing source owners and unrelated changes preserved.
