@@ -2,6 +2,8 @@
 // Add to your existing Railway backend: require('./reportRoute')(app);
 
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
+const { logIp } = require('./security/log_ip');
+const { getClientIp } = require('./middleware/ip');
 
 // In-memory rate limit store (resets on server restart — fine for abuse prevention)
 const rateLimitStore = new Map();
@@ -125,8 +127,9 @@ module.exports = function registerReportRoute(app) {
             return res.status(500).json({ error: 'Server misconfiguration' });
         }
 
-        // --- Get real IP (Railway sits behind a proxy) ---
-        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+        // --- Client IP: same trusted-proxy contract as every other limiter.
+        // The leftmost X-Forwarded-For entry is client-controlled and must not key the limit.
+        const ip = getClientIp(req) || 'unknown';
 
         // --- Honeypot check (hidden field must be empty) ---
         if (req.body.website || req.body._trap) {
@@ -180,7 +183,7 @@ module.exports = function registerReportRoute(app) {
                 { appVersion, androidVersion, device, description: description.trim(), email, screenshotUrl },
                 GITHUB_TOKEN, REPO_OWNER, REPO_NAME
             );
-            console.log(`[report] Issue #${issue.number} created from IP ${ip}`);
+            console.log(`[report] Issue #${issue.number} created from IP ${logIp(ip)}`);
             return res.status(201).json({ success: true, issue_number: issue.number, issue_url: issue.html_url });
         } catch (err) {
             console.error('[report] GitHub issue error:', err.message);
