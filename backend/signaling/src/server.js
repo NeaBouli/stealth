@@ -44,7 +44,7 @@ const {
 } = require("./services/activation_store");
 const { loadWalletMappings } = require("./services/wallet_store");
 const { setupActivationAdminRoutes } = require("./services/activation_admin");
-const { getClientIp }                                               = require("./middleware/ip");
+const { getClientIp, isTrustProxyEnabled }                          = require("./middleware/ip");
 const { makeRequireAdmin }                                         = require("./middleware/admin");
 const { pkdRegistrationRateLimit }                                  = require("./security/pkd_registration_limiter");
 const { verifyIfrHolding }                                          = require("./services/ifr");
@@ -143,6 +143,17 @@ function evictOldestBeyondCap(map, cap) {
 
 // --- App Setup ---
 const app = express();
+// STX-20: do not advertise the framework. HSTS is emitted only when the
+// TRUST_PROXY deployment contract (middleware/ip) reports an HTTPS front
+// connection via X-Forwarded-Proto; on plain HTTP the header is ignored by
+// browsers anyway. The repo nginx configs set HSTS at the proxy too.
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  if (isTrustProxyEnabled() && req.headers["x-forwarded-proto"] === "https") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  next();
+});
 const requireAdmin = makeRequireAdmin(ADMIN_API_KEY, { getClientIp });
 // Stripe webhook needs raw body for signature verification — must come BEFORE express.json()
 app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
