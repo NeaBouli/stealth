@@ -6235,3 +6235,6 @@ Open next:
 ## 2026-10-10 03:20 EEST - CODEX - Draft Queue Preview Published
 - Draft145 https://github.com/NeaBouli/stealth/pull/145 at ed77a747a3c426d8380196d5f8814cefd3dadd5a composes138/137/134/136 conflict-free. Lead verified exact input-file equality,15-file union,shared lockfile and diff check; no new source implementation. Original PRs/main unchanged.
 - Automatic main-targeted CI is running: backend/Rust/lint/dependency review/secret detection and bot green at this snapshot; Android/API24/API36/dependency audit pending. No full matrix or runtime PASS yet. Codex Security remains NOT RUN; conditional admin grant received but unmet, no merge or rollout. Reports retained; only own completed preview worktree is archived.
+
+## 2026-10-10 03:29 EEST - CODEX - Exact Queue CI Complete
+- Draft145 unchangeded77a747a3c426d8380196d5f8814cefd3dadd5a: all10 hosted jobs SUCCESS, including Android and API24/API36; bot SUCCESS is skipped Draft review, not approval. One corrected read-only wait succeeded after a local network error, no rerun. Own preview archive1206 verified files complete; source/evidence preserved. Codex Security NOT RUN, conditional admin prerequisite and manual/runtime/release/readiness gates still HOLD; no main merge or rollout.
