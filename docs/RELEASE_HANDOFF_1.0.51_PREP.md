@@ -16,6 +16,14 @@ VLABS `FINANCE_READY` are **not granted**. No sales are active and no codes have
 | compileSdk / targetSdk / minSdk | 37 / 36 / 24 (unchanged) | `build.gradle` |
 | Packages | Play `com.securecall.app.free`; direct `.pro`, `.premium` | `docs/DISTRIBUTION_MATRIX.md` |
 | Base (PROVISIONAL) | `3f3fa0550b7544535b3cb239fe1bc89105c71a17` (frozen PR119 branch) | integration base |
+| Accepted main merged in | `c02146a8cfae092d1cdb1c42c32f0dc0eb4e86ed` (includes #134, #136, #137, #138) | SC-SIGNALING-OPS-RC-SYNC-20261010 |
+
+### Main sync (SC-SIGNALING-OPS-RC-SYNC-20261010)
+
+- This candidate is the Draft PR143 branch plus a merge of accepted main `c02146a8`; ancestry of the unmerged PR119 work, the AGP 9 `freeRelease` host-test guard, the paid gates, versionName `1.0.51` and base `78018` are preserved. Only `backend/signaling/package.json` conflicted: both `test` lists are unioned (`ifr_checkout_proof` from the candidate, `log_ip` and `report_rate_limit` from main).
+- This preview does **not** approve PR119, its migration or any release; the PR119 base above stays PROVISIONAL. Main CI for `c02146a8` is a separate, hosted result; the merged candidate itself has no build or runtime suite run (Gradle, NDK, Rust, `npm ci`, device runs: NOT RUN).
+- Backend #138 (`proxy-addr` 2.0.8 in `package-lock.json`) reaches production only through a separately granted operator deployment; deploying it is not part of this preparation. `ENTITLEMENT_RELEASE_ID` stays unchanged (see below).
+- Play `78018` uniqueness remains UNVERIFIED (no Console access). Codex Security (PR146) remains separate and is not a PASS.
 
 ### Version-code inventory (read-only, 2026-10-10)
 
