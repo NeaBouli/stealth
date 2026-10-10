@@ -6077,3 +6077,31 @@ Open next:
   was performed.
 
 `STARTUP PATCH VERIFIED / INDEPENDENT GITHUB REVIEW STILL REQUIRED`
+
+
+## 2026-10-04 — CC — SC-OCT04-FULLSCREEN-FIX: Android full-screen settings startup crash
+
+### TYPE: FIX
+
+- Base: `origin/main` `f8c969b1436cb65c13a6c85e73abe179191245f1`. No equivalent open PR found
+  (open PRs #83, #119, #120, #131, #133, #134, #135 do not touch this path).
+- Hop: `MainActivity.onCreate` -> optional Android Settings intent (API 34+ and
+  `canUseFullScreenIntent() == false` only; guard unchanged). Code confirmed launching the
+  invalid plural action `android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENTS` unguarded,
+  which yields `ActivityNotFoundException` in `onCreate`.
+- Fix: `FullScreenIntentSettings.open()` uses `Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT`
+  with `package:` URI, falls back to `ACTION_APPLICATION_DETAILS_SETTINGS`; each attempt is
+  resolution-checked and catches `ActivityNotFoundException`/`SecurityException`; startup
+  continues if neither opens. No permission granted or assumed. Manifest `<queries>` gains
+  both settings intents so Android 11+ package visibility cannot make resolution return null.
+  No permission, dependency, version or call/security/flavor change.
+- Tests (local, macOS):
+  `./gradlew -Pinternal :app:testFreeDebugUnitTest :app:testPremiumDebugUnitTest --tests com.securecall.app.FullScreenIntentSettingsTest`
+  -> Free 7/7, Premium 7/7 passed. Negative control (plural action restored): 7/7 failed.
+  `compileFreeReleaseJavaWithJavac`, `compilePremiumReleaseJavaWithJavac`, `lintFreeDebug`,
+  `lintPremiumDebug` -> BUILD SUCCESSFUL, lint 0 errors. `git diff --check` clean;
+  gitleaks (repo config) on changed files: no leaks.
+- NOT VERIFIED: runtime API 33 / API 34+ granted/denied, OEM missing handler, startup to UI,
+  incoming calls locked/unlocked, Crashlytics original action/stack. No device access used.
+
+`PATCH VERIFIED (JVM/LINT) / RUNTIME + CRASHLYTICS NOT VERIFIED / NOT RELEASED`
