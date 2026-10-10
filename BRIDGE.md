@@ -6335,3 +6335,11 @@ Open next:
 ## 2026-10-10 13:03 EEST - CODEX - SecureChat Review Checkpoint
 - Independent review of SecureChat46d80ae615224630fa0c7bb81b147a33ae5683f93c completed with integration HOLD; bounded follow-up is retained under the existing audit, private analysis not published. Exact candidate remains Draft, hosted checks successful. No duplicated source/device work or source merge/deploy/release.
 - Supplied synthetic image evidence inspected; remaining visual/artifact/security gates are explicit, not a blanket PASS. Existing runtime and implementation ownership retained. PRODUCT_READY remains NO; financial coordination is handled separately by the VLABS operator.
+
+## 2026-10-10 13:08 EEST - CODEX - SecureChat UI Follow-up Scope
+- SecureChat46 now b78cc7afd07bcee8fb2dece55fc4b7a30ad4e0d0 after a bounded one-file dialog scroll change; targeted device evidence and exact-delta review remain open. Original implementation/device owner retained, no duplicate matrix or security review. Existing integration HOLD remains; no merge/deploy/release or activation performed.
+- Append-only coordination preserves unrelated changes. PRODUCT_READY remains NO; financial coordination is handled separately by the VLABS operator.
+
+## 2026-10-10 13:10 EEST - CODEX - Dialog Delta Review Receipt
+- Independent one-file source review of unchanged SecureChat46 b78cc7afd07bcee8fb2dece55fc4b7a30ad4e0d0 completed, source-safe with pending exact-head CI/device evidence. No source edits, duplicate device tests or worker fallback. Existing whole-PR integration HOLD remains; no merge, release or activation.
+- Project/global Bridge and PLAN updated locally; financial coordination is handled separately by the VLABS operator.
