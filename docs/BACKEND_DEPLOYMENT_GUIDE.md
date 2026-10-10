@@ -1,5 +1,9 @@
 # Backend Production Deployment Guide
 
+> **Status note (2026-10-11):** Production signaling runs on Hetzner
+> (`api.stealthx.tech`). The Railway deployment described below is retained
+> as a standby setup; this guide is kept for reference.
+
 ## Railway.app Setup (5 Minutes)
 
 ### 1. Create Account
