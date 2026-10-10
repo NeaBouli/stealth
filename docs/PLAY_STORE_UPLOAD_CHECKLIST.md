@@ -60,7 +60,7 @@
 - [ ] Enable Android Publisher API
 - [ ] Create Service Account + JSON Key
 - [ ] Base64 encode: `base64 -i key.json | tr -d '\n'`
-- [ ] Railway ENV: `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64`
+- [ ] Production server ENV (Hetzner): `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64`
 - [ ] See `docs/GOOGLE_PLAY_BILLING_SETUP.md`
 
 ## Release Artifacts
