@@ -6226,3 +6226,12 @@ Open next:
 - Terminal Claude confirms120570829ef superseded and reports no further source pushes. Preserve both draft histories; no branch/PR deletion, process interruption or second implementation.136 runtime remains exclusively Claude-owned.
 - Live canonical144 is e9de0a2882524d9a40d5e06b438ae9ef2f789e21, not the earlierf590e277 checkpoint. Four CI jobs plus bot SUCCESS; later reviewed corrections/tests retained, so current120 and144 are not byte-equivalent. Existing exact source-review evidence reused without another review/test run.
 - PLAN now explicitly reconciles latest active owner claims and immutable heads before future topic-writer dispatch. Global Fleet unchanged; full combined matrix/scan/runtime/migration and separate release/readiness gates stay open. No main merge or release action.
+
+## 2026-10-10 03:10 EEST - CODEX - Conditional Queue Grant And Client Ownership
+- New owner decision relayed in the common Bridge grants admin integration only for138 ->137 ->134 ->136 after Codex Security. The earlier missing-admin-grant status is superseded; scan NOT RUN and access/installation/transfer/cost scope remain separate prerequisites. No merge, scan or deployment performed.
+- Existing terminal Claude has the exclusive bounded SecureChat SCT-01/02/03 brief, preserving current identities/protocol and requiring contract reconciliation before relay changes. Chameleon remains separately queued; audit priorities reconciled without duplicate findings or new release acceptance.
+- Isolated integration-only preview of the accepted four queue heads assigned separately; full combined hosted CI remains pending. No repeated implementation or local heavy build;136 API34+ retains its sole terminal owner. Financial coordination remains separate through the VLABS operator; product/release gates stay open.
+
+## 2026-10-10 03:20 EEST - CODEX - Draft Queue Preview Published
+- Draft145 https://github.com/NeaBouli/stealth/pull/145 at ed77a747a3c426d8380196d5f8814cefd3dadd5a composes138/137/134/136 conflict-free. Lead verified exact input-file equality,15-file union,shared lockfile and diff check; no new source implementation. Original PRs/main unchanged.
+- Automatic main-targeted CI is running: backend/Rust/lint/dependency review/secret detection and bot green at this snapshot; Android/API24/API36/dependency audit pending. No full matrix or runtime PASS yet. Codex Security remains NOT RUN; conditional admin grant received but unmet, no merge or rollout. Reports retained; only own completed preview worktree is archived.
