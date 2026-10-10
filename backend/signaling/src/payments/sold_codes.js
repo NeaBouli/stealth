@@ -33,8 +33,8 @@ function isLockOwnerAlive(pid) {
   }
 }
 
-// Reclaim only a demonstrably stale lock (pid-stamped owner dead, or older than
-// any real critical section). A fresh lock from a live owner stays busy.
+// Reclaim only a demonstrably stale lock: the pid-stamped owner is dead, or the lock has
+// no readable owner and is older than any real critical section.
 function clearStaleStoreLock() {
   let stat;
   let owner;
@@ -44,9 +44,17 @@ function clearStaleStoreLock() {
   } catch {
     return false;
   }
-  const pid = Number(owner.split(":")[0]);
+  const pidText = owner.split(":")[0];
+  const pid = /^[1-9][0-9]*$/.test(pidText) ? Number(pidText) : NaN;
   const ageMs = Date.now() - stat.mtimeMs;
-  if (isLockOwnerAlive(pid) && ageMs < LOCK_STALE_MS) return false;
+  // A live owner is never displaced: a hung writer could resume and write concurrently.
+  // A lock without a readable pid may be mid-creation (opened, pid not yet written), so it
+  // is reclaimed only once it is older than any real critical section.
+  if (Number.isInteger(pid)) {
+    if (isLockOwnerAlive(pid)) return false;
+  } else if (ageMs < LOCK_STALE_MS) {
+    return false;
+  }
   try {
     fs.unlinkSync(SOLD_LOCK_FILE);
     console.warn(`[SOLD-CODES] Cleared stale store lock (owner pid ${owner.split(":")[0] || "unknown"}, age ${Math.round(ageMs / 1000)}s)`);
