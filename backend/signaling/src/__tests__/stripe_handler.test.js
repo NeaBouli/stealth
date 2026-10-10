@@ -257,6 +257,14 @@ async function runActivationCodeRefundTest() {
   );
   assert.strictEqual(persistedActivations, 2, "refund retry persists the repaired store");
 
+  // Storage failure must fail the webhook so Stripe retries instead of silently losing the revocation.
+  activationCodes.push({ code: "PRO-REFUND-TEST-01", tier: "pro", stripeSessionId: "cs_activation_refund_test" });
+  await assert.rejects(handleWebhook({
+    id: "evt_activation_refund_persist_fail",
+    type: "charge.refunded",
+    data: { object: { amount: 900, amount_refunded: 900, payment_intent: "pi_activation_refund" } },
+  }, stripe, activationCodes, { persistActivationCodes: () => false }), /activation_revocation_persistence_failed/);
+
   const lateCheckout = await handleWebhook({
     id: "evt_activation_late_checkout_test",
     type: "checkout.session.async_payment_succeeded",

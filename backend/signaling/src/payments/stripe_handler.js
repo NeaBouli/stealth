@@ -285,9 +285,12 @@ async function handleWebhook(event, stripe, activationCodesRef, deps = {}) {
           }
         }
       }
-      if (typeof deps.persistActivationCodes === "function") {
-        deps.persistActivationCodes();
-      }
+      // A revoked entitlement must not reappear after a restart: persist like the VLABS
+      // boundary does and fail the webhook (Stripe retries) if storage fails.
+      const persistActivationCodes = typeof deps.persistActivationCodes === "function"
+        ? deps.persistActivationCodes
+        : require("../services/activation_store").saveActivationCodes;
+      if (persistActivationCodes() === false) throw new Error("activation_revocation_persistence_failed");
       if (soldCode && !revoked.found) throw new Error("activation_code_revocation_failed");
     }
     const productKey = isCustomId
