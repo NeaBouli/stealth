@@ -22,9 +22,12 @@ function fail(code) {
 function loadIdentityMigrationRoutes({
   file,
   nowSeconds = () => Math.floor(Date.now() / 1000),
+  enabled = true,
 }) {
   if (!path.isAbsolute(file)) fail("invalid_identity_migration_routes_file");
-  if (!fs.existsSync(file)) {
+  // #144 review F2: the snapshot's authority comes from a pre-#144 unauthenticated write
+  // path, so alias migration stays off unless the owner explicitly enables it.
+  if (!enabled || !fs.existsSync(file)) {
     return Object.freeze({ size: 0, get: () => null });
   }
 

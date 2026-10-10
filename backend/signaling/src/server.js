@@ -168,6 +168,7 @@ const server = http.createServer(app);
 loadFcmTokens();
 const identityMigrationRoutes = loadIdentityMigrationRoutes({
   file: process.env.IDENTITY_MIGRATION_ROUTES_FILE,
+  enabled: process.env.IDENTITY_MIGRATION_ENABLED === "true",
 });
 
 loadActivationCodes();
