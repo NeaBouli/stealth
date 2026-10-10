@@ -13,6 +13,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { writeJsonAtomic } = require("./utils/json_store");
+const { getClientIp } = require("./middleware/ip");
 
 const IDS_FILE     = process.env.IDS_FILE     || path.join(__dirname, "..", "data", "custom_ids.json");
 const PENDING_FILE = process.env.PENDING_FILE || path.join(__dirname, "..", "data", "pending_activations.json");
@@ -172,9 +173,42 @@ function hashPassword(password, salt) {
   return { hash, salt };
 }
 
+// STX-06: passwords are bounded strings (PBKDF2 on huge or non-string input is a cheap
+// DoS) and compared in constant time.
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 256;
+
+function isAcceptablePassword(password) {
+  return typeof password === "string"
+    && password.length >= MIN_PASSWORD_LENGTH && password.length <= MAX_PASSWORD_LENGTH;
+}
+
 function verifyPassword(password, storedHash, storedSalt) {
+  if (typeof password !== "string" || typeof storedHash !== "string" || typeof storedSalt !== "string") return false;
   const { hash } = hashPassword(password, storedSalt);
-  return hash === storedHash;
+  const actual = Buffer.from(hash, "hex");
+  const expected = Buffer.from(storedHash, "hex");
+  return actual.length === expected.length && actual.length > 0 && crypto.timingSafeEqual(actual, expected);
+}
+
+// STX-06: failed transfer passwords are also budgeted per Custom ID, so a guess spread
+// across many addresses cannot take over an ID. The owner can retry after the window.
+const FAILED_TRANSFER_WINDOW_MS = 60 * 60 * 1000;
+const MAX_FAILED_TRANSFERS_PER_ID = 5;
+const MAX_TRACKED_IDS = 65536;
+const failedTransfers = new Map();
+
+function transferLocked(key, now) {
+  for (const [entryKey, entry] of failedTransfers) {
+    if (now - entry.windowStart >= FAILED_TRANSFER_WINDOW_MS) failedTransfers.delete(entryKey);
+  }
+  return (failedTransfers.get(key)?.count || 0) >= MAX_FAILED_TRANSFERS_PER_ID;
+}
+
+function recordFailedTransfer(key, now) {
+  const entry = failedTransfers.get(key);
+  if (entry) entry.count++;
+  else if (failedTransfers.size < MAX_TRACKED_IDS) failedTransfers.set(key, { windowStart: now, count: 1 });
 }
 
 // ─── Pricing ────────────────────────────────────────────────
@@ -204,12 +238,18 @@ function activate(id, deviceId, password) {
   if (!ID_REGEX.test(normalized)) return { success: false, error: "invalid_format" };
   if (normalized.length <= 2) return { success: false, error: "reserved" };
 
+  if (!isAcceptablePassword(password)) return { success: false, error: "invalid_password" };
+
   const key = idToKey(normalized);
   const existing = customIds[key];
   if (!existing) return { success: false, error: "purchase_required" };
+  const now = Date.now();
+  if (transferLocked(key, now)) return { success: false, error: "rate_limited" };
   if (!verifyPassword(password, existing.passwordHash, existing.passwordSalt)) {
+    recordFailedTransfer(key, now);
     return { success: false, error: "wrong_password" };
   }
+  failedTransfers.delete(key);
   existing.deviceId = deviceId;
   existing.lastTransfer = new Date().toISOString();
   saveIds();
@@ -235,7 +275,8 @@ function setupRoutes(app, requireAdmin) {
   // Rate limit: 5 attempts per IP per 15 minutes for activate/transfer/reclaim
   const customIdLimits = new Map();
   function customIdRateLimit(req, res, next) {
-    const ip = req.ip || req.connection.remoteAddress;
+    // STX-06/STX-07: same client address resolution as the rest of the API (TRUST_PROXY).
+    const ip = getClientIp(req) || "unknown";
     const now = Date.now();
     if (!customIdLimits.has(ip)) customIdLimits.set(ip, []);
     const attempts = customIdLimits.get(ip);
@@ -260,8 +301,9 @@ function setupRoutes(app, requireAdmin) {
     if (!id || !deviceId || !password) {
       return res.status(400).json({ error: "missing_fields" });
     }
-    if (password.length < 8) {
-      return res.status(400).json({ error: "password_too_short" });
+    if (!isAcceptablePassword(password)) {
+      return res.status(400).json({ error: typeof password === "string" && password.length < MIN_PASSWORD_LENGTH
+        ? "password_too_short" : "invalid_password" });
     }
     res.json(activate(id, deviceId, password));
   });
@@ -287,7 +329,10 @@ function setupRoutes(app, requireAdmin) {
     const taxId = String(req.body.taxId || "").trim().toUpperCase();
     const customerEmail = String(req.body.customerEmail || "").trim().toLowerCase();
     if (!id || !password) return res.status(400).json({ error: "missing_fields" });
-    if (password.length < 8) return res.status(400).json({ error: "password_too_short" });
+    if (!isAcceptablePassword(password)) {
+      return res.status(400).json({ error: typeof password === "string" && password.length < MIN_PASSWORD_LENGTH
+        ? "password_too_short" : "invalid_password" });
+    }
     if (!/^[A-Z]{2}$/.test(billingCountry) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
       return res.status(400).json({ error: "invalid_billing_details" });
     }
@@ -463,4 +508,4 @@ function setupRoutes(app, requireAdmin) {
 loadIds();
 loadPendingActivations();
 
-module.exports = { isAvailable, activate, getPrice, resolve, markPendingPaid, revokeByStripeSession, setupRoutes };
+module.exports = { isAvailable, activate, getPrice, resolve, markPendingPaid, revokeByStripeSession, setupRoutes, hashPassword };
