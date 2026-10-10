@@ -14,14 +14,15 @@ RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 # Copy application code
 COPY src/ ./src/
 
-# Copy seed data (activation codes, etc.) — runtime writes go to volume
-COPY data/ ./data/
+# STX-09: no data is baked into the image. Runtime stores live in the mounted
+# DATA_DIR volume; activation codes are seeded only via SEED_ACTIVATION_CODES.
+RUN mkdir -p /app/data
 
 # Non-root user for security
 RUN addgroup -g 1001 -S securecall && \
     adduser -S securecall -u 1001 -G securecall
 
-# Seed data owned by securecall in the image layer. A mounted volume must be
+# The empty data dir is owned by securecall. A mounted volume must be
 # writable by UID 1001 (Railway: RAILWAY_RUN_UID=0); production refuses the
 # ephemeral /tmp fallback (src/data_dir.js). entrypoint.sh is not used.
 RUN chown -R securecall:securecall /app/data

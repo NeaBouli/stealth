@@ -3,3 +3,7 @@ npm-debug.log
 yarn-error.log
 .env
 firebase-service-account-key.json
+
+# Runtime stores (codes, wallets, sales, identities) never belong in Git or the image (STX-09)
+data/*
+!data/.gitkeep
