@@ -6359,3 +6359,7 @@ Open next:
 ## 2026-10-10 13:52 EEST - CODEX - Frozen Owner Evidence Received
 - SecureChat46 c2f4994 synthetic Android negative-test and debug-build receipt received from original owner. Existing independent exact-head source verification and18/18 unit results retained; no duplicated review/build/device work. Hardware-positive and release-artifact checks remain open.
 - Official candidate scan NOT RUN pending scoped authorization; actual GitHub approval and integration HOLD remain. No source/main merge, deploy/release/activation; financial coordination remains separately operator-owned.
+
+## 2026-10-10 14:37 EEST - CODEX - Optional Support-Mail Channel
+- Owner reports Google Workspace availability for optional suite support mail; concrete mailbox/domain and send/receive operation NOT VERIFIED. Existing public contacts and Brevo configuration stay unchanged.
+- Information only, no new release blocker or mailbox/DNS/provider/secret change. Intended support address and a bounded setup scope remain to be specified if this option is selected.
