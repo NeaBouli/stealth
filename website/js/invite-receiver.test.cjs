@@ -138,9 +138,10 @@ function fakeDom() {
     const mk = (id) => (els[id] = { id, textContent: '', style: {}, attrs: {}, listeners: {}, href: undefined,
         addEventListener(t, fn) { this.listeners[t] = fn; }, removeAttribute(a) { delete this.attrs[a]; if (a === 'href') this.href = undefined; },
         setAttribute(a, v) { this.attrs[a] = v; } });
-    ['title', 'subtitle', 'secureId', 'openAppLink', 'downloadLink', 'playLink'].forEach(mk);
+    ['title', 'subtitle', 'secureId', 'openAppLink', 'downloadLink', 'playLink', 'noteLead', 'noteHave', 'noteNewWrap', 'noteNew'].forEach(mk);
     const label = { textContent: '' };
-    return { els, doc: { title: '', getElementById: (i) => els[i], querySelector: () => label }, label };
+    const doc = { title: '', getElementById: (i) => els[i], querySelector: () => label };
+    return { els, doc, label };
 }
 
 test('render: bundle sets href to the exact validated link; fixed download hosts', () => {
@@ -153,6 +154,29 @@ test('render: bundle sets href to the exact validated link; fixed download hosts
     assert.equal(els.downloadLink.href, 'https://chameleon.stealthx.tech/');
     els.openAppLink.listeners.click({ preventDefault() {} });
     assert.equal(win.location, BUNDLE);
+    assert.equal(els.noteLead.textContent, 'Already have Chameleon?');
+    assert.equal(els.noteHave.textContent, 'Tap "Open in Chameleon" above.');
+    assert.doesNotMatch(els.noteNew.textContent + els.subtitle.textContent, /SecureCall|Contacts|paste/);
+});
+
+test('render: SecureCall state keeps SecureCall helper copy', () => {
+    const { els, doc } = fakeDom();
+    render(doc, { location: at('/invite/', '?id=abc') });
+    assert.equal(els.noteLead.textContent, 'Already have SecureCall?');
+    assert.match(els.noteNew.textContent, /Add Contact/);
+});
+
+test('render: invalid and empty states use generic copy and hide download buttons', () => {
+    for (const search of ['?app=chameleon&link=nope', '']) {
+        const { els, doc, label } = fakeDom();
+        render(doc, { location: at('/invite/', search) });
+        const all = [doc.title, label.textContent, els.title.textContent, els.subtitle.textContent, els.noteLead.textContent, els.noteHave.textContent].join('|');
+        assert.doesNotMatch(all, /SecureCall|Chameleon|SecureChat/, search);
+        assert.equal(els.downloadLink.style.display, 'none');
+        assert.equal(els.playLink.style.display, 'none');
+        assert.equal(els.noteNewWrap.style.display, 'none');
+        assert.equal(els.openAppLink.href, undefined);
+    }
 });
 
 test('render: invalid input exposes no link and echoes nothing', () => {
@@ -177,7 +201,7 @@ test('both pages: no-referrer, shared controller, no inline invite parsing, no s
     for (const [page, src] of Object.entries(pages)) {
         const html = readFileSync(join(websiteRoot, page), 'utf8');
         assert.match(html, /<meta name="referrer" content="no-referrer">/, page);
-        assert.ok(html.includes('<script src="' + src + '"></script>'), page);
+        assert.ok(html.includes('<script src="' + src + '?v=20261010"></script>'), page);
         assert.doesNotMatch(html, /URLSearchParams|location\.(search|hash)|localStorage|sessionStorage|<img|\.href\s*\+?=/, page);
         for (const m of html.matchAll(/target="_blank"[^>]*/g)) assert.match(m[0], /noreferrer/, page);
         assert.doesNotMatch(html, /<script[^>]+src="https?:/, page);

@@ -128,6 +128,11 @@
 
     function render(doc, win) {
         var $ = function (id) { return doc.getElementById(id); };
+        var setNote = function (appName, fresh) {
+            $('noteLead').textContent = 'Already have ' + appName + '?';
+            $('noteHave').textContent = 'Tap "Open in ' + appName + '" above.';
+            $('noteNew').textContent = fresh;
+        };
         var open = $('openAppLink');
         var result = parseInvite(win.location);
         var go = function (target, fallback) {
@@ -152,6 +157,7 @@
             $('downloadLink').href = info.download;
             $('playLink').textContent = info.name + ' release page';
             $('playLink').href = info.download;
+            setNote(info.name, 'Download it first, then open this invitation link again.');
             open.href = result.link;
             go(result.link, info.download);
         } else if (result.kind === 'securecall') {
@@ -165,6 +171,7 @@
             } else {
                 doc.title = 'SecureCall Invitation from ' + result.id;
             }
+            setNote('SecureCall', 'Download the app, then go to Contacts \u2192 Add Contact \u2192 paste the ID above.');
             var scheme = 'securecall://add-contact?id=' + encodeURIComponent(result.id) + nameParam;
             var https = 'https://stealthx.tech/invite/?id=' + encodeURIComponent(result.id) + nameParam;
             open.href = scheme;
@@ -172,10 +179,18 @@
         } else {
             var invalid = result.kind === 'invalid';
             $('secureId').textContent = invalid ? 'Invalid invitation link' : 'No ID in URL';
-            $('title').textContent = invalid ? 'Invitation not recognized' : 'SecureCall';
+            $('title').textContent = invalid ? 'Invitation not recognized' : 'Invitation';
             $('subtitle').textContent = invalid
                 ? 'This invitation link is malformed or unsupported. Ask the sender for a new invitation.'
-                : 'End-to-end encrypted calls. No phone number needed.';
+                : 'No invitation was found in this link. Open the invitation link you received.';
+            doc.title = 'Invitation';
+            doc.querySelector('.id-label').textContent = 'Invitation';
+            $('noteLead').textContent = 'Need an invitation?';
+            $('noteHave').textContent = 'Ask the sender to share it again.';
+            $('noteNewWrap').style.display = 'none';
+            $('downloadLink').style.display = 'none';
+            $('playLink').style.display = 'none';
+            open.textContent = 'Open app';
             open.removeAttribute('href');
             open.setAttribute('aria-disabled', 'true');
             open.style.opacity = '0.4';
