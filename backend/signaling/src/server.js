@@ -1,4 +1,5 @@
 const express = require("express");
+const { logIp } = require("./security/log_ip");
 const http = require("http");
 const WebSocket = require("ws");
 const crypto = require("crypto");
@@ -336,7 +337,7 @@ const wss = new WebSocket.Server({
     recent.push(now);
     ipConnectionAttempts.set(ip, recent);
     if (recent.length > MAX_WS_ATTEMPTS_PER_IP) {
-      console.warn("[SIGNAL] Throttled IP:", ip, `(${recent.length} attempts in ${WS_ATTEMPT_WINDOW_MS}ms)`);
+      console.warn("[SIGNAL] Throttled IP:", logIp(ip), `(${recent.length} attempts in ${WS_ATTEMPT_WINDOW_MS}ms)`);
       return done(false, 429, "Too many connection attempts");
     }
 
