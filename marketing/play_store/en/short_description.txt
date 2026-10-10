@@ -1,1 +1,1 @@
-End-to-end encrypted voice calls. Zero metadata. Source available code.
+Encrypted one-to-one voice calls through a SecureID. Source available.

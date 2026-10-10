@@ -167,7 +167,7 @@ class PurchaseResultActivity : AppCompatActivity() {
         ws.activateCode(code) { success, tier, error ->
             runOnUiThread {
                 if (success && tier.isNotEmpty()) {
-                    TierManager.setActivatedTier(this, tier)
+                    TierManager.applyTier(this)
                     Toast.makeText(this, "Premium activated! Restarting…", Toast.LENGTH_LONG).show()
                     // Restart app
                     android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({

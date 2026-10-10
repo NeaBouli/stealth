@@ -16,7 +16,8 @@
 
 ## Fill in Store Listing
 - [ ] App name: SecureCall — Encrypted Calls
-- [ ] Short description (80 chars): End-to-end encrypted voice calls. No phone number. Zero metadata. Open source.
+- [ ] Short description (80 chars): use the reviewed text from
+      `fastlane/metadata/android/en-US/short_description.txt`; do not claim zero metadata
 - [ ] Full description: (from docs/PLAY_STORE_LISTING.md)
 - [ ] App icon: 512x512 PNG (scale from mipmap-xxxhdpi or logo.png)
 - [ ] Feature graphic: 1024x500 PNG (create from og-image)
@@ -26,22 +27,17 @@
 
 ## Pricing & In-App Products
 - [ ] App: free
-- [ ] Create In-App Products:
-  - `securecall_pro_monthly`: €3.49/month (Subscription)
-  - `securecall_pro_yearly`: €34.99/year (Subscription)
-  - `securecall_premium_monthly`: €4.99/month (Subscription)
-  - `securecall_premium_yearly`: €49.99/year (Subscription)
-  - `securecall_pro_lifetime`: $15 one-time (Managed product)
-  - `securecall_premium_lifetime`: $25 one-time (Managed product)
-  - `securecall_premium_activation_code`: current seller price is €25 one-time; verify the Play product price before publishing
+- [ ] Keep every paid Play product inactive while `BILLING_ENABLED=false`.
+- [ ] Before creating or activating any product, record matching PRODUCT_READY and
+      VLABS FINANCE_READY for the exact `securecall-play-v1` catalog and release.
+- [ ] Use `docs/GOOGLE_PLAY_BILLING_SETUP.md` for candidate product identifiers.
+- [ ] Do not reuse the separate direct-sale/IFR offer prices as Google Play prices
+      without a version-bound Play catalog approval.
 
 ## Privacy & Compliance
 - [ ] Privacy Policy URL: https://stealthx.tech/privacy.html
-- [ ] Data Safety questionnaire:
-  - No personal data collected
-  - No data shared with third parties
-  - Data encrypted in transit (yes)
-  - Users can request data deletion (yes — stealth-delete)
+- [ ] Re-verify every Data Safety answer against the exact AAB, bundled SDKs,
+      permissions, telemetry and current backend behavior; do not reuse historical answers.
 - [ ] Ads declaration: Free tier has AdMob ads
 
 ## Contact Details

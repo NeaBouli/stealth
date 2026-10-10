@@ -5,11 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.net.VpnService
 import androidx.core.content.ContextCompat
+import com.securecall.app.config.TierManager
 
 internal object PremiumVpnController {
     fun permissionIntent(context: Context): Intent? = VpnService.prepare(context)
 
     fun start(context: Context) {
+        if (!TierManager.isPremium(context)) return
         if (!VpnConfigStore.hasConfig(context)) return
         VpnConfigStore.setEnabled(context, true)
         ContextCompat.startForegroundService(

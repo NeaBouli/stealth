@@ -40,7 +40,9 @@ jobs:
           node --check website/js/ifr-checkout.js
           node --test \
             website/js/ifr-checkout.test.cjs \
-            website/js/no-google-analytics.test.cjs
+            website/js/no-google-analytics.test.cjs \
+            website/js/custom-id-gate.test.cjs \
+            website/js/product-truth.test.cjs
 
       - name: Run YAML Lint
         run: yamllint .
@@ -78,6 +80,9 @@ jobs:
 
       - name: Run signaling tests
         run: npm test
+
+      - name: Test private tester staging tools
+        run: python3 -B -m unittest discover -s scripts -p 'test_*tester_staging.py' -v
 
   rust-core:
     name: Rust Core Crypto
