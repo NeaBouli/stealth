@@ -6238,3 +6238,9 @@ Open next:
 
 ## 2026-10-10 03:29 EEST - CODEX - Exact Queue CI Complete
 - Draft145 unchangeded77a747a3c426d8380196d5f8814cefd3dadd5a: all10 hosted jobs SUCCESS, including Android and API24/API36; bot SUCCESS is skipped Draft review, not approval. One corrected read-only wait succeeded after a local network error, no rerun. Own preview archive1206 verified files complete; source/evidence preserved. Codex Security NOT RUN, conditional admin prerequisite and manual/runtime/release/readiness gates still HOLD; no main merge or rollout.
+
+## 2026-10-10 03:37 EEST - CODEX - Scoped Owner Scan And Admin Merge Decision
+- Owner decision "Ja, mit Security-Scan" requests Codex Security setup/run and conditionally authorizes admin squash/linear merges ONLY #138 -> #137 -> #134 -> #136 on green exact heads. Stop integration on any scan finding; #119/#120/#144/#143 and preview145 are excluded from merge authorization. Earlier setup-not-granted status is superseded; no additional spending or protection changes authorized.
+- Fresh read-only GitHub checks confirm all four heads unchanged, OPEN and SUCCESS; main unchanged. Exact combined preview145 ed77a747a3c426d8380196d5f8814cefd3dadd5a remains green. Existing source/test acceptance reused, no duplicate implementation or rerun.
+- Codex Security actual metadata installed=false; setup entry offered, not installed/connected by that action. Scan NOT RUN, no code transferred, no merge or rollout. Required next step is completing the service connection, then verifying bounded public-code scope/exclusions and EUR0 additional-cost ceiling before the actual scan. CI Security Summary is not a Codex Security scan.
+- PLAN and tracking ticket updated; existing specialist/device owners retained. Manual/runtime/migration/product/release gates remain open; financial coordination remains separately with the VLABS operator.
