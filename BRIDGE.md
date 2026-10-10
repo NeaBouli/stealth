@@ -6367,3 +6367,11 @@ Open next:
 ## 2026-10-10 14:50 EEST - CODEX - Bounded Suite Source Checkpoint
 - SecureChat Draft48 ecce7bbb77ba5a299b113c3b72dc811cc76dbd1a has exact45 ancestry and five-path8+/7- correction; initial wrong-base result corrected before integration. Lead ancestry/full diff and bounded YAML/consistency checks accepted, no app/protocol/device or full CI/scan claim. Parent/frontend/audit/release gates remain, no main merge/deploy/activation.
 - Completed own trees228/217files verified archived, reports/source/history retained, unrelated work preserved. Financial coordination remains separate through the VLABS operator.
+
+## 2026-10-10 14:55 EEST - CODEX - Scoped Candidate Scan Authorized
+- Owner approves the official Codex Security scan of SecureChat46 c2f49945627ddbdead344ce305eb0391e9912e5e: published diff and direct code neighbors only, ChatGPT login, zero additional cost, all private material excluded. Unchanged candidate/four hostedSUCCESS verified; clean separate read-only target planned.
+- Scan not yet executed; existing tests/review retained without repetition. Draft/required approval and runtime/artifact/release gates remain; no merge, deployment, configuration edit or activation authorized. Financial coordination stays separately operator-owned.
+
+## 2026-10-10 15:08 EEST - CODEX - Official Candidate Scan Completed
+- Official SecureChat46 scan completed/sealed on unchangedc2f49945627ddbdead344ce305eb0391e9912e5e vs429bbe7e5b808122591a0a7d07f765a7c202cc2c, all13 changed paths and direct neighbors reviewed; preflight3/3PASS. One LOW static finding, runtime reproductionNOT RUN; details/acceptance remain private. No duplicate public vulnerability ticket, build/device run or source/configuration edit.
+- Merge HOLD per owner instruction; Draft/required approval, hardware/release-artifact and product gates remain. Bounded remediation proposal recorded for existing owner, not started or merged/deployed. Financial coordination remains separately operator-owned.
