@@ -38,6 +38,22 @@ function newSeedActivationCodes(loaded, seedCodes) {
     .filter(entry => entry && !existing.has(entry.code));
 }
 
+// STX-09: SHA-256 of the activation codes that were tracked in the public repository
+// (backend/signaling/data/activation_codes.json until #159). Stored as hashes so the
+// codes themselves are not republished.
+const PUBLISHED_CODE_HASHES = new Set([
+  "b6ef99d8186760d842e2e1138a4ce791e17689675e8f2cd47d272e00dd0abf99",
+  "21c2596400c260368ddf09a6152786e6dada1d20761cd259a3ae912d79373fbc",
+  "d5d63e2001532d2018f38a9eaab6d01a45f231ae8aa9f43f1471b94d368a9000",
+]);
+const PUBLISHED_REVOKED_AT = "2026-10-11T00:00:00.000Z";
+
+function isPublishedCode(code) {
+  if (typeof code !== "string") return false;
+  const normalized = code.trim().toUpperCase();
+  return PUBLISHED_CODE_HASHES.has(require("crypto").createHash("sha256").update(normalized).digest("hex"));
+}
+
 function loadActivationCodes() {
   let loaded = [];
 
@@ -84,8 +100,16 @@ function loadActivationCodes() {
     console.warn("[ACTIVATION] Could not load sold_codes.json:", e.message);
   }
 
+  // Codes that were published in the public repository are never honoured, from any
+  // source (file, env seed, sold store); they load as revocation tombstones.
+  const published = loaded.map(entry => (isPublishedCode(entry?.code)
+    ? { code: String(entry.code).trim().toUpperCase(), revoked: true, revokedAt: entry.revokedAt || PUBLISHED_REVOKED_AT }
+    : entry));
+  const revokedCount = published.filter((entry, i) => entry !== loaded[i]).length;
+  if (revokedCount > 0) console.warn(`[ACTIVATION] Revoked ${revokedCount} publicly exposed activation code(s)`);
+
   // Use .splice() to mutate in-place — preserves all stale references to this array
-  activationCodes.splice(0, activationCodes.length, ...loaded);
+  activationCodes.splice(0, activationCodes.length, ...published);
 }
 
 function saveActivationCodes() {
@@ -121,6 +145,7 @@ function revokeActivationCode(code, persist = saveActivationCodes) {
 }
 
 module.exports = {
+  isPublishedCode,
   activationCodes,
   loadActivationCodes,
   saveActivationCodes,
