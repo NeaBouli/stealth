@@ -10,6 +10,23 @@ const {
   verifySignature,
 } = require("../../security/identity_protocol");
 
+// Rate-limit key for a peer address: IPv4 as-is, IPv6 aggregated to its /64.
+function networkKey(ip) {
+  if (typeof ip !== "string" || ip.length === 0) return null;
+  const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i.exec(ip);
+  if (mapped) return mapped[1];
+  if (!ip.includes(":")) return ip;
+  // Expand to eight hextets and keep the first four (the /64 a client controls).
+  const [head, tail = ""] = ip.toLowerCase().split("%")[0].split("::");
+  const left = head ? head.split(":") : [];
+  const right = ip.includes("::") && tail ? tail.split(":") : [];
+  if (right.some(part => part.includes("."))) return ip;
+  const hextets = ip.includes("::")
+    ? [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill("0"), ...right]
+    : left;
+  return `${hextets.slice(0, 4).map(part => part.replace(/^0+(?=.)/, "")).join(":")}::/64`;
+}
+
 module.exports = function registerHandlers(ctx) {
   const {
     clients, clientIds, phoneNumbers, phoneHashes, fcmTokens,
@@ -21,6 +38,25 @@ module.exports = function registerHandlers(ctx) {
   const nowSeconds = ctx.nowSeconds || (() => Math.floor(Date.now() / 1000));
   const challenges = new Map();
   const maxChallengesPerIp = 4;
+  // #144 review F6: migration challenges trigger a push to a legacy device, so they get
+  // their own small global budget and a per-client cooldown; ordinary proofs expire fast.
+  const maxChallenges = 8192;
+  const maxMigrationChallenges = 1024;
+  const challengeTtlSeconds = 60;
+  const migrationChallengeTtlSeconds = 300;
+  // Cooldown per (legacy id, claimed identity) stops reconnect loops without letting a
+  // claimant lock the real owner out; the per-network budget bounds push spam overall.
+  const migrationPushCooldownSeconds = 60;
+  const migrationPushWindowSeconds = 600;
+  const maxMigrationPushesPerNetwork = 5;
+  const migrationPushes = new Map();
+  const migrationPushBudget = new Map();
+  // #144 review F1: creating identities is the only way to grow the registry, so new
+  // identities are budgeted per network (IPv4 address or IPv6 /64).
+  const newIdentityWindowSeconds = 3600;
+  const maxNewIdentitiesPerNetwork = 10;
+  const maxTrackedNetworks = 65536;
+  const newIdentities = new Map();
   const closeWatched = new WeakSet();
 
   function legacyTransitionActive() {
@@ -115,6 +151,36 @@ module.exports = function registerHandlers(ctx) {
     });
   }
 
+  function ipKeyFor(connId) {
+    return networkKey(clients.get(connId)?.ip) || `connection:${connId}`;
+  }
+
+  function pruneWindows() {
+    const now = nowSeconds();
+    for (const [key, entry] of newIdentities) {
+      if (now - entry.windowStart >= newIdentityWindowSeconds) newIdentities.delete(key);
+    }
+    for (const [pair, sentAt] of migrationPushes) {
+      if (now - sentAt >= migrationPushCooldownSeconds) migrationPushes.delete(pair);
+    }
+    for (const [key, entry] of migrationPushBudget) {
+      if (now - entry.windowStart >= migrationPushWindowSeconds) migrationPushBudget.delete(key);
+    }
+  }
+
+  function newIdentityAllowed(ipKey) {
+    pruneWindows();
+    const entry = newIdentities.get(ipKey);
+    if (entry) return entry.count < maxNewIdentitiesPerNetwork;
+    return newIdentities.size < maxTrackedNetworks;
+  }
+
+  function recordNewIdentity(ipKey) {
+    const entry = newIdentities.get(ipKey);
+    if (entry) entry.count++;
+    else newIdentities.set(ipKey, { windowStart: nowSeconds(), count: 1 });
+  }
+
   function pruneChallenges() {
     const now = nowSeconds();
     for (const [id, pending] of challenges) {
@@ -130,19 +196,22 @@ module.exports = function registerHandlers(ctx) {
 
   function createChallenge(connId, fields, migration) {
     pruneChallenges();
-    const ipKey = clients.get(connId)?.ip || `connection:${connId}`;
+    const ipKey = ipKeyFor(connId);
     let pendingForIp = 0;
+    let pendingMigrations = 0;
     for (const pending of challenges.values()) {
       if (pending.ipKey === ipKey) pendingForIp++;
+      if (pending.migration) pendingMigrations++;
     }
-    if (challenges.size >= 1024 || pendingForIp >= maxChallengesPerIp) {
+    if (challenges.size >= maxChallenges || pendingForIp >= maxChallengesPerIp
+        || (migration && pendingMigrations >= maxMigrationChallenges)) {
       const error = new Error("identity_challenge_rate_limited");
       error.code = "identity_challenge_rate_limited";
       throw error;
     }
     const challengeId = crypto.randomUUID();
     const nonce = crypto.randomBytes(32).toString("base64url");
-    const expiresAt = nowSeconds() + 300;
+    const expiresAt = nowSeconds() + (migration ? migrationChallengeTtlSeconds : challengeTtlSeconds);
     const challenge = registrationTranscript({
       challengeId,
       requestedClientId: fields.requestedClientId,
@@ -180,6 +249,9 @@ module.exports = function registerHandlers(ctx) {
     if (resolved && resolved !== msg.identityId) return sendError(ws, "identity_alias_conflict");
     if (registered && registered.publicKey !== parsed.publicKeyBase64Url) {
       return sendError(ws, "identity_key_mismatch");
+    }
+    if (!registered && !newIdentityAllowed(ipKeyFor(connId))) {
+      return sendError(ws, "identity_challenge_rate_limited");
     }
 
     const fields = {
@@ -227,6 +299,15 @@ module.exports = function registerHandlers(ctx) {
       });
     }
 
+    pruneWindows();
+    const pushPair = `${msg.clientId}\n${msg.identityId}`;
+    const pushNetwork = ipKeyFor(connId);
+    const budget = migrationPushBudget.get(pushNetwork);
+    if (migrationPushes.has(pushPair) || (budget && budget.count >= maxMigrationPushesPerNetwork)
+        || (!budget && migrationPushBudget.size >= maxTrackedNetworks)) {
+      return sendError(ws, "identity_challenge_rate_limited");
+    }
+
     let pending;
     try {
       pending = createChallenge(connId, {
@@ -237,6 +318,9 @@ module.exports = function registerHandlers(ctx) {
       return sendError(ws, error?.code === "identity_challenge_rate_limited"
         ? error.code : "identity_service_unavailable");
     }
+    migrationPushes.set(pushPair, nowSeconds());
+    if (budget) budget.count++;
+    else migrationPushBudget.set(pushNetwork, { windowStart: nowSeconds(), count: 1 });
 
     Promise.resolve(fcm.sendIdentityMigrationChallenge(token, {
       challengeId: pending.challengeId,
@@ -314,6 +398,7 @@ module.exports = function registerHandlers(ctx) {
       }
       return sendError(ws, "identity_service_unavailable");
     }
+    if (binding.createdIdentity) recordNewIdentity(pending.ipKey);
 
     if (pending.migration && pending.requestedClientId !== pending.identityId) {
       fcmTokens.delete(pending.requestedClientId);
@@ -403,3 +488,5 @@ module.exports = function registerHandlers(ctx) {
     },
   };
 };
+
+module.exports.networkKey = networkKey;
