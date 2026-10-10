@@ -3,6 +3,7 @@
 <head>
     <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
     <meta charset="UTF-8">
+    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureCall Invitation</title>
     <meta name="description" content="Accept your SecureCall invitation. Join the encrypted communication network with end-to-end encrypted calls.">
@@ -48,10 +49,10 @@
         <a id="openAppLink" href="#" class="btn btn-primary" style="background:#00E676;border-color:#00E676;color:#000">
             Open in SecureCall
         </a>
-        <a id="downloadLink" href="https://github.com/NeaBouli/stealth/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">
+        <a id="downloadLink" href="https://github.com/NeaBouli/stealth/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
             Download SecureCall APK
         </a>
-        <a id="playLink" href="https://github.com/NeaBouli/stealth/releases/latest" target="_blank" rel="noopener" class="btn btn-outline">
+        <a id="playLink" href="https://github.com/NeaBouli/stealth/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
             GitHub Releases
         </a>
 
@@ -63,64 +64,6 @@
         </p>
     </div>
 
-    <script>
-    (function() {
-        var path = window.location.pathname;
-        var parts = path.split('/').filter(Boolean);
-        var params = new URLSearchParams(window.location.search);
-        var secureId = params.get('id');
-        if (!secureId && parts.length >= 2 && parts[0] === 'invite') {
-            secureId = parts[1];
-        }
-        // Fallback: read from hash (set by 404.html SPA router)
-        if (!secureId && window.location.hash) {
-            secureId = window.location.hash.substring(1);
-        }
-
-        if (secureId) {
-            document.getElementById('secureId').textContent = secureId;
-            // Read optional name from URL params
-            var senderName = params.get('name');
-            if (senderName) {
-                document.getElementById('title').textContent = senderName + ' invited you!';
-                document.getElementById('subtitle').textContent = 'Join ' + senderName + ' on SecureCall for encrypted calls. No phone number needed.';
-                document.title = 'SecureCall Invitation from ' + senderName;
-            } else {
-                document.title = 'SecureCall Invitation from ' + secureId;
-            }
-            // Store for deferred deep link
-            try { localStorage.setItem('pendingInviteSecureId', secureId); } catch(e) {}
-            // Set deep link for "Open in SecureCall" button (custom scheme + fallback)
-            var nameParam = senderName ? '&name=' + encodeURIComponent(senderName) : '';
-            var customSchemeLink = 'securecall://add-contact?id=' + secureId + nameParam;
-            var httpsLink = 'https://stealthx.tech/invite/?id=' + encodeURIComponent(secureId) + (senderName ? '&name=' + encodeURIComponent(senderName) : '');
-            document.getElementById('openAppLink').href = customSchemeLink;
-            document.getElementById('openAppLink').addEventListener('click', function(e) {
-                e.preventDefault();
-                window.location = customSchemeLink;
-                // Fallback: if app not installed, redirect to download after 2s
-                setTimeout(function() { window.location = httpsLink; }, 2000);
-            });
-            // Add referrer param to Play Store link
-            var playLink = document.getElementById('playLink');
-            playLink.href += '&referrer=' + encodeURIComponent('invite_' + secureId);
-        } else {
-            document.getElementById('secureId').textContent = 'No ID in URL';
-            document.getElementById('title').textContent = 'SecureCall';
-            document.getElementById('subtitle').textContent = 'End-to-end encrypted calls. No phone number needed.';
-        }
-    })();
-
-    function copyId() {
-        var id = document.getElementById('secureId').textContent;
-        if (id && id !== 'loading...' && id !== 'No ID in URL') {
-            navigator.clipboard.writeText(id).then(function() {
-                var label = document.getElementById('copiedLabel');
-                label.classList.add('show');
-                setTimeout(function() { label.classList.remove('show'); }, 2000);
-            });
-        }
-    }
-    </script>
+    <script src="../js/invite-receiver.js"></script>
 </body>
 </html>
