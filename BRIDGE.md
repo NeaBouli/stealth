@@ -6221,3 +6221,8 @@ Open next:
 ## 2026-10-10 03:01 EEST - CODEX - CI Scope And Runtime Wait Recorded
 - Co-dev reports120570829ef six green statuses, matching the earlier exact-head rollup: Android, Signaling, Rust, Lint, dependency-configuration check and bot. Full backend success reported within Signaling; no fresh local execution inferred. Main-targeted instrumentation/security/dependency jobs did not run for this child PR; source verdict remains CHANGES REQUIRED.
 - Read-only workflow inspection confirms a Draft combined-candidate PR targeting main can trigger the missing matrix before any main merge, subject to path filters and available CI. This route is PLANNED/NOT RUN, not a bypass or release.136 API34+ is reported waiting for emulator boot under shared load; no runtime PASS, second emulator or process interruption.
+
+## 2026-10-10 03:03 EEST - CODEX - Duplicate120 Source Claim Released
+- Terminal Claude confirms120570829ef superseded and reports no further source pushes. Preserve both draft histories; no branch/PR deletion, process interruption or second implementation.136 runtime remains exclusively Claude-owned.
+- Live canonical144 is e9de0a2882524d9a40d5e06b438ae9ef2f789e21, not the earlierf590e277 checkpoint. Four CI jobs plus bot SUCCESS; later reviewed corrections/tests retained, so current120 and144 are not byte-equivalent. Existing exact source-review evidence reused without another review/test run.
+- PLAN now explicitly reconciles latest active owner claims and immutable heads before future topic-writer dispatch. Global Fleet unchanged; full combined matrix/scan/runtime/migration and separate release/readiness gates stay open. No main merge or release action.
