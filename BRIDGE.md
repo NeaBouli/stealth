@@ -6379,3 +6379,7 @@ Open next:
 ## 2026-10-10 15:24 EEST - CODEX - SecureChat Candidate Fix Check
 - SecureChat46 changed frozen0e5b2499b2be6d76e81b7e79c72672cf9ca970ab passed targeted independent static fix verification; retained author XML23/23 PASS, no rerun. Functional/changed-dialog visual follow-up remains with the original owner; hosted Build/Test/API36 pending, no duplicate writer/device/build.
 - Official new-range delta scan NOT RUN pending scoped owner answer; old sealed scan unchanged. Draft/required approval, runtime/artifact/product gates remain HOLD; no merge/deploy/release/activation. Financial coordination remains separately operator-owned.
+
+## 2026-10-10 15:45 EEST - CODEX - SecureChat Scoped Acceptance Update
+- SecureChat46 frozen9b117bd00c68d2a27b3a52166ad859e86b83066f targeted independent review PARTIAL; original security correction retained, bounded functional/UI follow-up returned to the sole source owner. Author XML24/24 PASS retained/not rerun, all8 images inspected but tablet evidence incomplete; release-artifact gate open.
+- Exact-head build/instrumentation pending, Draft/required review; new-range scan NOT RUN pending scoped owner answer. Prior sealed scan unchanged, no duplicate build/device/implementation or merge/deploy/release/activation. Financial coordination remains separately operator-owned.
