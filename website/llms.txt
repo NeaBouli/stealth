@@ -57,7 +57,7 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 - Encryption: XChaCha20-Poly1305 (AEAD)
 - Audio codec: Opus 48kHz
 - Transport: WebRTC peer-to-peer DataChannel
-- Signaling: WebSocket (Node.js/Express on Railway)
+- Signaling: WebSocket (Node.js/Express on Hetzner)
 - VPN: Play edition has no VPN service and shows active system-VPN routing; direct Premium APK can optionally run a locally configured, app-only WireGuard tunnel after Android consent
 - Billing: Google Play Billing Library 8.2.1
 - Push: Firebase Cloud Messaging
@@ -70,13 +70,13 @@ who want encrypted calls WITHOUT requiring a phone number or personal data.
 
 ## Current Version
 - Direct APK: current published release remains linked from GitHub Releases
-- Next candidate: v1.0.50 / versionCode 78017; Google Play compliance replacement v1.0.49 / versionCode 78016 remains under review
+- Google Play: compliance replacement v1.0.49 / versionCode 78016 is live; next candidate: v1.0.50 / versionCode 78017
 - Latest candidate: Billing v8.2.1, target/compile SDK 36, edge-to-edge handling, Android 15+ 16KB native page-size support
 
 ## Company
 - Vendetta Labs — Kalamata 24100, Greece (EU)
 - GDPR-oriented data minimization; no call content is stored, while limited routing, entitlement, billing and legal records are handled as described in the privacy policy
-- Contact: GitHub Issues only (no personal support due to anonymity commitment)
+- Contact: GitHub Issues, the contact form on the Impressum page, or the address listed in the privacy policy
 - Website: stealthx.tech
 - Twitter/X: @secureslot
 
