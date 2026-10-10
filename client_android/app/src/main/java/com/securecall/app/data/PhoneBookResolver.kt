@@ -58,56 +58,61 @@ object PhoneBookResolver {
     }
 
     /**
-     * Resolve a caller's display name using all available sources, in priority order:
-     * 1. Android phone book (by phone number)
-     * 2. SecureCall internal contacts (by clientId)
-     * 3. SecureCall internal contacts (by phone number)
-     * 4. Raw phone number (if available)
-     * 5. Raw clientId (last resort)
+     * Resolve a caller's display name.
+     *
+     * For a SecureID caller ([IdentityProtocol.isDirectClientId]) the name comes only from
+     * contacts bound to that SecureID (and the phone book entry of the number stored in that
+     * contact). The caller-supplied [phoneNumber] is not part of the signed invite and is
+     * never used to pick a name, so a caller cannot borrow a phone-book name (#144 review F3).
+     *
+     * For phone-only records (no SecureID, e.g. older call history) the phone book and
+     * phone-number contacts are used as before.
      */
     fun resolveCallerName(
         context: Context,
         clientId: String,
         phoneNumber: String = ""
+    ): String = pickCallerName(
+        clientId = clientId,
+        phoneNumber = phoneNumber,
+        contacts = ContactRepository.getAll(context),
+        phoneBook = { resolvePhoneNumber(context, it) },
+        phoneMatches = { a, b -> PhoneUtils.matches(a, b, context) }
+    )
+
+    /** Pure selection logic behind [resolveCallerName]; sources are injected for tests. */
+    internal fun pickCallerName(
+        clientId: String,
+        phoneNumber: String,
+        contacts: List<Contact>,
+        phoneBook: (String) -> String?,
+        phoneMatches: (String, String) -> Boolean
     ): String {
-        // 1. Try Android phone book first (primary source)
-        if (phoneNumber.isNotEmpty()) {
-            val phoneBookName = resolvePhoneNumber(context, phoneNumber)
-            if (phoneBookName != null) return phoneBookName
-        }
-
-        // 2-3. Try SecureCall internal contacts
-        val contacts = ContactRepository.getAll(context)
-
-        // 2a. By SecureID (exact match on phoneOrId)
-        val contactByClientId = contacts.find { it.phoneOrId == clientId }
-        if (contactByClientId != null && contactByClientId.name.isNotBlank()
-            && contactByClientId.name != clientId) return contactByClientId.name
-
-        // 2b. By SecureID in secureId field (contact saved by phone, secureId linked later)
         if (IdentityProtocol.isDirectClientId(clientId)) {
-            val contactBySecureId = contacts.find { it.secureId == clientId }
-            if (contactBySecureId != null && contactBySecureId.name.isNotBlank()) {
-                // BUG-013: Also try phone book with this contact's phone number
-                val phoneFromContact = contactBySecureId.phoneOrId
-                if (!IdentityProtocol.isDirectClientId(phoneFromContact)) {
-                    val phoneBookName = resolvePhoneNumber(context, phoneFromContact)
-                    if (phoneBookName != null) return phoneBookName
+            // By SecureID stored as the contact's primary id
+            val byId = contacts.find { it.phoneOrId == clientId }
+            if (byId != null && byId.name.isNotBlank() && byId.name != clientId) return byId.name
+
+            // By SecureID linked to a phone contact (BUG-013: prefer that number's phone-book name)
+            val bySecureId = contacts.find { it.secureId == clientId }
+            if (bySecureId != null && bySecureId.name.isNotBlank()) {
+                val storedPhone = bySecureId.phoneOrId
+                if (!IdentityProtocol.isDirectClientId(storedPhone)) {
+                    phoneBook(storedPhone)?.let { return it }
                 }
-                return contactBySecureId.name
+                return bySecureId.name
             }
+            return clientId
         }
 
-        // 3. By normalized phone number
         if (phoneNumber.isNotEmpty()) {
-            val contactByPhone = contacts.find {
-                !IdentityProtocol.isDirectClientId(it.phoneOrId) &&
-                PhoneUtils.matches(it.phoneOrId, phoneNumber, context)
+            phoneBook(phoneNumber)?.let { return it }
+            val byPhone = contacts.find {
+                !IdentityProtocol.isDirectClientId(it.phoneOrId) && phoneMatches(it.phoneOrId, phoneNumber)
             }
-            if (contactByPhone != null && contactByPhone.name.isNotBlank()) return contactByPhone.name
+            if (byPhone != null && byPhone.name.isNotBlank()) return byPhone.name
+            return phoneNumber
         }
-
-        // 4-5. Fallback to raw phone or clientId
-        return if (phoneNumber.isNotEmpty()) phoneNumber else clientId
+        return clientId
     }
 }
