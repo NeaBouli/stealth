@@ -505,10 +505,26 @@ function setupRoutes(app, activationCodesRef, deps = {}) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   // Rate limit: 5 per IP per 10 minutes
+  // STX-17: hard cap on tracked IPs — prune stale windows first, then evict
+  // the oldest entry. The per-IP limit is unchanged.
+  const CHECKOUT_RL_MAX_KEYS = (() => {
+    const parsed = parseInt(process.env.STRIPE_CHECKOUT_RL_MAX_KEYS || "", 10);
+    if (!Number.isFinite(parsed)) return 10000;
+    return Math.min(Math.max(parsed, 1), 1000000);
+  })();
   const checkoutLimits = new Map();
   function checkoutRL(req, res, next) {
     const ip = req.ip || req.connection.remoteAddress;
     const now = Date.now();
+    if (!checkoutLimits.has(ip) && checkoutLimits.size >= CHECKOUT_RL_MAX_KEYS) {
+      for (const [key, list] of checkoutLimits) {
+        if (list.length === 0 || now - list[list.length - 1] > 600000) checkoutLimits.delete(key);
+      }
+      if (checkoutLimits.size >= CHECKOUT_RL_MAX_KEYS) {
+        const oldest = checkoutLimits.keys().next();
+        if (!oldest.done) checkoutLimits.delete(oldest.value);
+      }
+    }
     if (!checkoutLimits.has(ip)) checkoutLimits.set(ip, []);
     const a = checkoutLimits.get(ip);
     while (a.length > 0 && now - a[0] > 600000) a.shift();

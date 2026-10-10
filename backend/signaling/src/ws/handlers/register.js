@@ -3,6 +3,15 @@
 const crypto = require("crypto");
 const WebSocket = require("ws");
 
+// STX-17: hard cap on tracked rejected clientIds. The 60s sweep in server.js
+// TTL-prunes entries; between sweeps a flood of unique clientIds must not grow
+// the map without bound — evict the oldest entry (log-throttle state only).
+const REJECTION_TRACKER_MAX = (() => {
+  const parsed = parseInt(process.env.REJECTION_TRACKER_MAX || "", 10);
+  if (!Number.isFinite(parsed)) return 10000;
+  return Math.min(Math.max(parsed, 1), 1000000);
+})();
+
 module.exports = function registerHandlers(ctx) {
   const {
     clients, clientIds, phoneNumbers, phoneHashes, fcmTokens,
@@ -35,6 +44,10 @@ module.exports = function registerHandlers(ctx) {
         const forkMode = (process.env.FORK_PROTECTION_MODE || "warn").toLowerCase();
         if (!clientSig || !allowed.includes(clientSig)) {
           if (forkMode === "enforce") {
+            if (!rejectionTracker.has(msg.clientId) && rejectionTracker.size >= REJECTION_TRACKER_MAX) {
+              const oldest = rejectionTracker.keys().next();
+              if (!oldest.done) rejectionTracker.delete(oldest.value);
+            }
             const tracker = rejectionTracker.get(msg.clientId) || { count: 0, firstSeen: Date.now(), lastLogged: 0 };
             tracker.count++;
             if (tracker.count === 1 || tracker.count % 50 === 0) {

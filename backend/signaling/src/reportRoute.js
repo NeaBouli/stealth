@@ -10,13 +10,35 @@ const rateLimitStore = new Map();
 const RATE_LIMIT_MAX = 3;       // max reports per IP
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in ms
 
+// STX-17: hard cap so a flood of distinct source IPs cannot grow the map
+// without bound. On a full map, expired windows are pruned first and the
+// oldest remaining entry is evicted (abuse signal is best-effort here).
+const RATE_LIMIT_MAX_KEYS = (() => {
+    const parsed = parseInt(process.env.REPORT_RATE_LIMIT_MAX_KEYS || "", 10);
+    if (!Number.isFinite(parsed)) return 10000;
+    return Math.min(Math.max(parsed, 1), 1000000);
+})();
+
 function getRateLimitKey(ip) {
     return `rl:${ip}`;
+}
+
+function pruneExpired(now) {
+    for (const [key, entry] of rateLimitStore) {
+        if (now - entry.windowStart > RATE_LIMIT_WINDOW) rateLimitStore.delete(key);
+    }
 }
 
 function checkRateLimit(ip) {
     const key = getRateLimitKey(ip);
     const now = Date.now();
+    if (!rateLimitStore.has(key) && rateLimitStore.size >= RATE_LIMIT_MAX_KEYS) {
+        pruneExpired(now);
+        if (rateLimitStore.size >= RATE_LIMIT_MAX_KEYS) {
+            const oldest = rateLimitStore.keys().next();
+            if (!oldest.done) rateLimitStore.delete(oldest.value);
+        }
+    }
     const entry = rateLimitStore.get(key);
 
     if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW) {

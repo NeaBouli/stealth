@@ -19,18 +19,59 @@ const SOLD_FILE = process.env.SOLD_CODES_FILE ||
   path.join(__dirname, "..", "..", "data", "sold_codes.json");
 const SOLD_LOCK_FILE = `${SOLD_FILE}.lock`;
 
+// Critical sections under the lock are short synchronous read/write cycles, so
+// a lock older than this is abandoned, not contested.
+const LOCK_STALE_MS = 60 * 1000;
+
+function isLockOwnerAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return Boolean(error && error.code === "EPERM");
+  }
+}
+
+// Reclaim only a demonstrably stale lock (pid-stamped owner dead, or older than
+// any real critical section). A fresh lock from a live owner stays busy.
+function clearStaleStoreLock() {
+  let stat;
+  let owner;
+  try {
+    stat = fs.statSync(SOLD_LOCK_FILE);
+    owner = fs.readFileSync(SOLD_LOCK_FILE, "utf8").trim();
+  } catch {
+    return false;
+  }
+  const pid = Number(owner.split(":")[0]);
+  const ageMs = Date.now() - stat.mtimeMs;
+  if (isLockOwnerAlive(pid) && ageMs < LOCK_STALE_MS) return false;
+  try {
+    fs.unlinkSync(SOLD_LOCK_FILE);
+    console.warn(`[SOLD-CODES] Cleared stale store lock (owner pid ${owner.split(":")[0] || "unknown"}, age ${Math.round(ageMs / 1000)}s)`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function acquireStoreLock() {
   fs.mkdirSync(path.dirname(SOLD_LOCK_FILE), { recursive: true, mode: 0o700 });
-  try {
-    const descriptor = fs.openSync(SOLD_LOCK_FILE, "wx", 0o600);
-    const ownerToken = crypto.randomBytes(16).toString("hex");
-    fs.writeFileSync(descriptor, `${process.pid}:${ownerToken}\n`, "utf8");
-    return { descriptor, ownerToken };
-  } catch (error) {
-    // Never reclaim automatically. Recovery is allowed only with every writer stopped.
-    if (error.code === "EEXIST") throw new Error("sold_code_store_busy");
-    throw error;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const descriptor = fs.openSync(SOLD_LOCK_FILE, "wx", 0o600);
+      const ownerToken = crypto.randomBytes(16).toString("hex");
+      fs.writeFileSync(descriptor, `${process.pid}:${ownerToken}\n`, "utf8");
+      return { descriptor, ownerToken };
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      // Recover from a crashed writer; a contested live lock still fails closed.
+      if (attempt === 0 && clearStaleStoreLock()) continue;
+      throw new Error("sold_code_store_busy");
+    }
   }
+  throw new Error("sold_code_store_busy");
 }
 
 function assertStoreLockOwned(lock) {

@@ -111,6 +111,36 @@ const WS_ATTEMPT_WINDOW_MS = envIntAtLeast("WS_ATTEMPT_WINDOW_MS", 60000, 60000)
 const MAX_WS_ATTEMPTS_PER_IP = envIntAtLeast("MAX_WS_ATTEMPTS_PER_IP", 2000, 2000);
 const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 
+// STX-17: hard caps for the in-memory rate-limit/attempt trackers. Values are
+// clamped like the other knobs; on a full map stale windows are pruned first,
+// then the policy is fail-closed (HTTP limiters) or oldest-first (WS/SIWE).
+function clampEnvInt(name, fallback, min, max) {
+  const parsed = parseInt(process.env[name] || "", 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, min), max);
+}
+const INVITE_RL_MAX_KEYS = clampEnvInt("INVITE_RATE_LIMIT_MAX_KEYS", 10000, 1, 1000000);
+const CHECKOUT_RL_MAX_KEYS = clampEnvInt("CHECKOUT_RATE_LIMIT_MAX_KEYS", 10000, 1, 1000000);
+const SIWE_CHALLENGE_MAX = clampEnvInt("SIWE_CHALLENGE_MAX", 10000, 1, 1000000);
+const IP_CONN_ATTEMPTS_MAX = clampEnvInt("IP_CONN_ATTEMPTS_MAX", 10000, 1, 1000000);
+const REJECTION_TRACKER_MAX = clampEnvInt("REJECTION_TRACKER_MAX", 10000, 1, 1000000);
+
+// Drop keys whose newest attempt fell out of the sliding window.
+function pruneIpAttemptMap(map, now, windowMs) {
+  for (const [key, list] of map) {
+    if (!Array.isArray(list) || list.length === 0 || now - list[list.length - 1] > windowMs) map.delete(key);
+  }
+}
+
+// Oldest-first eviction until the map fits the cap (Map order = insertion).
+function evictOldestBeyondCap(map, cap) {
+  while (map.size > cap) {
+    const oldest = map.keys().next();
+    if (oldest.done) break;
+    map.delete(oldest.value);
+  }
+}
+
 // --- App Setup ---
 const app = express();
 const requireAdmin = makeRequireAdmin(ADMIN_API_KEY, { getClientIp });
@@ -332,6 +362,12 @@ const wss = new WebSocket.Server({
     // radio handover, app update, and FCM wake-up. Keep this high enough for
     // several owned devices while still rejecting clear abuse.
     const now = Date.now();
+    // STX-17: bounded map — evict the oldest attempt list when full so a
+    // reconnect flood from rotating IPs cannot grow the map without bound.
+    if (!ipConnectionAttempts.has(ip) && ipConnectionAttempts.size >= IP_CONN_ATTEMPTS_MAX) {
+      const oldest = ipConnectionAttempts.keys().next();
+      if (!oldest.done) ipConnectionAttempts.delete(oldest.value);
+    }
     const attempts = ipConnectionAttempts.get(ip) || [];
     const recent = attempts.filter(t => now - t < WS_ATTEMPT_WINDOW_MS);
     recent.push(now);
@@ -510,9 +546,15 @@ app.get("/invite/:secureId", (req, res) => {
 });
 
 // Rate limit: 3 invite acceptances per IP per 10 minutes (H-04 fix)
+// STX-17: bounded map — prune stale windows, then fail closed for new IPs
+// while the map is full (mirrors billingVerificationRateLimit).
 function inviteRateLimit(req, res, next) {
   const ip = getClientIp(req);
   const now = Date.now();
+  if (inviteRateLimits.size >= INVITE_RL_MAX_KEYS) pruneIpAttemptMap(inviteRateLimits, now, 600000);
+  if (!inviteRateLimits.has(ip) && inviteRateLimits.size >= INVITE_RL_MAX_KEYS) {
+    return res.status(503).json({ error: "rate_limiter_capacity_reached" });
+  }
   if (!inviteRateLimits.has(ip)) inviteRateLimits.set(ip, []);
   const attempts = inviteRateLimits.get(ip);
   while (attempts.length > 0 && now - attempts[0] > 600000) attempts.shift();
@@ -668,6 +710,12 @@ setInterval(() => {
     if (recent.length === 0) ipConnectionAttempts.delete(ip);
     else ipConnectionAttempts.set(ip, recent);
   }
+  // STX-17: prune expired invite/checkout windows and enforce hard caps on
+  // the remaining trackers (oldest-first beyond the cap).
+  pruneIpAttemptMap(inviteRateLimits, now, 600000);
+  pruneIpAttemptMap(checkoutRateLimits, now, 600000);
+  evictOldestBeyondCap(rejectionTracker, REJECTION_TRACKER_MAX);
+  evictOldestBeyondCap(ipConnectionAttempts, IP_CONN_ATTEMPTS_MAX);
 }, 60000);
 
 // Manual address-only eligibility checks are retired. Browser checkout proves
@@ -783,6 +831,9 @@ app.post('/stripe/ifr-discount-challenge', checkoutRateLimit, (req, res) => {
     'Issued At: ' + issuedAt + '\n\n' +
     'Sign this message to prove wallet ownership. This does not transfer tokens or grant spending permission.';
 
+  // STX-17: bounded map — evict the oldest challenge when full (the TTL sweep
+  // in the 60s cleanup below stays the primary eviction path).
+  evictOldestBeyondCap(siweChallenges, SIWE_CHALLENGE_MAX - 1);
   siweChallenges.set(nonce, {
     deviceId: 'stripe-checkout',
     purpose: 'stripe_ifr_discount',
@@ -795,9 +846,15 @@ app.post('/stripe/ifr-discount-challenge', checkoutRateLimit, (req, res) => {
 });
 
 // Rate limit: 5 checkout requests per IP per 10 minutes
+// STX-17: bounded map — prune stale windows, then fail closed for new IPs
+// while the map is full (mirrors billingVerificationRateLimit).
 function checkoutRateLimit(req, res, next) {
   const ip = getClientIp(req);
   const now = Date.now();
+  if (checkoutRateLimits.size >= CHECKOUT_RL_MAX_KEYS) pruneIpAttemptMap(checkoutRateLimits, now, 600000);
+  if (!checkoutRateLimits.has(ip) && checkoutRateLimits.size >= CHECKOUT_RL_MAX_KEYS) {
+    return res.status(503).json({ error: "rate_limiter_capacity_reached" });
+  }
   if (!checkoutRateLimits.has(ip)) checkoutRateLimits.set(ip, []);
   const attempts = checkoutRateLimits.get(ip);
   while (attempts.length > 0 && now - attempts[0] > 600000) attempts.shift();

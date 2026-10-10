@@ -94,7 +94,12 @@ function savePendingActivations() {
     const obj = {};
     const now = Date.now();
     for (const [token, entry] of pendingActivations) {
-      if (now - entry.createdAt < PENDING_TTL_MS) obj[token] = entry;
+      if (now - entry.createdAt < PENDING_TTL_MS) {
+        obj[token] = entry;
+      } else {
+        // Drop expired tokens from memory too, not just from the file.
+        pendingActivations.delete(token);
+      }
     }
     writeJsonAtomic(PENDING_FILE, obj);
   } catch (e) {
@@ -233,10 +238,26 @@ function resolve(id) {
 
 function setupRoutes(app, requireAdmin) {
   // Rate limit: 5 attempts per IP per 15 minutes for activate/transfer/reclaim
+  // STX-17: hard cap on tracked IPs — on a full map, stale windows are pruned
+  // first, then the oldest entry is evicted. Limits themselves unchanged.
+  const CUSTOM_ID_RL_MAX_KEYS = (() => {
+    const parsed = parseInt(process.env.CUSTOM_ID_RATE_LIMIT_MAX_KEYS || "", 10);
+    if (!Number.isFinite(parsed)) return 10000;
+    return Math.min(Math.max(parsed, 1), 1000000);
+  })();
   const customIdLimits = new Map();
   function customIdRateLimit(req, res, next) {
     const ip = req.ip || req.connection.remoteAddress;
     const now = Date.now();
+    if (!customIdLimits.has(ip) && customIdLimits.size >= CUSTOM_ID_RL_MAX_KEYS) {
+      for (const [key, list] of customIdLimits) {
+        if (list.length === 0 || now - list[list.length - 1] > 900000) customIdLimits.delete(key);
+      }
+      if (customIdLimits.size >= CUSTOM_ID_RL_MAX_KEYS) {
+        const oldest = customIdLimits.keys().next();
+        if (!oldest.done) customIdLimits.delete(oldest.value);
+      }
+    }
     if (!customIdLimits.has(ip)) customIdLimits.set(ip, []);
     const attempts = customIdLimits.get(ip);
     while (attempts.length > 0 && now - attempts[0] > 900000) attempts.shift(); // 15min window
