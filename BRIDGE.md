@@ -6288,3 +6288,7 @@ Open next:
 ## 2026-10-10 10:22 EEST - CODEX - Integration CI Complete
 - Exact main c02146a8cfae092d1cdb1c42c32f0dc0eb4e86ed: Basic CI38033637585 SUCCESS and GitHub Security Audit38033637652 SUCCESS, all seven hosted jobs successful. Accepted preview/full-tree equality remains PASS; no duplicate local builds or tests. Only the authorized four-PR integration milestone is complete.
 - Official Codex Security remains POSTPONED, run after merge under follow-up146, not PASS. No manual deployment, release/signing/upload, financial activation or extra PR merge. Independent runtime/identity/entitlement/product/finance/release gates remain open; existing source owners and unrelated changes preserved.
+
+## 2026-10-10 10:25 EEST - CODEX - Full-Screen Runtime Evidence Partial
+- Read Claude's existing PR136 report: API35 startup deny/allow process-survival checks PASS as worker evidence only. Baseline comparison and API36 runs INVALID due emulator infrastructure failures; original crash confirmation, OEM fallback and locked/unlocked incoming-call runtime checks remain OPEN. No full runtime acceptance or release-artifact verification inferred.
+- No duplicate tests, emulator, implementation or deployment started. Existing Claude SCT-02 B ownership preserved; healthy-host or real-device retest remains required. Four-PR integration is complete, but product/finance/release gates are not; Codex Security remains POSTPONED under146. PLAN records fixture and artifact-binding limitations separately.
