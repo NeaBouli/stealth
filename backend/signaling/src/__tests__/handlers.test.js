@@ -328,6 +328,61 @@ console.log("\n[Suite] PHONE_LOOKUP handler");
 }
 
 // ==========================================
+// Suite: STX-04 daily discovery budget survives reconnects
+// ==========================================
+console.log("\n[Suite] STX-04 discovery budget");
+{
+  clearState();
+  const ctx = buildCtx();
+  const hashes = Array.from({ length: 200 }, (_, i) => `h${i}`);
+  let ok = 0;
+  let limited = false;
+  for (let i = 0; i < 30 && !limited; i++) {
+    // Fresh connection every batch: the per-connection minute limit never applies.
+    const ws = mockWs();
+    const connId = `conn-enum-${i}`;
+    ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: "eve", ip: "203.0.113.20" });
+    ctx.clientIds.set("eve", connId);
+    ctx.handlers.BATCH_PHONE_LOOKUP(ws, connId, { hashes });
+    if (lastMsg(ws).error === "rate_limited") limited = true;
+    else ok++;
+  }
+  assert(limited && ok === 25, "client budget: 25 x 200 numbers per day, then rate_limited across reconnects");
+
+  const wsSingle = mockWs();
+  ctx.clients.set("conn-enum-single", { ws: wsSingle, lastSeen: Date.now(), clientId: "eve", ip: "203.0.113.20" });
+  ctx.clientIds.set("eve", "conn-enum-single");
+  ctx.handlers.PHONE_LOOKUP(wsSingle, "conn-enum-single", { phoneNumber: "+4915100000000" });
+  assert(lastMsg(wsSingle).error === "rate_limited", "single lookups share the daily budget");
+
+  // A second identity on the same address can use the remaining address budget only.
+  let ok2 = 0;
+  for (let i = 0; i < 30; i++) {
+    const ws = mockWs();
+    const connId = `conn-enum2-${i}`;
+    ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: "eve2", ip: "203.0.113.20" });
+    ctx.clientIds.set("eve2", connId);
+    ctx.handlers.BATCH_PHONE_LOOKUP(ws, connId, { hashes });
+    if (lastMsg(ws).error === "rate_limited") break;
+    ok2++;
+  }
+  assert(ok2 === 25, "a second identity on the address gets the remaining address budget");
+
+  // The address budget (10000/day) is now exhausted: a third identity gets nothing.
+  const ws3 = mockWs();
+  ctx.clients.set("conn-enum3", { ws: ws3, lastSeen: Date.now(), clientId: "eve3", ip: "203.0.113.20" });
+  ctx.clientIds.set("eve3", "conn-enum3");
+  ctx.handlers.BATCH_PHONE_LOOKUP(ws3, "conn-enum3", { hashes });
+  assert(lastMsg(ws3).error === "rate_limited", "address budget caps identity rotation on one address");
+
+  const wsOther = mockWs();
+  ctx.clients.set("conn-other", { ws: wsOther, lastSeen: Date.now(), clientId: "carol", ip: "198.51.100.30" });
+  ctx.clientIds.set("carol", "conn-other");
+  ctx.handlers.BATCH_PHONE_LOOKUP(wsOther, "conn-other", { hashes });
+  assert(Array.isArray(lastMsg(wsOther).results) && lastMsg(wsOther).results.length === 200, "other clients unaffected");
+}
+
+// ==========================================
 // Results
 // ==========================================
 console.log(`\n${"─".repeat(50)}`);

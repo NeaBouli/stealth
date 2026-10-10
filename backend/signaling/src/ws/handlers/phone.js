@@ -2,6 +2,41 @@
 
 module.exports = function phoneHandlers(ctx) {
   const { clients, clientIds, phoneNumbers, phoneHashes, getClientId, normalizePhone } = ctx;
+  // STX-04: the per-connection minute limits reset on reconnect, so contact discovery could
+  // enumerate the number space. A daily budget per client id and per peer address survives
+  // reconnects; it is sized for a large address book sync, not for enumeration.
+  const dayMs = 24 * 60 * 60 * 1000;
+  const maxNumbersPerClientPerDay = 5000;
+  const maxNumbersPerAddressPerDay = 10000;
+  const maxTrackedKeys = 65536;
+  const lookupBudget = new Map();
+
+  function budgetKeys(connId) {
+    const keys = [[`client:${getClientId(connId)}`, maxNumbersPerClientPerDay]];
+    const ip = clients.get(connId)?.ip;
+    if (typeof ip === "string" && ip) keys.push([`ip:${ip}`, maxNumbersPerAddressPerDay]);
+    return keys;
+  }
+
+  // Reserves `count` lookups for this connection or returns false without reserving any.
+  function reserveLookups(connId, count) {
+    const now = Date.now();
+    for (const [key, entry] of lookupBudget) {
+      if (now - entry.windowStart >= dayMs) lookupBudget.delete(key);
+    }
+    const keys = budgetKeys(connId);
+    for (const [key, limit] of keys) {
+      const used = lookupBudget.get(key)?.count || 0;
+      if (used + count > limit) return false;
+      if (!lookupBudget.has(key) && lookupBudget.size >= maxTrackedKeys) return false;
+    }
+    for (const [key] of keys) {
+      const entry = lookupBudget.get(key);
+      if (entry) entry.count += count;
+      else lookupBudget.set(key, { windowStart: now, count });
+    }
+    return true;
+  }
 
   return {
     PHONE_LOOKUP(ws, connId, msg) {
@@ -21,6 +56,9 @@ module.exports = function phoneHandlers(ctx) {
         return ws.send(JSON.stringify({ type: "PHONE_LOOKUP_RESULT", phoneNumber: "", clientId: null, online: false }));
       }
 
+      if (!reserveLookups(connId, 1)) {
+        return ws.send(JSON.stringify({ type: "PHONE_LOOKUP_RESULT", phoneNumber: msg.phoneNumber, clientId: null, online: false, error: "rate_limited" }));
+      }
       const normalized = normalizePhone(msg.phoneNumber);
       const resolvedClientId = phoneNumbers.get(normalized) || null;
       const online = resolvedClientId ? clientIds.has(resolvedClientId) : false;
@@ -40,8 +78,14 @@ module.exports = function phoneHandlers(ctx) {
       }
       batchLookups.push(bNow);
 
+      const requested = Array.isArray(msg.hashes) ? msg.hashes.slice(0, 200)
+        : (Array.isArray(msg.phoneNumbers) ? msg.phoneNumbers.slice(0, 200) : []);
+      if (!reserveLookups(connId, requested.length)) {
+        return ws.send(JSON.stringify({ type: "BATCH_PHONE_LOOKUP_RESULT", results: [], error: "rate_limited" }));
+      }
+
       if (Array.isArray(msg.hashes)) {
-        const results = msg.hashes.slice(0, 200).map(hash => {
+        const results = requested.map(hash => {
           const resolvedClientId = phoneHashes.get(hash) || null;
           const online = resolvedClientId ? clientIds.has(resolvedClientId) : false;
           return { hash, clientId: resolvedClientId, online };
@@ -49,8 +93,7 @@ module.exports = function phoneHandlers(ctx) {
         return ws.send(JSON.stringify({ type: "BATCH_PHONE_LOOKUP_RESULT", mode: "hashed", results }));
       }
 
-      const phoneList = Array.isArray(msg.phoneNumbers) ? msg.phoneNumbers : [];
-      const results = phoneList.slice(0, 200).map(phone => {
+      const results = requested.map(phone => {
         const normalized = normalizePhone(phone);
         const resolvedClientId = phoneNumbers.get(normalized) || null;
         const online = resolvedClientId ? clientIds.has(resolvedClientId) : false;
