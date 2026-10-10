@@ -217,7 +217,28 @@ function createIdentityRegistry({
     return result;
   }
 
-  return { getIdentity, resolve, bind, aliasesFor, size: () => identities.size };
+  // Operator reversal of a disputed legacy migration (#144 review F2, owner decision
+  // 2026-10-11: keep legacy ids, with audit and revoke). A revoked alias resolves to
+  // nothing and cannot be re-bound automatically (bind() reports identity_alias_conflict).
+  function revokeAlias(alias) {
+    const entry = aliases.get(alias);
+    if (!entry) fail("identity_alias_unknown");
+    if (entry.status !== "active") return { ...entry, changed: false };
+    const revoked = { ...entry, status: "revoked", updatedAt: now() };
+    const previous = state;
+    state = { schema: 1, identities: state.identities,
+      aliases: state.aliases.map(item => (item.alias === alias ? revoked : item)) };
+    try { persist(); } catch (error) { state = previous; throw error; }
+    aliases.set(alias, revoked);
+    return { ...revoked, changed: true };
+  }
+
+  function getAlias(alias) {
+    const entry = aliases.get(alias);
+    return entry ? { ...entry } : null;
+  }
+
+  return { getIdentity, resolve, bind, aliasesFor, getAlias, revokeAlias, size: () => identities.size };
 }
 
 module.exports = { createIdentityRegistry, IdentityRegistryError };

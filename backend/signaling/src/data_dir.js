@@ -52,6 +52,7 @@ const STORE_FILES = Object.freeze({
   GOOGLE_PLAY_RTDN_FILE: "google_play_rtdn.json",
   VLABS_FULFILLMENT_ORDERS_FILE: "vlabs_fulfillment_orders.json",
   IDENTITY_REGISTRY_FILE: "identity_registry.json",
+  IDENTITY_MIGRATION_AUDIT_FILE: "identity_migration_audit.jsonl",
 });
 
 // Must run before any store module is required (several read their path at

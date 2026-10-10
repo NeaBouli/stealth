@@ -32,6 +32,7 @@ module.exports = function registerHandlers(ctx) {
     clients, clientIds, phoneNumbers, phoneHashes, fcmTokens,
     rejectionTracker, getClientId, normalizePhone, hashPhone,
     saveFcmTokens, getIceServers, identityRegistry, identityMigrationRoutes, fcm,
+    identityMigrationAudit,
   } = ctx;
   const protocolMode = ctx.identityProtocolMode || "enforce";
   const transitionDeadline = ctx.identityTransitionDeadline;
@@ -372,6 +373,21 @@ module.exports = function registerHandlers(ctx) {
     // retry and is never sourced from runtime REGISTER_FCM_TOKEN messages.
     const migrationToken = pending.migration
       ? identityMigrationRoutes?.get?.(pending.requestedClientId) : null;
+    // Every legacy migration is recorded before anything is bound, so an operator can find
+    // and reverse a disputed claim (#144 review F2). No audit trail, no migration.
+    if (pending.migration) {
+      try {
+        identityMigrationAudit.append("alias_bind_authorized", {
+          alias: pending.requestedClientId,
+          identityId: pending.identityId,
+          keyHash: pending.keyHash,
+          network: pending.ipKey,
+          routeHash: pending.fcmTokenHash,
+        });
+      } catch {
+        return sendError(ws, "identity_service_unavailable");
+      }
+    }
     const previousCanonicalToken = pending.migration ? fcmTokens.get(pending.identityId) : null;
     if (pending.migration) {
       if (!migrationToken) return sendError(ws, "invalid_identity_proof");

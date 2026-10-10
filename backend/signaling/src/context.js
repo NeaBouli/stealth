@@ -108,7 +108,7 @@ function buildContext(externalDeps) {
     saveWalletMappings: saveWalletMappingsOverride,
     saveFcmTokens: saveFcmTokensOverride,
     testerLicenseRegistry,
-    identityRegistry, identityMigrationRoutes,
+    identityRegistry, identityMigrationRoutes, identityMigrationAudit,
     identityProtocolMode, identityTransitionDeadline, nowSeconds,
   } = externalDeps;
 
@@ -146,7 +146,7 @@ function buildContext(externalDeps) {
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
     // External services
     testerLicenseRegistry,
-    identityRegistry, identityMigrationRoutes,
+    identityRegistry, identityMigrationRoutes, identityMigrationAudit,
     identityProtocolMode, identityTransitionDeadline, nowSeconds,
     pkd, subscriptions, fcm, customIds, licenses,
     getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS,
