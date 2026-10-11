@@ -46,6 +46,7 @@ const { loadWalletMappings } = require("./services/wallet_store");
 const { setupActivationAdminRoutes } = require("./services/activation_admin");
 const { getClientIp }                                               = require("./middleware/ip");
 const { makeRequireAdmin }                                         = require("./middleware/admin");
+const { isWebSocketOriginAllowed }                                 = require("./middleware/cors");
 const { pkdRegistrationRateLimit }                                  = require("./security/pkd_registration_limiter");
 const { verifyIfrHolding }                                          = require("./services/ifr");
 const { buildContext, wireWs }                                      = require("./context");
@@ -312,11 +313,8 @@ const wss = new WebSocket.Server({
     // allowlist (blocks cross-site attacks from malicious web pages).
     // Missing Origin passes through; those clients cannot be CSRF-hijacked
     // because they are not browsers.
-    if (ALLOWED_ORIGINS.length > 0) {
-      const origin = info.origin || info.req.headers.origin;
-      if (origin && !ALLOWED_ORIGINS.includes(origin)) {
-        return done(false, 403, "Origin not allowed");
-      }
+    if (!isWebSocketOriginAllowed(info.origin || info.req.headers.origin, ALLOWED_ORIGINS, DEFAULT_ALLOWED_ORIGINS)) {
+      return done(false, 403, "Origin not allowed");
     }
     // Per-IP connection limit
     const ip = getClientIp(info.req);

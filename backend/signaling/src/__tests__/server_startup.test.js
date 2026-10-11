@@ -113,6 +113,19 @@ async function stopChild(child) {
     assert.strictEqual(response.statusCode, 200, output.value);
     assert.strictEqual(JSON.parse(response.body).status, "ok", output.value);
     assert.match(output.value, /Server running on port/, output.value);
+
+    // STX-15: with ALLOWED_ORIGINS unset, a foreign browser Origin is still rejected while
+    // native clients (no Origin) and the default web origin can connect.
+    const WebSocket = require("ws");
+    const upgrade = headers => new Promise(resolve => {
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/signal`, { headers });
+      socket.once("open", () => { socket.close(); resolve("open"); });
+      socket.once("unexpected-response", (_req, res) => { resolve(res.statusCode); });
+      socket.once("error", () => resolve("error"));
+    });
+    assert.strictEqual(await upgrade({ Origin: "https://evil.example" }), 403, "foreign origin rejected");
+    assert.strictEqual(await upgrade({}), "open", "native client without Origin accepted");
+    assert.strictEqual(await upgrade({ Origin: "https://stealthx.tech" }), "open", "default web origin accepted");
     console.log("server_startup.test.js: PASS");
   } finally {
     await stopChild(child);

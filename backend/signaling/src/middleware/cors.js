@@ -21,4 +21,13 @@ function makeCorsMiddleware(allowedOrigins) {
   };
 }
 
-module.exports = { makeCorsMiddleware, DEFAULT_ALLOWED_ORIGINS };
+// STX-15: WebSocket upgrades follow the same allowlist as CORS. Native clients send no
+// Origin and pass; a browser Origin outside the allowlist (configured, or the defaults
+// when none is configured) is rejected, so foreign web pages cannot open /signal.
+function isWebSocketOriginAllowed(origin, configuredOrigins, defaultOrigins = DEFAULT_ALLOWED_ORIGINS) {
+  if (!origin) return true;
+  const origins = (configuredOrigins && configuredOrigins.length > 0) ? configuredOrigins : defaultOrigins;
+  return origins.includes(origin);
+}
+
+module.exports = { makeCorsMiddleware, isWebSocketOriginAllowed, DEFAULT_ALLOWED_ORIGINS };
