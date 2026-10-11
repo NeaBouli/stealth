@@ -17,9 +17,6 @@ object GhostMediaRouter {
     private val audioPlayer =
         com.securecall.app.ghostnet.media.playback.GhostAudioPlayer(48000, 1)
 
-    // PATCH 251: CryptoContext
-    private var cryptoContext: com.securecall.app.ghostnet.crypto.SessionCryptoContext? = null
-
     // Singleton accessor (object is already singleton, but callers use .get())
     fun get(): GhostMediaRouter = this
 
@@ -88,12 +85,6 @@ object GhostMediaRouter {
 
     private fun decryptFrame(frame: MediaFrame): MediaFrame {
         return com.securecall.app.ghostnet.media.crypto.MediaDecrypt.decrypt(frame)
-    }
-
-    // CRYPTO-06: key-aware decrypt
-    private fun decryptWithKey(frame: MediaFrame): MediaFrame {
-        val ctx = cryptoContext
-        return com.securecall.app.ghostnet.media.crypto.MediaDecryptor.decryptWithKey(frame, ctx)
     }
 
     // CRYPTO-28: session-bound decrypt
@@ -205,19 +196,6 @@ object GhostMediaRouter {
     // PATCH 237: media reset stub
     fun resetMedia() {
         Log.w(TAG, "resetMedia(): future decoder cleanup here")
-    }
-
-    // ===================== CryptoContext =====================
-
-    fun attachCryptoContext(ctx: com.securecall.app.ghostnet.crypto.SessionCryptoContext) {
-        Log.d(TAG, "attachCryptoContext(): " + ctx.debugSummary())
-        cryptoContext = ctx
-    }
-
-    fun getCryptoContext(): com.securecall.app.ghostnet.crypto.SessionCryptoContext? = cryptoContext
-
-    fun debugDecryptWithKey(frame: MediaFrame) {
-        decryptWithKey(frame)
     }
 
     // ===================== CRYPTO-07: Header Parsing =====================
