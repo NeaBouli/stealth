@@ -634,6 +634,46 @@ console.log("\n[Suite] GHOST_PREPARE handler");
 }
 
 // ==========================================
+// Suite: STX-05 activation guess budget
+// ==========================================
+console.log("\n[Suite] STX-05 activation guess budget");
+{
+  clearState();
+  const ctx = buildCtx();
+  const ws = mockWs();
+  ctx.clients.set("conn-guess", { ws, lastSeen: Date.now(), clientId: "mallory", ip: "203.0.113.9" });
+  ctx.clientIds.set("mallory", "conn-guess");
+  ctx.giftCodes.set("GIFT-REAL-0001", { tier: "pro", used: false, expires: new Date(Date.now() + 86400000).toISOString() });
+
+  for (let i = 0; i < 10; i++) ctx.handlers.ACTIVATE_CODE(ws, "conn-guess", { code: `GIFT-WRONG-${i}` });
+  assert(lastMsg(ws).error === "invalid", "first 10 unknown codes → invalid");
+  ctx.handlers.ACTIVATE_CODE(ws, "conn-guess", { code: "GIFT-REAL-0001" });
+  assert(lastMsg(ws).error === "rate_limited", "after 10 failures even a valid code is not looked up");
+  assert(ctx.giftCodes.get("GIFT-REAL-0001").used === false, "limited attempt does not consume the code");
+
+  // A new connection from the same address is still limited.
+  const ws2 = mockWs();
+  ctx.clients.set("conn-guess-2", { ws: ws2, lastSeen: Date.now(), clientId: "mallory2", ip: "203.0.113.9" });
+  ctx.clientIds.set("mallory2", "conn-guess-2");
+  ctx.handlers.ACTIVATE_CODE(ws2, "conn-guess-2", { code: "GIFT-REAL-0001" });
+  assert(lastMsg(ws2).error === "rate_limited", "reconnecting from the same address does not reset the budget");
+
+  // Another address is unaffected.
+  const ws3 = mockWs();
+  ctx.clients.set("conn-honest", { ws: ws3, lastSeen: Date.now(), clientId: "honest", ip: "198.51.100.4" });
+  ctx.clientIds.set("honest", "conn-honest");
+  ctx.handlers.ACTIVATE_CODE(ws3, "conn-honest", { code: "GIFT-REAL-0001" });
+  assert(lastMsg(ws3).success === true, "other clients can still redeem");
+
+  // Valid or used codes do not count as guesses.
+  const ws4 = mockWs();
+  ctx.clients.set("conn-retry", { ws: ws4, lastSeen: Date.now(), clientId: "retry", ip: "198.51.100.5" });
+  ctx.clientIds.set("retry", "conn-retry");
+  for (let i = 0; i < 12; i++) ctx.handlers.ACTIVATE_CODE(ws4, "conn-retry", { code: "GIFT-REAL-0001" });
+  assert(lastMsg(ws4).error === "already_used", "repeated known-code attempts are not rate limited");
+}
+
+// ==========================================
 // Summary
 // ==========================================
 {

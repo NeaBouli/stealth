@@ -464,7 +464,8 @@ app.post("/admin/gift", requireAdmin, (req, res) => {
     return res.status(400).json({ error: "tier must be 'pro' or 'premium'" });
   }
 
-  const code = "GIFT-" + crypto.randomBytes(4).toString("hex").toUpperCase();
+  // STX-05: 128-bit codes (previously 32-bit); existing short codes stay valid until expiry.
+  const code = "GIFT-" + crypto.randomBytes(16).toString("hex").toUpperCase();
   const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   giftCodes.set(code, {

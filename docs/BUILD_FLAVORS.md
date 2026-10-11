@@ -13,11 +13,11 @@ SecureCall uses Android Product Flavors to produce three distinct app tiers from
 | **Call Duration** | 15 min | Unlimited | Unlimited |
 | **Contacts** | 10 | Unlimited | Unlimited |
 | **Device Attestation** | No | Yes | Yes |
-| **Root Detection** | Warn | Block | Terminate |
+| **Root Detection** | Not checked | Logged only (no block) | Terminate (app closes) |
 | **Certificate Pinning** | Yes | Yes | Yes |
 | **Screen Capture Detection** | No | No | Yes |
 | **Debugger Detection** | No | No | Yes (terminate) |
-| **Emulator Detection** | No | No | Yes (block) |
+| **Emulator Detection** | No | No | Yes (terminate) |
 | **Hardware Keystore** | No | No | Required |
 | **Key Rotation** | Standard | Standard | Aggressive |
 | **Telemetry** | Yes (opt-out) | No | No |
