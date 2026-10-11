@@ -1,5 +1,9 @@
 # ACTION REQUIRED: Deploy Backend & Update URLs
 
+> **Status note (2026-10-11):** Production signaling now runs on Hetzner
+> (`api.stealthx.tech`); the Railway steps below are kept as standby
+> reference.
+
 ## Step 1: Deploy to Railway.app
 
 1. Go to: https://railway.app

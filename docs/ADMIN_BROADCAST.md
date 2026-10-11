@@ -1,7 +1,8 @@
 # Emergency Broadcast System — Admin Guide
 
-> **SECURITY:** `ADMIN_API_KEY` is stored ONLY in Railway environment variables.
-> Never commit the actual key. Find it: Railway Dashboard → Variables → `ADMIN_API_KEY`
+> **SECURITY:** `ADMIN_API_KEY` is stored ONLY in the production server
+> environment (Hetzner). Never commit the actual key. Find it in the
+> production environment configuration.
 
 ## How It Works
 The server sends ONLY a numeric `template_id` to all connected clients.
@@ -39,7 +40,7 @@ Server sends FCM data message to all registered tokens:
 
 ### Server Admin Endpoint
 ```bash
-curl -X POST https://protective-healing-production.up.railway.app/admin/broadcast \
+curl -X POST https://api.stealthx.tech/admin/broadcast \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ADMIN_KEY" \
   -d '{"template_id": 3}'
@@ -75,7 +76,7 @@ app.post('/admin/broadcast', (req, res) => {
 ## Testing
 Use template 8 (All Clear / INFO severity) for safe testing:
 ```bash
-curl -X POST https://protective-healing-production.up.railway.app/admin/broadcast \
+curl -X POST https://api.stealthx.tech/admin/broadcast \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ADMIN_KEY" \
   -d '{"template_id": 8}'

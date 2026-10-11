@@ -12,10 +12,6 @@ object GhostTransport {
     private var thread: GhostTransportThread? = null
     private var running = false
 
-    // PATCH 251: optionaler CryptoContext
-    @Volatile
-    private var cryptoContext: com.securecall.app.ghostnet.crypto.SessionCryptoContext? = null
-
     // CRYPTO-07: Nonce counter
     private var nonceCounter: Long = 0L
 
@@ -79,35 +75,6 @@ object GhostTransport {
     // DummyAudioRecorder test entry point
     fun enqueueTestFrame(data: ByteArray) {
         Log.d("GHOST_TRANSPORT", "enqueueTestFrame(): size=${data.size}")
-    }
-
-    // ===================== CryptoContext =====================
-
-    fun setCryptoContext(ctx: com.securecall.app.ghostnet.crypto.SessionCryptoContext) {
-        Log.d("GHOST_TRANSPORT", "setCryptoContext(): " + ctx.debugSummary())
-        cryptoContext = ctx
-    }
-
-    fun getCryptoContext(): com.securecall.app.ghostnet.crypto.SessionCryptoContext? = cryptoContext
-
-    // ===================== Encrypt Helpers =====================
-
-    private fun encryptForSend(payload: ByteArray): ByteArray {
-        val ctx = getCryptoContext()
-        return com.securecall.app.ghostnet.media.crypto.MediaEncryptor.encrypt(payload, ctx)
-    }
-
-    fun debugEncryptDummyFrame() {
-        val dummy = ByteArray(32) { 0x42.toByte() }
-        Log.d("GHOST_TRANSPORT", "debugEncryptDummyFrame(): before encrypt size=${dummy.size}")
-        val enc = encryptForSend(dummy)
-        Log.d("GHOST_TRANSPORT", "debugEncryptDummyFrame(): after encrypt size=${enc.size}")
-    }
-
-    // CRYPTO-06: key-aware encrypt
-    private fun encryptForSendWithKey(payload: ByteArray): ByteArray {
-        val ctx = getCryptoContext()
-        return com.securecall.app.ghostnet.media.crypto.MediaEncryptor.encryptWithKey(payload, ctx)
     }
 
     // ===================== CRYPTO-07: FrameHeader + Nonce =====================

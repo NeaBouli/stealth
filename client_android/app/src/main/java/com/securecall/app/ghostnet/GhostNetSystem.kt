@@ -33,12 +33,6 @@ object GhostNetSystem {
 
         com.securecall.app.debug.GhostDebugEventBus.post("SYSTEM", "GhostNetSystem initialized")
 
-        // PATCH 250: CryptoContext beim Systemstart erzeugen
-        initCrypto()
-
-        // PATCH 251: CryptoContext in Subsysteme einspeisen
-        wireCryptoIntoSubsystems()
-
         // PATCH 241: eventbus notice
         postInitEvent()
 
@@ -48,21 +42,5 @@ object GhostNetSystem {
 
     private fun postInitEvent() {
         com.securecall.app.debug.GhostDebugEventBus.post("SYSTEM", "GhostNetSystem fully initialized")
-    }
-
-    private fun initCrypto() {
-        Log.d(TAG, "initCrypto(): creating initial SessionCryptoContext")
-        val ctx = com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.getContext()
-        com.securecall.app.debug.GhostDebugEventBus.post(
-            "SYSTEM",
-            "CryptoContext created: " + ctx.debugSummary()
-        )
-    }
-
-    private fun wireCryptoIntoSubsystems() {
-        val ctx = com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.getContext()
-        com.securecall.app.ghostnet.transport.GhostTransport.setCryptoContext(ctx)
-        com.securecall.app.ghostnet.media.GhostMediaRouter.attachCryptoContext(ctx)
-        com.securecall.app.debug.GhostDebugEventBus.post("SYSTEM", "Crypto wired into Transport + Media")
     }
 }

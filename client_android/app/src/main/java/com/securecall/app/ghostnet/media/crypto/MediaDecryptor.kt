@@ -1,7 +1,6 @@
 package com.securecall.app.ghostnet.media.crypto
 
 import android.util.Log
-import com.securecall.app.ghostnet.crypto.SessionCryptoContext
 import com.securecall.app.ghostnet.media.MediaFrame
 
 /**
@@ -15,20 +14,6 @@ object MediaDecryptor {
     fun decrypt(frame: MediaFrame): ByteArray {
         Log.d(TAG, "decrypt(): called, size=${frame.data.size}")
         return frame.data
-    }
-
-    private fun selectRecvKey(ctx: SessionCryptoContext?): ByteArray? {
-        return ctx?.recvKey
-    }
-
-    fun decryptWithKey(frame: MediaFrame, ctx: SessionCryptoContext?): MediaFrame {
-        val key = selectRecvKey(ctx)
-        if (key == null) {
-            Log.w(TAG, "decryptWithKey(): NO recvKey → returning original frame")
-            return frame
-        }
-        Log.d(TAG, "decryptWithKey(): using recvKey[${key.size}] (placeholder, no real crypto)")
-        return frame
     }
 
     // CRYPTO-28: SessionCipherBinding nutzen

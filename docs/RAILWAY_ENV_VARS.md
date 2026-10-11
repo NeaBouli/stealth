@@ -1,5 +1,9 @@
 # Railway Environment Variables Setup
 
+> **Status note (2026-10-11):** Production signaling runs on Hetzner
+> (`api.stealthx.tech`). This Railway variable setup applies only to the
+> standby Railway deployment.
+
 ## Dashboard URL
 https://railway.com/project/263caa21-e6f6-4075-9470-22427cfcf5f9
 

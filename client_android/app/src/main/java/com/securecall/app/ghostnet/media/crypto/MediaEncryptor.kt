@@ -17,19 +17,9 @@ object MediaEncryptor {
         return SessionCipherEngine.encrypt(ctx, pcm)
     }
 
-    fun encrypt(pcm: ByteArray, ctx: com.securecall.app.ghostnet.crypto.SessionCryptoContext?): ByteArray {
-        Log.d(TAG, "encrypt(): pcmSize=${pcm.size} (SessionCryptoContext)")
-        return pcm
-    }
-
     fun encrypt(frame: com.securecall.app.ghostnet.media.MediaFrame): ByteArray {
         Log.d(TAG, "encrypt(): frame size=${frame.data.size}")
         return frame.data
-    }
-
-    fun encryptWithKey(pcm: ByteArray, ctx: com.securecall.app.ghostnet.crypto.SessionCryptoContext?): ByteArray {
-        Log.d(TAG, "encryptWithKey(): pcmSize=${pcm.size}")
-        return pcm
     }
 
     // CRYPTO-39: FrameV1 Builders

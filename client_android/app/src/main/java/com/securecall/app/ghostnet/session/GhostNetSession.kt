@@ -23,9 +23,6 @@ class GhostNetSession(
         // PATCH 237: auto-clean when session becomes DEAD
         if (newState == GhostNetSessionState.DEAD) {
             Log.e("SESSION", "Session moved to DEAD → auto reset")
-            // PATCH 253: Crypto-Kontext löschen
-            com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.clearContext()
-            com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "Session DEAD → CryptoContext cleared")
             GhostNetSessionManager.resetSession()
         }
     }
