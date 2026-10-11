@@ -54,7 +54,17 @@ assert.equal(explicitOverride.VLABS_FULFILLMENT_ORDERS_FILE, "/srv/securecall-da
 
 // Regression guard: any module that reads a *_FILE variable must be listed in
 // STORE_FILES, otherwise its module-relative default escapes DATA_DIR.
-const NON_STORE_FILE_VARIABLES = new Set(["LOG_TO_FILE", "TURN_SECRET_FILE"]);
+// The tester signer and registry are operator-provisioned private files, not
+// DATA_DIR stores: they have no default path, must be absolute, and are
+// validated as 0700 directory / 0600 file without symlinks or a Git checkout
+// (services/tester_license_runtime.js, tester_license_registry.js). Pinning them
+// via alignStoreFiles would silently relocate an existing registry.
+const NON_STORE_FILE_VARIABLES = new Set([
+  "LOG_TO_FILE",
+  "TURN_SECRET_FILE",
+  "SECURECALL_TESTER_SIGNER_FILE",
+  "SECURECALL_TESTER_REGISTRY_FILE",
+]);
 const sourceRoot = path.join(__dirname, "..");
 function sources(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

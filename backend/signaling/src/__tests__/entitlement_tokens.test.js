@@ -85,4 +85,120 @@ assert.throws(
   "missing signing key produces a retryable infrastructure error",
 );
 
+// --- v2 exact-claim tokens -----------------------------------------------------
+
+process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM = privateKeyPem;
+
+const V2_CLAIMS = {
+  catalogVersion: "stealthx-lifetime-v1",
+  offerVersion: "securechat-pro-eur-900-lifetime-v1",
+  releaseId: "securechat-android-0.1.11-alpha-vc15-api36",
+};
+const v2Token = issueEntitlementToken({
+  subject: "sx_test_device",
+  productKey: "securechat_pro_lifetime",
+  tier: "pro",
+  externalOrderId: "cs_test_v2_order",
+  ...V2_CLAIMS,
+  nowSeconds: now,
+});
+assert.ok(v2Token, "v2 token issued with the complete immutable contract tuple");
+const [v2EncodedPayload] = v2Token.split(".");
+const v2Payload = Buffer.from(v2EncodedPayload, "base64url").toString("utf8");
+assert.ok(v2Payload.includes("v=2"));
+assert.ok(v2Payload.includes("catalog=stealthx-lifetime-v1"));
+assert.ok(v2Payload.includes("offer=securechat-pro-eur-900-lifetime-v1"));
+assert.ok(v2Payload.includes("release=securechat-android-0.1.11-alpha-vc15-api36"));
+const verifiedV2 = verifyEntitlementToken(v2Token, { expectedSubject: "sx_test_device", nowSeconds: now + 60 });
+assert.strictEqual(verifiedV2.v, "2");
+assert.strictEqual(verifiedV2.catalog, V2_CLAIMS.catalogVersion);
+assert.strictEqual(verifiedV2.offer, V2_CLAIMS.offerVersion);
+assert.strictEqual(verifiedV2.release, V2_CLAIMS.releaseId);
+assert.throws(() => verifyEntitlementToken(v2Token, { expectedSubject: "copied_device", nowSeconds: now + 60 }),
+  undefined, "v2 token is bound to its subject");
+
+function signRawClaims(payload) {
+  const encoded = Buffer.from(payload, "utf8").toString("base64url");
+  const signature = crypto.sign(null, Buffer.from(encoded, "utf8"), privateKey).toString("base64url");
+  return `${encoded}.${signature}`;
+}
+
+// A valid signature must not make stale or ambiguous contract claims acceptable.
+for (const [claim, staleValue] of [
+  ["catalog", "stealthx-lifetime-v0"],
+  ["offer", "securechat-pro-eur-900-lifetime-v0"],
+  ["release", "securechat-android-0.1.10-alpha-vc14-api35"],
+]) {
+  const stalePayload = v2Payload.replace(new RegExp(`^${claim}=.*$`, "m"), `${claim}=${staleValue}`);
+  assert.throws(() => verifyEntitlementToken(signRawClaims(stalePayload), {
+    expectedSubject: "sx_test_device",
+    nowSeconds: now + 60,
+  }), /Invalid entitlement claims/, `signed stale ${claim} is rejected`);
+}
+assert.throws(() => verifyEntitlementToken(signRawClaims(`${v2Payload}\noffer=${V2_CLAIMS.offerVersion}`), {
+  expectedSubject: "sx_test_device",
+  nowSeconds: now + 60,
+}), /Invalid entitlement claims/, "signed duplicate claims are rejected");
+
+// v2 tamper: a modified claim no longer matches the signature.
+const tamperedPayload = Buffer.from(
+  v2Payload.replace("release=securechat-android-0.1.11-alpha-vc15-api36", "release=securechat-android-9.9.9-forged"),
+  "utf8",
+).toString("base64url");
+assert.throws(() => verifyEntitlementToken(`${tamperedPayload}.${v2Token.split(".")[1]}`, {
+  expectedSubject: "sx_test_device",
+  nowSeconds: now + 60,
+}), /Invalid entitlement signature/, "tampered v2 payload fails signature verification");
+
+// v2 issuance fails closed on any contract drift or incomplete tuple.
+assert.throws(() => issueEntitlementToken({
+  subject: "sx_test_device",
+  productKey: "securechat_pro_lifetime",
+  tier: "pro",
+  externalOrderId: "cs_test_v2_order",
+  ...V2_CLAIMS,
+  offerVersion: "securechat-pro-eur-900-lifetime-v2",
+  nowSeconds: now,
+}), /Invalid entitlement claims/, "offerVersion drift rejects v2 issuance");
+assert.throws(() => issueEntitlementToken({
+  subject: "sx_test_device",
+  productKey: "securechat_pro_lifetime",
+  tier: "elite",
+  externalOrderId: "cs_test_v2_order",
+  ...V2_CLAIMS,
+  nowSeconds: now,
+}), /Invalid entitlement claims/, "tier drift rejects v2 issuance");
+assert.throws(() => issueEntitlementToken({
+  subject: "sx_test_device",
+  productKey: "securechat_pro_lifetime",
+  tier: "pro",
+  externalOrderId: "cs_test_v2_order",
+  catalogVersion: V2_CLAIMS.catalogVersion,
+  nowSeconds: now,
+}), /Invalid entitlement claims/, "partial contract tuple rejects v2 issuance");
+assert.throws(() => issueEntitlementToken({
+  subject: "sx_test_device",
+  productKey: "stealthx_suite_lifetime",
+  tier: "elite",
+  externalOrderId: "cs_test_v2_order",
+  catalogVersion: V2_CLAIMS.catalogVersion,
+  offerVersion: "suite-eur-0-lifetime-v1",
+  releaseId: "suite-android-0.0.0",
+  nowSeconds: now,
+}), /Invalid entitlement claims/, "Suite is never an accepted v2 product");
+
+// v1 migration: tokens issued before v2 remain verifiable, without v2 claims.
+const legacyV1 = issueEntitlementToken({
+  subject: "sx_reviewer_device",
+  productKey: "chameleon_elite_lifetime",
+  tier: "elite",
+  externalOrderId: "google_play_reviewer",
+  nowSeconds: now,
+});
+const verifiedLegacy = verifyEntitlementToken(legacyV1, { expectedSubject: "sx_reviewer_device", nowSeconds: now + 60 });
+assert.strictEqual(verifiedLegacy.v, "1");
+assert.strictEqual(verifiedLegacy.catalog, undefined, "v1 tokens carry no v2 claims");
+
+delete process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM;
+
 console.log("entitlement_tokens.test.js ok");

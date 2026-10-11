@@ -1,8 +1,8 @@
 # WalletConnect v2 Setup — SecureCall
 
-> Deprecated: WalletConnect and in-app IFR tier unlocking were removed from the current SecureCall app line. This document is retained only for the internal test tag `internal-ifr-wallet-test-2026-06-18`.
+> Historical document: WalletConnect and in-app IFR tier unlocking were removed from the current SecureCall app line. This file is retained only as history for the internal test tag `internal-ifr-wallet-test-2026-06-18`; the Android flow described below no longer ships.
 >
-> Current direction: IFR holder benefits should be implemented as a browser-based wallet verification plus Stripe checkout discount. The Android app should receive a normal license or activation-code unlock and should not contain wallet return/deep-link logic.
+> Current direction: the intended IFR holder discount is browser-only — browser wallet verification plus a Stripe checkout discount for any positive IFR balance (no balance thresholds). The Android app receives a normal license or activation-code unlock and contains no wallet return/deep-link logic. Exact payment/finance activation remains closed pending VLABS approval; nothing in this document enables sales.
 
 ## Project ID — MUST BE REGISTERED
 
@@ -21,15 +21,15 @@ All three flavors:
 - `com.securecall.app.pro`
 - `com.securecall.app.premium`
 
-## How it works
-1. User taps "Connect Wallet" in Settings → IFR Holder Discount
-2. WalletConnect Sign protocol creates a pairing URI
-3. URI opens in installed wallet app (MetaMask, Trust Wallet, etc.)
-4. User approves connection in their wallet app
-5. SecureCall reads the connected wallet address
-6. Server verifies IFR token balance on-chain
-7. If balance >= 1,000 IFR → PRO, >= 5,000 IFR → PREMIUM
-8. WalletConnect-verified wallets get **permanent unlock** (no 30-day expiry)
+## How it worked (removed Android flow)
+1. User tapped "Connect Wallet" in Settings → IFR Holder Discount
+2. WalletConnect Sign protocol created a pairing URI
+3. URI opened in installed wallet app (MetaMask, Trust Wallet, etc.)
+4. User approved connection in their wallet app
+5. SecureCall read the connected wallet address
+6. Server verified the IFR token balance on-chain
+7. Tier unlock thresholds were applied server-side at the time; this Android unlock path was later removed entirely (see above)
+8. WalletConnect-verified wallets had **permanent unlock** (no 30-day expiry)
 
 ## Deep Link
 - Scheme: `securecall://wc`
