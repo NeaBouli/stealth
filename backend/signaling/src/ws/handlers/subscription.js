@@ -8,6 +8,38 @@ module.exports = function subscriptionHandlers(ctx) {
     subscriptions, fcm, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
   } = ctx;
+  // STX-05: unknown-code guesses are budgeted per peer address and per client, so short
+  // legacy codes cannot be brute-forced through ACTIVATE_CODE.
+  const failedActivationWindowMs = 15 * 60 * 1000;
+  const maxFailedActivations = 10;
+  const maxTrackedActivationKeys = 65536;
+  const failedActivations = new Map();
+  function activationKeys(connId) {
+    const keys = [`conn:${connId}`];
+    const ip = ctx.clients?.get?.(connId)?.ip;
+    if (typeof ip === "string" && ip) keys.push(`ip:${ip}`);
+    const clientId = getClientId(connId);
+    if (clientId) keys.push(`client:${clientId}`);
+    return keys;
+  }
+  function pruneFailedActivations(now) {
+    for (const [key, entry] of failedActivations) {
+      if (now - entry.windowStart >= failedActivationWindowMs) failedActivations.delete(key);
+    }
+  }
+  function activationLimited(connId) {
+    const now = Date.now();
+    pruneFailedActivations(now);
+    return activationKeys(connId).some(key => (failedActivations.get(key)?.count || 0) >= maxFailedActivations);
+  }
+  function recordFailedActivation(connId) {
+    const now = Date.now();
+    for (const key of activationKeys(connId)) {
+      const entry = failedActivations.get(key);
+      if (entry) entry.count++;
+      else if (failedActivations.size < maxTrackedActivationKeys) failedActivations.set(key, { windowStart: now, count: 1 });
+    }
+  }
 
   const BLOCKED_CODES = ["BETA-PRO0-2026", "BETA-PREM-2026"];
   const LEGACY_UNSIGNED_PRODUCTS = new Set([
@@ -171,6 +203,10 @@ module.exports = function subscriptionHandlers(ctx) {
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "missing_code" }));
       }
 
+      if (activationLimited(connId)) {
+        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "rate_limited" }));
+      }
+
       if (BLOCKED_CODES.includes(code)) {
         console.log("[ACTIVATION] Blocked expired BETA code:", code);
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "expired", message: "This beta code has expired. Thank you for testing!" }));
@@ -191,6 +227,7 @@ module.exports = function subscriptionHandlers(ctx) {
       }
 
       if (!entry) {
+        recordFailedActivation(connId);
         console.log("[ACTIVATION] Invalid code attempted:", code.substring(0, 4) + "****");
         return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "invalid" }));
       }

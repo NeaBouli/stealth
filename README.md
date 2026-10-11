@@ -132,7 +132,7 @@ For the full privacy policy, see [Privacy Policy](https://stealthx.tech/privacy.
 | Feature | Free | Pro | Premium |
 |---------|------|-----|---------|
 | E2E Encryption (XChaCha20-Poly1305) | Yes | Yes | Yes |
-| Root Detection | Warning only | Blocks | Blocks |
+| Root Detection | Not checked | Detected and logged (calls not blocked) | App closes |
 | Certificate Pinning | Yes | Yes | Yes |
 | Screen Capture Detection | No | No | Yes |
 | Debugger Detection | No | No | Yes |
