@@ -9,6 +9,7 @@ const { spawn } = require("child_process");
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "securecall-vlabs-payment-"));
 process.env.SOLD_CODES_FILE = path.join(directory, "sold_codes.json");
 process.env.VLABS_FULFILLMENT_ORDERS_FILE = path.join(directory, "orders.json");
+process.env.CODES_FILE = path.join(directory, "activation_codes.json");
 
 const SECRET = "test-fulfillment-secret-with-32+-chars";
 process.env.VLABS_FULFILLMENT_SECRET = SECRET;
@@ -718,6 +719,140 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.strictEqual(migratedLegacyOrder.catalogVersion, CATALOG_VERSION);
   assert.strictEqual(migratedLegacyOrder.offerVersion, legacyTarget.offerVersion);
   assert.strictEqual(migratedLegacyOrder.releaseId, legacyTarget.releaseId);
+
+  // Revocation persistence: fulfillment -> activation -> signed revoke must stay
+  // revoked across a process/store reload, including crash and write failures
+  // between sold_codes.json and activation_codes.json.
+  const activationStore = require("../services/activation_store");
+  const liveCodes = activationStore.activationCodes;
+  activationStore.loadActivationCodes();
+  const liveRoutes = {};
+  fulfillment.setupVlabsFulfillmentRoute({ post: (routePath, handler) => { liveRoutes[routePath] = handler; } }, liveCodes);
+  const failingRoutes = {};
+  fulfillment.setupVlabsFulfillmentRoute(
+    { post: (routePath, handler) => { failingRoutes[routePath] = handler; } },
+    liveCodes,
+    { persistActivationCodes: () => false },
+  );
+  const orderHash = reference => crypto.createHash("sha256").update(String(reference)).digest("hex");
+  const subscription = require("../ws/handlers/subscription")({
+    activationCodes: liveCodes,
+    giftCodes: new Map(),
+    getClientId: connId => connId,
+    saveActivationCodes: activationStore.saveActivationCodes,
+    saveGiftCodes: () => true,
+    entitlementOrderHash: orderHash,
+    issueEntitlementToken: claims => `test.${Buffer.from(JSON.stringify({
+      sub: claims.subject, product: claims.productKey, order: orderHash(claims.externalOrderId), v: "2",
+      catalog: claims.catalogVersion, offer: claims.offerVersion, release: claims.releaseId,
+    })).toString("base64url")}`,
+    verifyEntitlementToken: (token, { expectedSubject }) => {
+      const claims = JSON.parse(Buffer.from(token.slice(5), "base64url").toString("utf8"));
+      if (claims.sub !== expectedSubject) throw new Error("subject mismatch");
+      return claims;
+    },
+  });
+  const wsCall = (type, device, msg) => {
+    let reply = null;
+    subscription[type]({ send: raw => { reply = JSON.parse(raw); } }, device, msg);
+    return reply;
+  };
+  const activate = (code, device) => wsCall("ACTIVATE_CODE", device, { code });
+  const refresh = (token, device) => wsCall("REFRESH_ENTITLEMENT", device, { entitlementToken: token });
+  const persistedCodes = () => JSON.parse(fs.readFileSync(process.env.CODES_FILE, "utf8")).codes.map(entry => entry.code);
+  async function soldAndActivated(device, ip) {
+    const target = fulfillBody("stealthx-securechat-elite-lifetime");
+    const res = makeRes();
+    await liveRoutes["/internal/vlabs/fulfill"](signedReq(target, ip), res);
+    assert.strictEqual(res.payload.fulfilled, true, JSON.stringify(res.payload));
+    const code = soldCodes.findByStripeSession(target.externalOrderId).code;
+    const activation = activate(code, device);
+    assert.strictEqual(activation.success, true, JSON.stringify(activation));
+    assert.ok(activation.entitlementToken, "signed activation carries an entitlement token");
+    assert.ok(persistedCodes().includes(code), "activation persisted the sold code copy");
+    return { target, code, token: activation.entitlementToken };
+  }
+  function assertDenied(sale, device, label) {
+    assert.strictEqual(activate(sale.code, device).success, false, `${label}: activation denied`);
+    assert.strictEqual(activate(sale.code, `${device}-new`).success, false, `${label}: new device denied`);
+    const refreshed = refresh(sale.token, device);
+    assert.strictEqual(refreshed.success, false, `${label}: refresh denied`);
+    assert.strictEqual(refreshed.error, "entitlement_revoked", `${label}: refresh reports revocation`);
+  }
+
+  const refunded = await soldAndActivated("device-refund", "192.0.2.10");
+  assert.strictEqual(refresh(refunded.token, "device-refund").success, true, "active sale refreshes");
+  const preRevokeSnapshot = fs.readFileSync(process.env.CODES_FILE, "utf8");
+  const refundRevokeRes = makeRes();
+  liveRoutes["/internal/vlabs/revoke"](signedReq(revokeFor(refunded.target), "192.0.2.10"), refundRevokeRes);
+  assert.strictEqual(refundRevokeRes.payload.revoked, true, JSON.stringify(refundRevokeRes.payload));
+  assert.ok(!persistedCodes().includes(refunded.code), "revoke persists the activation store");
+  assertDenied(refunded, "device-refund", "after revoke");
+  activationStore.loadActivationCodes();
+  assertDenied(refunded, "device-refund", "after restart");
+
+  // Crash between the sold-store revoke and the activation-store write: the
+  // stale active copy is back on disk, but the reload must not resurrect it.
+  fs.writeFileSync(process.env.CODES_FILE, preRevokeSnapshot);
+  activationStore.loadActivationCodes();
+  assertDenied(refunded, "device-refund", "after crash reload");
+  assert.ok(!persistedCodes().includes(refunded.code), "reload rewrites the stale copy away");
+
+  // Activation persistence failure: the revoke fails retryably, stays denied
+  // in-process and after restart, and a retry completes the order.
+  const disputed = await soldAndActivated("device-dispute", "192.0.2.11");
+  const disputeRevoke = revokeFor(disputed.target, { reason: "stripe_dispute" });
+  const failedPersistRes = makeRes();
+  failingRoutes["/internal/vlabs/revoke"](signedReq(disputeRevoke, "192.0.2.11"), failedPersistRes);
+  assert.strictEqual(failedPersistRes.statusCode, 503, "activation write failure is reported");
+  assert.notStrictEqual(
+    JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[disputed.target.externalOrderId].status,
+    "REVOKED", "order stays retryable while the activation store is stale",
+  );
+  assert.ok(persistedCodes().includes(disputed.code), "stale copy remains on disk after the failed write");
+  assertDenied(disputed, "device-dispute", "after failed persist");
+  activationStore.loadActivationCodes();
+  assertDenied(disputed, "device-dispute", "after failed persist restart");
+  const retryRevokeRes = makeRes();
+  liveRoutes["/internal/vlabs/revoke"](signedReq(disputeRevoke, "192.0.2.11"), retryRevokeRes);
+  assert.strictEqual(retryRevokeRes.payload.revoked, true, JSON.stringify(retryRevokeRes.payload));
+  assert.ok(!persistedCodes().includes(disputed.code));
+
+  // Payment-reference-only reversal of an activated sale also survives restart.
+  const reversed = await soldAndActivated("device-reversal", "192.0.2.12");
+  const reversalRes = makeRes();
+  const { externalOrderId: _reversedOrderId, ...paymentOnlyReversal } = revokeFor(reversed.target);
+  liveRoutes["/internal/vlabs/revoke"](signedReq(paymentOnlyReversal, "192.0.2.12"), reversalRes);
+  assert.strictEqual(reversalRes.statusCode, 200, JSON.stringify(reversalRes.payload));
+  activationStore.loadActivationCodes();
+  assertDenied(reversed, "device-reversal", "payment-only reversal after restart");
+
+  // Reversal tombstone before fulfillment stays terminal across a restart.
+  const tombstoned = fulfillBody("stealthx-securechat-elite-lifetime");
+  const earlyRevokeRes = makeRes();
+  liveRoutes["/internal/vlabs/revoke"](signedReq(revokeFor(tombstoned), "192.0.2.13"), earlyRevokeRes);
+  assert.strictEqual(earlyRevokeRes.payload.tombstoned, true);
+  activationStore.loadActivationCodes();
+  const lateRes = makeRes();
+  await liveRoutes["/internal/vlabs/fulfill"](signedReq(tombstoned, "192.0.2.13"), lateRes);
+  assert.strictEqual(lateRes.statusCode, 409, "tombstoned order cannot be fulfilled after restart");
+  assert.strictEqual(soldCodes.findByStripeSession(tombstoned.externalOrderId), null, "no code was issued");
+
+  // Unreadable sold store: sold copies are held inactive (fail-closed) but kept
+  // on disk, and return once the authoritative store is readable again.
+  const healthy = await soldAndActivated("device-healthy", "192.0.2.14");
+  const soldSnapshot = fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8");
+  fs.writeFileSync(process.env.SOLD_CODES_FILE, "{not json");
+  activationStore.loadActivationCodes();
+  assert.strictEqual(activate(healthy.code, "device-healthy").success, false, "unverifiable sale is denied");
+  assert.strictEqual(refresh(healthy.token, "device-healthy").success, false, "unverifiable refresh is denied");
+  assert.strictEqual(activationStore.saveActivationCodes(), true);
+  assert.ok(persistedCodes().includes(healthy.code), "held copy is preserved on save");
+  fs.writeFileSync(process.env.SOLD_CODES_FILE, soldSnapshot);
+  activationStore.loadActivationCodes();
+  assert.strictEqual(activate(healthy.code, "device-healthy").success, true, "verified sale is restored");
+  assert.strictEqual(refresh(healthy.token, "device-healthy").success, true, "verified refresh is restored");
+  assertDenied(refunded, "device-refund", "unrelated revoked sale stays denied");
 
   // Concurrency: a foreign-held orders lock fails the mutation closed.
   fs.writeFileSync(`${process.env.VLABS_FULFILLMENT_ORDERS_FILE}.lock`, "999999:foreignowner\n", { mode: 0o600 });

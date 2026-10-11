@@ -463,6 +463,14 @@ console.log("\n[Suite] ACTIVATE_CODE handler");
   assert(refresh.success === true && refresh.type === "ENTITLEMENT_REFRESH_RESULT", "active purchase refreshes signed entitlement");
   assert(refresh.entitlementToken === "signed:alice:securechat_pro_lifetime:pro", "refresh returns a new signed lease");
 
+  entry.revoked = true;
+  ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token" });
+  const flaggedRefresh = lastMsg(ws);
+  assert(flaggedRefresh.success === false && flaggedRefresh.error === "entitlement_revoked" && !flaggedRefresh.entitlementToken, "revoked record denies refresh for a still-valid bound proof");
+  delete entry.revoked;
+  ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token" });
+  assert(lastMsg(ws).success === true, "non-revoked record still renews after revoked flag is absent");
+
   ctx.activationCodes.splice(ctx.activationCodes.indexOf(entry), 1);
   ctx.handlers.REFRESH_ENTITLEMENT(ws, connId, { entitlementToken: "valid-refresh-token", requestId: refreshRequestId });
   const revokedRefresh = lastMsg(ws);
