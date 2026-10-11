@@ -16,7 +16,22 @@ The temporary legacy compatibility mode is deliberately deployment-bounded:
 Do not use transition mode as a permanent operating configuration. It permits
 old clients temporarily, so final enforcement remains a release gate. Alias
 migration itself never trusts an FCM token submitted by a legacy session. It
-uses only a separate, immutable pre-transition snapshot:
+uses only a separate, immutable pre-transition snapshot.
+
+**Alias migration is disabled by default** (#144 review F2). Owner decision
+2026-10-11: legacy ids are kept, so operators may enable it, but only together
+with the migration audit trail (`IDENTITY_MIGRATION_AUDIT_FILE`, append-only,
+mode `0600`; without it every migration fails closed) and the admin reversal
+`POST /admin/identity/alias/revoke {alias, reason}`, which revokes the alias,
+removes the push route inherited from it and returns
+`entitlementsReviewRequired` for the operator entitlement process. Before this
+candidate, any socket could register as any legacy id and overwrite its FCM
+token, so a snapshot can contain attacker-owned routes and there is no evidence
+in the data to filter them. Without migration, updated clients register their
+key-derived `sc-...` identity. The server ignores the snapshot unless
+`IDENTITY_MIGRATION_ENABLED=true` is set, which requires an explicit owner
+decision together with a migration audit log and an alias revoke procedure.
+Only then:
 
 1. Stop legacy token writes for the snapshot operation.
 2. Set absolute `FCM_TOKENS_FILE` and `IDENTITY_MIGRATION_ROUTES_FILE` paths.

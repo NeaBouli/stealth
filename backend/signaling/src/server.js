@@ -58,6 +58,8 @@ const { sanitize: sanitizeUtil }                                    = require(".
 const { issueEntitlementToken, verifyEntitlementToken, orderHash: entitlementOrderHash } = require("./payments/entitlement_tokens");
 const { resolveTurnSecret } = require("./security/turn_secret");
 const { createIdentityRegistry } = require("./services/identity_registry");
+const { createMigrationAudit } = require("./services/identity_migration_audit");
+const { setupIdentityAliasAdminRoutes } = require("./services/identity_alias_admin");
 const { loadIdentityMigrationRoutes } = require("./services/identity_migration_routes");
 const { readIdentityProtocolConfig } = require("./security/identity_protocol");
 
@@ -67,6 +69,9 @@ let ctx;
 
 const IDENTITY_PROTOCOL_CONFIG = readIdentityProtocolConfig(process.env);
 const identityRegistry = createIdentityRegistry({ file: process.env.IDENTITY_REGISTRY_FILE });
+const identityMigrationAudit = createMigrationAudit({
+  file: process.env.IDENTITY_MIGRATION_AUDIT_FILE,
+});
 
 // Initialize Firebase Cloud Messaging
 fcm.initFcm();
@@ -211,6 +216,7 @@ const server = http.createServer(app);
 loadFcmTokens();
 const identityMigrationRoutes = loadIdentityMigrationRoutes({
   file: process.env.IDENTITY_MIGRATION_ROUTES_FILE,
+  enabled: process.env.IDENTITY_MIGRATION_ENABLED === "true",
 });
 
 loadActivationCodes();
@@ -787,6 +793,9 @@ app.get("/metrics", requireAdmin, (req, res) => {
 });
 
 setupActivationAdminRoutes(app, requireAdmin, revokeActivationCode);
+setupIdentityAliasAdminRoutes(app, requireAdmin, {
+  identityRegistry, identityMigrationAudit, fcmTokens, saveFcmTokens,
+});
 
 // --- Stripe Payment Routes (disabled if STRIPE_SECRET_KEY not set) ---
 try {
@@ -856,6 +865,7 @@ ctx = buildContext({
   pkd, subscriptions, fcm, customIds, licenses,
   getIceServers, ADMIN_API_KEY, ALLOWED_ORIGINS, CLIENT_ID_REGEX,
   identityRegistry,
+  identityMigrationAudit,
   identityMigrationRoutes,
   identityProtocolMode: IDENTITY_PROTOCOL_CONFIG.mode,
   identityTransitionDeadline: IDENTITY_PROTOCOL_CONFIG.transitionDeadline,

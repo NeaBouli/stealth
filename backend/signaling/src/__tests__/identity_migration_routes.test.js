@@ -36,6 +36,10 @@ try {
   const afterRestart = loadIdentityMigrationRoutes({ file, nowSeconds: () => now });
   assert.strictEqual(first.get("legacy-01"), token);
   assert.strictEqual(afterRestart.get("legacy-01"), token);
+  // #144 review F2: an existing snapshot grants nothing unless migration is explicitly enabled.
+  const disabled = loadIdentityMigrationRoutes({ file, nowSeconds: () => now, enabled: false });
+  assert.strictEqual(disabled.size, 0);
+  assert.strictEqual(disabled.get("legacy-01"), null);
   assert.strictEqual(first.get("sc-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"), null);
   assert.strictEqual(first.get("unknown"), null);
   now = first.expiresAt + 1;

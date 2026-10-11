@@ -7,6 +7,7 @@ const os = require("os");
 const path = require("path");
 const { buildContext } = require("../context");
 const { createIdentityRegistry } = require("../services/identity_registry");
+const { createMigrationAudit } = require("../services/identity_migration_audit");
 const { parseIdentityPublicKey } = require("../security/identity_protocol");
 
 function mockWs() {
@@ -61,8 +62,10 @@ async function flushPromises() { await new Promise(resolve => setImmediate(resol
     sendIdentityMigrationChallenge: async (token, payload) => { pushes.push({ token, payload }); return true; },
   };
   const trustedMigrationRoutes = new Map();
+  const audit = createMigrationAudit({ file: path.join(root, "identity_migration_audit.jsonl") });
   const ctx = makeContext(registry, fcm, () => now, {
     identityMigrationRoutes: trustedMigrationRoutes,
+    identityMigrationAudit: audit,
   });
 
   try {
@@ -217,6 +220,12 @@ async function flushPromises() { await new Promise(resolve => setImmediate(resol
     assert.strictEqual(registry.resolve(legacyId), legacy.identityId);
     assert.strictEqual(ctx.fcmTokens.get(legacy.identityId), oldToken);
     assert.strictEqual(ctx.fcmTokens.has(legacyId), false);
+    const bound = audit.read().filter(record => record.event === "alias_bind_authorized");
+    assert.strictEqual(bound.length, 1, "migration is audited");
+    assert.strictEqual(bound[0].alias, legacyId);
+    assert.strictEqual(bound[0].identityId, legacy.identityId);
+    assert.strictEqual(JSON.stringify(bound[0]).includes(oldToken), false, "audit never stores push tokens");
+    assert.strictEqual((fs.statSync(path.join(root, "identity_migration_audit.jsonl")).mode & 0o077), 0);
 
     const failedAlias = "android-persist-failure";
     const failedToken = "synthetic-fcm-token-that-is-long-enough-failure";
@@ -225,6 +234,7 @@ async function flushPromises() { await new Promise(resolve => setImmediate(resol
     const wsPersistFailure = mockWs();
     const failureCtx = makeContext(registry, fcm, () => now, {
       identityMigrationRoutes: trustedMigrationRoutes,
+      identityMigrationAudit: audit,
       saveFcmTokens: () => false,
     });
     failureCtx.clients.set("persist-failure", {

@@ -1314,7 +1314,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     // ===================== Call Signaling =====================
 
-    fun sendCallInvite(targetId: String) {
+    fun sendCallInvite(requestedTarget: String) {
+        val targetId = com.securecall.app.call.CallTargetPolicy.resolve(
+            requestedTarget,
+            com.securecall.app.data.ContactRepository.getAll(this),
+        ) { a, b -> com.securecall.app.data.PhoneUtils.matches(a, b, this) }
         // BUG-034: If WS is not yet registered after reconnect, queue the call
         if (!isRegistered) {
             Log.w("WS_SERVICE", "BUG-034: WS not registered yet — queuing call to $targetId")
