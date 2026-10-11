@@ -38,9 +38,11 @@ jobs:
       - name: Verify browser privacy and closed checkout gates
         run: |
           node --check website/js/ifr-checkout.js
+          node --check website/js/invite-receiver.js
           node --test \
             website/js/ifr-checkout.test.cjs \
-            website/js/no-google-analytics.test.cjs
+            website/js/no-google-analytics.test.cjs \
+            website/js/invite-receiver.test.cjs
 
       - name: Run YAML Lint
         run: yamllint .
