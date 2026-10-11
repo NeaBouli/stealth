@@ -4,6 +4,7 @@
     <script>if(window.location.hostname!=="stealthx.tech"&&window.location.hostname!=="www.stealthx.tech"&&window.location.hostname!=="localhost"&&window.location.hostname!=="127.0.0.1"){window.location.replace("https://stealthx.tech"+window.location.pathname);}</script>
     <meta charset="UTF-8">
     <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-8obao0vuMIQ13kigNcftx7qnNN+tgkLHYcQ/P+YkPKk='; style-src 'self' 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureCall Invitation</title>
     <meta name="description" content="Accept your SecureCall invitation. Join the encrypted communication network with end-to-end encrypted calls.">
@@ -11,12 +12,9 @@
     <meta name="theme-color" content="#0a0a12">
     <link rel="canonical" href="https://stealthx.tech/invite.html">
     <link rel="shortcut icon" href="logo.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Inter, -apple-system, sans-serif; background: #0a0a12; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0a0a12; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
         .card { max-width: 420px; width: 100%; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 16px; padding: 40px 32px; text-align: center; }
         .icon { font-size: 48px; margin-bottom: 16px; }
         h1 { font-size: 22px; margin-bottom: 8px; }
@@ -52,7 +50,7 @@
         <p class="subtitle" id="subtitle">You've been invited to make encrypted calls. No phone number needed.</p>
 
         <div class="id-label">Inviter's SecureCall ID</div>
-        <div class="id-box" id="idBox" onclick="copyId()">
+        <div class="id-box" id="idBox">
             <span id="secureId">loading...</span>
             <span class="copied" id="copiedLabel">Copied!</span>
         </div>

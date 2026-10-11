@@ -216,6 +216,9 @@
         module.exports = api;
     } else {
         root.copyId = copyId;
+        // Bound here instead of an inline onclick so the pages can run under a strict CSP.
+        var idBox = root.document.getElementById('idBox');
+        if (idBox) idBox.addEventListener('click', copyId);
         render(root.document, root);
     }
 })(typeof window !== 'undefined' ? window : globalThis);
