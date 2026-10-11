@@ -61,7 +61,8 @@ assert.equal(typeof customIdMw, "function", "custom-id limiter registered");
 function customIdHit(ip) {
   let passed = false;
   const res = resStub();
-  customIdMw({ ip }, res, () => { passed = true; });
+  // Real request shape: the limiter resolves the client via getClientIp (socket address).
+  customIdMw({ headers: {}, socket: { remoteAddress: ip } }, res, () => { passed = true; });
   return passed ? "next" : res.code;
 }
 
