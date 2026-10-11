@@ -38,6 +38,7 @@ import com.securecall.app.data.CallRecord;
 import com.securecall.app.data.CallType;
 import com.securecall.app.net.ExternalVpnMonitor;
 import com.securecall.app.security.SecureCallMonitor;
+import com.securecall.app.security.IdentityProtocol;
 import com.securecall.app.ui.EdgeToEdgeHelper;
 
 public class CallActivity extends AppCompatActivity {
@@ -66,6 +67,7 @@ public class CallActivity extends AppCompatActivity {
     private boolean isMuted = false;
     private boolean isSpeaker = false;
     private boolean isCallActive = false;
+    private boolean transportStartRequested = false;
     private volatile boolean isEnding = false;
     private volatile boolean showingSaveDialog = false;
     private long callStartTimeMs = 0;
@@ -97,6 +99,8 @@ public class CallActivity extends AppCompatActivity {
     // Security status UI
     private ImageView securityStatusIcon;
     private TextView securityStatusText;
+    private TextView securityCodeText;
+    private View encryptionIndicator;
     private TextView securityWarningBanner;
     private Runnable warningBannerHideRunnable;
     private FloatingActionButton fabEndCall;
@@ -171,6 +175,8 @@ public class CallActivity extends AppCompatActivity {
         // Security status views
         securityStatusIcon = findViewById(R.id.securityStatusIcon);
         securityStatusText = findViewById(R.id.securityStatusText);
+        securityCodeText = findViewById(R.id.securityCodeText);
+        encryptionIndicator = findViewById(R.id.encryptionIndicator);
         securityWarningBanner = findViewById(R.id.securityWarningBanner);
         findViewById(R.id.securityStatusBar).setOnClickListener(v -> showSecurityDetailsDialog());
         if (securityWarningBanner != null) {
@@ -197,7 +203,7 @@ public class CallActivity extends AppCompatActivity {
         originalPhone = origPhone != null ? origPhone : "";
 
         // Re-resolve caller name from phone book if it looks like a raw ID or number
-        if (callerName == null || callerName.isEmpty() || callerName.startsWith("android-")
+        if (callerName == null || callerName.isEmpty() || IdentityProtocol.isDirectClientId(callerName)
                 || callerName.matches("^[+\\d\\s\\-()]+$")) {
             String phoneForLookup = !originalPhone.isEmpty() ? originalPhone : callerName;
             String resolved = com.securecall.app.data.PhoneBookResolver.INSTANCE
@@ -210,7 +216,7 @@ public class CallActivity extends AppCompatActivity {
         callContactName = (callerName != null && !callerName.isEmpty()) ? callerName : "Unknown";
 
         // Verified Contact badge — show if caller name was resolved from phone book
-        if (callerName != null && !callerName.isEmpty() && !callerName.startsWith("android-")
+        if (callerName != null && !callerName.isEmpty() && !IdentityProtocol.isDirectClientId(callerName)
                 && !callerName.matches("^[+\\d\\s\\-()]+$")) {
             connectionState.setText("\u2713 Verified Contact");
             connectionState.setTextColor(getResources().getColor(android.R.color.holo_green_light, getTheme()));
@@ -225,6 +231,25 @@ public class CallActivity extends AppCompatActivity {
         com.securecall.app.net.WebSocketService ws =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
 
+        if (ws != null) {
+            ws.setOnSecureSessionEstablished((establishedSessionId, code) -> {
+                if (sessionId != null && !sessionId.isEmpty()
+                        && !sessionId.equals(establishedSessionId)) return kotlin.Unit.INSTANCE;
+                runOnUiThread(() -> {
+                    stopRingbackTone();
+                    if (encryptionIndicator != null) encryptionIndicator.setVisibility(View.VISIBLE);
+                    if (securityCodeText != null && code.length() == 6) {
+                        securityCodeText.setText(getString(
+                                R.string.call_security_code,
+                                code.substring(0, 3), code.substring(3)));
+                        securityCodeText.setVisibility(View.VISIBLE);
+                    }
+                    startTransportAndTimer(connectionState, callTimer);
+                });
+                return kotlin.Unit.INSTANCE;
+            });
+        }
+
         if (fromNotification) {
             // FCM push path — accept and start
             Log.d(TAG, "Launched from notification: session=" + sessionId + ", caller=" + callerName);
@@ -232,12 +257,12 @@ public class CallActivity extends AppCompatActivity {
                 ws.sendCallAccept(sessionId);
             }
             prepareCallAudio();
-            startTransportAndTimer(connectionState, callTimer);
+            connectionState.setText(R.string.call_connecting);
         } else if (isIncoming) {
             // Already accepted from IncomingCallActivity
             Log.d(TAG, "Incoming call accepted: session=" + sessionId);
             prepareCallAudio(); // BUG-039: pre-configure audio before ICE
-            startTransportAndTimer(connectionState, callTimer);
+            connectionState.setText(R.string.call_connecting);
         } else {
             // Trial check: block outgoing calls if trial expired and still FREE
             if (!com.securecall.app.trial.TrialManager.INSTANCE.isTrialActive(this)
@@ -265,9 +290,8 @@ public class CallActivity extends AppCompatActivity {
 
             if (ws != null && targetId != null && !targetId.isEmpty()) {
                 ws.setOnCallAccepted(acceptedSessionId -> {
-                    Log.d(TAG, "Remote accepted, session=" + acceptedSessionId);
+                    Log.d(TAG, "Remote accepted with authenticated key confirmation");
                     stopRingbackTone();
-                    runOnUiThread(() -> startTransportAndTimer(connectionState, callTimer));
                     return kotlin.Unit.INSTANCE;
                 });
                 ws.setOnCallError((error, message) -> {
@@ -710,6 +734,8 @@ public class CallActivity extends AppCompatActivity {
     }
 
     private void startTransportAndTimer(TextView connectionState, Chronometer callTimer) {
+        if (transportStartRequested || isCallActive || isEnding) return;
+        transportStartRequested = true;
         cancelPendingCallActivation();
         connectionState.setText(R.string.call_connecting);
         updateCallButton(false);
@@ -993,6 +1019,7 @@ public class CallActivity extends AppCompatActivity {
                 ws.sendCallEnd(sid);
             }
             ws.setOnCallAccepted(null);
+            ws.setOnSecureSessionEstablished(null);
             ws.setOnCallEnded(null);
             ws.setOnCallError(null);
             ws.clearSession();
@@ -1151,7 +1178,7 @@ public class CallActivity extends AppCompatActivity {
         Log.d(TAG, "shouldOfferContactSave: originalPhone='" + originalPhone
                 + "', callContactId='" + callContactId + "'");
         if (originalPhone.isEmpty() || callContactId.isEmpty()) return false;
-        if (!callContactId.startsWith("android-")) return false;
+        if (!IdentityProtocol.isDirectClientId(callContactId)) return false;
         // Check if already saved in contacts (by clientId or phone number)
         String normalizedPhone = com.securecall.app.data.PhoneUtils.INSTANCE.normalize(originalPhone, this);
         java.util.List<com.securecall.app.data.Contact> contacts =
@@ -1187,7 +1214,7 @@ public class CallActivity extends AppCompatActivity {
                 // this deduplicates correctly with phone book contacts
                 String savePhoneOrId = (originalPhone != null && !originalPhone.isEmpty())
                     ? originalPhone : callContactId;
-                String saveSecureId = callContactId.startsWith("android-") ? callContactId : null;
+                String saveSecureId = IdentityProtocol.isDirectClientId(callContactId) ? callContactId : null;
                 com.securecall.app.data.Contact contact = new com.securecall.app.data.Contact(
                     java.util.UUID.randomUUID().toString(),
                     callContactName, savePhoneOrId,
@@ -1239,6 +1266,7 @@ public class CallActivity extends AppCompatActivity {
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
         if (ws != null) {
             try { ws.killAllAudio(); } catch (Exception e) { Log.e(TAG, "Error in killAllAudio", e); }
+            ws.setOnSecureSessionEstablished(null);
         }
         if (secureCallMonitor != null) {
             secureCallMonitor.stopMonitoring(this);

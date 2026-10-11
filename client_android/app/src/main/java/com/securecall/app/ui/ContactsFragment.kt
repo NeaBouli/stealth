@@ -27,6 +27,7 @@ import com.securecall.app.CallActivity
 import com.securecall.app.R
 import com.securecall.app.data.Contact
 import com.securecall.app.data.ContactRepository
+import com.securecall.app.security.IdentityProtocol
 import com.securecall.app.ui.adapter.ContactAdapter
 
 class ContactsFragment : Fragment() {
@@ -255,10 +256,10 @@ class ContactsFragment : Fragment() {
 
         // Exclude phone book contacts that are already covered by app contacts (by phone or secureId)
         val appPhoneNumbers = appContacts
-            .filter { !it.phoneOrId.startsWith("android-") }
+            .filter { !IdentityProtocol.isDirectClientId(it.phoneOrId) }
             .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }.toSet()
         val appSecureIds = appContacts.mapNotNull { it.secureId }.toSet() +
-            appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
+            appContacts.filter { IdentityProtocol.isDirectClientId(it.phoneOrId) }.map { it.phoneOrId }.toSet()
         val secureIdPhones = cachedClientIdToPhone
             .filter { it.key in appSecureIds }
             .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
@@ -283,10 +284,10 @@ class ContactsFragment : Fragment() {
 
                 // Exclude phone book contacts already covered by app contacts
                 val appPhoneNumbers = appContacts
-                    .filter { !it.phoneOrId.startsWith("android-") }
+                    .filter { !IdentityProtocol.isDirectClientId(it.phoneOrId) }
                     .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }.toSet()
                 val appSecureIds = appContacts.mapNotNull { it.secureId }.toSet() +
-                    appContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
+                    appContacts.filter { IdentityProtocol.isDirectClientId(it.phoneOrId) }.map { it.phoneOrId }.toSet()
                 val secureIdPhones = cachedClientIdToPhone
                     .filter { it.key in appSecureIds }
                     .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
@@ -328,7 +329,7 @@ class ContactsFragment : Fragment() {
         // to avoid race condition where allContacts is still empty when this runs
         val contactsSnapshot = cachedContacts ?: allContacts
         val phoneNumbers = contactsSnapshot
-            .filter { !it.phoneOrId.startsWith("android-") }
+            .filter { !IdentityProtocol.isDirectClientId(it.phoneOrId) }
             .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }
         Log.d(TAG, "checkSecureCallMembers: ${contactsSnapshot.size} contacts, ${phoneNumbers.size} phone numbers to check")
         if (phoneNumbers.isEmpty()) return
@@ -428,8 +429,8 @@ class ContactsFragment : Fragment() {
         }
 
         // Separate app contacts into SecureID-based and phone-based
-        val secureIdContacts = appContacts.filter { it.phoneOrId.startsWith("android-") }
-        val phoneAppContacts = appContacts.filter { !it.phoneOrId.startsWith("android-") }
+        val secureIdContacts = appContacts.filter { IdentityProtocol.isDirectClientId(it.phoneOrId) }
+        val phoneAppContacts = appContacts.filter { !IdentityProtocol.isDirectClientId(it.phoneOrId) }
 
         // Build lookup: normalized phone → phone app contact
         val phoneAppMap = mutableMapOf<String, Contact>()
@@ -493,7 +494,7 @@ class ContactsFragment : Fragment() {
         var metadataUpdated = false
         for (i in finalAppContacts.indices) {
             val c = finalAppContacts[i]
-            if (!c.phoneOrId.startsWith("android-") && c.secureId == null) {
+            if (!IdentityProtocol.isDirectClientId(c.phoneOrId) && c.secureId == null) {
                 val norm = c.phoneOrId.replace(Regex("[^0-9+]"), "")
                 val cid = phoneToCid[norm]
                 if (cid != null) {
@@ -507,10 +508,10 @@ class ContactsFragment : Fragment() {
         // Rebuild display list
         val freshAppContacts = ContactRepository.getAll(ctx)
         val appPhoneNumbers = freshAppContacts
-            .filter { !it.phoneOrId.startsWith("android-") }
+            .filter { !IdentityProtocol.isDirectClientId(it.phoneOrId) }
             .map { it.phoneOrId.replace(Regex("[^0-9+]"), "") }.toSet()
         val appSecureIds = freshAppContacts.mapNotNull { it.secureId }.toSet() +
-            freshAppContacts.filter { it.phoneOrId.startsWith("android-") }.map { it.phoneOrId }.toSet()
+            freshAppContacts.filter { IdentityProtocol.isDirectClientId(it.phoneOrId) }.map { it.phoneOrId }.toSet()
         val secureIdPhones = cachedClientIdToPhone
             .filter { it.key in appSecureIds }
             .values.map { it.replace(Regex("[^0-9+]"), "") }.toSet()
@@ -530,7 +531,7 @@ class ContactsFragment : Fragment() {
 
     /**
      * Remove stale SecureIDs from contacts.
-     * If an app contact is saved only by SecureID (android-*) and that ID is no longer
+     * If an app contact is saved only by a SecureCall ID and that ID is no longer
      * registered on the server, delete it — the device probably reinstalled and has a new ID.
      */
     private fun cleanupStaleSecureIds(activeClientIds: Set<String>) {
@@ -538,7 +539,7 @@ class ContactsFragment : Fragment() {
         if (activeClientIds.isEmpty()) return // No server data yet, don't delete anything
         val appContacts = ContactRepository.getAll(ctx)
         val staleContacts = appContacts.filter { c ->
-            c.phoneOrId.startsWith("android-") && c.phoneOrId !in activeClientIds
+            IdentityProtocol.isDirectClientId(c.phoneOrId) && c.phoneOrId !in activeClientIds
         }
         if (staleContacts.isNotEmpty()) {
             Log.d(TAG, "Cleaning up ${staleContacts.size} stale SecureID contacts: ${staleContacts.map { it.phoneOrId }}")
@@ -634,13 +635,13 @@ class ContactsFragment : Fragment() {
 
     private fun isContactOnline(contact: Contact): Boolean {
         val normalized = contact.phoneOrId.replace(Regex("[^0-9+]"), "")
-        val clientId = contact.secureId ?: if (contact.phoneOrId.startsWith("android-")) contact.phoneOrId else null
+        val clientId = contact.secureId ?: contact.phoneOrId.takeIf(IdentityProtocol::isDirectClientId)
         return onlinePhones.contains(normalized) ||
             (clientId != null && cachedOnlineClientIds.contains(clientId))
     }
 
     private fun isContactRegistered(contact: Contact): Boolean {
-        return contact.phoneOrId.startsWith("android-") ||
+        return IdentityProtocol.isDirectClientId(contact.phoneOrId) ||
             contact.secureId != null ||
             !contact.isPhoneContact || // App-saved contacts always show (not from phone book)
             registeredPhones.contains(contact.phoneOrId.replace(Regex("[^0-9+]"), ""))
@@ -732,7 +733,7 @@ class ContactsFragment : Fragment() {
                                 com.securecall.app.data.ContactRepository.delete(ctx, contact.id)
                                 com.securecall.app.data.ContactRepository.deleteByPhoneOrId(ctx, contact.phoneOrId)
                                 // Hide phone number so phone-book contacts don't reappear
-                                if (contact.isPhoneContact || !contact.phoneOrId.startsWith("android-")) {
+                                if (contact.isPhoneContact || !IdentityProtocol.isDirectClientId(contact.phoneOrId)) {
                                     com.securecall.app.data.ContactRepository.hidePhone(ctx, contact.phoneOrId)
                                 }
                                 invalidateCache()
@@ -749,7 +750,7 @@ class ContactsFragment : Fragment() {
     }
 
     private fun startCall(contact: Contact) {
-        if (contact.phoneOrId.startsWith("android-") || contact.secureId != null) {
+        if (IdentityProtocol.isDirectClientId(contact.phoneOrId) || contact.secureId != null) {
             // Pre-call health check for direct calls too
             val ws = com.securecall.app.net.WebSocketService.instance
             if (ws == null || !ws.isConnected) {
@@ -763,7 +764,7 @@ class ContactsFragment : Fragment() {
             val intent = Intent(requireContext(), CallActivity::class.java).apply {
                 putExtra("callerName", contact.name)
                 putExtra("phoneNumber", callTarget)
-                if (!contact.phoneOrId.startsWith("android-")) {
+                if (!IdentityProtocol.isDirectClientId(contact.phoneOrId)) {
                     putExtra("originalPhone", contact.phoneOrId)
                 }
             }

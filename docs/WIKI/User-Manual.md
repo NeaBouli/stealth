@@ -105,21 +105,21 @@ During a call, the security status bar shows:
 #### ████ UPGRADING ████
 ---
 
-### Free → Pro (€3.49/month)
-1. Open Settings → Subscription
-2. Tap "Upgrade to Pro"
-3. Complete purchase via Google Play
+### Current Status
+Paid controls are disabled. The app hides its complete purchase surface until a
+specific Google Play offer has passed purchase, restore, refund, revoke and RTDN
+tests for the same release.
 
-### Pro → Premium (€4.99/month)
-1. Open Settings → Subscription
-2. Tap "Upgrade to Premium"
-3. Complete purchase via Google Play
+### Planned Direct Lifetime Offers
+- Pro candidate: €15, or €7.50 after eligible browser-only IFR holder proof
+- Premium candidate: €25, or €12.50 after eligible browser-only IFR holder proof
+- The Android app contains no wallet connection or IFR verification.
+- Sales remain closed until matching `PRODUCT_READY` and VLABS `FINANCE_READY`.
 
-### Cancel Subscription
-1. Google Play → Subscriptions
-2. Select SecureCall
-3. Tap "Cancel subscription"
-4. Features remain active until end of billing period
+### Future Google Play Offers
+If a subscription is later approved, the app will load its price from Google
+Play. Purchase restoration and cancellation will then be managed through Google
+Play; no hard-coded website price applies to that channel.
 
 ---
 

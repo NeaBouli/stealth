@@ -1,6 +1,6 @@
 # SecureCall — User Manual
 
-**Published APK 1.0.48 · Play update 1.0.49 under review · StealthX Platform**
+**Release status and current downloads are maintained in `docs/DISTRIBUTION_MATRIX.md`.**
 
 ---
 
@@ -12,7 +12,7 @@ SecureCall is an end-to-end encrypted voice call app built for people who need c
 
 ## How It Works
 
-When you make a call, SecureCall establishes a direct encrypted audio channel between two devices using WebRTC with hardware-backed key exchange. The signaling server (which coordinates the connection) only sees encrypted session tokens — never your voice. Once the call is established, audio travels peer-to-peer. If a direct connection cannot be established, a TURN relay is used, but audio remains end-to-end encrypted and the relay cannot read it.
+When you make a call, SecureCall derives per-call key material with X25519 and HKDF-SHA256 and protects application media frames with XChaCha20-Poly1305. A per-install P-256 identity key in Android Keystore signs registration and the ephemeral key exchange. Media starts only after both clients verify a transcript-bound confirmation, and both show the same six-digit security code. The signaling service coordinates connection setup and processes SecureIDs, public key material and routing/delivery metadata; call audio is not sent to that service. WebRTC uses a direct route when available and otherwise may use a TURN relay. Human-readable aliases, custom IDs and phone lookups remain server-resolved, so compare the canonical SecureID or security code when target authenticity matters. SecureCall does not implement a Double Ratchet or post-compromise security.
 
 Your SecureCall ID is your identity on the network. It is randomly generated on your device and never tied to your phone number, email, or real name.
 
@@ -85,10 +85,10 @@ Tap the connection icon in the toolbar to manually disconnect or reconnect.
 Displays your active tier (Free, Pro, or Premium). Read-only.
 
 **Upgrade to Pro / Upgrade to Premium**
-Opens the in-app purchase screen. Available on Free and Pro tiers respectively. Not shown on Premium.
+Paid Google Play controls are hidden while the release-bound billing gate is closed. When a future Play catalog is approved, the app may expose only products and prices returned by Google Play for that catalog.
 
 **Activation Code**
-Enter a redeemable code provided by StealthX. Type the code in the field and tap **Activate**. On success the app restarts and applies your new tier. On failure you will see one of these errors:
+Code redemption is hidden while the release-bound activation gate is closed. For an approved release, enter a valid code provided through the official fulfillment path. On success the app applies the verified tier. On failure you may see one of these errors:
 - *Invalid code* — the code does not exist
 - *Code exhausted* — all device slots for this code are used
 - *Max devices reached* — your account has reached the device limit

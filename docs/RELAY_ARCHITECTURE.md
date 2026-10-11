@@ -46,7 +46,7 @@ Critical points:
 | Level | Attacker | Protection Status |
 |-------|----------|-------------------|
 | L1 — Passive Observer | Network sniffing | Achieved (E2E) |
-| L2 — Active Relay Operator | IP, timing, partner | Partial (GhostNet) |
+| L2 — Active Relay Operator | IP, timing, partner | Not mitigated by a SecureCall relay layer in the current release |
 | L3 — State-Level Adversary | Global observation | Goal of this handbook |
 
 ## Four Architecture Options

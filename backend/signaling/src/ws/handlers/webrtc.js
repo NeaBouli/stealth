@@ -5,11 +5,33 @@ const crypto = require("crypto");
 module.exports = function webrtcHandlers(ctx) {
   const { routingTable, getClientId, getSessionPeer, sendToClient, getIceServers } = ctx;
 
+  function activeSession(ws, connId, sessionId) {
+    const myClientId = getClientId(connId);
+    if (!myClientId) {
+      ws.send(JSON.stringify({ type: "ERROR", error: "not_registered" }));
+      return null;
+    }
+    const session = routingTable.get(sessionId);
+    if (!session) {
+      ws.send(JSON.stringify({ type: "ERROR", error: "session_not_found" }));
+      return null;
+    }
+    if (session.from !== myClientId && session.to !== myClientId) {
+      ws.send(JSON.stringify({ type: "ERROR", error: "not_participant" }));
+      return null;
+    }
+    if (session.state !== "ACTIVE") {
+      ws.send(JSON.stringify({ type: "ERROR", error: "session_not_active" }));
+      return null;
+    }
+    return { myClientId, session };
+  }
+
   return {
     WEBRTC_OFFER(ws, connId, msg) {
-      const myClientId = getClientId(connId);
-      if (!myClientId) return ws.send(JSON.stringify({ type: "ERROR", error: "not_registered" }));
-      if (!msg.sessionId || !routingTable.has(msg.sessionId)) return ws.send(JSON.stringify({ type: "ERROR", error: "session_not_found" }));
+      const active = activeSession(ws, connId, msg.sessionId);
+      if (!active) return;
+      const { myClientId } = active;
       if (!msg.sdp) return ws.send(JSON.stringify({ type: "ERROR", error: "missing_sdp", message: "Field 'sdp' is required for WEBRTC_OFFER" }));
       if (typeof msg.sdp !== "string" || msg.sdp.length > 10000) return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_sdp" }));
 
@@ -22,9 +44,9 @@ module.exports = function webrtcHandlers(ctx) {
     },
 
     WEBRTC_ANSWER(ws, connId, msg) {
-      const myClientId = getClientId(connId);
-      if (!myClientId) return ws.send(JSON.stringify({ type: "ERROR", error: "not_registered" }));
-      if (!msg.sessionId || !routingTable.has(msg.sessionId)) return ws.send(JSON.stringify({ type: "ERROR", error: "session_not_found" }));
+      const active = activeSession(ws, connId, msg.sessionId);
+      if (!active) return;
+      const { myClientId } = active;
       if (!msg.sdp) return ws.send(JSON.stringify({ type: "ERROR", error: "missing_sdp", message: "Field 'sdp' is required for WEBRTC_ANSWER" }));
       if (typeof msg.sdp !== "string" || msg.sdp.length > 10000) return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_sdp" }));
 
@@ -37,9 +59,9 @@ module.exports = function webrtcHandlers(ctx) {
     },
 
     ICE_CANDIDATE(ws, connId, msg) {
-      const myClientId = getClientId(connId);
-      if (!myClientId) return ws.send(JSON.stringify({ type: "ERROR", error: "not_registered" }));
-      if (!msg.sessionId || !routingTable.has(msg.sessionId)) return ws.send(JSON.stringify({ type: "ERROR", error: "session_not_found" }));
+      const active = activeSession(ws, connId, msg.sessionId);
+      if (!active) return;
+      const { myClientId } = active;
       if (!msg.candidate) return ws.send(JSON.stringify({ type: "ERROR", error: "missing_candidate", message: "Field 'candidate' is required for ICE_CANDIDATE" }));
       if (typeof msg.candidate !== "object" && typeof msg.candidate !== "string") return ws.send(JSON.stringify({ type: "ERROR", error: "invalid_candidate" }));
 
@@ -51,13 +73,9 @@ module.exports = function webrtcHandlers(ctx) {
     },
 
     GHOST_PREPARE(ws, connId, msg) {
-      const myClientId = getClientId(connId);
-      if (!myClientId) {
-        return ws.send(JSON.stringify({ type: "ERROR", error: "not_registered", message: "You must REGISTER before sending GHOST_PREPARE" }));
-      }
-      if (!msg.sessionId || !routingTable.has(msg.sessionId)) {
-        return ws.send(JSON.stringify({ type: "ERROR", error: "session_not_found" }));
-      }
+      const active = activeSession(ws, connId, msg.sessionId);
+      if (!active) return;
+      const { myClientId } = active;
       console.log("[GHOST] PREPARE received for session:", msg.sessionId);
       const ghostNetId = crypto.randomUUID();
       ws.send(JSON.stringify({

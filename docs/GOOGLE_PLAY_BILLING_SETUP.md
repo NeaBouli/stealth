@@ -17,41 +17,43 @@ historical revocations can still be applied.
 
 1. **securecall_pro_monthly**
    - Type: Recurring subscription
-   - Price: €3.49/month
+   - Price: Not approved; configure only after the exact Play catalog receives
+     matching PRODUCT_READY and VLABS FINANCE_READY
    - Grace period: 3 days
    - Description: "Pro plan — unlimited calls, anti-recording, priority connection"
 
 2. **securecall_pro_yearly**
    - Type: Recurring subscription
-   - Price: €34.99/year (save 16%)
+   - Price: Not approved
    - Grace period: 3 days
 
 3. **securecall_premium_monthly**
    - Type: Recurring subscription
-   - Price: €4.99/month
+   - Price: Not approved
    - Grace period: 3 days
-   - Description: "Premium plan — all features, advanced threat protection, zero telemetry"
+   - Description: "Premium plan — all approved Premium features"
 
 4. **securecall_premium_yearly**
    - Type: Recurring subscription
-   - Price: €49.99/year (save 16%)
+   - Price: Not approved
    - Grace period: 3 days
 
 ### One-Time Products
 
 5. **securecall_pro_lifetime**
    - Type: One-time product (managed/non-consumable)
-   - Candidate price: €15.00
+   - Price: Not approved for Google Play; do not copy the separate direct-sale
+     VLABS price into Play Console without a version-bound approval
    - Description: "Pro access for supported SecureCall versions"
 
 6. **securecall_premium_lifetime**
    - Type: One-time product (managed/non-consumable)
-   - Candidate price: €25.00
+   - Price: Not approved for Google Play
    - Description: "Premium access for supported SecureCall versions"
 
 7. **securecall_premium_activation_code**
    - Type: One-time product (managed/non-consumable)
-   - Price: €25.00
+   - Price: Not approved for Google Play
    - Description: "Premium activation code for supported SecureCall versions"
 
 ## Service Account for Purchase Verification

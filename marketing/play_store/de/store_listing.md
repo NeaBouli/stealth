@@ -1,84 +1,56 @@
-# Play Store Listing — SecureCall (Deutsch)
+# Play Store Listing - SecureCall (Deutsch)
 
-## App-Name (max 30 Zeichen)
-```
-SecureCall — Sichere Anrufe
-```
+Diese Datei ist eine redaktionelle Ansicht. Die kanonische deutsche Store-Kopie
+liegt in `marketing/play_store_de.txt`; Preis-, Sicherheits- und Releaseangaben
+muessen vor jeder Einreichung mit diesem Kandidaten und der Distribution Matrix
+abgeglichen werden.
 
-## Kurzbeschreibung (max 80 Zeichen)
-```
-Ende-zu-Ende verschluesselte Anrufe. Keine Telefonnummer. Kein Tracking.
-```
+## App-Name (max. 30 Zeichen)
 
-## Vollstaendige Beschreibung (max 4000 Zeichen)
-
-```
-SecureCall ist eine verschluesselte Telefon-App fuer alle, die Privatsphaere ernst nehmen.
-
-🔐 ENDE-ZU-ENDE VERSCHLUESSELT
-WebRTC mit DTLS-SRTP Verschluesselung. Anrufe sind Peer-to-Peer — kein Audio beruehrt jemals unsere Server. X25519 Schluesselaustausch fuer maximale Sicherheit.
-
-📵 KEINE TELEFONNUMMER NOETIG
-Du wirst nur ueber deine SecureID identifiziert. Keine Registrierung, keine persoenlichen Daten erforderlich.
-
-🛡️ ROBUSTE NETZWERKVERBINDUNG
-SecureCall unterstuetzt WLAN und mobile Daten mit automatischem TURN-Relay-Fallback.
-
-💥 EMERGENCY DELETE
-5 schnelle Tipps in den Einstellungen loeschen sofort alle App-Daten. Keine Spuren.
-
-🚨 NOTFALL-BROADCAST
-Erhalte kritische Sicherheitswarnungen vom Entwicklerteam. Vorinstallierte Vorlagen — kein Nachrichteninhalt wird uebertragen, nur Alert-IDs. Datenschutzfreundliches Warnsystem.
-
-📱 DREI VERSIONEN
-• Free — Vollstaendige Anruffunktion, Banner- und Interstitial-Werbung
-• Pro — Keine Werbung, Kontakte, Anrufverlauf, Online-Status
-• Premium — Alle Funktionen + erweiterter Bedrohungs- und Anti-Recording-Schutz
-
-🔓 PREMIUM FREISCHALTEN — DREI WEGE
-• Google Play In-App-Kauf
-• Aktivierungscode (kontaktiere @secureslot auf X)
-• Sperre >= 1.000 IFR Token — lebenslanger Zugang, kein Abo
-  IFR ist der native Token des Inferno Protocol (ifrunit.tech)
-  Bootstrap-Phase endet am 5. Juni 2026
-
-🎁 PREMIUM VERSCHENKEN
-Erstelle einen einmaligen Geschenkcode fuer einen Freund. Einfach in Einstellungen eingeben — sofort Premium. Kein Account noetig. 30 Tage gueltig.
-
-🌍 DATENSCHUTZ BY DESIGN
-• Keine Kontoregistrierung
-• Keine persoenlichen Daten auf unseren Servern
-• Kein Anrufinhalt beruehrt jemals unsere Infrastruktur
-• Quellcode einsehbar: github.com/NeaBouli/stealth
-• Firma: Vendetta Labs, Griechenland (EU) — DSGVO-konform
-
-📢 KOSTENLOSE VERSION ENTHAELT WERBUNG
-⚠️ Die Free-Version enthaelt Banner- und Interstitial-Werbung zur Unterstuetzung der Entwicklung. Werbung wird zwischen Anrufen und in der Hauptoberflaeche angezeigt. Keine Werbung in Pro oder Premium.
-
-Upgrade auf Pro oder Premium fuer ein werbefreies Erlebnis.
-
-📦 AUCH ERHAELTLICH AUF
-• Direkter APK-Download: github.com/NeaBouli/stealth/releases
-
-Website: stealthx.tech
-Folge uns: @secureslot auf X
+```text
+SecureCall
 ```
 
-## Keywords
-```
-verschluesselte anrufe, sichere telefon app, private anrufe, anonyme anrufe, ende zu ende verschluesselung, datenschutz, sichere kommunikation
+## Kurzbeschreibung (max. 80 Zeichen)
+
+```text
+Ende-zu-Ende-verschluesselte 1:1-Sprachanrufe ueber eine SecureID.
 ```
 
-## Neuigkeiten (Release Notes v1.0.9)
+## Vollstaendige Beschreibung
+
+```text
+SecureCall ermoeglicht Ende-zu-Ende-verschluesselte 1:1-Sprachanrufe ueber eine SecureID. Fuer den SecureID-Anrufpfad ist kein herkoemmliches Benutzerkonto erforderlich.
+
+SICHERHEITSDESIGN
+* XChaCha20-Poly1305 schuetzt Anwendungs-Medienframes.
+* X25519 und HKDF-SHA256 leiten fuer jeden Anruf separates Schluesselmaterial ab.
+* Das Schluesselmaterial wird nach dem Anruf verworfen.
+* Die Kryptografie-Engine ist in Rust implementiert.
+
+SecureCall implementiert derzeit kein Double Ratchet, keinen authentifizierten Identitaets-Schluesselaustausch und keine Post-Compromise-Sicherheit. Quellcode, Auditstatus und offene Grenzen sind oeffentlich pruefbar.
+
+ANRUFE
+* Opus-Audio-Codec
+* WLAN und mobile Daten
+* TURN-Relay-Fallback, wenn keine direkte WebRTC-Verbindung moeglich ist
+* Benachrichtigungen fuer eingehende Anrufe ueber Firebase Cloud Messaging
+* Optionale lokale Kontakte zur Anzeige von Namen
+
+DATENSCHUTZ
+* Kein Upload der Kontaktliste
+* Keine Speicherung von Anrufinhalten durch den Signalisierungsdienst
+* Routing- und Zustellmetadaten werden wie in der Datenschutzrichtlinie beschrieben verarbeitet.
+* Die Google-Play-Version enthaelt keinen app-eigenen VPN-Dienst. Sie kann dem aktiven Android-Netzwerk einschliesslich eines extern verwalteten VPNs folgen.
+
+Die aktuelle Android-App enthaelt weder WalletConnect noch eine IFR-Token-Freischaltung. Direkte kostenpflichtige Angebote und der geplante IFR-Halterrabatt werden ausschliesslich ausserhalb der Android-App angeboten und bleiben geschlossen, bis Produkt- und Finanzfreigabe fuer dieselbe Version vorliegen.
+
+Datenschutz: https://stealthx.tech/privacy.html
+Sicherheit: https://stealthx.tech/security.html
+Quellcode und Auditstatus: https://github.com/NeaBouli/stealth
 ```
-v1.0.9 — Beta Update
-• FCM Push-Benachrichtigungen persistent
-• Emergency Delete (5-Tap sofort loeschen)
-• Pro/Premium Labels in Einstellungen
-• Screenshot-Block tier-basiert
-• Einladungsdialog mit Deep-Link
-• Kontaktliste zeigt nur SecureCall-Nutzer
-• Verifiziertes Kontakt-Badge bei Anrufen
-• AdMob SDK 23.6.0
-• Bug Report Formular im Wiki
-```
+
+## Release Notes
+
+Die aktuelle kanonische Fassung liegt in
+`marketing/play_store/de/release_notes.txt`.

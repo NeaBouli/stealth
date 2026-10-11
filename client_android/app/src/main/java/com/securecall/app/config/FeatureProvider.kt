@@ -3,8 +3,8 @@ package com.securecall.app.config
 /**
  * Abstraction layer for feature flags.
  *
- * - PRO/PREMIUM flavors: CompileTimeFeatureProvider (delegates to FeatureFlags)
- * - FREE flavor: RuntimeFeatureProvider (reads from SubscriptionManager)
+ * Direct editions read signed entitlements; the Play edition reads verified
+ * subscriptions. Build variants alone never establish a paid entitlement.
  */
 interface FeatureProvider {
     val tier: String

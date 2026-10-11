@@ -1,5 +1,52 @@
 SecureCall Signaling Server
 
+Identity protocol rollout
+-------------------------
+
+Authenticated registration and call setup protocol v2 is enforced by default.
+The temporary legacy compatibility mode is deliberately deployment-bounded:
+
+- `IDENTITY_PROTOCOL_MODE=enforce` (default) rejects legacy registration and calls.
+- `IDENTITY_PROTOCOL_MODE=transition` also requires
+  `IDENTITY_TRANSITION_DEADLINE_EPOCH_SECONDS`.
+- The deadline must be in the future and no more than 14 days after server start.
+- An expired or invalid transition configuration fails closed. Restart with
+  `IDENTITY_PROTOCOL_MODE=enforce` after the migration window.
+
+Do not use transition mode as a permanent operating configuration. It permits
+old clients temporarily, so final enforcement remains a release gate. Alias
+migration itself never trusts an FCM token submitted by a legacy session. It
+uses only a separate, immutable pre-transition snapshot.
+
+**Alias migration is disabled by default** (#144 review F2). Owner decision
+2026-10-11: legacy ids are kept, so operators may enable it, but only together
+with the migration audit trail (`IDENTITY_MIGRATION_AUDIT_FILE`, append-only,
+mode `0600`; without it every migration fails closed) and the admin reversal
+`POST /admin/identity/alias/revoke {alias, reason}`, which revokes the alias,
+removes the push route inherited from it and returns
+`entitlementsReviewRequired` for the operator entitlement process. Before this
+candidate, any socket could register as any legacy id and overwrite its FCM
+token, so a snapshot can contain attacker-owned routes and there is no evidence
+in the data to filter them. Without migration, updated clients register their
+key-derived `sc-...` identity. The server ignores the snapshot unless
+`IDENTITY_MIGRATION_ENABLED=true` is set, which requires an explicit owner
+decision together with a migration audit log and an alias revoke procedure.
+Only then:
+
+1. Stop legacy token writes for the snapshot operation.
+2. Set absolute `FCM_TOKENS_FILE` and `IDENTITY_MIGRATION_ROUTES_FILE` paths.
+3. Run `npm run prepare:identity-migration-routes` once. The command refuses to
+   overwrite an existing snapshot, writes mode `0600`, logs only a count, and
+   expires the snapshot after at most 14 days. An earlier deadline can be set
+   with `IDENTITY_MIGRATION_DEADLINE_EPOCH_SECONDS`.
+4. Start the new server. If no snapshot exists, alias migration fails closed
+   and updated clients fall back to their key-derived `sc-...` identity.
+
+Protocol-v1 sessions cannot create or replace FCM routes after this candidate
+starts. On successful migration the canonical route is durably stored before
+the alias is bound. Do not copy the snapshot into Git, logs, tickets, backups
+without access controls, or build artifacts; it contains private push tokens.
+
 BACKEND-19 – Session Cleanup (automatic deletion of expired sessions)
 
 This update introduces a server-side cleanup module that automatically removes

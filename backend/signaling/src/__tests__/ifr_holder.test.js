@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("assert");
-const { classifyHolderEligibility } = require("../services/ifr");
+const { classifyHolderEligibility, maskWalletAddress } = require("../services/ifr");
 
 assert.deepStrictEqual(
   classifyHolderEligibility(0n),
@@ -18,5 +18,13 @@ assert.deepStrictEqual(
   { success: true, holder: true, balanceAmount: "1500" },
   "eligibility has no legacy 2,000 IFR threshold"
 );
+
+assert.strictEqual(
+  maskWalletAddress("0x17e99917Eca8539c62F509ED1193ac36580A6e7B"),
+  "0x17e9...6e7B",
+  "balance logs keep only edge characters of a wallet address"
+);
+assert.strictEqual(maskWalletAddress(""), "***", "empty input is fully masked");
+assert.strictEqual(maskWalletAddress("0x123"), "***", "short input is fully masked");
 
 console.log("ifr_holder.test PASSED - every positive IFR balance is eligible");

@@ -23,14 +23,15 @@ input::placeholder{color:#64748b;font-weight:500}
 </style>
 </head>
 <body>
-<main class="card" data-ifr-checkout data-ifr-product="SecureCall">
+<main class="card" data-ifr-checkout data-ifr-product="SecureCall" data-ifr-enabled="false">
 <h1>SecureCall IFR Discount</h1>
 <p class="muted">A browser-based IFR holder discount is planned but is not currently enabled. Discounted checkout remains unavailable until payment and Greek fiscal integration are approved. No payment can be made on this page.</p>
+<p class="muted">Accepted closed-gate prices: Pro EUR 15.00, or EUR 7.50 with holder proof; Premium EUR 25.00, or EUR 12.50 with holder proof. Any positive verified IFR balance qualifies, with no token threshold or lifetime redemption cap. Wallet verification stays in the browser and never enters the Android app.</p>
 <button class="btn" type="button" data-ifr-connect disabled>Connect Wallet</button>
 <button class="btn line" type="button" data-ifr-disconnect disabled>Disconnect Wallet</button>
 <input readonly data-ifr-address aria-label="Connected wallet address" placeholder="Connected wallet address">
-<button class="btn" type="button" data-ifr-tier="pro_lifetime" disabled>Pro Discounted Checkout</button>
-<button class="btn" type="button" data-ifr-tier="premium_lifetime" disabled>Premium Discounted Checkout</button>
+<button class="btn" type="button" data-ifr-tier="pro_lifetime" disabled>Pro IFR Price - EUR 7.50</button>
+<button class="btn" type="button" data-ifr-tier="premium_lifetime" disabled>Premium IFR Price - EUR 12.50</button>
 <p data-ifr-status role="status" aria-live="polite">IFR discount checkout is currently disabled pending payment and fiscal approval.</p>
 </main>
 <script type="module" src="js/ifr-checkout.js"></script>

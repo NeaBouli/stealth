@@ -27,8 +27,10 @@ function saveFcmTokens() {
     const obj = {};
     for (const [k, v] of fcmTokens) obj[k] = v;
     writeJsonAtomic(FCM_TOKENS_FILE, obj);
+    return true;
   } catch (e) {
     console.error("[FCM] Failed to persist tokens:", e.message);
+    return false;
   }
 }
 

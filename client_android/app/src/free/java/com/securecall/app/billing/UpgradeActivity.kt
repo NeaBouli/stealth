@@ -3,8 +3,8 @@ package com.securecall.app.billing
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Button
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -26,19 +26,8 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
     private lateinit var tvCurrentTier: TextView
     private lateinit var tvStatus: TextView
 
-    // Lifetime offer views
-    private lateinit var tvProLicensesLeft: TextView
-    private lateinit var tvPremiumLicensesLeft: TextView
-    private lateinit var tvProNextPrice: TextView
-    private lateinit var tvPremiumNextPrice: TextView
-    private lateinit var progressProSold: ProgressBar
-    private lateinit var progressPremiumSold: ProgressBar
     private lateinit var btnProLifetime: Button
     private lateinit var btnPremiumLifetime: Button
-
-    // Simulated sold counts (in production, fetch from backend)
-    private var proSold = 0
-    private var premiumSold = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,34 +40,17 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         tvCurrentTier = findViewById(R.id.tvCurrentTier)
         tvStatus = findViewById(R.id.tvStatus)
 
-        // Lifetime offer views
-        tvProLicensesLeft = findViewById(R.id.tvProLicensesLeft)
-        tvPremiumLicensesLeft = findViewById(R.id.tvPremiumLicensesLeft)
-        tvProNextPrice = findViewById(R.id.tvProNextPrice)
-        tvPremiumNextPrice = findViewById(R.id.tvPremiumNextPrice)
-        progressProSold = findViewById(R.id.progressProSold)
-        progressPremiumSold = findViewById(R.id.progressPremiumSold)
         btnProLifetime = findViewById(R.id.btnProLifetime)
         btnPremiumLifetime = findViewById(R.id.btnPremiumLifetime)
 
         updateCurrentTierDisplay()
-        updateLifetimePricing()
 
         // Purchases remain closed until product and finance readiness approve the same offer version.
         val isPlayStore = com.securecall.app.update.UpdateManager.getUpdateUrl(this).contains("market://")
         val billingAvailable = BuildConfig.BILLING_ENABLED && isPlayStore
         if (!billingAvailable) {
-            Log.d(TAG, "Billing gate closed — hiding purchase and restore controls")
-            listOf(
-                R.id.btnProMonthly,
-                R.id.btnProYearly,
-                R.id.btnPremiumMonthly,
-                R.id.btnPremiumYearly,
-                R.id.btnActivationCode,
-                R.id.btnRestore,
-                R.id.btnProLifetime,
-                R.id.btnPremiumLifetime
-            ).forEach { findViewById<Button>(it).visibility = android.view.View.GONE }
+            Log.d(TAG, "Billing gate closed — hiding the complete purchase surface")
+            findViewById<View>(R.id.billingPurchaseContent).visibility = View.GONE
             tvStatus.text = "Purchases are currently unavailable"
         }
 
@@ -129,26 +101,6 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         }
     }
 
-    private fun updateLifetimePricing() {
-        // PRO
-        val proRemaining = PricingCalculator.getRemainingLicenses("PRO", proSold)
-        val proPrice = PricingCalculator.calculateProPrice(proSold)
-        val proNextPrice = PricingCalculator.calculateProPrice(proSold + 1)
-        tvProLicensesLeft.text = "Only $proRemaining PRO licenses left!"
-        btnProLifetime.text = "Buy PRO Lifetime — ${PricingCalculator.formatPrice(proPrice)}"
-        tvProNextPrice.text = "Next buyer pays: ${PricingCalculator.formatPrice(proNextPrice)}"
-        progressProSold.progress = proSold
-
-        // PREMIUM
-        val premiumRemaining = PricingCalculator.getRemainingLicenses("PREMIUM", premiumSold)
-        val premiumPrice = PricingCalculator.calculatePremiumPrice(premiumSold)
-        val premiumNextPrice = PricingCalculator.calculatePremiumPrice(premiumSold + 1)
-        tvPremiumLicensesLeft.text = "Only $premiumRemaining PREMIUM licenses left!"
-        btnPremiumLifetime.text = "Buy PREMIUM Lifetime — ${PricingCalculator.formatPrice(premiumPrice)}"
-        tvPremiumNextPrice.text = "Next buyer pays: ${PricingCalculator.formatPrice(premiumNextPrice)}"
-        progressPremiumSold.progress = premiumSold
-    }
-
     private fun launchPurchase(sku: String) {
         val details = billingManager.getProductDetails(sku)
         if (details == null) {
@@ -186,9 +138,36 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
 
     override fun onProductsLoaded(products: List<ProductDetails>) {
         runOnUiThread {
+            bindProductPrice(products, R.id.btnProMonthly, BuildConfig.SKU_PRO_MONTHLY, "Upgrade to Pro")
+            bindProductPrice(products, R.id.btnProYearly, BuildConfig.SKU_PRO_YEARLY, "Pro yearly")
+            bindProductPrice(products, R.id.btnPremiumMonthly, BuildConfig.SKU_PREMIUM_MONTHLY, "Upgrade to Premium")
+            bindProductPrice(products, R.id.btnPremiumYearly, BuildConfig.SKU_PREMIUM_YEARLY, "Premium yearly")
+            bindProductPrice(products, R.id.btnProLifetime, BuildConfig.SKU_PRO_LIFETIME, "Pro Lifetime")
+            bindProductPrice(products, R.id.btnPremiumLifetime, BuildConfig.SKU_PREMIUM_LIFETIME, "Premium Lifetime")
+            bindProductPrice(products, R.id.btnActivationCode, BuildConfig.SKU_PREMIUM_ACTIVATION_CODE, "Activation Code")
             tvStatus.text = "${products.size} products loaded"
             Log.d(TAG, "Products loaded: ${products.map { it.productId }}")
         }
+    }
+
+    private fun bindProductPrice(
+        products: List<ProductDetails>,
+        buttonId: Int,
+        productId: String,
+        label: String
+    ) {
+        val button = findViewById<Button>(buttonId)
+        val details = products.firstOrNull { it.productId == productId }
+        val formattedPrice = details?.oneTimePurchaseOfferDetails?.formattedPrice
+            ?: details?.subscriptionOfferDetails
+                ?.firstOrNull()
+                ?.pricingPhases
+                ?.pricingPhaseList
+                ?.firstOrNull()
+                ?.formattedPrice
+
+        button.isEnabled = formattedPrice != null
+        button.text = if (formattedPrice == null) label else "$label — $formattedPrice"
     }
 
     override fun onPurchaseCompleted(tier: SubscriptionTier, token: String) {

@@ -5,6 +5,8 @@
     <string name="premium_vpn_category">Standalone VPN</string>
     <string name="premium_vpn_enabled">Protect SecureCall with WireGuard</string>
     <string name="premium_vpn_enabled_summary">Routes only this Premium APK through the configured tunnel</string>
+    <string name="premium_vpn_license_required">A verified Premium license is required to start VPN protection</string>
+    <string name="premium_vpn_license_recheck">Existing tunnel retained. Verify your Premium license before restarting VPN protection.</string>
     <string name="premium_vpn_status">VPN status</string>
     <string name="premium_vpn_status_off">Off</string>
     <string name="premium_vpn_status_connecting">Connecting</string>
