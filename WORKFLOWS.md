@@ -19,7 +19,7 @@ gh issue view <number>
 gh issue close <number> --comment "Fixed in v..."
 ```
 
-**Endpoint:** https://protective-healing-production.up.railway.app/api/report
+**Endpoint:** https://api.stealthx.tech/api/report
 **Form:** https://stealthx.tech/wiki/bug-report.html
 
 ---

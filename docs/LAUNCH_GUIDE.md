@@ -1,5 +1,9 @@
 # SecureCall — Complete Launch Guide (Zero-Cost Strategy)
 
+> **Status note (2026-10-11):** Production signaling runs on Hetzner
+> (`api.stealthx.tech`); the Railway setup below describes the original
+> launch and is retained as standby reference.
+
 > **Free Cloud Strategy:** GitHub Pages + Railway.app + Metered.ca
 >
 > Only cost: **25 EUR** (Google Play Developer Account, one-time)

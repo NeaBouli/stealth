@@ -120,9 +120,5 @@ object GhostCallController {
         com.securecall.app.ghostnet.transport.GhostTransport.resetTransport()
         com.securecall.app.ghostnet.media.GhostMediaRouter.resetMedia()
         com.securecall.app.ghostnet.session.GhostNetSessionManager.resetSession()
-
-        // PATCH 253: CryptoContext bei FullReset löschen
-        com.securecall.app.ghostnet.crypto.GhostNetCryptoManager.clearContext()
-        com.securecall.app.debug.GhostDebugEventBus.post("CRYPTO", "FullReset → CryptoContext cleared")
     }
 }
