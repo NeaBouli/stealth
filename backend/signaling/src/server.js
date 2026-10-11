@@ -557,15 +557,15 @@ app.get("/invite/:secureId", (req, res) => {
 });
 
 // Rate limit: 3 invite acceptances per IP per 10 minutes (H-04 fix)
-// STX-17: bounded map — prune stale windows, then fail closed for new IPs
-// while the map is full (mirrors billingVerificationRateLimit).
+// STX-17: bounded map — prune stale windows first
+// (oldest-first eviction at capacity).
 function inviteRateLimit(req, res, next) {
   const ip = getClientIp(req);
   const now = Date.now();
   if (inviteRateLimits.size >= INVITE_RL_MAX_KEYS) pruneIpAttemptMap(inviteRateLimits, now, 600000);
-  if (!inviteRateLimits.has(ip) && inviteRateLimits.size >= INVITE_RL_MAX_KEYS) {
-    return res.status(503).json({ error: "rate_limiter_capacity_reached" });
-  }
+  // Evict the oldest entry instead of failing closed: a flood of (IPv6) addresses must
+  // not lock every new visitor out.
+  if (!inviteRateLimits.has(ip)) evictOldestBeyondCap(inviteRateLimits, INVITE_RL_MAX_KEYS - 1);
   if (!inviteRateLimits.has(ip)) inviteRateLimits.set(ip, []);
   const attempts = inviteRateLimits.get(ip);
   while (attempts.length > 0 && now - attempts[0] > 600000) attempts.shift();
@@ -857,15 +857,15 @@ app.post('/stripe/ifr-discount-challenge', checkoutRateLimit, (req, res) => {
 });
 
 // Rate limit: 5 checkout requests per IP per 10 minutes
-// STX-17: bounded map — prune stale windows, then fail closed for new IPs
-// while the map is full (mirrors billingVerificationRateLimit).
+// STX-17: bounded map — prune stale windows first
+// (oldest-first eviction at capacity).
 function checkoutRateLimit(req, res, next) {
   const ip = getClientIp(req);
   const now = Date.now();
   if (checkoutRateLimits.size >= CHECKOUT_RL_MAX_KEYS) pruneIpAttemptMap(checkoutRateLimits, now, 600000);
-  if (!checkoutRateLimits.has(ip) && checkoutRateLimits.size >= CHECKOUT_RL_MAX_KEYS) {
-    return res.status(503).json({ error: "rate_limiter_capacity_reached" });
-  }
+  // Evict the oldest entry instead of failing closed: a flood of (IPv6) addresses must
+  // not lock every new visitor out.
+  if (!checkoutRateLimits.has(ip)) evictOldestBeyondCap(checkoutRateLimits, CHECKOUT_RL_MAX_KEYS - 1);
   if (!checkoutRateLimits.has(ip)) checkoutRateLimits.set(ip, []);
   const attempts = checkoutRateLimits.get(ip);
   while (attempts.length > 0 && now - attempts[0] > 600000) attempts.shift();
