@@ -726,8 +726,9 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.strictEqual(busyRes.statusCode, 503, "busy order store fails closed");
   fs.unlinkSync(`${process.env.VLABS_FULFILLMENT_ORDERS_FILE}.lock`);
 
-  // Concurrency: a foreign-held sold-codes lock blocks sale recording.
-  fs.writeFileSync(`${process.env.SOLD_CODES_FILE}.lock`, "999999:foreignowner\n", { mode: 0o600 });
+  // Concurrency: a sold-codes lock held by a live foreign process blocks sale recording.
+  // (A dead owner's lock is reclaimed since STX-17 #155/#156; the parent pid is alive.)
+  fs.writeFileSync(`${process.env.SOLD_CODES_FILE}.lock`, `${process.ppid}:foreignowner\n`, { mode: 0o600 });
   assert.throws(() => soldCodes.recordSale({
     code: "PRO-BUSY-BUSY-BUSY",
     tier: "pro",
