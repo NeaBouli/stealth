@@ -1,7 +1,7 @@
 "use strict";
 
-// STX-17: the sold-code store lock must recover from a stale owner (crashed
-// pid or abandoned age) while a live, fresh lock still fails closed.
+// STX-17: the sold-code store lock must recover from a crashed owner (dead pid) or an
+// abandoned ownerless lock, while any live owner's lock still fails closed.
 // Run: node src/__tests__/sold_codes_lock.test.js
 
 const assert = require("node:assert/strict");
@@ -44,16 +44,29 @@ function writeLock(content, ageMs = 0) {
     );
     assert.equal(fs.existsSync(LOCK_FILE), true, "live lock is never reclaimed");
 
-    // 3. Live owner but abandoned lock (older than any real critical section)
-    //    → stale by age, reclaimed.
+    // 3. Live owner with an old lock → still busy: a hung writer may resume.
     writeLock(`${liveChild.pid}:live-owner-token\n`, 120000);
-    const aged = soldCodes.recordSale({ code: "PRO-AGEDLOCK-01", tier: "pro", stripeSessionId: "cs_lock_aged" });
-    assert.equal(aged.code, "PRO-AGEDLOCK-01", "abandoned lock is reclaimed by age");
+    assert.throws(
+      () => soldCodes.recordSale({ code: "PRO-AGEDLIVE-01", tier: "pro", stripeSessionId: "cs_lock_aged_live" }),
+      /sold_code_store_busy/,
+      "a live owner's lock is never reclaimed by age"
+    );
   } finally {
     liveChild.kill("SIGKILL");
   }
 
-  // 4. Store content survived both reclaim paths.
+  // 4. Lock without a readable owner (mid-creation): fresh → busy, old → reclaimed.
+  writeLock("");
+  assert.throws(
+    () => soldCodes.recordSale({ code: "PRO-EMPTYLOCK-1", tier: "pro", stripeSessionId: "cs_lock_empty_fresh" }),
+    /sold_code_store_busy/,
+    "an ownerless fresh lock may be mid-creation and stays busy"
+  );
+  writeLock("", 120000);
+  const aged = soldCodes.recordSale({ code: "PRO-AGEDLOCK-01", tier: "pro", stripeSessionId: "cs_lock_aged" });
+  assert.equal(aged.code, "PRO-AGEDLOCK-01", "an abandoned ownerless lock is reclaimed by age");
+
+  // 5. Store content survived both reclaim paths.
   const codes = soldCodes.loadAsActivationCodes();
   assert.deepEqual(codes.map((c) => c.code).sort(), ["PRO-AGEDLOCK-01", "PRO-DEADLOCK-001"]);
 

@@ -103,10 +103,10 @@ async function stopChild(child) {
     }
     assert.strictEqual((await post(port, "/invite/accepted", "198.51.100.1", {})).statusCode, 429, "invite per-IP limit unchanged");
 
-    // Fill the map to the cap (A,B,C); a 4th new IP fails closed, tracked IPs pass.
+    // Fill the map to the cap (A,B,C); a 4th new IP is still served (oldest evicted).
     assert.strictEqual((await post(port, "/invite/accepted", "198.51.100.2", {})).statusCode, 400);
     assert.strictEqual((await post(port, "/invite/accepted", "198.51.100.3", {})).statusCode, 400);
-    assert.strictEqual((await post(port, "/invite/accepted", "198.51.100.4", {})).statusCode, 503, "new IP fails closed at capacity");
+    assert.strictEqual((await post(port, "/invite/accepted", "198.51.100.4", {})).statusCode, 400, "new IP served at capacity (oldest evicted, no lockout)");
     assert.strictEqual((await post(port, "/invite/accepted", "198.51.100.2", {})).statusCode, 400, "tracked IP unaffected by capacity");
 
     // --- checkoutRateLimits + siweChallenges caps ---
@@ -117,7 +117,7 @@ async function stopChild(child) {
       assert.strictEqual(res.statusCode, 200, output.value);
       nonces.push(res.json.nonce);
     }
-    assert.strictEqual((await challenge("203.0.113.5")).statusCode, 503, "checkout limiter fails closed at capacity");
+    assert.strictEqual((await challenge("203.0.113.5")).statusCode, 200, "checkout stays available at capacity (oldest evicted)");
 
     // SIWE_CHALLENGE_MAX=2: the first two challenges were evicted oldest-first.
     const checkoutBody = (nonce) => ({
