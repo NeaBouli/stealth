@@ -1,5 +1,7 @@
 "use strict";
 
+const { networkKey } = require("../../utils/network_key");
+
 module.exports = function phoneHandlers(ctx) {
   const { clients, clientIds, phoneNumbers, phoneHashes, getClientId, normalizePhone } = ctx;
   // STX-04: the per-connection minute limits reset on reconnect, so contact discovery could
@@ -13,27 +15,34 @@ module.exports = function phoneHandlers(ctx) {
 
   function budgetKeys(connId) {
     const keys = [[`client:${getClientId(connId)}`, maxNumbersPerClientPerDay]];
-    const ip = clients.get(connId)?.ip;
-    if (typeof ip === "string" && ip) keys.push([`ip:${ip}`, maxNumbersPerAddressPerDay]);
+    const network = networkKey(clients.get(connId)?.ip);
+    if (network) keys.push([`ip:${network}`, maxNumbersPerAddressPerDay]);
     return keys;
   }
 
   // Reserves `count` lookups for this connection or returns false without reserving any.
   function reserveLookups(connId, count) {
     const now = Date.now();
+    // Entries are in insertion (= window start) order, so pruning stops at the first live one.
     for (const [key, entry] of lookupBudget) {
-      if (now - entry.windowStart >= dayMs) lookupBudget.delete(key);
+      if (now - entry.windowStart < dayMs) break;
+      lookupBudget.delete(key);
     }
     const keys = budgetKeys(connId);
     for (const [key, limit] of keys) {
       const used = lookupBudget.get(key)?.count || 0;
       if (used + count > limit) return false;
-      if (!lookupBudget.has(key) && lookupBudget.size >= maxTrackedKeys) return false;
     }
     for (const [key] of keys) {
       const entry = lookupBudget.get(key);
-      if (entry) entry.count += count;
-      else lookupBudget.set(key, { windowStart: now, count });
+      if (entry) {
+        entry.count += count;
+        continue;
+      }
+      // A full map evicts its oldest entry (Map keeps insertion order) instead of refusing
+      // every new client, so flooding the map cannot lock out legitimate users.
+      if (lookupBudget.size >= maxTrackedKeys) lookupBudget.delete(lookupBudget.keys().next().value);
+      lookupBudget.set(key, { windowStart: now, count });
     }
     return true;
   }

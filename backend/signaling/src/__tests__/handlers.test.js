@@ -383,6 +383,44 @@ console.log("\n[Suite] STX-04 discovery budget");
 }
 
 // ==========================================
+// Suite: STX-04 review fixes (IPv6 /64 budget, eviction instead of lockout)
+// ==========================================
+console.log("\n[Suite] STX-04 /64 budget and eviction");
+{
+  clearState();
+  const ctx = buildCtx();
+  const hashes = Array.from({ length: 200 }, (_, i) => `h${i}`);
+  // Rotating identities AND addresses inside one IPv6 /64 shares one address budget.
+  let ok = 0;
+  for (let i = 0; i < 60; i++) {
+    const ws = mockWs();
+    const connId = `conn-v6-${i}`;
+    const clientId = `v6-${Math.floor(i / 25)}`;
+    ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId, ip: `2001:db8:dead:beef::${(i + 1).toString(16)}` });
+    ctx.clientIds.set(clientId, connId);
+    ctx.handlers.BATCH_PHONE_LOOKUP(ws, connId, { hashes });
+    if (lastMsg(ws).error === "rate_limited") break;
+    ok++;
+  }
+  assert(ok === 50, "IPv6 address rotation inside one /64 is capped by the 10000/day address budget");
+
+  // Flooding the tracking map evicts old entries; a new legitimate client is still served.
+  for (let i = 0; i < 33000; i++) {
+    const connId = `flood-${i}`;
+    ctx.clients.set(connId, { ws: mockWs(), lastSeen: Date.now(), clientId: `flood-${i}`, ip: `10.${(i >> 16) & 255}.${(i >> 8) & 255}.${i & 255}` });
+    ctx.clientIds.set(`flood-${i}`, connId);
+    ctx.handlers.PHONE_LOOKUP(ctx.clients.get(connId).ws, connId, { phoneNumber: "+4915100000001" });
+    ctx.clients.delete(connId);
+    ctx.clientIds.delete(`flood-${i}`);
+  }
+  const wsNew = mockWs();
+  ctx.clients.set("conn-late", { ws: wsNew, lastSeen: Date.now(), clientId: "latecomer", ip: "198.51.100.200" });
+  ctx.clientIds.set("latecomer", "conn-late");
+  ctx.handlers.PHONE_LOOKUP(wsNew, "conn-late", { phoneNumber: "+4915100000002" });
+  assert(lastMsg(wsNew).error !== "rate_limited", "full tracking map does not lock out new legitimate clients");
+}
+
+// ==========================================
 // Results
 // ==========================================
 console.log(`\n${"─".repeat(50)}`);
