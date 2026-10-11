@@ -305,6 +305,8 @@ public class CallActivity extends AppCompatActivity {
                             userMessage = "Contact is offline or not registered.\nMake sure they have SecureCall installed.";
                         } else if ("busy".equals(error)) {
                             userMessage = "Contact is busy on another call.";
+                        } else if ("no_answer".equals(error)) {
+                            userMessage = "No answer.";
                         } else {
                             userMessage = "Call failed: " + message;
                         }
