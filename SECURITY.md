@@ -5,9 +5,11 @@
 If you discover a security vulnerability in SecureCall or the StealthX platform,
 **please do not open a public GitHub issue.**
 
-Instead, report it privately to:
+Instead, report it privately through GitHub's private vulnerability reporting:
 
-**[Open an issue](https://github.com/NeaBouli/stealth/issues)**
+**[Report a vulnerability](https://github.com/NeaBouli/stealth/security/advisories/new)**
+(Security tab → "Report a vulnerability"). Only the maintainers can see the
+report and the discussion until an advisory is published.
 
 Please include:
 
