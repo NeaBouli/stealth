@@ -41,6 +41,24 @@ class SubscriptionManagerTest {
     }
 
     @Test
+    fun authenticatedIdentityMigrationPreservesExistingDirectEntitlement() {
+        val fixture = DirectFixture()
+        val legacy = fixture.subject
+        fixture.subject = "sc-${"a".repeat(43)}"
+        val store = DirectEntitlementStore(
+            fixture.prefs,
+            { fixture.subject },
+            fixture.encoder.encodeToString(fixture.keys.public.encoded.takeLast(32).toByteArray()),
+            "pro",
+            fixture.release,
+            { fixture.now },
+            legacySubject = { legacy },
+        )
+        assertTrue(store.accept(fixture.token))
+        assertEquals("PRO", store.currentTier())
+    }
+
+    @Test
     fun testerProofUsesHardwareBindingAndNeverUnlocksOtherPackages() {
         val keys = java.security.KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
         val encoder = java.util.Base64.getUrlEncoder().withoutPadding()

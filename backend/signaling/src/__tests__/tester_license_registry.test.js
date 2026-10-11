@@ -77,6 +77,23 @@ const prove = (challenge, key = a, subject = "synthetic-A") => ({ challengeId: c
   const renewed = restarted.refresh(prove(renewal));
   assert.equal(verifyTesterEntitlement(renewed, { subject: "synthetic-A", deviceKeyHash: a.hash, publicKey, nowSeconds: now }).grant, initial.grants[0].id);
   assert.throws(() => restarted.refresh(prove(renewal)));
+
+  const beforeIdentityMigration = structuredClone(load());
+  assert.throws(() => restarted.beginRefresh({token:renewed,subject:"synthetic-v2",keyHash:a.hash,
+    legacySubjects:["not valid"]}));
+  const removedAlias = restarted.beginRefresh({token:renewed,subject:"synthetic-v2",keyHash:a.hash,
+    legacySubjects:["synthetic-A"]});
+  assert.throws(() => restarted.refresh({...prove(removedAlias,a,"synthetic-v2"),legacySubjects:[]}));
+  const migration = restarted.beginRefresh({token:renewed,subject:"synthetic-v2",keyHash:a.hash,
+    legacySubjects:["synthetic-A"]});
+  const migrated = restarted.refresh({...prove(migration,a,"synthetic-v2"),legacySubjects:["synthetic-A"]});
+  assert.equal(verifyTesterEntitlement(migrated, {subject:"synthetic-v2",deviceKeyHash:a.hash,
+    publicKey,nowSeconds:now}).grant, initial.grants[0].id);
+  assert.deepEqual(load().grants[0].binding, {subject:"synthetic-v2",keyHash:a.hash});
+  assert.throws(() => restarted.beginRefresh({token:renewed,subject:"synthetic-v3",keyHash:a.hash,
+    legacySubjects:[]}));
+  save(beforeIdentityMigration);
+
   const forged = restarted.beginRefresh({ token: renewed, subject: "synthetic-A", keyHash: a.hash });
   assert.throws(() => restarted.refresh(prove(forged, b)));
   state = load(); state.grants[0].status = "revoked"; save(state);

@@ -17,7 +17,8 @@ class DirectEntitlementStore internal constructor(
     private val testerPublicKey: String = "",
     private val testerDeviceHash: () -> String? = { null },
     private val applicationId: String = "com.securecall.app.$flavor",
-    private val testerEnabled: Boolean = true
+    private val testerEnabled: Boolean = true,
+    private val legacySubject: () -> String? = { null },
 ) {
     constructor(context: Context) : this(
         context.getSharedPreferences("securecall_direct_entitlement", Context.MODE_PRIVATE),
@@ -26,12 +27,15 @@ class DirectEntitlementStore internal constructor(
         { System.currentTimeMillis() / 1000 },
         BuildConfig.TESTER_ENTITLEMENT_PUBLIC_KEY,
         { TesterDeviceKey.existingHardwareKeyHash() }, BuildConfig.APPLICATION_ID,
-        BuildConfig.TESTER_LICENSE_ENABLED
+        BuildConfig.TESTER_LICENSE_ENABLED,
+        { context.getSharedPreferences("securecall_prefs", Context.MODE_PRIVATE)
+            .getString("legacy_client_id", null) },
     )
 
     private fun verify(token: String): VerifiedDirectEntitlement {
         require(flavor in setOf("pro", "premium"))
-        val identity = subject() ?: throw IllegalArgumentException("Missing local identity")
+        val identities = listOfNotNull(subject(), legacySubject()).filter { it.isNotEmpty() }.distinct()
+        require(identities.isNotEmpty()) { "Missing local identity" }
         val now = clock()
         require(now + 300 >= prefs.getLong("last_verified_time", 0)) { "Clock rollback" }
         if (token.startsWith("sct1.")) {
@@ -39,14 +43,22 @@ class DirectEntitlementStore internal constructor(
             val testerKey = testerPublicKey.decodeBase64()?.toByteArray()
                 ?: throw IllegalArgumentException("Tester verifier not configured")
             val device = testerDeviceHash() ?: throw IllegalArgumentException("Enrolled hardware key unavailable")
-            val proof = TesterEntitlementVerifier.verify(token, testerKey, identity, device, now, applicationId)
+            val proof = identities.firstNotNullOfOrNull { identity ->
+                runCatching {
+                    TesterEntitlementVerifier.verify(token, testerKey, identity, device, now, applicationId)
+                }.getOrNull()
+            } ?: throw IllegalArgumentException("Invalid tester entitlement")
             return VerifiedDirectEntitlement("PREMIUM", "securecall_tester_premium_lifetime", proof.expiresAtEpochSeconds)
         }
         val key = publicKey.decodeBase64()?.toByteArray()
             ?: throw IllegalArgumentException("Verifier not configured")
-        return DirectEntitlementVerifier.verify(
-            token, key, identity, flavor.uppercase(), release, now
-        )
+        return identities.firstNotNullOfOrNull { identity ->
+            runCatching {
+                DirectEntitlementVerifier.verify(
+                    token, key, identity, flavor.uppercase(), release, now
+                )
+            }.getOrNull()
+        } ?: throw IllegalArgumentException("Invalid direct entitlement")
     }
 
     fun currentTier(): String {

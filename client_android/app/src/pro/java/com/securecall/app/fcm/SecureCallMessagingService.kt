@@ -12,6 +12,10 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.securecall.app.R
 import com.securecall.app.notifications.IncomingCallNotifications
+import com.securecall.app.security.IdentityProtocol
+import com.securecall.app.security.IdentitySigningKey
+import com.securecall.app.security.VerifiedCallInvite
+import org.json.JSONObject
 
 class SecureCallMessagingService : FirebaseMessagingService() {
 
@@ -31,14 +35,20 @@ class SecureCallMessagingService : FirebaseMessagingService() {
 
         val type = message.data["type"] ?: return
         when (type) {
-            "CALL_INVITE" -> {
-                val sessionId = message.data["sessionId"] ?: ""
-                val callerName = message.data["callerName"] ?: "Unknown"
-                val callerClientId = message.data["callerClientId"] ?: ""
-                val callerPhone = message.data["callerPhone"] ?: ""
-                Log.d(TAG, "Incoming call push: session=$sessionId, caller=$callerName, clientId=$callerClientId")
-                com.securecall.app.debug.SecLogManager.log("FCM", "CALL_INVITE: session=$sessionId, caller=$callerName")
-                handleFcmCallInvite(sessionId, callerName, callerClientId, callerPhone)
+            "CALL_INVITE_V2" -> {
+                val verified = verifyCallInvite(message.data)
+                if (verified == null) {
+                    Log.w(TAG, "Rejected invalid authenticated call push")
+                    return
+                }
+                val (invite, payload) = verified
+                val callerName = com.securecall.app.data.PhoneBookResolver.resolveCallerName(
+                    this, invite.fromClientId, invite.callerPhone
+                )
+                handleFcmCallInvite(invite, payload, callerName)
+            }
+            "IDENTITY_MIGRATION_CHALLENGE" -> {
+                handleIdentityMigrationChallenge(message.data)
             }
             "EMERGENCY_BROADCAST" -> {
                 val templateId = message.data["template_id"]?.toIntOrNull() ?: -1
@@ -51,11 +61,81 @@ class SecureCallMessagingService : FirebaseMessagingService() {
         }
     }
 
-    /**
-     * BUG-010: FCM CALL_INVITE — start IncomingCallActivity DIRECTLY without waiting for WS.
-     * All call data comes from FCM payload. WS reconnects in background for CALL_ACCEPT.
-     */
-    private fun handleFcmCallInvite(sessionId: String, callerName: String, callerClientId: String, callerPhone: String) {
+    /** Accept only a signed v2 invite before any wake-up UI or ringtone is started. */
+    private fun verifyCallInvite(data: Map<String, String>): Pair<VerifiedCallInvite, String>? {
+        val invite = VerifiedCallInvite(
+            sessionId = data["sessionId"].orEmpty(),
+            fromClientId = data["from"].orEmpty(),
+            fromIdentityId = data["fromIdentityId"].orEmpty(),
+            to = data["to"].orEmpty(),
+            requestedTo = data["requestedTo"].orEmpty(),
+            ephemeralPublicKey = data["ephemeralPublicKey"].orEmpty(),
+            identityPublicKey = data["identityPublicKey"].orEmpty(),
+            issuedAt = data["issuedAt"]?.toLongOrNull() ?: return null,
+            nonce = data["nonce"].orEmpty(),
+            signature = data["signature"].orEmpty(),
+            inviteDigest = data["inviteDigest"].orEmpty(),
+            callerPhone = data["callerPhone"].orEmpty().takeIf { it.length <= 64 } ?: return null,
+        )
+        val identity = IdentitySigningKey.existingIdentity() ?: return null
+        val localId = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
+            .getString("client_id", null)
+        if (invite.to != identity.identityId || localId != identity.identityId
+            || !IdentityProtocol.verifyCallInvite(invite, System.currentTimeMillis() / 1000)) return null
+        val payload = JSONObject().apply {
+            put("type", "CALL_INVITE_V2")
+            put("sessionId", invite.sessionId)
+            put("from", invite.fromClientId)
+            put("fromIdentityId", invite.fromIdentityId)
+            put("to", invite.to)
+            put("requestedTo", invite.requestedTo)
+            put("ephemeralPublicKey", invite.ephemeralPublicKey)
+            put("identityPublicKey", invite.identityPublicKey)
+            put("issuedAt", invite.issuedAt)
+            put("nonce", invite.nonce)
+            put("signature", invite.signature)
+            put("inviteDigest", invite.inviteDigest)
+            put("callerPhone", invite.callerPhone)
+        }.toString()
+        return invite to payload
+    }
+
+    private fun handleIdentityMigrationChallenge(data: Map<String, String>) {
+        val identity = IdentitySigningKey.existingIdentity() ?: return
+        val requested = data["requestedClientId"].orEmpty()
+        val challengeId = data["challengeId"].orEmpty()
+        val challenge = data["challenge"].orEmpty()
+        val expiresAt = data["expiresAt"]?.toLongOrNull() ?: return
+        if (data["identityId"] != identity.identityId
+            || !IdentityProtocol.validateRegistrationChallenge(
+                challengeId, challenge, requested, identity, expiresAt,
+                System.currentTimeMillis() / 1000,
+            )) return
+        val payload = JSONObject().apply {
+            put("type", "IDENTITY_MIGRATION_CHALLENGE")
+            put("challengeId", challengeId)
+            put("challenge", challenge)
+            put("requestedClientId", requested)
+            put("identityId", identity.identityId)
+            put("expiresAt", expiresAt)
+        }.toString()
+        val intent = Intent(this, com.securecall.app.net.WebSocketService::class.java).apply {
+            action = com.securecall.app.net.WebSocketService.ACTION_IDENTITY_MIGRATION_CHALLENGE
+            putExtra(com.securecall.app.net.WebSocketService.EXTRA_IDENTITY_CHALLENGE, payload)
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent) else startService(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to deliver identity migration challenge", e)
+        }
+    }
+
+    private fun handleFcmCallInvite(invite: VerifiedCallInvite, payload: String, callerName: String) {
+        val existingService = com.securecall.app.net.WebSocketService.instance
+        if (existingService != null && !existingService.acceptFcmInvite(payload)) {
+            Log.w(TAG, "WebSocket service rejected authenticated call push")
+            return
+        }
         // A) Acquire WakeLock immediately to keep CPU alive for ringing
         val pm = getSystemService(POWER_SERVICE) as PowerManager
         @Suppress("DEPRECATION")
@@ -70,8 +150,8 @@ class SecureCallMessagingService : FirebaseMessagingService() {
         //    register the FCM session and own ringtone/vibration before the activity
         //    is shown; this also works when no persistent service exists on API 35+.
         val wsIntent = Intent(this, com.securecall.app.net.WebSocketService::class.java).apply {
-            action = com.securecall.app.net.WebSocketService.ACTION_FCM_CALL_INVITE
-            putExtra(com.securecall.app.net.WebSocketService.EXTRA_FCM_SESSION_ID, sessionId)
+            action = com.securecall.app.net.WebSocketService.ACTION_FCM_CALL_INVITE_V2
+            putExtra(com.securecall.app.net.WebSocketService.EXTRA_FCM_PAYLOAD, payload)
         }
         val signalingStartRequested = try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -91,9 +171,9 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra("sessionId", sessionId)
-            putExtra("callerClientId", callerClientId)
-            putExtra("callerPhone", callerPhone)
+            putExtra("sessionId", invite.sessionId)
+            putExtra("callerClientId", invite.fromClientId)
+            putExtra("callerPhone", invite.callerPhone)
             putExtra("callerName", callerName)
             putExtra("from_fcm", true) // Flag: came from FCM, WS may not be connected
         }
@@ -108,7 +188,7 @@ class SecureCallMessagingService : FirebaseMessagingService() {
 
         // D) Show full-screen notification as backup (lock screen / DND / Android 10+)
         showIncomingCallNotification(
-            sessionId, callerName, callerClientId, callerPhone,
+            invite.sessionId, callerName, invite.fromClientId, invite.callerPhone,
             serviceHandlesRingtone = signalingStartRequested
         )
 

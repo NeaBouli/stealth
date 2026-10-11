@@ -59,11 +59,16 @@ assert.equal(explicitOverride.VLABS_FULFILLMENT_ORDERS_FILE, "/srv/securecall-da
 // validated as 0700 directory / 0600 file without symlinks or a Git checkout
 // (services/tester_license_runtime.js, tester_license_registry.js). Pinning them
 // via alignStoreFiles would silently relocate an existing registry.
+// IDENTITY_MIGRATION_ROUTES_FILE is the same class: an operator-provisioned,
+// permission-checked immutable authority (services/identity_migration_routes.js);
+// its DATA_DIR default only covers the absent-file empty-routes case and an
+// explicit path must survive alignment.
 const NON_STORE_FILE_VARIABLES = new Set([
   "LOG_TO_FILE",
   "TURN_SECRET_FILE",
   "SECURECALL_TESTER_SIGNER_FILE",
   "SECURECALL_TESTER_REGISTRY_FILE",
+  "IDENTITY_MIGRATION_ROUTES_FILE",
 ]);
 const sourceRoot = path.join(__dirname, "..");
 function sources(directory) {

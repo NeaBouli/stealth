@@ -13,6 +13,7 @@ import com.securecall.app.CallActivity
 import com.securecall.app.R
 import com.securecall.app.data.CallHistoryRepository
 import com.securecall.app.data.CallRecord
+import com.securecall.app.security.IdentityProtocol
 import com.securecall.app.ui.adapter.CallHistoryAdapter
 
 class CallsFragment : Fragment() {
@@ -52,12 +53,12 @@ class CallsFragment : Fragment() {
                 var anyUpdated = false
                 val enriched = records.map { record ->
                     val name = record.contactName
-                    if (name.startsWith("android-") || name.matches(Regex("^[+\\d\\s\\-()]+$"))) {
+                    if (IdentityProtocol.isDirectClientId(name) || name.matches(Regex("^[+\\d\\s\\-()]+$"))) {
                         // BUG-013: Use resolveCallerName() which checks BOTH phone book AND SecureCall contacts
                         val clientId = record.contactId ?: ""
                         // Try phoneNumber field first, then contactId, then name as fallback
                         val phoneForLookup = record.phoneNumber
-                            ?: (if (clientId.isNotBlank() && !clientId.startsWith("android-")) clientId else "")
+                            ?: (if (clientId.isNotBlank() && !IdentityProtocol.isDirectClientId(clientId)) clientId else "")
                         val phoneFallback = if (phoneForLookup.isNotEmpty()) phoneForLookup else name
                         val resolved = com.securecall.app.data.PhoneBookResolver.resolveCallerName(ctx, clientId, phoneFallback)
                         if (resolved != name && resolved != clientId && !resolved.matches(Regex("^[+\\d\\s\\-()]+$"))) {
@@ -137,10 +138,10 @@ class CallsFragment : Fragment() {
         val ctx = context ?: return
         val phone = record.phoneNumber ?: record.contactId ?: ""
         val name = record.contactName
-        val secureId = if (record.contactId?.startsWith("android-") == true) record.contactId else null
+        val secureId = record.contactId?.takeIf(IdentityProtocol::isDirectClientId)
 
         // If name is just a number/ID, prompt user for a name
-        if (name.startsWith("android-") || name.matches(Regex("^[+\\d\\s\\-()]+$"))) {
+        if (IdentityProtocol.isDirectClientId(name) || name.matches(Regex("^[+\\d\\s\\-()]+$"))) {
             val input = android.widget.EditText(ctx)
             input.hint = "Name, Alias"
             input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS
@@ -163,7 +164,7 @@ class CallsFragment : Fragment() {
     private fun doSaveContact(name: String, phoneOrId: String, secureId: String?) {
         val ctx = context ?: return
         // Save with phone as primary key, secureId as metadata
-        val savePhoneOrId = if (!phoneOrId.startsWith("android-") && phoneOrId.isNotEmpty()) phoneOrId
+        val savePhoneOrId = if (!IdentityProtocol.isDirectClientId(phoneOrId) && phoneOrId.isNotEmpty()) phoneOrId
             else if (secureId != null) secureId else phoneOrId
         val contact = com.securecall.app.data.Contact(
             name = name,
@@ -234,7 +235,7 @@ class CallsFragment : Fragment() {
         } else {
             // Create new blocked contact
             val phone = record.phoneNumber ?: record.contactId ?: record.contactName
-            val secureId = if (record.contactId?.startsWith("android-") == true) record.contactId else null
+            val secureId = record.contactId?.takeIf(IdentityProtocol::isDirectClientId)
             val contact = com.securecall.app.data.Contact(
                 name = record.contactName,
                 phoneOrId = phone,
@@ -266,7 +267,7 @@ class CallsFragment : Fragment() {
             Log.w(TAG, "No contactId for call history entry: ${record.contactName}")
             return
         }
-        if (targetId.startsWith("android-")) {
+        if (IdentityProtocol.isDirectClientId(targetId)) {
             // Direct SecureCall ID
             Log.d(TAG, "Calling back: ${record.contactName} ($targetId)")
             val intent = Intent(requireContext(), CallActivity::class.java).apply {

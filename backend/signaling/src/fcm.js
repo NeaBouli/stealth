@@ -86,8 +86,61 @@ async function sendCallInvitePush(fcmToken, sessionId, callerClientId, callerPho
   }
 }
 
+/** Deliver a one-time legacy identity migration challenge to the device that
+ * already owns the persisted FCM route. The challenge contains no secret and
+ * is useful only with the matching non-exportable installation private key. */
+async function sendIdentityMigrationChallenge(fcmToken, payload) {
+  if (!initialized || !admin) return false;
+  const required = ["challengeId", "challenge", "requestedClientId", "identityId", "expiresAt"];
+  if (!payload || required.some(key => typeof payload[key] !== "string" || !payload[key])) return false;
+  try {
+    await admin.messaging().send({
+      token: fcmToken,
+      data: {
+        type: "IDENTITY_MIGRATION_CHALLENGE",
+        challengeId: payload.challengeId,
+        challenge: payload.challenge,
+        requestedClientId: payload.requestedClientId,
+        identityId: payload.identityId,
+        expiresAt: payload.expiresAt,
+      },
+      android: { priority: "high", ttl: 300000 },
+    });
+    console.log("[IDENTITY] Migration challenge push delivered");
+    return true;
+  } catch (error) {
+    console.warn("[IDENTITY] Migration challenge push failed:", error.message);
+    return false;
+  }
+}
+
+async function sendAuthenticatedCallInvitePush(fcmToken, payload) {
+  if (!initialized || !admin) return false;
+  const fields = ["sessionId", "from", "fromIdentityId", "to", "requestedTo", "ephemeralPublicKey",
+    "identityPublicKey", "issuedAt", "nonce", "signature", "inviteDigest"];
+  if (!payload || fields.some(key => typeof payload[key] !== "string" || !payload[key])) return false;
+  try {
+    await admin.messaging().send({
+      token: fcmToken,
+      data: { type: "CALL_INVITE_V2", ...Object.fromEntries(fields.map(key => [key, payload[key]])),
+        callerPhone: typeof payload.callerPhone === "string" ? payload.callerPhone : "" },
+      android: { priority: "high", ttl: 30000 },
+    });
+    return true;
+  } catch (error) {
+    console.warn("[FCM] Authenticated call push failed:", error.message);
+    return false;
+  }
+}
+
 function isInitialized() {
   return initialized;
 }
 
-module.exports = { initFcm, sendCallInvitePush, isInitialized };
+module.exports = {
+  initFcm,
+  sendCallInvitePush,
+  sendIdentityMigrationChallenge,
+  sendAuthenticatedCallInvitePush,
+  isInitialized,
+};

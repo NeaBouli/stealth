@@ -63,7 +63,7 @@ function lastMsg(ws) {
   return ws.messages[ws.messages.length - 1];
 }
 
-function buildCtx() {
+function buildCtx(overrides = {}) {
   const { buildContext } = require("../context");
 
   const mockFcm = {
@@ -89,7 +89,11 @@ function buildCtx() {
   const ALLOWED_ORIGINS = ["https://stealthx.tech"];
   const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 
+  const now = 2_000_000_000;
   return buildContext({
+    identityProtocolMode: "transition",
+    identityTransitionDeadline: now + 3600,
+    nowSeconds: () => now,
     pkd: mockPkd,
     subscriptions: mockSubscriptions,
     fcm: mockFcm,
@@ -103,6 +107,7 @@ function buildCtx() {
     hb: mockHb,
     giftCodes,
     saveGiftCodes,
+    ...overrides,
   });
 }
 
@@ -139,14 +144,36 @@ console.log("\n[Suite] REGISTER handler");
   assert(ctx.clientIds.get("alice") === connId, "clientIds Map updated");
   assert(ctx.clients.get(connId).clientId === "alice", "client.clientId set");
 
-  // Supersede: second conn registers same clientId
+  // Transition-mode legacy registration never lets an unauthenticated claimant
+  // supersede an already-online identity.
   const ws2 = mockWs();
   const connId2 = "conn-002";
   ctx.clients.set(connId2, { ws: ws2, lastSeen: Date.now(), clientId: null, ip: "1.2.3.5" });
   ctx.handlers.REGISTER(ws2, connId2, { clientId: "alice" });
-  assert(ws.closed, "old connection closed on supersede");
-  assert(lastMsg(ws2).type === "REGISTERED", "new connection gets REGISTERED");
-  assert(ctx.clientIds.get("alice") === connId2, "clientIds updated to new conn");
+  assert(!ws.closed, "old connection remains active");
+  assert(lastMsg(ws2).error === "duplicate_client_id", "duplicate legacy ID is rejected");
+  assert(ctx.clientIds.get("alice") === connId, "clientIds keeps original connection");
+}
+
+console.log("\n[Suite] expired identity transition");
+{
+  clearState();
+  const ctx = buildCtx({ identityTransitionDeadline: 1_999_999_999 });
+  const ws = mockWs();
+  ctx.clients.set("expired-register", {
+    ws, lastSeen: Date.now(), clientId: null, ip: "1.2.3.7",
+  });
+  ctx.handlers.REGISTER(ws, "expired-register", { clientId: "legacy-client" });
+  assert(lastMsg(ws).error === "identity_protocol_required", "expired transition rejects legacy REGISTER");
+  assert(ws.closed && ws.closeCode === 4003, "expired legacy REGISTER closes the connection");
+
+  const callWs = mockWs();
+  ctx.clients.set("expired-call", {
+    ws: callWs, lastSeen: Date.now(), clientId: "legacy-caller", authVersion: 1, ip: "1.2.3.8",
+  });
+  ctx.clientIds.set("legacy-caller", "expired-call");
+  ctx.handlers.CALL_INVITE(callWs, "expired-call", { to: "legacy-peer" });
+  assert(lastMsg(callWs).error === "identity_protocol_required", "expired transition rejects legacy calls");
 }
 
 // ==========================================
@@ -158,28 +185,29 @@ console.log("\n[Suite] REGISTER_FCM_TOKEN handler");
   const ctx = buildCtx();
   const ws = mockWs();
   const connId = "conn-fcm";
-  ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: "bob", ip: "1.2.3.4" });
+  ctx.clients.set(connId, { ws, lastSeen: Date.now(), clientId: "bob", authVersion: 1, ip: "1.2.3.4" });
   ctx.clientIds.set("bob", connId);
 
-  // Missing fcmToken
+  // Legacy sessions may not create or replace a route used for migration.
   ctx.handlers.REGISTER_FCM_TOKEN(ws, connId, {});
-  assert(lastMsg(ws).error === "missing_fcm_token", "missing fcmToken → error");
+  assert(lastMsg(ws).error === "identity_protocol_required", "legacy FCM update rejected");
 
   // Not registered
   const ws2 = mockWs();
   const connId2 = "conn-noreg";
   ctx.clients.set(connId2, { ws: ws2, lastSeen: Date.now(), clientId: null, ip: "1.2.3.6" });
   ctx.handlers.REGISTER_FCM_TOKEN(ws2, connId2, { fcmToken: "tok123" });
-  assert(lastMsg(ws2).error === "not_registered", "unregistered → not_registered error");
+  assert(lastMsg(ws2).error === "not_authenticated", "unregistered → not_authenticated error");
 
-  // Valid
-  ctx.handlers.REGISTER_FCM_TOKEN(ws, connId, { fcmToken: "fcm-token-abc" });
+  // Valid authenticated registration
+  ctx.clients.get(connId).authVersion = 2;
+  ctx.handlers.REGISTER_FCM_TOKEN(ws, connId, { fcmToken: "synthetic-fcm-token-that-is-long-enough" });
   assert(lastMsg(ws).type === "REGISTER_FCM_TOKEN_ACK", "valid → ACK");
-  assert(ctx.fcmTokens.get("bob") === "fcm-token-abc", "fcmTokens Map updated");
+  assert(ctx.fcmTokens.get("bob") === "synthetic-fcm-token-that-is-long-enough", "fcmTokens Map updated");
 
   // FCM token preserved on DEREGISTER so offline incoming calls can still wake the app
   ctx.handlers.DEREGISTER(ws, connId, {});
-  assert(ctx.fcmTokens.get("bob") === "fcm-token-abc", "FCM token preserved on DEREGISTER");
+  assert(ctx.fcmTokens.get("bob") === "synthetic-fcm-token-that-is-long-enough", "FCM token preserved on DEREGISTER");
   assert(!ctx.clientIds.has("bob"), "clientId removed on DEREGISTER");
 }
 
@@ -235,7 +263,7 @@ console.log("\n[Suite] CALL_INVITE handler");
   assert(session !== undefined, "session in routingTable");
   assert(session.from === "alice", "session.from = alice");
   assert(session.to === "bob", "session.to = bob");
-  assert(session.state === "INVITE", "session.state = INVITE");
+  assert(session.state === "LEGACY_INVITE", "legacy session.state = LEGACY_INVITE");
 }
 
 // ==========================================
@@ -254,7 +282,14 @@ console.log("\n[Suite] CALL_ACCEPT + CALL_END handlers");
 
   // Setup session manually
   const sessionId = "sess-001";
-  ctx.routingTable.set(sessionId, { sessionId, from: "alice", to: "bob", state: "INVITE", created: Date.now(), updated: Date.now() });
+  ctx.routingTable.set(sessionId, {
+    sessionId,
+    from: "alice",
+    to: "bob",
+    state: "LEGACY_INVITE",
+    created: Date.now(),
+    updated: Date.now(),
+  });
 
   // Wrong callee trying to accept
   const wsC = mockWs();
