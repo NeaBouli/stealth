@@ -872,13 +872,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         // and WS can both deliver the same session. Do not relaunch over an
         // already visible incoming UI because it can race the accept transition.
         var directLaunchSucceeded = false
-        val alreadyShowing = com.securecall.app.IncomingCallActivity.isShowingSession(sessionId)
-        val interactive = (getSystemService(POWER_SERVICE) as? android.os.PowerManager)?.isInteractive ?: true
-        if (alreadyShowing) {
+        if (com.securecall.app.IncomingCallActivity.isShowingSession(sessionId)) {
             Log.d("WS_SERVICE", "IncomingCallActivity already visible for session $sessionId — skipping direct relaunch")
             directLaunchSucceeded = true
-        } else if (!com.securecall.app.call.IncomingLaunchPolicy.launchDirectly(interactive, alreadyShowing)) {
-            Log.d("WS_SERVICE", "Screen off — leaving incoming UI to the full-screen intent")
         } else {
             try {
                 startActivity(intent)

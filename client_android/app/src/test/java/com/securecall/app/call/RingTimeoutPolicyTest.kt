@@ -34,11 +34,4 @@ class RingTimeoutPolicyTest {
         assertFalse(CallEndPolicy.releasesSecurityState("s2", "s1"))
         assertFalse(CallEndPolicy.releasesSecurityState(null, "s1"))
     }
-
-    @Test
-    fun incomingUiLaunchesDirectlyOnlyWhileInteractive() {
-        assertTrue(IncomingLaunchPolicy.launchDirectly(screenInteractive = true, alreadyShowing = false))
-        assertFalse(IncomingLaunchPolicy.launchDirectly(screenInteractive = false, alreadyShowing = false))
-        assertFalse(IncomingLaunchPolicy.launchDirectly(screenInteractive = true, alreadyShowing = true))
-    }
 }

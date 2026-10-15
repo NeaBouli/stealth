@@ -25,14 +25,3 @@ object CallEndPolicy {
         stateSessionId != null && stateSessionId == endedSessionId
 }
 
-/**
- * Incoming-call UI launch. With the screen off (doze / always-on display) a direct
- * startActivity() neither wakes the device nor beats the keyguard, and because the activity
- * then already exists the full-screen-intent notification no longer wakes the screen either:
- * the call rings behind a dark screen (#136 Tab S4 QA, 2026-10-12). Only launch directly while
- * the device is interactive; otherwise the system launches it via the full-screen intent.
- */
-object IncomingLaunchPolicy {
-    fun launchDirectly(screenInteractive: Boolean, alreadyShowing: Boolean): Boolean =
-        screenInteractive && !alreadyShowing
-}
