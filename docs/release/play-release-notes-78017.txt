@@ -1,0 +1,20 @@
+<en-US>
+SecureCall 1.0.50
+
+- New signed registration: your SecureCall ID is now bound to a key on your device
+- Caller names come only from contacts verified for that ID
+- Calls to saved contacts go directly to their verified ID
+- Hardened encryption key handling in the native crypto core
+- Safer invite links
+- Stability fixes for connecting and reconnecting
+</en-US>
+<de-DE>
+SecureCall 1.0.50
+
+- Neue signierte Anmeldung: Deine SecureCall-ID ist an einen Schlüssel auf deinem Gerät gebunden
+- Anrufernamen nur noch aus Kontakten, die für diese ID bestätigt sind
+- Anrufe an gespeicherte Kontakte gehen direkt an deren bestätigte ID
+- Verbesserter Umgang mit Schlüsseln im Krypto-Kern
+- Sicherere Einladungslinks
+- Stabilere Verbindung beim Verbinden und Wiederverbinden
+</de-DE>

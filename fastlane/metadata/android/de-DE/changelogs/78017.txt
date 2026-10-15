@@ -1,0 +1,8 @@
+SecureCall 1.0.50
+
+- Neue signierte Anmeldung: Deine SecureCall-ID ist an einen Schlüssel auf deinem Gerät gebunden
+- Anrufernamen nur noch aus Kontakten, die für diese ID bestätigt sind
+- Anrufe an gespeicherte Kontakte gehen direkt an deren bestätigte ID
+- Verbesserter Umgang mit Schlüsseln im Krypto-Kern
+- Sicherere Einladungslinks
+- Stabilere Verbindung beim Verbinden und Wiederverbinden
