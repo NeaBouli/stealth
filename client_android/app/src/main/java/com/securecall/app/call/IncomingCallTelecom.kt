@@ -56,8 +56,12 @@ object IncomingCallTelecom {
             return true
         }
         if (IncomingCallActivity.isAcceptedSession(sessionId) || calls.containsKey(sessionId)) return true
+        // FEATURE_TELECOM only exists from Android 13; older devices declare the
+        // connection-service feature instead (Galaxy A21s/Tab S4 QA, 2026-10-16).
+        val telecomFeature = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            PackageManager.FEATURE_TELECOM else PackageManager.FEATURE_CONNECTION_SERVICE
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
-            !context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELECOM)) return false
+            !context.packageManager.hasSystemFeature(telecomFeature)) return false
         val telecom = context.getSystemService(TelecomManager::class.java) ?: return false
         val app = context.applicationContext
         val call = Call(app, Intent(incomingIntent).putExtra(EXTRA_MANAGED, true), callerName, showUi)
