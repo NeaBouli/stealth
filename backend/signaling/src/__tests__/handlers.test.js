@@ -224,8 +224,8 @@ console.log("\n[Suite] REGISTER_FCM_TOKEN handler");
   ctx.handlers.REGISTER_FCM_TOKEN(ws2, connId2, { fcmToken: "tok123" });
   assert(lastMsg(ws2).error === "not_authenticated", "unregistered → not_authenticated error");
 
-  // Valid authenticated registration
-  ctx.clients.get(connId).authVersion = 2;
+  // Valid authenticated registration (real v2 state: the routing id is the identity)
+  Object.assign(ctx.clients.get(connId), { authVersion: 2, identityId: "bob", identityPublicKey: "synthetic-pk" });
   ctx.handlers.REGISTER_FCM_TOKEN(ws, connId, { fcmToken: "synthetic-fcm-token-that-is-long-enough" });
   assert(lastMsg(ws).type === "REGISTER_FCM_TOKEN_ACK", "valid → ACK");
   assert(ctx.fcmTokens.get("bob") === "synthetic-fcm-token-that-is-long-enough", "fcmTokens Map updated");

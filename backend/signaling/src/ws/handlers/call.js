@@ -51,8 +51,9 @@ module.exports = function callHandlers(ctx) {
 
   function authenticatedClient(connId) {
     const client = clients.get(connId);
+    // The socket's routing id must be the authenticated identity itself (friend audit FB-01).
     return client?.authVersion === 2 && client.clientId && client.identityId
-      && client.identityPublicKey ? client : null;
+      && client.identityPublicKey && client.clientId === client.identityId ? client : null;
   }
 
   function sendAuthenticatedPush(targetClientId, payload) {

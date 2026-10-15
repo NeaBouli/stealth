@@ -506,7 +506,7 @@ module.exports = function registerHandlers(ctx) {
       if (!myClientId || !client?.authVersion) {
         return sendError(ws, "not_authenticated", "Authenticated registration is required");
       }
-      if (client.authVersion !== 2) {
+      if (client.authVersion !== 2 || !client.identityId || myClientId !== client.identityId) {
         return sendError(ws, "identity_protocol_required",
           "Authenticated registration protocol v2 is required for FCM updates");
       }
