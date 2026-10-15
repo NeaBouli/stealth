@@ -13,3 +13,26 @@ object RingTimeoutPolicy {
     fun shouldExpire(isCaller: Boolean, sameSession: Boolean, accepted: Boolean): Boolean =
         isCaller && sameSession && !accepted
 }
+
+/**
+ * A remote CALL_END must release the per-call security state of exactly that session.
+ * Otherwise a missed call (caller hung up or timed out while the callee only saw a
+ * notification) leaves the old invite behind and every later invite is rejected as
+ * conflicting until the app restarts (#136 real-device QA, 2026-10-12).
+ */
+object CallEndPolicy {
+    fun releasesSecurityState(stateSessionId: String?, endedSessionId: String): Boolean =
+        stateSessionId != null && stateSessionId == endedSessionId
+}
+
+/**
+ * Incoming-call UI launch. With the screen off (doze / always-on display) a direct
+ * startActivity() neither wakes the device nor beats the keyguard, and because the activity
+ * then already exists the full-screen-intent notification no longer wakes the screen either:
+ * the call rings behind a dark screen (#136 Tab S4 QA, 2026-10-12). Only launch directly while
+ * the device is interactive; otherwise the system launches it via the full-screen intent.
+ */
+object IncomingLaunchPolicy {
+    fun launchDirectly(screenInteractive: Boolean, alreadyShowing: Boolean): Boolean =
+        screenInteractive && !alreadyShowing
+}

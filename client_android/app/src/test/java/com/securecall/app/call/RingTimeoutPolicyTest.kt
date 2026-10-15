@@ -27,4 +27,18 @@ class RingTimeoutPolicyTest {
     fun timeoutMatchesCalleeRingWindow() {
         assertEquals(60_000L, RingTimeoutPolicy.OUTGOING_RING_TIMEOUT_MS)
     }
+
+    @Test
+    fun remoteEndReleasesOnlyTheEndedSession() {
+        assertTrue(CallEndPolicy.releasesSecurityState("s1", "s1"))
+        assertFalse(CallEndPolicy.releasesSecurityState("s2", "s1"))
+        assertFalse(CallEndPolicy.releasesSecurityState(null, "s1"))
+    }
+
+    @Test
+    fun incomingUiLaunchesDirectlyOnlyWhileInteractive() {
+        assertTrue(IncomingLaunchPolicy.launchDirectly(screenInteractive = true, alreadyShowing = false))
+        assertFalse(IncomingLaunchPolicy.launchDirectly(screenInteractive = false, alreadyShowing = false))
+        assertFalse(IncomingLaunchPolicy.launchDirectly(screenInteractive = true, alreadyShowing = true))
+    }
 }
