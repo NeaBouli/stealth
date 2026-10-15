@@ -131,6 +131,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     )
     private val activationRequests = com.securecall.app.billing.ActivationRequestSlot()
     private val activationHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val outgoingRingHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var outgoingRingTimeout: Runnable? = null
     private val testerLicenses by lazy {
         com.securecall.app.billing.TesterLicenseClient(
             send = { message -> isRegistered && (client?.send(message.toString()) ?: false) },
@@ -194,6 +196,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     fun isSecureSessionEstablished(): Boolean = callSecurityState?.established == true
     fun getSecurityCode(): String? = callSecurityState?.takeIf { it.established }?.securityCode
     fun clearSession() {
+        cancelOutgoingRingTimeout()
         _currentSessionId = null
         fcmPendingSessionId = null
         localPrivKey?.fill(0)
@@ -1382,6 +1385,32 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         // BUG-032: Mark call active during ringing — prevents heartbeat staleness from killing the WS
         client?.setCallActive(true)
         Log.d("WS_SERVICE", "Authenticated CALL_INVITE sent")
+        scheduleOutgoingRingTimeout(sessionId)
+    }
+
+    private fun scheduleOutgoingRingTimeout(sessionId: String) {
+        cancelOutgoingRingTimeout()
+        val timeout = Runnable {
+            outgoingRingTimeout = null
+            val state = callSecurityState
+            if (!com.securecall.app.call.RingTimeoutPolicy.shouldExpire(
+                    isCaller = state?.role == SecureCallRole.CALLER,
+                    sameSession = state?.invite?.sessionId == sessionId,
+                    accepted = state?.accept != null,
+                )) return@Runnable
+            Log.d("WS_SERVICE", "Outgoing call unanswered — ending session $sessionId")
+            sendCallEnd(sessionId, "no_answer")
+            clearSession()
+            setCallActive(false)
+            _onCallError?.invoke("no_answer", "No answer")
+        }
+        outgoingRingTimeout = timeout
+        outgoingRingHandler.postDelayed(timeout, com.securecall.app.call.RingTimeoutPolicy.OUTGOING_RING_TIMEOUT_MS)
+    }
+
+    private fun cancelOutgoingRingTimeout() {
+        outgoingRingTimeout?.let { outgoingRingHandler.removeCallbacks(it) }
+        outgoingRingTimeout = null
     }
 
     fun sendCallAccept(sessionId: String) {
@@ -1711,6 +1740,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         sessionKey = boundKey
         remotePubKey = remoteKey
         state.accept = accept
+        cancelOutgoingRingTimeout()
         state.acceptTranscript = acceptTranscript
         state.expectedPeerConfirmation = SessionKeyBinding.confirmation(
             boundKey, accept.sessionId, "callee", accept.inviteDigest, accept.acceptDigest,
@@ -1952,6 +1982,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     private fun executeCallEnd(sessionId: String) {
         cancelCallEndGrace()
+        // Release keys, invite and media of the ended session; a stale CALL_END for an older
+        // session must not tear down a newer call.
+        if (com.securecall.app.call.CallEndPolicy.releasesSecurityState(
+                callSecurityState?.invite?.sessionId, sessionId)) {
+            clearSession()
+        }
         _currentSessionId = null
         // Kill all audio immediately — belt-and-suspenders
         killAllAudio()
