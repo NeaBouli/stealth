@@ -11,6 +11,8 @@ import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.securecall.app.R
+import com.securecall.app.call.IncomingCallAlertPolicy
+import com.securecall.app.call.IncomingCallTelecom
 import com.securecall.app.notifications.IncomingCallNotifications
 import com.securecall.app.security.IdentityProtocol
 import com.securecall.app.security.IdentitySigningKey
@@ -153,20 +155,18 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             action = com.securecall.app.net.WebSocketService.ACTION_FCM_CALL_INVITE_V2
             putExtra(com.securecall.app.net.WebSocketService.EXTRA_FCM_PAYLOAD, payload)
         }
-        val signalingStartRequested = try {
+        try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(wsIntent)
             } else {
                 startService(wsIntent)
             }
             Log.d(TAG, "WebSocketService wake requested for CALL_ACCEPT delivery")
-            true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start WebSocketService from FCM", e)
-            false
         }
 
-        // D) Start IncomingCallActivity DIRECTLY — no WS needed for ringing
+        // C) Telecom decides when our incoming UI may be shown.
         val intent = Intent(this, com.securecall.app.IncomingCallActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
@@ -177,20 +177,28 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             putExtra("callerName", callerName)
             putExtra("from_fcm", true) // Flag: came from FCM, WS may not be connected
         }
-        try {
-            startActivity(intent)
-            Log.d(TAG, "IncomingCallActivity launched directly from FCM for $callerName")
-            com.securecall.app.debug.SecLogManager.log("FCM", "IncomingCallActivity launched directly")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to launch IncomingCallActivity from FCM", e)
-            com.securecall.app.debug.SecLogManager.log("FCM", "FAILED to launch IncomingCallActivity: ${e.message}")
+        val showUi = {
+            val service = com.securecall.app.net.WebSocketService.instance
+            val serviceHandlesRingtone = IncomingCallAlertPolicy.serviceHandlesRingtone(
+                IncomingCallTelecom.hasCall(invite.sessionId), service != null,
+            )
+            if (serviceHandlesRingtone) service?.startIncomingRingtone()
+            // Post FSI before the direct launch; a successful start is not proof of visibility.
+            showIncomingCallNotification(
+                invite.sessionId, callerName, invite.fromClientId, invite.callerPhone,
+                serviceHandlesRingtone = serviceHandlesRingtone
+            )
+            if (!com.securecall.app.IncomingCallActivity.isShowingSession(invite.sessionId)) {
+                try {
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Unable to open incoming UI; notification remains available", e)
+                }
+            }
         }
-
-        // D) Show full-screen notification as backup (lock screen / DND / Android 10+)
-        showIncomingCallNotification(
-            invite.sessionId, callerName, invite.fromClientId, invite.callerPhone,
-            serviceHandlesRingtone = signalingStartRequested
-        )
+        if (!IncomingCallTelecom.reportIncomingCall(this, invite.sessionId, callerName, intent, showUi)) {
+            showUi()
+        }
 
         // E) Force reconnect if an existing service instance is disconnected.
         com.securecall.app.net.WebSocketService.instance?.let { ws ->
@@ -200,7 +208,7 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             }
         }
 
-        // Release WakeLock after activity launch (activity manages its own screen wake)
+        // Release the delivery wake lock; Telecom now controls when UI is shown.
         try {
             if (wl.isHeld) wl.release()
         } catch (_: Exception) {}
@@ -223,6 +231,11 @@ class SecureCallMessagingService : FirebaseMessagingService() {
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifications for incoming secure calls"
+                setSound(
+                    android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE),
+                    android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE).build(),
+                )
                 setBypassDnd(true)
                 enableVibration(true)
                 lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
@@ -232,6 +245,7 @@ class SecureCallMessagingService : FirebaseMessagingService() {
 
         val intent = Intent(this, com.securecall.app.IncomingCallActivity::class.java).apply {
             putExtra("fromNotification", true)
+            putExtra(IncomingCallTelecom.EXTRA_MANAGED, IncomingCallTelecom.hasCall(sessionId))
             putExtra("sessionId", sessionId)
             putExtra("callerName", callerName)
             putExtra("callerClientId", callerClientId)
@@ -254,15 +268,15 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setSilent(serviceHandlesRingtone)
-            .setAutoCancel(true)
+            .setAutoCancel(!IncomingCallTelecom.hasCall(sessionId))
             .setOngoing(true)
             .setContentIntent(pendingIntent)
             .setFullScreenIntent(pendingIntent, true)
             .build()
 
         if (!serviceHandlesRingtone) {
-            // If Android rejects the FGS start, keep the channel sound repeating
-            // until the user opens or dismisses the incoming-call notification.
+            // Telecom calls and the no-service fallback use the notification ringtone
+            // until answer, decline or the ring deadline.
             notification.flags = notification.flags or android.app.Notification.FLAG_INSISTENT
         }
         manager.notify(IncomingCallNotifications.FCM_BACKUP_NOTIFICATION_ID, notification)
