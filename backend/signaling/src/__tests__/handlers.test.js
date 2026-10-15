@@ -153,6 +153,31 @@ console.log("\n[Suite] REGISTER handler");
   assert(!ws.closed, "old connection remains active");
   assert(lastMsg(ws2).error === "duplicate_client_id", "duplicate legacy ID is rejected");
   assert(ctx.clientIds.get("alice") === connId, "clientIds keeps original connection");
+
+  // Hotfix 2026-10-15: the same device reconnecting (same network) supersedes its own
+  // previous legacy socket instead of looping on duplicate_client_id.
+  const ws3 = mockWs();
+  ctx.clients.set("conn-003", { ws: ws3, lastSeen: Date.now(), clientId: null, ip: ctx.clients.get(connId).ip });
+  ctx.handlers.REGISTER(ws3, "conn-003", { clientId: "alice" });
+  assert(lastMsg(ws3).type === "REGISTERED", "same-network legacy reconnect supersedes");
+  assert(ctx.clientIds.get("alice") === "conn-003", "binding moved to the reconnecting socket");
+
+  // A stale legacy binding (no heartbeat for >15 s) can be taken over from another network.
+  ctx.clients.get("conn-003").lastSeen = Date.now() - 16000;
+  const ws4 = mockWs();
+  ctx.clients.set("conn-004", { ws: ws4, lastSeen: Date.now(), clientId: null, ip: "9.9.9.9" });
+  ctx.handlers.REGISTER(ws4, "conn-004", { clientId: "alice" });
+  assert(lastMsg(ws4).type === "REGISTERED", "stale legacy binding can be taken over");
+
+  // An identity-v2 binding is never displaced by legacy REGISTER, even from the same network.
+  const ws5 = mockWs();
+  ctx.clients.set("conn-005", { ws: ws5, lastSeen: Date.now(), clientId: "bobv2", authVersion: 2, identityId: "bobv2", ip: "7.7.7.7" });
+  ctx.clientIds.set("bobv2", "conn-005");
+  const ws6 = mockWs();
+  ctx.clients.set("conn-006", { ws: ws6, lastSeen: Date.now(), clientId: null, ip: "7.7.7.7" });
+  ctx.handlers.REGISTER(ws6, "conn-006", { clientId: "bobv2" });
+  assert(lastMsg(ws6).type === "ERROR", "v2 binding is not displaced by legacy REGISTER");
+  assert(ctx.clientIds.get("bobv2") === "conn-005", "v2 binding kept");
 }
 
 console.log("\n[Suite] expired identity transition");

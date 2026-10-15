@@ -21,6 +21,9 @@ const REJECTION_TRACKER_MAX = (() => {
 // Rate-limit key for a peer address: IPv4 as-is, IPv6 aggregated to its /64 (shared helper).
 const { networkKey } = require("../../utils/network_key");
 
+// A binding is live while its socket answered a heartbeat ping (every 5 s) within this window.
+const LEGACY_LIVE_WINDOW_MS = 15000;
+
 module.exports = function registerHandlers(ctx) {
   const {
     clients, clientIds, phoneNumbers, phoneHashes, fcmTokens,
@@ -453,8 +456,21 @@ module.exports = function registerHandlers(ctx) {
         catch { return sendError(ws, "identity_service_unavailable"); }
         if (bound) return sendError(ws, "identity_alias_conflict");
       }
-      if (clientIds.has(msg.clientId) && clientIds.get(msg.clientId) !== connId) {
-        return sendError(ws, "duplicate_client_id", "Legacy identity is already online");
+      // A reconnecting legacy app often still has its previous socket registered (half-open
+      // TCP, or the app's own earlier connection). Refusing it locked legacy apps into a
+      // REGISTER/timeout loop after the 2026-10-11 deploy. Supersede a legacy binding when it
+      // is stale or comes from the same network as the new connection; never displace a live
+      // binding from elsewhere, and never an identity-v2 binding.
+      const existingConnId = clientIds.get(msg.clientId);
+      if (existingConnId && existingConnId !== connId) {
+        const existing = clients.get(existingConnId);
+        const v2Bound = existing?.authVersion === 2;
+        const stale = !existing || existing.ws?.readyState !== 1
+          || Date.now() - (existing.lastSeen || 0) >= LEGACY_LIVE_WINDOW_MS;
+        const sameNetwork = Boolean(existing) && ipKeyFor(existingConnId) === ipKeyFor(connId);
+        if (v2Bound || !(stale || sameNetwork)) {
+          return sendError(ws, "duplicate_client_id", "Legacy identity is already online");
+        }
       }
       return finishRegistration(ws, connId, {
         clientId: msg.clientId,
