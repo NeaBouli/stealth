@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.securecall.app.R
+import com.securecall.app.security.StealthDeleteManager
 import com.securecall.app.ui.EdgeToEdgeHelper
 
 /**
@@ -116,16 +117,7 @@ class EmergencyBroadcastActivity : AppCompatActivity() {
         // Stealth Delete button
         if (t.showStealthDelete) {
             layout.addView(makeRoundedButton("EMERGENCY DELETE", 0xFFFF0000.toInt()) {
-                val prefs = getSharedPreferences("securecall_prefs", MODE_PRIVATE)
-                prefs.edit().clear().apply()
-                val defaultPrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this@EmergencyBroadcastActivity)
-                defaultPrefs.edit().clear().apply()
-                for (db in databaseList()) { deleteDatabase(db) }
-                cacheDir.deleteRecursively()
-                val restartIntent = packageManager.getLaunchIntentForPackage(packageName)
-                restartIntent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(restartIntent)
-                Runtime.getRuntime().exit(0)
+                StealthDeleteManager.execute(this@EmergencyBroadcastActivity)
             })
         }
 

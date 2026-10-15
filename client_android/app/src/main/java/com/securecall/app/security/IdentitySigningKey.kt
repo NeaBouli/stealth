@@ -39,6 +39,12 @@ object IdentitySigningKey {
 
     fun existingIdentity(): CallIdentity? = try { validatedIdentity(loadStore()) } catch (_: Exception) { null }
 
+    /** Remove only this app's signaling identity; the next registration creates a fresh key. */
+    @Synchronized
+    fun destroy() {
+        loadStore().deleteEntry(ALIAS)
+    }
+
     fun sign(transcript: String): String? {
         if (transcript.length !in 1..4096 || !transcript.startsWith("securecall-")
             || transcript.contains('\u0000') || existingIdentity() == null) return null
