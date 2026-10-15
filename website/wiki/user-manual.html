@@ -156,7 +156,7 @@
 
             <h2>What Is SecureCall?</h2>
             <p>SecureCall is an end-to-end encrypted voice call app. Every call is encrypted in transit using modern authenticated cryptography. The server never stores call content and never has access to your voice data. Limited signaling and routing metadata is processed transiently to connect calls. Your identity is a randomly generated ID &mdash; no phone number required.</p>
-            <p>When you make a call, SecureCall establishes a direct encrypted audio channel using WebRTC with hardware-backed key exchange. Once connected, audio travels peer-to-peer. If a direct path is not possible, a TURN relay forwards the packets &mdash; but audio remains end-to-end encrypted and the relay cannot read it.</p>
+            <p>When you make a call, SecureCall establishes a direct encrypted audio channel: a WebRTC DataChannel (DTLS) carrying XChaCha20-Poly1305-encrypted Opus frames, keyed by a fresh per-call X25519 exchange. Once connected, audio travels peer-to-peer. If a direct path is not possible, a TURN relay forwards the packets &mdash; but audio remains end-to-end encrypted and the relay cannot read it.</p>
 
             <h2>Tier Overview</h2>
             <p>Your effective tier is the highest of: your installed build flavor, an active subscription, or an active activation code.</p>
@@ -239,7 +239,7 @@
             <ul>
                 <li><strong>Certificate Pinning</strong> &mdash; Whether TLS certificate pinning is active.</li>
                 <li><strong>Device Attestation</strong> &mdash; Whether hardware integrity verification is required.</li>
-                <li><strong>Hardware Keystore</strong> &mdash; Whether encryption keys must be hardware-backed.</li>
+                <li><strong>Hardware Keystore</strong> &mdash; Whether the build requires the device to provide a hardware-backed keystore (Premium requirement).</li>
             </ul>
 
             <h2>Anti-Recording Protection</h2>

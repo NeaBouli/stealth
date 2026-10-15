@@ -371,7 +371,7 @@
 
             <h2>Privacy Settings</h2>
             <ul>
-                <li><strong>Crash reports</strong> &mdash; Anonymous crash data is collected on the Free tier only via Firebase Crashlytics. This is opt-out: navigate to <strong>Settings &gt; Privacy &gt; Crash Reports</strong> to disable. Pro and Premium tiers have Crashlytics completely disabled at the build level.</li>
+                <li><strong>Crash reports</strong> &mdash; Anonymous crash data is collected on the Free tier only via Firebase Crashlytics. This is opt-out: navigate to <strong>Settings &gt; Privacy &gt; Crash Reports</strong> to disable. The Crashlytics SDK is also present in Pro and Premium builds, but crash collection is disabled at runtime there.</li>
                 <li><strong>Delete all data</strong> &mdash; Erase all local data including encryption keys, contacts, call history, and all app settings. This is a destructive, irreversible operation. Navigate to <strong>Settings &gt; Delete All Data</strong>.</li>
                 <li><strong>Background service</strong> &mdash; Enable or disable the persistent background service that keeps SecureCall connected for incoming calls. Toggle in <strong>Settings &gt; Background Service</strong>. Enabled by default.</li>
             </ul>
@@ -422,7 +422,7 @@
             </table>
 
             <div class="info-box warning">
-                <strong>Important:</strong> Contact data is stored exclusively on your device. It is never uploaded to our servers. If you uninstall the app or use "Delete All Data," your contact list will be permanently erased and cannot be recovered.
+                <strong>Important:</strong> Contact names and numbers are stored on your device. Optional SecureCall-user discovery sends SHA-256 hashes of normalized phone numbers, and calling by phone number sends that number once to the server for lookup. If you uninstall the app or use "Delete All Data," your contact list will be permanently erased and cannot be recovered.
             </div>
 
             <!-- ════════════════════════════════════════════════════ -->
@@ -440,7 +440,7 @@
             <p>Pro features activate immediately after purchase confirmation.</p>
 
             <h2>Pro &rarr; Premium (&euro;4.99/month or one-time license)</h2>
-            <p>Upgrade to Premium for the maximum security posture, including hardware-backed key storage, automatic threat termination, enforced security controls, and zero telemetry:</p>
+            <p>Upgrade to Premium for the maximum security posture, including the hardware-keystore device requirement, automatic threat termination, enforced security controls, and zero telemetry:</p>
             <ol>
                 <li>Open <strong>Settings &rarr; Subscription</strong></li>
                 <li>Tap <strong>"Upgrade to Premium"</strong></li>

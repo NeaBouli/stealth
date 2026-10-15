@@ -73,7 +73,7 @@
 
         <div class="section-label" style="margin-bottom:24px">PRIVACY POLICY</div>
         <h1>Privacy Directive</h1>
-        <p class="page-meta">Effective: February 18, 2026 &middot; Last Updated: March 22, 2026</p>
+        <p class="page-meta">Effective: February 18, 2026 &middot; Last Updated: October 15, 2026</p>
 
         <!-- Language Switcher -->
         <div class="lang-switcher">
@@ -95,7 +95,7 @@
             <ul>
                 <li><strong>Call content:</strong> End-to-end encrypted &mdash; we cannot access it</li>
                 <li><strong>Call metadata:</strong> No persistent call history or recordings stored on servers. Signaling metadata (session IDs, connection IDs) is processed transiently for connection setup.</li>
-                <li><strong>Contacts:</strong> Raw contact names and numbers stay on device. SHA-256 hashes of normalized phone numbers are sent for optional SecureCall-user discovery. Because phone numbers have a limited search space, hashing alone does not guarantee anonymity or prevent re-identification.</li>
+                <li><strong>Contacts:</strong> Raw contact names and numbers stay on device. SHA-256 hashes of normalized phone numbers are sent for optional SecureCall-user discovery. Because phone numbers have a limited search space, hashing alone does not guarantee anonymity or prevent re-identification. If you start a call by entering a phone number, that number is sent to the server once to look up the callee.</li>
                 <li><strong>Phone number:</strong> Optional. If supplied, it is processed for registration, caller identification and number lookup; the SecureID-only path can be used without it.</li>
                 <li><strong>IP address:</strong> Visible during signaling and STUN/TURN connectivity; not persistently logged by our servers. TURN relay providers may see IPs required for WebRTC.</li>
                 <li><strong>Push tokens:</strong> FCM tokens may be stored for push delivery and cleared on deregistration.</li>
@@ -106,7 +106,9 @@
             <p>IFR holder verification is browser-only and launch-gated. When enabled, the checkout service processes the public wallet address, a one-time signed challenge and the public on-chain token balance; no wallet credential or private key is requested.</p>
             <h2>Third-Party Services</h2>
             <p><strong>FREE:</strong> Firebase Crashlytics (anonymous crash reports, opt-out), Google AdMob (ads).</p>
-            <p><strong>PRO &amp; PREMIUM:</strong> No ads. Firebase Cloud Messaging (FCM) is used for push notifications across all tiers. STUN/TURN relay services are used for WebRTC connectivity.</p>
+            <p><strong>PRO &amp; PREMIUM:</strong> No ads. The Crashlytics SDK is present in these builds but crash collection is disabled at runtime. Firebase Cloud Messaging (FCM) is used for push notifications across all tiers. STUN/TURN relay services are used for WebRTC connectivity.</p>
+            <h2>This Website</h2>
+            <p>stealthx.tech is a static website hosted on GitHub Pages; GitHub processes visitor IP addresses to serve the pages. Pages load fonts from Google Fonts (fonts.googleapis.com and fonts.gstatic.com). The payment-success page additionally loads a pinned QR-code library from cdn.jsdelivr.net, and the launch-gated IFR checkout page loads a pinned wallet library from esm.sh. This website uses no analytics or tracking scripts.</p>
             <h2>Your Rights (GDPR)</h2>
             <p>You have the right to access, rectify, erase, and port your data. Because SecureCall avoids call content, contact uploads, and persistent server-side call history, most rights can be fulfilled locally or by deleting operational records tied to your SecureCall ID.</p>
             <h2 id="account-deletion">Account &amp; Data Deletion</h2>
@@ -149,7 +151,7 @@
             <ul>
                 <li><strong>Gespr&auml;chsinhalte:</strong> Ende-zu-Ende verschl&uuml;sselt &mdash; wir k&ouml;nnen nicht darauf zugreifen</li>
                 <li><strong>Metadaten:</strong> Keine Anrufprotokolle auf unseren Servern</li>
-                <li><strong>Kontakte:</strong> Verlassen niemals Ihr Ger&auml;t</li>
+                <li><strong>Kontakte:</strong> Namen und Nummern bleiben auf Ihrem Ger&auml;t. F&uuml;r die optionale Erkennung von SecureCall-Nutzern werden SHA-256-Hashes normalisierter Telefonnummern &uuml;bertragen. Rufen Sie &uuml;ber eine Telefonnummer an, wird diese Nummer einmalig zur Suche an den Server gesendet.</li>
                 <li><strong>IP-Adresse:</strong> Nur vor&uuml;bergehend sichtbar; wird nicht gespeichert</li>
             </ul>
             <h2>Werbung (nur FREE-Version)</h2>
@@ -168,7 +170,7 @@
             <ul>
                 <li><strong>&#922;&#955;&#942;&#963;&#949;&#953;&#962;:</strong> &#922;&#961;&#965;&#960;&#964;&#959;&#947;&#961;&#945;&#966;&#951;&#956;&#941;&#957;&#949;&#962; &#945;&#960;&#972; &#940;&#954;&#961;&#951; &#963;&#949; &#940;&#954;&#961;&#951;</li>
                 <li><strong>&#924;&#949;&#964;&#945;&#948;&#949;&#948;&#959;&#956;&#941;&#957;&#945;:</strong> &#916;&#949;&#957; &#945;&#960;&#959;&#952;&#951;&#954;&#949;&#973;&#959;&#957;&#964;&#945;&#953;</li>
-                <li><strong>&#917;&#960;&#945;&#966;&#941;&#962;:</strong> &#916;&#949;&#957; &#966;&#949;&#973;&#947;&#959;&#965;&#957; &#945;&#960;&#972; &#964;&#951; &#963;&#965;&#963;&#954;&#949;&#965;&#942; &#963;&#945;&#962;</li>
+                <li><strong>&#917;&#960;&#945;&#966;&#941;&#962;:</strong> &#927;&#957;&#972;&#956;&#945;&#964;&#945; &#954;&#945;&#953; &#945;&#961;&#953;&#952;&#956;&#959;&#943; &#960;&#945;&#961;&#945;&#956;&#941;&#957;&#959;&#965;&#957; &#963;&#964;&#951; &#963;&#965;&#963;&#954;&#949;&#965;&#942; &#963;&#945;&#962;. &#915;&#953;&#945; &#964;&#951;&#957; &#960;&#961;&#959;&#945;&#953;&#961;&#949;&#964;&#953;&#954;&#942; &#945;&#957;&#945;&#954;&#940;&#955;&#965;&#968;&#951; &#967;&#961;&#951;&#963;&#964;&#974;&#957; SecureCall &#945;&#960;&#959;&#963;&#964;&#941;&#955;&#955;&#959;&#957;&#964;&#945;&#953; hashes SHA-256 &#954;&#945;&#957;&#959;&#957;&#953;&#954;&#959;&#960;&#959;&#953;&#951;&#956;&#941;&#957;&#969;&#957; &#945;&#961;&#953;&#952;&#956;&#974;&#957;&#183; &#972;&#964;&#945;&#957; &#954;&#945;&#955;&#949;&#943;&#964;&#949; &#956;&#941;&#963;&#969; &#945;&#961;&#953;&#952;&#956;&#959;&#973; &#964;&#951;&#955;&#949;&#966;&#974;&#957;&#959;&#965;, &#959; &#945;&#961;&#953;&#952;&#956;&#972;&#962; &#945;&#965;&#964;&#972;&#962; &#945;&#960;&#959;&#963;&#964;&#941;&#955;&#955;&#949;&#964;&#945;&#953; &#956;&#943;&#945; &#966;&#959;&#961;&#940; &#963;&#964;&#959;&#957; &#948;&#953;&#945;&#954;&#959;&#956;&#953;&#963;&#964;&#942; &#947;&#953;&#945; &#945;&#957;&#945;&#950;&#942;&#964;&#951;&#963;&#951;.</li>
             </ul>
             <h2>&#916;&#953;&#945;&#966;&#942;&#956;&#953;&#963;&#951; (&#956;&#972;&#957;&#959; FREE)</h2>
             <p>&#919; &#948;&#969;&#961;&#949;&#940;&#957; &#941;&#954;&#948;&#959;&#963;&#951; &#949;&#956;&#966;&#945;&#957;&#943;&#950;&#949;&#953; &#948;&#953;&#945;&#966;&#951;&#956;&#943;&#963;&#949;&#953;&#962; &#956;&#941;&#963;&#969; Google AdMob. PRO &#954;&#945;&#953; PREMIUM &#948;&#949;&#957; &#960;&#949;&#961;&#953;&#941;&#967;&#959;&#965;&#957; &#948;&#953;&#945;&#966;&#951;&#956;&#943;&#963;&#949;&#953;&#962;.</p>
@@ -186,7 +188,7 @@
             <ul>
                 <li><strong>Chiamate:</strong> Crittografate end-to-end &mdash; non possiamo accedervi</li>
                 <li><strong>Metadati:</strong> Non archiviati sui nostri server</li>
-                <li><strong>Contatti:</strong> Non lasciano mai il vostro dispositivo</li>
+                <li><strong>Contatti:</strong> Nomi e numeri restano sul vostro dispositivo. Per il rilevamento opzionale degli utenti SecureCall vengono inviati hash SHA-256 dei numeri normalizzati; quando chiamate inserendo un numero di telefono, quel numero viene inviato una volta al server per la ricerca.</li>
             </ul>
             <h2>Pubblicit&agrave; (solo versione FREE)</h2>
             <p>La versione gratuita mostra annunci tramite Google AdMob. PRO e PREMIUM non contengono pubblicit&agrave;.</p>
@@ -204,7 +206,7 @@
             <ul>
                 <li><strong>Llamadas:</strong> Cifradas de extremo a extremo &mdash; no podemos acceder</li>
                 <li><strong>Metadatos:</strong> No se almacenan en nuestros servidores</li>
-                <li><strong>Contactos:</strong> Nunca salen de su dispositivo</li>
+                <li><strong>Contactos:</strong> Los nombres y n&uacute;meros permanecen en su dispositivo. Para la detecci&oacute;n opcional de usuarios de SecureCall se env&iacute;an hashes SHA-256 de los n&uacute;meros normalizados; al llamar introduciendo un n&uacute;mero de tel&eacute;fono, ese n&uacute;mero se env&iacute;a una vez al servidor para localizar al destinatario.</li>
             </ul>
             <h2>Publicidad (solo versi&oacute;n FREE)</h2>
             <p>La versi&oacute;n gratuita muestra anuncios de Google AdMob. PRO y PREMIUM no contienen publicidad.</p>
@@ -222,7 +224,7 @@
             <ul>
                 <li><strong>&#1047;&#1074;&#1086;&#1085;&#1082;&#1080;:</strong> &#1057;&#1082;&#1074;&#1086;&#1079;&#1085;&#1086;&#1077; &#1096;&#1080;&#1092;&#1088;&#1086;&#1074;&#1072;&#1085;&#1080;&#1077; &mdash; &#1084;&#1099; &#1085;&#1077; &#1084;&#1086;&#1078;&#1077;&#1084; &#1087;&#1086;&#1083;&#1091;&#1095;&#1080;&#1090;&#1100; &#1076;&#1086;&#1089;&#1090;&#1091;&#1087;</li>
                 <li><strong>&#1052;&#1077;&#1090;&#1072;&#1076;&#1072;&#1085;&#1085;&#1099;&#1077;:</strong> &#1053;&#1077; &#1093;&#1088;&#1072;&#1085;&#1103;&#1090;&#1089;&#1103; &#1085;&#1072; &#1085;&#1072;&#1096;&#1080;&#1093; &#1089;&#1077;&#1088;&#1074;&#1077;&#1088;&#1072;&#1093;</li>
-                <li><strong>&#1050;&#1086;&#1085;&#1090;&#1072;&#1082;&#1090;&#1099;:</strong> &#1053;&#1080;&#1082;&#1086;&#1075;&#1076;&#1072; &#1085;&#1077; &#1087;&#1086;&#1082;&#1080;&#1076;&#1072;&#1102;&#1090; &#1074;&#1072;&#1096;&#1077; &#1091;&#1089;&#1090;&#1088;&#1086;&#1081;&#1089;&#1090;&#1074;&#1086;</li>
+                <li><strong>&#1050;&#1086;&#1085;&#1090;&#1072;&#1082;&#1090;&#1099;:</strong> &#1048;&#1084;&#1077;&#1085;&#1072; &#1080; &#1085;&#1086;&#1084;&#1077;&#1088;&#1072; &#1086;&#1089;&#1090;&#1072;&#1102;&#1090;&#1089;&#1103; &#1085;&#1072; &#1074;&#1072;&#1096;&#1077;&#1084; &#1091;&#1089;&#1090;&#1088;&#1086;&#1081;&#1089;&#1090;&#1074;&#1077;. &#1044;&#1083;&#1103; &#1086;&#1087;&#1094;&#1080;&#1086;&#1085;&#1072;&#1083;&#1100;&#1085;&#1086;&#1075;&#1086; &#1086;&#1073;&#1085;&#1072;&#1088;&#1091;&#1078;&#1077;&#1085;&#1080;&#1103; &#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1077;&#1081; SecureCall &#1086;&#1090;&#1087;&#1088;&#1072;&#1074;&#1083;&#1103;&#1102;&#1090;&#1089;&#1103; SHA-256-&#1093;&#1077;&#1096;&#1080; &#1085;&#1086;&#1088;&#1084;&#1072;&#1083;&#1080;&#1079;&#1086;&#1074;&#1072;&#1085;&#1085;&#1099;&#1093; &#1085;&#1086;&#1084;&#1077;&#1088;&#1086;&#1074;; &#1087;&#1088;&#1080; &#1079;&#1074;&#1086;&#1085;&#1082;&#1077; &#1087;&#1086; &#1085;&#1086;&#1084;&#1077;&#1088;&#1091; &#1090;&#1077;&#1083;&#1077;&#1092;&#1086;&#1085;&#1072; &#1101;&#1090;&#1086;&#1090; &#1085;&#1086;&#1084;&#1077;&#1088; &#1086;&#1076;&#1080;&#1085; &#1088;&#1072;&#1079; &#1086;&#1090;&#1087;&#1088;&#1072;&#1074;&#1083;&#1103;&#1077;&#1090;&#1089;&#1103; &#1085;&#1072; &#1089;&#1077;&#1088;&#1074;&#1077;&#1088; &#1076;&#1083;&#1103; &#1087;&#1086;&#1080;&#1089;&#1082;&#1072;.</li>
             </ul>
             <h2>&#1056;&#1077;&#1082;&#1083;&#1072;&#1084;&#1072; (&#1090;&#1086;&#1083;&#1100;&#1082;&#1086; FREE)</h2>
             <p>&#1041;&#1077;&#1089;&#1087;&#1083;&#1072;&#1090;&#1085;&#1072;&#1103; &#1074;&#1077;&#1088;&#1089;&#1080;&#1103; &#1087;&#1086;&#1082;&#1072;&#1079;&#1099;&#1074;&#1072;&#1077;&#1090; &#1088;&#1077;&#1082;&#1083;&#1072;&#1084;&#1091; Google AdMob. PRO &#1080; PREMIUM &#1073;&#1077;&#1079; &#1088;&#1077;&#1082;&#1083;&#1072;&#1084;&#1099;.</p>
@@ -240,7 +242,7 @@
             <ul>
                 <li><strong>&#36890;&#35805;:</strong> &#31471;&#21040;&#31471;&#21152;&#23494; &mdash; &#25105;&#20204;&#26080;&#27861;&#35775;&#38382;</li>
                 <li><strong>&#20803;&#25968;&#25454;:</strong> &#19981;&#23384;&#20648;&#22312;&#25105;&#20204;&#30340;&#26381;&#21153;&#22120;&#19978;</li>
-                <li><strong>&#32852;&#31995;&#20154;:</strong> &#27704;&#36828;&#19981;&#20250;&#31163;&#24320;&#24744;&#30340;&#35774;&#22791;</li>
+                <li><strong>&#32852;&#31995;&#20154;:</strong> &#22995;&#21517;&#21644;&#21495;&#30721;&#20445;&#30041;&#22312;&#24744;&#30340;&#35774;&#22791;&#19978;&#12290;&#21487;&#36873;&#30340; SecureCall &#29992;&#25143;&#21457;&#29616;&#21151;&#33021;&#20250;&#21457;&#36865;&#35268;&#33539;&#21270;&#30005;&#35805;&#21495;&#30721;&#30340; SHA-256 &#21704;&#24076;&#20540;&#65307;&#24403;&#24744;&#36890;&#36807;&#36755;&#20837;&#30005;&#35805;&#21495;&#30721;&#25320;&#25171;&#30005;&#35805;&#26102;&#65292;&#35813;&#21495;&#30721;&#20250;&#21457;&#36865;&#19968;&#27425;&#21040;&#26381;&#21153;&#22120;&#29992;&#20110;&#26597;&#25214;&#12290;</li>
             </ul>
             <h2>&#24191;&#21578; (&#20165;FREE&#29256;)</h2>
             <p>&#20813;&#36153;&#29256;&#36890;&#36807;Google AdMob&#26174;&#31034;&#24191;&#21578;&#12290;PRO&#21644;PREMIUM&#19981;&#21253;&#21547;&#24191;&#21578;&#12290;</p>
