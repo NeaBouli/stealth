@@ -15,9 +15,20 @@
 const SX_ID_REGEX = /^sx_[1-9A-HJ-NP-Za-km-z]{9}$/;
 const BUNDLE_PREFIX = "stealthx://add/";
 const MAX_BUNDLE_LEN = 2048;
+// Friend audit MAIN-07: IDENTIFY carries no proof of ownership yet, so it must not displace a
+// live owner. A binding is live while its socket is open and answered a heartbeat ping
+// recently (ping every 5 s); only a dead/stale binding may be taken over.
+const LIVE_BINDING_WINDOW_MS = 15000;
 
 module.exports = function contactHandlers(ctx) {
   const { clients, clientIds, getClientId, sendToClient } = ctx;
+  const now = typeof ctx.now === "function" ? ctx.now : () => Date.now();
+
+  function isLiveBinding(connId) {
+    const owner = clients.get(connId);
+    return Boolean(owner && owner.ws && owner.ws.readyState === 1
+      && now() - (owner.lastSeen || 0) < LIVE_BINDING_WINDOW_MS);
+  }
 
   return {
     /**
@@ -34,9 +45,17 @@ module.exports = function contactHandlers(ctx) {
         }));
       }
 
-      // Supersede any existing connection for this sxId
+      // Supersede an existing binding only when it is no longer live (reconnect after a
+      // network change); a live owner is never displaced by an unproven claim.
       if (clientIds.has(sxId)) {
         const existingConnId = clientIds.get(sxId);
+        if (existingConnId !== connId && isLiveBinding(existingConnId)) {
+          return ws.send(JSON.stringify({
+            type: "ERROR",
+            error: "sx_id_in_use",
+            message: "This sxId is bound to a live connection",
+          }));
+        }
         if (existingConnId !== connId) {
           const oldClient = clients.get(existingConnId);
           if (oldClient) {
@@ -50,7 +69,14 @@ module.exports = function contactHandlers(ctx) {
       if (client && client.clientId && client.clientId !== sxId) {
         clientIds.delete(client.clientId);
       }
-      if (client) client.clientId = sxId;
+      if (client) {
+        client.clientId = sxId;
+        // An sx_ binding is unauthenticated: drop any identity-v2 state of this socket so
+        // call/FCM handlers can no longer treat it as the authenticated identity (FB-01).
+        client.authVersion = undefined;
+        client.identityId = null;
+        client.identityPublicKey = null;
+      }
       clientIds.set(sxId, connId);
 
       console.log("[IDENTIFY]", sxId, "->", connId);
