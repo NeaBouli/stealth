@@ -60,12 +60,9 @@ function loadIds() {
   migrateToHmac();
 }
 
-function saveIds() {
-  try {
-    writeJsonAtomic(IDS_FILE, customIds);
-  } catch (e) {
-    console.error("[CUSTOM-ID] Save failed:", e.message);
-  }
+function saveIds(next = customIds) {
+  writeJsonAtomic(IDS_FILE, next);
+  customIds = next;
 }
 
 // ─── Pending activation storage (token-based) ─────────────────
@@ -123,17 +120,18 @@ function revokeByStripeSession(stripeSessionId) {
   if (!stripeSessionId || !stripeSessionId.startsWith("cs_")) return { revokedIds: 0, revokedPending: 0 };
   let revokedIds = 0;
   let revokedPending = 0;
+  const next = { ...customIds };
   for (const [key, entry] of Object.entries(customIds)) {
     if (entry?.stripeSessionId !== stripeSessionId) continue;
-    delete customIds[key];
+    delete next[key];
     revokedIds += 1;
   }
+  if (revokedIds > 0) saveIds(next);
   for (const [token, entry] of pendingActivations) {
     if (entry?.stripeSessionId !== stripeSessionId) continue;
     pendingActivations.delete(token);
     revokedPending += 1;
   }
-  if (revokedIds > 0) saveIds();
   if (revokedPending > 0) savePendingActivations();
   return { revokedIds, revokedPending };
 }
@@ -238,6 +236,66 @@ function isAvailable(id) {
   return { available: true, price, id: normalized };
 }
 
+// Internal VLABS reservation boundary. Persistence errors must propagate so a
+// paid order is retried until it is durable.
+// Called synchronously under the VLABS orders lock in the single signaling runtime.
+function readVlabsStore(file) {
+  if (!fs.existsSync(file)) return {};
+  const value = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("custom_id_store_invalid");
+  }
+  return value;
+}
+
+function reserveForVlabs(id, externalOrderId) {
+  if (!getPepper()) throw new Error("custom_id_pepper_unavailable");
+  const normalized = typeof id === "string" ? id.toLowerCase().trim() : "";
+  if (!ID_REGEX.test(normalized) || normalized.length <= 2
+    || !/^cs_[a-zA-Z0-9_]+$/.test(externalOrderId)) {
+    throw new Error("custom_id_reservation_invalid");
+  }
+  const key = idToKey(normalized);
+  const persistedIds = readVlabsStore(IDS_FILE);
+  const stores = [customIds, persistedIds];
+  const isOwnReservation = entry => entry?.source === "vlabs" && entry.stripeSessionId === externalOrderId;
+  const pending = [...pendingActivations.values(), ...Object.values(readVlabsStore(PENDING_FILE))];
+  if (stores.some(ids => (ids[key] && !isOwnReservation(ids[key]))
+    || Object.prototype.hasOwnProperty.call(ids, normalized)
+    || Object.entries(ids).some(([storedKey, entry]) => storedKey !== key && isOwnReservation(entry)))
+    || pending.some(entry => entry?.customId === normalized
+      && !(Number.isFinite(entry.createdAt) && Date.now() - entry.createdAt > PENDING_TTL_MS))) {
+    const error = new Error("Custom ID is not available");
+    error.status = 409;
+    throw error;
+  }
+  // Older legacy writes could fail silently. Never discard their live ownership,
+  // including when another ID is reserved or this order is retried.
+  const ids = { ...persistedIds, ...customIds };
+  if (isOwnReservation(persistedIds[key])) {
+    customIds = ids;
+    return;
+  }
+  const next = {
+    ...ids,
+    [key]: ids[key] || {
+      source: "vlabs", stripeSessionId: externalOrderId, deviceId: null,
+      idLength: normalized.length, tier: "premium_only", purchasedAt: new Date().toISOString(),
+    },
+  };
+  writeJsonAtomic(IDS_FILE, next);
+  customIds = next;
+}
+
+function releaseVlabsReservation(externalOrderId) {
+  const ids = { ...readVlabsStore(IDS_FILE), ...customIds };
+  const next = Object.fromEntries(Object.entries(ids).filter(([, entry]) => (
+    entry?.source !== "vlabs" || entry.stripeSessionId !== externalOrderId
+  )));
+  if (Object.keys(next).length !== Object.keys(ids).length) writeJsonAtomic(IDS_FILE, next);
+  customIds = next;
+}
+
 function activate(id, deviceId, password) {
   const normalized = id.toLowerCase().trim();
   if (!ID_REGEX.test(normalized)) return { success: false, error: "invalid_format" };
@@ -255,9 +313,10 @@ function activate(id, deviceId, password) {
     return { success: false, error: "wrong_password" };
   }
   failedTransfers.delete(key);
-  existing.deviceId = deviceId;
-  existing.lastTransfer = new Date().toISOString();
-  saveIds();
+  saveIds({
+    ...customIds,
+    [key]: { ...existing, deviceId, lastTransfer: new Date().toISOString() },
+  });
   console.log(`[CUSTOM-ID] Transfer: ${key.substring(0, 12)}... -> ${deviceId}`);
   return { success: true, transferred: true };
 }
@@ -472,8 +531,8 @@ function setupRoutes(app, requireAdmin) {
 
     // Register the ID with the device + persist the password hash so the owner
     // can later transfer / re-claim via /custom-id/activate (password-based flow).
-    if (!customIds[key]) {
-      customIds[key] = {
+    const entry = !customIds[key]
+      ? {
         deviceId,
         idLength: normalized.length,
         purchasedAt: new Date().toISOString(),
@@ -482,13 +541,12 @@ function setupRoutes(app, requireAdmin) {
         stripeSessionId: pending.stripeSessionId,
         passwordHash: pending.passwordHash,
         passwordSalt: pending.passwordSalt
+      }
+      : {
+        ...customIds[key], deviceId,
+        passwordHash: pending.passwordHash, passwordSalt: pending.passwordSalt,
       };
-    } else {
-      customIds[key].deviceId = deviceId;
-      customIds[key].passwordHash = pending.passwordHash;
-      customIds[key].passwordSalt = pending.passwordSalt;
-    }
-    saveIds();
+    saveIds({ ...customIds, [key]: entry });
 
     // Token is single-use — prevent replay.
     pendingActivations.delete(token);
@@ -529,4 +587,7 @@ function setupRoutes(app, requireAdmin) {
 loadIds();
 loadPendingActivations();
 
-module.exports = { isAvailable, activate, getPrice, resolve, markPendingPaid, revokeByStripeSession, setupRoutes, hashPassword };
+module.exports = {
+  isAvailable, activate, getPrice, resolve, markPendingPaid, revokeByStripeSession, setupRoutes, hashPassword,
+  reserveForVlabs, releaseVlabsReservation,
+};

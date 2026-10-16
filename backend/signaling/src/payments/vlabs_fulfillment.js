@@ -87,6 +87,27 @@ const PRODUCTS = Object.freeze({
   },
 });
 Object.values(PRODUCTS).forEach(Object.freeze);
+// Separate draft catalog: the externally checked lifetime literal stays unchanged.
+const CUSTOM_ID_PRODUCTS = Object.freeze({
+  "stealthx-custom-id-standard": Object.freeze({
+    kind: "custom_id", tier: "custom_id", productKey: "custom_id_standard",
+    catalogVersion: "stealthx-custom-id-v1", offerVersion: "custom-id-standard-eur-100-v1",
+    releaseId: "stealthx-custom-id-reservation-v1", amount: 100, currency: "eur",
+    minLength: 10, maxLength: 30,
+  }),
+  "stealthx-custom-id-short": Object.freeze({
+    kind: "custom_id", tier: "custom_id", productKey: "custom_id_short",
+    catalogVersion: "stealthx-custom-id-v1", offerVersion: "custom-id-short-eur-200-v1",
+    releaseId: "stealthx-custom-id-reservation-v1", amount: 200, currency: "eur",
+    minLength: 5, maxLength: 9,
+  }),
+  "stealthx-custom-id-ultra": Object.freeze({
+    kind: "custom_id", tier: "custom_id", productKey: "custom_id_ultra",
+    catalogVersion: "stealthx-custom-id-v1", offerVersion: "custom-id-ultra-eur-500-v1",
+    releaseId: "stealthx-custom-id-reservation-v1", amount: 500, currency: "eur",
+    minLength: 3, maxLength: 4,
+  }),
+});
 const REVOCATION_REASONS = new Set(["stripe_full_refund", "stripe_dispute"]);
 
 function ordersFile() {
@@ -178,7 +199,27 @@ function validString(value, maxLength) {
 }
 
 function findProduct(productId) {
-  return Object.prototype.hasOwnProperty.call(PRODUCTS, productId) ? PRODUCTS[productId] : null;
+  if (Object.prototype.hasOwnProperty.call(PRODUCTS, productId)) return PRODUCTS[productId];
+  return Object.prototype.hasOwnProperty.call(CUSTOM_ID_PRODUCTS, productId) ? CUSTOM_ID_PRODUCTS[productId] : null;
+}
+
+function normalizedRequestedId(body, product) {
+  const value = body.requestedId;
+  if (!validString(value, 64)) throw httpError(400, "Missing or invalid requestedId");
+  const normalized = value.toLowerCase().trim();
+  if (!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(normalized)) {
+    throw httpError(400, "Invalid or reserved Custom ID");
+  }
+  if (normalized.length < product.minLength || normalized.length > product.maxLength) {
+    throw httpError(409, "Contract drift: Custom ID length tier mismatch");
+  }
+  return normalized;
+}
+
+function requestedIdKey(body, product) {
+  const pepper = process.env.ID_HASH_PEPPER;
+  if (!pepper) throw httpError(503, "Custom ID fulfillment is not configured");
+  return crypto.createHmac("sha256", pepper).update(normalizedRequestedId(body, product)).digest("hex");
 }
 
 function verifySignature(secret, timestamp, rawBody, receivedSignature) {
@@ -255,7 +296,13 @@ function validateFulfillmentContract(body) {
   if (!validString(productId, 100)) throw httpError(400, "Missing or invalid productId");
   const product = findProduct(productId);
   if (!product) throw httpError(409, "Product activation is not enabled");
-  requireExactClaim(catalogVersion, CATALOG_VERSION, "catalogVersion");
+  if (product.kind === "custom_id") {
+    if (process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED !== "true") {
+      throw httpError(409, "Custom ID fulfillment is not enabled");
+    }
+    normalizedRequestedId(body, product);
+  }
+  requireExactClaim(catalogVersion, product.catalogVersion, "catalogVersion");
   requireExactClaim(offerVersion, product.offerVersion, "offerVersion");
   requireExactClaim(releaseId, product.releaseId, "releaseId");
   if (!validString(paymentReference, 128) || !/^pi_[a-zA-Z0-9_]+$/.test(paymentReference)) {
@@ -285,7 +332,7 @@ function validateRevocationContract(body) {
   if (!validString(productId, 100)) throw httpError(400, "Missing or invalid productId");
   const product = findProduct(productId);
   if (!product) throw httpError(409, "Product activation is not enabled");
-  requireExactClaim(catalogVersion, CATALOG_VERSION, "catalogVersion");
+  requireExactClaim(catalogVersion, product.catalogVersion, "catalogVersion");
   requireExactClaim(offerVersion, product.offerVersion, "offerVersion");
   requireExactClaim(releaseId, product.releaseId, "releaseId");
   if (!validString(paymentReference, 128) || !/^pi_[a-zA-Z0-9_]+$/.test(paymentReference)) {
@@ -299,7 +346,9 @@ function validateRevocationContract(body) {
 }
 
 function fulfillmentTupleDrift(order, body) {
-  return order.productId !== body.productId
+  const product = findProduct(body.productId);
+  return (product.kind === "custom_id" && order.requestedIdKey !== requestedIdKey(body, product))
+    || order.productId !== body.productId
     || (order.catalogVersion || null) !== (body.catalogVersion || null)
     || (order.offerVersion || null) !== (body.offerVersion || null)
     || (order.releaseId || null) !== (body.releaseId || null)
@@ -315,7 +364,7 @@ function isLegacyOrder(order) {
 function bindLegacyOrder(order, body, product) {
   return {
     ...order,
-    catalogVersion: CATALOG_VERSION,
+    catalogVersion: product.catalogVersion,
     offerVersion: product.offerVersion,
     releaseId: product.releaseId,
     amount: product.amount,
@@ -379,6 +428,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
               throw httpError(409, "Order was revoked before fulfillment");
             }
             if (isLegacyOrder(existing) && existing.productId === productId) {
+              if (product.kind === "custom_id") throw httpError(409, "Order contract mismatch");
               if (existing.tier !== product.tier
                 || (existing.paymentReference && existing.paymentReference !== req.body.paymentReference)) {
                 throw httpError(409, "Order contract mismatch");
@@ -390,12 +440,54 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
             if (fulfillmentTupleDrift(existing, req.body)) {
               throw httpError(409, "Order contract mismatch");
             }
+            if (product.kind === "custom_id" && soldCodes.isReversed(externalOrderId, req.body.paymentReference)) {
+              throw httpError(409, "Order was revoked before fulfillment");
+            }
             if (existing.status === "FULFILLED") {
               duplicate = true;
               order = existing;
               return;
             }
-            order = existing;
+            if (product.kind !== "custom_id") {
+              order = existing;
+              return;
+            }
+          }
+
+          if (product.kind === "custom_id") {
+            const customIds = require("../custom_ids");
+            // Persist intent before reserving. A retry can recover either side of
+            // the two-file write without issuing a second reservation.
+            order = existing || {
+              productId,
+              tier: product.tier,
+              catalogVersion: product.catalogVersion,
+              offerVersion: product.offerVersion,
+              releaseId: product.releaseId,
+              amount: product.amount,
+              currency: product.currency,
+              paymentReference: req.body.paymentReference,
+              paymentEventId: req.body.paymentEventId,
+              requestedIdKey: requestedIdKey(req.body, product),
+              status: "PENDING_EMAIL",
+              createdAt: new Date().toISOString(),
+            };
+            orders[externalOrderId] = order;
+            saveOrders(orders);
+            if (soldCodes.isReversed(externalOrderId, req.body.paymentReference)) {
+              customIds.releaseVlabsReservation(externalOrderId);
+              orders[externalOrderId] = {
+                ...order, status: "TOMBSTONED", tombstonedAt: new Date().toISOString(),
+                revokeReason: "reversal_precedes_fulfillment",
+              };
+              saveOrders(orders);
+              throw httpError(409, "Order was revoked before fulfillment");
+            }
+            customIds.reserveForVlabs(normalizedRequestedId(req.body, product), externalOrderId);
+            orders[externalOrderId] = {
+              ...order, status: "FULFILLED", fulfilledAt: new Date().toISOString(),
+            };
+            saveOrders(orders);
             return;
           }
 
@@ -464,6 +556,9 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
       }
 
       if (duplicate) return res.json({ ok: true, duplicate: true, productId });
+      // VLABS delivers the reservation confirmation. Custom IDs do not mint an
+      // app activation code or pass through the activation-code email template.
+      if (product.kind === "custom_id") return res.json({ ok: true, fulfilled: true, productId });
 
       const emailSent = await sendActivationCode(customerEmail, order.code, product.tier, {
         productKey: product.productKey,
@@ -584,14 +679,19 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           productKey: product.productKey,
           eventId: adjustmentEventId,
           reason,
-          catalogVersion: CATALOG_VERSION,
+          catalogVersion: product.catalogVersion,
           offerVersion: product.offerVersion,
           releaseId: product.releaseId,
         });
+        if (product.kind === "custom_id" && soldSessionKey) {
+          // Release durably before marking the order terminal. The feature flag
+          // gates new sales only; refunds/disputes must work after disabling it.
+          require("../custom_ids").releaseVlabsReservation(soldSessionKey);
+        }
         // sold_codes.json now records the revocation. Drop every live activation
         // copy and persist before the order turns terminal, so a failed write is
         // retried by the caller instead of surviving a restart as an active code.
-        if (Array.isArray(activationCodesRef)) {
+        if (product.kind !== "custom_id" && Array.isArray(activationCodesRef)) {
           activationStore.reconcileSoldRevocations(activationCodesRef);
           if (persistActivationCodes() === false) throw new Error("activation_revocation_persistence_failed");
         }
@@ -601,7 +701,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           orders[orderKey] = {
             productId,
             tier: product.tier,
-            catalogVersion: CATALOG_VERSION,
+            catalogVersion: product.catalogVersion,
             offerVersion: product.offerVersion,
             releaseId: product.releaseId,
             amount: product.amount,
@@ -650,6 +750,7 @@ module.exports = {
   validateRevocationContract,
   createRequestRateLimiter,
   PRODUCTS,
+  CUSTOM_ID_PRODUCTS,
   CATALOG_VERSION,
   MIN_FULFILLMENT_SECRET_LENGTH,
   INTERNAL_RATE_LIMIT_MAX_REQUESTS,
