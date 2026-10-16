@@ -1103,13 +1103,24 @@ public class CallActivity extends AppCompatActivity {
         android.app.KeyguardManager km = getSystemService(android.app.KeyguardManager.class);
         boolean locked = km != null && km.isKeyguardLocked();
         if (!locked && shouldOfferContactSave()) {
+            stopShowingWhenLocked();
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             showSaveContactDialog();
         } else if (!locked && shouldOfferVerify()) {
+            stopShowingWhenLocked();
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             showVerifyDialog();
         } else {
             returnToMain();
+        }
+    }
+
+    /** Once the call is over, a re-locked device must hide this activity behind the keyguard. */
+    private void stopShowingWhenLocked() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(false);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
         }
     }
 
