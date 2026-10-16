@@ -59,3 +59,10 @@
 # ---- WebRTC ----
 -keep class org.webrtc.** { *; }
 -dontwarn org.webrtc.**
+
+# ---- Room / WorkManager (free flavor: play-services-ads pulls work-runtime 2.7.0 + room 2.2.5) ----
+# Room 2.2 instantiates <Database>_Impl reflectively via a no-arg constructor. Under AGP 9 / R8
+# the library consumer rule no longer kept that constructor and the free release crashed on start
+# ("Failed to create an instance of androidx.work.impl.WorkDatabase").
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep class androidx.work.impl.WorkDatabase_Impl { <init>(); }
