@@ -1,0 +1,254 @@
+const assert = require("assert");
+const crypto = require("crypto");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+
+const directory = fs.mkdtempSync(path.join(os.tmpdir(), "securecall-vlabs-custom-id-"));
+process.env.SOLD_CODES_FILE = path.join(directory, "sold.json");
+process.env.VLABS_FULFILLMENT_ORDERS_FILE = path.join(directory, "orders.json");
+process.env.IDS_FILE = path.join(directory, "ids.json");
+process.env.PENDING_FILE = path.join(directory, "pending.json");
+process.env.ID_HASH_PEPPER = "test-only-custom-id-pepper";
+process.env.VLABS_FULFILLMENT_SECRET = "test-only-fulfillment-secret-over-32-characters";
+delete process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED;
+
+const fulfillment = require("../payments/vlabs_fulfillment");
+let customIds = require("../custom_ids");
+const soldCodes = require("../payments/sold_codes");
+const activationCodes = [];
+let routes;
+let counter = 0;
+const originalRename = fs.renameSync;
+
+function setup() {
+  routes = {};
+  fulfillment.setupVlabsFulfillmentRoute({ post: (route, handler) => { routes[route] = handler; } }, activationCodes, {
+    persistActivationCodes: () => { throw new Error("Custom IDs must not mutate app activation codes"); },
+  });
+}
+
+function body(requestedId = "test-example", overrides = {}) {
+  counter += 1;
+  const length = typeof requestedId === "string" ? requestedId.trim().length : 0;
+  const suffix = length >= 10 ? "standard" : length >= 5 ? "short" : "ultra";
+  const productId = `stealthx-custom-id-${suffix}`;
+  const product = fulfillment.CUSTOM_ID_PRODUCTS[productId];
+  return {
+    externalOrderId: `cs_test_custom_${counter}`, productId,
+    catalogVersion: product.catalogVersion, offerVersion: product.offerVersion, releaseId: product.releaseId,
+    paymentReference: `pi_test_custom_${counter}`, paymentEventId: `evt_test_custom_${counter}`,
+    paymentStatus: "paid", amount: product.amount, currency: "eur",
+    customerEmail: "buyer@example.invalid", requestedId, ...overrides,
+  };
+}
+
+function revokeBody(order, overrides = {}) {
+  return {
+    externalOrderId: order.externalOrderId, productId: order.productId,
+    catalogVersion: order.catalogVersion, offerVersion: order.offerVersion, releaseId: order.releaseId,
+    paymentReference: order.paymentReference, adjustmentEventId: `evt_revoke_${counter}`,
+    reason: "stripe_full_refund", ...overrides,
+  };
+}
+
+async function request(route, payload, { signatureValid = true } = {}) {
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const signature = crypto.createHmac("sha256", process.env.VLABS_FULFILLMENT_SECRET)
+    .update(`${timestamp}.${JSON.stringify(payload)}`).digest("hex");
+  const res = {
+    statusCode: 200, payload: null,
+    status(status) { this.statusCode = status; return this; },
+    json(value) { this.payload = value; return this; },
+  };
+  await routes[`/internal/vlabs/${route}`]({
+    body: payload, ip: "192.0.2.1",
+    get: header => header === "x-vlabs-timestamp" ? timestamp : signatureValid ? signature : "0".repeat(64),
+  }, res);
+  return res;
+}
+
+function read(file) { return JSON.parse(fs.readFileSync(file, "utf8")); }
+function orders() { return read(process.env.VLABS_FULFILLMENT_ORDERS_FILE); }
+function reload() {
+  delete require.cache[require.resolve("../custom_ids")];
+  customIds = require("../custom_ids");
+  setup();
+}
+function failRename(target, occurrence = 1) {
+  let count = 0;
+  fs.renameSync = (from, to) => {
+    if (to === target && ++count === occurrence) throw new Error("injected persistence failure");
+    return originalRename(from, to);
+  };
+}
+
+(async () => {
+  setup();
+  const disabled = body();
+  for (const value of [undefined, "false", "1", "TRUE"]) {
+    if (value === undefined) delete process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED;
+    else process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED = value;
+    assert.strictEqual((await request("fulfill", disabled)).statusCode, 409);
+  }
+  assert.strictEqual(fs.existsSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE), false);
+  assert.strictEqual((await request("fulfill", disabled, { signatureValid: false })).statusCode, 401);
+  process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED = "true";
+
+  for (const id of [undefined, null, 42, "", "ab", "-abc", "abc-", "bad_id", "a".repeat(31)]) {
+    assert.strictEqual((await request("fulfill", body(id, { requestedId: id }))).statusCode, 400);
+  }
+  for (const [override, status] of [
+    [{ amount: 99 }, 409], [{ amount: 100.5 }, 400], [{ currency: "usd" }, 409],
+    [{ catalogVersion: "drift" }, 409], [{ offerVersion: "drift" }, 409], [{ releaseId: "drift" }, 409],
+    [{ paymentStatus: "unpaid" }, 409], [{ paymentReference: "ch_test" }, 400],
+    [{ paymentEventId: null }, 400], [{ customerEmail: null }, 400], [{ requestedId: "abc" }, 409],
+  ]) {
+    assert.strictEqual((await request("fulfill", body("test-example", override))).statusCode, status);
+  }
+  const pepper = process.env.ID_HASH_PEPPER;
+  delete process.env.ID_HASH_PEPPER;
+  assert.strictEqual((await request("fulfill", body())).statusCode, 503);
+  process.env.ID_HASH_PEPPER = pepper;
+
+  // Real registry checks, length boundaries, normalized identity and app separation.
+  const examples = ["abc", "abcd", "short", "ninechars", "tenletters", "a".repeat(30), "constructor"];
+  for (const id of examples) {
+    const order = body(id);
+    const result = await request("fulfill", order);
+    assert.deepStrictEqual(result.payload, { ok: true, fulfilled: true, productId: order.productId });
+    assert.strictEqual(order.amount, customIds.getPrice(id));
+    assert.strictEqual(customIds.isAvailable(id).available, false);
+    assert.strictEqual(customIds.resolve(id), null, "reservation grants no device routing or paid app tier");
+    assert.strictEqual(orders()[order.externalOrderId].status, "FULFILLED");
+    const duplicate = await request("fulfill", { ...order, requestedId: ` ${id.toUpperCase()} `, paymentEventId: "evt_retry" });
+    assert.strictEqual(duplicate.payload.duplicate, true);
+    assert.strictEqual((await request("fulfill", { ...order, requestedId: id.replace(/^./, "z") })).statusCode, 409);
+    assert.strictEqual((await request("fulfill", { ...order, paymentReference: "pi_drift" })).statusCode, 409);
+    assert.strictEqual((await request("fulfill", body(id))).statusCode, 409, "another order cannot take the ID");
+    setup(); // Keep each scenario below the unchanged shared request budget.
+  }
+  assert.deepStrictEqual(activationCodes, []);
+  assert.strictEqual(soldCodes.load().length, 0, "no application activation code is minted");
+  const stored = fs.readFileSync(process.env.IDS_FILE, "utf8") + fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8");
+  assert.ok(!stored.includes("tenletters") && !stored.includes("buyer@example.invalid"));
+  assert.ok(Object.keys(read(process.env.IDS_FILE)).every(key => /^[a-f0-9]{64}$/.test(key)));
+
+  // Pre-existing ownership and an in-flight legacy activation must win.
+  const ids = read(process.env.IDS_FILE);
+  const ownedKey = crypto.createHmac("sha256", pepper).update("owned-example").digest("hex");
+  ids[ownedKey] = { deviceId: "test-device", stripeSessionId: "cs_legacy" };
+  fs.writeFileSync(process.env.IDS_FILE, JSON.stringify(ids));
+  fs.writeFileSync(process.env.PENDING_FILE, JSON.stringify({ test_token: {
+    customId: "pending-example", createdAt: Date.now(), stripeSessionId: "cs_legacy_pending",
+  } }));
+  reload();
+  assert.strictEqual((await request("fulfill", body("owned-example"))).statusCode, 409);
+  assert.strictEqual((await request("fulfill", body("pending-example"))).statusCode, 409);
+  assert.strictEqual(customIds.resolve("owned-example"), "test-device");
+  const race = await Promise.all([
+    request("fulfill", body("race-example")), request("fulfill", body("race-example")),
+  ]);
+  assert.deepStrictEqual(race.map(result => result.statusCode).sort(), [200, 409]);
+
+  // Both accepted reversal reasons work with the sales flag off, including payment-only lookup.
+  for (const reason of ["stripe_full_refund", "stripe_dispute"]) {
+    const order = body(reason === "stripe_dispute" ? "dispute-example" : "refund-example");
+    assert.strictEqual((await request("fulfill", order)).statusCode, 200);
+    delete process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED;
+    const adjustment = revokeBody(order, { reason, externalOrderId: undefined });
+    assert.strictEqual((await request("revoke", adjustment)).payload.revoked, true);
+    assert.strictEqual((await request("revoke", adjustment)).payload.duplicate, true);
+    reload();
+    assert.strictEqual(customIds.isAvailable(order.requestedId).available, true);
+    process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED = "true";
+    assert.strictEqual((await request("fulfill", order)).statusCode, 409);
+    const replacement = body(order.requestedId);
+    assert.strictEqual((await request("fulfill", replacement)).statusCode, 200);
+    await request("revoke", adjustment);
+    assert.strictEqual(customIds.isAvailable(order.requestedId).available, false, "old refund cannot release a new owner");
+  }
+
+  for (const paymentOnly of [false, true]) {
+    const order = body(paymentOnly ? "early-payment" : "early-session");
+    const adjustment = revokeBody(order, paymentOnly ? { externalOrderId: undefined } : {});
+    assert.strictEqual((await request("revoke", adjustment)).payload.tombstoned, true);
+    assert.strictEqual((await request("fulfill", order)).statusCode, 409);
+    assert.strictEqual((await request("revoke", adjustment)).payload.duplicate, true);
+    assert.strictEqual(customIds.isAvailable(order.requestedId).available, true);
+  }
+  assert.strictEqual((await request("revoke", revokeBody(body(), { reason: "partial_refund" }))).statusCode, 400);
+
+  // Recover a durable intent if reservation persistence fails.
+  const failedReservation = body("retry-reservation");
+  failRename(process.env.IDS_FILE);
+  assert.strictEqual((await request("fulfill", failedReservation)).statusCode, 503);
+  fs.renameSync = originalRename;
+  assert.strictEqual(orders()[failedReservation.externalOrderId].status, "PENDING_EMAIL");
+  assert.strictEqual(customIds.isAvailable(failedReservation.requestedId).available, true);
+  reload();
+  assert.strictEqual((await request("fulfill", failedReservation)).statusCode, 200);
+
+  // Crash after reservation, before final order write: retry reuses its ownership.
+  const failedFinalization = body("retry-finalization");
+  failRename(process.env.VLABS_FULFILLMENT_ORDERS_FILE, 2);
+  assert.strictEqual((await request("fulfill", failedFinalization)).statusCode, 503);
+  fs.renameSync = originalRename;
+  assert.strictEqual(customIds.isAvailable(failedFinalization.requestedId).available, false);
+  assert.strictEqual(orders()[failedFinalization.externalOrderId].status, "PENDING_EMAIL");
+  reload();
+  assert.strictEqual((await request("fulfill", failedFinalization)).statusCode, 200);
+
+  // A failed release stays retryable even though the reversal is already recorded.
+  const failedRelease = body("retry-revocation");
+  await request("fulfill", failedRelease);
+  failRename(process.env.IDS_FILE);
+  const adjustment = revokeBody(failedRelease);
+  assert.strictEqual((await request("revoke", adjustment)).statusCode, 503);
+  fs.renameSync = originalRename;
+  assert.strictEqual(orders()[failedRelease.externalOrderId].status, "FULFILLED");
+  assert.strictEqual((await request("fulfill", failedRelease)).statusCode, 409, "reversal blocks duplicate fulfillment too");
+  reload();
+  assert.strictEqual((await request("revoke", adjustment)).payload.revoked, true);
+  assert.strictEqual(customIds.isAvailable(failedRelease.requestedId).available, true);
+
+  // A failed terminal write must not let a retry remove a replacement's reservation.
+  const failedTerminal = body("retry-terminal");
+  await request("fulfill", failedTerminal);
+  failRename(process.env.VLABS_FULFILLMENT_ORDERS_FILE);
+  assert.strictEqual((await request("revoke", revokeBody(failedTerminal))).statusCode, 503);
+  fs.renameSync = originalRename;
+  assert.strictEqual((await request("fulfill", body(failedTerminal.requestedId))).statusCode, 200);
+  assert.strictEqual((await request("revoke", revokeBody(failedTerminal))).statusCode, 200);
+  assert.strictEqual(customIds.isAvailable(failedTerminal.requestedId).available, false);
+
+  // Failure before durable intent must not leave an orphaned reservation.
+  const failedIntent = body("retry-intent");
+  failRename(process.env.VLABS_FULFILLMENT_ORDERS_FILE);
+  assert.strictEqual((await request("fulfill", failedIntent)).statusCode, 503);
+  fs.renameSync = originalRename;
+  assert.strictEqual(customIds.isAvailable(failedIntent.requestedId).available, true);
+  assert.strictEqual(orders()[failedIntent.externalOrderId], undefined);
+  assert.strictEqual((await request("fulfill", failedIntent)).statusCode, 200);
+
+  // Corruption and a contested orders lock fail closed.
+  const savedIds = fs.readFileSync(process.env.IDS_FILE, "utf8");
+  fs.writeFileSync(process.env.IDS_FILE, "{");
+  assert.strictEqual((await request("fulfill", body("corrupt-store"))).statusCode, 503);
+  fs.writeFileSync(process.env.IDS_FILE, savedIds);
+  const savedPending = fs.readFileSync(process.env.PENDING_FILE, "utf8");
+  fs.writeFileSync(process.env.PENDING_FILE, "[]");
+  assert.strictEqual((await request("fulfill", body("corrupt-pending"))).statusCode, 503);
+  fs.writeFileSync(process.env.PENDING_FILE, savedPending);
+  fs.writeFileSync(`${process.env.VLABS_FULFILLMENT_ORDERS_FILE}.lock`, "999999:foreign\n");
+  assert.strictEqual((await request("fulfill", body("locked-store"))).statusCode, 503);
+  fs.unlinkSync(`${process.env.VLABS_FULFILLMENT_ORDERS_FILE}.lock`);
+  assert.strictEqual(customIds.resolve("owned-example"), "test-device", "legacy ownership is preserved");
+  console.log("vlabs_custom_id_fulfillment.test.js ok");
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+}).finally(() => {
+  fs.renameSync = originalRename;
+  fs.rmSync(directory, { recursive: true, force: true });
+});

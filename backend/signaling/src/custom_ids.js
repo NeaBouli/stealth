@@ -238,6 +238,60 @@ function isAvailable(id) {
   return { available: true, price, id: normalized };
 }
 
+// Internal VLABS reservation boundary. Unlike legacy best-effort persistence,
+// these writes must throw so a paid order is retried until it is durable.
+// Called synchronously under the VLABS orders lock in the single signaling runtime.
+function readVlabsStore(file) {
+  if (!fs.existsSync(file)) return {};
+  const value = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("custom_id_store_invalid");
+  }
+  return value;
+}
+
+function reserveForVlabs(id, externalOrderId) {
+  if (!getPepper()) throw new Error("custom_id_pepper_unavailable");
+  const normalized = typeof id === "string" ? id.toLowerCase().trim() : "";
+  if (!ID_REGEX.test(normalized) || normalized.length <= 2
+    || !/^cs_[a-zA-Z0-9_]+$/.test(externalOrderId)) {
+    throw new Error("custom_id_reservation_invalid");
+  }
+  const key = idToKey(normalized);
+  const ids = readVlabsStore(IDS_FILE);
+  const existing = ids[key];
+  if (existing?.source === "vlabs" && existing.stripeSessionId === externalOrderId) {
+    customIds = ids;
+    return;
+  }
+  const pending = [...pendingActivations.values(), ...Object.values(readVlabsStore(PENDING_FILE))];
+  if (existing || Object.prototype.hasOwnProperty.call(ids, normalized) || pending.some(entry => entry?.customId === normalized
+    && !(Number.isFinite(entry.createdAt) && Date.now() - entry.createdAt > PENDING_TTL_MS))
+    || Object.values(ids).some(entry => entry?.source === "vlabs" && entry.stripeSessionId === externalOrderId)) {
+    const error = new Error("Custom ID is not available");
+    error.status = 409;
+    throw error;
+  }
+  const next = {
+    ...ids,
+    [key]: {
+      source: "vlabs", stripeSessionId: externalOrderId, deviceId: null,
+      idLength: normalized.length, tier: "premium_only", purchasedAt: new Date().toISOString(),
+    },
+  };
+  writeJsonAtomic(IDS_FILE, next);
+  customIds = next;
+}
+
+function releaseVlabsReservation(externalOrderId) {
+  const ids = readVlabsStore(IDS_FILE);
+  const next = Object.fromEntries(Object.entries(ids).filter(([, entry]) => (
+    entry?.source !== "vlabs" || entry.stripeSessionId !== externalOrderId
+  )));
+  if (Object.keys(next).length !== Object.keys(ids).length) writeJsonAtomic(IDS_FILE, next);
+  customIds = next;
+}
+
 function activate(id, deviceId, password) {
   const normalized = id.toLowerCase().trim();
   if (!ID_REGEX.test(normalized)) return { success: false, error: "invalid_format" };
@@ -529,4 +583,7 @@ function setupRoutes(app, requireAdmin) {
 loadIds();
 loadPendingActivations();
 
-module.exports = { isAvailable, activate, getPrice, resolve, markPendingPaid, revokeByStripeSession, setupRoutes, hashPassword };
+module.exports = {
+  isAvailable, activate, getPrice, resolve, markPendingPaid, revokeByStripeSession, setupRoutes, hashPassword,
+  reserveForVlabs, releaseVlabsReservation,
+};
