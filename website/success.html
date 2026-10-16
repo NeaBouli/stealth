@@ -116,6 +116,7 @@
             line-height: 1.6;
             margin-bottom: 32px;
         }
+        .note .js-mail a { color: #aaa; }
         .links {
             display: flex;
             gap: 16px;
@@ -189,7 +190,7 @@
         <p class="note">
             Your code works on up to 2 devices. No account needed &mdash; just the code.<br>
             Keep it safe. Due to our commitment to anonymity, we cannot recover lost codes.<br>
-            Questions? Contact <a href="mailto:support@stealthx.tech" style="color:#aaa">support@stealthx.tech</a>
+            Questions? Contact <span class="js-mail" data-u="troppus" data-d="xhtlaets|hcet"></span><noscript><img src="img/contact-mail.png" alt="Contact email address; enable JavaScript or use GitHub Issues" width="220" height="28" style="vertical-align:middle"></noscript>
         </p>
 
         <div class="links">
@@ -199,6 +200,7 @@
 
         <p class="order-ref" id="orderRef"></p>
     </div>
+    <script src="js/mail-assemble.js" defer></script>
     <script>
     (function() {
         // Stripe Payment Links append ?session_id=... on redirect when configured.

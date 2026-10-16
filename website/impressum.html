@@ -86,9 +86,6 @@
         .canvas-field canvas {
             display: block;
         }
-        .email-canvas {
-            cursor: pointer;
-        }
         .personal-data {
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -168,6 +165,7 @@
             </div>
 
             <h2>Contact</h2>
+            <p>E-Mail: <span class="js-mail" data-u="troppus" data-d="xhtlaets|hcet"></span><noscript><img src="img/contact-mail.png" alt="Contact email address; enable JavaScript or use GitHub Issues" width="220" height="28" style="vertical-align:middle"></noscript></p>
             <p><a href="#contact-form" style="color:#FF9800;text-decoration:underline">Send us a message</a> (contact form below)</p>
             <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
 
@@ -199,6 +197,7 @@
             </div>
 
             <h2>Kontakt</h2>
+            <p>E-Mail: <span class="js-mail" data-u="troppus" data-d="xhtlaets|hcet"></span><noscript><img src="img/contact-mail.png" alt="Kontakt-E-Mail-Adresse; bitte JavaScript aktivieren oder GitHub Issues nutzen" width="220" height="28" style="vertical-align:middle"></noscript></p>
             <p><a href="#contact-form" style="color:#FF9800;text-decoration:underline">Nachricht senden</a> (Kontaktformular unten)</p>
             <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
 
@@ -230,6 +229,7 @@
             </div>
 
             <h2>&#917;&#960;&#953;&#954;&#959;&#953;&#957;&#969;&#957;&#943;&#945;</h2>
+            <p>E-Mail: <span class="js-mail" data-u="troppus" data-d="xhtlaets|hcet"></span><noscript><img src="img/contact-mail.png" alt="Διεύθυνση ηλεκτρονικού ταχυδρομείου· ενεργοποιήστε τη JavaScript ή χρησιμοποιήστε το GitHub Issues" width="220" height="28" style="vertical-align:middle"></noscript></p>
             <p><a href="#contact-form" style="color:#FF9800;text-decoration:underline">&#931;&#964;&#949;&#943;&#955;&#964;&#949; &#956;&#942;&#957;&#965;&#956;&#945;</a> (&#966;&#972;&#961;&#956;&#945; &#949;&#960;&#953;&#954;&#959;&#953;&#957;&#969;&#957;&#943;&#945;&#962;)</p>
             <p style="margin-top:8px">GitHub Issues: <a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">github.com/NeaBouli/stealth/issues</a></p>
 
@@ -275,6 +275,7 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script src="js/mail-assemble.js" defer></script>
     <script>
     // ── Language Switcher ──
     function switchLang(lang) {
@@ -289,7 +290,6 @@
     function renderCanvases() {
         const dpr = window.devicePixelRatio || 1;
         const ownerText = 'Vendetta Labs';
-        const emailText = 'kaspartisan' + '@' + 'proton.me';
 
         function drawText(canvasId, text, fontSize, color, width) {
             const canvas = document.getElementById(canvasId);
@@ -317,19 +317,7 @@
         ['addrEN', 'addrDE', 'addrEL'].forEach(function(id) {
             drawText(id, addrText, 14, '#ccc', 360);
         });
-
-        // Email canvases
-        ['emailEN', 'emailDE', 'emailEL'].forEach(function(id) {
-            drawText(id, emailText, 14, '#FF9800', 220);
-        });
     }
-
-    // ── Email Click Handler ──
-    document.querySelectorAll('.email-canvas').forEach(function(canvas) {
-        canvas.addEventListener('click', function() {
-            window.location = 'mai' + 'lto:' + 'kaspartisan' + '@' + 'proton.me';
-        });
-    });
 
     // ── Copy/Context Protection for Protected Sections ──
     document.querySelectorAll('.personal-data').forEach(function(el) {
@@ -380,7 +368,7 @@
         if (!name || !email || !msg) return;
         var subject = encodeURIComponent('Contact from ' + name + ' via Impressum');
         var body = encodeURIComponent('From: ' + name + ' (' + email + ')\n\n' + msg);
-        window.location.href = 'mai' + 'lto:' + 'kaspar' + 'tisan' + '@' + 'proton' + '.me' + '?subject=' + subject + '&body=' + body;
+        window.location.href = 'mai' + 'lto:' + window.stxMail() + '?subject=' + subject + '&body=' + body;
         var st = document.getElementById('cfStatus');
         st.textContent = 'Opening your email app...';
         st.style.display = 'block';

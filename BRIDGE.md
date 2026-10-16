@@ -6105,3 +6105,9 @@ Open next:
   incoming calls locked/unlocked, Crashlytics original action/stack. No device access used.
 
 `PATCH VERIFIED (JVM/LINT) / RUNTIME + CRASHLYTICS NOT VERIFIED / NOT RELEASED`
+
+## 2026-10-16 — gio-10 (Claude): support@stealthx.tech scraper-safe (Branch agent/claude/stx-email-obfuscation-20261016, Draft-PR)
+- Auftrag Gio via gio-1c. Codex CLI implementiert, Claude geprüft/angepasst.
+- impressum.html (EN/DE/EL) + success.html: Adresse nur clientseitig aus data-Teilen (js/mail-assemble.js); noscript = PNG ohne Metadaten.
+- Kontaktformular mailt jetzt an support@ (vorher private proton-Adresse) — erst live schalten, wenn Alias empfängt.
+- security.txt unverändert (RFC 9116). Test js/no-plain-support-mail.test.cjs; node --test 34/34; curl: 0 Treffer. Kein Merge/Deploy (Pages = Gio).
