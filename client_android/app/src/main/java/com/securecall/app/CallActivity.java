@@ -1099,10 +1099,13 @@ public class CallActivity extends AppCompatActivity {
         // FLAG_KEEP_SCREEN_ON prevents Samsung Activity destruction during dialog.
         releaseProximitySensor();
 
-        if (shouldOfferContactSave()) {
+        // Contact save/verify dialogs change stored data; never offer them above the lock screen.
+        android.app.KeyguardManager km = getSystemService(android.app.KeyguardManager.class);
+        boolean locked = km != null && km.isKeyguardLocked();
+        if (!locked && shouldOfferContactSave()) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             showSaveContactDialog();
-        } else if (shouldOfferVerify()) {
+        } else if (!locked && shouldOfferVerify()) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             showVerifyDialog();
         } else {
