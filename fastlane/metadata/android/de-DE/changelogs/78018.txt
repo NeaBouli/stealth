@@ -1,0 +1,10 @@
+SecureCall 1.0.50
+
+- Signierte Anmeldung: Deine ID ist an einen Schlüssel auf deinem Gerät gebunden
+- Anrufernamen nur aus Kontakten, die für die ID bestätigt sind
+- Anrufe an Kontakte gehen direkt an deren bestätigte ID
+- Eingehende Anrufe erscheinen auf dem Sperrbildschirm, auch bei Samsung
+- Unbeantwortete Anrufe enden nach 60 Sekunden
+- Stealth-Löschen entfernt alle App-Daten vollständig
+- Besserer Schlüsselschutz, sicherere Einladungslinks
+- Stabilere Verbindung
