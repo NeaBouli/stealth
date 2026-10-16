@@ -1,9 +1,9 @@
 package com.securecall.app
 
-import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.app.KeyguardManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -20,6 +20,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "INCOMING_CALL"
+        private const val SCREEN_WAKE_MS = 10_000L
 
         @Volatile
         var activeInstance: IncomingCallActivity? = null
@@ -72,6 +73,15 @@ class IncomingCallActivity : AppCompatActivity() {
     private var ringTimeoutHandler: android.os.Handler? = null
     private var ringTimeoutRunnable: Runnable? = null
 
+    @Suppress("DEPRECATION")
+    private fun wakeScreen() {
+        val power = getSystemService(android.os.PowerManager::class.java) ?: return
+        power.newWakeLock(
+            android.os.PowerManager.FULL_WAKE_LOCK or android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP,
+            "SecureCall:IncomingCallWake",
+        ).acquire(SCREEN_WAKE_MS)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         EdgeToEdgeHelper.enable(this)
@@ -80,17 +90,18 @@ class IncomingCallActivity : AppCompatActivity() {
         com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this)
         com.securecall.app.ads.AdMobManager.pauseForCall()
 
-        // Show over lock screen and wake device for incoming calls
+        // Show over lock screen and wake device for incoming calls. On a secure lock,
+        // dismissing the keyguard raises the unlock prompt over Accept/Decline, so wake
+        // the screen with a short wake lock instead (Samsung ignores setTurnScreenOn here).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
             val km = getSystemService(KeyguardManager::class.java)
-            km?.requestDismissKeyguard(this, null)
+            if (km?.isKeyguardSecure == true) wakeScreen() else km?.requestDismissKeyguard(this, null)
         } else {
             @Suppress("DEPRECATION")
             window.addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
                 WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             )
         }
