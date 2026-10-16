@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Self-managed Telecom ConnectionService needs API 26; disabled below. -->
+    <bool name="connection_service_enabled">false</bool>
+</resources>

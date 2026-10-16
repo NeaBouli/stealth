@@ -82,8 +82,10 @@
 
         <service
             android:name=".call.SecureCallConnectionService"
+            android:enabled="@bool/connection_service_enabled"
             android:exported="true"
-            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
+            tools:targetApi="26">
             <intent-filter>
                 <action android:name="android.telecom.ConnectionService" />
             </intent-filter>
