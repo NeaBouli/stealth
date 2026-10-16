@@ -138,7 +138,7 @@ test("edited landing JSON-LD remains valid", () => {
   for (const [, payload] of blocks) JSON.parse(payload);
 });
 
-test("paid landing offers advertise final VAT prices while sales stay closed", () => {
+test("landing advertises only the Free offer while paid sales stay closed", () => {
   const landing = read("website/index.html");
   const structured = [...landing.matchAll(
     /<script\s+type="application\/ld\+json">([\s\S]*?)<\/script>/g,
@@ -146,16 +146,10 @@ test("paid landing offers advertise final VAT prices while sales stay closed", (
 
   for (const type of ["SoftwareApplication", "Product"]) {
     const offers = structured.find(item => item["@type"] === type).offers;
-    for (const [tier, price] of [["Pro", "15"], ["Premium", "25"]]) {
-      const offer = offers.find(item => item.name === `${tier} lifetime licence`);
-      assert.equal(offer.price, price);
-      assert.equal(offer.priceCurrency, "EUR");
-      assert.equal(offer.priceSpecification.price, price);
-      assert.equal(offer.priceSpecification.valueAddedTaxIncluded, true);
-      assert.equal(offer.availability, "https://schema.org/PreOrder");
-      assert.match(offer.description, /incl\. VAT, one-time/);
-      assert.match(offer.description, /Sales are not open yet; no orders accepted until the VLABS shop goes live/);
-    }
+    assert.deepEqual(offers.map(offer => offer.name), ["Free"],
+      `${type} must not advertise paid offers while sales are closed`);
+    assert.equal(offers[0].price, "0");
+    assert.equal(offers[0].priceCurrency, "EUR");
   }
 
   const cards = [...landing.matchAll(/<article class="price-card[^>]*>([\s\S]*?)<\/article>/g)]
