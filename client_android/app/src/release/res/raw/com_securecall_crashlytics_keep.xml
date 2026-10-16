@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Crashlytics reads the plugin-generated mapping ID with Resources.getIdentifier().
+    AGP 9's optimized resource shrinker cannot infer this lookup in the current SDK.
+    Keep the generated value so startup succeeds and reports match the R8 mapping.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/com.google.firebase.crashlytics.mapping_file_id" />
