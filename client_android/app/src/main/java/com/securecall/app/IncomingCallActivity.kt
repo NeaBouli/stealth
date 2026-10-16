@@ -1,9 +1,9 @@
 package com.securecall.app
 
-import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.app.KeyguardManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -11,6 +11,7 @@ import android.view.WindowManager
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.securecall.app.call.IncomingCallTelecom
 import com.securecall.app.notifications.IncomingCallNotifications
 import com.securecall.app.security.IdentityProtocol
 import com.securecall.app.ui.EdgeToEdgeHelper
@@ -19,6 +20,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "INCOMING_CALL"
+        private const val SCREEN_WAKE_MS = 10_000L
 
         @Volatile
         var activeInstance: IncomingCallActivity? = null
@@ -71,6 +73,15 @@ class IncomingCallActivity : AppCompatActivity() {
     private var ringTimeoutHandler: android.os.Handler? = null
     private var ringTimeoutRunnable: Runnable? = null
 
+    @Suppress("DEPRECATION")
+    private fun wakeScreen() {
+        val power = getSystemService(android.os.PowerManager::class.java) ?: return
+        power.newWakeLock(
+            android.os.PowerManager.FULL_WAKE_LOCK or android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP,
+            "SecureCall:IncomingCallWake",
+        ).acquire(SCREEN_WAKE_MS)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         EdgeToEdgeHelper.enable(this)
@@ -79,17 +90,18 @@ class IncomingCallActivity : AppCompatActivity() {
         com.securecall.app.security.WindowSecurityHelper.applyFlagSecure(this)
         com.securecall.app.ads.AdMobManager.pauseForCall()
 
-        // Show over lock screen and wake device for incoming calls
+        // Show over lock screen and wake device for incoming calls. On a secure lock,
+        // dismissing the keyguard raises the unlock prompt over Accept/Decline, so wake
+        // the screen with a short wake lock instead (Samsung ignores setTurnScreenOn here).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
             val km = getSystemService(KeyguardManager::class.java)
-            km?.requestDismissKeyguard(this, null)
+            if (km?.isKeyguardSecure == true) wakeScreen() else km?.requestDismissKeyguard(this, null)
         } else {
             @Suppress("DEPRECATION")
             window.addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
                 WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             )
         }
@@ -100,6 +112,13 @@ class IncomingCallActivity : AppCompatActivity() {
         callerPhone = intent.getStringExtra("callerPhone") ?: ""
         fromFcm = intent.getBooleanExtra("from_fcm", false)
         Log.d(TAG, "Incoming call: session=$sessionId, from=$callerClientId, phone=$callerPhone, fromFcm=$fromFcm")
+
+        if (intent.getBooleanExtra(IncomingCallTelecom.EXTRA_MANAGED, false) &&
+            !IncomingCallTelecom.hasCall(sessionId)) {
+            // A full-screen PendingIntent may already be queued when CALL_END arrives.
+            finish()
+            return
+        }
 
         val existing = activeInstance
         if (existing != null && existing !== this && existing.sessionId == sessionId) {
@@ -181,6 +200,8 @@ class IncomingCallActivity : AppCompatActivity() {
                 }
             }
         }
+        if (intent.getBooleanExtra(IncomingCallTelecom.EXTRA_ANSWER, false) &&
+            IncomingCallTelecom.isAnswered(sessionId)) acceptCall()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -192,6 +213,8 @@ class IncomingCallActivity : AppCompatActivity() {
             return
         }
         if (newSessionId == sessionId || newSessionId.isEmpty()) {
+            if (intent.getBooleanExtra(IncomingCallTelecom.EXTRA_ANSWER, false) &&
+                IncomingCallTelecom.isAnswered(sessionId)) acceptCall()
             Log.d(TAG, "onNewIntent duplicate while ringing for session=$sessionId — ignored")
             return
         }
@@ -215,6 +238,7 @@ class IncomingCallActivity : AppCompatActivity() {
         }
         accepted = true
         acceptedSessionId = sessionId
+        IncomingCallTelecom.accepted(sessionId)
         cancelRingTimeout()
         stopRingtoneAndVibration()
         dismissIncomingCallNotification()
@@ -298,6 +322,7 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun declineCall() {
+        IncomingCallTelecom.end(sessionId, android.telecom.DisconnectCause.REJECTED)
         cancelRingTimeout()
         stopRingtoneAndVibration()
         dismissIncomingCallNotification()

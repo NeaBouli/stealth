@@ -19,6 +19,8 @@ import androidx.preference.PreferenceManager
 import com.securecall.app.BuildConfig
 import com.securecall.app.MainActivity
 import com.securecall.app.R
+import com.securecall.app.call.IncomingCallAlertPolicy
+import com.securecall.app.call.IncomingCallTelecom
 import com.securecall.app.notifications.IncomingCallNotifications
 import com.securecall.app.crypto.SessionKeyBinding
 import com.securecall.app.security.IdentityProtocol
@@ -196,6 +198,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     fun isSecureSessionEstablished(): Boolean = callSecurityState?.established == true
     fun getSecurityCode(): String? = callSecurityState?.takeIf { it.established }?.securityCode
     fun clearSession() {
+        callSecurityState?.invite?.sessionId?.let { IncomingCallTelecom.end(it) }
         cancelOutgoingRingTimeout()
         _currentSessionId = null
         fcmPendingSessionId = null
@@ -441,7 +444,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             val invite = parseVerifiedInvite(payload)
             if (invite != null && acceptAuthenticatedInvite(invite)) {
                 fcmPendingSessionId = invite.sessionId
-                startIncomingRingtone()
+                showIncomingCallNotification(invite.sessionId, invite.fromClientId, invite.callerPhone)
                 Log.d("WS_SERVICE", "Authenticated FCM call wake action accepted")
             } else {
                 Log.w("WS_SERVICE", "Rejected invalid FCM call wake action")
@@ -519,6 +522,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onDestroy() {
         Log.d("WS_SERVICE", "onDestroy")
+        callSecurityState?.invite?.sessionId?.let { IncomingCallTelecom.end(it) }
         activationHandler.removeCallbacksAndMessages(null)
         runCatching { activationRequests.clear()?.callback?.invoke(false, "", "not_connected") }
         testerLicenses.cancel()
@@ -865,25 +869,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
 
-        // Start ringtone+vibration from service (works even if activity doesn't launch on Android 10+)
-        startIncomingRingtone()
+        val showUi = { postIncomingCallNotification(sessionId, callerName, intent) }
+        if (!IncomingCallTelecom.reportIncomingCall(this, sessionId, callerName, intent, showUi)) showUi()
+    }
 
-        // Direct launch is needed for foreground/background reliability, but FCM
-        // and WS can both deliver the same session. Do not relaunch over an
-        // already visible incoming UI because it can race the accept transition.
-        var directLaunchSucceeded = false
-        if (com.securecall.app.IncomingCallActivity.isShowingSession(sessionId)) {
-            Log.d("WS_SERVICE", "IncomingCallActivity already visible for session $sessionId — skipping direct relaunch")
-            directLaunchSucceeded = true
-        } else {
-            try {
-                startActivity(intent)
-                directLaunchSucceeded = true
-                Log.d("WS_SERVICE", "IncomingCallActivity launched directly for $callerName")
-            } catch (e: Exception) {
-                Log.e("WS_SERVICE", "Failed to launch IncomingCallActivity directly", e)
-            }
-        }
+    private fun postIncomingCallNotification(sessionId: String, callerName: String, intent: Intent) {
+        val telecomManaged = IncomingCallTelecom.hasCall(sessionId)
+        val serviceHandlesRingtone = IncomingCallAlertPolicy.serviceHandlesRingtone(
+            telecomManaged, serviceAvailable = true,
+        )
+        if (serviceHandlesRingtone) startIncomingRingtone()
 
         // Also show high-priority notification as backup (for lock screen / DND / Android 10+ restrictions)
         val fullScreenPending = android.app.PendingIntent.getActivity(
@@ -897,17 +892,28 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             .setContentText(callerName)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setFullScreenIntent(fullScreenPending, !directLaunchSucceeded)
+            // startActivity() can return normally while Android keeps its task invisible.
+            .setFullScreenIntent(fullScreenPending, true)
             .setContentIntent(fullScreenPending)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setSilent(true) // Service handles ringtone — prevent double sound
-            .setAutoCancel(true)
+            .setSilent(serviceHandlesRingtone)
+            .setAutoCancel(!telecomManaged)
             .setOngoing(true)
             .build()
+        if (!serviceHandlesRingtone) notification.flags = notification.flags or Notification.FLAG_INSISTENT
 
         val nm = getSystemService(android.app.NotificationManager::class.java)
         nm.notify(IncomingCallNotifications.WS_NOTIFICATION_ID, notification)
         Log.d("WS_SERVICE", "Incoming call notification shown for $callerName")
+
+        // Telecom invokes this path only when it permits our incoming-call UI.
+        if (!com.securecall.app.IncomingCallActivity.isShowingSession(sessionId)) {
+            try {
+                startActivity(intent)
+            } catch (e: Exception) {
+                Log.w("WS_SERVICE", "Unable to open incoming UI; notification remains available", e)
+            }
+        }
     }
 
     private fun createIncomingCallChannel() {
@@ -918,6 +924,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 android.app.NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifications for incoming secure calls"
+                setSound(
+                    android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE),
+                    android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE).build(),
+                )
                 setShowBadge(true)
                 enableVibration(true)
                 lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
@@ -1517,6 +1528,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     @JvmOverloads
     fun sendCallEnd(sessionId: String, reason: String = "user_hangup") {
+        IncomingCallTelecom.end(sessionId)
         val json = """
             {
               "type": "CALL_END",
@@ -1980,8 +1992,16 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         } catch (_: Exception) {}
     }
 
+    internal fun endCallFromTelecom(sessionId: String, reason: String): Boolean {
+        if (_currentSessionId != sessionId) return false
+        sendCallEnd(sessionId, reason)
+        executeCallEnd(sessionId)
+        return true
+    }
+
     private fun executeCallEnd(sessionId: String) {
         cancelCallEndGrace()
+        IncomingCallTelecom.end(sessionId, android.telecom.DisconnectCause.REMOTE)
         // Release keys, invite and media of the ended session; a stale CALL_END for an older
         // session must not tear down a newer call.
         if (com.securecall.app.call.CallEndPolicy.releasesSecurityState(
