@@ -103,8 +103,8 @@ test("browser-only IFR surface matches the accepted closed-gate VLABS offer", ()
   assert.match(source, /data-ifr-enabled="false"/);
   assert.match(source, /data-ifr-connect disabled/);
   assert.match(source, /data-ifr-disconnect disabled/);
-  assert.match(source, /Pro EUR 15\.00, or EUR 7\.50/);
-  assert.match(source, /Premium EUR 25\.00, or EUR 12\.50/);
+  assert.match(source, /Pro EUR 15\.00 incl\. VAT, or EUR 7\.50 incl\. VAT/);
+  assert.match(source, /Premium EUR 25\.00 incl\. VAT, or EUR 12\.50 incl\. VAT/);
   assert.match(source, /Any positive verified IFR balance qualifies/);
   assert.match(source, /no token threshold or lifetime redemption cap/);
   assert.match(source, /never enters the Android app/);
@@ -136,4 +136,34 @@ test("edited landing JSON-LD remains valid", () => {
 
   assert.ok(blocks.length > 0, "landing has no JSON-LD block");
   for (const [, payload] of blocks) JSON.parse(payload);
+});
+
+test("paid landing offers advertise final VAT prices while sales stay closed", () => {
+  const landing = read("website/index.html");
+  const structured = [...landing.matchAll(
+    /<script\s+type="application\/ld\+json">([\s\S]*?)<\/script>/g,
+  )].map(([, payload]) => JSON.parse(payload));
+
+  for (const type of ["SoftwareApplication", "Product"]) {
+    const offers = structured.find(item => item["@type"] === type).offers;
+    for (const [tier, price] of [["Pro", "15"], ["Premium", "25"]]) {
+      const offer = offers.find(item => item.name === `${tier} lifetime licence`);
+      assert.equal(offer.price, price);
+      assert.equal(offer.priceCurrency, "EUR");
+      assert.equal(offer.priceSpecification.price, price);
+      assert.equal(offer.priceSpecification.valueAddedTaxIncluded, true);
+      assert.equal(offer.availability, "https://schema.org/PreOrder");
+      assert.match(offer.description, /incl\. VAT, one-time/);
+      assert.match(offer.description, /Sales are not open yet; no orders accepted until the VLABS shop goes live/);
+    }
+  }
+
+  const cards = [...landing.matchAll(/<article class="price-card[^>]*>([\s\S]*?)<\/article>/g)]
+    .map(([, card]) => card).filter(card => !card.includes("<h3>Free</h3>"));
+  assert.equal(cards.length, 4);
+  for (const card of cards) {
+    assert.match(card, /incl\. VAT · one-time/);
+    assert.match(card, /aria-disabled="true">Sales not yet available/);
+    assert.doesNotMatch(card, /<a\b/);
+  }
 });

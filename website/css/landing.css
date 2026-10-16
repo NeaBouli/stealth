@@ -248,19 +248,16 @@ body.landing-redesign {
 }
 .voice-head,
 .status-row,
-.suite-row,
 .price-meter-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
-.voice-head > div:first-child,
-.suite-row > div {
+.voice-head > div:first-child {
   min-width: 0;
 }
-.voice-head strong,
-.suite-row strong {
+.voice-head strong {
   overflow-wrap: anywhere;
 }
 .app-mark {
@@ -491,27 +488,6 @@ body.landing-redesign {
 }
 .price-card .excluded { color: var(--sx-faint); }
 .price-card .excluded::before { content: "–"; color: var(--sx-faint); margin-right: 8px; }
-
-.suite-band {
-  margin-top: 20px;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 20px;
-  border: 1px solid var(--sx-line-strong);
-  border-radius: 20px;
-  padding: 22px;
-  background: linear-gradient(110deg, rgba(50,105,216,.1), rgba(14,159,143,.06));
-}
-.suite-icons { display: flex; }
-.suite-icons img {
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
-  margin-left: -9px;
-  border: 2px solid var(--sx-bg);
-}
-.suite-icons img:first-child { margin-left: 0; }
 
 .steps {
   display: grid;
@@ -907,7 +883,6 @@ body.landing-redesign {
   .sx-hero { min-height: auto; padding: 72px 0 54px; }
   .sx-hero-grid,
   .oss-grid,
-  .suite-band,
   .footer-grid {
     grid-template-columns: 1fr;
   }
@@ -990,6 +965,5 @@ body.landing-redesign {
   .voice-bars { grid-template-columns: repeat(12, 1fr); }
   .voice-bars i:nth-child(n+13) { display: none; }
   .audit-stats { grid-template-columns: 1fr; }
-  .suite-row { align-items: flex-start; flex-direction: column; }
   .cmp-table { min-width: 660px; }
 }

@@ -110,16 +110,19 @@ Paid controls are disabled. The app hides its complete purchase surface until a
 specific Google Play offer has passed purchase, restore, refund, revoke and RTDN
 tests for the same release.
 
-### Planned Direct Lifetime Offers
-- Pro candidate: €15, or €7.50 after eligible browser-only IFR holder proof
-- Premium candidate: €25, or €12.50 after eligible browser-only IFR holder proof
+### One-Time Lifetime Licences
+Buy once, use forever. Sales are not open yet and will remain closed until the VLABS shop goes live.
+
+- Pro (one-time): €15 incl. VAT, or €7.50 incl. VAT after eligible browser-only IFR holder proof
+- Premium (one-time): €25 incl. VAT, or €12.50 incl. VAT after eligible browser-only IFR holder proof
 - The Android app contains no wallet connection or IFR verification.
 - Sales remain closed until matching `PRODUCT_READY` and VLABS `FINANCE_READY`.
 
-### Future Google Play Offers
-If a subscription is later approved, the app will load its price from Google
-Play. Purchase restoration and cancellation will then be managed through Google
-Play; no hard-coded website price applies to that channel.
+### Licence Scope
+No subscriptions or recurring charges. A lifetime licence covers the purchased
+tier and supported versions for the installation edition stated in the offer.
+A Google Play tier entitlement does not add the direct Premium APK's WireGuard
+runtime. Applicable consumer rights and the terms shown before purchase apply.
 
 ---
 

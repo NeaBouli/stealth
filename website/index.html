@@ -54,7 +54,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/landing.css">
+    <link rel="stylesheet" href="css/landing.css?v=20261017">
     <link rel="icon" href="assets/brand/securecall-icon.png" type="image/png">
     <link rel="shortcut icon" href="assets/brand/securecall-icon.png">
     <link rel="dns-prefetch" href="https://github.com">
@@ -77,7 +77,9 @@
         "location": "Greece"
       },
       "offers": [
-        { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "EUR" }
+        { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "EUR", "description": "EUR 0 incl. VAT; ad-supported Free edition" },
+        { "@type": "Offer", "name": "Pro lifetime licence", "price": "15", "priceCurrency": "EUR", "availability": "https://schema.org/PreOrder", "description": "EUR 15 incl. VAT, one-time. Buy once, use forever. Sales are not open yet; no orders accepted until the VLABS shop goes live.", "priceSpecification": { "@type": "PriceSpecification", "price": "15", "priceCurrency": "EUR", "valueAddedTaxIncluded": true } },
+        { "@type": "Offer", "name": "Premium lifetime licence", "price": "25", "priceCurrency": "EUR", "availability": "https://schema.org/PreOrder", "description": "EUR 25 incl. VAT, one-time. Buy once, use forever. Sales are not open yet; no orders accepted until the VLABS shop goes live.", "priceSpecification": { "@type": "PriceSpecification", "price": "25", "priceCurrency": "EUR", "valueAddedTaxIncluded": true } }
       ],
       "featureList": [
         "End-to-end encryption (X25519 + DTLS-SRTP)",
@@ -204,8 +206,10 @@
       "image": "https://stealthx.tech/assets/brand/securecall-icon.png",
       "description": "End-to-end encrypted calling app with STEALTH-DELETE and Emergency Broadcast System",
       "brand": { "@type": "Brand", "name": "Vendetta Labs" },
-      "offers": {
+      "offers": [{
         "@type": "Offer",
+        "name": "Free",
+        "description": "EUR 0 incl. VAT; ad-supported Free edition",
         "price": "0",
         "priceCurrency": "EUR",
         "availability": "https://schema.org/InStock",
@@ -229,7 +233,10 @@
           },
           "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "GR" }
         }
-      }
+      },
+        { "@type": "Offer", "name": "Pro lifetime licence", "price": "15", "priceCurrency": "EUR", "availability": "https://schema.org/PreOrder", "description": "EUR 15 incl. VAT, one-time. Buy once, use forever. Sales are not open yet; no orders accepted until the VLABS shop goes live.", "priceSpecification": { "@type": "PriceSpecification", "price": "15", "priceCurrency": "EUR", "valueAddedTaxIncluded": true } },
+        { "@type": "Offer", "name": "Premium lifetime licence", "price": "25", "priceCurrency": "EUR", "availability": "https://schema.org/PreOrder", "description": "EUR 25 incl. VAT, one-time. Buy once, use forever. Sales are not open yet; no orders accepted until the VLABS shop goes live.", "priceSpecification": { "@type": "PriceSpecification", "price": "25", "priceCurrency": "EUR", "valueAddedTaxIncluded": true } }
+      ]
     }
     </script>
 </head>
@@ -333,7 +340,7 @@
                         <div class="product-top"><img class="app-mark" src="assets/brand/securechat-icon.png" alt="SecureChat icon"><span class="tag">APK available</span></div>
                         <h3>SecureChat</h3>
                         <p>Encrypted messaging with Double Ratchet forward secrecy, QR contact exchange and StealthX activation tiers.</p>
-                        <ul><li>Core messaging build published</li><li>QR contact exchange</li><li>SecureChat Elite in Suite</li></ul>
+                        <ul><li>Core messaging build published</li><li>QR contact exchange</li><li>Pro and Elite lifetime licences planned</li></ul>
                         <a class="btn line block" href="https://securechat.stealthx.tech/" target="_blank" rel="noopener">Open SecureChat</a>
                     </article>
                     <article class="product-card reveal" style="--accent:var(--sx-violet)">
@@ -343,11 +350,6 @@
                         <ul><li>Overlay encryption for any app</li><li>Automation rules</li><li>Decoy profile protection</li></ul>
                         <a class="btn line block" href="https://chameleon.stealthx.tech/" target="_blank" rel="noopener">Open Chameleon</a>
                     </article>
-                </div>
-                <div class="suite-band reveal">
-                    <div class="suite-icons"><img src="assets/brand/securecall-icon.png" alt=""><img src="assets/brand/securechat-icon.png" alt=""><img src="assets/brand/chameleon-icon.png" alt=""></div>
-                    <div><h3>StealthX Suite - everything, forever</h3><p>SecureCall Premium + SecureChat Elite + Chameleon Elite. One-time purchase, no subscription stack.</p></div>
-                    <a class="btn teal" href="#pricing">See suite</a>
                 </div>
             </div>
         </section>
@@ -422,7 +424,7 @@
                     <div class="audit-stat"><b>841ms</b><span>Average app start</span></div>
                     <div class="audit-stat"><b>E2E</b><span>XChaCha20 verified</span></div>
                 </div>
-                <p style="font-size:12px;color:var(--sx-faint)">Last verified: June 11, 2026. Current release checks include the 44/44 legacy overnight regression suite plus expanded automated, website, backend and physical-device testing on S10, S7 and Tab S4 hardware.</p>
+                <p style="font-size:12px;color:var(--sx-faint)">Last verified: June 11, 2026. Current release checks include the 44/44 legacy overnight regression tests plus expanded automated, website, backend and physical-device testing on S10, S7 and Tab S4 hardware.</p>
                 <div class="audit-grid">
                     <div class="card" style="padding:24px"><h3>Quality Review - v1.0.45</h3><ul class="plain-list"><li>Incoming call accept, hold and end</li><li>Outgoing call through dialer</li><li>FCM push wakes killed app</li><li>Online status dots refresh in under 15s</li><li>Dynamic TURN credentials</li><li>Tier gating across settings</li><li>Contact deduplication</li><li>Screenshot blocking</li><li>Network audit: TLS, VPN compatibility, no cleartext</li></ul></div>
                     <div class="card" style="padding:24px"><h3>Security architecture</h3><ul class="plain-list"><li>Call audio is not sent to the signaling service</li><li>E2E encryption: XChaCha20-Poly1305 + X25519</li><li>STEALTH-DELETE emergency wipe</li><li>Anti-recording and mic hijack detection</li><li>Proximity sensor wake lock during calls</li><li>Certificate pinning enabled for protected backend traffic</li></ul></div>
@@ -469,11 +471,11 @@
 
         <section class="section alt" id="pricing">
             <div class="container">
-                <div class="section-head"><span class="section-label">Access levels</span><h2>Choose your clearance level.</h2><p class="lead">Every tier includes end-to-end encryption. Upgrade for advanced protection through Play billing or activation codes.</p></div>
+                <div class="section-head"><span class="section-label">Access levels</span><h2>Choose your clearance level.</h2><p class="lead">Every tier includes end-to-end encryption. Buy once, use forever. Paid licences are one-time purchases; sales are not open yet and will remain closed until the VLABS shop goes live.</p></div>
                 <div class="pricing-grid">
-                    <article class="price-card reveal"><h3>Free</h3><div class="price"><span class="amount">€0</span><span class="period">forever</span></div><ul><li class="included">E2E encrypted calls</li><li class="included">15 min call limit, 10 contacts</li><li class="included">Basic security warnings</li><li class="included">Dark/Light mode</li><li class="included">Ad-supported banner</li><li class="excluded">Call history and online status</li><li class="excluded">Anti-recording protection</li><li class="excluded">Automatic threat termination</li></ul><a href="#download" class="btn line block">Get started</a></article>
-                    <article class="price-card featured reveal"><span class="price-badge">Planned Play offer</span><h3>Pro</h3><div class="price"><span class="amount">Not active</span><span class="period">Google Play</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">Automatic threat termination</li></ul><span class="btn primary block" aria-disabled="true">Play offer not available</span></article>
-                    <article class="price-card reveal"><span class="price-badge">Planned Play offer</span><h3>Premium</h3><div class="price"><span class="amount">Not active</span><span class="period">Google Play</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">Network selection controls</li><li class="included">No ads or crash reporting</li><li class="included">Device-managed VPN compatibility in every edition</li><li class="included">Optional app-managed WireGuard in the direct Premium APK</li></ul><span class="btn primary block" aria-disabled="true">Play offer not available</span></article>
+                    <article class="price-card reveal"><h3>Free</h3><div class="price"><span class="amount">€0</span><span class="period">incl. VAT · forever</span></div><ul><li class="included">E2E encrypted calls</li><li class="included">15 min call limit, 10 contacts</li><li class="included">Basic security warnings</li><li class="included">Dark/Light mode</li><li class="included">Ad-supported banner</li><li class="excluded">Call history and online status</li><li class="excluded">Anti-recording protection</li><li class="excluded">Automatic threat termination</li></ul><a href="#download" class="btn line block">Get started</a></article>
+                    <article class="price-card featured reveal"><span class="price-badge">One-time licence</span><h3>Pro</h3><div class="price"><span class="amount">€15</span><span class="period">incl. VAT · one-time</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded">Automatic threat termination</li></ul><span class="btn primary block" aria-disabled="true">Sales not yet available</span></article>
+                    <article class="price-card reveal"><span class="price-badge">One-time licence</span><h3>Premium</h3><div class="price"><span class="amount">€25</span><span class="period">incl. VAT · one-time</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">Network selection controls</li><li class="included">No ads or crash reporting</li><li class="included">Device-managed VPN compatibility in every edition</li><li class="included">Optional app-managed WireGuard in the direct Premium APK</li></ul><span class="btn primary block" aria-disabled="true">Sales not yet available</span></article>
                 </div>
                 <div class="ifr-box reveal" id="ifr" data-ifr-checkout data-ifr-product="SecureCall" data-ifr-enabled="false">
                     <span class="section-label">Browser purchase benefit</span>
@@ -495,8 +497,8 @@
                             <label for="securecall-ifr-address" style="display:block;font-size:12px;color:var(--sx-muted);margin-bottom:6px">Connected wallet address (available after launch)</label>
                             <input id="securecall-ifr-address" type="text" readonly data-ifr-address placeholder="Connected wallet address" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--sx-line);background:#111827;color:#f8fafc;margin-bottom:12px;font-weight:700;font-family:var(--sx-font-mono)">
                             <div class="ifr-checkout-actions" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
-                                <button class="btn primary" type="button" data-ifr-tier="pro_lifetime" disabled>Pro IFR price &euro;7.50</button>
-                                <button class="btn primary" type="button" data-ifr-tier="premium_lifetime" disabled>Premium IFR price &euro;12.50</button>
+                                <button class="btn primary" type="button" data-ifr-tier="pro_lifetime" disabled>Pro IFR price &euro;7.50 incl. VAT</button>
+                                <button class="btn primary" type="button" data-ifr-tier="premium_lifetime" disabled>Premium IFR price &euro;12.50 incl. VAT</button>
                             </div>
                             <p data-ifr-status role="status" aria-live="polite" style="font-size:13px;color:var(--sx-text);font-weight:700;margin:14px 0 0;line-height:1.5">IFR discount verification and checkout are currently disabled pending payment and fiscal approval.</p>
                         </div>
@@ -508,10 +510,10 @@
 
         <section class="section" id="lifetime">
             <div class="container">
-                <div class="section-head"><span class="section-label">Launch gated</span><h2>Planned lifetime licenses.</h2><p class="lead">One-time offers remain unavailable until product and finance readiness are approved for the same catalog version.</p></div>
+                <div class="section-head"><span class="section-label">Launch gated</span><h2>Lifetime licences.</h2><p class="lead">Buy once, use forever. Sales are not open yet: paid licences remain unavailable until the VLABS shop goes live and matching product and finance readiness are approved.</p></div>
                 <div class="pricing-grid">
-                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-gold)">Planned</span><h3>Pro Lifetime</h3><div class="price"><span class="amount" id="proPrice">€15</span><span class="period">one-time</span></div><p style="font-size:12px">Accepted VLABS full price; IFR-holder price &euro;7.50. Sales are closed.</p><ul><li class="included">Everything in Pro</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><span class="btn primary block" aria-disabled="true">Sales not yet available</span></article>
-                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-red);color:#fff">Planned</span><h3>Premium Lifetime</h3><div class="price"><span class="amount" id="premiumPrice">€25</span><span class="period">one-time</span></div><p style="font-size:12px">Accepted VLABS full price; IFR-holder price &euro;12.50. Sales are closed.</p><ul><li class="included">Everything in Premium</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><span class="btn primary block" aria-disabled="true">Sales not yet available</span></article>
+                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-gold)">Planned</span><h3>Pro Lifetime</h3><div class="price"><span class="amount" id="proPrice">€15</span><span class="period">incl. VAT · one-time</span></div><p style="font-size:12px">Accepted VLABS full price; IFR-holder price &euro;7.50 incl. VAT. Sales are closed.</p><ul><li class="included">Everything in Pro</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><span class="btn primary block" aria-disabled="true">Sales not yet available</span></article>
+                    <article class="price-card featured reveal"><span class="price-badge" style="background:var(--sx-red);color:#fff">Planned</span><h3>Premium Lifetime</h3><div class="price"><span class="amount" id="premiumPrice">€25</span><span class="period">incl. VAT · one-time</span></div><p style="font-size:12px">Accepted VLABS full price; IFR-holder price &euro;12.50 incl. VAT. Sales are closed.</p><ul><li class="included">Everything in Premium</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><span class="btn primary block" aria-disabled="true">Sales not yet available</span></article>
                 </div>
             </div>
         </section>
@@ -563,7 +565,7 @@
                 <div><a href="./" class="sx-logo"><img src="assets/brand/stealthx-logo.png" alt="StealthX"></a><p>Your comms are your own. SecureCall, SecureChat and Chameleon are products of Vendetta Labs.</p></div>
                 <div class="footer-col"><h4>Product</h4><a href="#features">Features</a><a href="#security">Security</a><a href="#pricing">Pricing</a><a href="#download">Download</a></div>
                 <div class="footer-col"><h4>Resources</h4><a href="wiki/">Intel Database</a><a href="wiki/security-design.html">Security Design</a><a href="wiki/faq.html">FAQ</a><a href="https://github.com/NeaBouli/stealth" target="_blank" rel="noopener">GitHub</a></div>
-                <div class="footer-col"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a><a href="impressum.html">Impressum</a><a href="https://github.com/NeaBouli/stealth/issues" target="_blank" rel="noopener">Contact</a></div>
+                <div class="footer-col"><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a><a href="impressum.html">Impressum</a><a href="impressum.html#contact-form">Contact</a><span class="js-mail" data-u="troppus" data-d="xhtlaets|hcet"></span></div>
             </div>
             <div class="footer-bottom"><span>© 2026 Vendetta Labs - Greece | Source available for audit - built by <a href="https://github.com/NeaBouli" target="_blank" rel="noopener">NeaBouli</a></span><span>Made with security in mind.</span></div>
         </div>
@@ -590,5 +592,6 @@
       u(); setInterval(u,15000);
     })();
     </script>
+    <script src="js/mail-assemble.js" defer></script>
 </body>
 </html>
