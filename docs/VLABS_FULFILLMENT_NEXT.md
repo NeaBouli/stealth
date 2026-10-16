@@ -2,7 +2,12 @@
 
 Status: local design and default-off Custom-ID reservation implementation. No deployment,
 live configuration, signing-key generation, Android change, or subscription implementation
-is part of this work. The owner has not chosen monthly subscriptions versus lifetime sales.
+is part of this work.
+
+**Owner decision 2026-10-17 (price model A):** one-time purchase / lifetime licence only, end prices incl. VAT
+(SecureCall Pro 15 EUR, Premium 25 EUR; SecureChat Pro 9 / Elite 19 EUR; Chameleon Pro 9 / Elite 19 EUR),
+VAT computed on the VLABS side, GB blocked on the VLABS side. No subscriptions: section 3 is kept
+for reference only and will not be implemented. The legacy monthly Stripe prices stay closed.
 The six existing lifetime offers and their immutable contracts remain unchanged.
 
 ## 1. Existing trust and delivery boundary
@@ -191,7 +196,7 @@ password, or device ID in VLABS metadata to bypass that binding. Customer confir
 claim/recovery UX, pre-payment holds or collision compensation, and VLABS's catalog
 checker updates must be integrated and tested before enabling real Custom-ID sales.
 
-## 3. Monthly subscription lifecycle — decision-dependent, not implemented
+## 3. Monthly subscription lifecycle — not needed (owner chose lifetime, 2026-10-17)
 
 The owner must first choose lifetime versus monthly offers, cancellation timing, and
 any grace period. Existing lifetime fulfill/revoke cannot represent a paid-through date;
