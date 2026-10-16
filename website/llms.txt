@@ -64,14 +64,16 @@ SecureID calling path without a conventional account.
 - Physical QA includes Samsung S7, S10 and Tab S4; broader compatibility remains subject to device testing
 
 ## Download
-- Google Play: public listing live for package com.securecall.app.free
+- Google Play v1.0.50 in review (v1.0.49 live); package com.securecall.app.free
 - Direct APK: github.com/NeaBouli/stealth/releases
 
 ## Current Version
-- Direct APK: the currently published artifact remains linked from GitHub Releases; it is not the final audited sales candidate.
-- Google Play: compliance replacement v1.0.49 / versionCode 78016 is live.
-- Development candidate baseline: v1.0.50 / versionCode 78017. A fresh unused version code and newly signed artifacts are required after audit remediation.
-- Candidate platform baseline: Billing v8.2.1, target/compile SDK 36, edge-to-edge handling, Android 15+ 16KB native page-size support.
+- Direct APK: v1.0.50 / versionCode 78017 (Free, Pro, Premium), GitHub release tag v1.0.50, marked latest.
+- Direct APK assets: SecureCall-Free-LATEST.apk, SecureCall-Pro-LATEST.apk, SecureCall-Premium-LATEST.apk, SecureCall-v1.0.50-SHA256SUMS.txt. APK download URLs remain /releases/latest/download/ followed by the asset name.
+- Google Play v1.0.50 in review (v1.0.49 live). v1.0.50 / versionCode 78017 was submitted for review on 2026-10-17; v1.0.49 / versionCode 78016 is live.
+- v1.0.50 changes: signed registration binds the ID to the device key; caller names come only from contacts verified for that ID; calls to saved contacts use their verified ID; incoming calls appear on the lock screen, including Samsung; unanswered calls end after 60 seconds; stealth delete wipes all app data; hardened key handling, safer invite links, and more stable reconnecting.
+- Pro/Premium features in v1.0.50 require a verified license; licenses are not on sale yet.
+- Platform baseline: Billing v8.2.1, target/compile SDK 36, edge-to-edge handling, Android 15+ 16KB native page-size support.
 
 ## Company
 - Vendetta Labs — Kalamata 24100, Greece (EU)
