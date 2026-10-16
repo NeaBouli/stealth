@@ -146,6 +146,68 @@ function failRename(target, occurrence = 1) {
   assert.strictEqual((await request("fulfill", body("owned-example"))).statusCode, 409);
   assert.strictEqual((await request("fulfill", body("pending-example"))).statusCode, 409);
   assert.strictEqual(customIds.resolve("owned-example"), "test-device");
+
+  // Recreate the state left by a legacy activation whose failed save was swallowed:
+  // the paid token is consumed and ownership exists only in the live registry.
+  const legacyId = "live-legacy-owner";
+  const legacyKey = crypto.createHmac("sha256", pepper).update(legacyId).digest("hex");
+  fs.writeFileSync(process.env.PENDING_FILE, JSON.stringify({ legacy_token: {
+    customId: legacyId, createdAt: Date.now(), stripeSessionId: "cs_legacy_live",
+    paidAt: new Date().toISOString(), passwordHash: "test-hash", passwordSalt: "test-salt",
+  } }));
+  reload();
+  let legacyActivate;
+  customIds.setupRoutes({ get() {}, post(route, ...handlers) {
+    if (route === "/custom-id/activate-token") legacyActivate = handlers.at(-1);
+  } });
+  const legacyResponse = { payload: null, json(value) { this.payload = value; return this; } };
+  legacyActivate({ body: { id: legacyId, deviceId: "device-legacy-live", token: "legacy_token" } }, legacyResponse);
+  assert.strictEqual(legacyResponse.payload.success, true);
+  const beforeLegacySave = read(process.env.IDS_FILE);
+  delete beforeLegacySave[legacyKey];
+  fs.writeFileSync(process.env.IDS_FILE, JSON.stringify(beforeLegacySave));
+  assert.deepStrictEqual(read(process.env.PENDING_FILE), {});
+  assert.strictEqual(customIds.resolve(legacyId), "device-legacy-live");
+  const contested = body(legacyId);
+  assert.strictEqual((await request("fulfill", contested)).statusCode, 409,
+    "live-only ownership must prevent a second sale after a legacy persistence failure");
+  assert.strictEqual(customIds.resolve(legacyId), "device-legacy-live", "rejected sale preserves routing");
+  assert.strictEqual(orders()[contested.externalOrderId]?.status, "PENDING_EMAIL");
+
+  // A persisted same-order reservation cannot bypass conflicting live ownership.
+  fs.writeFileSync(process.env.IDS_FILE, JSON.stringify({ ...beforeLegacySave, [legacyKey]: {
+    source: "vlabs", stripeSessionId: contested.externalOrderId, deviceId: null,
+  } }));
+  assert.strictEqual((await request("fulfill", contested)).statusCode, 409);
+  assert.strictEqual(customIds.resolve(legacyId), "device-legacy-live");
+  fs.writeFileSync(process.env.IDS_FILE, JSON.stringify(beforeLegacySave));
+
+  // An unrelated reservation and its idempotent retry must also preserve live routing.
+  const unrelated = body("unrelated-reservation");
+  assert.strictEqual((await request("fulfill", unrelated)).statusCode, 200);
+  assert.strictEqual(customIds.resolve(legacyId), "device-legacy-live");
+  assert.strictEqual(read(process.env.IDS_FILE)[legacyKey].deviceId, "device-legacy-live");
+  assert.strictEqual((await request("fulfill", unrelated)).payload.duplicate, true);
+  assert.strictEqual(customIds.resolve(legacyId), "device-legacy-live");
+
+  // Reservation retries and release must not refresh away other live-only owners.
+  const withoutLiveOwner = read(process.env.IDS_FILE);
+  delete withoutLiveOwner[legacyKey];
+  fs.writeFileSync(process.env.IDS_FILE, JSON.stringify(withoutLiveOwner));
+  customIds.reserveForVlabs(unrelated.requestedId, unrelated.externalOrderId);
+  assert.strictEqual(customIds.resolve(legacyId), "device-legacy-live");
+  assert.strictEqual((await request("revoke", revokeBody(unrelated))).payload.revoked, true);
+  assert.strictEqual(customIds.resolve(legacyId), "device-legacy-live");
+  assert.strictEqual(read(process.env.IDS_FILE)[legacyKey].deviceId, "device-legacy-live");
+
+  // Ownership added on disk since startup must also win without reloading the module.
+  const diskId = "disk-only-owner";
+  const diskKey = crypto.createHmac("sha256", pepper).update(diskId).digest("hex");
+  fs.writeFileSync(process.env.IDS_FILE, JSON.stringify({ ...read(process.env.IDS_FILE), [diskKey]: {
+    deviceId: "device-disk-only", stripeSessionId: "cs_legacy_disk",
+  } }));
+  assert.strictEqual((await request("fulfill", body(diskId))).statusCode, 409);
+
   const race = await Promise.all([
     request("fulfill", body("race-example")), request("fulfill", body("race-example")),
   ]);
