@@ -73,24 +73,6 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
             launchPurchase(BuildConfig.SKU_PREMIUM_ACTIVATION_CODE)
         }
 
-        // Subscription buttons (Play Store only)
-        findViewById<Button>(R.id.btnProMonthly).setOnClickListener {
-            if (!billingAvailable) return@setOnClickListener
-            launchPurchase(BuildConfig.SKU_PRO_MONTHLY)
-        }
-        findViewById<Button>(R.id.btnProYearly).setOnClickListener {
-            if (!billingAvailable) return@setOnClickListener
-            launchPurchase(BuildConfig.SKU_PRO_YEARLY)
-        }
-        findViewById<Button>(R.id.btnPremiumMonthly).setOnClickListener {
-            if (!billingAvailable) return@setOnClickListener
-            launchPurchase(BuildConfig.SKU_PREMIUM_MONTHLY)
-        }
-        findViewById<Button>(R.id.btnPremiumYearly).setOnClickListener {
-            if (!billingAvailable) return@setOnClickListener
-            launchPurchase(BuildConfig.SKU_PREMIUM_YEARLY)
-        }
-
         // Restore (Play Store only)
         findViewById<Button>(R.id.btnRestore).setOnClickListener {
             if (!billingAvailable) return@setOnClickListener
@@ -131,26 +113,22 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
 
     private fun updateCurrentTierDisplay() {
         val tier = subscriptionManager.getCurrentTier()
-        tvCurrentTier.text = "Current Plan: ${tier.displayName}"
+        tvCurrentTier.text = getString(R.string.upgrade_current_edition, tier.displayName)
     }
 
     // ===================== BillingListener =====================
 
     override fun onProductsLoaded(products: List<ProductDetails>) {
         runOnUiThread {
-            bindProductPrice(products, R.id.btnProMonthly, BuildConfig.SKU_PRO_MONTHLY, "Upgrade to Pro")
-            bindProductPrice(products, R.id.btnProYearly, BuildConfig.SKU_PRO_YEARLY, "Pro yearly")
-            bindProductPrice(products, R.id.btnPremiumMonthly, BuildConfig.SKU_PREMIUM_MONTHLY, "Upgrade to Premium")
-            bindProductPrice(products, R.id.btnPremiumYearly, BuildConfig.SKU_PREMIUM_YEARLY, "Premium yearly")
-            bindProductPrice(products, R.id.btnProLifetime, BuildConfig.SKU_PRO_LIFETIME, "Pro Lifetime")
-            bindProductPrice(products, R.id.btnPremiumLifetime, BuildConfig.SKU_PREMIUM_LIFETIME, "Premium Lifetime")
-            bindProductPrice(products, R.id.btnActivationCode, BuildConfig.SKU_PREMIUM_ACTIVATION_CODE, "Activation Code")
+            bindPurchaseButton(products, R.id.btnProLifetime, BuildConfig.SKU_PRO_LIFETIME, getString(R.string.upgrade_pro_lifetime))
+            bindPurchaseButton(products, R.id.btnPremiumLifetime, BuildConfig.SKU_PREMIUM_LIFETIME, getString(R.string.upgrade_premium_lifetime))
+            bindPurchaseButton(products, R.id.btnActivationCode, BuildConfig.SKU_PREMIUM_ACTIVATION_CODE, getString(R.string.upgrade_activation_code))
             tvStatus.text = "${products.size} products loaded"
             Log.d(TAG, "Products loaded: ${products.map { it.productId }}")
         }
     }
 
-    private fun bindProductPrice(
+    private fun bindPurchaseButton(
         products: List<ProductDetails>,
         buttonId: Int,
         productId: String,
