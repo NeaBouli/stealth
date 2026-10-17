@@ -11,6 +11,15 @@
     <!-- Main -->
     <string name="new_call">New Call</string>
     <string name="upgrade_to_pro">Upgrade to Pro</string>
+    <string name="upgrade_choose_edition">Choose your edition</string>
+    <string name="upgrade_current_edition">Current edition: %1$s</string>
+    <string name="upgrade_pro_price">One-time purchase · lifetime</string>
+    <string name="upgrade_premium_price">One-time purchase · lifetime</string>
+    <string name="upgrade_price_terms">One-time purchase, no subscription. Prices include VAT.</string>
+    <string name="upgrade_pro_lifetime">Buy Pro Lifetime</string>
+    <string name="upgrade_premium_lifetime">Buy Premium Lifetime</string>
+    <string name="upgrade_activation_code">Buy activation code</string>
+    <string name="upgrade_activation_code_description">Buy a Premium lifetime activation code. Use it yourself or gift it to anyone. Activate it in Settings.</string>
 
     <!-- Call screen -->
     <string name="call_connecting">Connecting\u2026</string>
@@ -55,6 +64,7 @@
     <string name="settings_report_bug_summary">Report a bug via our form</string>
     <string name="settings_privacy">Privacy Policy</string>
     <string name="settings_privacy_summary">How we protect your data</string>
+    <string name="settings_terms_summary">Activation codes, lifetime purchases, legal terms</string>
     <string name="settings_ad_privacy">Ad Privacy Choices</string>
     <string name="settings_ad_privacy_summary">Review consent choices used for ads</string>
     <string name="settings_crash_reports">Crash Reports</string>

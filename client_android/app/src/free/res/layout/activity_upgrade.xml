@@ -15,7 +15,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Choose Your Plan"
+            android:text="@string/upgrade_choose_edition"
             android:textSize="22sp"
             android:textColor="#FFFFFF"
             android:textStyle="bold"
@@ -27,7 +27,6 @@
             android:id="@+id/tvCurrentTier"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Current Plan: Free"
             android:textSize="14sp"
             android:textColor="#00FFAA"
             android:gravity="center"
@@ -35,7 +34,7 @@
             android:background="#222244"
             android:layout_marginBottom="16dp" />
 
-        <!-- ═══ 3 PLAN CARDS ═══ -->
+        <!-- Edition cards -->
 
         <!-- FREE Card -->
         <LinearLayout
@@ -76,6 +75,14 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/upgrade_price_terms"
+            android:textSize="13sp"
+            android:textColor="#CCCCCC"
+            android:layout_marginBottom="12dp" />
+
         <!-- PRO Card -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -92,19 +99,13 @@
                 android:textSize="16sp"
                 android:textColor="#FFD700"
                 android:textStyle="bold" />
-            <LinearLayout
-                android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Price loaded from Google Play"
-                    android:textSize="16sp"
-                    android:textColor="#FFD700"
-                    android:textStyle="bold" />
-            </LinearLayout>
+                android:text="@string/upgrade_pro_price"
+                android:textSize="16sp"
+                android:textColor="#FFD700"
+                android:textStyle="bold" />
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -115,10 +116,11 @@
                 android:layout_marginTop="8dp" />
 
             <Button
-                android:id="@+id/btnProMonthly"
+                android:id="@+id/btnProLifetime"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:text="Upgrade to Pro"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/upgrade_pro_lifetime"
                 android:textSize="14sp"
                 android:backgroundTint="#FFD700"
                 android:textColor="#000000"
@@ -142,19 +144,13 @@
                 android:textSize="16sp"
                 android:textColor="#FF4444"
                 android:textStyle="bold" />
-            <LinearLayout
-                android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Price loaded from Google Play"
-                    android:textSize="16sp"
-                    android:textColor="#FF4444"
-                    android:textStyle="bold" />
-            </LinearLayout>
+                android:text="@string/upgrade_premium_price"
+                android:textSize="16sp"
+                android:textColor="#FF4444"
+                android:textStyle="bold" />
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -165,77 +161,16 @@
                 android:layout_marginTop="8dp" />
 
             <Button
-                android:id="@+id/btnPremiumMonthly"
+                android:id="@+id/btnPremiumLifetime"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:text="Upgrade to Premium"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/upgrade_premium_lifetime"
                 android:textSize="14sp"
                 android:backgroundTint="#FF4444"
                 android:textColor="#FFFFFF"
                 android:enabled="false"
                 android:layout_marginTop="12dp" />
-        </LinearLayout>
-
-        <!-- ═══ LIFETIME ACCESS ═══ -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#333355"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="&#128273; Lifetime Access"
-            android:textSize="18sp"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Lifetime license status -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#1A2A2A"
-            android:padding="16dp"
-            android:layout_marginBottom="8dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Lifetime licenses"
-                android:textSize="14sp"
-                android:textColor="#FF9800"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="One-time Google Play offers are unavailable until purchase, restore, refund, revoke, and RTDN tests pass for this release."
-                android:textSize="13sp"
-                android:textColor="#CCCCCC"
-                android:lineSpacingMultiplier="1.4" />
-
-            <Button
-                android:id="@+id/btnProLifetime"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:text="Pro Lifetime"
-                android:textSize="14sp"
-                android:enabled="false"
-                android:layout_marginTop="12dp" />
-            <Button
-                android:id="@+id/btnPremiumLifetime"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:text="Premium Lifetime"
-                android:textSize="14sp"
-                android:enabled="false"
-                android:layout_marginTop="8dp" />
-            <Button android:id="@+id/btnProYearly" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-            <Button android:id="@+id/btnPremiumYearly" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
         </LinearLayout>
 
         <!-- Activation Code -->
@@ -258,7 +193,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Buy a Premium activation code. Use it yourself or gift it to anyone. Enter in Settings → instant Premium."
+                android:text="@string/upgrade_activation_code_description"
                 android:textSize="13sp"
                 android:textColor="#CCCCCC"
                 android:lineSpacingMultiplier="1.4" />
@@ -266,8 +201,9 @@
             <Button
                 android:id="@+id/btnActivationCode"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:text="Buy Activation Code"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/upgrade_activation_code"
                 android:textSize="14sp"
                 android:backgroundTint="#00E676"
                 android:textColor="#000000"

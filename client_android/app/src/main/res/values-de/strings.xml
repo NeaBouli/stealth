@@ -10,6 +10,15 @@
     <!-- Main -->
     <string name="new_call">Neuer Anruf</string>
     <string name="upgrade_to_pro">Auf Pro upgraden</string>
+    <string name="upgrade_choose_edition">Edition wählen</string>
+    <string name="upgrade_current_edition">Aktuelle Edition: %1$s</string>
+    <string name="upgrade_pro_price">Einmalkauf · lebenslang</string>
+    <string name="upgrade_premium_price">Einmalkauf · lebenslang</string>
+    <string name="upgrade_price_terms">Einmalkauf, kein Abo. Preise inkl. MwSt.</string>
+    <string name="upgrade_pro_lifetime">Pro lebenslang kaufen</string>
+    <string name="upgrade_premium_lifetime">Premium lebenslang kaufen</string>
+    <string name="upgrade_activation_code">Aktivierungscode kaufen</string>
+    <string name="upgrade_activation_code_description">Premium-Aktivierungscode für lebenslangen Zugang kaufen, selbst nutzen oder verschenken. In den Einstellungen aktivieren.</string>
 
     <!-- Call screen -->
     <string name="call_connecting">Verbinde\u2026</string>
@@ -48,6 +57,7 @@
     <string name="settings_dark_mode">Dunkler Modus</string>
     <string name="settings_version">Version</string>
     <string name="settings_tier">Aktueller Plan</string>
+    <string name="settings_terms_summary">Aktivierungscodes, Einmalkäufe, rechtliche Hinweise</string>
     <string name="settings_ad_privacy">Datenschutzoptionen für Werbung</string>
     <string name="settings_ad_privacy_summary">Einwilligungen für Werbung prüfen</string>
     <string name="settings_crash_reports">Absturzberichte</string>
