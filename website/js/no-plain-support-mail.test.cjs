@@ -82,10 +82,15 @@ function pageContext(html) {
     return { elements, document, window: {} };
 }
 
-test('both pages assemble the exact address and build mail links at runtime', () => {
-    for (const [page, count] of [['impressum.html', 3], ['success.html', 1]]) {
+test('contact pages assemble the exact address and build mail links at runtime', () => {
+    for (const [page, count] of [
+        ['impressum.html', 3], ['success.html', 1], ['index.html', 1],
+        ['privacy.html', 1], ['wiki/index.html', 1], ['wiki/faq.html', 1],
+        ['wiki/beta-testing.html', 1]
+    ]) {
         const html = readFileSync(join(websiteRoot, page), 'utf8');
-        assert.match(html, /<script src="js\/mail-assemble\.js" defer><\/script>/);
+        const prefix = page.startsWith('wiki/') ? '../' : '';
+        assert.ok(html.includes(`<script src="${prefix}js/mail-assemble.js" defer></script>`));
         const context = pageContext(html);
         assert.equal(context.elements.length, count);
         vm.runInNewContext(script, context);

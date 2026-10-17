@@ -33,13 +33,16 @@ SecureID calling path without a conventional account.
 - FCM push notifications for incoming calls when app is closed
 - Automatic reconnection on network change (WiFi ↔ Mobile)
 
-## Pricing (EUR)
-- Free: €0 (ad-supported, 15min call limit, 10 contacts)
-- Pro Lifetime candidate: €15 full price; €7.50 IFR-holder price
-- Premium Lifetime candidate: €25 full price; €12.50 IFR-holder price
+## Pricing (EUR, one-time lifetime licences)
+Buy once, use forever. No subscriptions. Sales are not open yet and will remain closed until the VLABS shop goes live.
+- Free: €0 incl. VAT (ad-supported, 15min call limit, 10 contacts)
+- SecureCall Pro Lifetime: €15 incl. VAT full price; €7.50 incl. VAT IFR-holder price
+- SecureCall Premium Lifetime: €25 incl. VAT full price; €12.50 incl. VAT IFR-holder price
 - IFR Holder Discount: browser-only and launch-gated; any positive verified IFR balance qualifies, with no token threshold or lifetime redemption cap
 - Paid checkout is closed until the same immutable release has both PRODUCT_READY and VLABS FINANCE_READY.
-- Google Play prices, if later enabled, come from Google Play and are separate from direct-channel prices.
+- SecureChat Pro: €9 incl. VAT; Elite: €19 incl. VAT (one-time)
+- Chameleon Pro: €9 incl. VAT; Elite: €19 incl. VAT (one-time)
+- Custom IDs (one-time): 10+ characters €1 incl. VAT; 5–9 characters €2 incl. VAT; 3–4 characters €5 incl. VAT.
 
 ## How does SecureCall compare to Signal?
 - Signal requires a phone number; SecureCall does not
@@ -64,19 +67,21 @@ SecureID calling path without a conventional account.
 - Physical QA includes Samsung S7, S10 and Tab S4; broader compatibility remains subject to device testing
 
 ## Download
-- Google Play: public listing live for package com.securecall.app.free
+- Google Play v1.0.50 in review (v1.0.49 live); package com.securecall.app.free
 - Direct APK: github.com/NeaBouli/stealth/releases
 
 ## Current Version
-- Direct APK: the currently published artifact remains linked from GitHub Releases; it is not the final audited sales candidate.
-- Google Play: compliance replacement v1.0.49 / versionCode 78016 is live.
-- Development candidate baseline: v1.0.50 / versionCode 78017. A fresh unused version code and newly signed artifacts are required after audit remediation.
-- Candidate platform baseline: Billing v8.2.1, target/compile SDK 36, edge-to-edge handling, Android 15+ 16KB native page-size support.
+- Direct APK: v1.0.50 / versionCode 78017 (Free, Pro, Premium), GitHub release tag v1.0.50, marked latest.
+- Direct APK assets: SecureCall-Free-LATEST.apk, SecureCall-Pro-LATEST.apk, SecureCall-Premium-LATEST.apk, SecureCall-v1.0.50-SHA256SUMS.txt. APK download URLs remain /releases/latest/download/ followed by the asset name.
+- Google Play v1.0.50 in review (v1.0.49 live). v1.0.50 / versionCode 78017 was submitted for review on 2026-10-17; v1.0.49 / versionCode 78016 is live.
+- v1.0.50 changes: signed registration binds the ID to the device key; caller names come only from contacts verified for that ID; calls to saved contacts use their verified ID; incoming calls appear on the lock screen, including Samsung; unanswered calls end after 60 seconds; stealth delete wipes all app data; hardened key handling, safer invite links, and more stable reconnecting.
+- Pro/Premium features in v1.0.50 require a verified license; licenses are not on sale yet.
+- Platform baseline: Billing v8.2.1, target/compile SDK 36, edge-to-edge handling, Android 15+ 16KB native page-size support.
 
 ## Company
 - Vendetta Labs — Kalamata 24100, Greece (EU)
 - GDPR-oriented data minimization; no call content is stored, while limited routing, entitlement, billing and legal records are handled as described in the privacy policy
-- Contact: GitHub Issues, the contact form on the Impressum page, or the address listed in the privacy policy
+- Contact: GitHub Issues or the support email and contact form on the Impressum page (https://stealthx.tech/impressum.html).
 - Website: stealthx.tech
 - Twitter/X: @secureslot
 

@@ -152,16 +152,6 @@
   .pc-arrow { transition: transform .2s; }
   .product-card:hover .pc-arrow { transform: translateX(4px); }
 
-  .suite-teaser { margin-top: 22px; display: flex; align-items: center; gap: 24px; padding: 24px 28px;
-    border: 1px solid var(--line-strong); border-radius: 18px; background: var(--surface);
-    background-image: linear-gradient(120deg, color-mix(in oklch, var(--accent) 9%, transparent), transparent 60%); }
-  .suite-marks { display: flex; }
-  .suite-marks > * { margin-left: -8px; }
-  .suite-marks > *:first-child { margin-left: 0; }
-  .suite-body { flex: 1; }
-  .suite-kicker { font-family: var(--font-display); font-weight: 700; font-size: 17px; }
-  .suite-text { margin: 4px 0 0; font-size: 14.5px; color: var(--text-dim); }
-
   /* ---------- trust ---------- */
   .trust-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 36px; }
   .tstat { text-align: center; padding: 22px 14px; border: 1px solid var(--line); border-radius: 15px; background: var(--bg); }
@@ -209,14 +199,6 @@
   .price-feats { list-style: none; padding: 16px 0 22px; margin: 0; display: grid; gap: 11px; border-top: 1px solid var(--line); }
   .price-feats li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-dim); }
   .price-card .btn { margin-top: auto; }
-
-  .suite-card { margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 28px;
-    flex-wrap: wrap; padding: 26px 30px; border-radius: 18px; border: 1px solid var(--line-strong);
-    background: linear-gradient(110deg, color-mix(in oklch, var(--accent) 12%, var(--bg)), var(--bg)); }
-  .suite-card-l { display: flex; align-items: center; gap: 20px; }
-  .suite-card-r { display: flex; align-items: center; gap: 20px; }
-  .suite-price { font-family: var(--font-display); font-weight: 800; font-size: 30px; letter-spacing: -0.03em; white-space: nowrap; }
-  .suite-price span { font-size: 14px; font-weight: 500; color: var(--text-faint); }
 
   /* ---------- brand system ---------- */
   .brand-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
@@ -269,7 +251,6 @@
     .section { padding: 72px 20px; }
     .product-grid, .price-grid, .spec-grid, .trust-stats, .brand-grid { grid-template-columns: 1fr; }
     .nav-cta .btn-ghost { display: none; }
-    .suite-teaser, .suite-card { flex-direction: column; align-items: flex-start; }
     .footer-cols { grid-template-columns: 1fr 1fr; }
   }
 </style>
@@ -282,10 +263,10 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
 <script type="text/babel" src="tweaks-panel.jsx"></script>
-<script type="text/babel" src="i18n.jsx"></script>
+<script type="text/babel" src="i18n.jsx?v=20261017"></script>
 <script type="text/babel" src="brand.jsx"></script>
-<script type="text/babel" src="sections1.jsx"></script>
-<script type="text/babel" src="sections2.jsx"></script>
+<script type="text/babel" src="sections1.jsx?v=20261017"></script>
+<script type="text/babel" src="sections2.jsx?v=20261017"></script>
 <script type="text/babel" src="app.jsx"></script>
 </body>
 </html>

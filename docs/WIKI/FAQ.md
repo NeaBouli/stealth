@@ -71,7 +71,7 @@ Yes. An internal security audit was conducted in February 2026. All 7 Critical a
 #### ████ TIER COMPARISON ████
 ---
 
-| Feature | Free | Pro (direct candidate €15 lifetime) | Premium (direct candidate €25 lifetime) |
+| Feature | Free | Pro (€15 incl. VAT, one-time lifetime) | Premium (€25 incl. VAT, one-time lifetime) |
 |---------|------|-------------------------------|-----------------------------------|
 | E2E Encrypted Calls | Yes | Yes | Yes |
 | Audio Quality | Standard | HD (48kHz Opus) | HD (48kHz Opus) |
@@ -89,19 +89,18 @@ Yes. An internal security audit was conducted in February 2026. All 7 Critical a
 ---
 
 ### What are Forever Licenses?
-Forever Licenses are planned **one-time offers** for supported SecureCall versions. Candidate prices are:
+Forever Licences are **one-time lifetime licences** for the purchased tier and supported versions of the installation edition stated in the offer. Buy once, use forever. Final prices are:
 
-- **PRO Lifetime:** €15
-- **PREMIUM Lifetime:** €25
+- **PRO Lifetime:** €15 incl. VAT
+- **PREMIUM Lifetime:** €25 incl. VAT
 
 Sales remain unavailable until SecureCall records PRODUCT_READY and the private VLABS operator records FINANCE_READY for the same catalog version.
 
-### Lifetime vs. Subscription — what should I choose?
-- **Lifetime:** Planned one-time access for the supported product version.
-- **Subscription:** Planned monthly or yearly access managed through Google Play.
+### Is paid access one-time only?
+No subscriptions, one-time only. There are no recurring charges. Statutory refund rights and the licence terms apply.
 
-### How do I upgrade or cancel?
-Purchases are currently disabled. When subscriptions launch, cancellation and restoration will be managed through Google Play.
+### How do I upgrade?
+Sales are not open yet and will remain closed until the VLABS shop goes live. Future offers will show the exact price, licence scope, activation instructions and terms before purchase.
 
 ### Do you see my payment information?
 No SecureCall payment flow is currently active. Payment and fiscal processing will be controlled by the applicable store and the private VLABS finance service at launch.

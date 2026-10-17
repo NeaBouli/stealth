@@ -199,7 +199,7 @@
             <div class="section-break">Pricing</div>
 
             <h2>ID Pricing</h2>
-            <p>Proposed one-time pricing, not an active offer. Final availability and checkout terms remain pending.</p>
+            <p>Buy once, use forever. Final one-time prices incl. VAT. Sales are not open yet; purchases remain closed until the VLABS shop goes live and matching release gates pass.</p>
             <table>
                 <thead>
                     <tr>
@@ -211,17 +211,17 @@
                 <tbody>
                     <tr>
                         <td><strong>10+ characters</strong></td>
-                        <td>&euro;1.00</td>
+                        <td>&euro;1.00 incl. VAT</td>
                         <td><code>nighthawk42</code></td>
                     </tr>
                     <tr>
                         <td><strong>5&ndash;9 characters</strong></td>
-                        <td>&euro;2.00</td>
+                        <td>&euro;2.00 incl. VAT</td>
                         <td><code>marco</code>, <code>ghost</code></td>
                     </tr>
                     <tr>
                         <td><strong>3&ndash;4 characters</strong></td>
-                        <td>&euro;5.00</td>
+                        <td>&euro;5.00 incl. VAT</td>
                         <td><code>ace</code>, <code>vip</code></td>
                     </tr>
                     <tr>
@@ -317,7 +317,7 @@
                 <li><strong>Password lost = ID lost.</strong> We cannot recover your password or transfer your ID without it. There is no support for forgotten passwords.</li>
                 <li>Refunds follow the checkout terms and applicable consumer law. A lost password or ID cannot be technically recovered.</li>
                 <li><strong>IDs are bound to passwords, not persons.</strong> Anyone with the password can transfer the ID to their device.</li>
-                <li><strong>Premium required.</strong> Custom IDs only work on devices with an active Premium subscription or lifetime license.</li>
+                <li><strong>Premium required.</strong> Custom IDs only work on devices with a verified Premium lifetime licence.</li>
                 <li><strong>Offensive IDs</strong> may be removed under the usage policy; refund rights follow applicable law and the checkout terms.</li>
                 <li><strong>Privacy by design:</strong> Your ID is stored as HMAC-SHA256 hash with a server-side secret. Neither the ID nor your password exist in cleartext on our servers. <a href="../terms.html">Full Terms of Service</a>.</li>
             </ul>
@@ -347,7 +347,7 @@
             return;
         }
         const API = "https://api.stealthx.tech";
-        const PRICES = { 100: "€1.00", 200: "€2.00", 500: "€5.00" };
+        const PRICES = { 100: "€1.00 incl. VAT", 200: "€2.00 incl. VAT", 500: "€5.00 incl. VAT" };
         const PRICE_IDS = { 100: "price_1TJITIBcyoLtm3FA0qZyTL5O", 200: "price_1TJITKBcyoLtm3FARalsHHII", 500: "price_1TJITNBcyoLtm3FAlvw1HlRY" };
         // NOTE: No fallback Payment Links — raw Payment Links bypass the
         // custom_id metadata flow (password_hash, pending_token) and would
@@ -402,7 +402,7 @@
                     currentPrice = data.price;
                     idStatus.className = "id-status available";
                     idStatus.innerHTML = '<strong>"' + data.id + '"</strong> is available!';
-                    priceTag.textContent = PRICES[data.price] || "€?.??";
+                    priceTag.textContent = PRICES[data.price] || "€?.?? incl. VAT";
                     priceLength.textContent = data.id.length + " characters — one-time payment";
                     priceDisplay.style.display = "block";
                     pwGroup.style.display = "block";

@@ -1,7 +1,7 @@
 /* sections2.jsx — Trust, Compare, Pricing, Brand system, CTA, Footer */
 (function () {
   const h = React.createElement;
-  const { useState, useContext } = React;
+  const { useContext } = React;
   const ctx = () => useContext(window.I18N);
 
   function Trust() {
@@ -45,42 +45,25 @@
 
   function Pricing() {
     const { L } = ctx(); const P = L.pricing;
-    const [annual, setAnnual] = useState(true);
     return h("section", { id: "pricing", className: "section section-alt" },
       h("div", { className: "section-head" },
         h("span", { className: "kicker" }, P.kicker), h("h2", { className: "section-title" }, P.title),
         h("p", { className: "section-lead" }, P.lead)),
-      h("div", { className: "bill-toggle" },
-        h("button", { className: "bt " + (annual ? "on" : ""), onClick: () => setAnnual(true) }, P.annual),
-        h("button", { className: "bt " + (!annual ? "on" : ""), onClick: () => setAnnual(false) }, P.monthly)),
       h("div", { className: "price-grid" },
         P.tiers.map((t, i) => {
           const best = i === 1;
-          const price = t.price || (annual ? t.priceA : t.priceM);
+          const price = t.price;
           return h("div", { className: "price-card" + (best ? " best" : ""), key: t.name },
             best && h("span", { className: "price-flag" }, P.flag),
             h("div", { className: "price-name" }, t.name),
             h("div", { className: "price-row" },
-              h("span", { className: "price-amt" }, price), !t.price && h("span", { className: "price-per" }, P.perMonth)),
+              h("span", { className: "price-amt" }, price), h("span", { className: "price-per" }, P.vat)),
             h("div", { className: "price-note" }, t.note),
             h("ul", { className: "price-feats" }, t.feats.map((f) => h("li", { key: f }, h("span", { className: "pf-tick" }), f))),
-            h("a", { href: "#download", className: "btn btn-" + (best ? "solid" : "ghost") + " btn-block" }, t.cta));
-        })),
-      h(SuiteCard, { L })
-    );
-  }
-
-  function SuiteCard({ L }) {
-    return h("div", { className: "suite-card" },
-      h("div", { className: "suite-card-l" },
-        h("div", { className: "suite-marks" },
-          h(window.CallMark, { size: 40 }), h(window.ChatMark, { size: 40 }), h(window.ChamMark, { size: 40 })),
-        h("div", null,
-          h("div", { className: "suite-kicker" }, L.suite.cardKicker),
-          h("p", { className: "suite-text" }, L.suite.cardText))),
-      h("div", { className: "suite-card-r" },
-        h("div", { className: "suite-price" }, "€54", h("span", null, L.suite.once)),
-        h("a", { href: "#", className: "btn btn-solid" }, L.suite.cardBtn))
+            i === 0
+              ? h("a", { href: "#download", className: "btn btn-ghost btn-block" }, t.cta)
+              : h("span", { "aria-disabled": "true", className: "btn btn-" + (best ? "solid" : "ghost") + " btn-block" }, t.cta));
+        }))
     );
   }
 

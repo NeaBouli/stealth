@@ -20,7 +20,7 @@ Your SecureCall ID is your identity on the network. It is randomly generated on 
 
 ## Tier Overview
 
-SecureCall is available in three tiers. Your effective tier is the highest of: your build flavor, any active subscription, or any active activation code.
+SecureCall has three tiers. Pro/Premium features require a verified licence for the installation edition; installing a Pro or Premium APK alone does not unlock them. Buy once, use forever. Final one-time prices are Pro €15 incl. VAT and Premium €25 incl. VAT. No subscriptions or recurring charges. Sales are not open yet and will remain closed until the VLABS shop goes live and matching product and finance readiness are approved.
 
 | Feature | Free | Pro | Premium |
 |---|---|---|---|

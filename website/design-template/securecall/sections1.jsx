@@ -78,8 +78,7 @@
         h("h2", { className: "section-title" }, L.platform.title),
         h("p", { className: "section-lead" }, L.platform.lead)),
       h("div", { className: "product-grid" },
-        window.PRODUCTS.map((p) => h(ProductCard, { key: p.key, p, L }))),
-      h(SuiteTeaser, { L })
+        window.PRODUCTS.map((p) => h(ProductCard, { key: p.key, p, L })))
     );
   }
 
@@ -94,17 +93,6 @@
       h("ul", { className: "pc-points" },
         t.points.map((pt) => h("li", { key: pt }, h("span", { className: "pc-bullet" }), pt))),
       h("span", { className: "pc-more" }, L.platform.more, h("span", { className: "pc-arrow" }, "→"))
-    );
-  }
-
-  function SuiteTeaser({ L }) {
-    return h("div", { className: "suite-teaser" },
-      h("div", { className: "suite-marks" },
-        h(window.CallMark, { size: 36 }), h(window.ChatMark, { size: 36 }), h(window.ChamMark, { size: 36 })),
-      h("div", { className: "suite-body" },
-        h("div", { className: "suite-kicker" }, L.suite.kicker),
-        h("p", { className: "suite-text" }, L.suite.teaserA, h("strong", null, L.suite.teaserStrong), L.suite.teaserB)),
-      h("a", { href: "#pricing", className: "btn btn-solid" }, L.suite.btn)
     );
   }
 
