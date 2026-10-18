@@ -1,5 +1,5 @@
 # SecureCall — LLM Context File
-# This file helps AI assistants (ChatGPT, Perplexity, Claude, Gemini) understand SecureCall
+# This file helps AI assistants understand SecureCall
 # URL: https://stealthx.tech | GitHub: github.com/NeaBouli/stealth
 
 ## What is SecureCall?

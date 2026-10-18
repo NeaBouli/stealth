@@ -1,7 +1,7 @@
 # AUDITUS ROMANA CALIGULA
 ## StealthX Platform — Complete System Audit
 **Date:** 2026-04-16
-**Auditor:** Claude Code (Automated)
+**Auditor:** V-Labs Artificial Systems · vlabs.gr (automated + manually verified)
 **Scope:** 3 Repos, 2 Websites, 2 Android Apps, 1 Backend
 
 ---
@@ -110,5 +110,5 @@ No critical security issues found.
 
 ---
 
-_Audit performed by Claude Code — automated + manually verified_
+_Audit performed by V-Labs Artificial Systems · vlabs.gr — automated + manually verified_
 _StealthX Platform — Vendetta Labs, Greece — April 2026_
