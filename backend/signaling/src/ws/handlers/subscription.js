@@ -1,5 +1,8 @@
 "use strict";
 
+const { networkKey } = require("../../utils/network_key");
+const { PRODUCTS } = require("../../payments/vlabs_fulfillment");
+
 module.exports = function subscriptionHandlers(ctx) {
   const {
     activationCodes, fcmTokens, giftCodes,
@@ -17,15 +20,17 @@ module.exports = function subscriptionHandlers(ctx) {
   const failedActivations = new Map();
   function activationKeys(connId) {
     const keys = [`conn:${connId}`];
-    const ip = ctx.clients?.get?.(connId)?.ip;
-    if (typeof ip === "string" && ip) keys.push(`ip:${ip}`);
+    const network = networkKey(ctx.clients?.get?.(connId)?.ip);
+    if (network) keys.push(`ip:${network}`);
     const clientId = getClientId(connId);
     if (clientId) keys.push(`client:${clientId}`);
     return keys;
   }
   function pruneFailedActivations(now) {
+    // Entries remain in window-start order, so the first live entry ends pruning.
     for (const [key, entry] of failedActivations) {
-      if (now - entry.windowStart >= failedActivationWindowMs) failedActivations.delete(key);
+      if (now - entry.windowStart < failedActivationWindowMs) break;
+      failedActivations.delete(key);
     }
   }
   function activationLimited(connId) {
@@ -38,7 +43,13 @@ module.exports = function subscriptionHandlers(ctx) {
     for (const key of activationKeys(connId)) {
       const entry = failedActivations.get(key);
       if (entry) entry.count++;
-      else if (failedActivations.size < maxTrackedActivationKeys) failedActivations.set(key, { windowStart: now, count: 1 });
+      else {
+        // Map insertion order follows window start; keep tracking new keys at capacity.
+        if (failedActivations.size >= maxTrackedActivationKeys) {
+          failedActivations.delete(failedActivations.keys().next().value);
+        }
+        failedActivations.set(key, { windowStart: now, count: 1 });
+      }
     }
   }
 
@@ -258,7 +269,7 @@ module.exports = function subscriptionHandlers(ctx) {
       }
 
       if (activationLimited(connId)) {
-        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "rate_limited" }));
+        return respond({ success: false, error: "rate_limited" });
       }
 
       if (BLOCKED_CODES.includes(code)) {
@@ -297,6 +308,19 @@ module.exports = function subscriptionHandlers(ctx) {
           success: false,
           error: "entitlement_revoked",
         });
+      }
+
+      // New clients declare their verifier contract before any signing or device binding.
+      // Omitted fields preserve activation behavior for older clients.
+      if (msg.edition !== undefined && msg.edition !== String(entry.tier).toLowerCase()) {
+        return respond({ success: false, error: "edition_mismatch" });
+      }
+      if (msg.release !== undefined) {
+        const releaseId = entry.releaseId
+          || Object.values(PRODUCTS).find(product => product.productKey === entry.productKey)?.releaseId;
+        if (msg.release !== releaseId) {
+          return respond({ success: false, error: "release_mismatch" });
+        }
       }
 
       const devices = Array.isArray(entry.usedBy) ? [...entry.usedBy] : (entry.usedBy ? [entry.usedBy] : []);

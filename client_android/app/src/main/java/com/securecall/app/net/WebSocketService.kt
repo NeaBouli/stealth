@@ -738,6 +738,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             put("type", "ACTIVATE_CODE")
             put("requestId", request.id)
             put("code", code.trim().uppercase())
+            put("edition", com.securecall.app.BuildConfig.FLAVOR)
+            put("release", com.securecall.app.BuildConfig.ENTITLEMENT_RELEASE_ID)
         }.toString()
         val sent = sendActivationMessage(json)
         if (!sent) {

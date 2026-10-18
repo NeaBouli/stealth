@@ -1,7 +1,9 @@
 package com.securecall.app.net
 
 import com.securecall.app.BuildConfig
+import com.securecall.app.R
 import com.securecall.app.billing.ActivationRequestSlot
+import com.securecall.app.ui.activationErrorMessageResource
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -69,7 +71,18 @@ class WebSocketServiceActivationGateTest {
         messages.forEach {
             assertEquals("ACTIVATE_CODE", it.getString("type"))
             assertEquals("DIRECT-PRO-TEST", it.getString("code"))
+            assertEquals(BuildConfig.FLAVOR, it.getString("edition"))
+            assertEquals(BuildConfig.ENTITLEMENT_RELEASE_ID, it.getString("release"))
         }
         assertNotEquals(messages[0].getString("requestId"), messages[1].getString("requestId"))
+    }
+
+    @Test
+    fun activationPreflightAndRateLimitErrorsHaveUserMessages() {
+        assertEquals(R.string.activation_error_edition_mismatch, activationErrorMessageResource("edition_mismatch"))
+        assertEquals(R.string.activation_error_release_mismatch, activationErrorMessageResource("release_mismatch"))
+        assertEquals(R.string.activation_error_rate_limited, activationErrorMessageResource("rate_limited"))
+        assertEquals(R.string.activation_error_connection, activationErrorMessageResource("timeout"))
+        assertNull(activationErrorMessageResource("unknown_error"))
     }
 }
