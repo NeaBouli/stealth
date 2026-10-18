@@ -666,7 +666,14 @@ console.log("\n[Suite] ACTIVATE_CODE requestId correlation");
 // ==========================================
 console.log("\n[Suite] ACTIVATE_CODE edition and release preflight");
 {
+  const crypto = require("crypto");
   const { PRODUCTS } = require("../payments/vlabs_fulfillment");
+  const { issueEntitlementToken, verifyEntitlementToken } = require("../payments/entitlement_tokens");
+  const keyNames = ["ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM", "ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM_BASE64"];
+  const previousKeys = keyNames.map(name => process.env[name]);
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM = privateKey.export({ type: "pkcs8", format: "pem" });
+  delete process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM_BASE64;
   const requestId = "12345678-1234-1234-1234-123456789abc";
   for (const tier of ["pro", "premium"]) {
     const contract = PRODUCTS[`stealthx-securecall-${tier}-lifetime`];
@@ -675,13 +682,21 @@ console.log("\n[Suite] ACTIVATE_CODE edition and release preflight");
       { label: "wrong edition", fields: { edition: otherEdition }, error: "edition_mismatch" },
       { label: "Free edition", fields: { edition: "free" }, error: "edition_mismatch" },
       { label: "wrong release", fields: { edition: tier, release: "wrong-release" }, error: "release_mismatch" },
-      { label: "catalog fallback rejects wrong release", fields: { release: "wrong-release" }, catalogFallback: true, error: "release_mismatch" },
+      { label: "missing release with catalog/offer", fields: { edition: tier, release: contract.releaseId }, omit: ["releaseId"], error: "code_unsupported" },
+      { label: "missing catalog", fields: { edition: tier, release: contract.releaseId }, omit: ["catalogVersion"], error: "code_unsupported" },
+      { label: "missing offer", fields: { edition: tier, release: contract.releaseId }, omit: ["offerVersion"], error: "code_unsupported" },
+      { label: "missing product", fields: { edition: tier, release: contract.releaseId }, omit: ["productKey"], error: "code_unsupported" },
+      { label: "no v2 tuple", fields: { edition: tier, release: contract.releaseId }, omit: ["releaseId", "catalogVersion", "offerVersion"], error: "code_unsupported" },
+      { label: "stale catalog", fields: { edition: tier, release: contract.releaseId }, contract: { catalogVersion: "stale-catalog" }, error: "code_unsupported" },
+      { label: "stale offer", fields: { edition: tier, release: contract.releaseId }, contract: { offerVersion: "stale-offer" }, error: "code_unsupported" },
       { label: "matching contract", fields: { edition: tier, release: contract.releaseId } },
-      { label: "matching catalog fallback", fields: { edition: tier, release: contract.releaseId }, catalogFallback: true },
       { label: "stored release takes precedence", fields: { edition: tier, release: contract.releaseId }, releaseId: "older-release", error: "release_mismatch" },
-      { label: "legacy missing fields", fields: {}, releaseId: "older-release" },
-      { label: "edition only", fields: { edition: tier } },
+      { label: "legacy missing fields", fields: {}, omit: ["releaseId", "catalogVersion", "offerVersion"], legacy: true },
+      { label: "edition only", fields: { edition: tier }, error: "release_mismatch" },
+      { label: "edition only without tuple", fields: { edition: tier }, omit: ["releaseId", "catalogVersion", "offerVersion"], error: "code_unsupported" },
       { label: "release only", fields: { release: contract.releaseId } },
+      { label: "bound device matching contract", fields: { edition: tier, release: contract.releaseId }, bound: true },
+      { label: "bound device missing release", fields: { edition: tier, release: contract.releaseId }, omit: ["releaseId"], bound: true, error: "code_unsupported" },
       { label: "bound device wrong edition", fields: { edition: otherEdition }, bound: true, error: "edition_mismatch" },
       { label: "bound device wrong release", fields: { release: "wrong-release" }, bound: true, error: "release_mismatch" },
     ];
@@ -691,7 +706,7 @@ console.log("\n[Suite] ACTIVATE_CODE edition and release preflight");
       let signatures = 0;
       const ctx = buildCtx({
         saveActivationCodes: () => { saves++; return true; },
-        issueEntitlementToken: () => { signatures++; return "signed-token"; },
+        issueEntitlementToken: claims => { signatures++; return issueEntitlementToken(claims); },
       });
       const ws = mockWs();
       const connId = "conn-preflight";
@@ -702,11 +717,13 @@ console.log("\n[Suite] ACTIVATE_CODE edition and release preflight");
         productKey: contract.productKey,
         catalogVersion: contract.catalogVersion,
         offerVersion: contract.offerVersion,
-        ...(test.catalogFallback ? {} : { releaseId: test.releaseId || contract.releaseId }),
+        releaseId: test.releaseId || contract.releaseId,
+        ...test.contract,
         maxUses: 2,
         usedBy: test.bound ? ["preflight-client"] : [],
         currentUses: test.bound ? 1 : 0,
       };
+      for (const field of test.omit || []) delete entry[field];
       ctx.activationCodes.push(entry);
       const before = JSON.stringify(ctx.activationCodes);
       ctx.handlers.ACTIVATE_CODE(ws, connId, { code: entry.code, requestId, ...test.fields });
@@ -718,11 +735,59 @@ console.log("\n[Suite] ACTIVATE_CODE edition and release preflight");
         assert(JSON.stringify(ctx.activationCodes) === before && saves === 0, `${label} leaves slots and persistence unchanged`);
         assert(signatures === 0, `${label} rejects before signing`);
       } else {
-        assert(result.success === true && result.entitlementToken === "signed-token", `${label} activates normally`);
+        assert(result.success === true && typeof result.entitlementToken === "string", `${label} returns a signed token`);
+        const claims = verifyEntitlementToken(result.entitlementToken, { expectedSubject: "preflight-client" });
+        assert(claims.v === (test.legacy ? "1" : "2") && claims.product === contract.productKey
+          && claims.tier === tier.toUpperCase(), `${label} verifies the token version, product and tier`);
+        if (!test.legacy) {
+          assert(claims.release === entry.releaseId && claims.catalog === entry.catalogVersion
+            && claims.offer === entry.offerVersion, `${label} signs the stored release/catalog/offer tuple`);
+        }
         assert(entry.usedBy.length === 1 && entry.usedBy[0] === "preflight-client"
-          && entry.currentUses === 1 && saves === 1 && signatures === 1, `${label} consumes and persists exactly one slot`);
+          && entry.currentUses === 1 && saves === (test.bound ? 0 : 1) && signatures === 1,
+        `${label} ${test.bound ? "reuses the bound slot without persistence" : "consumes and persists exactly one slot"}`);
+        if (test.bound) assert(JSON.stringify(ctx.activationCodes) === before, `${label} leaves the binding unchanged`);
       }
     }
+  }
+  keyNames.forEach((name, index) => {
+    if (previousKeys[index] === undefined) delete process.env[name];
+    else process.env[name] = previousKeys[index];
+  });
+}
+
+// Direct clients require signed v2 entitlements; legacy gift redemption stays compatible.
+console.log("\n[Suite] ACTIVATE_CODE gift compatibility");
+for (const { fields, error } of [
+  { fields: { edition: "premium" }, error: "code_unsupported" },
+  { fields: { edition: "pro", release: "direct-release" }, error: "code_unsupported" },
+  { fields: { release: "direct-release" }, error: "code_unsupported" },
+  { fields: {} },
+  { fields: { edition: "free" } },
+]) {
+  clearState();
+  let saves = 0;
+  const ctx = buildCtx({
+    saveGiftCodes: () => { saves++; return true; },
+    issueEntitlementToken: require("../payments/entitlement_tokens").issueEntitlementToken,
+  });
+  const ws = mockWs();
+  const connId = "conn-gift-contract";
+  ctx.clients.set(connId, { ws, clientId: "gift-client", ip: "192.0.2.9" });
+  const gift = { tier: "premium", used: false, expires: new Date(Date.now() + 86400000).toISOString() };
+  ctx.giftCodes.set("GIFT-CONTRACT-TEST", gift);
+  const before = JSON.stringify(gift);
+  const requestId = "12345678-1234-1234-1234-123456789abc";
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "GIFT-CONTRACT-TEST", requestId, ...fields });
+  const result = lastMsg(ws);
+  assert(result.requestId === requestId, "gift redemption echoes requestId");
+  if (error) {
+    assert(result.success === false && result.error === error && !result.entitlementToken, "direct gift redemption is unsupported");
+    assert(JSON.stringify(gift) === before && saves === 0, "unsupported gift remains unused and is not persisted");
+  } else {
+    assert(result.success === true && result.tier === "premium" && !result.entitlementToken,
+      "legacy and Free gift redemption keep the unsigned response");
+    assert(gift.used === true && gift.usedBy === "gift-client" && saves === 1, "legacy gift redemption is persisted");
   }
 }
 

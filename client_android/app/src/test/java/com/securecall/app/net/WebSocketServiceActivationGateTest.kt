@@ -81,6 +81,7 @@ class WebSocketServiceActivationGateTest {
     fun activationPreflightAndRateLimitErrorsHaveUserMessages() {
         assertEquals(R.string.activation_error_edition_mismatch, activationErrorMessageResource("edition_mismatch"))
         assertEquals(R.string.activation_error_release_mismatch, activationErrorMessageResource("release_mismatch"))
+        assertEquals(R.string.activation_error_code_unsupported, activationErrorMessageResource("code_unsupported"))
         assertEquals(R.string.activation_error_rate_limited, activationErrorMessageResource("rate_limited"))
         assertEquals(R.string.activation_error_connection, activationErrorMessageResource("timeout"))
         assertNull(activationErrorMessageResource("unknown_error"))

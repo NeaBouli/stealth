@@ -1,7 +1,7 @@
 "use strict";
 
 const { networkKey } = require("../../utils/network_key");
-const { PRODUCTS } = require("../../payments/vlabs_fulfillment");
+const { validateV2Contract } = require("../../payments/entitlement_tokens");
 
 module.exports = function subscriptionHandlers(ctx) {
   const {
@@ -278,9 +278,13 @@ module.exports = function subscriptionHandlers(ctx) {
       }
 
       const entry = activationCodes.find(c => c.code === code);
+      const declaresContract = msg.edition !== undefined || msg.release !== undefined;
 
       if (!entry && giftCodes.has(code)) {
         const gift = giftCodes.get(code);
+        if (declaresContract && msg.edition !== "free") {
+          return respond({ success: false, error: "code_unsupported" });
+        }
         if (gift.used) return respond({ success: false, error: "already_used" });
         if (new Date(gift.expires) < new Date()) return respond({ success: false, error: "expired" });
         const previousUsed = gift.used;
@@ -315,11 +319,15 @@ module.exports = function subscriptionHandlers(ctx) {
       if (msg.edition !== undefined && msg.edition !== String(entry.tier).toLowerCase()) {
         return respond({ success: false, error: "edition_mismatch" });
       }
-      if (msg.release !== undefined) {
-        const releaseId = entry.releaseId
-          || Object.values(PRODUCTS).find(product => product.productKey === entry.productKey)?.releaseId;
-        if (msg.release !== releaseId) {
+      if (declaresContract) {
+        if (entry.releaseId && entry.releaseId !== msg.release) {
           return respond({ success: false, error: "release_mismatch" });
+        }
+        try {
+          // Validate the stored tuple with the signer's exact v2 rules; never infer missing claims.
+          validateV2Contract({ ...entry, normalizedTier: String(entry.tier).toUpperCase() });
+        } catch {
+          return respond({ success: false, error: "code_unsupported" });
         }
       }
 

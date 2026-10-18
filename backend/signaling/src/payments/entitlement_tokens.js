@@ -163,6 +163,7 @@ function verifyEntitlementToken(token, { expectedSubject, nowSeconds = Math.floo
 
 module.exports = {
   issueEntitlementToken,
+  validateV2Contract,
   verifyEntitlementToken,
   audienceForProduct,
   orderHash,

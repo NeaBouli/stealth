@@ -23,6 +23,7 @@ internal fun activationErrorMessageResource(error: String): Int? = when (error) 
     "timeout", "not_connected" -> R.string.activation_error_connection
     "edition_mismatch" -> R.string.activation_error_edition_mismatch
     "release_mismatch" -> R.string.activation_error_release_mismatch
+    "code_unsupported" -> R.string.activation_error_code_unsupported
     "rate_limited" -> R.string.activation_error_rate_limited
     else -> null
 }
