@@ -1,25 +1,52 @@
 const assert = require("assert");
+const fs = require("fs");
+const vm = require("vm");
+
+// Isolate module-load configuration from the host's deployment overrides.
+function loadEmailHandler(env = {}) {
+  const context = { module: { exports: {} }, process: { env }, require };
+  const source = fs.readFileSync(require.resolve("../payments/email_handler"), "utf8");
+  vm.runInNewContext(source, context);
+  return context.module.exports;
+}
+
 const {
   generateEmailHTML,
   resolveDownloadLinks
-} = require("../payments/email_handler");
+} = loadEmailHandler();
 
 const premiumLinks = resolveDownloadLinks("premium");
-assert.ok(premiumLinks.primary.endsWith("/app-premium-arm64-v8a-release.apk"), "premium link should point to uploaded Premium ARM64 APK");
-assert.ok(premiumLinks.armeabi.endsWith("/app-premium-armeabi-v7a-release.apk"), "premium alternate link should point to uploaded Premium ARMv7 APK");
+assert.strictEqual(premiumLinks.primary, "https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Premium-LATEST.apk");
+assert.strictEqual(premiumLinks.armeabi, premiumLinks.primary, "Premium ARMv7 should use the same universal APK");
 
 const premiumHtml = generateEmailHTML("PREM-ABCD-EFGH-IJKL", "premium");
 assert.ok(premiumHtml.includes("Download Premium APK"), "premium email should show direct APK CTA");
 assert.ok(premiumHtml.includes(premiumLinks.primary), "premium email should include direct Premium APK link");
-assert.ok(!premiumHtml.includes("github.com/NeaBouli/stealth/releases/latest"), "email must not fall back to generic latest release link");
+assert.ok(!premiumHtml.includes("/releases/download/v1.0.35/"), "email must not link the retired release");
 
 const proLinks = resolveDownloadLinks("pro");
-assert.ok(proLinks.primary.endsWith("/app-pro-arm64-v8a-release.apk"), "pro link should point to uploaded Pro ARM64 APK");
-assert.ok(proLinks.armeabi.endsWith("/app-pro-armeabi-v7a-release.apk"), "pro alternate link should point to uploaded Pro ARMv7 APK");
+assert.strictEqual(proLinks.primary, "https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Pro-LATEST.apk");
+assert.strictEqual(proLinks.armeabi, proLinks.primary, "Pro ARMv7 should use the same universal APK");
 
 const proHtml = generateEmailHTML("PRO-ABCD-EFGH-IJKL", "pro");
 assert.ok(proHtml.includes("Download Pro APK"), "pro email should show direct APK CTA");
 assert.ok(proHtml.includes(proLinks.primary), "pro email should include direct Pro APK link");
+
+const overrides = {
+  SECURECALL_PRO_APK_URL: "https://downloads.example.invalid/pro.apk",
+  SECURECALL_PRO_APK_ARMEABI_URL: "https://downloads.example.invalid/pro-armv7.apk",
+  SECURECALL_PREMIUM_APK_URL: "https://downloads.example.invalid/premium.apk",
+  SECURECALL_PREMIUM_APK_ARMEABI_URL: "https://downloads.example.invalid/premium-armv7.apk"
+};
+const configured = loadEmailHandler(overrides);
+assert.strictEqual(configured.resolveDownloadLinks("pro").primary, overrides.SECURECALL_PRO_APK_URL);
+assert.strictEqual(configured.resolveDownloadLinks("pro").armeabi, overrides.SECURECALL_PRO_APK_ARMEABI_URL);
+assert.strictEqual(configured.resolveDownloadLinks("premium").primary, overrides.SECURECALL_PREMIUM_APK_URL);
+assert.strictEqual(configured.resolveDownloadLinks("premium").armeabi, overrides.SECURECALL_PREMIUM_APK_ARMEABI_URL);
+for (const tier of ["pro", "premium"]) {
+  assert.ok(configured.generateEmailHTML("TEST-CODE", tier).includes(configured.resolveDownloadLinks(tier).primary),
+    `${tier} email should use the configured primary APK link`);
+}
 
 const secureChatHtml = generateEmailHTML("ELIT-ABCD-EFGH-IJKL", "elite", {
   productName: "SecureChat",

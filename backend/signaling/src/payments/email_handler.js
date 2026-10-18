@@ -12,15 +12,15 @@ const DOWNLOAD_PAGE_URL = process.env.SECURECALL_DOWNLOAD_PAGE_URL || "https://s
 const APK_DOWNLOADS = {
   pro: {
     primary: process.env.SECURECALL_PRO_APK_URL ||
-      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-pro-arm64-v8a-release.apk",
+      "https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Pro-LATEST.apk",
     armeabi: process.env.SECURECALL_PRO_APK_ARMEABI_URL ||
-      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-pro-armeabi-v7a-release.apk"
+      "https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Pro-LATEST.apk"
   },
   premium: {
     primary: process.env.SECURECALL_PREMIUM_APK_URL ||
-      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-premium-arm64-v8a-release.apk",
+      "https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Premium-LATEST.apk",
     armeabi: process.env.SECURECALL_PREMIUM_APK_ARMEABI_URL ||
-      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-premium-armeabi-v7a-release.apk"
+      "https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Premium-LATEST.apk"
   }
 };
 
