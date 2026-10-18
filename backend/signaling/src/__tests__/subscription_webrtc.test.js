@@ -662,6 +662,136 @@ console.log("\n[Suite] ACTIVATE_CODE requestId correlation");
 }
 
 // ==========================================
+// Suite: ACTIVATE_CODE edition and release preflight
+// ==========================================
+console.log("\n[Suite] ACTIVATE_CODE edition and release preflight");
+{
+  const crypto = require("crypto");
+  const { PRODUCTS } = require("../payments/vlabs_fulfillment");
+  const { issueEntitlementToken, verifyEntitlementToken } = require("../payments/entitlement_tokens");
+  const keyNames = ["ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM", "ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM_BASE64"];
+  const previousKeys = keyNames.map(name => process.env[name]);
+  const { privateKey } = crypto.generateKeyPairSync("ed25519");
+  process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM = privateKey.export({ type: "pkcs8", format: "pem" });
+  delete process.env.ENTITLEMENT_SIGNING_PRIVATE_KEY_PEM_BASE64;
+  const requestId = "12345678-1234-1234-1234-123456789abc";
+  for (const tier of ["pro", "premium"]) {
+    const contract = PRODUCTS[`stealthx-securecall-${tier}-lifetime`];
+    const otherEdition = tier === "pro" ? "premium" : "pro";
+    const cases = [
+      { label: "wrong edition", fields: { edition: otherEdition }, error: "edition_mismatch" },
+      { label: "Free edition", fields: { edition: "free" }, error: "edition_mismatch" },
+      { label: "wrong release", fields: { edition: tier, release: "wrong-release" }, error: "release_mismatch" },
+      { label: "missing release with catalog/offer", fields: { edition: tier, release: contract.releaseId }, omit: ["releaseId"], error: "code_unsupported" },
+      { label: "missing catalog", fields: { edition: tier, release: contract.releaseId }, omit: ["catalogVersion"], error: "code_unsupported" },
+      { label: "missing offer", fields: { edition: tier, release: contract.releaseId }, omit: ["offerVersion"], error: "code_unsupported" },
+      { label: "missing product", fields: { edition: tier, release: contract.releaseId }, omit: ["productKey"], error: "code_unsupported" },
+      { label: "no v2 tuple", fields: { edition: tier, release: contract.releaseId }, omit: ["releaseId", "catalogVersion", "offerVersion"], error: "code_unsupported" },
+      { label: "stale catalog", fields: { edition: tier, release: contract.releaseId }, contract: { catalogVersion: "stale-catalog" }, error: "code_unsupported" },
+      { label: "stale offer", fields: { edition: tier, release: contract.releaseId }, contract: { offerVersion: "stale-offer" }, error: "code_unsupported" },
+      { label: "matching contract", fields: { edition: tier, release: contract.releaseId } },
+      { label: "stored release takes precedence", fields: { edition: tier, release: contract.releaseId }, releaseId: "older-release", error: "release_mismatch" },
+      { label: "legacy missing fields", fields: {}, omit: ["releaseId", "catalogVersion", "offerVersion"], legacy: true },
+      { label: "edition only", fields: { edition: tier }, error: "release_mismatch" },
+      { label: "edition only without tuple", fields: { edition: tier }, omit: ["releaseId", "catalogVersion", "offerVersion"], error: "code_unsupported" },
+      { label: "release only", fields: { release: contract.releaseId } },
+      { label: "bound device matching contract", fields: { edition: tier, release: contract.releaseId }, bound: true },
+      { label: "bound device missing release", fields: { edition: tier, release: contract.releaseId }, omit: ["releaseId"], bound: true, error: "code_unsupported" },
+      { label: "bound device wrong edition", fields: { edition: otherEdition }, bound: true, error: "edition_mismatch" },
+      { label: "bound device wrong release", fields: { release: "wrong-release" }, bound: true, error: "release_mismatch" },
+    ];
+    for (const test of cases) {
+      clearState();
+      let saves = 0;
+      let signatures = 0;
+      const ctx = buildCtx({
+        saveActivationCodes: () => { saves++; return true; },
+        issueEntitlementToken: claims => { signatures++; return issueEntitlementToken(claims); },
+      });
+      const ws = mockWs();
+      const connId = "conn-preflight";
+      ctx.clients.set(connId, { ws, clientId: "preflight-client", ip: "192.0.2.8" });
+      const entry = {
+        code: "DIRECT-PREFLIGHT-TEST",
+        tier: tier.toUpperCase(),
+        productKey: contract.productKey,
+        catalogVersion: contract.catalogVersion,
+        offerVersion: contract.offerVersion,
+        releaseId: test.releaseId || contract.releaseId,
+        ...test.contract,
+        maxUses: 2,
+        usedBy: test.bound ? ["preflight-client"] : [],
+        currentUses: test.bound ? 1 : 0,
+      };
+      for (const field of test.omit || []) delete entry[field];
+      ctx.activationCodes.push(entry);
+      const before = JSON.stringify(ctx.activationCodes);
+      ctx.handlers.ACTIVATE_CODE(ws, connId, { code: entry.code, requestId, ...test.fields });
+      const result = lastMsg(ws);
+      const label = `${tier}: ${test.label}`;
+      assert(result.requestId === requestId, `${label} echoes requestId`);
+      if (test.error) {
+        assert(result.success === false && result.error === test.error, `${label} rejects with ${test.error}`);
+        assert(JSON.stringify(ctx.activationCodes) === before && saves === 0, `${label} leaves slots and persistence unchanged`);
+        assert(signatures === 0, `${label} rejects before signing`);
+      } else {
+        assert(result.success === true && typeof result.entitlementToken === "string", `${label} returns a signed token`);
+        const claims = verifyEntitlementToken(result.entitlementToken, { expectedSubject: "preflight-client" });
+        assert(claims.v === (test.legacy ? "1" : "2") && claims.product === contract.productKey
+          && claims.tier === tier.toUpperCase(), `${label} verifies the token version, product and tier`);
+        if (!test.legacy) {
+          assert(claims.release === entry.releaseId && claims.catalog === entry.catalogVersion
+            && claims.offer === entry.offerVersion, `${label} signs the stored release/catalog/offer tuple`);
+        }
+        assert(entry.usedBy.length === 1 && entry.usedBy[0] === "preflight-client"
+          && entry.currentUses === 1 && saves === (test.bound ? 0 : 1) && signatures === 1,
+        `${label} ${test.bound ? "reuses the bound slot without persistence" : "consumes and persists exactly one slot"}`);
+        if (test.bound) assert(JSON.stringify(ctx.activationCodes) === before, `${label} leaves the binding unchanged`);
+      }
+    }
+  }
+  keyNames.forEach((name, index) => {
+    if (previousKeys[index] === undefined) delete process.env[name];
+    else process.env[name] = previousKeys[index];
+  });
+}
+
+// Direct clients require signed v2 entitlements; legacy gift redemption stays compatible.
+console.log("\n[Suite] ACTIVATE_CODE gift compatibility");
+for (const { fields, error } of [
+  { fields: { edition: "premium" }, error: "code_unsupported" },
+  { fields: { edition: "pro", release: "direct-release" }, error: "code_unsupported" },
+  { fields: { release: "direct-release" }, error: "code_unsupported" },
+  { fields: {} },
+  { fields: { edition: "free" } },
+]) {
+  clearState();
+  let saves = 0;
+  const ctx = buildCtx({
+    saveGiftCodes: () => { saves++; return true; },
+    issueEntitlementToken: require("../payments/entitlement_tokens").issueEntitlementToken,
+  });
+  const ws = mockWs();
+  const connId = "conn-gift-contract";
+  ctx.clients.set(connId, { ws, clientId: "gift-client", ip: "192.0.2.9" });
+  const gift = { tier: "premium", used: false, expires: new Date(Date.now() + 86400000).toISOString() };
+  ctx.giftCodes.set("GIFT-CONTRACT-TEST", gift);
+  const before = JSON.stringify(gift);
+  const requestId = "12345678-1234-1234-1234-123456789abc";
+  ctx.handlers.ACTIVATE_CODE(ws, connId, { code: "GIFT-CONTRACT-TEST", requestId, ...fields });
+  const result = lastMsg(ws);
+  assert(result.requestId === requestId, "gift redemption echoes requestId");
+  if (error) {
+    assert(result.success === false && result.error === error && !result.entitlementToken, "direct gift redemption is unsupported");
+    assert(JSON.stringify(gift) === before && saves === 0, "unsupported gift remains unused and is not persisted");
+  } else {
+    assert(result.success === true && result.tier === "premium" && !result.entitlementToken,
+      "legacy and Free gift redemption keep the unsigned response");
+    assert(gift.used === true && gift.usedBy === "gift-client" && saves === 1, "legacy gift redemption is persisted");
+  }
+}
+
+// ==========================================
 // Suite: VERIFY_IFR_LOCK permanently removed
 // ==========================================
 console.log("\n[Suite] VERIFY_IFR_LOCK removed");
@@ -865,8 +995,10 @@ console.log("\n[Suite] STX-05 activation guess budget");
 
   for (let i = 0; i < 10; i++) ctx.handlers.ACTIVATE_CODE(ws, "conn-guess", { code: `GIFT-WRONG-${i}` });
   assert(lastMsg(ws).error === "invalid", "first 10 unknown codes → invalid");
-  ctx.handlers.ACTIVATE_CODE(ws, "conn-guess", { code: "GIFT-REAL-0001" });
+  const requestId = "12345678-1234-1234-1234-123456789abc";
+  ctx.handlers.ACTIVATE_CODE(ws, "conn-guess", { code: "GIFT-REAL-0001", requestId });
   assert(lastMsg(ws).error === "rate_limited", "after 10 failures even a valid code is not looked up");
+  assert(lastMsg(ws).requestId === requestId, "rate_limited echoes requestId for Android callback correlation");
   assert(ctx.giftCodes.get("GIFT-REAL-0001").used === false, "limited attempt does not consume the code");
 
   // A new connection from the same address is still limited.
@@ -889,6 +1021,68 @@ console.log("\n[Suite] STX-05 activation guess budget");
   ctx.clientIds.set("retry", "conn-retry");
   for (let i = 0; i < 12; i++) ctx.handlers.ACTIVATE_CODE(ws4, "conn-retry", { code: "GIFT-REAL-0001" });
   assert(lastMsg(ws4).error === "already_used", "repeated known-code attempts are not rate limited");
+}
+
+// ==========================================
+// Suite: activation network budgets and bounded tracking
+// ==========================================
+console.log("\n[Suite] activation network budgets and bounded tracking");
+{
+  clearState();
+  const ctx = buildCtx();
+  const ws = mockWs();
+  ctx.clients.set("ipv6-a", { ws, clientId: "ipv6-a", ip: "2001:db8:0:1:aaaa::1" });
+  for (let i = 0; i < 10; i++) ctx.handlers.ACTIVATE_CODE(ws, "ipv6-a", { code: "UNKNOWN-CODE" });
+  ctx.clients.set("ipv6-b", { ws, clientId: "ipv6-b", ip: "2001:0db8:0000:0001:ffff:ffff:ffff:ffff" });
+  ctx.handlers.ACTIVATE_CODE(ws, "ipv6-b", { code: "UNKNOWN-CODE" });
+  assert(lastMsg(ws).error === "rate_limited", "IPv6 address rotation within a /64 retains the budget");
+  ctx.clients.set("ipv6-c", { ws, clientId: "ipv6-c", ip: "2001:db8:0:2::1" });
+  ctx.handlers.ACTIVATE_CODE(ws, "ipv6-c", { code: "UNKNOWN-CODE" });
+  assert(lastMsg(ws).error === "invalid", "another IPv6 /64 has its own budget");
+
+  ctx.clients.set("ipv4", { ws, clientId: "ipv4", ip: "203.0.113.42" });
+  for (let i = 0; i < 10; i++) ctx.handlers.ACTIVATE_CODE(ws, "ipv4", { code: "UNKNOWN-CODE" });
+  ctx.clients.set("ipv4-mapped", { ws, clientId: "ipv4-mapped", ip: "::ffff:203.0.113.42" });
+  ctx.handlers.ACTIVATE_CODE(ws, "ipv4-mapped", { code: "UNKNOWN-CODE" });
+  assert(lastMsg(ws).error === "rate_limited", "IPv4-mapped IPv6 shares the IPv4 budget");
+
+  const originalNow = Date.now;
+  const nextWindow = originalNow() + 15 * 60 * 1000;
+  try {
+    Date.now = () => nextWindow;
+    ctx.handlers.ACTIVATE_CODE(ws, "ipv6-a", { code: "UNKNOWN-CODE" });
+  } finally {
+    Date.now = originalNow;
+  }
+  assert(lastMsg(ws).error === "invalid", "expired activation budgets are pruned after 15 minutes");
+
+  // Two keys per peer without an IP: fill the real 65,536-key cap without test-only settings.
+  const handlers = require("../ws/handlers/subscription")({
+    activationCodes: [], giftCodes: new Map(), getClientId: connId => connId,
+  });
+  let result;
+  const overflowWs = { send: data => { result = JSON.parse(data); } };
+  const guess = connId => handlers.ACTIVATE_CODE(overflowWs, connId, { code: "UNKNOWN-CODE" });
+  const originalLog = console.log;
+  let newestResult;
+  let retainedResult;
+  let oldestResult;
+  try {
+    console.log = () => {}; // Avoid flooding test output with 32,768 synthetic invalid-code logs.
+    for (let i = 0; i < 10; i++) { guess("oldest"); guess("retained"); }
+    for (let i = 2; i < 32768; i++) guess(`capacity-${i}`);
+    for (let i = 0; i < 11; i++) guess("newest");
+    newestResult = result;
+    guess("retained");
+    retainedResult = result;
+    guess("oldest");
+    oldestResult = result;
+  } finally {
+    console.log = originalLog;
+  }
+  assert(newestResult.error === "rate_limited", "new keys remain rate limited when tracking is full");
+  assert(retainedResult.error === "rate_limited", "overflow preserves other tracked budgets");
+  assert(oldestResult.error === "invalid", "overflow evicts the oldest keys to admit new keys");
 }
 
 // ==========================================

@@ -193,6 +193,10 @@
     <string name="activation_error_invalid">Invalid activation code</string>
     <string name="activation_error_exhausted">This code has been fully redeemed</string>
     <string name="activation_error_connection">Could not connect to server. Try again.</string>
+    <string name="activation_error_edition_mismatch">This code is for a different SecureCall edition. Please install the Pro or Premium app you purchased.</string>
+    <string name="activation_error_release_mismatch">This code is for a different SecureCall release. Please install the app version provided with your purchase.</string>
+    <string name="activation_error_code_unsupported">This code cannot be redeemed in this app version. Please contact support@stealthx.tech.</string>
+    <string name="activation_error_rate_limited">Too many activation attempts. Please try again in 15 minutes.</string>
 
     <!-- Network (eSIM) -->
     <string name="settings_anon_network">Network</string>

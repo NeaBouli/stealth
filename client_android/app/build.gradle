@@ -140,7 +140,7 @@ android {
             buildConfigField "boolean", "NO_FALLBACK_MODE", "false"
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
             buildConfigField "boolean", "BILLING_ENABLED", "false"
-            buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "false"
+            buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "true"
             buildConfigField "String", "PLAY_CATALOG_VERSION", "\"securecall-play-v1\""
         }
 
@@ -169,7 +169,7 @@ android {
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "true"
             buildConfigField "boolean", "TESTER_LICENSE_ENABLED", testerLicensesEnabled
             buildConfigField "boolean", "BILLING_ENABLED", "false"
-            buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "false"
+            buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "true"
             buildConfigField "String", "PLAY_CATALOG_VERSION", "\"securecall-play-v1\""
         }
 
