@@ -99,6 +99,9 @@ Sales remain unavailable until SecureCall records PRODUCT_READY and the private 
 ### Is paid access one-time only?
 No subscriptions, one-time only. There are no recurring charges. Statutory refund rights and the licence terms apply.
 
+### Does my Pro or Premium licence work offline?
+Yes, your licence stays valid for life. While your phone is online, the app renews its licence proof automatically. If the phone has had no internet for more than 30 days, Pro or Premium pauses and the app runs as Free; it comes back automatically as soon as you go online within the next 7 days. After that, simply enter your activation code again. On the same device this does not use up an extra device slot.
+
 ### How do I upgrade?
 Sales are not open yet and will remain closed until the VLABS shop goes live. Future offers will show the exact price, licence scope, activation instructions and terms before purchase.
 
