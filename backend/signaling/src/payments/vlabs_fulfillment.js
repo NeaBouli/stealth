@@ -257,7 +257,7 @@ function authenticateRequest(req, secrets) {
 function validateRequestMode(body, mode) {
   const { externalOrderId, livemode } = body || {};
   const testOrderId = typeof externalOrderId === "string" && externalOrderId.startsWith("cs_test_");
-  if ((mode === "test" && externalOrderId !== undefined && !testOrderId)
+  if ((mode === "test" && !testOrderId)
     || (mode === "live" && testOrderId)
     || (typeof livemode === "boolean" && livemode !== (mode === "live"))) {
     throw httpError(403, "Mode mismatch");
@@ -444,7 +444,14 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
     } catch (error) {
       return res.status(error.status || 400).json({ ok: false, error: error.message });
     }
-    const { externalOrderId, productId, customerEmail } = req.body;
+    // Authentication and contract validation use the original payload. Stored
+    // bindings use isolated TEST references throughout the order lifecycle.
+    const orderBody = {
+      ...req.body,
+      paymentReference: soldCodes.referenceForMode(req.body.paymentReference, mode),
+      paymentEventId: soldCodes.referenceForMode(req.body.paymentEventId, mode),
+    };
+    const { externalOrderId, productId, customerEmail, paymentReference, paymentEventId } = orderBody;
     console.log(`[VLABS-FULFILLMENT mode=${mode}] Fulfill:`, soldCodes.maskStripeId(externalOrderId));
 
     if (inFlightOrders.has(externalOrderId)) {
@@ -459,7 +466,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
         withOrdersLock(lock => {
           assertOrdersLockOwned(lock);
           const orders = loadOrders();
-          assertOrderModes(orders, externalOrderId, req.body.paymentReference, mode);
+          assertOrderModes(orders, externalOrderId, paymentReference, mode);
           let existing = orders[externalOrderId];
           if (existing) {
             if (existing.status === "TOMBSTONED" || existing.status === "REVOKED") {
@@ -468,17 +475,17 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
             if (isLegacyOrder(existing) && existing.productId === productId) {
               if (product.kind === "custom_id") throw httpError(409, "Order contract mismatch");
               if (existing.tier !== product.tier
-                || (existing.paymentReference && existing.paymentReference !== req.body.paymentReference)) {
+                || (existing.paymentReference && existing.paymentReference !== paymentReference)) {
                 throw httpError(409, "Order contract mismatch");
               }
-              existing = { ...bindLegacyOrder(existing, req.body, product), mode };
+              existing = { ...bindLegacyOrder(existing, orderBody, product), mode };
               orders[externalOrderId] = existing;
               saveOrders(orders);
             }
-            if (fulfillmentTupleDrift(existing, req.body)) {
+            if (fulfillmentTupleDrift(existing, orderBody)) {
               throw httpError(409, "Order contract mismatch");
             }
-            if (product.kind === "custom_id" && soldCodes.isReversed(externalOrderId, req.body.paymentReference)) {
+            if (product.kind === "custom_id" && soldCodes.isReversed(externalOrderId, req.body.paymentReference, mode)) {
               throw httpError(409, "Order was revoked before fulfillment");
             }
             if (existing.status === "FULFILLED") {
@@ -494,6 +501,9 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
 
           if (product.kind === "custom_id") {
             const customIds = require("../custom_ids");
+            // Check orphaned sales and reversals before persisting a binding or
+            // reserving an ID. The session ID already separates TEST ownership.
+            const reversed = soldCodes.isReversed(externalOrderId, req.body.paymentReference, mode);
             // Persist intent before reserving. A retry can recover either side of
             // the two-file write without issuing a second reservation.
             order = existing || {
@@ -505,15 +515,15 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
               releaseId: product.releaseId,
               amount: product.amount,
               currency: product.currency,
-              paymentReference: req.body.paymentReference,
-              paymentEventId: req.body.paymentEventId,
+              paymentReference,
+              paymentEventId,
               requestedIdKey: requestedIdKey(req.body, product),
               status: "PENDING_EMAIL",
               createdAt: new Date().toISOString(),
             };
             orders[externalOrderId] = order;
             saveOrders(orders);
-            if (soldCodes.isReversed(externalOrderId, req.body.paymentReference)) {
+            if (reversed) {
               customIds.releaseVlabsReservation(externalOrderId);
               orders[externalOrderId] = {
                 ...order, status: "TOMBSTONED", tombstonedAt: new Date().toISOString(),
@@ -558,8 +568,8 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
                 releaseId: product.releaseId,
                 amount: product.amount,
                 currency: product.currency,
-                paymentReference: req.body.paymentReference,
-                paymentEventId: req.body.paymentEventId,
+                paymentReference,
+                paymentEventId,
                 status: "TOMBSTONED",
                 createdAt: new Date().toISOString(),
                 tombstonedAt: new Date().toISOString(),
@@ -582,8 +592,8 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
             releaseId: product.releaseId,
             amount: product.amount,
             currency: product.currency,
-            paymentReference: req.body.paymentReference,
-            paymentEventId: req.body.paymentEventId,
+            paymentReference,
+            paymentEventId,
             code: recorded.code,
             status: "PENDING_EMAIL",
             createdAt: new Date().toISOString(),
@@ -592,6 +602,9 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           saveOrders(orders);
         }, mode);
       } catch (error) {
+        if (error && error.message === "sale_mode_mismatch") {
+          return res.status(403).json({ ok: false, error: "Mode mismatch" });
+        }
         if (error && error.status) {
           return res.status(error.status).json({ ok: false, error: error.message });
         }
@@ -666,7 +679,12 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
     } catch (error) {
       return res.status(error.status || 400).json({ ok: false, error: error.message });
     }
-    const { externalOrderId, productId, reason, paymentReference, adjustmentEventId } = req.body;
+    const orderBody = {
+      ...req.body,
+      paymentReference: soldCodes.referenceForMode(req.body.paymentReference, mode),
+      adjustmentEventId: soldCodes.referenceForMode(req.body.adjustmentEventId, mode),
+    };
+    const { externalOrderId, productId, reason, paymentReference, adjustmentEventId } = orderBody;
     console.log(`[VLABS-FULFILLMENT mode=${mode}] Revoke:`, soldCodes.maskStripeId(externalOrderId || paymentReference));
     try {
       const outcome = withOrdersLock(lock => {
@@ -687,7 +705,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
             if (candidate.productId !== productId) return false;
             if (candidate.paymentReference && candidate.paymentReference !== paymentReference) return false;
             if (isLegacyOrder(candidate)) return candidate.tier === product.tier;
-            return !revocationTupleDrift(candidate, req.body);
+            return !revocationTupleDrift(candidate, orderBody);
           });
           if (!terminalDuplicate) throw httpError(409, "Revocation contract mismatch");
           return { duplicate: true };
@@ -700,7 +718,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           || (existing.paymentReference && existing.paymentReference !== paymentReference))) {
           throw httpError(409, "Revocation contract mismatch");
         }
-        if (existing && !isLegacyOrder(existing) && revocationTupleDrift(existing, req.body)) {
+        if (existing && !isLegacyOrder(existing) && revocationTupleDrift(existing, orderBody)) {
           throw httpError(409, "Revocation contract mismatch");
         }
         if (existing && (existing.status === "REVOKED" || existing.status === "TOMBSTONED")) {
@@ -710,11 +728,11 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           if (existing.tier !== product.tier) {
             throw httpError(409, "Revocation contract mismatch");
           }
-          existing = { ...bindLegacyOrder(existing, req.body, product), mode };
+          existing = { ...bindLegacyOrder(existing, orderBody, product), mode };
           orders[orderKey] = existing;
           saveOrders(orders);
         }
-        if (existing && revocationTupleDrift(existing, req.body)) {
+        if (existing && revocationTupleDrift(existing, orderBody)) {
           throw httpError(409, "Revocation contract mismatch");
         }
         // The payment-reference scan may have recovered the canonical cs_
@@ -725,9 +743,9 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           || (scannedOrderKey && /^cs_[a-zA-Z0-9_]+$/.test(scannedOrderKey) ? scannedOrderKey : null)
           || null;
         const result = soldCodes.revokeByStripeSession(soldSessionKey, activationCodesRef, {
-          paymentIntent: paymentReference,
+          paymentIntent: req.body.paymentReference,
           productKey: product.productKey,
-          eventId: adjustmentEventId,
+          eventId: req.body.adjustmentEventId,
           reason,
           catalogVersion: product.catalogVersion,
           offerVersion: product.offerVersion,

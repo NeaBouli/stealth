@@ -146,12 +146,18 @@ function writeStoreLocked(lock, codes, reversals) {
   writeJsonAtomic(SOLD_FILE, { codes, reversals });
 }
 
-function hashReference(value) {
-  return crypto.createHash("sha256").update(value).digest("hex");
+// Only verified VLABS TEST traffic uses this namespace. Legacy Stripe callers
+// and LIVE traffic retain their existing references and hashes.
+function referenceForMode(value, mode) {
+  return mode === "test" ? `test:${value}` : value;
 }
 
-// VLABS supplies a verified mode. Check both registries while holding the store
-// lock, including orphaned sales for which the order-file write never completed.
+function hashReference(value, mode) {
+  return crypto.createHash("sha256").update(referenceForMode(value, mode)).digest("hex");
+}
+
+// VLABS supplies a verified mode. Check both registries, including orphaned
+// sales for which the order-file write never completed. Writers hold the lock.
 function assertPaymentMode(store, stripeSessionId, paymentReferenceHash, mode) {
   if (!mode) return;
   for (const entry of [...store.codes, ...store.reversals]) {
@@ -163,13 +169,11 @@ function assertPaymentMode(store, stripeSessionId, paymentReferenceHash, mode) {
   }
 }
 
-function loadReversals() {
-  return readStore().reversals;
-}
-
-function isReversed(stripeSessionId, paymentReference) {
-  const paymentReferenceHash = paymentReference ? hashReference(paymentReference) : null;
-  return loadReversals().some(entry => (
+function isReversed(stripeSessionId, paymentReference, mode) {
+  const store = readStore();
+  const paymentReferenceHash = paymentReference ? hashReference(paymentReference, mode) : null;
+  assertPaymentMode(store, stripeSessionId, paymentReferenceHash, mode);
+  return store.reversals.some(entry => (
     (stripeSessionId && entry.stripeSessionId === stripeSessionId)
     || (paymentReferenceHash && entry.paymentIntentHash === paymentReferenceHash)
   ));
@@ -267,7 +271,7 @@ function recordSale({ code, tier, stripeSessionId, paymentReference, productKey,
   withStoreLock(lock => {
     const store = readStore();
     const existing = sanitizeCodes(store.codes);
-    const paymentReferenceHash = paymentReference ? hashReference(paymentReference) : null;
+    const paymentReferenceHash = paymentReference ? hashReference(paymentReference, mode) : null;
     assertPaymentMode(store, stripeSessionId, paymentReferenceHash, mode);
     if (store.reversals.some(item => (
       (stripeSessionId && item.stripeSessionId === stripeSessionId)
@@ -393,7 +397,7 @@ function revokeByStripeSession(stripeSessionId, activationCodesRef, reversalData
     const store = readStore();
     const existing = sanitizeCodes(store.codes);
     const reversals = [...store.reversals];
-    const paymentIntentHash = reversalData?.paymentIntent ? hashReference(reversalData.paymentIntent) : null;
+    const paymentIntentHash = reversalData?.paymentIntent ? hashReference(reversalData.paymentIntent, reversalData.mode) : null;
     assertPaymentMode(store, stripeSessionId, paymentIntentHash, reversalData?.mode);
     entry = existing.find(item => (
       (stripeSessionId && item.stripeSessionId === stripeSessionId)
@@ -415,7 +419,7 @@ function revokeByStripeSession(stripeSessionId, activationCodesRef, reversalData
           catalogVersion: reversalData.catalogVersion || null,
           offerVersion: reversalData.offerVersion || null,
           releaseId: reversalData.releaseId || null,
-          eventHash: hashReference(reversalData.eventId),
+          eventHash: hashReference(reversalData.eventId, reversalData.mode),
           reason: reversalData.reason,
           reversedAt: new Date().toISOString(),
         });
@@ -445,6 +449,6 @@ function revokeByStripeSession(stripeSessionId, activationCodesRef, reversalData
 
 module.exports = {
   load, save, recordSale, updateEmailDelivery, revokeByStripeSession, loadAsActivationCodes,
-  findByStripeSession, isReversed,
+  findByStripeSession, isReversed, referenceForMode,
   maskCode, maskEmail, maskStripeId,
 };
