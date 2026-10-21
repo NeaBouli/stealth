@@ -11,6 +11,7 @@ process.env.IDS_FILE = path.join(directory, "ids.json");
 process.env.PENDING_FILE = path.join(directory, "pending.json");
 process.env.ID_HASH_PEPPER = "test-only-custom-id-pepper";
 process.env.VLABS_FULFILLMENT_SECRET = "test-only-fulfillment-secret-over-32-characters";
+delete process.env.VLABS_FULFILLMENT_TEST_SECRET;
 delete process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED;
 
 const fulfillment = require("../payments/vlabs_fulfillment");
@@ -35,7 +36,7 @@ function body(requestedId = "test-example", overrides = {}) {
   const productId = `stealthx-custom-id-${suffix}`;
   const product = fulfillment.CUSTOM_ID_PRODUCTS[productId];
   return {
-    externalOrderId: `cs_test_custom_${counter}`, productId,
+    externalOrderId: `cs_live_custom_${counter}`, productId,
     catalogVersion: product.catalogVersion, offerVersion: product.offerVersion, releaseId: product.releaseId,
     paymentReference: `pi_test_custom_${counter}`, paymentEventId: `evt_test_custom_${counter}`,
     paymentStatus: "paid", amount: product.amount, currency: "eur",
@@ -52,9 +53,9 @@ function revokeBody(order, overrides = {}) {
   };
 }
 
-async function request(route, payload, { signatureValid = true } = {}) {
+async function request(route, payload, { signatureValid = true, secret = process.env.VLABS_FULFILLMENT_SECRET } = {}) {
   const timestamp = String(Math.floor(Date.now() / 1000));
-  const signature = crypto.createHmac("sha256", process.env.VLABS_FULFILLMENT_SECRET)
+  const signature = crypto.createHmac("sha256", secret)
     .update(`${timestamp}.${JSON.stringify(payload)}`).digest("hex");
   const res = {
     statusCode: 200, payload: null,
@@ -306,6 +307,113 @@ function failRename(target, occurrence = 1) {
   assert.strictEqual((await request("fulfill", body("locked-store"))).statusCode, 503);
   fs.unlinkSync(`${process.env.VLABS_FULFILLMENT_ORDERS_FILE}.lock`);
   assert.strictEqual(customIds.resolve("owned-example"), "test-device", "legacy ownership is preserved");
+
+  // The same TEST signing boundary applies to Custom-ID reservations and release.
+  setup();
+  const testSecret = "custom-id-test-fulfillment-secret-over-32-characters";
+  process.env.VLABS_FULFILLMENT_TEST_SECRET = testSecret;
+  const testOrder = body("test-mode-reservation", { externalOrderId: "cs_test_custom_mode", livemode: false });
+  assert.strictEqual((await request("fulfill", testOrder)).statusCode, 403);
+  assert.strictEqual((await request("fulfill", testOrder, { secret: testSecret })).payload.fulfilled, true);
+  assert.strictEqual(orders()[testOrder.externalOrderId].mode, "test");
+  assert.strictEqual(orders()[testOrder.externalOrderId].paymentReference, `test:${testOrder.paymentReference}`);
+  assert.strictEqual(orders()[testOrder.externalOrderId].paymentEventId, `test:${testOrder.paymentEventId}`);
+  assert.strictEqual(customIds.isAvailable(testOrder.requestedId).available, false);
+  const modeSnapshot = () => [process.env.VLABS_FULFILLMENT_ORDERS_FILE, process.env.SOLD_CODES_FILE, process.env.IDS_FILE]
+    .map(file => fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null);
+  const beforeMissingSession = modeSnapshot();
+  const missingSession = await request("revoke", revokeBody(testOrder, { externalOrderId: undefined }), { secret: testSecret });
+  assert.strictEqual(missingSession.statusCode, 403);
+  assert.deepStrictEqual(missingSession.payload, { ok: false, error: "Mode mismatch" });
+  assert.deepStrictEqual(modeSnapshot(), beforeMissingSession, "rejected TEST revoke has no persistence effects");
+  const testRevoke = revokeBody(testOrder, { livemode: false });
+  assert.strictEqual((await request("revoke", testRevoke)).statusCode, 403);
+  assert.strictEqual((await request("revoke", testRevoke, { secret: testSecret })).payload.revoked, true);
+  assert.strictEqual(orders()[testOrder.externalOrderId].mode, "test");
+  assert.strictEqual(orders()[testOrder.externalOrderId].adjustmentEventId, `test:${testRevoke.adjustmentEventId}`);
+  assert.strictEqual(customIds.isAvailable(testOrder.requestedId).available, true);
+
+  // F2: a TEST Custom ID cannot claim an orphaned LIVE sale's payment binding.
+  // Recreate the sold entry left when the LIVE order-file write failed.
+  process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED = "true";
+  const product = fulfillment.PRODUCTS["stealthx-securecall-pro-lifetime"];
+  const orphanSale = {
+    code: "PRO-ORPH-AN00-0001", tier: product.tier,
+    stripeSessionId: "cs_live_orphan_custom_test", paymentReference: "pi_live_orphan_custom_test",
+    productKey: product.productKey, catalogVersion: product.catalogVersion,
+    offerVersion: product.offerVersion, releaseId: product.releaseId,
+    externalProductId: "stealthx-securecall-pro-lifetime", mode: "live",
+  };
+  const liveSaleBefore = soldCodes.recordSale(orphanSale);
+  const orphanTest = body("orphan-test-reservation", {
+    externalOrderId: "cs_test_orphan_custom", paymentReference: orphanSale.paymentReference,
+  });
+  assert.strictEqual(orders()[orphanSale.stripeSessionId], undefined);
+  assert.strictEqual((await request("fulfill", orphanTest, { secret: testSecret })).payload.fulfilled, true);
+  assert.strictEqual(orders()[orphanTest.externalOrderId].paymentReference, `test:${orphanSale.paymentReference}`);
+  assert.strictEqual(read(process.env.IDS_FILE)[orders()[orphanTest.externalOrderId].requestedIdKey].stripeSessionId,
+    orphanTest.externalOrderId, "TEST reservation belongs to its TEST session");
+  assert.deepStrictEqual(soldCodes.findByStripeSession(orphanSale.stripeSessionId), liveSaleBefore);
+  assert.deepStrictEqual(soldCodes.recordSale({ ...orphanSale, code: "PRO-UNUS-ED00-0001" }), liveSaleBefore,
+    "LIVE sale recovery still reuses the original code");
+  assert.deepStrictEqual(soldCodes.revokeByStripeSession(orphanSale.stripeSessionId, undefined, {
+    paymentIntent: orphanSale.paymentReference, eventId: "evt_live_orphan_custom_refund",
+    reason: "stripe_full_refund", mode: "live",
+  }), { found: true, duplicate: false });
+  assert.strictEqual(soldCodes.isReversed(null, orphanSale.paymentReference), true);
+  assert.strictEqual(soldCodes.isReversed(null, orphanSale.paymentReference, "test"), false);
+  assert.strictEqual((await request("fulfill", orphanTest, { secret: testSecret })).payload.duplicate, true,
+    "a LIVE reversal cannot block a TEST Custom-ID retry");
+  const revokedLiveSale = soldCodes.findByStripeSession(orphanSale.stripeSessionId);
+  assert.strictEqual((await request("revoke", revokeBody(orphanTest), { secret: testSecret })).payload.revoked, true);
+  assert.deepStrictEqual(soldCodes.findByStripeSession(orphanSale.stripeSessionId), revokedLiveSale);
+  assert.strictEqual(customIds.isAvailable(orphanTest.requestedId).available, true);
+
+  // A TEST reversal must also leave a later LIVE reservation/reversal usable.
+  const laterLive = body("later-live-reservation");
+  const earlierTest = body("earlier-test-reservation", {
+    externalOrderId: "cs_test_custom_preempt", paymentReference: laterLive.paymentReference,
+  });
+  assert.strictEqual((await request("revoke", revokeBody(earlierTest), { secret: testSecret })).payload.tombstoned, true);
+  assert.strictEqual((await request("fulfill", laterLive)).payload.fulfilled, true);
+  assert.strictEqual((await request("revoke", revokeBody(laterLive, { externalOrderId: undefined }))).payload.revoked, true);
+  assert.strictEqual(customIds.isAvailable(laterLive.requestedId).available, true);
+  assert.strictEqual((await request("fulfill", earlierTest, { secret: testSecret })).statusCode, 409);
+  const sameTestPayment = body("blocked-test-reservation", {
+    externalOrderId: "cs_test_custom_same_payment", paymentReference: laterLive.paymentReference,
+  });
+  assert.strictEqual((await request("fulfill", sameTestPayment, { secret: testSecret })).statusCode, 409,
+    "TEST reversal still blocks another TEST session using the same payment");
+  assert.strictEqual(customIds.isAvailable(sameTestPayment.requestedId).available, true);
+
+  // Equal references cannot release the other mode's existing reservation.
+  const sharedLive = body("shared-live-reservation");
+  const sharedTest = body("shared-test-reservation", {
+    externalOrderId: "cs_test_custom_shared", paymentReference: sharedLive.paymentReference,
+  });
+  assert.strictEqual((await request("fulfill", sharedLive)).payload.fulfilled, true);
+  assert.strictEqual((await request("fulfill", sharedTest, { secret: testSecret })).payload.fulfilled, true);
+  assert.strictEqual((await request("revoke", revokeBody(sharedTest), { secret: testSecret })).payload.revoked, true);
+  assert.strictEqual(customIds.isAvailable(sharedLive.requestedId).available, false);
+  assert.strictEqual(orders()[sharedLive.externalOrderId].status, "FULFILLED");
+  assert.strictEqual((await request("revoke", revokeBody(sharedLive, { externalOrderId: undefined }))).payload.revoked, true);
+  assert.strictEqual(customIds.isAvailable(sharedLive.requestedId).available, true);
+
+  // Explicit sold-store mode checks also protect the custom branch if a stored
+  // session binding is inconsistent, before any order write or reservation.
+  const conflicting = body("conflicting-mode-reservation", { externalOrderId: "cs_test_custom_conflict" });
+  soldCodes.recordSale({
+    ...orphanSale, code: "PRO-MODE-CONF-LICT",
+    stripeSessionId: conflicting.externalOrderId, paymentReference: "pi_unrelated_conflict",
+  });
+  const beforeConflict = modeSnapshot();
+  const conflict = await request("fulfill", conflicting, { secret: testSecret });
+  assert.strictEqual(conflict.statusCode, 403);
+  assert.deepStrictEqual(conflict.payload, { ok: false, error: "Mode mismatch" });
+  assert.deepStrictEqual(modeSnapshot(), beforeConflict);
+  assert.strictEqual(customIds.isAvailable(conflicting.requestedId).available, true);
+  assert.deepStrictEqual(activationCodes, []);
+  delete process.env.VLABS_FULFILLMENT_TEST_SECRET;
   console.log("vlabs_custom_id_fulfillment.test.js ok");
 })().catch(error => {
   console.error(error);

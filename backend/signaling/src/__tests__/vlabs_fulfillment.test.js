@@ -13,11 +13,15 @@ process.env.CODES_FILE = path.join(directory, "activation_codes.json");
 
 const SECRET = "test-fulfillment-secret-with-32+-chars";
 process.env.VLABS_FULFILLMENT_SECRET = SECRET;
+delete process.env.VLABS_FULFILLMENT_TEST_SECRET;
+const TEST_SECRET = "test-fulfillment-key".padEnd(32, "x");
 process.env.BREVO_API_KEY = "test-brevo-key";
 
 const sentEmails = [];
+const requestedUrls = [];
 const realFetch = global.fetch;
-global.fetch = async (_url, options) => {
+global.fetch = async (url, options) => {
+  requestedUrls.push(url);
   sentEmails.push(JSON.parse(options.body));
   return { ok: true, json: async () => ({ messageId: "test-message" }) };
 };
@@ -288,10 +292,10 @@ function makeRes() {
   };
 }
 
-function signedReq(requestBody, ip = "127.0.0.1") {
+function signedReq(requestBody, ip = "127.0.0.1", secret = process.env.VLABS_FULFILLMENT_SECRET) {
   const raw = JSON.stringify(requestBody);
   const ts = Math.floor(Date.now() / 1000).toString();
-  const sig = crypto.createHmac("sha256", process.env.VLABS_FULFILLMENT_SECRET).update(`${ts}.${raw}`).digest("hex");
+  const sig = crypto.createHmac("sha256", secret).update(`${ts}.${raw}`).digest("hex");
   return { get: header => ({ "x-vlabs-timestamp": ts, "x-vlabs-signature": sig }[header]), body: requestBody, ip };
 }
 
@@ -299,7 +303,7 @@ let orderCounter = 0;
 function fulfillBody(productId, overrides = {}) {
   orderCounter += 1;
   return contractBody(productId, {
-    externalOrderId: `cs_test_route_${orderCounter}`,
+    externalOrderId: `cs_live_route_${orderCounter}`,
     paymentReference: `pi_test_route_${orderCounter}`,
     paymentEventId: `evt_test_route_${orderCounter}_paid`,
     ...overrides,
@@ -321,6 +325,39 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
 }
 
 (async () => {
+  // Without an orders-file override, use the validated DATA_DIR next to sold codes.
+  const ordersOverride = process.env.VLABS_FULFILLMENT_ORDERS_FILE;
+  const previousDataDir = process.env.DATA_DIR;
+  process.env.DATA_DIR = directory;
+  delete process.env.VLABS_FULFILLMENT_ORDERS_FILE;
+  const defaultOrdersPath = path.join(directory, "vlabs_fulfillment_orders.json");
+  const defaultTarget = fulfillBody("stealthx-securecall-pro-lifetime", { externalOrderId: "cs_live_default_path" });
+  const defaultRes = makeRes();
+  await routes["/internal/vlabs/fulfill"](signedReq(defaultTarget), defaultRes);
+  assert.strictEqual(defaultRes.statusCode, 200, JSON.stringify(defaultRes.payload));
+  assert.strictEqual(JSON.parse(fs.readFileSync(defaultOrdersPath, "utf8"))[defaultTarget.externalOrderId].status, "FULFILLED");
+  assert.strictEqual(fs.existsSync(ordersOverride), false, "unset override must not be used");
+  assert.strictEqual(fs.existsSync(`${defaultOrdersPath}.lock`), false, "adjacent lock is released");
+
+  delete require.cache[require.resolve("../payments/vlabs_fulfillment")];
+  const reloadedRoutes = {};
+  require("../payments/vlabs_fulfillment").setupVlabsFulfillmentRoute({
+    post: (routePath, handler) => { reloadedRoutes[routePath] = handler; },
+  }, activationCodes);
+  const emailsBeforeReload = sentEmails.length;
+  const reloadedRes = makeRes();
+  await reloadedRoutes["/internal/vlabs/fulfill"](signedReq(defaultTarget), reloadedRes);
+  assert.deepStrictEqual(reloadedRes.payload, { ok: true, duplicate: true, productId: defaultTarget.productId });
+  assert.strictEqual(sentEmails.length, emailsBeforeReload, "reload retains idempotency");
+  fs.writeFileSync(`${defaultOrdersPath}.lock`, "999999:foreignowner\n");
+  const lockedDefaultRes = makeRes();
+  await reloadedRoutes["/internal/vlabs/fulfill"](signedReq(defaultTarget), lockedDefaultRes);
+  assert.strictEqual(lockedDefaultRes.statusCode, 503, "lock stays next to the default store");
+  fs.unlinkSync(`${defaultOrdersPath}.lock`);
+  process.env.VLABS_FULFILLMENT_ORDERS_FILE = ordersOverride;
+  if (previousDataDir === undefined) delete process.env.DATA_DIR;
+  else process.env.DATA_DIR = previousDataDir;
+
   // Six-product mapping: every individual lifetime product fulfills exactly.
   for (const productId of Object.keys(EXPECTED_PRODUCTS)) {
     const res = makeRes();
@@ -333,6 +370,7 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.strictEqual(fulfilledOrders.length, 6, "six orders persisted with FULFILLED status");
   for (const order of fulfilledOrders) {
     const expected = EXPECTED_PRODUCTS[order.productId];
+    assert.strictEqual(order.mode, "live");
     assert.strictEqual(order.catalogVersion, CATALOG_VERSION);
     assert.strictEqual(order.offerVersion, expected.offerVersion);
     assert.strictEqual(order.releaseId, expected.releaseId);
@@ -342,8 +380,9 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   }
   const soldStore = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"));
   const contractedSales = soldStore.codes.filter(entry => entry.catalogVersion === CATALOG_VERSION
-    && /^cs_test_route_/.test(entry.stripeSessionId || ""));
+    && /^cs_live_route_/.test(entry.stripeSessionId || ""));
   assert.strictEqual(contractedSales.length, 6, "six sold codes carry the contract tuple");
+  assert.ok(contractedSales.every(entry => entry.mode === "live"));
 
   // Per-product email identity.
   const securechatMail = sentEmails.find(mail => mail.subject.includes("SecureChat Elite"));
@@ -652,11 +691,11 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   // Legacy rows must never be mutated before terminal status and existing
   // payment-reference checks have passed.
   const legacyBlockedTarget = fulfillBody("stealthx-securecall-pro-lifetime", {
-    externalOrderId: "cs_test_legacy_blocked",
+    externalOrderId: "cs_live_legacy_blocked",
     paymentReference: "pi_test_legacy_blocked",
   });
   const legacyMismatchTarget = fulfillBody("stealthx-securecall-pro-lifetime", {
-    externalOrderId: "cs_test_legacy_mismatch",
+    externalOrderId: "cs_live_legacy_mismatch",
     paymentReference: "pi_test_legacy_new",
   });
   const guardedLegacyOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
@@ -689,7 +728,7 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   // Pre-contract receiver orders remain revocable and are bound during the
   // signed request instead of wedging on missing tuple fields.
   const legacyTarget = fulfillBody("stealthx-securecall-pro-lifetime", {
-    externalOrderId: "cs_test_legacy_receiver",
+    externalOrderId: "cs_live_legacy_receiver",
     paymentReference: "pi_test_legacy_receiver",
     paymentEventId: "evt_test_legacy_receiver_paid",
   });
@@ -853,6 +892,189 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.strictEqual(activate(healthy.code, "device-healthy").success, true, "verified sale is restored");
   assert.strictEqual(refresh(healthy.token, "device-healthy").success, true, "verified refresh is restored");
   assertDenied(refunded, "device-refund", "unrelated revoked sale stays denied");
+
+  // Separate signing keys enforce mode before orders, codes, delivery or revocation change.
+  const modeRoutes = {};
+  fulfillment.setupVlabsFulfillmentRoute({ post: (routePath, handler) => { modeRoutes[routePath] = handler; } }, liveCodes);
+  const modeIp = "192.0.2.200";
+  const productId = "stealthx-securechat-elite-lifetime";
+  const testTarget = fulfillBody(productId, { externalOrderId: "cs_test_signed_e2e", livemode: false });
+  const liveTarget = fulfillBody(productId, { externalOrderId: "cs_live_signed_mode", livemode: true });
+  const modeSnapshot = () => JSON.stringify({
+    files: [process.env.VLABS_FULFILLMENT_ORDERS_FILE, process.env.SOLD_CODES_FILE, process.env.CODES_FILE]
+      .map(file => fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null),
+    liveCodes,
+    emails: sentEmails.length,
+    requests: requestedUrls.length,
+  });
+  async function modeRequest(action, payload, secret) {
+    const res = makeRes();
+    await modeRoutes[`/internal/vlabs/${action}`](signedReq(payload, modeIp, secret), res);
+    return res;
+  }
+  async function rejectedModeRequest(action, payload, secret, status = 403) {
+    const before = modeSnapshot();
+    const res = await modeRequest(action, payload, secret);
+    assert.strictEqual(res.statusCode, status, JSON.stringify(res.payload));
+    assert.deepStrictEqual(res.payload, {
+      ok: false, error: status === 403 ? "Mode mismatch" : "Invalid fulfillment signature",
+    });
+    assert.strictEqual(modeSnapshot(), before, `${action} rejection must have no side effects`);
+    assert.strictEqual(fs.existsSync(`${process.env.VLABS_FULFILLMENT_ORDERS_FILE}.lock`), false);
+    assert.strictEqual(fs.existsSync(`${process.env.SOLD_CODES_FILE}.lock`), false);
+  }
+
+  // An absent or too-short TEST secret cannot authenticate either route.
+  for (const configured of [undefined, "short", "x".repeat(31)]) {
+    if (configured === undefined) delete process.env.VLABS_FULFILLMENT_TEST_SECRET;
+    else process.env.VLABS_FULFILLMENT_TEST_SECRET = configured;
+    await rejectedModeRequest("fulfill", testTarget, configured || TEST_SECRET, 401);
+    await rejectedModeRequest("revoke", revokeFor(testTarget), configured || TEST_SECRET, 401);
+  }
+  process.env.VLABS_FULFILLMENT_TEST_SECRET = TEST_SECRET;
+  for (const action of ["fulfill", "revoke"]) {
+    const payload = target => action === "fulfill" ? target : revokeFor(
+      { ...target, externalOrderId: target.externalOrderId || "cs_invalid" },
+      { externalOrderId: target.externalOrderId },
+    );
+    for (const [target, secret] of [
+      [liveTarget, TEST_SECRET],
+      [{ ...liveTarget, externalOrderId: "cs_other_order", livemode: undefined }, TEST_SECRET],
+      [{ ...testTarget, externalOrderId: null }, TEST_SECRET],
+      [testTarget, SECRET],
+      [{ ...testTarget, livemode: true }, TEST_SECRET],
+      [{ ...liveTarget, livemode: false }, SECRET],
+    ]) {
+      await rejectedModeRequest(action, { ...payload(target), livemode: target.livemode }, secret);
+    }
+  }
+
+  // Configure finance export so accidental use of that separate path is observable.
+  const previousFinanceUrl = process.env.VLABS_FINANCE_INGEST_URL;
+  const previousFinanceSecret = process.env.VLABS_FINANCE_INGEST_SECRET;
+  process.env.VLABS_FINANCE_INGEST_URL = "https://finance.example.invalid/ingest";
+  process.env.VLABS_FINANCE_INGEST_SECRET = "test-only-finance-ingest-secret";
+  const requestsBeforeTestSale = requestedUrls.length;
+  const testFulfilled = await modeRequest("fulfill", testTarget, TEST_SECRET);
+  assert.deepStrictEqual(testFulfilled.payload, { ok: true, fulfilled: true, productId });
+  const testOrder = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[testTarget.externalOrderId];
+  const testSale = soldCodes.findByStripeSession(testTarget.externalOrderId);
+  assert.strictEqual(testOrder.mode, "test");
+  assert.strictEqual(testOrder.paymentReference, `test:${testTarget.paymentReference}`);
+  assert.strictEqual(testOrder.paymentEventId, `test:${testTarget.paymentEventId}`);
+  assert.strictEqual(testSale.mode, "test");
+  const hash = value => crypto.createHash("sha256").update(value).digest("hex");
+  assert.strictEqual(testSale.paymentReferenceHash, hash(`test:${testTarget.paymentReference}`));
+  assert.strictEqual(testSale.emailDelivery.status, "delivered");
+  const testActivation = activate(testSale.code, "device-test-mode");
+  assert.strictEqual(testActivation.success, true, JSON.stringify(testActivation));
+  assert.ok(testActivation.entitlementToken, "TEST code follows the real redemption path");
+  assert.strictEqual(refresh(testActivation.entitlementToken, "device-test-mode").success, true);
+  assert.strictEqual((await modeRequest("fulfill", { ...testTarget, livemode: undefined }, TEST_SECRET)).payload.duplicate, true,
+    "livemode remains optional on TEST retries");
+  assert.strictEqual((await modeRequest("fulfill", { ...healthy.target, livemode: true }, SECRET)).payload.duplicate, true,
+    "explicit LIVE livemode remains accepted");
+
+  // TEST requests always require a TEST session, even for an unknown payment.
+  await rejectedModeRequest("revoke", revokeFor(healthy.target, { externalOrderId: undefined }), TEST_SECRET);
+  await rejectedModeRequest("fulfill", { ...testTarget, externalOrderId: undefined }, TEST_SECRET);
+
+  // Equal raw references are independent: neither mode can bind or revoke the other's sale.
+  const healthyOrderBefore = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[healthy.target.externalOrderId];
+  const healthySaleBefore = soldCodes.findByStripeSession(healthy.target.externalOrderId);
+  const spoofedTest = { ...testTarget, externalOrderId: "cs_test_foreign_reference", paymentReference: healthy.target.paymentReference };
+  assert.strictEqual((await modeRequest("fulfill", spoofedTest, TEST_SECRET)).payload.fulfilled, true);
+  assert.strictEqual((await modeRequest("revoke", revokeFor(spoofedTest), TEST_SECRET)).payload.revoked, true);
+  assert.deepStrictEqual(soldCodes.findByStripeSession(healthy.target.externalOrderId), healthySaleBefore);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[healthy.target.externalOrderId], healthyOrderBefore);
+  assert.strictEqual(refresh(healthy.token, "device-healthy").success, true);
+  const testSaleBeforeLiveRevoke = soldCodes.findByStripeSession(testTarget.externalOrderId);
+  assert.strictEqual((await modeRequest("revoke", revokeFor(testTarget, { externalOrderId: undefined }), SECRET)).payload.tombstoned, true);
+  assert.deepStrictEqual(soldCodes.findByStripeSession(testTarget.externalOrderId), testSaleBeforeLiveRevoke);
+  assert.strictEqual(refresh(testActivation.entitlementToken, "device-test-mode").success, true);
+
+  // Even without an order row, the sold store must protect its LIVE entry.
+  const orphan = fulfillBody(productId);
+  soldCodes.recordSale({
+    code: "ELIT-ORPH-AN00-0001", tier: "elite", stripeSessionId: orphan.externalOrderId,
+    paymentReference: orphan.paymentReference, productKey: "securechat_elite_lifetime",
+  });
+  await rejectedModeRequest("revoke", revokeFor(orphan, { externalOrderId: undefined }), TEST_SECRET);
+  const orphanBefore = soldCodes.findByStripeSession(orphan.externalOrderId);
+  const orphanTest = { ...testTarget, externalOrderId: "cs_test_orphan", paymentReference: orphan.paymentReference };
+  assert.strictEqual((await modeRequest("fulfill", orphanTest, TEST_SECRET)).payload.fulfilled, true);
+  assert.strictEqual((await modeRequest("revoke", revokeFor(orphanTest), TEST_SECRET)).payload.revoked, true);
+  assert.deepStrictEqual(soldCodes.findByStripeSession(orphan.externalOrderId), orphanBefore);
+
+  // F1: TEST activity before the LIVE order exists cannot poison its later lifecycle.
+  for (const attack of ["fulfill", "revoke", "fulfill_then_revoke"]) {
+    const pendingLive = fulfillBody(productId);
+    const pendingTest = { ...pendingLive, externalOrderId: `cs_test_preempt_${attack}` };
+    const adjustmentEventId = `evt_shared_preempt_${attack}`;
+    await rejectedModeRequest("revoke", revokeFor(pendingLive, { externalOrderId: undefined }), TEST_SECRET);
+    if (attack !== "revoke") {
+      assert.strictEqual((await modeRequest("fulfill", pendingTest, TEST_SECRET)).payload.fulfilled, true);
+    }
+    if (attack !== "fulfill") {
+      const early = await modeRequest("revoke", revokeFor(pendingTest, { adjustmentEventId }), TEST_SECRET);
+      assert.strictEqual(early.payload[attack === "revoke" ? "tombstoned" : "revoked"], true);
+    }
+    assert.strictEqual(soldCodes.isReversed(null, pendingLive.paymentReference), false);
+    assert.strictEqual((await modeRequest("fulfill", pendingLive, SECRET)).payload.fulfilled, true);
+    const liveSale = soldCodes.findByStripeSession(pendingLive.externalOrderId);
+    assert.strictEqual(liveSale.paymentReferenceHash, hash(pendingLive.paymentReference), "LIVE hashes stay unchanged");
+    const liveRevoke = await modeRequest("revoke", revokeFor(pendingLive, { externalOrderId: undefined, adjustmentEventId }), SECRET);
+    assert.strictEqual(liveRevoke.payload.revoked, true);
+    const storedOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+    assert.strictEqual(storedOrders[pendingLive.externalOrderId].paymentReference, pendingLive.paymentReference);
+    assert.strictEqual(storedOrders[pendingLive.externalOrderId].paymentEventId, pendingLive.paymentEventId);
+    assert.strictEqual(storedOrders[pendingLive.externalOrderId].adjustmentEventId, adjustmentEventId);
+    assert.strictEqual(storedOrders[pendingTest.externalOrderId].paymentReference, `test:${pendingLive.paymentReference}`);
+    if (attack === "fulfill") {
+      assert.strictEqual((await modeRequest("fulfill", pendingTest, TEST_SECRET)).payload.duplicate, true,
+        "LIVE reversal cannot block an existing TEST sale");
+      assert.strictEqual((await modeRequest("revoke", revokeFor(pendingTest, { adjustmentEventId }), TEST_SECRET)).payload.revoked, true);
+    }
+    const reversals = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8")).reversals;
+    const liveReversal = reversals.find(entry => entry.paymentIntentHash === hash(pendingLive.paymentReference));
+    const testReversal = reversals.find(entry => entry.stripeSessionId === pendingTest.externalOrderId);
+    assert.strictEqual(liveReversal.eventHash, hash(adjustmentEventId));
+    assert.strictEqual(testReversal.paymentIntentHash, hash(`test:${pendingLive.paymentReference}`));
+    assert.strictEqual(testReversal.eventHash, hash(`test:${adjustmentEventId}`));
+    assert.strictEqual(soldCodes.isReversed(null, pendingLive.paymentReference, "test"), true);
+  }
+
+  const testRevoked = await modeRequest("revoke", { ...revokeFor(testTarget), livemode: false }, TEST_SECRET);
+  assert.deepStrictEqual(testRevoked.payload, { ok: true, revoked: true, productId });
+  assertDenied({ code: testSale.code, token: testActivation.entitlementToken }, "device-test-mode", "TEST revoke");
+  activationStore.loadActivationCodes();
+  assertDenied({ code: testSale.code, token: testActivation.entitlementToken }, "device-test-mode", "TEST revoke after reload");
+  assert.strictEqual((await modeRequest("revoke", revokeFor(testTarget), TEST_SECRET)).payload.duplicate, true);
+  assert.strictEqual(soldCodes.findByStripeSession(testTarget.externalOrderId).mode, "test");
+  const testReversal = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8")).reversals
+    .find(entry => entry.stripeSessionId === testTarget.externalOrderId);
+  assert.strictEqual(testReversal.mode, "test");
+  assert.strictEqual(testReversal.eventHash, hash(`test:${revokeFor(testTarget).adjustmentEventId}`));
+
+  // TEST-only configuration works with mandatory session IDs on both routes.
+  delete process.env.VLABS_FULFILLMENT_SECRET;
+  const testOnly = fulfillBody(productId, { externalOrderId: "cs_test_only_secret" });
+  assert.strictEqual((await modeRequest("fulfill", testOnly, TEST_SECRET)).payload.fulfilled, true);
+  await rejectedModeRequest("revoke", revokeFor(testOnly, { externalOrderId: undefined }), TEST_SECRET);
+  assert.strictEqual((await modeRequest("revoke", revokeFor(testOnly), TEST_SECRET)).payload.revoked, true);
+  const earlyTest = fulfillBody(productId, { externalOrderId: "cs_test_early_reversal" });
+  await rejectedModeRequest("revoke", revokeFor(earlyTest, { externalOrderId: undefined }), TEST_SECRET);
+  assert.strictEqual((await modeRequest("revoke", revokeFor(earlyTest), TEST_SECRET)).payload.tombstoned, true);
+  assert.strictEqual((await modeRequest("fulfill", earlyTest, TEST_SECRET)).statusCode, 409);
+  process.env.VLABS_FULFILLMENT_SECRET = SECRET;
+  delete process.env.VLABS_FULFILLMENT_TEST_SECRET;
+  assert.ok(requestedUrls.slice(requestsBeforeTestSale).every(url => url === "https://api.brevo.com/v3/smtp/email"),
+    "TEST fulfillment and revoke never call finance ingest, even when configured");
+  if (previousFinanceUrl === undefined) delete process.env.VLABS_FINANCE_INGEST_URL;
+  else process.env.VLABS_FINANCE_INGEST_URL = previousFinanceUrl;
+  if (previousFinanceSecret === undefined) delete process.env.VLABS_FINANCE_INGEST_SECRET;
+  else process.env.VLABS_FINANCE_INGEST_SECRET = previousFinanceSecret;
+  console.log("vlabs_fulfillment: DATA_DIR persistence and TEST/LIVE lifecycle assertions PASS");
 
   // Concurrency: a foreign-held orders lock fails the mutation closed.
   fs.writeFileSync(`${process.env.VLABS_FULFILLMENT_ORDERS_FILE}.lock`, "999999:foreignowner\n", { mode: 0o600 });
