@@ -107,6 +107,18 @@ function failRename(target, occurrence = 1) {
   ]) {
     assert.strictEqual((await request("fulfill", body("test-example", override))).statusCode, status);
   }
+  for (const overrides of [
+    { listAmount: 100, discount: { couponId: "CQgFczlb", percentOff: 50 } },
+    { amount: 50, listAmount: 100, discount: { couponId: "CQgFczlb", percentOff: 50 } },
+    { discount: { couponId: "other-coupon", percentOff: 50 } },
+    { amount: 50 },
+    { listAmount: 99 },
+  ]) {
+    const result = await request("fulfill", body("test-example", overrides));
+    assert.strictEqual(result.statusCode, 409, "Custom IDs keep exact pricing and reject discounts");
+  }
+  assert.strictEqual(fs.existsSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE), false,
+    "invalid contracts cannot create a Custom ID order");
   const pepper = process.env.ID_HASH_PEPPER;
   delete process.env.ID_HASH_PEPPER;
   assert.strictEqual((await request("fulfill", body())).statusCode, 503);
@@ -115,13 +127,15 @@ function failRename(target, occurrence = 1) {
   // Real registry checks, length boundaries, normalized identity and app separation.
   const examples = ["abc", "abcd", "short", "ninechars", "tenletters", "a".repeat(30), "constructor"];
   for (const id of examples) {
-    const order = body(id);
+    const order = body(id, { listAmount: customIds.getPrice(id), discount: null });
     const result = await request("fulfill", order);
     assert.deepStrictEqual(result.payload, { ok: true, fulfilled: true, productId: order.productId });
     assert.strictEqual(order.amount, customIds.getPrice(id));
     assert.strictEqual(customIds.isAvailable(id).available, false);
     assert.strictEqual(customIds.resolve(id), null, "reservation grants no device routing or paid app tier");
     assert.strictEqual(orders()[order.externalOrderId].status, "FULFILLED");
+    assert.strictEqual(orders()[order.externalOrderId].paidAmount, order.amount);
+    assert.strictEqual(orders()[order.externalOrderId].couponId, null);
     const duplicate = await request("fulfill", { ...order, requestedId: ` ${id.toUpperCase()} `, paymentEventId: "evt_retry" });
     assert.strictEqual(duplicate.payload.duplicate, true);
     assert.strictEqual((await request("fulfill", { ...order, requestedId: id.replace(/^./, "z") })).statusCode, 409);

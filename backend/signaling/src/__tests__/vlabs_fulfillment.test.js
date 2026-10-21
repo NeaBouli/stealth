@@ -152,6 +152,47 @@ assert.throws(() => validateFulfillmentContract(contractBody("stealthx-securecal
 assert.throws(() => validateFulfillmentContract(contractBody("stealthx-suite-lifetime")),
   error => error.status === 409, "Suite product is never enabled");
 
+const ifrDiscount = { couponId: "CQgFczlb", percentOff: 50 };
+for (const [productId, product] of Object.entries(PRODUCTS)) {
+  for (const overrides of [
+    {}, { listAmount: product.amount }, { discount: null },
+    { listAmount: product.amount, discount: null },
+    { amount: product.amount / 2, listAmount: product.amount, discount: ifrDiscount },
+  ]) {
+    assert.strictEqual(validateFulfillmentContract(contractBody(productId, overrides)).product, product,
+      `${productId} accepts full price or the exact IFR half price`);
+  }
+}
+
+const invalidCouponContracts = [
+  ["wrong coupon ID", { discount: { ...ifrDiscount, couponId: "other-coupon" } }, 409, "discount mismatch"],
+  ["wrong percent", { discount: { ...ifrDiscount, percentOff: 49 } }, 409, "discount mismatch"],
+  ["fractional percent", { discount: { ...ifrDiscount, percentOff: 50.5 } }, 409, "discount mismatch"],
+  ["below half price", { amount: 749 }, 409, "amount mismatch"],
+  ["above half price", { amount: 751 }, 409, "amount mismatch"],
+  ["full price with discount", { amount: 1500 }, 409, "amount mismatch"],
+  ["wrong list price", { listAmount: 1499 }, 409, "listAmount mismatch"],
+  ["missing coupon list price", { listAmount: undefined }, 409, "listAmount mismatch"],
+  ["half price without discount", { discount: undefined }, 409, "amount mismatch"],
+  ["half price with null discount", { discount: null }, 409, "amount mismatch"],
+  ["full price with wrong list price", { amount: 1500, listAmount: 1499, discount: null }, 409, "listAmount mismatch"],
+  ...[undefined, null, "750", 750.5, NaN, Infinity, {}, true].map(amount =>
+    ["malformed amount", { amount }, 400, "amount"]),
+  ...[null, "1500", 1500.5, NaN, Infinity, {}, true].map(listAmount =>
+    ["malformed list price", { listAmount }, 400, "listAmount"]),
+  ...[{}, [], "CQgFczlb", 50, false,
+    { ...ifrDiscount, couponId: 123 }, { ...ifrDiscount, couponId: null },
+    { couponId: ifrDiscount.couponId }, { percentOff: 50 },
+    { ...ifrDiscount, percentOff: "50" }, { ...ifrDiscount, percentOff: null },
+    { ...ifrDiscount, percentOff: NaN }, { ...ifrDiscount, percentOff: Infinity },
+  ].map(discount => ["malformed discount", { discount }, 400, "discount"]),
+];
+for (const [label, overrides, status, message] of invalidCouponContracts) {
+  assert.throws(() => validateFulfillmentContract(contractBody("stealthx-securecall-pro-lifetime", {
+    amount: 750, listAmount: 1500, discount: ifrDiscount, ...overrides,
+  })), error => error.status === status && error.message.includes(message), label);
+}
+
 const revokeBody = (productId, overrides = {}) => ({
   externalOrderId: "cs_test_validator",
   productId,
@@ -375,6 +416,8 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
     assert.strictEqual(order.offerVersion, expected.offerVersion);
     assert.strictEqual(order.releaseId, expected.releaseId);
     assert.strictEqual(order.amount, expected.amount);
+    assert.strictEqual(order.paidAmount, expected.amount);
+    assert.strictEqual(order.couponId, null);
     assert.strictEqual(order.currency, expected.currency);
     assert.ok(/^pi_/.test(order.paymentReference));
   }
@@ -390,6 +433,70 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.ok(securechatMail.htmlContent.includes("https://securechat.stealthx.tech/"), "SecureChat email uses the SecureChat identity");
   const chameleonMail = sentEmails.find(mail => mail.subject.includes("Chameleon Pro"));
   assert.ok(chameleonMail && chameleonMail.htmlContent.includes("https://chameleon.stealthx.tech/"), "Chameleon email uses the Chameleon identity");
+
+  // Coupon orders retain the paid amount for audit, retries and reversals.
+  const couponIp = "198.51.100.50";
+  for (const [productId, amount] of [
+    ["stealthx-securecall-pro-lifetime", 750],
+    ["stealthx-securecall-premium-lifetime", 1250],
+  ]) {
+    const target = fulfillBody(productId, { amount, listAmount: PRODUCTS[productId].amount, discount: ifrDiscount });
+    const res = makeRes();
+    await routes["/internal/vlabs/fulfill"](signedReq(target, couponIp), res);
+    assert.deepStrictEqual(res.payload, { ok: true, fulfilled: true, productId });
+    const order = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[target.externalOrderId];
+    assert.strictEqual(order.status, "FULFILLED");
+    assert.strictEqual(order.amount, amount);
+    assert.strictEqual(order.paidAmount, amount);
+    assert.strictEqual(order.couponId, "CQgFczlb");
+    const emailCount = sentEmails.length;
+    const saleCount = soldCodes.load().length;
+    const duplicate = makeRes();
+    await reloadedRoutes["/internal/vlabs/fulfill"](signedReq(target, couponIp), duplicate);
+    assert.deepStrictEqual(duplicate.payload, { ok: true, duplicate: true, productId });
+    const changedPayment = makeRes();
+    await routes["/internal/vlabs/fulfill"](signedReq({
+      ...target, amount: target.listAmount, discount: null,
+    }, couponIp), changedPayment);
+    assert.strictEqual(changedPayment.statusCode, 409, "a retry cannot change the paid amount");
+    assert.strictEqual(sentEmails.length, emailCount, "coupon retries do not resend email");
+    assert.strictEqual(soldCodes.load().length, saleCount, "coupon retries do not mint another code");
+    const revoked = makeRes();
+    await routes["/internal/vlabs/revoke"](signedReq(revokeFor(target), couponIp), revoked);
+    assert.strictEqual(revoked.payload.revoked, true);
+    const revokedOrder = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[target.externalOrderId];
+    assert.strictEqual(revokedOrder.paidAmount, amount);
+    assert.strictEqual(revokedOrder.couponId, "CQgFczlb");
+  }
+  for (const discount of [undefined, null]) {
+    const target = fulfillBody("stealthx-securecall-pro-lifetime", { listAmount: 1500, discount });
+    const res = makeRes();
+    await routes["/internal/vlabs/fulfill"](signedReq(target, couponIp), res);
+    assert.strictEqual(res.payload.fulfilled, true, "full price accepts an explicit listAmount");
+    const order = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[target.externalOrderId];
+    assert.strictEqual(order.paidAmount, 1500);
+    assert.strictEqual(order.couponId, null);
+  }
+  const beforeCouponRejections = {
+    orders: fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"),
+    sold: fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"),
+    emails: sentEmails.length,
+    codes: activationCodes.length,
+  };
+  for (const [label, overrides, status, message] of invalidCouponContracts) {
+    const res = makeRes();
+    await routes["/internal/vlabs/fulfill"](signedReq(fulfillBody("stealthx-securecall-pro-lifetime", {
+      amount: 750, listAmount: 1500, discount: ifrDiscount, ...overrides,
+    }), "198.51.100.51"), res);
+    assert.strictEqual(res.statusCode, status, label);
+    assert.ok(res.payload.error.includes(message), label);
+  }
+  assert.deepStrictEqual({
+    orders: fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"),
+    sold: fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"),
+    emails: sentEmails.length,
+    codes: activationCodes.length,
+  }, beforeCouponRejections, "rejected coupons have no persistence, email or activation side effects");
 
   // Missing / drift rejection before persistence.
   for (const [overrides, expectedStatus] of [

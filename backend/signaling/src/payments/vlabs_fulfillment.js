@@ -11,6 +11,8 @@ const { sendActivationCode } = require("./email_handler");
 const MAX_CLOCK_SKEW_SECONDS = 300;
 const MIN_FULFILLMENT_SECRET_LENGTH = 32;
 const CATALOG_VERSION = "stealthx-lifetime-v1";
+const IFR_COUPON_ID = "CQgFczlb";
+const IFR_PERCENT_OFF = 50;
 const INTERNAL_RATE_LIMIT_WINDOW_MS = 60_000;
 const INTERNAL_RATE_LIMIT_MAX_REQUESTS = 60;
 const INTERNAL_RATE_LIMIT_MAX_BUCKETS = 4096;
@@ -320,7 +322,8 @@ function requireExactClaim(value, expected, label) {
 
 function validateFulfillmentContract(body) {
   const { externalOrderId, productId, catalogVersion, offerVersion, releaseId,
-    paymentReference, paymentEventId, paymentStatus, amount, currency, customerEmail } = body || {};
+    paymentReference, paymentEventId, paymentStatus, amount, listAmount, discount,
+    currency, customerEmail } = body || {};
   if (!validString(externalOrderId, 128) || !/^cs_[a-zA-Z0-9_]+$/.test(externalOrderId)) {
     throw httpError(400, "Invalid external order ID");
   }
@@ -344,7 +347,27 @@ function validateFulfillmentContract(body) {
   }
   if (paymentStatus !== "paid") throw httpError(409, "Stripe payment is not proven paid");
   if (!Number.isInteger(amount)) throw httpError(400, "Missing or invalid amount");
-  if (amount !== product.amount) throw httpError(409, "Contract drift: amount mismatch");
+  if (listAmount !== undefined && !Number.isInteger(listAmount)) {
+    throw httpError(400, "Invalid listAmount");
+  }
+  if (discount != null && (typeof discount !== "object" || Array.isArray(discount)
+    || typeof discount.couponId !== "string" || !Number.isFinite(discount.percentOff))) {
+    throw httpError(400, "Invalid discount");
+  }
+  if (listAmount !== undefined && listAmount !== product.amount) {
+    throw httpError(409, "Contract drift: listAmount mismatch");
+  }
+  if (discount != null) {
+    if (product.kind === "custom_id"
+      || discount.couponId !== IFR_COUPON_ID || discount.percentOff !== IFR_PERCENT_OFF) {
+      throw httpError(409, "Contract drift: discount mismatch");
+    }
+    if (listAmount !== product.amount) throw httpError(409, "Contract drift: listAmount mismatch");
+    // Exact integer half also rejects catalog prices with an odd number of cents.
+    if (amount * 2 !== product.amount) throw httpError(409, "Contract drift: amount mismatch");
+  } else if (amount !== product.amount) {
+    throw httpError(409, "Contract drift: amount mismatch");
+  }
   if (!validString(currency, 8)) throw httpError(400, "Missing or invalid currency");
   if (currency.toLowerCase() !== product.currency) throw httpError(409, "Contract drift: currency mismatch");
   if (!validString(customerEmail, 254) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
@@ -513,7 +536,9 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
               catalogVersion: product.catalogVersion,
               offerVersion: product.offerVersion,
               releaseId: product.releaseId,
-              amount: product.amount,
+              amount: orderBody.amount,
+              paidAmount: orderBody.amount,
+              couponId: null,
               currency: product.currency,
               paymentReference,
               paymentEventId,
@@ -566,7 +591,9 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
                 catalogVersion: CATALOG_VERSION,
                 offerVersion: product.offerVersion,
                 releaseId: product.releaseId,
-                amount: product.amount,
+                amount: orderBody.amount,
+                paidAmount: orderBody.amount,
+                couponId: orderBody.discount?.couponId || null,
                 currency: product.currency,
                 paymentReference,
                 paymentEventId,
@@ -590,7 +617,9 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
             catalogVersion: CATALOG_VERSION,
             offerVersion: product.offerVersion,
             releaseId: product.releaseId,
-            amount: product.amount,
+            amount: orderBody.amount,
+            paidAmount: orderBody.amount,
+            couponId: orderBody.discount?.couponId || null,
             currency: product.currency,
             paymentReference,
             paymentEventId,
