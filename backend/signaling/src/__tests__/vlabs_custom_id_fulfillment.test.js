@@ -71,6 +71,10 @@ async function request(route, payload, { signatureValid = true, secret = process
 
 function read(file) { return JSON.parse(fs.readFileSync(file, "utf8")); }
 function orders() { return read(process.env.VLABS_FULFILLMENT_ORDERS_FILE); }
+function assertUtcTimestamp(value) {
+  assert.strictEqual(typeof value, "string");
+  assert.strictEqual(new Date(value).toISOString(), value);
+}
 function reload() {
   delete require.cache[require.resolve("../custom_ids")];
   customIds = require("../custom_ids");
@@ -127,9 +131,16 @@ function failRename(target, occurrence = 1) {
   // Real registry checks, length boundaries, normalized identity and app separation.
   const examples = ["abc", "abcd", "short", "ninechars", "tenletters", "a".repeat(30), "constructor"];
   for (const id of examples) {
-    const order = body(id, { listAmount: customIds.getPrice(id), discount: null });
+    const order = body(id, { listAmount: customIds.getPrice(id), discount: null, requestedId: ` ${id.toUpperCase()} ` });
     const result = await request("fulfill", order);
-    assert.deepStrictEqual(result.payload, { ok: true, fulfilled: true, productId: order.productId });
+    const referenceHash = crypto.createHash("sha256").update(`stealthx-custom-id-ref:v1:${id}`).digest("hex").slice(0, 24);
+    assert.match(result.payload.licenseRef, /^cid_[a-f0-9]{24}$/);
+    assert.strictEqual(result.payload.licenseRef, `cid_${referenceHash}`, "reference uses the normalized reserved ID");
+    assertUtcTimestamp(result.payload.fulfilledAt);
+    assert.deepStrictEqual(result.payload, {
+      ok: true, fulfilled: true, productId: order.productId,
+      licenseRef: orders()[order.externalOrderId].licenseRef, fulfilledAt: orders()[order.externalOrderId].fulfilledAt,
+    });
     assert.strictEqual(order.amount, customIds.getPrice(id));
     assert.strictEqual(customIds.isAvailable(id).available, false);
     assert.strictEqual(customIds.resolve(id), null, "reservation grants no device routing or paid app tier");
@@ -138,11 +149,29 @@ function failRename(target, occurrence = 1) {
     assert.strictEqual(orders()[order.externalOrderId].couponId, null);
     const duplicate = await request("fulfill", { ...order, requestedId: ` ${id.toUpperCase()} `, paymentEventId: "evt_retry" });
     assert.strictEqual(duplicate.payload.duplicate, true);
+    assert.strictEqual(duplicate.payload.licenseRef, result.payload.licenseRef);
+    assert.strictEqual(duplicate.payload.fulfilledAt, result.payload.fulfilledAt);
     assert.strictEqual((await request("fulfill", { ...order, requestedId: id.replace(/^./, "z") })).statusCode, 409);
     assert.strictEqual((await request("fulfill", { ...order, paymentReference: "pi_drift" })).statusCode, 409);
     assert.strictEqual((await request("fulfill", body(id))).statusCode, 409, "another order cannot take the ID");
     setup(); // Keep each scenario below the unchanged shared request budget.
   }
+
+  // Pre-receipt Custom-ID rows can recover their reference from a signed retry.
+  const legacyReceipt = body("legacy-receipt");
+  const originalReceipt = await request("fulfill", legacyReceipt);
+  const legacyOrders = orders();
+  delete legacyOrders[legacyReceipt.externalOrderId].licenseRef;
+  delete legacyOrders[legacyReceipt.externalOrderId].fulfilledAt;
+  legacyOrders[legacyReceipt.externalOrderId].createdAt = "2024-01-02T03:04:05.000Z";
+  fs.writeFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, JSON.stringify(legacyOrders));
+  const backfilledReceipt = await request("fulfill", { ...legacyReceipt, requestedId: " LEGACY-RECEIPT " });
+  assert.strictEqual(backfilledReceipt.payload.duplicate, true);
+  assert.strictEqual(backfilledReceipt.payload.licenseRef, originalReceipt.payload.licenseRef);
+  assert.strictEqual(backfilledReceipt.payload.fulfilledAt, "2024-01-02T03:04:05.000Z");
+  reload();
+  assert.deepStrictEqual((await request("fulfill", legacyReceipt)).payload, backfilledReceipt.payload);
+
   assert.deepStrictEqual(activationCodes, []);
   assert.strictEqual(soldCodes.load().length, 0, "no application activation code is minted");
   const stored = fs.readFileSync(process.env.IDS_FILE, "utf8") + fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8");
@@ -231,12 +260,20 @@ function failRename(target, occurrence = 1) {
   // Both accepted reversal reasons work with the sales flag off, including payment-only lookup.
   for (const reason of ["stripe_full_refund", "stripe_dispute"]) {
     const order = body(reason === "stripe_dispute" ? "dispute-example" : "refund-example");
-    assert.strictEqual((await request("fulfill", order)).statusCode, 200);
+    const fulfilled = await request("fulfill", order);
+    assert.strictEqual(fulfilled.statusCode, 200);
     delete process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED;
     const adjustment = revokeBody(order, { reason, externalOrderId: undefined });
-    assert.strictEqual((await request("revoke", adjustment)).payload.revoked, true);
-    assert.strictEqual((await request("revoke", adjustment)).payload.duplicate, true);
+    const revoked = await request("revoke", adjustment);
+    assert.strictEqual(revoked.payload.revoked, true);
+    assertUtcTimestamp(revoked.payload.revokedAt);
+    assert.strictEqual(revoked.payload.licenseRef, fulfilled.payload.licenseRef);
+    assert.strictEqual(orders()[order.externalOrderId].revokedAt, revoked.payload.revokedAt);
     reload();
+    const duplicate = await request("revoke", adjustment);
+    assert.strictEqual(duplicate.payload.duplicate, true);
+    assert.strictEqual(duplicate.payload.revokedAt, revoked.payload.revokedAt);
+    assert.strictEqual(duplicate.payload.licenseRef, fulfilled.payload.licenseRef);
     assert.strictEqual(customIds.isAvailable(order.requestedId).available, true);
     process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED = "true";
     assert.strictEqual((await request("fulfill", order)).statusCode, 409);
@@ -249,9 +286,13 @@ function failRename(target, occurrence = 1) {
   for (const paymentOnly of [false, true]) {
     const order = body(paymentOnly ? "early-payment" : "early-session");
     const adjustment = revokeBody(order, paymentOnly ? { externalOrderId: undefined } : {});
-    assert.strictEqual((await request("revoke", adjustment)).payload.tombstoned, true);
+    const revoked = await request("revoke", adjustment);
+    assert.strictEqual(revoked.payload.tombstoned, true);
+    assertUtcTimestamp(revoked.payload.revokedAt);
     assert.strictEqual((await request("fulfill", order)).statusCode, 409);
-    assert.strictEqual((await request("revoke", adjustment)).payload.duplicate, true);
+    const duplicate = await request("revoke", adjustment);
+    assert.strictEqual(duplicate.payload.duplicate, true);
+    assert.strictEqual(duplicate.payload.revokedAt, revoked.payload.revokedAt);
     assert.strictEqual(customIds.isAvailable(order.requestedId).available, true);
   }
   assert.strictEqual((await request("revoke", revokeBody(body(), { reason: "partial_refund" }))).statusCode, 400);
@@ -282,11 +323,16 @@ function failRename(target, occurrence = 1) {
   failRename(process.env.IDS_FILE);
   const adjustment = revokeBody(failedRelease);
   assert.strictEqual((await request("revoke", adjustment)).statusCode, 503);
+  const firstReleaseTime = read(process.env.SOLD_CODES_FILE).reversals
+    .find(entry => entry.stripeSessionId === failedRelease.externalOrderId).reversedAt;
   fs.renameSync = originalRename;
   assert.strictEqual(orders()[failedRelease.externalOrderId].status, "FULFILLED");
   assert.strictEqual((await request("fulfill", failedRelease)).statusCode, 409, "reversal blocks duplicate fulfillment too");
   reload();
-  assert.strictEqual((await request("revoke", adjustment)).payload.revoked, true);
+  await new Promise(resolve => setTimeout(resolve, 10));
+  const retriedRelease = await request("revoke", adjustment);
+  assert.strictEqual(retriedRelease.payload.revoked, true);
+  assert.strictEqual(retriedRelease.payload.revokedAt, firstReleaseTime);
   assert.strictEqual(customIds.isAvailable(failedRelease.requestedId).available, true);
 
   // A failed terminal write must not let a retry remove a replacement's reservation.
@@ -294,9 +340,13 @@ function failRename(target, occurrence = 1) {
   await request("fulfill", failedTerminal);
   failRename(process.env.VLABS_FULFILLMENT_ORDERS_FILE);
   assert.strictEqual((await request("revoke", revokeBody(failedTerminal))).statusCode, 503);
+  const firstTerminalTime = read(process.env.SOLD_CODES_FILE).reversals
+    .find(entry => entry.stripeSessionId === failedTerminal.externalOrderId).reversedAt;
   fs.renameSync = originalRename;
   assert.strictEqual((await request("fulfill", body(failedTerminal.requestedId))).statusCode, 200);
-  assert.strictEqual((await request("revoke", revokeBody(failedTerminal))).statusCode, 200);
+  const retriedTerminal = await request("revoke", revokeBody(failedTerminal));
+  assert.strictEqual(retriedTerminal.statusCode, 200);
+  assert.strictEqual(retriedTerminal.payload.revokedAt, firstTerminalTime);
   assert.strictEqual(customIds.isAvailable(failedTerminal.requestedId).available, false);
 
   // Failure before durable intent must not leave an orphaned reservation.

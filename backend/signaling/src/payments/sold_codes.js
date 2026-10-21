@@ -179,6 +179,16 @@ function isReversed(stripeSessionId, paymentReference, mode) {
   ));
 }
 
+function findReversal(stripeSessionId, paymentReference, mode) {
+  const store = readStore();
+  const paymentReferenceHash = paymentReference ? hashReference(paymentReference, mode) : null;
+  assertPaymentMode(store, stripeSessionId, paymentReferenceHash, mode);
+  return store.reversals.find(entry => (
+    (stripeSessionId && entry.stripeSessionId === stripeSessionId)
+    || (paymentReferenceHash && entry.paymentIntentHash === paymentReferenceHash)
+  )) || null;
+}
+
 function maskCode(value) {
   return typeof value === "string" && value.length >= 4 ? `${value.slice(0, 4)}****` : "****";
 }
@@ -449,6 +459,6 @@ function revokeByStripeSession(stripeSessionId, activationCodesRef, reversalData
 
 module.exports = {
   load, save, recordSale, updateEmailDelivery, revokeByStripeSession, loadAsActivationCodes,
-  findByStripeSession, isReversed, referenceForMode,
+  findByStripeSession, isReversed, findReversal, referenceForMode,
   maskCode, maskEmail, maskStripeId,
 };
