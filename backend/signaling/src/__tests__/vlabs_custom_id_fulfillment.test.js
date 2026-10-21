@@ -11,6 +11,7 @@ process.env.IDS_FILE = path.join(directory, "ids.json");
 process.env.PENDING_FILE = path.join(directory, "pending.json");
 process.env.ID_HASH_PEPPER = "test-only-custom-id-pepper";
 process.env.VLABS_FULFILLMENT_SECRET = "test-only-fulfillment-secret-over-32-characters";
+delete process.env.VLABS_FULFILLMENT_TEST_SECRET;
 delete process.env.VLABS_CUSTOM_ID_FULFILLMENT_ENABLED;
 
 const fulfillment = require("../payments/vlabs_fulfillment");
@@ -35,7 +36,7 @@ function body(requestedId = "test-example", overrides = {}) {
   const productId = `stealthx-custom-id-${suffix}`;
   const product = fulfillment.CUSTOM_ID_PRODUCTS[productId];
   return {
-    externalOrderId: `cs_test_custom_${counter}`, productId,
+    externalOrderId: `cs_live_custom_${counter}`, productId,
     catalogVersion: product.catalogVersion, offerVersion: product.offerVersion, releaseId: product.releaseId,
     paymentReference: `pi_test_custom_${counter}`, paymentEventId: `evt_test_custom_${counter}`,
     paymentStatus: "paid", amount: product.amount, currency: "eur",
@@ -52,9 +53,9 @@ function revokeBody(order, overrides = {}) {
   };
 }
 
-async function request(route, payload, { signatureValid = true } = {}) {
+async function request(route, payload, { signatureValid = true, secret = process.env.VLABS_FULFILLMENT_SECRET } = {}) {
   const timestamp = String(Math.floor(Date.now() / 1000));
-  const signature = crypto.createHmac("sha256", process.env.VLABS_FULFILLMENT_SECRET)
+  const signature = crypto.createHmac("sha256", secret)
     .update(`${timestamp}.${JSON.stringify(payload)}`).digest("hex");
   const res = {
     statusCode: 200, payload: null,
@@ -306,6 +307,22 @@ function failRename(target, occurrence = 1) {
   assert.strictEqual((await request("fulfill", body("locked-store"))).statusCode, 503);
   fs.unlinkSync(`${process.env.VLABS_FULFILLMENT_ORDERS_FILE}.lock`);
   assert.strictEqual(customIds.resolve("owned-example"), "test-device", "legacy ownership is preserved");
+
+  // The same TEST signing boundary applies to Custom-ID reservations and release.
+  setup();
+  const testSecret = "custom-id-test-fulfillment-secret-over-32-characters";
+  process.env.VLABS_FULFILLMENT_TEST_SECRET = testSecret;
+  const testOrder = body("test-mode-reservation", { externalOrderId: "cs_test_custom_mode", livemode: false });
+  assert.strictEqual((await request("fulfill", testOrder)).statusCode, 403);
+  assert.strictEqual((await request("fulfill", testOrder, { secret: testSecret })).payload.fulfilled, true);
+  assert.strictEqual(orders()[testOrder.externalOrderId].mode, "test");
+  assert.strictEqual(customIds.isAvailable(testOrder.requestedId).available, false);
+  const testRevoke = revokeBody(testOrder, { livemode: false });
+  assert.strictEqual((await request("revoke", testRevoke)).statusCode, 403);
+  assert.strictEqual((await request("revoke", testRevoke, { secret: testSecret })).payload.revoked, true);
+  assert.strictEqual(orders()[testOrder.externalOrderId].mode, "test");
+  assert.strictEqual(customIds.isAvailable(testOrder.requestedId).available, true);
+  delete process.env.VLABS_FULFILLMENT_TEST_SECRET;
   console.log("vlabs_custom_id_fulfillment.test.js ok");
 })().catch(error => {
   console.error(error);

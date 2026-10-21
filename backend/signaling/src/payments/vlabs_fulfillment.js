@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { resolveDataDir } = require("../data_dir");
 const { writeJsonAtomic } = require("../utils/json_store");
 const { generateActivationCode } = require("./stripe_handler");
 const soldCodes = require("./sold_codes");
@@ -14,6 +15,7 @@ const INTERNAL_RATE_LIMIT_WINDOW_MS = 60_000;
 const INTERNAL_RATE_LIMIT_MAX_REQUESTS = 60;
 const INTERNAL_RATE_LIMIT_MAX_BUCKETS = 4096;
 const inFlightOrders = new Set();
+let defaultOrdersFile;
 
 // Static immutable sales contract for the private VLABS receiver.
 // Parsed by the VLABS AST checker: keep this a plain frozen literal with
@@ -111,8 +113,14 @@ const CUSTOM_ID_PRODUCTS = Object.freeze({
 const REVOCATION_REASONS = new Set(["stripe_full_refund", "stripe_dispute"]);
 
 function ordersFile() {
-  return process.env.VLABS_FULFILLMENT_ORDERS_FILE
-    || path.join(__dirname, "..", "..", "data", "vlabs_fulfillment_orders.json");
+  if (process.env.VLABS_FULFILLMENT_ORDERS_FILE) return process.env.VLABS_FULFILLMENT_ORDERS_FILE;
+  if (!defaultOrdersFile) {
+    const dataDir = resolveDataDir({
+      preferred: process.env.DATA_DIR || path.join(__dirname, "..", "..", "data"),
+    });
+    defaultOrdersFile = path.join(dataDir, "vlabs_fulfillment_orders.json");
+  }
+  return defaultOrdersFile;
 }
 
 function ordersLockFile() {
@@ -151,26 +159,26 @@ function assertOrdersLockOwned(lock) {
   throw new Error("vlabs_fulfillment_store_lock_lost");
 }
 
-function releaseOrdersLock(lock) {
+function releaseOrdersLock(lock, mode) {
   try {
     fs.closeSync(lock.descriptor);
   } catch (error) {
-    console.error("[VLABS-FULFILLMENT] Failed to close store lock:", error.message);
+    console.error(`[VLABS-FULFILLMENT mode=${mode}] Failed to close store lock:`, error.message);
   }
   try {
     const owner = fs.readFileSync(ordersLockFile(), "utf8").trim();
     if (owner.endsWith(`:${lock.ownerToken}`)) fs.unlinkSync(ordersLockFile());
   } catch (error) {
-    if (error.code !== "ENOENT") console.error("[VLABS-FULFILLMENT] Failed to release store lock:", error.message);
+    if (error.code !== "ENOENT") console.error(`[VLABS-FULFILLMENT mode=${mode}] Failed to release store lock:`, error.message);
   }
 }
 
-function withOrdersLock(operation) {
+function withOrdersLock(operation, mode) {
   const lock = acquireOrdersLock();
   try {
     return operation(lock);
   } finally {
-    releaseOrdersLock(lock);
+    releaseOrdersLock(lock, mode);
   }
 }
 
@@ -236,10 +244,33 @@ function isRevocationReason(value) {
   return typeof value === "string" && REVOCATION_REASONS.has(value);
 }
 
-function authenticateRequest(req, secret) {
+function authenticateRequest(req, secrets) {
   const timestamp = req.get("x-vlabs-timestamp") || "";
   const signature = req.get("x-vlabs-signature") || "";
-  return verifySignature(secret, timestamp, JSON.stringify(req.body || {}), signature);
+  const body = JSON.stringify(req.body || {});
+  for (const mode of ["live", "test"]) {
+    if (secrets[mode] && verifySignature(secrets[mode], timestamp, body, signature)) return mode;
+  }
+  return null;
+}
+
+function validateRequestMode(body, mode) {
+  const { externalOrderId, livemode } = body || {};
+  const testOrderId = typeof externalOrderId === "string" && externalOrderId.startsWith("cs_test_");
+  if ((mode === "test" && externalOrderId !== undefined && !testOrderId)
+    || (mode === "live" && testOrderId)
+    || (typeof livemode === "boolean" && livemode !== (mode === "live"))) {
+    throw httpError(403, "Mode mismatch");
+  }
+}
+
+function assertOrderModes(orders, externalOrderId, paymentReference, mode) {
+  for (const [key, order] of Object.entries(orders)) {
+    if (!order || (key !== externalOrderId && order.paymentReference !== paymentReference)) continue;
+    // Older rows have no mode; their canonical session key identifies test data.
+    const orderMode = order.mode || (key.startsWith("cs_test_") ? "test" : "live");
+    if (orderMode !== mode) throw httpError(403, "Mode mismatch");
+  }
 }
 
 function requestIp(req) {
@@ -383,8 +414,8 @@ function revocationTupleDrift(order, body) {
     || (order.paymentReference || null) !== (body.paymentReference || null);
 }
 
-function configuredSecret() {
-  const secret = process.env.VLABS_FULFILLMENT_SECRET;
+function configuredSecret(name) {
+  const secret = process.env[name];
   return typeof secret === "string" && secret.length >= MIN_FULFILLMENT_SECRET_LENGTH ? secret : null;
 }
 
@@ -396,19 +427,25 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
     if (!requestRateLimiter.allow(req)) {
       return res.status(429).json({ ok: false, error: "Too many fulfillment requests" });
     }
-    const secret = configuredSecret();
-    if (!secret) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
-    if (!authenticateRequest(req, secret)) {
+    const secrets = {
+      live: configuredSecret("VLABS_FULFILLMENT_SECRET"),
+      test: configuredSecret("VLABS_FULFILLMENT_TEST_SECRET"),
+    };
+    if (!secrets.live && !secrets.test) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
+    const mode = authenticateRequest(req, secrets);
+    if (!mode) {
       return res.status(401).json({ ok: false, error: "Invalid fulfillment signature" });
     }
 
     let product;
     try {
+      validateRequestMode(req.body, mode);
       ({ product } = validateFulfillmentContract(req.body));
     } catch (error) {
       return res.status(error.status || 400).json({ ok: false, error: error.message });
     }
     const { externalOrderId, productId, customerEmail } = req.body;
+    console.log(`[VLABS-FULFILLMENT mode=${mode}] Fulfill:`, soldCodes.maskStripeId(externalOrderId));
 
     if (inFlightOrders.has(externalOrderId)) {
       return res.status(409).json({ ok: false, error: "Order fulfillment is already in progress" });
@@ -422,6 +459,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
         withOrdersLock(lock => {
           assertOrdersLockOwned(lock);
           const orders = loadOrders();
+          assertOrderModes(orders, externalOrderId, req.body.paymentReference, mode);
           let existing = orders[externalOrderId];
           if (existing) {
             if (existing.status === "TOMBSTONED" || existing.status === "REVOKED") {
@@ -433,7 +471,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
                 || (existing.paymentReference && existing.paymentReference !== req.body.paymentReference)) {
                 throw httpError(409, "Order contract mismatch");
               }
-              existing = bindLegacyOrder(existing, req.body, product);
+              existing = { ...bindLegacyOrder(existing, req.body, product), mode };
               orders[externalOrderId] = existing;
               saveOrders(orders);
             }
@@ -459,6 +497,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
             // Persist intent before reserving. A retry can recover either side of
             // the two-file write without issuing a second reservation.
             order = existing || {
+              mode,
               productId,
               tier: product.tier,
               catalogVersion: product.catalogVersion,
@@ -504,11 +543,14 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
               offerVersion: product.offerVersion,
               releaseId: product.releaseId,
               externalProductId: productId,
+              mode,
               activationCodesRef,
             });
           } catch (saleError) {
+            if (saleError && saleError.message === "sale_mode_mismatch") throw httpError(403, "Mode mismatch");
             if (saleError && saleError.message === "payment_reversed") {
               orders[externalOrderId] = {
+                mode,
                 productId,
                 tier: product.tier,
                 catalogVersion: CATALOG_VERSION,
@@ -532,6 +574,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
             throw saleError;
           }
           order = {
+            mode,
             productId,
             tier: product.tier,
             catalogVersion: CATALOG_VERSION,
@@ -547,7 +590,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           };
           orders[externalOrderId] = order;
           saveOrders(orders);
-        });
+        }, mode);
       } catch (error) {
         if (error && error.status) {
           return res.status(error.status).json({ ok: false, error: error.message });
@@ -589,13 +632,13 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           emailSent: true,
         };
         saveOrders(orders);
-      });
+      }, mode);
       if (revokedBeforeFinalized) {
         return res.status(409).json({ ok: false, error: "Order was revoked before fulfillment" });
       }
       return res.json({ ok: true, fulfilled: true, productId });
     } catch (error) {
-      console.error("[VLABS-FULFILLMENT] Order failed:", soldCodes.maskStripeId(externalOrderId), error.message);
+      console.error(`[VLABS-FULFILLMENT mode=${mode}] Order failed:`, soldCodes.maskStripeId(externalOrderId), error.message);
       return res.status(503).json({ ok: false, error: "Fulfillment failed" });
     } finally {
       inFlightOrders.delete(externalOrderId);
@@ -606,23 +649,30 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
     if (!requestRateLimiter.allow(req)) {
       return res.status(429).json({ ok: false, error: "Too many fulfillment requests" });
     }
-    const secret = configuredSecret();
-    if (!secret) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
-    if (!authenticateRequest(req, secret)) {
+    const secrets = {
+      live: configuredSecret("VLABS_FULFILLMENT_SECRET"),
+      test: configuredSecret("VLABS_FULFILLMENT_TEST_SECRET"),
+    };
+    if (!secrets.live && !secrets.test) return res.status(503).json({ ok: false, error: "Fulfillment is not configured" });
+    const mode = authenticateRequest(req, secrets);
+    if (!mode) {
       return res.status(401).json({ ok: false, error: "Invalid fulfillment signature" });
     }
 
     let product;
     try {
+      validateRequestMode(req.body, mode);
       ({ product } = validateRevocationContract(req.body));
     } catch (error) {
       return res.status(error.status || 400).json({ ok: false, error: error.message });
     }
     const { externalOrderId, productId, reason, paymentReference, adjustmentEventId } = req.body;
+    console.log(`[VLABS-FULFILLMENT mode=${mode}] Revoke:`, soldCodes.maskStripeId(externalOrderId || paymentReference));
     try {
       const outcome = withOrdersLock(lock => {
         assertOrdersLockOwned(lock);
         const orders = loadOrders();
+        assertOrderModes(orders, externalOrderId, paymentReference, mode);
         const paymentOrderKey = `payment_${crypto.createHash("sha256").update(paymentReference).digest("hex").slice(0, 32)}`;
         const matchingPaymentOrderKeys = externalOrderId ? [] : Object.keys(orders)
           .filter(key => orders[key] && orders[key].paymentReference === paymentReference);
@@ -660,7 +710,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           if (existing.tier !== product.tier) {
             throw httpError(409, "Revocation contract mismatch");
           }
-          existing = bindLegacyOrder(existing, req.body, product);
+          existing = { ...bindLegacyOrder(existing, req.body, product), mode };
           orders[orderKey] = existing;
           saveOrders(orders);
         }
@@ -682,6 +732,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           catalogVersion: product.catalogVersion,
           offerVersion: product.offerVersion,
           releaseId: product.releaseId,
+          mode,
         });
         if (product.kind === "custom_id" && soldSessionKey) {
           // Release durably before marking the order terminal. The feature flag
@@ -699,6 +750,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
         if (!existing) {
           // Revoke-before-fulfill: tombstone so a later fulfillment fails closed.
           orders[orderKey] = {
+            mode,
             productId,
             tier: product.tier,
             catalogVersion: product.catalogVersion,
@@ -720,6 +772,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
 
         orders[orderKey] = {
           ...existing,
+          mode,
           status: "REVOKED",
           revokedAt: new Date().toISOString(),
           revokeReason: reason,
@@ -727,16 +780,19 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
         };
         saveOrders(orders);
         return { revoked: true };
-      });
+      }, mode);
 
       if (outcome.duplicate) return res.json({ ok: true, duplicate: true, productId });
       if (outcome.tombstoned) return res.json({ ok: true, tombstoned: true, productId });
       return res.json({ ok: true, revoked: true, productId });
     } catch (error) {
+      if (error && error.message === "sale_mode_mismatch") {
+        return res.status(403).json({ ok: false, error: "Mode mismatch" });
+      }
       if (error && error.status) {
         return res.status(error.status).json({ ok: false, error: error.message });
       }
-      console.error("[VLABS-FULFILLMENT] Revocation failed:", soldCodes.maskStripeId(externalOrderId || paymentReference), error.message);
+      console.error(`[VLABS-FULFILLMENT mode=${mode}] Revocation failed:`, soldCodes.maskStripeId(externalOrderId || paymentReference), error.message);
       return res.status(503).json({ ok: false, error: "Revocation failed" });
     }
   });
