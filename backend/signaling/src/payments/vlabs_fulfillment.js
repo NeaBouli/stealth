@@ -198,6 +198,39 @@ function saveOrders(orders) {
   writeJsonAtomic(ordersFile(), orders);
 }
 
+function licenseReference(order, requestedId) {
+  if (order.licenseRef) return order.licenseRef;
+  if (order.code) {
+    return `lic_${crypto.createHash("sha256").update(`stealthx-license-ref:v1:${order.code}`).digest("hex").slice(0, 24)}`;
+  }
+  if (requestedId) {
+    return `cid_${crypto.createHash("sha256").update(`stealthx-custom-id-ref:v1:${requestedId}`).digest("hex").slice(0, 24)}`;
+  }
+  return undefined;
+}
+
+function fulfillmentReceipt(order, requestedId) {
+  return {
+    licenseRef: licenseReference(order, requestedId),
+    fulfilledAt: order.fulfilledAt || order.createdAt || new Date().toISOString(),
+  };
+}
+
+function firstRevokedAt(orders, externalOrderId, paymentReference) {
+  // A payment tombstone and a later session tombstone describe one reversal.
+  const timestamps = Object.entries(orders)
+    .filter(([key, order]) => order && (key === externalOrderId || order.paymentReference === paymentReference)
+      && (order.status === "REVOKED" || order.status === "TOMBSTONED"))
+    .map(([, order]) => order.revokedAt || order.tombstonedAt)
+    .filter(Boolean);
+  return timestamps.sort()[0] || new Date().toISOString();
+}
+
+function revocationReceipt(order, revokedAt) {
+  const licenseRef = licenseReference(order);
+  return { revokedAt, ...(licenseRef ? { licenseRef } : {}) };
+}
+
 function httpError(status, message) {
   const error = new Error(message);
   error.status = status;
@@ -512,8 +545,14 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
               throw httpError(409, "Order was revoked before fulfillment");
             }
             if (existing.status === "FULFILLED") {
+              const receipt = fulfillmentReceipt(existing,
+                product.kind === "custom_id" ? normalizedRequestedId(req.body, product) : undefined);
+              if (existing.licenseRef !== receipt.licenseRef || existing.fulfilledAt !== receipt.fulfilledAt) {
+                orders[externalOrderId] = { ...existing, ...receipt };
+                saveOrders(orders);
+              }
               duplicate = true;
-              order = existing;
+              order = orders[externalOrderId];
               return;
             }
             if (product.kind !== "custom_id") {
@@ -552,15 +591,19 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
               customIds.releaseVlabsReservation(externalOrderId);
               orders[externalOrderId] = {
                 ...order, status: "TOMBSTONED", tombstonedAt: new Date().toISOString(),
+                revokedAt: soldCodes.findReversal(externalOrderId, req.body.paymentReference, mode)?.reversedAt
+                  || firstRevokedAt(orders, externalOrderId, paymentReference),
                 revokeReason: "reversal_precedes_fulfillment",
               };
               saveOrders(orders);
               throw httpError(409, "Order was revoked before fulfillment");
             }
             customIds.reserveForVlabs(normalizedRequestedId(req.body, product), externalOrderId);
-            orders[externalOrderId] = {
-              ...order, status: "FULFILLED", fulfilledAt: new Date().toISOString(),
+            order = {
+              ...order, status: "FULFILLED", fulfilledAt: order.fulfilledAt || new Date().toISOString(),
+              licenseRef: licenseReference(order, normalizedRequestedId(req.body, product)),
             };
+            orders[externalOrderId] = order;
             saveOrders(orders);
             return;
           }
@@ -600,6 +643,8 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
                 status: "TOMBSTONED",
                 createdAt: new Date().toISOString(),
                 tombstonedAt: new Date().toISOString(),
+                revokedAt: soldCodes.findReversal(externalOrderId, req.body.paymentReference, mode)?.reversedAt
+                  || firstRevokedAt(orders, externalOrderId, paymentReference),
                 revokeReason: "reversal_precedes_fulfillment",
               };
               saveOrders(orders);
@@ -624,6 +669,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
             paymentReference,
             paymentEventId,
             code: recorded.code,
+            licenseRef: licenseReference(recorded),
             status: "PENDING_EMAIL",
             createdAt: new Date().toISOString(),
           };
@@ -640,10 +686,10 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
         throw error;
       }
 
-      if (duplicate) return res.json({ ok: true, duplicate: true, productId });
+      if (duplicate) return res.json({ ok: true, duplicate: true, productId, ...fulfillmentReceipt(order) });
       // VLABS delivers the reservation confirmation. Custom IDs do not mint an
       // app activation code or pass through the activation-code email template.
-      if (product.kind === "custom_id") return res.json({ ok: true, fulfilled: true, productId });
+      if (product.kind === "custom_id") return res.json({ ok: true, fulfilled: true, productId, ...fulfillmentReceipt(order) });
 
       const emailSent = await sendActivationCode(customerEmail, order.code, product.tier, {
         productKey: product.productKey,
@@ -667,18 +713,20 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           lastAttemptAt: new Date().toISOString(),
           deliveredAt: new Date().toISOString(),
         });
-        orders[externalOrderId] = {
+        order = {
           ...current,
           status: "FULFILLED",
-          fulfilledAt: new Date().toISOString(),
+          licenseRef: licenseReference(current),
+          fulfilledAt: current.fulfilledAt || new Date().toISOString(),
           emailSent: true,
         };
+        orders[externalOrderId] = order;
         saveOrders(orders);
       }, mode);
       if (revokedBeforeFinalized) {
         return res.status(409).json({ ok: false, error: "Order was revoked before fulfillment" });
       }
-      return res.json({ ok: true, fulfilled: true, productId });
+      return res.json({ ok: true, fulfilled: true, productId, ...fulfillmentReceipt(order) });
     } catch (error) {
       console.error(`[VLABS-FULFILLMENT mode=${mode}] Order failed:`, soldCodes.maskStripeId(externalOrderId), error.message);
       return res.status(503).json({ ok: false, error: "Fulfillment failed" });
@@ -720,6 +768,7 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
         assertOrdersLockOwned(lock);
         const orders = loadOrders();
         assertOrderModes(orders, externalOrderId, paymentReference, mode);
+        const revokedAt = firstRevokedAt(orders, externalOrderId, paymentReference);
         const paymentOrderKey = `payment_${crypto.createHash("sha256").update(paymentReference).digest("hex").slice(0, 32)}`;
         const matchingPaymentOrderKeys = externalOrderId ? [] : Object.keys(orders)
           .filter(key => orders[key] && orders[key].paymentReference === paymentReference);
@@ -737,7 +786,18 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
             return !revocationTupleDrift(candidate, orderBody);
           });
           if (!terminalDuplicate) throw httpError(409, "Revocation contract mismatch");
-          return { duplicate: true };
+          let licenseRef;
+          let changed = false;
+          for (const key of matchingPaymentOrderKeys) {
+            const receipt = revocationReceipt(orders[key], revokedAt);
+            if (orders[key].revokedAt !== receipt.revokedAt || orders[key].licenseRef !== receipt.licenseRef) {
+              orders[key] = { ...orders[key], ...receipt };
+              changed = true;
+            }
+            licenseRef = licenseRef || receipt.licenseRef;
+          }
+          if (changed) saveOrders(orders);
+          return { duplicate: true, revokedAt, ...(licenseRef ? { licenseRef } : {}) };
         }
         const orderKey = externalOrderId
           || matchingPaymentOrderKeys[0]
@@ -751,7 +811,12 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           throw httpError(409, "Revocation contract mismatch");
         }
         if (existing && (existing.status === "REVOKED" || existing.status === "TOMBSTONED")) {
-          return { duplicate: true };
+          const receipt = revocationReceipt(existing, revokedAt);
+          if (existing.revokedAt !== receipt.revokedAt || existing.licenseRef !== receipt.licenseRef) {
+            orders[orderKey] = { ...existing, ...receipt };
+            saveOrders(orders);
+          }
+          return { duplicate: true, ...receipt };
         }
         if (existing && isLegacyOrder(existing)) {
           if (existing.tier !== product.tier) {
@@ -781,6 +846,9 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
           releaseId: product.releaseId,
           mode,
         });
+        // The reversal can already be durable when a later activation/reservation
+        // or order write fails. Recover its original time on the successful retry.
+        const reversalTime = soldCodes.findReversal(soldSessionKey, req.body.paymentReference, mode)?.reversedAt || revokedAt;
         if (product.kind === "custom_id" && soldSessionKey) {
           // Release durably before marking the order terminal. The feature flag
           // gates new sales only; refunds/disputes must work after disabling it.
@@ -809,29 +877,29 @@ function setupVlabsFulfillmentRoute(app, activationCodesRef, {
             status: "TOMBSTONED",
             createdAt: new Date().toISOString(),
             tombstonedAt: new Date().toISOString(),
+            revokedAt: reversalTime,
             revokeReason: reason,
             adjustmentEventId,
             soldCodeTombstoned: result.tombstoned === true,
           };
           saveOrders(orders);
-          return { tombstoned: true };
+          return { tombstoned: true, revokedAt: reversalTime };
         }
 
+        const receipt = revocationReceipt(existing, reversalTime);
         orders[orderKey] = {
           ...existing,
           mode,
           status: "REVOKED",
-          revokedAt: new Date().toISOString(),
+          ...receipt,
           revokeReason: reason,
           adjustmentEventId,
         };
         saveOrders(orders);
-        return { revoked: true };
+        return { revoked: true, ...receipt };
       }, mode);
 
-      if (outcome.duplicate) return res.json({ ok: true, duplicate: true, productId });
-      if (outcome.tombstoned) return res.json({ ok: true, tombstoned: true, productId });
-      return res.json({ ok: true, revoked: true, productId });
+      return res.json({ ok: true, ...outcome, productId });
     } catch (error) {
       if (error && error.message === "sale_mode_mismatch") {
         return res.status(403).json({ ok: false, error: "Mode mismatch" });
