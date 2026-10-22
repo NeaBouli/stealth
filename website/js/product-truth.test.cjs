@@ -161,3 +161,124 @@ test("landing advertises only the Free offer while paid sales stay closed", () =
     assert.doesNotMatch(card, /<a\b/);
   }
 });
+
+const htmlPages = ['index.html', 'privacy.html', 'faq.html', 'security.html', 'disclaimer.html',
+    'download.html', 'terms.html', 'impressum.html', 'llms.txt'];
+const wikiPages = fs.readdirSync(path.join(repositoryRoot, 'website', 'wiki'))
+    .filter((f) => f.endsWith('.html')).map((f) => `wiki/${f}`);
+const allPages = [...htmlPages, ...wikiPages];
+const readWebsite = (name) => read(`website/${name}`);
+
+test('WEB-05/H-CRYPTO-07: no page markets the transport as SRTP', () => {
+    for (const name of allPages) {
+        assert.doesNotMatch(readWebsite(name), /SRTP/i, `${name} mentions SRTP`);
+    }
+});
+
+test('WEB-02: contact-data claims match the implemented flows', () => {
+    const forbidden = [
+        /no contact uploads/i,
+        /contacts?[^.]{0,160}never uploaded/i,
+        /contact data is stored exclusively on your device/i,
+        /Verlassen niemals Ihr Gerät/i,
+        /Non lasciano mai il vostro dispositivo/i,
+        /Nunca salen de su dispositivo/i,
+    ];
+    for (const name of allPages) {
+        for (const pattern of forbidden) {
+            assert.doesNotMatch(readWebsite(name), pattern, `${name} contains ${pattern}`);
+        }
+    }
+});
+
+test('WEB-02: every privacy.html language block states the hashed discovery flow', () => {
+    const privacy = readWebsite('privacy.html');
+    const langs = ['en', 'de', 'el', 'it', 'es', 'ru', 'zh'];
+    for (const lang of langs) {
+        const block = privacy.split(`class="lang-content" data-lang="${lang}"`)[1];
+        assert.ok(block, `privacy.html missing ${lang} block`);
+        const text = block.split('class="lang-content"')[0];
+        assert.match(text, /SHA-256/, `privacy.html ${lang} block lacks the hashed-discovery statement`);
+    }
+});
+
+test('WEB-03: wiki privacy page is a summary linking the canonical policy', () => {
+    const wiki = readWebsite('wiki/privacy-policy.html');
+    assert.ok(wiki.includes('href="../privacy.html"'));
+    assert.doesNotMatch(wiki, /completely disabled at the build level/i);
+    assert.doesNotMatch(wiki, /never uploaded/i);
+    assert.doesNotMatch(wiki, /Last updated (April|June) 2026/);
+});
+
+test('WEB-04: crash-reporting copy matches the runtime consent model', () => {
+    for (const name of allPages) {
+        const html = readWebsite(name);
+        assert.doesNotMatch(html, /build level/i, `${name} claims build-level disabling`);
+        assert.doesNotMatch(html, /opt-in Crashlytics/i, `${name} claims opt-in Crashlytics`);
+    }
+});
+
+test('WEB-08: impressum renders provider and address as text, no dead ODR link', () => {
+    const html = readWebsite('impressum.html');
+    assert.ok((html.match(/Vendetta Labs/g) || []).length >= 3);
+    assert.ok(html.includes('Lakonikis 127, 24100 Kalamata'));
+    assert.doesNotMatch(html, /<canvas id="owner/);
+    assert.doesNotMatch(html, /ec\.europa\.eu\/consumers\/odr/);
+});
+
+test('WEB-09: privacy policy names the website third-party origins', () => {
+    const privacy = readWebsite('privacy.html');
+    assert.match(privacy, /<h2>This Website<\/h2>/);
+    for (const origin of ['GitHub Pages', 'fonts.googleapis.com', 'cdn.jsdelivr.net', 'esm.sh']) {
+        assert.ok(privacy.includes(origin), `privacy.html does not name ${origin}`);
+    }
+});
+
+test('WEB-13: excluded pricing features carry a screen-reader prefix', () => {
+    const items = readWebsite('index.html').match(/<li class="excluded">[\s\S]*?<\/li>/g) || [];
+    assert.ok(items.length >= 4, 'expected excluded pricing items on index.html');
+    for (const item of items) {
+        assert.match(item, /<span class="sr-only">Not included: <\/span>/);
+    }
+    const css = readWebsite('css/landing.css');
+    assert.match(css, /\.sr-only\s*\{[^}]*position:\s*absolute;[^}]*clip:\s*rect\(0, 0, 0, 0\)/);
+});
+
+test('WEB-01: Pages deploy includes hidden files and smoke-checks .well-known', () => {
+    const wf = read(".github/workflows/deploy-pages.yml");
+    assert.match(wf, /include-hidden-files:\s*true/);
+    assert.match(wf, /\.well-known\/assetlinks\.json/);
+    assert.match(wf, /\.well-known\/security\.txt/);
+    assert.ok(JSON.parse(readWebsite('.well-known/assetlinks.json')).length > 0);
+    assert.match(readWebsite('.well-known/security.txt'), /Canonical: https:\/\/stealthx\.tech\/\.well-known\/security\.txt/);
+});
+
+test('media copy describes application encryption over the DataChannel', () => {
+    for (const name of ['index.html', 'security.html', 'wiki/user-manual.html']) {
+        assert.match(readWebsite(name), /WebRTC DataChannel/);
+        assert.match(readWebsite(name), /XChaCha20-Poly1305-encrypted Opus/);
+    }
+});
+
+test('current direct release and Free-only Play distribution survive the port', () => {
+    assert.match(readWebsite('download.html'), /v1\.0\.50 \(versionCode 78018\)/);
+    assert.match(readWebsite('wiki/user-manual.html'), /Published APK 1\.0\.50 \(78018\)/);
+    for (const name of ['index.html', 'download.html', 'faq.html', 'wiki/faq.html']) {
+        const html = readWebsite(name);
+        assert.match(html, /Google Play distributes (?:the Free edition only|only the Free edition)/);
+        assert.match(html, /one-time lifetime purchases through the VLABS shop/);
+        assert.doesNotMatch(html, /Google Play Billing|Play billing|\/(?:month|year)\b/i);
+    }
+});
+
+test('offline lifetime licence FAQ preserves the 30-day proof and 7-day recovery', () => {
+    const faq = readWebsite('index.html').match(
+        /Does my Pro or Premium licence work offline\?[\s\S]*?<div class="faq-answer-inner">([\s\S]*?)<\/div>/,
+    );
+    assert.ok(faq, 'offline licence FAQ is missing');
+    assert.match(faq[1], /licence stays valid for life/);
+    assert.match(faq[1], /more than 30 days/);
+    assert.match(faq[1], /within the next 7 days/);
+    assert.match(faq[1], /enter your activation code again/);
+    assert.match(faq[1], /does not use up an extra device slot/);
+});
