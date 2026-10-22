@@ -11,6 +11,38 @@
     <!-- Main -->
     <string name="new_call">New Call</string>
     <string name="upgrade_to_pro">Upgrade to Pro</string>
+    <string name="upgrade_choose_edition">Choose your edition</string>
+    <string name="upgrade_current_edition">Current edition: %1$s</string>
+    <string name="upgrade_pro_price">One-time purchase · lifetime</string>
+    <string name="upgrade_premium_price">One-time purchase · lifetime</string>
+    <string name="upgrade_price_terms">One-time purchase, no subscription. Prices include VAT.</string>
+    <string name="upgrade_pro_lifetime">Buy Pro Lifetime</string>
+    <string name="upgrade_premium_lifetime">Buy Premium Lifetime</string>
+    <string name="upgrade_activation_code">Buy activation code</string>
+    <string name="upgrade_activation_code_description">Buy a Premium lifetime activation code. Use it yourself or gift it to anyone. Activate it in Settings.</string>
+    <string name="upgrade_free_title">FREE</string>
+    <string name="upgrade_free_price">Free of charge</string>
+    <string name="upgrade_free_features">• Encrypted calls\n• 15 min call limit\n• 10 contacts\n• With ads</string>
+    <string name="upgrade_pro_title">PRO</string>
+    <string name="upgrade_pro_features">• No ads\n• Unlimited calls &amp; contacts\n• Online status\n• Call history\n• Anti-recording detection</string>
+    <string name="upgrade_premium_title">PREMIUM</string>
+    <string name="upgrade_premium_features">• Everything in Pro\n• Advanced threat protection\n• Screenshot protection\n• Hardware-backed local key protection where supported</string>
+    <string name="upgrade_activation_code_title">🎁 Activation Code</string>
+    <string name="upgrade_restore_purchase">Restore Purchase</string>
+    <string name="upgrade_purchases_unavailable">Purchases are currently unavailable</string>
+    <string name="upgrade_restoring_purchases">Restoring purchases...</string>
+    <string name="upgrade_product_unavailable">Product not available</string>
+    <string name="upgrade_launching_purchase">Launching purchase...</string>
+    <string name="upgrade_no_offer_available">No offer available</string>
+    <string name="upgrade_products_loaded">Products loaded: %1$d</string>
+    <string name="upgrade_purchase_with_price">%1$s — %2$s</string>
+    <string name="upgrade_verification_pending">Purchase pending server verification</string>
+    <string name="upgrade_unable_to_verify_purchase">Unable to verify purchase</string>
+    <string name="upgrade_edition_verification_pending">%1$s purchase pending server verification</string>
+    <string name="upgrade_verifying_purchase">Verifying purchase securely...</string>
+    <string name="upgrade_purchase_failed">Purchase failed: %1$s</string>
+    <string name="upgrade_billing_disconnected">Billing disconnected — tap Restore to retry</string>
+    <string name="upgrade_verification_unavailable">Verification unavailable</string>
 
     <!-- Call screen -->
     <string name="call_connecting">Connecting\u2026</string>
@@ -55,6 +87,7 @@
     <string name="settings_report_bug_summary">Report a bug via our form</string>
     <string name="settings_privacy">Privacy Policy</string>
     <string name="settings_privacy_summary">How we protect your data</string>
+    <string name="settings_terms_summary">Activation codes, lifetime purchases, legal terms</string>
     <string name="settings_ad_privacy">Ad Privacy Choices</string>
     <string name="settings_ad_privacy_summary">Review consent choices used for ads</string>
     <string name="settings_crash_reports">Crash Reports</string>

@@ -3,11 +3,13 @@ package com.securecall.app.billing
 import android.widget.TextView
 import com.android.billingclient.api.ProductDetails
 import com.securecall.app.BuildConfig
+import com.securecall.app.R
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Answers
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -20,6 +22,8 @@ class UpgradeActivityTest {
 
     @Before
     fun setUp() {
+        doReturn("Launching purchase...").whenever(activity).getString(R.string.upgrade_launching_purchase)
+        doReturn("No offer available").whenever(activity).getString(R.string.upgrade_no_offer_available)
         for ((name, value) in mapOf("billingManager" to manager, "tvStatus" to status)) {
             UpgradeActivity::class.java.getDeclaredField(name).apply {
                 isAccessible = true
@@ -65,10 +69,11 @@ class UpgradeActivityTest {
     fun missingOfferDoesNotLaunchPurchase() {
         val details: ProductDetails = mock()
         whenever(manager.getProductDetails(BuildConfig.SKU_PREMIUM_ACTIVATION_CODE)).thenReturn(details)
+        val expectedStatus = activity.getString(R.string.upgrade_no_offer_available)
 
         launchPurchase(BuildConfig.SKU_PREMIUM_ACTIVATION_CODE)
 
-        verify(status).text = "No offer available"
+        verify(status).text = expectedStatus
         verify(manager, never()).launchInAppPurchaseFlow(any())
         verify(manager, never()).launchPurchaseFlow(any(), any())
     }

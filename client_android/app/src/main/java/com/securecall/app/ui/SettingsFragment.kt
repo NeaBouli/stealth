@@ -117,19 +117,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Battery optimization status + toggle
         configureBatteryOptimization()
 
-        // Upgrade button — hidden for Premium, shows "Upgrade to Premium" for Pro
-        findPreference<Preference>("pref_upgrade")?.apply {
-            when (effectiveTier) {
-                "PREMIUM" -> isVisible = false
-                "PRO" -> { isVisible = true; title = "Upgrade to Premium" }
-                else -> { isVisible = true; title = "Buy Pro / Premium" }
-            }
-            summary = "View purchase options on the SecureCall website"
-            setOnPreferenceClickListener {
-                openUrl("https://stealthx.tech/#pricing")
-                true
-            }
-        }
+        configureExternalPurchaseLinks(effectiveTier)
 
         // Custom Call ID section (Premium only)
         configureCustomCallId(effectiveTier)
@@ -434,6 +422,39 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
+    internal fun configureExternalPurchaseLinks(effectiveTier: String) {
+        val upgrade = findPreference<Preference>("pref_upgrade")
+        val customIdBuy = findPreference<Preference>("pref_custom_id_buy")
+        // Play must hide purchase prompts even after an entitlement changes the effective tier.
+        if (!BuildConfig.EXTERNAL_PURCHASE_LINKS_ENABLED) {
+            listOfNotNull(upgrade, customIdBuy).forEach {
+                it.isVisible = false
+                it.onPreferenceClickListener = null
+            }
+            return
+        }
+
+        // Direct APK upgrade button — hidden for Premium, offers Premium for Pro.
+        upgrade?.apply {
+            when (effectiveTier) {
+                "PREMIUM" -> isVisible = false
+                "PRO" -> { isVisible = true; title = "Upgrade to Premium" }
+                else -> { isVisible = true; title = "Buy Pro / Premium" }
+            }
+            summary = "View purchase options on the SecureCall website"
+            setOnPreferenceClickListener {
+                openUrl("https://stealthx.tech/#pricing")
+                true
+            }
+        }
+        if (effectiveTier == "PREMIUM") {
+            customIdBuy?.setOnPreferenceClickListener {
+                openUrl("https://stealthx.tech/wiki/custom-id.html")
+                true
+            }
+        }
+    }
+
     private fun configureCustomCallId(effectiveTier: String) {
         val isPremium = effectiveTier == "PREMIUM"
         val category = findPreference<com.securecall.app.ui.CollapsiblePreferenceCategory>("pref_category_custom_id")
@@ -480,12 +501,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
             val deviceId = prefs.getString("client_id", "") ?: ""
             showCustomIdConfirmation(id, password, deviceId, true)
-            true
-        }
-
-        // Buy button → open website
-        findPreference<Preference>("pref_custom_id_buy")?.setOnPreferenceClickListener {
-            openUrl("https://stealthx.tech/wiki/custom-id.html")
             true
         }
     }
