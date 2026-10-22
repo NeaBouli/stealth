@@ -19,6 +19,29 @@
     <string name="upgrade_premium_lifetime">Premium lebenslang kaufen</string>
     <string name="upgrade_activation_code">Aktivierungscode kaufen</string>
     <string name="upgrade_activation_code_description">Premium-Aktivierungscode für lebenslangen Zugang kaufen, selbst nutzen oder verschenken. In den Einstellungen aktivieren.</string>
+    <string name="upgrade_free_title">FREE</string>
+    <string name="upgrade_free_price">Kostenlos</string>
+    <string name="upgrade_free_features">• Verschlüsselte Anrufe\n• Anrufdauer auf 15 Min. begrenzt\n• 10 Kontakte\n• Mit Werbung</string>
+    <string name="upgrade_pro_title">PRO</string>
+    <string name="upgrade_pro_features">• Keine Werbung\n• Unbegrenzte Anrufe &amp; Kontakte\n• Online-Status\n• Anrufverlauf\n• Erkennung von Aufnahmen</string>
+    <string name="upgrade_premium_title">PREMIUM</string>
+    <string name="upgrade_premium_features">• Alle Pro-Funktionen\n• Erweiterter Schutz vor Bedrohungen\n• Schutz vor Screenshots\n• Hardwaregestützter Schutz lokaler Schlüssel, sofern unterstützt</string>
+    <string name="upgrade_activation_code_title">🎁 Aktivierungscode</string>
+    <string name="upgrade_restore_purchase">Kauf wiederherstellen</string>
+    <string name="upgrade_purchases_unavailable">Käufe sind derzeit nicht verfügbar</string>
+    <string name="upgrade_restoring_purchases">Käufe werden wiederhergestellt...</string>
+    <string name="upgrade_product_unavailable">Produkt nicht verfügbar</string>
+    <string name="upgrade_launching_purchase">Kauf wird gestartet...</string>
+    <string name="upgrade_no_offer_available">Kein Angebot verfügbar</string>
+    <string name="upgrade_products_loaded">Geladene Produkte: %1$d</string>
+    <string name="upgrade_purchase_with_price">%1$s — %2$s</string>
+    <string name="upgrade_verification_pending">Kauf wartet auf Serverprüfung</string>
+    <string name="upgrade_unable_to_verify_purchase">Kauf konnte nicht überprüft werden</string>
+    <string name="upgrade_edition_verification_pending">%1$s-Kauf wartet auf Serverprüfung</string>
+    <string name="upgrade_verifying_purchase">Kauf wird sicher überprüft...</string>
+    <string name="upgrade_purchase_failed">Kauf fehlgeschlagen: %1$s</string>
+    <string name="upgrade_billing_disconnected">Abrechnungsverbindung getrennt — zum erneuten Versuch auf „Kauf wiederherstellen“ tippen</string>
+    <string name="upgrade_verification_unavailable">Überprüfung nicht verfügbar</string>
 
     <!-- Call screen -->
     <string name="call_connecting">Verbinde\u2026</string>

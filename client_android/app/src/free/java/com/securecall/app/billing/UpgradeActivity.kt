@@ -51,7 +51,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         if (!billingAvailable) {
             Log.d(TAG, "Billing gate closed — hiding the complete purchase surface")
             findViewById<View>(R.id.billingPurchaseContent).visibility = View.GONE
-            tvStatus.text = "Purchases are currently unavailable"
+            tvStatus.text = getString(R.string.upgrade_purchases_unavailable)
         }
 
         billingManager = BillingManager(this, this)
@@ -76,7 +76,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         // Restore (Play Store only)
         findViewById<Button>(R.id.btnRestore).setOnClickListener {
             if (!billingAvailable) return@setOnClickListener
-            tvStatus.text = "Restoring purchases..."
+            tvStatus.text = getString(R.string.upgrade_restoring_purchases)
             billingManager.destroy()
             billingManager = BillingManager(this, this)
             billingManager.init()
@@ -86,22 +86,22 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
     private fun launchPurchase(sku: String) {
         val details = billingManager.getProductDetails(sku)
         if (details == null) {
-            tvStatus.text = "Product not available"
+            tvStatus.text = getString(R.string.upgrade_product_unavailable)
             Log.w(TAG, "Product not found: $sku")
             return
         }
 
         // Lifetime and activation-code products are INAPP; subscriptions are SUBS.
         if (details.oneTimePurchaseOfferDetails != null) {
-            tvStatus.text = "Launching purchase..."
+            tvStatus.text = getString(R.string.upgrade_launching_purchase)
             billingManager.launchInAppPurchaseFlow(details)
         } else {
             val offerToken = details.subscriptionOfferDetails?.firstOrNull()?.offerToken
             if (offerToken == null) {
-                tvStatus.text = "No offer available"
+                tvStatus.text = getString(R.string.upgrade_no_offer_available)
                 return
             }
-            tvStatus.text = "Launching purchase..."
+            tvStatus.text = getString(R.string.upgrade_launching_purchase)
             billingManager.launchPurchaseFlow(details, offerToken)
         }
     }
@@ -118,7 +118,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
             bindPurchaseButton(products, R.id.btnProLifetime, BuildConfig.SKU_PRO_LIFETIME, getString(R.string.upgrade_pro_lifetime))
             bindPurchaseButton(products, R.id.btnPremiumLifetime, BuildConfig.SKU_PREMIUM_LIFETIME, getString(R.string.upgrade_premium_lifetime))
             bindPurchaseButton(products, R.id.btnActivationCode, BuildConfig.SKU_PREMIUM_ACTIVATION_CODE, getString(R.string.upgrade_activation_code))
-            tvStatus.text = "${products.size} products loaded"
+            tvStatus.text = getString(R.string.upgrade_products_loaded, products.size)
             Log.d(TAG, "Products loaded: ${products.map { it.productId }}")
         }
     }
@@ -140,7 +140,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
                 ?.formattedPrice
 
         button.isEnabled = formattedPrice != null
-        button.text = if (formattedPrice == null) label else "$label — $formattedPrice"
+        button.text = if (formattedPrice == null) label else getString(R.string.upgrade_purchase_with_price, label, formattedPrice)
     }
 
     override fun onPurchaseCompleted(tier: SubscriptionTier, token: String) {
@@ -160,7 +160,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
                     putExtra(PurchaseResultActivity.EXTRA_PACKAGE_NAME, packageName)
                 }
                 startActivity(intent)
-                tvStatus.text = "Purchase pending server verification"
+                tvStatus.text = getString(R.string.upgrade_verification_pending)
                 return@runOnUiThread
             }
 
@@ -170,27 +170,27 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
             }.getOrElse {
                 subscriptionManager.clearSubscription()
                 com.securecall.app.config.TierManager.applyTier(this)
-                tvStatus.text = "Unable to verify purchase"
+                tvStatus.text = getString(R.string.upgrade_unable_to_verify_purchase)
                 return@runOnUiThread
             }
             com.securecall.app.config.TierManager.applyTier(this)
             sendVerificationToBackend(token, productId, requestId)
             updateCurrentTierDisplay()
-            tvStatus.text = tier.displayName + " purchase pending server verification"
-            Toast.makeText(this, "Verifying purchase securely...", Toast.LENGTH_LONG).show()
+            tvStatus.text = getString(R.string.upgrade_edition_verification_pending, tier.displayName)
+            Toast.makeText(this, getString(R.string.upgrade_verifying_purchase), Toast.LENGTH_LONG).show()
         }
     }
 
     override fun onPurchaseFailed(errorCode: Int, message: String) {
         runOnUiThread {
-            tvStatus.text = "Purchase failed: $message"
+            tvStatus.text = getString(R.string.upgrade_purchase_failed, message)
             Log.e(TAG, "Purchase failed: code=$errorCode, msg=$message")
         }
     }
 
     override fun onBillingDisconnected() {
         runOnUiThread {
-            tvStatus.text = "Billing disconnected — tap Restore to retry"
+            tvStatus.text = getString(R.string.upgrade_billing_disconnected)
         }
     }
 
@@ -203,7 +203,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
         if (ws == null || !ws.isConnected) {
             subscriptionManager.clearSubscription()
             com.securecall.app.config.TierManager.applyTier(this)
-            tvStatus.text = "Verification unavailable"
+            tvStatus.text = getString(R.string.upgrade_verification_unavailable)
             return
         }
         val json = org.json.JSONObject().apply {

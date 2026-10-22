@@ -48,21 +48,21 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="FREE"
+                android:text="@string/upgrade_free_title"
                 android:textSize="16sp"
                 android:textColor="#AAAAAA"
                 android:textStyle="bold" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="€0"
+                android:text="@string/upgrade_free_price"
                 android:textSize="28sp"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold" />
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="&#8226; Encrypted calls\n&#8226; 15 min call limit\n&#8226; 10 contacts\n&#8226; With ads"
+                android:text="@string/upgrade_free_features"
                 android:textSize="13sp"
                 android:textColor="#999999"
                 android:lineSpacingMultiplier="1.4"
@@ -95,7 +95,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="PRO"
+                android:text="@string/upgrade_pro_title"
                 android:textSize="16sp"
                 android:textColor="#FFD700"
                 android:textStyle="bold" />
@@ -109,7 +109,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="&#8226; No ads\n&#8226; Unlimited calls &amp; contacts\n&#8226; Online status\n&#8226; Call history\n&#8226; Anti-recording detection"
+                android:text="@string/upgrade_pro_features"
                 android:textSize="13sp"
                 android:textColor="#CCCCCC"
                 android:lineSpacingMultiplier="1.4"
@@ -140,7 +140,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="PREMIUM"
+                android:text="@string/upgrade_premium_title"
                 android:textSize="16sp"
                 android:textColor="#FF4444"
                 android:textStyle="bold" />
@@ -154,7 +154,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="&#8226; Everything in Pro\n&#8226; Advanced threat protection\n&#8226; Screenshot protection\n&#8226; Hardware-backed local key protection where supported"
+                android:text="@string/upgrade_premium_features"
                 android:textSize="13sp"
                 android:textColor="#CCCCCC"
                 android:lineSpacingMultiplier="1.4"
@@ -185,7 +185,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="&#127873; Activation Code"
+                android:text="@string/upgrade_activation_code_title"
                 android:textSize="14sp"
                 android:textColor="#00E676"
                 android:textStyle="bold"
@@ -215,8 +215,9 @@
         <Button
             android:id="@+id/btnRestore"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:text="Restore Purchase"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/upgrade_restore_purchase"
             android:textSize="12sp"
             android:backgroundTint="#333355"
             android:layout_marginBottom="8dp" />
@@ -227,7 +228,6 @@
             android:id="@+id/tvStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text=""
             android:textSize="12sp"
             android:textColor="#AAAAAA"
             android:gravity="center"
