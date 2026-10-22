@@ -261,8 +261,8 @@ test('media copy describes application encryption over the DataChannel', () => {
 });
 
 test('current direct release and Free-only Play distribution survive the port', () => {
-    assert.match(readWebsite('download.html'), /v1\.0\.50 \(versionCode 78018\)/);
-    assert.match(readWebsite('wiki/user-manual.html'), /Published APK 1\.0\.50 \(78018\)/);
+    assert.match(readWebsite('download.html'), /v1\.0\.51 \(versionCode 78019\)/);
+    assert.match(readWebsite('wiki/user-manual.html'), /Published APK 1\.0\.51 \(78019\)/);
     for (const name of ['index.html', 'download.html', 'faq.html', 'wiki/faq.html']) {
         const html = readWebsite(name);
         assert.match(html, /Google Play distributes (?:the Free edition only|only the Free edition)/);
