@@ -26,7 +26,7 @@
       "@context": "https://schema.org",
       "@type": "WebPage",
       "name": "Security — SecureCall",
-	      "description": "SecureCall security overview. XChaCha20-Poly1305, X25519 key exchange, and DTLS-SRTP encrypted voice calls.",
+	      "description": "SecureCall security overview. XChaCha20-Poly1305, X25519 key exchange, and voice calls over a WebRTC DataChannel (DTLS).",
       "url": "https://stealthx.tech/security.html",
       "publisher": { "@type": "Organization", "name": "SecureCall", "url": "https://stealthx.tech" },
       "inLanguage": "en"
@@ -82,7 +82,7 @@
             <tr><td><strong>Identity Authentication</strong></td><td>P-256 / SHA-256</td><td>Android Keystore identity signs registration and call transcripts</td></tr>
             <tr><td><strong>Session Key Lifecycle</strong></td><td>X25519 + HKDF-SHA256</td><td>Separate key material per call, discarded at call end</td></tr>
             <tr><td><strong>Key Derivation</strong></td><td>HKDF-SHA256</td><td>HMAC-based key derivation function</td></tr>
-            <tr><td><strong>Transport</strong></td><td>DTLS-SRTP</td><td>Encrypted peer-to-peer media transport</td></tr>
+            <tr><td><strong>Transport</strong></td><td>WebRTC DataChannel (DTLS)</td><td>Peer-to-peer transport carrying XChaCha20-Poly1305-encrypted Opus frames</td></tr>
             <tr><td><strong>Audio Codec</strong></td><td>Opus</td><td>48kHz, adaptive bitrate 6-510 kbps</td></tr>
         </table>
 
@@ -165,7 +165,7 @@
         <p>SecureCall is part of the StealthX Platform. All three products share the same cryptographic foundation:</p>
         <table>
             <tr><th>Product</th><th>Encryption</th><th>Key Exchange</th><th>Key Lifecycle</th><th>Transport</th></tr>
-            <tr><td><strong>SecureCall</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Per-call HKDF key; no ratchet</td><td>WebRTC DTLS-SRTP</td></tr>
+            <tr><td><strong>SecureCall</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Per-call HKDF key; no ratchet</td><td>WebRTC DataChannel (DTLS)</td></tr>
             <tr><td><strong>SecureChat</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Double Ratchet</td><td>Tor/.onion Relay Nodes</td></tr>
             <tr><td><strong>Chameleon</strong></td><td>XChaCha20-Poly1305</td><td>X25519</td><td>Double Ratchet</td><td>Local + AIDL IPC</td></tr>
         </table>
