@@ -1,0 +1,12 @@
+<en-US>
+SecureCall 1.0.51
+
+- Updated English and German text
+- Minor interface fixes
+</en-US>
+<de-DE>
+SecureCall 1.0.51
+
+- Überarbeitete englische und deutsche Texte
+- Kleine Korrekturen an der Benutzeroberfläche
+</de-DE>

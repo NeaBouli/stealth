@@ -7,6 +7,17 @@ Format follows "Keep a Changelog" with security-critical extensions.
 
 ---
 
+## [1.0.51] — 2026-10-23 — vC78019
+
+### Fixed
+- Google Play Free build no longer shows external purchase links (#196)
+- Upgrade screen offers one-time lifetime licences only, with updated English and German text (#177)
+- Activation code entry enabled in direct Pro and Premium builds (#178)
+
+### Distribution
+- `ENTITLEMENT_RELEASE_ID` remains unchanged; the server catalog stays on
+  `securecall-android-1.0.50-vc78017-api36`
+
 ## [1.0.49] — 2026-08-26 — vC78016
 
 ### Fixed
