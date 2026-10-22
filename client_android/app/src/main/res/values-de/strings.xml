@@ -110,4 +110,8 @@
 
     <!-- Permissions -->
     <string name="permission_mic_required">Mikrofon-Berechtigung ben\u00F6tigt</string>
+    <string name="activation_error_edition_mismatch">Dieser Code ist für eine andere SecureCall-Edition. Bitte installiere die gekaufte Pro- oder Premium-App.</string>
+    <string name="activation_error_release_mismatch">Dieser Code ist für eine andere SecureCall-Version. Bitte installiere die App-Version, die du mit deinem Kauf erhalten hast.</string>
+    <string name="activation_error_code_unsupported">Dieser Code kann in dieser App-Version nicht eingelöst werden. Bitte kontaktiere support@stealthx.tech.</string>
+    <string name="activation_error_rate_limited">Zu viele Aktivierungsversuche. Bitte versuche es in 15 Minuten erneut.</string>
 </resources>

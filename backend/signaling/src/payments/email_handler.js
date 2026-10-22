@@ -12,15 +12,15 @@ const DOWNLOAD_PAGE_URL = process.env.SECURECALL_DOWNLOAD_PAGE_URL || "https://s
 const APK_DOWNLOADS = {
   pro: {
     primary: process.env.SECURECALL_PRO_APK_URL ||
-      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-pro-arm64-v8a-release.apk",
+      "https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Pro-LATEST.apk",
     armeabi: process.env.SECURECALL_PRO_APK_ARMEABI_URL ||
-      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-pro-armeabi-v7a-release.apk"
+      "https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Pro-LATEST.apk"
   },
   premium: {
     primary: process.env.SECURECALL_PREMIUM_APK_URL ||
-      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-premium-arm64-v8a-release.apk",
+      "https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Premium-LATEST.apk",
     armeabi: process.env.SECURECALL_PREMIUM_APK_ARMEABI_URL ||
-      "https://github.com/NeaBouli/stealth/releases/download/v1.0.35/app-premium-armeabi-v7a-release.apk"
+      "https://github.com/NeaBouli/stealth/releases/latest/download/SecureCall-Premium-LATEST.apk"
   }
 };
 
@@ -68,6 +68,9 @@ function generateEmailHTML(code, tier, options = {}) {
     ...resolveDownloadLinks(tier),
     ...options.downloadLinks
   };
+  const offlineLicenceBlock = product.isSecureCall ? `
+    <p style="color:#ccc;margin:16px 0 0 0;font-size:14px;line-height:1.6;">Your licence is valid for life. The app confirms it automatically whenever the device is online (no login needed). After more than 30 days offline it temporarily runs as the free version; if the device is back online within a further 7 days, Pro/Premium returns automatically. After that, simply enter the same code again &ndash; on the same device this uses no extra device slot and needs no new purchase.</p>
+    <p style="color:#ccc;margin:16px 0 0 0;font-size:14px;line-height:1.6;">Die Lizenz gilt dauerhaft. Die App bestätigt sie automatisch, sobald das Gerät online ist (kein Login nötig). Nach mehr als 30 Tagen offline läuft sie vorübergehend als Gratis-Version; ist das Gerät innerhalb weiterer 7 Tage wieder online, ist Pro/Premium automatisch zurück. Danach einfach denselben Code erneut eingeben &ndash; auf demselben Gerät ohne zusätzlichen Geräteplatz und ohne neuen Kauf.</p>` : "";
   const installBlock = product.isSecureCall ? `
     <h3 style="color:#FFD700;font-size:13px;text-transform:uppercase;letter-spacing:2px;margin:0 0 16px 0;">Don't have the app yet?</h3>
     <p style="color:#aaa;margin:0 0 16px 0;font-size:14px;line-height:1.6;">Install the ${tierName} APK directly after purchase, or use Google Play for the public Free build.</p>
@@ -118,7 +121,7 @@ function generateEmailHTML(code, tier, options = {}) {
       <li>Tap <strong style="color:#fff;">Activation Code</strong></li>
       <li>Enter the code above and tap <strong style="color:#fff;">Activate</strong></li>
       <li>Restart the app &mdash; ${tierName} features unlock instantly</li>
-    </ol>
+    </ol>${offlineLicenceBlock}
   </div>
 
   <div style="background:#11131a;border:1px solid #1f2330;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;">

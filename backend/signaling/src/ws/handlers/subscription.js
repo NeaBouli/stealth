@@ -1,5 +1,8 @@
 "use strict";
 
+const { networkKey } = require("../../utils/network_key");
+const { validateV2Contract } = require("../../payments/entitlement_tokens");
+
 module.exports = function subscriptionHandlers(ctx) {
   const {
     activationCodes, fcmTokens, giftCodes,
@@ -17,15 +20,17 @@ module.exports = function subscriptionHandlers(ctx) {
   const failedActivations = new Map();
   function activationKeys(connId) {
     const keys = [`conn:${connId}`];
-    const ip = ctx.clients?.get?.(connId)?.ip;
-    if (typeof ip === "string" && ip) keys.push(`ip:${ip}`);
+    const network = networkKey(ctx.clients?.get?.(connId)?.ip);
+    if (network) keys.push(`ip:${network}`);
     const clientId = getClientId(connId);
     if (clientId) keys.push(`client:${clientId}`);
     return keys;
   }
   function pruneFailedActivations(now) {
+    // Entries remain in window-start order, so the first live entry ends pruning.
     for (const [key, entry] of failedActivations) {
-      if (now - entry.windowStart >= failedActivationWindowMs) failedActivations.delete(key);
+      if (now - entry.windowStart < failedActivationWindowMs) break;
+      failedActivations.delete(key);
     }
   }
   function activationLimited(connId) {
@@ -38,7 +43,13 @@ module.exports = function subscriptionHandlers(ctx) {
     for (const key of activationKeys(connId)) {
       const entry = failedActivations.get(key);
       if (entry) entry.count++;
-      else if (failedActivations.size < maxTrackedActivationKeys) failedActivations.set(key, { windowStart: now, count: 1 });
+      else {
+        // Map insertion order follows window start; keep tracking new keys at capacity.
+        if (failedActivations.size >= maxTrackedActivationKeys) {
+          failedActivations.delete(failedActivations.keys().next().value);
+        }
+        failedActivations.set(key, { windowStart: now, count: 1 });
+      }
     }
   }
 
@@ -258,7 +269,7 @@ module.exports = function subscriptionHandlers(ctx) {
       }
 
       if (activationLimited(connId)) {
-        return ws.send(JSON.stringify({ type: "ACTIVATE_CODE_RESULT", success: false, error: "rate_limited" }));
+        return respond({ success: false, error: "rate_limited" });
       }
 
       if (BLOCKED_CODES.includes(code)) {
@@ -267,9 +278,13 @@ module.exports = function subscriptionHandlers(ctx) {
       }
 
       const entry = activationCodes.find(c => c.code === code);
+      const declaresContract = msg.edition !== undefined || msg.release !== undefined;
 
       if (!entry && giftCodes.has(code)) {
         const gift = giftCodes.get(code);
+        if (declaresContract && msg.edition !== "free") {
+          return respond({ success: false, error: "code_unsupported" });
+        }
         if (gift.used) return respond({ success: false, error: "already_used" });
         if (new Date(gift.expires) < new Date()) return respond({ success: false, error: "expired" });
         const previousUsed = gift.used;
@@ -297,6 +312,23 @@ module.exports = function subscriptionHandlers(ctx) {
           success: false,
           error: "entitlement_revoked",
         });
+      }
+
+      // New clients declare their verifier contract before any signing or device binding.
+      // Omitted fields preserve activation behavior for older clients.
+      if (msg.edition !== undefined && msg.edition !== String(entry.tier).toLowerCase()) {
+        return respond({ success: false, error: "edition_mismatch" });
+      }
+      if (declaresContract) {
+        if (entry.releaseId && entry.releaseId !== msg.release) {
+          return respond({ success: false, error: "release_mismatch" });
+        }
+        try {
+          // Validate the stored tuple with the signer's exact v2 rules; never infer missing claims.
+          validateV2Contract({ ...entry, normalizedTier: String(entry.tier).toUpperCase() });
+        } catch {
+          return respond({ success: false, error: "code_unsupported" });
+        }
       }
 
       const devices = Array.isArray(entry.usedBy) ? [...entry.usedBy] : (entry.usedBy ? [entry.usedBy] : []);

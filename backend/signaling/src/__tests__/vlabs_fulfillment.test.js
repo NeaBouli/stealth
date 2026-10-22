@@ -13,11 +13,15 @@ process.env.CODES_FILE = path.join(directory, "activation_codes.json");
 
 const SECRET = "test-fulfillment-secret-with-32+-chars";
 process.env.VLABS_FULFILLMENT_SECRET = SECRET;
+delete process.env.VLABS_FULFILLMENT_TEST_SECRET;
+const TEST_SECRET = "test-fulfillment-key".padEnd(32, "x");
 process.env.BREVO_API_KEY = "test-brevo-key";
 
 const sentEmails = [];
+const requestedUrls = [];
 const realFetch = global.fetch;
-global.fetch = async (_url, options) => {
+global.fetch = async (url, options) => {
+  requestedUrls.push(url);
   sentEmails.push(JSON.parse(options.body));
   return { ok: true, json: async () => ({ messageId: "test-message" }) };
 };
@@ -147,6 +151,47 @@ assert.throws(() => validateFulfillmentContract(contractBody("stealthx-securecal
   error => error.status === 400, "missing payment event rejected");
 assert.throws(() => validateFulfillmentContract(contractBody("stealthx-suite-lifetime")),
   error => error.status === 409, "Suite product is never enabled");
+
+const ifrDiscount = { couponId: "CQgFczlb", percentOff: 50 };
+for (const [productId, product] of Object.entries(PRODUCTS)) {
+  for (const overrides of [
+    {}, { listAmount: product.amount }, { discount: null },
+    { listAmount: product.amount, discount: null },
+    { amount: product.amount / 2, listAmount: product.amount, discount: ifrDiscount },
+  ]) {
+    assert.strictEqual(validateFulfillmentContract(contractBody(productId, overrides)).product, product,
+      `${productId} accepts full price or the exact IFR half price`);
+  }
+}
+
+const invalidCouponContracts = [
+  ["wrong coupon ID", { discount: { ...ifrDiscount, couponId: "other-coupon" } }, 409, "discount mismatch"],
+  ["wrong percent", { discount: { ...ifrDiscount, percentOff: 49 } }, 409, "discount mismatch"],
+  ["fractional percent", { discount: { ...ifrDiscount, percentOff: 50.5 } }, 409, "discount mismatch"],
+  ["below half price", { amount: 749 }, 409, "amount mismatch"],
+  ["above half price", { amount: 751 }, 409, "amount mismatch"],
+  ["full price with discount", { amount: 1500 }, 409, "amount mismatch"],
+  ["wrong list price", { listAmount: 1499 }, 409, "listAmount mismatch"],
+  ["missing coupon list price", { listAmount: undefined }, 409, "listAmount mismatch"],
+  ["half price without discount", { discount: undefined }, 409, "amount mismatch"],
+  ["half price with null discount", { discount: null }, 409, "amount mismatch"],
+  ["full price with wrong list price", { amount: 1500, listAmount: 1499, discount: null }, 409, "listAmount mismatch"],
+  ...[undefined, null, "750", 750.5, NaN, Infinity, {}, true].map(amount =>
+    ["malformed amount", { amount }, 400, "amount"]),
+  ...[null, "1500", 1500.5, NaN, Infinity, {}, true].map(listAmount =>
+    ["malformed list price", { listAmount }, 400, "listAmount"]),
+  ...[{}, [], "CQgFczlb", 50, false,
+    { ...ifrDiscount, couponId: 123 }, { ...ifrDiscount, couponId: null },
+    { couponId: ifrDiscount.couponId }, { percentOff: 50 },
+    { ...ifrDiscount, percentOff: "50" }, { ...ifrDiscount, percentOff: null },
+    { ...ifrDiscount, percentOff: NaN }, { ...ifrDiscount, percentOff: Infinity },
+  ].map(discount => ["malformed discount", { discount }, 400, "discount"]),
+];
+for (const [label, overrides, status, message] of invalidCouponContracts) {
+  assert.throws(() => validateFulfillmentContract(contractBody("stealthx-securecall-pro-lifetime", {
+    amount: 750, listAmount: 1500, discount: ifrDiscount, ...overrides,
+  })), error => error.status === status && error.message.includes(message), label);
+}
 
 const revokeBody = (productId, overrides = {}) => ({
   externalOrderId: "cs_test_validator",
@@ -288,10 +333,25 @@ function makeRes() {
   };
 }
 
-function signedReq(requestBody, ip = "127.0.0.1") {
+function assertUtcTimestamp(value) {
+  assert.strictEqual(typeof value, "string");
+  assert.strictEqual(new Date(value).toISOString(), value, "timestamp is canonical ISO-8601 UTC");
+}
+
+function assertFulfillmentReceipt(payload, order) {
+  assert.match(payload.licenseRef, /^lic_[a-f0-9]{24}$/);
+  const expected = crypto.createHash("sha256").update(`stealthx-license-ref:v1:${order.code}`).digest("hex").slice(0, 24);
+  assert.strictEqual(payload.licenseRef, `lic_${expected}`);
+  assert.ok(!JSON.stringify(payload).includes(order.code), "receipt never exposes the activation code");
+  assertUtcTimestamp(payload.fulfilledAt);
+  assert.strictEqual(order.licenseRef, payload.licenseRef, "reference is persisted");
+  assert.strictEqual(order.fulfilledAt, payload.fulfilledAt, "fulfillment time is persisted");
+}
+
+function signedReq(requestBody, ip = "127.0.0.1", secret = process.env.VLABS_FULFILLMENT_SECRET) {
   const raw = JSON.stringify(requestBody);
   const ts = Math.floor(Date.now() / 1000).toString();
-  const sig = crypto.createHmac("sha256", process.env.VLABS_FULFILLMENT_SECRET).update(`${ts}.${raw}`).digest("hex");
+  const sig = crypto.createHmac("sha256", secret).update(`${ts}.${raw}`).digest("hex");
   return { get: header => ({ "x-vlabs-timestamp": ts, "x-vlabs-signature": sig }[header]), body: requestBody, ip };
 }
 
@@ -299,7 +359,7 @@ let orderCounter = 0;
 function fulfillBody(productId, overrides = {}) {
   orderCounter += 1;
   return contractBody(productId, {
-    externalOrderId: `cs_test_route_${orderCounter}`,
+    externalOrderId: `cs_live_route_${orderCounter}`,
     paymentReference: `pi_test_route_${orderCounter}`,
     paymentEventId: `evt_test_route_${orderCounter}_paid`,
     ...overrides,
@@ -321,6 +381,44 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
 }
 
 (async () => {
+  // Without an orders-file override, use the validated DATA_DIR next to sold codes.
+  const ordersOverride = process.env.VLABS_FULFILLMENT_ORDERS_FILE;
+  const previousDataDir = process.env.DATA_DIR;
+  process.env.DATA_DIR = directory;
+  delete process.env.VLABS_FULFILLMENT_ORDERS_FILE;
+  const defaultOrdersPath = path.join(directory, "vlabs_fulfillment_orders.json");
+  const defaultTarget = fulfillBody("stealthx-securecall-pro-lifetime", { externalOrderId: "cs_live_default_path" });
+  const defaultRes = makeRes();
+  await routes["/internal/vlabs/fulfill"](signedReq(defaultTarget), defaultRes);
+  assert.strictEqual(defaultRes.statusCode, 200, JSON.stringify(defaultRes.payload));
+  const defaultOrder = JSON.parse(fs.readFileSync(defaultOrdersPath, "utf8"))[defaultTarget.externalOrderId];
+  assert.strictEqual(defaultOrder.status, "FULFILLED");
+  assertFulfillmentReceipt(defaultRes.payload, defaultOrder);
+  assert.strictEqual(fs.existsSync(ordersOverride), false, "unset override must not be used");
+  assert.strictEqual(fs.existsSync(`${defaultOrdersPath}.lock`), false, "adjacent lock is released");
+
+  delete require.cache[require.resolve("../payments/vlabs_fulfillment")];
+  const reloadedRoutes = {};
+  require("../payments/vlabs_fulfillment").setupVlabsFulfillmentRoute({
+    post: (routePath, handler) => { reloadedRoutes[routePath] = handler; },
+  }, activationCodes);
+  const emailsBeforeReload = sentEmails.length;
+  const reloadedRes = makeRes();
+  await reloadedRoutes["/internal/vlabs/fulfill"](signedReq(defaultTarget), reloadedRes);
+  assert.deepStrictEqual(reloadedRes.payload, {
+    ok: true, duplicate: true, productId: defaultTarget.productId,
+    licenseRef: defaultRes.payload.licenseRef, fulfilledAt: defaultRes.payload.fulfilledAt,
+  });
+  assert.strictEqual(sentEmails.length, emailsBeforeReload, "reload retains idempotency");
+  fs.writeFileSync(`${defaultOrdersPath}.lock`, "999999:foreignowner\n");
+  const lockedDefaultRes = makeRes();
+  await reloadedRoutes["/internal/vlabs/fulfill"](signedReq(defaultTarget), lockedDefaultRes);
+  assert.strictEqual(lockedDefaultRes.statusCode, 503, "lock stays next to the default store");
+  fs.unlinkSync(`${defaultOrdersPath}.lock`);
+  process.env.VLABS_FULFILLMENT_ORDERS_FILE = ordersOverride;
+  if (previousDataDir === undefined) delete process.env.DATA_DIR;
+  else process.env.DATA_DIR = previousDataDir;
+
   // Six-product mapping: every individual lifetime product fulfills exactly.
   for (const productId of Object.keys(EXPECTED_PRODUCTS)) {
     const res = makeRes();
@@ -333,17 +431,21 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.strictEqual(fulfilledOrders.length, 6, "six orders persisted with FULFILLED status");
   for (const order of fulfilledOrders) {
     const expected = EXPECTED_PRODUCTS[order.productId];
+    assert.strictEqual(order.mode, "live");
     assert.strictEqual(order.catalogVersion, CATALOG_VERSION);
     assert.strictEqual(order.offerVersion, expected.offerVersion);
     assert.strictEqual(order.releaseId, expected.releaseId);
     assert.strictEqual(order.amount, expected.amount);
+    assert.strictEqual(order.paidAmount, expected.amount);
+    assert.strictEqual(order.couponId, null);
     assert.strictEqual(order.currency, expected.currency);
     assert.ok(/^pi_/.test(order.paymentReference));
   }
   const soldStore = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"));
   const contractedSales = soldStore.codes.filter(entry => entry.catalogVersion === CATALOG_VERSION
-    && /^cs_test_route_/.test(entry.stripeSessionId || ""));
+    && /^cs_live_route_/.test(entry.stripeSessionId || ""));
   assert.strictEqual(contractedSales.length, 6, "six sold codes carry the contract tuple");
+  assert.ok(contractedSales.every(entry => entry.mode === "live"));
 
   // Per-product email identity.
   const securechatMail = sentEmails.find(mail => mail.subject.includes("SecureChat Elite"));
@@ -351,6 +453,75 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.ok(securechatMail.htmlContent.includes("https://securechat.stealthx.tech/"), "SecureChat email uses the SecureChat identity");
   const chameleonMail = sentEmails.find(mail => mail.subject.includes("Chameleon Pro"));
   assert.ok(chameleonMail && chameleonMail.htmlContent.includes("https://chameleon.stealthx.tech/"), "Chameleon email uses the Chameleon identity");
+
+  // Coupon orders retain the paid amount for audit, retries and reversals.
+  const couponIp = "198.51.100.50";
+  for (const [productId, amount] of [
+    ["stealthx-securecall-pro-lifetime", 750],
+    ["stealthx-securecall-premium-lifetime", 1250],
+  ]) {
+    const target = fulfillBody(productId, { amount, listAmount: PRODUCTS[productId].amount, discount: ifrDiscount });
+    const res = makeRes();
+    await routes["/internal/vlabs/fulfill"](signedReq(target, couponIp), res);
+    const order = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[target.externalOrderId];
+    assertFulfillmentReceipt(res.payload, order);
+    assert.deepStrictEqual(res.payload, {
+      ok: true, fulfilled: true, productId, licenseRef: order.licenseRef, fulfilledAt: order.fulfilledAt,
+    });
+    assert.strictEqual(order.status, "FULFILLED");
+    assert.strictEqual(order.amount, amount);
+    assert.strictEqual(order.paidAmount, amount);
+    assert.strictEqual(order.couponId, "CQgFczlb");
+    const emailCount = sentEmails.length;
+    const saleCount = soldCodes.load().length;
+    const duplicate = makeRes();
+    await reloadedRoutes["/internal/vlabs/fulfill"](signedReq(target, couponIp), duplicate);
+    assert.deepStrictEqual(duplicate.payload, {
+      ok: true, duplicate: true, productId, licenseRef: order.licenseRef, fulfilledAt: order.fulfilledAt,
+    });
+    const changedPayment = makeRes();
+    await routes["/internal/vlabs/fulfill"](signedReq({
+      ...target, amount: target.listAmount, discount: null,
+    }, couponIp), changedPayment);
+    assert.strictEqual(changedPayment.statusCode, 409, "a retry cannot change the paid amount");
+    assert.strictEqual(sentEmails.length, emailCount, "coupon retries do not resend email");
+    assert.strictEqual(soldCodes.load().length, saleCount, "coupon retries do not mint another code");
+    const revoked = makeRes();
+    await routes["/internal/vlabs/revoke"](signedReq(revokeFor(target), couponIp), revoked);
+    assert.strictEqual(revoked.payload.revoked, true);
+    const revokedOrder = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[target.externalOrderId];
+    assert.strictEqual(revokedOrder.paidAmount, amount);
+    assert.strictEqual(revokedOrder.couponId, "CQgFczlb");
+  }
+  for (const discount of [undefined, null]) {
+    const target = fulfillBody("stealthx-securecall-pro-lifetime", { listAmount: 1500, discount });
+    const res = makeRes();
+    await routes["/internal/vlabs/fulfill"](signedReq(target, couponIp), res);
+    assert.strictEqual(res.payload.fulfilled, true, "full price accepts an explicit listAmount");
+    const order = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[target.externalOrderId];
+    assert.strictEqual(order.paidAmount, 1500);
+    assert.strictEqual(order.couponId, null);
+  }
+  const beforeCouponRejections = {
+    orders: fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"),
+    sold: fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"),
+    emails: sentEmails.length,
+    codes: activationCodes.length,
+  };
+  for (const [label, overrides, status, message] of invalidCouponContracts) {
+    const res = makeRes();
+    await routes["/internal/vlabs/fulfill"](signedReq(fulfillBody("stealthx-securecall-pro-lifetime", {
+      amount: 750, listAmount: 1500, discount: ifrDiscount, ...overrides,
+    }), "198.51.100.51"), res);
+    assert.strictEqual(res.statusCode, status, label);
+    assert.ok(res.payload.error.includes(message), label);
+  }
+  assert.deepStrictEqual({
+    orders: fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"),
+    sold: fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"),
+    emails: sentEmails.length,
+    codes: activationCodes.length,
+  }, beforeCouponRejections, "rejected coupons have no persistence, email or activation side effects");
 
   // Missing / drift rejection before persistence.
   for (const [overrides, expectedStatus] of [
@@ -405,10 +576,17 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   const firstRes = makeRes();
   await routes["/internal/vlabs/fulfill"](signedReq(duplicateTarget), firstRes);
   assert.strictEqual(firstRes.payload.fulfilled, true);
+  const firstOrder = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[duplicateTarget.externalOrderId];
+  assertFulfillmentReceipt(firstRes.payload, firstOrder);
+  await new Promise(resolve => setTimeout(resolve, 10));
   const duplicateRes = makeRes();
   await routes["/internal/vlabs/fulfill"](signedReq(duplicateTarget), duplicateRes);
   assert.strictEqual(duplicateRes.statusCode, 200);
   assert.strictEqual(duplicateRes.payload.duplicate, true);
+  assert.deepStrictEqual(duplicateRes.payload, {
+    ok: true, duplicate: true, productId: duplicateTarget.productId,
+    licenseRef: firstRes.payload.licenseRef, fulfilledAt: firstRes.payload.fulfilledAt,
+  });
   const replayEventRes = makeRes();
   await routes["/internal/vlabs/fulfill"](
     signedReq({ ...duplicateTarget, paymentEventId: "evt_test_manual_replay" }),
@@ -416,6 +594,8 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   );
   assert.strictEqual(replayEventRes.statusCode, 200);
   assert.strictEqual(replayEventRes.payload.duplicate, true, "new event id may replay the same paid order");
+  assert.strictEqual(replayEventRes.payload.licenseRef, firstRes.payload.licenseRef);
+  assert.strictEqual(replayEventRes.payload.fulfilledAt, firstRes.payload.fulfilledAt);
   const driftedRes = makeRes();
   await routes["/internal/vlabs/fulfill"](signedReq({ ...duplicateTarget, offerVersion: "securecall-premium-eur-2500-lifetime-v9" }), driftedRes);
   assert.strictEqual(driftedRes.statusCode, 409, "duplicate order with contract drift fails closed");
@@ -425,6 +605,12 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   await routes["/internal/vlabs/revoke"](signedReq(revokeFor(duplicateTarget)), revokeRes);
   assert.strictEqual(revokeRes.statusCode, 200);
   assert.strictEqual(revokeRes.payload.revoked, true);
+  assertUtcTimestamp(revokeRes.payload.revokedAt);
+  assert.strictEqual(revokeRes.payload.licenseRef, firstRes.payload.licenseRef);
+  assert.strictEqual(revokeRes.payload.revokedAt, JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"))
+    .reversals.find(entry => entry.stripeSessionId === duplicateTarget.externalOrderId).reversedAt);
+  assert.strictEqual(JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))
+    [duplicateTarget.externalOrderId].revokedAt, revokeRes.payload.revokedAt);
   assert.strictEqual(soldCodes.isReversed(duplicateTarget.externalOrderId), true);
   const emailCountAfterRevoke = sentEmails.length;
   const revokedFulfillRes = makeRes();
@@ -432,9 +618,12 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.strictEqual(revokedFulfillRes.statusCode, 409, "revoked order cannot be fulfilled again");
   assert.strictEqual(sentEmails.length, emailCountAfterRevoke, "revoked order never resends activation email");
   const duplicateRevokeRes = makeRes();
+  await new Promise(resolve => setTimeout(resolve, 10));
   await routes["/internal/vlabs/revoke"](signedReq(revokeFor(duplicateTarget)), duplicateRevokeRes);
   assert.strictEqual(duplicateRevokeRes.statusCode, 200);
   assert.strictEqual(duplicateRevokeRes.payload.duplicate, true, "duplicate revoke stays idempotent");
+  assert.strictEqual(duplicateRevokeRes.payload.revokedAt, revokeRes.payload.revokedAt);
+  assert.strictEqual(duplicateRevokeRes.payload.licenseRef, firstRes.payload.licenseRef);
   const mismatchedPaymentRevokeRes = makeRes();
   await routes["/internal/vlabs/revoke"](
     signedReq(revokeFor(duplicateTarget, { paymentReference: "pi_test_wrong_payment" })),
@@ -468,6 +657,8 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   const referenceRevokeRes = makeRes();
   routes["/internal/vlabs/revoke"](signedReq(referenceRevoke), referenceRevokeRes);
   assert.strictEqual(referenceRevokeRes.payload.revoked, true);
+  assert.strictEqual(referenceRevokeRes.payload.licenseRef, referenceFulfillRes.payload.licenseRef);
+  assertUtcTimestamp(referenceRevokeRes.payload.revokedAt);
   const referenceOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
   assert.strictEqual(referenceOrders[referenceTarget.externalOrderId].status, "REVOKED");
   const referencePaymentKey = `payment_${crypto.createHash("sha256").update(referenceTarget.paymentReference).digest("hex").slice(0, 32)}`;
@@ -480,6 +671,10 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   await routes["/internal/vlabs/revoke"](signedReq(revokeFor(tombstoneTarget)), tombstoneRes);
   assert.strictEqual(tombstoneRes.statusCode, 200);
   assert.strictEqual(tombstoneRes.payload.tombstoned, true);
+  assertUtcTimestamp(tombstoneRes.payload.revokedAt);
+  assert.strictEqual(Object.hasOwn(tombstoneRes.payload, "licenseRef"), false, "unissued orders have no license reference");
+  assert.strictEqual(JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))
+    [tombstoneTarget.externalOrderId].revokedAt, tombstoneRes.payload.revokedAt);
   const lateFulfillRes = makeRes();
   await routes["/internal/vlabs/fulfill"](signedReq(tombstoneTarget), lateFulfillRes);
   assert.strictEqual(lateFulfillRes.statusCode, 409, "fulfillment after revoke tombstone fails closed");
@@ -496,6 +691,7 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   const tombstoneAgainRes = makeRes();
   await routes["/internal/vlabs/revoke"](signedReq(revokeFor(tombstoneTarget)), tombstoneAgainRes);
   assert.strictEqual(tombstoneAgainRes.payload.duplicate, true, "duplicate revoke of a tombstone is idempotent");
+  assert.strictEqual(tombstoneAgainRes.payload.revokedAt, tombstoneRes.payload.revokedAt);
 
   // Stripe may deliver a refund/dispute before VLABS has a local session order.
   // The payment-intent tombstone must still block a later fulfillment.
@@ -536,6 +732,8 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   const dualFirstRevokeRes = makeRes();
   routes["/internal/vlabs/revoke"](signedReq(dualTombstoneRevoke, "198.51.100.10"), dualFirstRevokeRes);
   assert.strictEqual(dualFirstRevokeRes.payload.tombstoned, true);
+  assertUtcTimestamp(dualFirstRevokeRes.payload.revokedAt);
+  await new Promise(resolve => setTimeout(resolve, 10));
   const dualLateFulfillRes = makeRes();
   await routes["/internal/vlabs/fulfill"](signedReq(dualTombstoneTarget, "198.51.100.10"), dualLateFulfillRes);
   assert.strictEqual(dualLateFulfillRes.statusCode, 409, "fulfillment after payment reversal still fails closed");
@@ -543,11 +741,13 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   const dualPaymentKey = `payment_${crypto.createHash("sha256").update(dualTombstoneTarget.paymentReference).digest("hex").slice(0, 32)}`;
   assert.strictEqual(dualOrders[dualPaymentKey].status, "TOMBSTONED", "payment tombstone exists");
   assert.strictEqual(dualOrders[dualTombstoneTarget.externalOrderId].status, "TOMBSTONED", "session tombstone exists");
+  assert.strictEqual(dualOrders[dualTombstoneTarget.externalOrderId].revokedAt, dualFirstRevokeRes.payload.revokedAt);
   const dualRetryRevokeRes = makeRes();
   routes["/internal/vlabs/revoke"](signedReq(dualTombstoneRevoke, "198.51.100.10"), dualRetryRevokeRes);
   assert.strictEqual(dualRetryRevokeRes.statusCode, 200);
   assert.strictEqual(dualRetryRevokeRes.payload.duplicate, true,
     "payment + session tombstones keep the reversal idempotent");
+  assert.strictEqual(dualRetryRevokeRes.payload.revokedAt, dualFirstRevokeRes.payload.revokedAt);
 
   // Ambiguous scans still fail closed: a live order beside a tombstone for
   // the same payment reference is never silently treated as a duplicate.
@@ -652,11 +852,11 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   // Legacy rows must never be mutated before terminal status and existing
   // payment-reference checks have passed.
   const legacyBlockedTarget = fulfillBody("stealthx-securecall-pro-lifetime", {
-    externalOrderId: "cs_test_legacy_blocked",
+    externalOrderId: "cs_live_legacy_blocked",
     paymentReference: "pi_test_legacy_blocked",
   });
   const legacyMismatchTarget = fulfillBody("stealthx-securecall-pro-lifetime", {
-    externalOrderId: "cs_test_legacy_mismatch",
+    externalOrderId: "cs_live_legacy_mismatch",
     paymentReference: "pi_test_legacy_new",
   });
   const guardedLegacyOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
@@ -686,10 +886,64 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.deepStrictEqual(guardedLegacyAfter[legacyBlockedTarget.externalOrderId], guardedLegacyOrders[legacyBlockedTarget.externalOrderId]);
   assert.deepStrictEqual(guardedLegacyAfter[legacyMismatchTarget.externalOrderId], guardedLegacyOrders[legacyMismatchTarget.externalOrderId]);
 
+  // Legacy receipt backfills use the historical creation time, or persist one
+  // fallback time when no timestamp exists. Neither path resends an email.
+  for (const createdAt of ["2024-01-02T03:04:05.000Z", undefined]) {
+    const target = fulfillBody("stealthx-securecall-pro-lifetime");
+    const before = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+    before[target.externalOrderId] = {
+      productId: target.productId, tier: "pro", code: "PRO-LEGA-CY00-REF1", status: "FULFILLED",
+      ...(createdAt ? { createdAt } : {}),
+    };
+    fs.writeFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, JSON.stringify(before));
+    const emailCount = sentEmails.length;
+    const startedAt = Date.now();
+    const first = makeRes();
+    await routes["/internal/vlabs/fulfill"](signedReq(target, "198.51.100.70"), first);
+    assert.strictEqual(first.statusCode, 200);
+    assert.strictEqual(first.payload.duplicate, true);
+    const saved = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[target.externalOrderId];
+    assertFulfillmentReceipt(first.payload, saved);
+    if (createdAt) assert.strictEqual(first.payload.fulfilledAt, createdAt);
+    else assert.ok(Date.parse(first.payload.fulfilledAt) >= startedAt && Date.parse(first.payload.fulfilledAt) <= Date.now());
+    await new Promise(resolve => setTimeout(resolve, 10));
+    const repeat = makeRes();
+    await reloadedRoutes["/internal/vlabs/fulfill"](signedReq(target, "198.51.100.70"), repeat);
+    assert.deepStrictEqual(repeat.payload, first.payload, "backfilled receipt survives reload and retry");
+    assert.strictEqual(sentEmails.length, emailCount);
+  }
+
+  // Old terminal rows also acquire a durable receipt without reapplying a reversal.
+  for (const terminal of [
+    { status: "REVOKED", revokedAt: "2024-02-03T04:05:06.000Z", code: "PRO-LEGA-CY00-REF2" },
+    { status: "TOMBSTONED", tombstonedAt: "2024-03-04T05:06:07.000Z" },
+    { status: "TOMBSTONED" },
+  ]) {
+    const target = fulfillBody("stealthx-securecall-pro-lifetime");
+    const before = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+    before[target.externalOrderId] = { productId: target.productId, tier: "pro", ...terminal };
+    fs.writeFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, JSON.stringify(before));
+    const first = makeRes();
+    routes["/internal/vlabs/revoke"](signedReq(revokeFor(target), "198.51.100.70"), first);
+    assert.strictEqual(first.statusCode, 200);
+    assert.strictEqual(first.payload.duplicate, true);
+    assertUtcTimestamp(first.payload.revokedAt);
+    if (terminal.revokedAt || terminal.tombstonedAt) {
+      assert.strictEqual(first.payload.revokedAt, terminal.revokedAt || terminal.tombstonedAt);
+    }
+    if (terminal.code) assert.match(first.payload.licenseRef, /^lic_[a-f0-9]{24}$/);
+    const saved = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[target.externalOrderId];
+    assert.strictEqual(saved.revokedAt, first.payload.revokedAt);
+    await new Promise(resolve => setTimeout(resolve, 10));
+    const repeat = makeRes();
+    reloadedRoutes["/internal/vlabs/revoke"](signedReq(revokeFor(target), "198.51.100.70"), repeat);
+    assert.deepStrictEqual(repeat.payload, first.payload);
+  }
+
   // Pre-contract receiver orders remain revocable and are bound during the
   // signed request instead of wedging on missing tuple fields.
   const legacyTarget = fulfillBody("stealthx-securecall-pro-lifetime", {
-    externalOrderId: "cs_test_legacy_receiver",
+    externalOrderId: "cs_live_legacy_receiver",
     paymentReference: "pi_test_legacy_receiver",
     paymentEventId: "evt_test_legacy_receiver_paid",
   });
@@ -713,6 +967,8 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   await routes["/internal/vlabs/revoke"](signedReq(revokeFor(legacyTarget)), legacyRevokeRes);
   assert.strictEqual(legacyRevokeRes.statusCode, 200);
   assert.strictEqual(legacyRevokeRes.payload.revoked, true);
+  assert.match(legacyRevokeRes.payload.licenseRef, /^lic_[a-f0-9]{24}$/);
+  assertUtcTimestamp(legacyRevokeRes.payload.revokedAt);
   const migratedLegacyOrder = JSON.parse(
     fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"),
   )[legacyTarget.externalOrderId];
@@ -805,6 +1061,8 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   const failedPersistRes = makeRes();
   failingRoutes["/internal/vlabs/revoke"](signedReq(disputeRevoke, "192.0.2.11"), failedPersistRes);
   assert.strictEqual(failedPersistRes.statusCode, 503, "activation write failure is reported");
+  const firstDisputeTime = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8"))
+    .reversals.find(entry => entry.stripeSessionId === disputed.target.externalOrderId).reversedAt;
   assert.notStrictEqual(
     JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[disputed.target.externalOrderId].status,
     "REVOKED", "order stays retryable while the activation store is stale",
@@ -814,8 +1072,10 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   activationStore.loadActivationCodes();
   assertDenied(disputed, "device-dispute", "after failed persist restart");
   const retryRevokeRes = makeRes();
+  await new Promise(resolve => setTimeout(resolve, 10));
   liveRoutes["/internal/vlabs/revoke"](signedReq(disputeRevoke, "192.0.2.11"), retryRevokeRes);
   assert.strictEqual(retryRevokeRes.payload.revoked, true, JSON.stringify(retryRevokeRes.payload));
+  assert.strictEqual(retryRevokeRes.payload.revokedAt, firstDisputeTime, "retry preserves the first durable reversal time");
   assert.ok(!persistedCodes().includes(disputed.code));
 
   // Payment-reference-only reversal of an activated sale also survives restart.
@@ -853,6 +1113,195 @@ function revokeFor(fulfillRequestBody, overrides = {}) {
   assert.strictEqual(activate(healthy.code, "device-healthy").success, true, "verified sale is restored");
   assert.strictEqual(refresh(healthy.token, "device-healthy").success, true, "verified refresh is restored");
   assertDenied(refunded, "device-refund", "unrelated revoked sale stays denied");
+
+  // Separate signing keys enforce mode before orders, codes, delivery or revocation change.
+  const modeRoutes = {};
+  fulfillment.setupVlabsFulfillmentRoute({ post: (routePath, handler) => { modeRoutes[routePath] = handler; } }, liveCodes);
+  const modeIp = "192.0.2.200";
+  const productId = "stealthx-securechat-elite-lifetime";
+  const testTarget = fulfillBody(productId, { externalOrderId: "cs_test_signed_e2e", livemode: false });
+  const liveTarget = fulfillBody(productId, { externalOrderId: "cs_live_signed_mode", livemode: true });
+  const modeSnapshot = () => JSON.stringify({
+    files: [process.env.VLABS_FULFILLMENT_ORDERS_FILE, process.env.SOLD_CODES_FILE, process.env.CODES_FILE]
+      .map(file => fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null),
+    liveCodes,
+    emails: sentEmails.length,
+    requests: requestedUrls.length,
+  });
+  async function modeRequest(action, payload, secret) {
+    const res = makeRes();
+    await modeRoutes[`/internal/vlabs/${action}`](signedReq(payload, modeIp, secret), res);
+    return res;
+  }
+  async function rejectedModeRequest(action, payload, secret, status = 403) {
+    const before = modeSnapshot();
+    const res = await modeRequest(action, payload, secret);
+    assert.strictEqual(res.statusCode, status, JSON.stringify(res.payload));
+    assert.deepStrictEqual(res.payload, {
+      ok: false, error: status === 403 ? "Mode mismatch" : "Invalid fulfillment signature",
+    });
+    assert.strictEqual(modeSnapshot(), before, `${action} rejection must have no side effects`);
+    assert.strictEqual(fs.existsSync(`${process.env.VLABS_FULFILLMENT_ORDERS_FILE}.lock`), false);
+    assert.strictEqual(fs.existsSync(`${process.env.SOLD_CODES_FILE}.lock`), false);
+  }
+
+  // An absent or too-short TEST secret cannot authenticate either route.
+  for (const configured of [undefined, "short", "x".repeat(31)]) {
+    if (configured === undefined) delete process.env.VLABS_FULFILLMENT_TEST_SECRET;
+    else process.env.VLABS_FULFILLMENT_TEST_SECRET = configured;
+    await rejectedModeRequest("fulfill", testTarget, configured || TEST_SECRET, 401);
+    await rejectedModeRequest("revoke", revokeFor(testTarget), configured || TEST_SECRET, 401);
+  }
+  process.env.VLABS_FULFILLMENT_TEST_SECRET = TEST_SECRET;
+  for (const action of ["fulfill", "revoke"]) {
+    const payload = target => action === "fulfill" ? target : revokeFor(
+      { ...target, externalOrderId: target.externalOrderId || "cs_invalid" },
+      { externalOrderId: target.externalOrderId },
+    );
+    for (const [target, secret] of [
+      [liveTarget, TEST_SECRET],
+      [{ ...liveTarget, externalOrderId: "cs_other_order", livemode: undefined }, TEST_SECRET],
+      [{ ...testTarget, externalOrderId: null }, TEST_SECRET],
+      [testTarget, SECRET],
+      [{ ...testTarget, livemode: true }, TEST_SECRET],
+      [{ ...liveTarget, livemode: false }, SECRET],
+    ]) {
+      await rejectedModeRequest(action, { ...payload(target), livemode: target.livemode }, secret);
+    }
+  }
+
+  // Configure finance export so accidental use of that separate path is observable.
+  const previousFinanceUrl = process.env.VLABS_FINANCE_INGEST_URL;
+  const previousFinanceSecret = process.env.VLABS_FINANCE_INGEST_SECRET;
+  process.env.VLABS_FINANCE_INGEST_URL = "https://finance.example.invalid/ingest";
+  process.env.VLABS_FINANCE_INGEST_SECRET = "test-only-finance-ingest-secret";
+  const requestsBeforeTestSale = requestedUrls.length;
+  const testFulfilled = await modeRequest("fulfill", testTarget, TEST_SECRET);
+  const testOrder = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[testTarget.externalOrderId];
+  assertFulfillmentReceipt(testFulfilled.payload, testOrder);
+  assert.deepStrictEqual(testFulfilled.payload, {
+    ok: true, fulfilled: true, productId, licenseRef: testOrder.licenseRef, fulfilledAt: testOrder.fulfilledAt,
+  });
+  const testSale = soldCodes.findByStripeSession(testTarget.externalOrderId);
+  assert.strictEqual(testOrder.mode, "test");
+  assert.strictEqual(testOrder.paymentReference, `test:${testTarget.paymentReference}`);
+  assert.strictEqual(testOrder.paymentEventId, `test:${testTarget.paymentEventId}`);
+  assert.strictEqual(testSale.mode, "test");
+  const hash = value => crypto.createHash("sha256").update(value).digest("hex");
+  assert.strictEqual(testSale.paymentReferenceHash, hash(`test:${testTarget.paymentReference}`));
+  assert.strictEqual(testSale.emailDelivery.status, "delivered");
+  const testActivation = activate(testSale.code, "device-test-mode");
+  assert.strictEqual(testActivation.success, true, JSON.stringify(testActivation));
+  assert.ok(testActivation.entitlementToken, "TEST code follows the real redemption path");
+  assert.strictEqual(refresh(testActivation.entitlementToken, "device-test-mode").success, true);
+  assert.strictEqual((await modeRequest("fulfill", { ...testTarget, livemode: undefined }, TEST_SECRET)).payload.duplicate, true,
+    "livemode remains optional on TEST retries");
+  assert.strictEqual((await modeRequest("fulfill", { ...healthy.target, livemode: true }, SECRET)).payload.duplicate, true,
+    "explicit LIVE livemode remains accepted");
+
+  // TEST requests always require a TEST session, even for an unknown payment.
+  await rejectedModeRequest("revoke", revokeFor(healthy.target, { externalOrderId: undefined }), TEST_SECRET);
+  await rejectedModeRequest("fulfill", { ...testTarget, externalOrderId: undefined }, TEST_SECRET);
+
+  // Equal raw references are independent: neither mode can bind or revoke the other's sale.
+  const healthyOrderBefore = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[healthy.target.externalOrderId];
+  const healthySaleBefore = soldCodes.findByStripeSession(healthy.target.externalOrderId);
+  const spoofedTest = { ...testTarget, externalOrderId: "cs_test_foreign_reference", paymentReference: healthy.target.paymentReference };
+  assert.strictEqual((await modeRequest("fulfill", spoofedTest, TEST_SECRET)).payload.fulfilled, true);
+  assert.strictEqual((await modeRequest("revoke", revokeFor(spoofedTest), TEST_SECRET)).payload.revoked, true);
+  assert.deepStrictEqual(soldCodes.findByStripeSession(healthy.target.externalOrderId), healthySaleBefore);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"))[healthy.target.externalOrderId], healthyOrderBefore);
+  assert.strictEqual(refresh(healthy.token, "device-healthy").success, true);
+  const testSaleBeforeLiveRevoke = soldCodes.findByStripeSession(testTarget.externalOrderId);
+  assert.strictEqual((await modeRequest("revoke", revokeFor(testTarget, { externalOrderId: undefined }), SECRET)).payload.tombstoned, true);
+  assert.deepStrictEqual(soldCodes.findByStripeSession(testTarget.externalOrderId), testSaleBeforeLiveRevoke);
+  assert.strictEqual(refresh(testActivation.entitlementToken, "device-test-mode").success, true);
+
+  // Even without an order row, the sold store must protect its LIVE entry.
+  const orphan = fulfillBody(productId);
+  soldCodes.recordSale({
+    code: "ELIT-ORPH-AN00-0001", tier: "elite", stripeSessionId: orphan.externalOrderId,
+    paymentReference: orphan.paymentReference, productKey: "securechat_elite_lifetime",
+  });
+  await rejectedModeRequest("revoke", revokeFor(orphan, { externalOrderId: undefined }), TEST_SECRET);
+  const orphanBefore = soldCodes.findByStripeSession(orphan.externalOrderId);
+  const orphanTest = { ...testTarget, externalOrderId: "cs_test_orphan", paymentReference: orphan.paymentReference };
+  assert.strictEqual((await modeRequest("fulfill", orphanTest, TEST_SECRET)).payload.fulfilled, true);
+  assert.strictEqual((await modeRequest("revoke", revokeFor(orphanTest), TEST_SECRET)).payload.revoked, true);
+  assert.deepStrictEqual(soldCodes.findByStripeSession(orphan.externalOrderId), orphanBefore);
+
+  // F1: TEST activity before the LIVE order exists cannot poison its later lifecycle.
+  for (const attack of ["fulfill", "revoke", "fulfill_then_revoke"]) {
+    const pendingLive = fulfillBody(productId);
+    const pendingTest = { ...pendingLive, externalOrderId: `cs_test_preempt_${attack}` };
+    const adjustmentEventId = `evt_shared_preempt_${attack}`;
+    await rejectedModeRequest("revoke", revokeFor(pendingLive, { externalOrderId: undefined }), TEST_SECRET);
+    if (attack !== "revoke") {
+      assert.strictEqual((await modeRequest("fulfill", pendingTest, TEST_SECRET)).payload.fulfilled, true);
+    }
+    if (attack !== "fulfill") {
+      const early = await modeRequest("revoke", revokeFor(pendingTest, { adjustmentEventId }), TEST_SECRET);
+      assert.strictEqual(early.payload[attack === "revoke" ? "tombstoned" : "revoked"], true);
+    }
+    assert.strictEqual(soldCodes.isReversed(null, pendingLive.paymentReference), false);
+    assert.strictEqual((await modeRequest("fulfill", pendingLive, SECRET)).payload.fulfilled, true);
+    const liveSale = soldCodes.findByStripeSession(pendingLive.externalOrderId);
+    assert.strictEqual(liveSale.paymentReferenceHash, hash(pendingLive.paymentReference), "LIVE hashes stay unchanged");
+    const liveRevoke = await modeRequest("revoke", revokeFor(pendingLive, { externalOrderId: undefined, adjustmentEventId }), SECRET);
+    assert.strictEqual(liveRevoke.payload.revoked, true);
+    const storedOrders = JSON.parse(fs.readFileSync(process.env.VLABS_FULFILLMENT_ORDERS_FILE, "utf8"));
+    assert.strictEqual(storedOrders[pendingLive.externalOrderId].paymentReference, pendingLive.paymentReference);
+    assert.strictEqual(storedOrders[pendingLive.externalOrderId].paymentEventId, pendingLive.paymentEventId);
+    assert.strictEqual(storedOrders[pendingLive.externalOrderId].adjustmentEventId, adjustmentEventId);
+    assert.strictEqual(storedOrders[pendingTest.externalOrderId].paymentReference, `test:${pendingLive.paymentReference}`);
+    if (attack === "fulfill") {
+      assert.strictEqual((await modeRequest("fulfill", pendingTest, TEST_SECRET)).payload.duplicate, true,
+        "LIVE reversal cannot block an existing TEST sale");
+      assert.strictEqual((await modeRequest("revoke", revokeFor(pendingTest, { adjustmentEventId }), TEST_SECRET)).payload.revoked, true);
+    }
+    const reversals = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8")).reversals;
+    const liveReversal = reversals.find(entry => entry.paymentIntentHash === hash(pendingLive.paymentReference));
+    const testReversal = reversals.find(entry => entry.stripeSessionId === pendingTest.externalOrderId);
+    assert.strictEqual(liveReversal.eventHash, hash(adjustmentEventId));
+    assert.strictEqual(testReversal.paymentIntentHash, hash(`test:${pendingLive.paymentReference}`));
+    assert.strictEqual(testReversal.eventHash, hash(`test:${adjustmentEventId}`));
+    assert.strictEqual(soldCodes.isReversed(null, pendingLive.paymentReference, "test"), true);
+  }
+
+  const testRevoked = await modeRequest("revoke", { ...revokeFor(testTarget), livemode: false }, TEST_SECRET);
+  assertUtcTimestamp(testRevoked.payload.revokedAt);
+  assert.deepStrictEqual(testRevoked.payload, {
+    ok: true, revoked: true, productId, licenseRef: testOrder.licenseRef, revokedAt: testRevoked.payload.revokedAt,
+  });
+  assertDenied({ code: testSale.code, token: testActivation.entitlementToken }, "device-test-mode", "TEST revoke");
+  activationStore.loadActivationCodes();
+  assertDenied({ code: testSale.code, token: testActivation.entitlementToken }, "device-test-mode", "TEST revoke after reload");
+  assert.strictEqual((await modeRequest("revoke", revokeFor(testTarget), TEST_SECRET)).payload.duplicate, true);
+  assert.strictEqual(soldCodes.findByStripeSession(testTarget.externalOrderId).mode, "test");
+  const testReversal = JSON.parse(fs.readFileSync(process.env.SOLD_CODES_FILE, "utf8")).reversals
+    .find(entry => entry.stripeSessionId === testTarget.externalOrderId);
+  assert.strictEqual(testReversal.mode, "test");
+  assert.strictEqual(testReversal.eventHash, hash(`test:${revokeFor(testTarget).adjustmentEventId}`));
+
+  // TEST-only configuration works with mandatory session IDs on both routes.
+  delete process.env.VLABS_FULFILLMENT_SECRET;
+  const testOnly = fulfillBody(productId, { externalOrderId: "cs_test_only_secret" });
+  assert.strictEqual((await modeRequest("fulfill", testOnly, TEST_SECRET)).payload.fulfilled, true);
+  await rejectedModeRequest("revoke", revokeFor(testOnly, { externalOrderId: undefined }), TEST_SECRET);
+  assert.strictEqual((await modeRequest("revoke", revokeFor(testOnly), TEST_SECRET)).payload.revoked, true);
+  const earlyTest = fulfillBody(productId, { externalOrderId: "cs_test_early_reversal" });
+  await rejectedModeRequest("revoke", revokeFor(earlyTest, { externalOrderId: undefined }), TEST_SECRET);
+  assert.strictEqual((await modeRequest("revoke", revokeFor(earlyTest), TEST_SECRET)).payload.tombstoned, true);
+  assert.strictEqual((await modeRequest("fulfill", earlyTest, TEST_SECRET)).statusCode, 409);
+  process.env.VLABS_FULFILLMENT_SECRET = SECRET;
+  delete process.env.VLABS_FULFILLMENT_TEST_SECRET;
+  assert.ok(requestedUrls.slice(requestsBeforeTestSale).every(url => url === "https://api.brevo.com/v3/smtp/email"),
+    "TEST fulfillment and revoke never call finance ingest, even when configured");
+  if (previousFinanceUrl === undefined) delete process.env.VLABS_FINANCE_INGEST_URL;
+  else process.env.VLABS_FINANCE_INGEST_URL = previousFinanceUrl;
+  if (previousFinanceSecret === undefined) delete process.env.VLABS_FINANCE_INGEST_SECRET;
+  else process.env.VLABS_FINANCE_INGEST_SECRET = previousFinanceSecret;
+  console.log("vlabs_fulfillment: DATA_DIR persistence and TEST/LIVE lifecycle assertions PASS");
 
   // Concurrency: a foreign-held orders lock fails the mutation closed.
   fs.writeFileSync(`${process.env.VLABS_FULFILLMENT_ORDERS_FILE}.lock`, "999999:foreignowner\n", { mode: 0o600 });

@@ -91,13 +91,8 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
             return
         }
 
-        // Lifetime products are INAPP, subscriptions are SUBS
-        if (sku.contains("lifetime")) {
-            val offerDetails = details.oneTimePurchaseOfferDetails
-            if (offerDetails == null) {
-                tvStatus.text = "No offer available"
-                return
-            }
+        // Lifetime and activation-code products are INAPP; subscriptions are SUBS.
+        if (details.oneTimePurchaseOfferDetails != null) {
             tvStatus.text = "Launching purchase..."
             billingManager.launchInAppPurchaseFlow(details)
         } else {

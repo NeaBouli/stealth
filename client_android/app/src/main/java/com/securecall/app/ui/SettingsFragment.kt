@@ -17,6 +17,17 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import com.securecall.app.config.FeatureProviderRegistry
 import com.securecall.app.config.TierManager
 
+internal fun activationErrorMessageResource(error: String): Int? = when (error) {
+    "invalid" -> R.string.activation_error_invalid
+    "exhausted" -> R.string.activation_error_exhausted
+    "timeout", "not_connected" -> R.string.activation_error_connection
+    "edition_mismatch" -> R.string.activation_error_edition_mismatch
+    "release_mismatch" -> R.string.activation_error_release_mismatch
+    "code_unsupported" -> R.string.activation_error_code_unsupported
+    "rate_limited" -> R.string.activation_error_rate_limited
+    else -> null
+}
+
 class SettingsFragment : PreferenceFragmentCompat() {
 
     private val vpnPermissionLauncher = registerForActivityResult(
@@ -653,11 +664,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     }, 1500)
                 } else {
                     // Failed
-                    val msg = when (error) {
-                        "invalid" -> getString(R.string.activation_error_invalid)
-                        "exhausted" -> getString(R.string.activation_error_exhausted)
+                    val msg = activationErrorMessageResource(error)?.let { getString(it) } ?: when (error) {
                         "max_devices" -> "Code already activated on maximum devices"
-                        "timeout", "not_connected" -> getString(R.string.activation_error_connection)
                         else -> "Activation failed: $error"
                     }
                     android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_LONG).show()

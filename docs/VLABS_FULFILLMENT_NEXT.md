@@ -334,3 +334,17 @@ Open decisions before launch:
 
 Keep the Custom-ID switch off until the claim/delivery and VLABS integration work is
 complete. No production enablement or owner product decision is implied by this draft.
+
+## Known limitations
+
+- **B2 — Free cannot redeem direct entitlements:** activation remains disabled in Free
+  (`client_android/app/build.gradle:108`), and the direct proof store accepts only Pro/Premium
+  flavors (`client_android/app/src/main/java/com/securecall/app/billing/DirectEntitlementStore.kt:36`).
+- **B4 — Release-ID pin:** the signed release claim must exactly match the APK's
+  `ENTITLEMENT_RELEASE_ID` (`client_android/app/build.gradle:66`;
+  `client_android/app/src/main/java/com/securecall/app/billing/DirectEntitlementVerifier.kt:127`).
+  Future release identities require coordinated backend catalog and Android changes.
+- **B5 — 30-day proof TTL:** lifetime purchases still need periodic server refresh; commercial
+  proofs expire after 30 days (`backend/signaling/src/payments/entitlement_tokens.js:6`), and
+  Android rejects expired proofs or longer lifetimes
+  (`client_android/app/src/main/java/com/securecall/app/billing/DirectEntitlementVerifier.kt:134`).

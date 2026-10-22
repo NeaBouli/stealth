@@ -146,20 +146,47 @@ function writeStoreLocked(lock, codes, reversals) {
   writeJsonAtomic(SOLD_FILE, { codes, reversals });
 }
 
-function hashReference(value) {
-  return crypto.createHash("sha256").update(value).digest("hex");
+// Only verified VLABS TEST traffic uses this namespace. Legacy Stripe callers
+// and LIVE traffic retain their existing references and hashes.
+function referenceForMode(value, mode) {
+  return mode === "test" ? `test:${value}` : value;
 }
 
-function loadReversals() {
-  return readStore().reversals;
+function hashReference(value, mode) {
+  return crypto.createHash("sha256").update(referenceForMode(value, mode)).digest("hex");
 }
 
-function isReversed(stripeSessionId, paymentReference) {
-  const paymentReferenceHash = paymentReference ? hashReference(paymentReference) : null;
-  return loadReversals().some(entry => (
+// VLABS supplies a verified mode. Check both registries, including orphaned
+// sales for which the order-file write never completed. Writers hold the lock.
+function assertPaymentMode(store, stripeSessionId, paymentReferenceHash, mode) {
+  if (!mode) return;
+  for (const entry of [...store.codes, ...store.reversals]) {
+    if (!entry || !((stripeSessionId && entry.stripeSessionId === stripeSessionId)
+      || (paymentReferenceHash && (entry.paymentReferenceHash === paymentReferenceHash
+        || entry.paymentIntentHash === paymentReferenceHash)))) continue;
+    const entryMode = entry.mode || (entry.stripeSessionId?.startsWith("cs_test_") ? "test" : "live");
+    if (entryMode !== mode) throw new Error("sale_mode_mismatch");
+  }
+}
+
+function isReversed(stripeSessionId, paymentReference, mode) {
+  const store = readStore();
+  const paymentReferenceHash = paymentReference ? hashReference(paymentReference, mode) : null;
+  assertPaymentMode(store, stripeSessionId, paymentReferenceHash, mode);
+  return store.reversals.some(entry => (
     (stripeSessionId && entry.stripeSessionId === stripeSessionId)
     || (paymentReferenceHash && entry.paymentIntentHash === paymentReferenceHash)
   ));
+}
+
+function findReversal(stripeSessionId, paymentReference, mode) {
+  const store = readStore();
+  const paymentReferenceHash = paymentReference ? hashReference(paymentReference, mode) : null;
+  assertPaymentMode(store, stripeSessionId, paymentReferenceHash, mode);
+  return store.reversals.find(entry => (
+    (stripeSessionId && entry.stripeSessionId === stripeSessionId)
+    || (paymentReferenceHash && entry.paymentIntentHash === paymentReferenceHash)
+  )) || null;
 }
 
 function maskCode(value) {
@@ -244,16 +271,18 @@ function mergeIntoActivationCodes(entry, activationCodesRef) {
  * @param {string} [params.offerVersion] - Immutable offer version for the product
  * @param {string} [params.releaseId] - Immutable release identity for the product
  * @param {string} [params.externalProductId] - External (VLABS) product identifier
+ * @param {string} [params.mode] - Verified VLABS signing mode (live or test)
  * @param {Array}  [params.activationCodesRef] - Live reference to server.js activationCodes array
  * @returns {Object} The stored entry (also in activationCodes format)
  */
-function recordSale({ code, tier, stripeSessionId, paymentReference, productKey, catalogVersion, offerVersion, releaseId, externalProductId, activationCodesRef }) {
+function recordSale({ code, tier, stripeSessionId, paymentReference, productKey, catalogVersion, offerVersion, releaseId, externalProductId, mode, activationCodesRef }) {
   let entry;
   let reused = false;
   withStoreLock(lock => {
     const store = readStore();
     const existing = sanitizeCodes(store.codes);
-    const paymentReferenceHash = paymentReference ? hashReference(paymentReference) : null;
+    const paymentReferenceHash = paymentReference ? hashReference(paymentReference, mode) : null;
+    assertPaymentMode(store, stripeSessionId, paymentReferenceHash, mode);
     if (store.reversals.some(item => (
       (stripeSessionId && item.stripeSessionId === stripeSessionId)
       || (paymentReferenceHash && item.paymentIntentHash === paymentReferenceHash)
@@ -282,6 +311,7 @@ function recordSale({ code, tier, stripeSessionId, paymentReference, productKey,
     }
 
     entry = {
+      ...(mode ? { mode } : {}),
       code,
       tier,
       maxUses: 2,
@@ -314,11 +344,11 @@ function recordSale({ code, tier, stripeSessionId, paymentReference, productKey,
   mergeIntoActivationCodes(entry, activationCodesRef);
 
   if (reused) {
-    console.log(`[SOLD-CODES] Existing sale reused for Stripe session: ${maskStripeId(stripeSessionId)}`);
+    console.log(`[SOLD-CODES${mode ? ` mode=${mode}` : ""}] Existing sale reused for Stripe session: ${maskStripeId(stripeSessionId)}`);
     return entry;
   }
 
-  console.log(`[SOLD-CODES] Recorded: ${maskCode(code)} (${tier})`);
+  console.log(`[SOLD-CODES${mode ? ` mode=${mode}` : ""}] Recorded: ${maskCode(code)} (${tier})`);
   return entry;
 }
 
@@ -377,7 +407,8 @@ function revokeByStripeSession(stripeSessionId, activationCodesRef, reversalData
     const store = readStore();
     const existing = sanitizeCodes(store.codes);
     const reversals = [...store.reversals];
-    const paymentIntentHash = reversalData?.paymentIntent ? hashReference(reversalData.paymentIntent) : null;
+    const paymentIntentHash = reversalData?.paymentIntent ? hashReference(reversalData.paymentIntent, reversalData.mode) : null;
+    assertPaymentMode(store, stripeSessionId, paymentIntentHash, reversalData?.mode);
     entry = existing.find(item => (
       (stripeSessionId && item.stripeSessionId === stripeSessionId)
       || (paymentIntentHash && item.paymentReferenceHash === paymentIntentHash)
@@ -391,13 +422,14 @@ function revokeByStripeSession(stripeSessionId, activationCodesRef, reversalData
       reversalDuplicate = Boolean(prior);
       if (!prior) {
         reversals.push({
+          ...(reversalData.mode ? { mode: reversalData.mode } : {}),
           stripeSessionId: stripeSessionId || null,
           paymentIntentHash,
           productKey: reversalData.productKey || null,
           catalogVersion: reversalData.catalogVersion || null,
           offerVersion: reversalData.offerVersion || null,
           releaseId: reversalData.releaseId || null,
-          eventHash: hashReference(reversalData.eventId),
+          eventHash: hashReference(reversalData.eventId, reversalData.mode),
           reason: reversalData.reason,
           reversedAt: new Date().toISOString(),
         });
@@ -427,6 +459,6 @@ function revokeByStripeSession(stripeSessionId, activationCodesRef, reversalData
 
 module.exports = {
   load, save, recordSale, updateEmailDelivery, revokeByStripeSession, loadAsActivationCodes,
-  findByStripeSession, isReversed,
+  findByStripeSession, isReversed, findReversal, referenceForMode,
   maskCode, maskEmail, maskStripeId,
 };
