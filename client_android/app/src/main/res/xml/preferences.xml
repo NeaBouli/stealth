@@ -235,7 +235,7 @@
         <Preference
             android:key="pref_terms"
             android:title="Terms of Service"
-            android:summary="Activation codes, subscriptions, legal terms"
+            android:summary="@string/settings_terms_summary"
             android:icon="@drawable/ic_settings" />
         <Preference
             android:key="pref_licenses"
