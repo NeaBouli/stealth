@@ -106,6 +106,7 @@ android {
             // FINANCE_READY are recorded for the same immutable offer version.
             buildConfigField "boolean", "BILLING_ENABLED", "false"
             buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "false"
+            buildConfigField "boolean", "EXTERNAL_PURCHASE_LINKS_ENABLED", "false"
             buildConfigField "String", "PLAY_CATALOG_VERSION", "\"securecall-play-v1\""
             buildConfigField "String", "SKU_PRO_MONTHLY", "\"securecall_pro_monthly\""
             buildConfigField "String", "SKU_PRO_YEARLY", "\"securecall_pro_yearly\""
@@ -141,6 +142,7 @@ android {
             buildConfigField "boolean", "AGGRESSIVE_KEY_ROTATION", "false"
             buildConfigField "boolean", "BILLING_ENABLED", "false"
             buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "true"
+            buildConfigField "boolean", "EXTERNAL_PURCHASE_LINKS_ENABLED", "true"
             buildConfigField "String", "PLAY_CATALOG_VERSION", "\"securecall-play-v1\""
         }
 
@@ -170,6 +172,7 @@ android {
             buildConfigField "boolean", "TESTER_LICENSE_ENABLED", testerLicensesEnabled
             buildConfigField "boolean", "BILLING_ENABLED", "false"
             buildConfigField "boolean", "ACTIVATION_CODE_ENABLED", "true"
+            buildConfigField "boolean", "EXTERNAL_PURCHASE_LINKS_ENABLED", "true"
             buildConfigField "String", "PLAY_CATALOG_VERSION", "\"securecall-play-v1\""
         }
 
@@ -631,8 +634,23 @@ tasks.register('verifyFreeReleaseBillingClosed') {
     }
 }
 
+tasks.register('verifyFreeReleaseExternalPurchaseLinksClosed') {
+    group = 'verification'
+    description = 'Fails if the Google Play flavor allows external purchase links.'
+    dependsOn 'testFreeDebugUnitTest', 'testFreeReleaseUnitTest'
+    inputs.file(file('build.gradle'))
+    doLast {
+        def freeFlag = android.productFlavors.getByName('free')
+            .buildConfigFields['EXTERNAL_PURCHASE_LINKS_ENABLED']
+        if (freeFlag?.value != 'false') {
+            throw new GradleException('Free Google Play builds must disable external purchase links.')
+        }
+    }
+}
+
 tasks.matching { it.name == 'bundleFreeRelease' || it.name == 'assembleFreeRelease' }.configureEach {
     dependsOn tasks.named('verifyFreeReleaseBillingClosed')
+    dependsOn tasks.named('verifyFreeReleaseExternalPurchaseLinksClosed')
 }
 
 if (allowInternalFlavors) {
