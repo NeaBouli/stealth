@@ -271,6 +271,19 @@ test('current direct release and Free-only Play distribution survive the port', 
     }
 });
 
+test('current Google Play version claims match the Free production release', () => {
+    assert.match(readWebsite('index.html'), /"softwareVersion": "1\.0\.51-free"/);
+    for (const name of ['index.html', 'download.html', 'llms.txt', 'wiki/index.html', 'wiki/user-manual.html']) {
+        const versions = [...readWebsite(name).matchAll(/Google Play v(\d+\.\d+\.\d+)/g)]
+            .map(([, version]) => version);
+        assert.ok(versions.length > 0, `${name} is missing the current Google Play version`);
+        assert.ok(versions.every(version => version === '1.0.51'), `${name} has a stale Google Play version`);
+    }
+    const llms = readWebsite('llms.txt');
+    assert.match(llms, /Google Play v1\.0\.51; package com\.securecall\.app\.free/);
+    assert.match(llms, /Google Play v1\.0\.51 \(versionCode 78019\) live in production since 2026-10-23\./);
+});
+
 test('offline lifetime licence FAQ preserves the 30-day proof and 7-day recovery', () => {
     const faq = readWebsite('index.html').match(
         /Does my Pro or Premium licence work offline\?[\s\S]*?<div class="faq-answer-inner">([\s\S]*?)<\/div>/,
