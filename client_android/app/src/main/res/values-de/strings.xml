@@ -80,6 +80,7 @@
     <string name="settings_dark_mode">Dunkler Modus</string>
     <string name="settings_version">Version</string>
     <string name="settings_tier">Aktueller Plan</string>
+    <string name="pref_activation_code_dialog">Geben Sie Ihren Aktivierungscode ein (z. B. PRO-XXXX-XXXX-XXXX)</string>
     <string name="settings_terms_summary">Aktivierungscodes, Einmalkäufe, rechtliche Hinweise</string>
     <string name="settings_ad_privacy">Datenschutzoptionen für Werbung</string>
     <string name="settings_ad_privacy_summary">Einwilligungen für Werbung prüfen</string>

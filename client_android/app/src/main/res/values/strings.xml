@@ -219,7 +219,7 @@
     <!-- Activation Code -->
     <string name="pref_activation_code">Activation Code</string>
     <string name="pref_activation_code_summary">Enter code to unlock Pro or Premium</string>
-    <string name="pref_activation_code_dialog">Enter your activation code (format: XXXX-XXXX-XXXX)</string>
+    <string name="pref_activation_code_dialog">Enter your activation code (e.g. PRO-XXXX-XXXX-XXXX)</string>
     <string name="pref_activate">Activate Code</string>
     <string name="pref_plan_active">Plan active: %1$s</string>
     <string name="activation_success">Activated! Your plan is now %1$s. Restarting\u2026</string>
