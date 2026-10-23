@@ -67,13 +67,13 @@ Buy once, use forever. No subscriptions. Sales are not open yet and will remain 
 - Physical QA includes Samsung S7, S10 and Tab S4; broader compatibility remains subject to device testing
 
 ## Download
-- Google Play v1.0.50; package com.securecall.app.free
+- Google Play v1.0.51; package com.securecall.app.free
 - Direct APK: github.com/NeaBouli/stealth/releases
 
 ## Current Version
 - Direct APK: v1.0.51 / versionCode 78019 (Free, Pro, Premium), GitHub release tag v1.0.51, marked latest.
 - Direct APK assets: SecureCall-Free-LATEST.apk, SecureCall-Pro-LATEST.apk, SecureCall-Premium-LATEST.apk, SecureCall-v1.0.51-SHA256SUMS.txt. APK download URLs remain /releases/latest/download/ followed by the asset name.
-- Google Play v1.0.50 (versionCode 78018) live in production since 2026-10-17.
+- Google Play v1.0.51 (versionCode 78019) live in production since 2026-10-23.
 - v1.0.51 changes (direct builds): lifetime-only upgrade screen in English and German (EN/DE), and activation code entry in Pro/Premium.
 - v1.0.50 changes: signed registration binds the ID to the device key; caller names come only from contacts verified for that ID; calls to saved contacts use their verified ID; incoming calls appear on the lock screen, including Samsung; unanswered calls end after 60 seconds; stealth delete wipes all app data; hardened key handling, safer invite links, and more stable reconnecting.
 - Pro/Premium features in v1.0.51 require a verified license; licenses are not on sale yet.
