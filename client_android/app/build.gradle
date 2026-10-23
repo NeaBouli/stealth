@@ -63,7 +63,7 @@ android {
         buildConfigField "String", "ENTITLEMENT_PUBLIC_KEY", "\"${entitlementPublicKey}\""
         buildConfigField "String", "TESTER_ENTITLEMENT_PUBLIC_KEY", "\"${testerEntitlementPublicKey}\""
         buildConfigField "boolean", "TESTER_LICENSE_ENABLED", "false"
-        // Server-catalog contract: app 1.0.52 keeps the existing 1.0.50 entitlement release ID.
+        // Server-catalog contract: keep this release ID unchanged when bumping the app version.
         buildConfigField "String", "ENTITLEMENT_RELEASE_ID", '"securecall-android-1.0.50-vc78017-api36"'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
