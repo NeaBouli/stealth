@@ -627,20 +627,27 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         } else {
             // Free tier — show activation code input
-            codePref?.isVisible = true
-            codePref?.setOnPreferenceChangeListener { _, _ -> true }
+            codePref?.apply {
+                isVisible = true
+                setOnPreferenceChangeListener { _, newValue ->
+                    val code = (newValue as? String)?.trim().orEmpty()
+                    // Clear legacy saved input and reject persistence of the submitted code.
+                    text = ""
+                    if (code.isEmpty()) {
+                        android.widget.Toast.makeText(requireContext(), "Enter an activation code first", android.widget.Toast.LENGTH_SHORT).show()
+                    } else {
+                        submitActivationCode(code)
+                    }
+                    false
+                }
+            }
 
             activateButton?.apply {
                 title = getString(R.string.pref_activate)
                 isEnabled = true
                 summary = getString(R.string.pref_activation_code_summary)
                 setOnPreferenceClickListener {
-                    val code = codePref?.text?.trim() ?: ""
-                    if (code.isEmpty()) {
-                        android.widget.Toast.makeText(requireContext(), "Enter an activation code first", android.widget.Toast.LENGTH_SHORT).show()
-                        return@setOnPreferenceClickListener true
-                    }
-                    submitActivationCode(code)
+                    codePref?.let { onDisplayPreferenceDialog(it) }
                     true
                 }
             }
@@ -662,6 +669,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             isEnabled = false
             summary = "Validating\u2026"
         }
+        android.widget.Toast.makeText(ctx, "Validating\u2026", android.widget.Toast.LENGTH_SHORT).show()
 
         ws.activateCode(code) { success, tier, error ->
             activity?.runOnUiThread {
