@@ -56,8 +56,8 @@ android {
         applicationId "com.securecall.app"
         minSdkVersion 24
         targetSdkVersion 36
-        versionCode 78019
-        versionName "1.0.51"
+        versionCode 78020
+        versionName "1.0.52"
 
         // Public verifier only. Empty until the exact signed release is configured.
         buildConfigField "String", "ENTITLEMENT_PUBLIC_KEY", "\"${entitlementPublicKey}\""

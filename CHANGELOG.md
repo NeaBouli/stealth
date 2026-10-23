@@ -7,6 +7,16 @@ Format follows "Keep a Changelog" with security-critical extensions.
 
 ---
 
+## [1.0.52] — 2026-10-23 — vC78020
+
+### Fixed
+- Activation codes are submitted directly from the settings dialog in direct Pro and Premium builds (#203/#202)
+- Minor fixes
+
+### Distribution
+- `ENTITLEMENT_RELEASE_ID` remains unchanged; the server catalog stays on
+  `securecall-android-1.0.50-vc78017-api36`
+
 ## [1.0.51] — 2026-10-23 — vC78019
 
 ### Fixed

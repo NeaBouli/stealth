@@ -1,0 +1,12 @@
+<en-US>
+SecureCall 1.0.52
+
+- Activation codes are now activated directly after entering them
+- Minor fixes
+</en-US>
+<de-DE>
+SecureCall 1.0.52
+
+- Aktivierungscodes werden jetzt direkt nach der Eingabe aktiviert
+- Kleinere Korrekturen
+</de-DE>
