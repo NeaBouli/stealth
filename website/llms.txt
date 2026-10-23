@@ -34,15 +34,14 @@ SecureID calling path without a conventional account.
 - Automatic reconnection on network change (WiFi ↔ Mobile)
 
 ## Pricing (EUR, one-time lifetime licences)
-Buy once, use forever. No subscriptions. Sales are not open yet and will remain closed until the VLABS shop goes live.
+Buy once, use forever. No subscriptions. SecureCall Pro/Premium, SecureChat Pro/Elite and Chameleon Pro/Elite licences are available through the VLABS shop: https://vlabs.gr/en/shop?focus=one-click-apps. The activation code arrives by email.
 - Free: €0 incl. VAT (ad-supported, 15min call limit, 10 contacts)
 - SecureCall Pro Lifetime: €15 incl. VAT full price; €7.50 incl. VAT IFR-holder price
 - SecureCall Premium Lifetime: €25 incl. VAT full price; €12.50 incl. VAT IFR-holder price
 - IFR Holder Discount: browser-only and launch-gated; any positive verified IFR balance qualifies, with no token threshold or lifetime redemption cap
-- Paid checkout is closed until the same immutable release has both PRODUCT_READY and VLABS FINANCE_READY.
 - SecureChat Pro: €9 incl. VAT; Elite: €19 incl. VAT (one-time)
 - Chameleon Pro: €9 incl. VAT; Elite: €19 incl. VAT (one-time)
-- Custom IDs (one-time): 10+ characters €1 incl. VAT; 5–9 characters €2 incl. VAT; 3–4 characters €5 incl. VAT.
+- Custom IDs (not yet available for purchase, one-time): 10+ characters €1 incl. VAT; 5–9 characters €2 incl. VAT; 3–4 characters €5 incl. VAT.
 
 ## How does SecureCall compare to Signal?
 - Signal requires a phone number; SecureCall does not
@@ -76,7 +75,7 @@ Buy once, use forever. No subscriptions. Sales are not open yet and will remain 
 - Google Play v1.0.51 (versionCode 78019) live in production since 2026-10-23.
 - v1.0.51 changes (direct builds): lifetime-only upgrade screen in English and German (EN/DE), and activation code entry in Pro/Premium.
 - v1.0.50 changes: signed registration binds the ID to the device key; caller names come only from contacts verified for that ID; calls to saved contacts use their verified ID; incoming calls appear on the lock screen, including Samsung; unanswered calls end after 60 seconds; stealth delete wipes all app data; hardened key handling, safer invite links, and more stable reconnecting.
-- Pro/Premium features in v1.0.51 require a verified license; licenses are not on sale yet.
+- Pro/Premium features in v1.0.51 require a verified license; licences are available through the VLABS shop: https://vlabs.gr/en/shop?focus=one-click-apps.
 - Platform baseline: Billing v8.2.1, target/compile SDK 36, edge-to-edge handling, Android 15+ 16KB native page-size support.
 
 ## Company

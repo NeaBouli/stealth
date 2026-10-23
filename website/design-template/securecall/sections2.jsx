@@ -44,7 +44,8 @@
   }
 
   function Pricing() {
-    const { L } = ctx(); const P = L.pricing;
+    const { L, lang } = ctx(); const P = L.pricing;
+    const shopLanguage = ["en", "de", "el"].includes(lang) ? lang : "en";
     return h("section", { id: "pricing", className: "section section-alt" },
       h("div", { className: "section-head" },
         h("span", { className: "kicker" }, P.kicker), h("h2", { className: "section-title" }, P.title),
@@ -62,7 +63,7 @@
             h("ul", { className: "price-feats" }, t.feats.map((f) => h("li", { key: f }, h("span", { className: "pf-tick" }), f))),
             i === 0
               ? h("a", { href: "#download", className: "btn btn-ghost btn-block" }, t.cta)
-              : h("span", { "aria-disabled": "true", className: "btn btn-" + (best ? "solid" : "ghost") + " btn-block" }, t.cta));
+              : h("a", { href: `https://vlabs.gr/${shopLanguage}/shop?focus=one-click-apps`, className: "btn btn-" + (best ? "solid" : "ghost") + " btn-block" }, t.cta));
         }))
     );
   }
