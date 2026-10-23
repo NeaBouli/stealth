@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const vm = require("node:vm");
 
 const repositoryRoot = path.resolve(__dirname, "..", "..");
 
@@ -111,7 +112,7 @@ test("browser-only IFR surface matches the accepted closed-gate VLABS offer", ()
   assert.match(source, /No payment can be made on this page/);
 });
 
-test("landing and pricing record the same closed direct-channel prices", () => {
+test("landing and pricing record the same direct-channel prices", () => {
   const landing = read("website/index.html");
   const pricing = read("docs/PRICING.md");
 
@@ -123,7 +124,9 @@ test("landing and pricing record the same closed direct-channel prices", () => {
     assert.ok(pricing.includes(amount), `pricing is missing ${amount}`);
   }
 
-  assert.match(landing, /Sales not yet available/);
+  assert.match(landing, /https:\/\/vlabs\.gr\/en\/shop\?focus=one-click-apps/);
+  assert.match(landing, /activation code arrives by email/);
+  assert.doesNotMatch(landing, /Sales (?:are not open yet|not yet available|are closed)/i);
   assert.match(pricing, /PRODUCT_READY/);
   assert.match(pricing, /FINANCE_READY/);
 });
@@ -137,7 +140,7 @@ test("pricing links to the VLABS app shop in the page language", () => {
 
   assert.equal(shopLinks.length, 1, "pricing must offer a visible VLABS shop link");
   assert.equal(shopLinks[0][1], `https://vlabs.gr/${shopLanguage}/shop?focus=one-click-apps`);
-  assert.doesNotMatch(shopLinks[0][0], /aria-disabled="true"|\bonclick=/);
+  assert.doesNotMatch(shopLinks[0][0], /\baria-disabled\s*=|\bonclick=/);
 });
 
 test("website contains no legacy Stripe payment or checkout links", () => {
@@ -159,7 +162,7 @@ test("edited landing JSON-LD remains valid", () => {
   for (const [, payload] of blocks) JSON.parse(payload);
 });
 
-test("landing advertises only the Free offer while paid sales stay closed", () => {
+test("landing preserves the Free offer and links paid lifetime cards to the shop", () => {
   const landing = read("website/index.html");
   const structured = [...landing.matchAll(
     /<script\s+type="application\/ld\+json">([\s\S]*?)<\/script>/g,
@@ -168,7 +171,7 @@ test("landing advertises only the Free offer while paid sales stay closed", () =
   for (const type of ["SoftwareApplication", "Product"]) {
     const offers = structured.find(item => item["@type"] === type).offers;
     assert.deepEqual(offers.map(offer => offer.name), ["Free"],
-      `${type} must not advertise paid offers while sales are closed`);
+      `${type} must retain its Free offer metadata`);
     assert.equal(offers[0].price, "0");
     assert.equal(offers[0].priceCurrency, "EUR");
   }
@@ -178,8 +181,64 @@ test("landing advertises only the Free offer while paid sales stay closed", () =
   assert.equal(cards.length, 4);
   for (const card of cards) {
     assert.match(card, /incl\. VAT · one-time/);
-    assert.match(card, /aria-disabled="true">Sales not yet available/);
-    assert.doesNotMatch(card, /<a\b/);
+    const links = [...card.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)];
+    assert.equal(links.length, 1, "each paid card must offer a purchase link");
+    assert.match(links[0][0], /href="https:\/\/vlabs\.gr\/en\/shop\?focus=one-click-apps"/);
+    assert.match(links[0][0], /class="btn primary block"/);
+    assert.doesNotMatch(card, /\baria-disabled\s*=|Sales not yet available|Launch gated|>Planned</);
+  }
+});
+
+test("shop product pages no longer describe licence sales as closed", () => {
+  const pages = ["index.html", "download.html", "faq.html", "ifr.html", "llms.txt", "terms.html",
+    "wiki/faq.html", "wiki/getting-started.html", "wiki/ifr-unlock.html", "wiki/user-manual.html",
+    "design-template/securecall/StealthX Design-Konzept.html"];
+  for (const name of pages) {
+    const source = read(`website/${name}`);
+    const language = source.match(/<html\b[^>]*\blang="([^"]+)"/)?.[1] || "en";
+    const shopLanguage = ["en", "de", "el"].includes(language) ? language : "en";
+    assert.ok(source.includes(`https://vlabs.gr/${shopLanguage}/shop?focus=one-click-apps`), name);
+    assert.doesNotMatch(source,
+      /sales (?:are )?not (?:yet )?open(?: yet)?|Sales not yet available|sales are closed|sales[^.\n]*remain closed|licen[cs]es are not on sale yet|paid checkout is closed|No (?:paid SecureCall|SecureCall paid) checkout is currently active|purchases are currently disabled|once sales open|Verkauf ist noch nicht geöffnet|Verkauf noch geschlossen/i,
+      `${name} must not close shop product sales`);
+  }
+
+  for (const name of ["llms.txt", "terms.html", "wiki/custom-id.html"]) {
+    assert.match(read(`website/${name}`), /Custom IDs[^.\n]*not yet available for purchase/,
+      `${name} must keep Custom ID purchases closed`);
+  }
+  assert.match(read("website/wiki/custom-id.html"), /const CUSTOM_ID_SALES_ENABLED = false/);
+});
+
+test("design-template paid CTAs use the active language and remain enabled", () => {
+  for (const lang of ["en", "de", "el"]) {
+    const context = {
+      React: {
+        createContext: () => ({}),
+        useContext: () => ({ L: context.STRINGS[lang] || context.STRINGS.en, lang }),
+        createElement: (type, props, ...children) => ({ type, props: props || {}, children: children.flat() }),
+      },
+    };
+    context.window = context;
+    vm.runInNewContext(read("website/design-template/securecall/i18n.jsx"), context);
+    vm.runInNewContext(read("website/design-template/securecall/sections2.jsx"), context);
+    const links = [];
+    function collectLinks(node) {
+      if (!node || typeof node !== "object") return;
+      if (node.type === "a") links.push(node);
+      node.children.forEach(collectLinks);
+    }
+    collectLinks(context.Pricing());
+    assert.equal(links.length, 3);
+    assert.equal(links[0].props.href, "#download");
+    for (const link of links.slice(1)) {
+      assert.equal(link.props.href, `https://vlabs.gr/${lang}/shop?focus=one-click-apps`);
+      assert.equal(link.props["aria-disabled"], undefined);
+      assert.match(link.children[0], /^(?:Buy in VLABS shop|Im VLABS-Shop kaufen)$/);
+    }
+    const pricing = (context.STRINGS[lang] || context.STRINGS.en).pricing;
+    assert.match(pricing.lead, /(?:activation code arrives by email|Aktivierungscode kommt per E-Mail)/);
+    assert.doesNotMatch(pricing.lead, /not open yet|noch nicht geöffnet|geschlossen/);
   }
 });
 
@@ -287,7 +346,7 @@ test('current direct release and Free-only Play distribution survive the port', 
     for (const name of ['index.html', 'download.html', 'faq.html', 'wiki/faq.html']) {
         const html = readWebsite(name);
         assert.match(html, /Google Play distributes (?:the Free edition only|only the Free edition)/);
-        assert.match(html, /one-time lifetime purchases through the VLABS shop/);
+        assert.match(html.replace(/<[^>]+>/g, ''), /one-time lifetime purchases through the VLABS shop/);
         assert.doesNotMatch(html, /Google Play Billing|Play billing|\/(?:month|year)\b/i);
     }
 });
