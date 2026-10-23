@@ -128,6 +128,27 @@ test("landing and pricing record the same closed direct-channel prices", () => {
   assert.match(pricing, /FINANCE_READY/);
 });
 
+test("pricing links to the VLABS app shop in the page language", () => {
+  const landing = read("website/index.html");
+  const language = landing.match(/<html\b[^>]*\blang="([^"]+)"/)[1];
+  const shopLanguage = ["en", "de", "el"].includes(language) ? language : "en";
+  const pricing = landing.match(/<section\b[^>]*\bid="pricing"[^>]*>([\s\S]*?)<\/section>/)[1];
+  const shopLinks = [...pricing.matchAll(/<a\b[^>]*\bhref="([^"]+)"[^>]*>Visit VLABS shop<\/a>/g)];
+
+  assert.equal(shopLinks.length, 1, "pricing must offer a visible VLABS shop link");
+  assert.equal(shopLinks[0][1], `https://vlabs.gr/${shopLanguage}/shop?focus=one-click-apps`);
+  assert.doesNotMatch(shopLinks[0][0], /aria-disabled="true"|\bonclick=/);
+});
+
+test("website contains no legacy Stripe payment or checkout links", () => {
+  const websiteRoot = path.join(repositoryRoot, "website");
+  for (const name of fs.readdirSync(websiteRoot, { recursive: true })) {
+    if (!/\.(?:html|js)$/.test(name)) continue;
+    assert.doesNotMatch(fs.readFileSync(path.join(websiteRoot, name), "utf8"),
+      /(?:buy|checkout)\.stripe\.com/i, `${name} bypasses the VLABS shop`);
+  }
+});
+
 test("edited landing JSON-LD remains valid", () => {
   const landing = read("website/index.html");
   const blocks = [...landing.matchAll(
