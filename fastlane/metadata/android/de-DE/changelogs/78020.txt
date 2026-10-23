@@ -1,0 +1,4 @@
+SecureCall 1.0.52
+
+- Aktivierungscodes werden jetzt direkt nach der Eingabe aktiviert
+- Kleinere Korrekturen
