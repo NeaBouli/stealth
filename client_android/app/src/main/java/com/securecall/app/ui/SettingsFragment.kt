@@ -647,7 +647,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 isEnabled = true
                 summary = getString(R.string.pref_activation_code_summary)
                 setOnPreferenceClickListener {
-                    codePref?.performClick()
+                    codePref?.let { onDisplayPreferenceDialog(it) }
                     true
                 }
             }

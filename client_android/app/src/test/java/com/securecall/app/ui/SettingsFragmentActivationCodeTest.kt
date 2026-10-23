@@ -20,6 +20,7 @@ import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -144,13 +145,14 @@ class SettingsFragmentActivationCodeTest {
     @Test
     fun activateEntryOpensTheSameCodeDialog() {
         assumeDirectActivation()
+        doNothing().whenever(settings).onDisplayPreferenceDialog(any())
         configureActivationCode("FREE")
         val listener = argumentCaptor<Preference.OnPreferenceClickListener>()
         verify(activateButton).setOnPreferenceClickListener(listener.capture())
 
         assertTrue(listener.firstValue.onPreferenceClick(activateButton))
 
-        verify(codePreference).performClick()
+        verify(settings).onDisplayPreferenceDialog(codePreference)
         verify(service, never()).activateCode(any(), any())
     }
 
