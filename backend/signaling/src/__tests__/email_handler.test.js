@@ -32,6 +32,29 @@ const proHtml = generateEmailHTML("PRO-ABCD-EFGH-IJKL", "pro");
 assert.ok(proHtml.includes("Download Pro APK"), "pro email should show direct APK CTA");
 assert.ok(proHtml.includes(proLinks.primary), "pro email should include direct Pro APK link");
 
+// Activation labels fall back to English in German and Greek Android resources.
+const activationHints = [
+  ["en", 'To activate your licence: Settings → Activation Code → enter the code → OK, then tap "Activate Code".'],
+  ["de", "So aktivieren Sie Ihre Lizenz: Einstellungen → Activation Code → Code eingeben → OK, danach auf „Activate Code“ tippen."],
+  ["el", "Για ενεργοποίηση της άδειας: Settings → Activation Code → εισαγωγή κωδικού → OK, και μετά πατήστε «Activate Code»."]
+];
+for (const [tier, html, code] of [
+  ["pro", proHtml, "PRO-ABCD-EFGH-IJKL"],
+  ["premium", premiumHtml, "PREM-ABCD-EFGH-IJKL"]
+]) {
+  const renderedText = html.replace(/<[^>]*>/g, "").replace(/&quot;/g, '"');
+  for (const [language, hint] of activationHints) {
+    const paragraph = html.match(new RegExp(`<p\\b[^>]*lang="${language}"[^>]*>([\\s\\S]*?)<\\/p>`));
+    assert.ok(paragraph, `${tier} email should include a ${language} activation paragraph`);
+    assert.strictEqual(paragraph[1], hint.replace(/"/g, "&quot;"),
+      `${tier} email should include the HTML-escaped ${language} activation hint`);
+    assert.ok(renderedText.includes(hint), `${tier} email text should include the ${language} activation hint`);
+  }
+  assert.ok(html.includes(`>${code}</code>`), `${tier} email HTML should preserve the activation code`);
+  assert.ok(renderedText.includes(code), `${tier} email text should preserve the activation code`);
+  assert.ok(!html.includes("Settings &rarr; Konto"), `${tier} email should replace the obsolete activation steps`);
+}
+
 const offlineLicenceEn = "Your licence is valid for life. The app confirms it automatically whenever the device is online (no login needed). After more than 30 days offline it temporarily runs as the free version; if the device is back online within a further 7 days, Pro/Premium returns automatically. After that, simply enter the same code again &ndash; on the same device this uses no extra device slot and needs no new purchase.";
 const offlineLicenceDe = "Die Lizenz gilt dauerhaft. Die App bestätigt sie automatisch, sobald das Gerät online ist (kein Login nötig). Nach mehr als 30 Tagen offline läuft sie vorübergehend als Gratis-Version; ist das Gerät innerhalb weiterer 7 Tage wieder online, ist Pro/Premium automatisch zurück. Danach einfach denselben Code erneut eingeben &ndash; auf demselben Gerät ohne zusätzlichen Geräteplatz und ohne neuen Kauf.";
 for (const [tier, html] of [["pro", proHtml], ["premium", premiumHtml]]) {
@@ -68,5 +91,9 @@ assert.ok(!secureChatHtml.includes("Download Elite APK"), "SecureChat email must
 assert.ok(!secureChatHtml.includes("play.google.com/store/apps/details?id=com.securecall.app.free"), "SecureChat email must not link SecureCall Play listing");
 assert.ok(!secureChatHtml.includes(offlineLicenceEn), "SecureChat email must not include the English SecureCall offline licence paragraph");
 assert.ok(!secureChatHtml.includes(offlineLicenceDe), "SecureChat email must not include the German SecureCall offline licence paragraph");
+for (const [, hint] of activationHints) {
+  assert.ok(!secureChatHtml.includes(hint.replace(/"/g, "&quot;")),
+    "SecureChat email must not include SecureCall-specific activation instructions");
+}
 
 console.log("email_handler.test.js ok");

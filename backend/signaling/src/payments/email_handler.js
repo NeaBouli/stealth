@@ -68,6 +68,17 @@ function generateEmailHTML(code, tier, options = {}) {
     ...resolveDownloadLinks(tier),
     ...options.downloadLinks
   };
+  const activationInstructions = product.isSecureCall ? `
+    <p lang="en" style="color:#ccc;margin:0;font-size:15px;line-height:1.9;">To activate your licence: Settings → Activation Code → enter the code → OK, then tap &quot;Activate Code&quot;.</p>
+    <p lang="de" style="color:#ccc;margin:16px 0 0 0;font-size:15px;line-height:1.9;">So aktivieren Sie Ihre Lizenz: Einstellungen → Activation Code → Code eingeben → OK, danach auf „Activate Code“ tippen.</p>
+    <p lang="el" style="color:#ccc;margin:16px 0 0 0;font-size:15px;line-height:1.9;">Για ενεργοποίηση της άδειας: Settings → Activation Code → εισαγωγή κωδικού → OK, και μετά πατήστε «Activate Code».</p>` : `
+    <ol style="color:#ccc;line-height:1.9;padding-left:22px;margin:0;font-size:15px;">
+      <li>Open <strong style="color:#fff;">${product.name}</strong> on your Android device</li>
+      <li>Go to <strong style="color:#fff;">Settings &rarr; Konto</strong></li>
+      <li>Tap <strong style="color:#fff;">Activation Code</strong></li>
+      <li>Enter the code above and tap <strong style="color:#fff;">Activate</strong></li>
+      <li>Restart the app &mdash; ${tierName} features unlock instantly</li>
+    </ol>`;
   const offlineLicenceBlock = product.isSecureCall ? `
     <p style="color:#ccc;margin:16px 0 0 0;font-size:14px;line-height:1.6;">Your licence is valid for life. The app confirms it automatically whenever the device is online (no login needed). After more than 30 days offline it temporarily runs as the free version; if the device is back online within a further 7 days, Pro/Premium returns automatically. After that, simply enter the same code again &ndash; on the same device this uses no extra device slot and needs no new purchase.</p>
     <p style="color:#ccc;margin:16px 0 0 0;font-size:14px;line-height:1.6;">Die Lizenz gilt dauerhaft. Die App bestätigt sie automatisch, sobald das Gerät online ist (kein Login nötig). Nach mehr als 30 Tagen offline läuft sie vorübergehend als Gratis-Version; ist das Gerät innerhalb weiterer 7 Tage wieder online, ist Pro/Premium automatisch zurück. Danach einfach denselben Code erneut eingeben &ndash; auf demselben Gerät ohne zusätzlichen Geräteplatz und ohne neuen Kauf.</p>` : "";
@@ -115,13 +126,7 @@ function generateEmailHTML(code, tier, options = {}) {
 
   <div style="background:#11131a;border:1px solid #1f2330;border-radius:12px;padding:28px;margin-bottom:24px;">
     <h3 style="color:#FFD700;font-size:13px;text-transform:uppercase;letter-spacing:2px;margin:0 0 16px 0;">How to Activate</h3>
-    <ol style="color:#ccc;line-height:1.9;padding-left:22px;margin:0;font-size:15px;">
-      <li>Open <strong style="color:#fff;">${product.name}</strong> on your Android device</li>
-      <li>Go to <strong style="color:#fff;">Settings &rarr; Konto</strong></li>
-      <li>Tap <strong style="color:#fff;">Activation Code</strong></li>
-      <li>Enter the code above and tap <strong style="color:#fff;">Activate</strong></li>
-      <li>Restart the app &mdash; ${tierName} features unlock instantly</li>
-    </ol>${offlineLicenceBlock}
+    ${activationInstructions}${offlineLicenceBlock}
   </div>
 
   <div style="background:#11131a;border:1px solid #1f2330;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;">
