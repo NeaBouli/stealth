@@ -6111,3 +6111,23 @@ Open next:
 - impressum.html (EN/DE/EL) + success.html: Adresse nur clientseitig aus data-Teilen (js/mail-assemble.js); noscript = PNG ohne Metadaten.
 - Kontaktformular mailt jetzt an support@ (vorher private proton-Adresse) — erst live schalten, wenn Alias empfängt.
 - security.txt unverändert (RFC 9116). Test js/no-plain-support-mail.test.cjs; node --test 34/34; curl: 0 Treffer. Kein Merge/Deploy (Pages = Gio).
+
+## 2026-10-29 [AUTHOR: CODEX] - Issue211 / Source verification checkpoint
+- Separate bounded Android fix for a missed reconnect after heartbeat staleness:
+  clearing the socket before cancel causes the stale-callback guard to discard the
+  cancellation callback. Explicitly use the existing reconnect scheduler instead.
+- Four deterministic tests cover exactly one retry and preserve intentional-close,
+  auth-hard-stop and recovery suppression. On original code exactly the stale-retry
+  test fails (4 tests / 1 expected failure); the fixed full suites pass: Free297,
+  Premium298, zero failures/errors, 9 existing skips in total. Debug Kotlin/Java
+  compilation passes. Lint requested; not a PASS at this checkpoint.
+- Kimi quota-limited; Claude implemented the scoped source/tests/map. Its dispatcher
+  timed out before a report; Codex retained the work, reviewed the actual diff and
+  completed explicit red/green verification without duplicate implementation.
+- No URL, TLS, identity, license, backoff or normal-close policy changes. Lightweight
+  changed-file credential-pattern check clean; Codex Security scan NOT RUN.
+- Both attached official Free1.0.51 apps were Connected over validated Wi-Fi at two
+  readbacks more than two minutes apart. Earlier network access and old local-test
+  configuration problems were diagnosed separately. No app data/key reset, uninstall,
+  signing, installed source fix or production deployment. Socket status is not full
+  call/audio/release acceptance; frozen unsigned78020 remains a separate candidate.
