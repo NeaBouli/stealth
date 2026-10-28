@@ -38,6 +38,7 @@ Scope: only the static landing -> lifetime offer / IFR holder section hop
 - The Free card hands off to the in-page download section.
 - `ifr-checkout.js` finds `[data-ifr-checkout]` inside `#pricing`; its gates are unchanged.
 - `main.js` only toggles visibility of `.reveal` cards.
+- `landing.css` reserves desktop/mobile fixed-header clearance for direct `#lifetime` fragments; the landing stylesheet URL is versioned for cache refresh.
 
 ## 5. Contradictions and gaps
 
@@ -65,5 +66,5 @@ mindmap
 
 ## 7. Next step
 
-Module: Landing markup, hop 1-3. Untouched: `website/js/ifr-checkout.js`,
-`website/js/main.js`, `website/css/landing.css`, sister pages.
+Module: Landing markup, hop 1-3, including fragment clearance in `website/css/landing.css`.
+Untouched: `website/js/ifr-checkout.js`, `website/js/main.js`, sister pages.

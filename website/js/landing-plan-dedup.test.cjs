@@ -67,3 +67,10 @@ test('#pricing and #lifetime still resolve to the single pricing section', () =>
     assert.match(html, /<a href="#pricing">Pricing<\/a>/);
     assert.match(html, /<a href="#lifetime">Lifetime<\/a>/);
 });
+
+test('direct lifetime links reserve space for the fixed navigation header', () => {
+    const css = readFileSync(join(__dirname, '..', 'css', 'landing.css'), 'utf8');
+    assert.match(css, /\.section-head#lifetime \{ scroll-margin-top: 148px; \}/);
+    assert.equal((css.match(/\.section-head#lifetime/g) || []).length, 1);
+    assert.match(html, /css\/landing\.css\?v=20261028-plans/);
+});
