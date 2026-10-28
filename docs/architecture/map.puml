@@ -1,0 +1,23 @@
+@startmindmap
+* Landing pricing (static site)
+** Landing markup
+*** built: website/index.html::section#pricing
+*** built: #lifetime legacy anchor
+** IFR checkout script
+*** built (gated): website/js/ifr-checkout.js::root
+** Landing reveal
+*** built: website/js/main.js::revealObserver
+** VLABS shop
+*** external: vlabs.gr shop link
+@endmindmap
+
+@startuml
+component "Landing markup\nwebsite/index.html" as Landing
+component "IFR checkout script\nwebsite/js/ifr-checkout.js" as Ifr
+component "Landing reveal\nwebsite/js/main.js" as Reveal
+component "VLABS shop (external)" as Shop
+Landing --> Landing : section#pricing (#pricing, #lifetime)
+Landing --> Shop : Buy in VLABS shop
+Ifr --> Landing : querySelector([data-ifr-checkout])
+Reveal --> Landing : revealObserver(.reveal)
+@enduml
