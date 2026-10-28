@@ -330,7 +330,8 @@ class HeartbeatClient(
                             ws = null
                             try { oldWs?.cancel() } catch (_: Exception) {}
                             listener.onDisconnected()
-                            // onFailure from cancel() will schedule reconnect
+                            // ws is already null, so onFailure from cancel() is ignored as stale.
+                            scheduleReconnect()
                         }
                     }
                     return
