@@ -27,9 +27,11 @@ test('bLocX OS card is a planned, non-purchase status', () => {
 });
 
 test('bLocX OS stays outside pricing and download sections', () => {
-    for (const id of ['pricing', 'lifetime', 'download']) {
+    for (const id of ['pricing', 'download']) {
         assert.doesNotMatch(sectionById(id), /blocx/i);
     }
+    // #lifetime is a legacy anchor inside the single pricing section.
+    assert.match(sectionById('pricing'), /\bid="lifetime"/);
 });
 
 test('platform section lists existing products plus bLocX as separate', () => {

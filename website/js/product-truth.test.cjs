@@ -178,7 +178,9 @@ test("landing preserves the Free offer and links paid lifetime cards to the shop
 
   const cards = [...landing.matchAll(/<article class="price-card[^>]*>([\s\S]*?)<\/article>/g)]
     .map(([, card]) => card).filter(card => !card.includes("<h3>Free</h3>"));
-  assert.equal(cards.length, 4);
+  assert.equal(cards.length, 2, "paid plans must be offered once, as lifetime cards");
+  assert.match(cards[0], /<h3>Pro Lifetime<\/h3>/);
+  assert.match(cards[1], /<h3>Premium Lifetime<\/h3>/);
   for (const card of cards) {
     assert.match(card, /incl\. VAT · one-time/);
     const links = [...card.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)];

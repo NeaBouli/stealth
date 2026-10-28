@@ -1,0 +1,12 @@
+@startuml
+actor Visitor
+participant "Landing markup\nindex.html" as Landing
+participant "IFR checkout script\nifr-checkout.js" as Ifr
+participant "VLABS shop" as Shop
+Visitor -> Landing : nav #pricing / #lifetime
+Landing --> Visitor : section#pricing (Free, Pro Lifetime, Premium Lifetime)
+Ifr -> Landing : querySelector([data-ifr-checkout])
+Landing --> Visitor : IFR box, controls disabled
+Visitor -> Shop : Buy in VLABS shop
+Visitor -> Landing : Free "Get started" -> #download
+@enduml

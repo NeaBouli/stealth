@@ -54,7 +54,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/landing.css?v=20261022-blocx">
+    <link rel="stylesheet" href="css/landing.css?v=20261028-plans">
     <link rel="icon" href="assets/brand/securecall-icon.png" type="image/png">
     <link rel="shortcut icon" href="assets/brand/securecall-icon.png">
     <link rel="dns-prefetch" href="https://github.com">
@@ -473,12 +473,12 @@
 
         <section class="section alt" id="pricing">
             <div class="container">
-                <div class="section-head"><span class="section-label">Access levels</span><h2>Choose your clearance level.</h2><p class="lead">Every tier includes end-to-end encryption. Buy once, use forever. Paid licences are one-time purchases through the VLABS shop; the activation code arrives by email.</p></div>
+                <div class="section-head" id="lifetime"><span class="section-label">One-time purchase</span><h2>Lifetime licences.</h2><p class="lead">Buy once, use forever. Purchases go through the VLABS shop; the activation code arrives by email.</p></div>
                 <p><a href="https://vlabs.gr/en/shop?focus=one-click-apps" class="btn line">Visit VLABS shop</a></p>
                 <div class="pricing-grid">
                     <article class="price-card reveal"><h3>Free</h3><div class="price"><span class="amount">€0</span><span class="period">incl. VAT · forever</span></div><ul><li class="included">E2E encrypted calls</li><li class="included">15 min call limit, 10 contacts</li><li class="included">Basic security warnings</li><li class="included">Dark/Light mode</li><li class="included">Ad-supported banner</li><li class="excluded"><span class="sr-only">Not included: </span>Call history and online status</li><li class="excluded"><span class="sr-only">Not included: </span>Anti-recording protection</li><li class="excluded"><span class="sr-only">Not included: </span>Automatic threat termination</li></ul><a href="#download" class="btn line block">Get started</a></article>
-                    <article class="price-card featured reveal"><span class="price-badge">One-time licence</span><h3>Pro</h3><div class="price"><span class="amount">€15</span><span class="period">incl. VAT · one-time</span></div><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="excluded"><span class="sr-only">Not included: </span>Automatic threat termination</li></ul><a href="https://vlabs.gr/en/shop?focus=one-click-apps" class="btn primary block">Buy in VLABS shop</a></article>
-                    <article class="price-card reveal"><span class="price-badge">One-time licence</span><h3>Premium</h3><div class="price"><span class="amount">€25</span><span class="period">incl. VAT · one-time</span></div><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">Network selection controls</li><li class="included">No ads or crash reporting</li><li class="included">Device-managed VPN compatibility in every edition</li><li class="included">Optional app-managed WireGuard in the direct Premium APK</li></ul><a href="https://vlabs.gr/en/shop?focus=one-click-apps" class="btn primary block">Buy in VLABS shop</a></article>
+                    <article class="price-card featured reveal"><h3>Pro Lifetime</h3><div class="price"><span class="amount" id="proPrice">€15</span><span class="period">incl. VAT · one-time</span></div><p style="font-size:12px">Accepted VLABS full price; IFR-holder price &euro;7.50 incl. VAT.</p><ul><li class="included">Everything in Free</li><li class="included">Online/offline contact status</li><li class="included">Anti-recording detection</li><li class="included">Enhanced security monitoring</li><li class="included">Priority connection</li><li class="included">Unlimited contacts and calls</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li><li class="excluded"><span class="sr-only">Not included: </span>Automatic threat termination</li></ul><a href="https://vlabs.gr/en/shop?focus=one-click-apps" class="btn primary block">Buy in VLABS shop</a></article>
+                    <article class="price-card featured reveal"><h3>Premium Lifetime</h3><div class="price"><span class="amount" id="premiumPrice">€25</span><span class="period">incl. VAT · one-time</span></div><p style="font-size:12px">Accepted VLABS full price; IFR-holder price &euro;12.50 incl. VAT.</p><ul><li class="included">Everything in Pro</li><li class="included">Advanced threat detection</li><li class="included">Exclusive audio focus protection</li><li class="included">Threat auto-termination</li><li class="included">Network selection controls</li><li class="included">No ads or crash reporting</li><li class="included">Device-managed VPN compatibility in every edition</li><li class="included">Optional app-managed WireGuard in the direct Premium APK</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><a href="https://vlabs.gr/en/shop?focus=one-click-apps" class="btn primary block">Buy in VLABS shop</a></article>
                 </div>
                 <div class="ifr-box reveal" id="ifr" data-ifr-checkout data-ifr-product="SecureCall" data-ifr-enabled="false">
                     <span class="section-label">Browser purchase benefit</span>
@@ -507,16 +507,6 @@
                         </div>
                     </div>
                     <p style="margin:18px 0 0"><a class="btn line" href="wiki/ifr-unlock.html">How browser verification works</a></p>
-                </div>
-            </div>
-        </section>
-
-        <section class="section" id="lifetime">
-            <div class="container">
-                <div class="section-head"><span class="section-label">One-time purchase</span><h2>Lifetime licences.</h2><p class="lead">Buy once, use forever. Purchases go through the VLABS shop; the activation code arrives by email.</p></div>
-                <div class="pricing-grid">
-                    <article class="price-card featured reveal"><h3>Pro Lifetime</h3><div class="price"><span class="amount" id="proPrice">€15</span><span class="period">incl. VAT · one-time</span></div><p style="font-size:12px">Accepted VLABS full price; IFR-holder price &euro;7.50 incl. VAT.</p><ul><li class="included">Everything in Pro</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><a href="https://vlabs.gr/en/shop?focus=one-click-apps" class="btn primary block">Buy in VLABS shop</a></article>
-                    <article class="price-card featured reveal"><h3>Premium Lifetime</h3><div class="price"><span class="amount" id="premiumPrice">€25</span><span class="period">incl. VAT · one-time</span></div><p style="font-size:12px">Accepted VLABS full price; IFR-holder price &euro;12.50 incl. VAT.</p><ul><li class="included">Everything in Premium</li><li class="included">Pay once</li><li class="included">Access for supported versions</li><li class="included">Signed activation after confirmed payment</li></ul><a href="https://vlabs.gr/en/shop?focus=one-click-apps" class="btn primary block">Buy in VLABS shop</a></article>
                 </div>
             </div>
         </section>

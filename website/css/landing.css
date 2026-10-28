@@ -21,6 +21,7 @@
 }
 
 html { scroll-behavior: smooth; }
+.section-head#lifetime { scroll-margin-top: 148px; }
 body.landing-redesign {
   margin: 0;
   color: var(--sx-text);
