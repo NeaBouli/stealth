@@ -55,6 +55,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     private val binder = LocalBinder()
     private var client: HeartbeatClient? = null
+    @Volatile private var destroyed = false
     private val wsUrl: String = BuildConfig.SIGNAL_WS_URL
 
     // BACKEND-22: Status-Callbacks
@@ -522,18 +523,35 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     override fun onDestroy() {
         Log.d("WS_SERVICE", "onDestroy")
+        destroyed = true
         callSecurityState?.invite?.sessionId?.let { IncomingCallTelecom.end(it) }
         activationHandler.removeCallbacksAndMessages(null)
         runCatching { activationRequests.clear()?.callback?.invoke(false, "", "not_connected") }
         testerLicenses.cancel()
         entitlementHandler.removeCallbacksAndMessages(null)
         pendingEntitlementProof = null
-        instance = null
+        registerTimeoutHandler?.removeCallbacksAndMessages(null)
+        registerTimeoutHandler = null
+        registerPending = false
+        batchPhoneLookupTimeoutHandler.removeCallbacksAndMessages(null)
+        batchPhoneLookupQueue.suspendAndFailAll()
+        pendingCallQueue.clear()
         unregisterNetworkChangeCallback()
         releaseCpuWakeLock()
         stopAudioPlayback()
+        // Observe late hard/clean stops until the intentional-close boundary, not at stopService().
+        val resumable = instance === this && isRegistered && client?.canResumeAfterPolicyStop() == true
         client?.close()
+        isConnected = false
+        isRegistered = false
+        val ownedInstance = instance === this
+        if (ownedInstance) {
+            instance = null
+            statusCallbackOffline?.invoke()
+        }
         super.onDestroy()
+        (application as? com.securecall.app.SecureCallApplication)
+            ?.onSignalingServiceDestroyed(this, resumable && ownedInstance)
     }
 
     /** BUG-027: Partial wake lock keeps CPU alive for WebSocket heartbeats on aggressive OEMs. */
@@ -761,6 +779,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // ===================== HeartbeatClient.Listener =====================
 
     override fun onConnected() {
+        if (destroyed) return
         // Guard: prevent double-register on rapid reconnect
         if (registerPending) {
             Log.d("WS_SERVICE", "WebSocket connected but register already pending — skipping")
@@ -1031,6 +1050,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     override fun onDisconnected() {
+        if (destroyed) return
         Log.d("WS_SERVICE", "WebSocket disconnected")
         batchPhoneLookupQueue.suspendAndFailAll()
         isConnected = false
@@ -1051,6 +1071,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     override fun onError(t: Throwable) {
+        if (destroyed) return
         Log.e("WS_SERVICE", "WebSocket error", t)
         batchPhoneLookupQueue.suspendAndFailAll()
         isConnected = false
@@ -1214,6 +1235,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // WebSocketService only delegates via forceReconnect() or handleHeartbeatTimeout().
 
     fun forceReconnect() {
+        if (destroyed) return
         Log.w("WS_SERVICE", "ForceReconnect() invoked — delegating to HeartbeatClient")
         isConnected = false
         statusCallbackOffline?.invoke()

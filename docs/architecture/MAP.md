@@ -92,3 +92,33 @@ Scope: only the existing staleness hop in
   `onFailure` stays ignored, so exactly one retry is queued.
 - Untouched: `onClosing` 1000 policy, 4000..4099 hard stop, `close()`, flap recovery, backoff,
   TLS/pins, URLs. Guarded by `app/src/test/.../net/HeartbeatClientStaleReconnectTest.kt`.
+
+---
+
+# Narrow trace: Android policy stop -> warm resume (issue #220)
+
+Scope: `SecureCallApplication`, `WebSocketService`, a read-only lifecycle accessor
+in `HeartbeatClient`, and existing status wiring in `MainActivity`. No call,
+foreground-service API, preference, authentication or reconnect-policy redesign.
+
+| Module | Ownership | Hop |
+| --- | --- | --- |
+| Application lifecycle | Main-thread activity count, 15s stop and one-shot resume intent | activity stop -> policy stop -> service destruction -> foreground start |
+| Signaling service | Own client teardown and instance-scoped offline publication | onDestroy -> client close -> Application completion |
+| Heartbeat client | Read-only eligibility; all socket retries stay here | connected, not closed/recovering/retrying -> eligible snapshot before close |
+| Main activity | Current service's status callbacks and bounded existing binding retries | onResume/offline -> rebind -> current-state refresh |
+
+- Application remembers the exact service requested to stop, not an arbitrary absence.
+  It waits for that instance's destruction before starting via its existing
+  foreground-service startup path. A return before the delayed stop only cancels it.
+- Eligibility is sampled immediately before intentional client close. Only an
+  established CONNECTED client with no pending retry/recovery and no connection
+  attempt in the existing 10s flap window is resumable. A
+  disconnected/connecting client, manual close, auth400x or clean1000 is not.
+  Interrupted retry/backoff/recovery is deliberately not reconstructed in a new client.
+- Service destruction clears its own connection/registration state; only the current
+  instance clears the singleton and publishes offline. A replacement is untouched.
+- MainActivity detaches obsolete callbacks, checks instance ownership again on UI
+  delivery, and refreshes an already-connected replacement without reconnecting it.
+- Process-local only: cold startup/call startup, task removal, FCM, Android API35+
+  background policy and preference defaults are unchanged. Device proof is separate.

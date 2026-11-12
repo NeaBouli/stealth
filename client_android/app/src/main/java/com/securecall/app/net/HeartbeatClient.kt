@@ -187,6 +187,12 @@ class HeartbeatClient(
 
     fun getState(): State = state
 
+    /** Lifecycle restart is only safe outside existing retry, recovery and flap windows. */
+    fun canResumeAfterPolicyStop(): Boolean =
+        !isClosed && !inRecoveryMode && !reconnectPending &&
+            System.currentTimeMillis() - lastConnectAttempt >= flapWindow &&
+            state == State.CONNECTED
+
     /** Set call active flag — extends heartbeat staleness threshold to 120s during calls. */
     fun setCallActive(active: Boolean) {
         callActive = active

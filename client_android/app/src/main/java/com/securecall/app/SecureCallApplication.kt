@@ -14,6 +14,9 @@ import com.securecall.app.net.WebSocketService
 class SecureCallApplication : Application() {
     private val backgroundStopHandler = Handler(Looper.getMainLooper())
     private var startedActivityCount = 0
+    // Main-thread only: a stop request is not a completed service destruction.
+    private var policyStoppingService: WebSocketService? = null
+    private var resumeAfterPolicyStop = false
 
     override fun onCreate() {
         super.onCreate()
@@ -21,40 +24,7 @@ class SecureCallApplication : Application() {
         // Incoming-call notifications can launch activities before MainActivity.
         AppInit.init(this)
 
-        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
-            override fun onActivityStarted(activity: Activity) {
-                startedActivityCount++
-                backgroundStopHandler.removeCallbacksAndMessages(null)
-            }
-
-            override fun onActivityStopped(activity: Activity) {
-                startedActivityCount = (startedActivityCount - 1).coerceAtLeast(0)
-                if (startedActivityCount == 0) {
-                    backgroundStopHandler.postDelayed({
-                        // Android 15+ (API 35): persistent idle signaling is not allowed —
-                        // stop the service after backgrounding even if the legacy preference
-                        // is still true. An active call always keeps the service alive.
-                        val persistentIdleAllowed = ForegroundServicePolicy.allowsPersistentIdleSignaling(
-                            android.os.Build.VERSION.SDK_INT
-                        )
-                        if (startedActivityCount == 0 &&
-                            (!persistentIdleAllowed ||
-                                !WebSocketService.isBackgroundServiceEnabled(this@SecureCallApplication)) &&
-                            !WebSocketService.hasActiveCall()
-                        ) {
-                            android.util.Log.d("SecureCallApp", "Background service disabled or not allowed on this API; stopping WebSocketService after app background")
-                            stopService(android.content.Intent(this@SecureCallApplication, WebSocketService::class.java))
-                        }
-                    }, 15_000L)
-                }
-            }
-
-            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
-            override fun onActivityResumed(activity: Activity) = Unit
-            override fun onActivityPaused(activity: Activity) = Unit
-            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
-            override fun onActivityDestroyed(activity: Activity) = Unit
-        })
+        registerSignalingLifecycleCallbacks()
 
         // CRITICAL: Start the foreground service first when always-on mode is enabled.
         // On Android 8 (Galaxy S7), the 5-second startForeground() timeout starts
@@ -65,12 +35,7 @@ class SecureCallApplication : Application() {
         if (ForegroundServicePolicy.allowsPersistentIdleSignaling(android.os.Build.VERSION.SDK_INT) &&
             WebSocketService.isBackgroundServiceEnabled(this)
         ) {
-            try {
-                val wsIntent = android.content.Intent(this, WebSocketService::class.java)
-                androidx.core.content.ContextCompat.startForegroundService(this, wsIntent)
-            } catch (e: Exception) {
-                android.util.Log.e("SecureCallApp", "Failed to start foreground service", e)
-            }
+            startSignalingService()
         } else {
             android.util.Log.d("SecureCallApp", "Background service disabled; skipping startup WebSocketService")
         }
@@ -93,6 +58,78 @@ class SecureCallApplication : Application() {
             )
             android.util.Log.d("SecureCallApp", "WebRTC PeerConnectionFactory initialized")
         }, "webrtc-init").start()
+    }
 
+    internal fun registerSignalingLifecycleCallbacks() {
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityStarted(activity: Activity) {
+                startedActivityCount++
+                backgroundStopHandler.removeCallbacksAndMessages(null)
+                resumePolicyStoppedSignaling()
+            }
+
+            override fun onActivityStopped(activity: Activity) {
+                startedActivityCount = (startedActivityCount - 1).coerceAtLeast(0)
+                if (startedActivityCount == 0) {
+                    backgroundStopHandler.postDelayed({
+                        stopIdleSignaling(android.os.Build.VERSION.SDK_INT)
+                    }, 15_000L)
+                }
+            }
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityResumed(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
+        })
+    }
+
+    internal fun stopIdleSignaling(sdkInt: Int) {
+        val persistentIdleAllowed = ForegroundServicePolicy.allowsPersistentIdleSignaling(sdkInt)
+        if (startedActivityCount == 0 &&
+            (!persistentIdleAllowed || !WebSocketService.isBackgroundServiceEnabled(this)) &&
+            !WebSocketService.hasActiveCall()
+        ) {
+            val service = WebSocketService.instance ?: return
+            if (policyStoppingService === service) return
+            android.util.Log.d("SecureCallApp", "Background service disabled or not allowed on this API; stopping WebSocketService after app background")
+            policyStoppingService = service
+            resumeAfterPolicyStop = false
+            try {
+                if (!stopService(android.content.Intent(this, WebSocketService::class.java))) {
+                    policyStoppingService = null
+                }
+            } catch (e: Exception) {
+                policyStoppingService = null
+                android.util.Log.e("SecureCallApp", "Failed to stop signaling service", e)
+            }
+        }
+    }
+
+    internal fun onSignalingServiceDestroyed(service: WebSocketService, resumable: Boolean) {
+        if (policyStoppingService !== service) return
+        policyStoppingService = null
+        resumeAfterPolicyStop = resumable
+        resumePolicyStoppedSignaling()
+    }
+
+    private fun resumePolicyStoppedSignaling() {
+        if (!resumeAfterPolicyStop || startedActivityCount == 0) return
+        // A call/other existing startup may already have supplied a replacement.
+        if (WebSocketService.instance != null || startSignalingService()) {
+            resumeAfterPolicyStop = false
+        }
+    }
+
+    private fun startSignalingService(): Boolean {
+        return try {
+            val wsIntent = android.content.Intent(this, WebSocketService::class.java)
+            androidx.core.content.ContextCompat.startForegroundService(this, wsIntent)
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("SecureCallApp", "Failed to start foreground service", e)
+            false
+        }
     }
 }
