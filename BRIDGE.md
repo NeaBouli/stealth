@@ -6131,3 +6131,9 @@ Open next:
   configuration problems were diagnosed separately. No app data/key reset, uninstall,
   signing, installed source fix or production deployment. Socket status is not full
   call/audio/release acceptance; frozen unsigned78020 remains a separate candidate.
+
+## 2026-11-12 [AUTHOR: CODEX] - Issue220 policy stop / warm return - Review
+- Additional bounded Android lifecycle candidate after merged212. Application owns a one-shot, instance-scoped policy-stop resume intent and waits for actual destruction. Only a previously registered, stable connected client is eligible; manual/auth/clean-close/retry/recovery suppression is retained. No Android idle/FCM policy, permission, dependency, version, endpoint, TLS or license change.
+- MainActivity rebinds current-service callbacks on resume and ignores obsolete callback deliveries. Destruction clears only its own connection/registration/singleton state. Architecture trace updated for this hop; no additional retry loop or permanent wake lock.
+- Red scaffold:19 lifecycle tests,7 expected assertion failures. Final focused green:48/48 cases after independent review added the registered-session guard. Full Free/Pro/Premium suites and lint running; not yet accepted. Device proof of this fixed candidate, long-idle/FCM/call acceptance and Codex Security review remain separate gates.
+- Source candidate is not a signed release and does not update installed1.0.51. Codex owns review/integration; source worker has no server/device/signing/provider access. No server restart, app data reset, reinstall, payment or activation performed. Financial coordination is handled separately by the VLABS operator.
