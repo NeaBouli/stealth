@@ -68,3 +68,27 @@ mindmap
 
 Module: Landing markup, hop 1-3, including fragment clearance in `website/css/landing.css`.
 Untouched: `website/js/ifr-checkout.js`, `website/js/main.js`, sister pages.
+
+---
+
+# Narrow trace: Android heartbeat -> reconnect (issue #211)
+
+Scope: only the existing staleness hop in
+`client_android/app/src/main/java/com/securecall/app/net/HeartbeatClient.kt`.
+`HeartbeatClient` owns all reconnect scheduling; `WebSocketService` only reacts.
+
+## Trace
+
+1. `startHeartbeat()::TimerTask.run` -> staleness check (`_lastSeen` older than 45s / 120s in call)
+2. staleness -> `Handler(mainLooper).post` -> `state = DISCONNECTED`, `ws = null`, `oldWs.cancel()`, `listener.onDisconnected()`
+3. same main-thread block -> `scheduleReconnect()` (guards: `isClosed`, `inRecoveryMode`, `reconnectPending`; backoff unchanged)
+4. `scheduleReconnect()::postDelayed` -> `connect()` -> `okClient.newWebSocket`
+
+## Gap resolved
+
+- Before #211 hop 3 relied on `onFailure` from `oldWs.cancel()`; because `ws` was cleared
+  first, the stale-socket guard (`webSocket !== ws`) dropped that callback and no reconnect was
+  scheduled. Hop 3 now calls the existing `scheduleReconnect()` directly; the cancelled socket's
+  `onFailure` stays ignored, so exactly one retry is queued.
+- Untouched: `onClosing` 1000 policy, 4000..4099 hard stop, `close()`, flap recovery, backoff,
+  TLS/pins, URLs. Guarded by `app/src/test/.../net/HeartbeatClientStaleReconnectTest.kt`.
