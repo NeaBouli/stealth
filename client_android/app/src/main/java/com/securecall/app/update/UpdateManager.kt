@@ -2,6 +2,7 @@ package com.securecall.app.update
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -30,6 +31,7 @@ object UpdateManager {
     private const val PLAY_ID = "com.securecall.app.free"
     private const val PLAY_URL = "https://play.google.com/store/apps/details?id=$PLAY_ID"
     private const val GITHUB_RELEASES_URL = "https://github.com/NeaBouli/stealth/releases/latest"
+    private const val DIRECT_DOWNLOAD_URL = "https://stealthx.tech/download.html"
 
     private const val PREFS = "update_prefs"
     private const val KEY_LAST_CHECK = "last_check_ms"
@@ -42,19 +44,28 @@ object UpdateManager {
      * Label for the Settings entry. Kept for backwards compat.
      */
     @JvmStatic
-    fun getUpdateLabel(): String =
-        if (UpdateChecker.isAdbOnlyFlavor()) "Updates (ADB only)" else "Check for Updates"
+    fun getUpdateLabel(): String = "Check for Updates"
 
     /**
      * **Manual** check — invoked from Settings → "Check for Updates".
-     * Always runs the network check and ALWAYS shows feedback to the user
-     * (either the update dialog or a "You're up-to-date" toast).
+     * Direct Pro/Premium open the official download page without an internal
+     * check. Free keeps its existing store routing and in-app check feedback.
      */
     @JvmStatic
     fun checkAndPromptUpdate(activity: Activity) {
         if (UpdateChecker.isAdbOnlyFlavor()) {
-            Log.w(TAG, "Manual check — ADB-only flavor '${BuildConfig.FLAVOR}'")
-            Toast.makeText(activity, "Update via ADB only for this build", Toast.LENGTH_LONG).show()
+            try {
+                activity.startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse(DIRECT_DOWNLOAD_URL))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            } catch (e: ActivityNotFoundException) {
+                Log.w(TAG, "No browser available for Direct updates", e)
+                Toast.makeText(activity, "No browser available", Toast.LENGTH_SHORT).show()
+            } catch (e: SecurityException) {
+                Log.w(TAG, "Browser launch denied for Direct updates", e)
+                Toast.makeText(activity, "No browser available", Toast.LENGTH_SHORT).show()
+            }
             return
         }
         val source = InstallSource.resolve(activity)
