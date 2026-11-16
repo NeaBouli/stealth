@@ -335,3 +335,6 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   establish authenticated-call, real transport, FCM, audio or release acceptance.
 - Diagrams unchanged for this narrow adapter. Frozen Rust receipt, application,
   tests and all parent coordination/ops files remain untouched.
+- Parent result23:45UTC: run43979656186SUCCESS, one actual pinned Node script
+  exit0/finalPASS, inspected notOOM; owned DRAFT/ref removed, private receipt
+  retained. Rust proof unchanged. Android/JNI/call/full-release gates stay open.
