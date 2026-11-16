@@ -91,12 +91,19 @@ gradle.beforeProject { project ->
 } else if (process.argv[2] === 'run') {
   // Keep the emulator action's script to one command; execute this block in ONE Bash process.
   const result = spawnSync('bash', ['-euo', 'pipefail', '-c', String.raw`
+    stage=root
+    before=unavailable after=unavailable delta=unavailable
+    ipv6_before=unavailable ipv6_after=unavailable
+    trap 'printf "pre-app stage=%s status=%s ipv4_before=%s ipv4_after=%s delta=%s ipv6_before=%s ipv6_after=%s\n" "$stage" "$?" "$before" "$after" "$delta" "$ipv6_before" "$ipv6_after" > "$RUNNER_TEMP/sc224-receipts/pre-app.txt"' EXIT
     adb root
     adb wait-for-device
     test "$(adb shell id -u | tr -d '\r')" = 0
+    stage=guest
     test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = 36
     test "$(adb shell getprop ro.kernel.qemu | tr -d '\r')" = 1
+    stage=fresh-package
     test -z "$(adb shell pm list packages com.securecall.app | tr -d '\r')"
+    stage=policy
     # No app, DNS, FCM, backend, provider or loopback exceptions, IPv4 AND IPv6.
     adb shell iptables -w -F OUTPUT
     adb shell ip6tables -w -F OUTPUT
@@ -107,11 +114,47 @@ gradle.beforeProject { project ->
       test "$(adb shell ip6tables -w -S OUTPUT | tr -d '\r')" = '-P OUTPUT DROP'
     }
     verify_isolation
-    if adb shell ping -c 1 -W 1 192.0.2.1; then exit 1; fi
+    # SC224 counter-reader BEGIN
+    read_drop_count() {
+      local line count='' matches=0
+      # Bound both counters to nine digits before any Bash arithmetic.
+      local header='^Chain OUTPUT \(policy DROP ([0-9]{1,9}) packets, ([0-9]{1,9}) bytes\)'
+      header+=$'\r?$'
+      while IFS= read -r line || test -n "$line"; do
+        if [[ "$line" == *'Chain OUTPUT'* ]]; then
+          [[ "$line" =~ $header ]] || return 1
+          read -r _ _ _ _ count _ <<< "$line"
+          matches=$((matches + 1))
+          test "$matches" = 1 || return 1
+        fi
+      done < "$1"
+      test "$matches" = 1 || return 1
+      printf '%s\n' "$((10#$count))"
+    }
+    # SC224 counter-reader END
+    stage='before-counters'
     adb shell iptables -w -L OUTPUT -v -x -n > "$RUNNER_TEMP/sc224-receipts/ipv4-before.txt"
     adb shell ip6tables -w -L OUTPUT -v -x -n > "$RUNNER_TEMP/sc224-receipts/ipv6-before.txt"
-    grep -Eq 'policy DROP [1-9][0-9]* packets' "$RUNNER_TEMP/sc224-receipts/ipv4-before.txt"
+    # SC224 counter-before BEGIN
+    before=$(read_drop_count "$RUNNER_TEMP/sc224-receipts/ipv4-before.txt")
+    ipv6_before=$(read_drop_count "$RUNNER_TEMP/sc224-receipts/ipv6-before.txt")
+    # SC224 counter-before END
+    stage=probe
+    if timeout 5 adb shell ping -I lo -c 1 -W 1 127.0.0.1; then exit 1; fi
+    stage='after-counters'
+    adb shell iptables -w -L OUTPUT -v -x -n > "$RUNNER_TEMP/sc224-receipts/ipv4-after.txt"
+    adb shell ip6tables -w -L OUTPUT -v -x -n > "$RUNNER_TEMP/sc224-receipts/ipv6-after.txt"
+    # SC224 counter-after BEGIN
+    after=$(read_drop_count "$RUNNER_TEMP/sc224-receipts/ipv4-after.txt")
+    ipv6_after=$(read_drop_count "$RUNNER_TEMP/sc224-receipts/ipv6-after.txt")
+    delta=$((after - before))
+    test "$delta" -gt 0
+    # SC224 counter-after END
+    stage=verified
+    verify_isolation
     echo 'API36 disposable AVD; IPv4/IPv6 OUTPUT DROP with zero exceptions verified BEFORE ANY target install/process' > "$RUNNER_TEMP/sc224-receipts/isolation.txt"
+    printf 'pre-app stage=verified status=0 ipv4_before=%s ipv4_after=%s delta=%s ipv6_before=%s ipv6_after=%s\n' "$before" "$after" "$delta" "$ipv6_before" "$ipv6_after" > "$RUNNER_TEMP/sc224-receipts/pre-app.txt"
+    trap - EXIT
     cleanup() {
       local failed=0
       for flavor in pro premium; do

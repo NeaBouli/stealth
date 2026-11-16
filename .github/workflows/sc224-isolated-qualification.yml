@@ -36,11 +36,12 @@ jobs:
           set -euo pipefail
           test "$GITHUB_RUN_ATTEMPT" = 1
           test "$HEAD_REPO" = "$GITHUB_REPOSITORY"
-          test "$HEAD_BRANCH" = agent/codex/SC224-SDK37-QUALIFY-20261116
+          test "$HEAD_BRANCH" = agent/codex/SC224-ISOLATION-WITNESS-20261116
           git merge-base --is-ancestor "$SC224_BASE" HEAD
           git diff --exit-code "$SC224_BASE" HEAD -- . \
             ':(exclude).github/workflows/sc224-isolated-qualification.yml' \
             ':(exclude).github/scripts/sc224-fixture.mjs' \
+            ':(exclude).github/scripts/sc224-isolation.test.mjs' \
             ':(exclude)client_android/app/src/sc224AndroidTest/AndroidManifest.xml' \
             ':(exclude)client_android/app/src/sc224AndroidTest/java/com/securecall/app/sc224/Sc224Qualification.kt' \
             ':(exclude)client_android/app/src/sc224AndroidTest/java/com/securecall/app/sc224/Sc224ReceiverActivity.java'
@@ -48,6 +49,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/sc224-receipts"
           git rev-parse HEAD 'HEAD^{tree}' > "$RUNNER_TEMP/sc224-receipts/source.txt"
           git ls-tree -r "$SC224_BASE" client_android .github/workflows > "$RUNNER_TEMP/sc224-receipts/base-blobs.txt"
+
+      - name: Pure source isolation regression
+        run: node --test .github/scripts/sc224-isolation.test.mjs
 
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
         with:
