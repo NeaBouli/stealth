@@ -75,7 +75,8 @@ class IsolationParsers(unittest.TestCase):
         for extra in ["com.securecall.app.free", "com.securecall.app.free.test", "com.securecall.app.premium"]:
             self.assertNotEqual(0, pure("sc241_fresh_guard", packages + "\npackage:" + extra, processes).returncode)
             self.assertNotEqual(0, pure("sc241_fresh_guard", packages, processes + "\nu0 2 1 " + extra + ":worker").returncode)
-        for invalid in ["", "unknown", "USER PID", "x" * 262145]:
+        for invalid in ["", "unknown", "USER PID", "USER PID PPID VSZ RSS WCHAN ADDR S NAME",
+                        "USER PID PPID VSZ RSS WCHAN ADDR S NAME\nnot-a-process-row", "x" * 262145]:
             self.assertNotEqual(0, pure("sc241_fresh_guard", packages, invalid).returncode)
 
     def test_zero_allow_exceptions_for_both_families(self):
@@ -169,6 +170,13 @@ class SourceContracts(unittest.TestCase):
         self.assertIn('sc241_probe_delta "$v6probe"', self.isolation)
         self.assertNotRegex(smoke + self.isolation, r"(?:export\s+)?GITHUB_ACTIONS=")
         self.assertNotIn("sc224-fixture.mjs", smoke + self.isolation)
+
+    def test_api24_process_form(self):
+        self.assertIn('if [[ "$sc241_api" == 24 ]]; then\n'
+                      '    processes="$(sc241_adb shell ps)" || return 1\n'
+                      '  else\n'
+                      '    processes="$(sc241_adb shell ps -A)" || return 1\n'
+                      '  fi', self.isolation)
 
     def test_original_geometry_privacy_caps_and_failure_preservation(self):
         baseline = git("show", f"{BASE}:{MATRIX_PATH}").decode()

@@ -36,6 +36,7 @@ sc241_fresh_guard() {
   IFS= read -r header <<< "$processes"
   [[ "$header" == USER* && "$header" == *PID* &&
     ( "$header" == *NAME || "$header" == *CMD || "$header" == *COMMAND ) ]] || return 1
+  [[ "$processes" =~ $'\n'[^[:space:]]+[[:space:]]+[1-9][0-9]*[[:space:]] ]] || return 1
   [[ "$processes" != *com.securecall.app* ]]
 }
 
@@ -93,7 +94,12 @@ sc241_prepare_isolation() {
     "${hardware//$'\r'/}" == goldfish ) && ( "${api//$'\r'/}" == 24 || "${api//$'\r'/}" == 36 ) ]] || return 1
   sc241_api="${api//$'\r'/}"
   packages="$(sc241_adb shell pm list packages)" || return 1
-  processes="$(sc241_adb shell ps -A)" || return 1
+  # API24 toolbox ps lists all processes by default and rejects -A.
+  if [[ "$sc241_api" == 24 ]]; then
+    processes="$(sc241_adb shell ps)" || return 1
+  else
+    processes="$(sc241_adb shell ps -A)" || return 1
+  fi
   sc241_fresh_guard "${packages//$'\r'/}" "${processes//$'\r'/}" || return 1
   # Only this fresh disposable QEMU is owned; never kill an unadmitted/foreign target.
   sc241_shutdown_required=true
