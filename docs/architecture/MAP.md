@@ -526,3 +526,10 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - No focus/settings/PIN/security/production/dependency/timeout/skip changes.
   Visual capture/transport/caps unchanged. Kotlin/Android/runtime NOT_RUN;
   parent owns complete privacy review, source integration and any hosted probe.
+
+- Parent preflight: pure collector checks use Python `-B`, so their import does
+  not dirty the checkout. Ignore only the documented generated project-local
+  Kotlin metadata directory, not source; the exact clean-tree guard is intact.
+  Mixed root/visual/live-pin modes reject before builds. Explicit fresh-AVD
+  setting equals the existing pinned action's default, not a changed policy.
+  These are prospective admission fixes, not causes of the prior focus failure.
