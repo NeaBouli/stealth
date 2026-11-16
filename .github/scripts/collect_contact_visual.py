@@ -42,6 +42,16 @@ LAYOUT_ERRORS = {"missing_row", "scroll_end", "touch_scroll", "control_bounds", 
                  "row_not_fully_reachable", "row_target", "call_bounds", "floating_control_overlap", "child_bounds",
                  "text_layout", "text_height", "text_ellipsis", "text_width", "text_call_overlap",
                  "row_identity", "name_binding", "identity_binding"}
+PHASES = {
+    "ADMIT_OPT_IN", "ADMIT_BUILD", "ADMIT_API", "ADMIT_HARDWARE", "ADMIT_QEMU", "ADMIT_FREE", "SOURCE_RECEIPT",
+    "FIXTURE_SETUP", "FIXTURE_CLEANUP", "INITIAL_STORE", "CAPTURE_DIRECTORY", "DISPLAY_SNAPSHOT",
+    "DISPLAY_OVERRIDE", "HOST_LAUNCH", "STORAGE_SEED", "RENDER_BEFORE", "PARTIAL_SNAPSHOT", "SAVED_DATA",
+    "LIST_READY", "ADAPTER_STATE", "TOUCH_SCROLL", "ROW_LAYOUT", "CONTROL_LAYOUT", "WINDOW_SECURE",
+    "WINDOW_FOCUS", "WINDOW_FREE", "WINDOW_METRICS", "WINDOW_FONT", "WINDOW_BOUNDS", "SCREENSHOT",
+    "SCREENSHOT_SIZE", "SCREENSHOT_PIXELS", "PNG_ENCODE", "PNG_BUDGET", "PNG_WRITE", "API_BUDGET",
+    "MATRIX_LOOP", "HOST_CLOSE", "DISPLAY_RESTORE", "CAPTURE_CLEANUP", "METADATA", "CAPTURE_COUNT", "LAYOUT_ASSERTION",
+}
+DIAGNOSTIC_KEYS = {"sc241_phase", "sc241_failure"}
 
 
 class GateError(Exception):
@@ -55,32 +65,87 @@ def require(condition: bool, label: str) -> None:
         raise GateError(label)
 
 
-def protocol(data: bytes) -> str:
+def diagnostic_fields(value: dict) -> tuple[str, str]:
+    require(set(value) == DIAGNOSTIC_KEYS, "UNAPPROVED_DIAGNOSTIC_FIELDS")
+    phase, failure = value["sc241_phase"], value["sc241_failure"]
+    require(type(phase) is str and phase in PHASES, "UNAPPROVED_DIAGNOSTIC_PHASE")
+    require(type(failure) is str and failure in {"ASSERTION", "EXECUTION"}, "UNAPPROVED_DIAGNOSTIC_FAILURE")
+    return phase, failure
+
+
+def status_code(line: str) -> int:
+    value = line.split(": ", 1)[1]
+    if re.fullmatch(r"-?[0-9]{1,3}", value) is None:
+        raise GateError("INVALID_INSTRUMENTATION_STATUS_CODE", 2)
+    return int(value)
+
+
+def execution(data: bytes) -> tuple[str, list[dict]]:
     require(len(data) <= 256 * 1024, "PROTOCOL_TOO_LARGE")
     text = data.decode("utf-8", errors="strict")
     block: dict[str, str] = {}
     events: list[int] = []
     terminal: list[int] = []
+    diagnostics: list[dict] = []
+    duplicate = False
     for line in text.splitlines():
         if line.startswith("INSTRUMENTATION_STATUS: "):
             key, separator, value = line.removeprefix("INSTRUMENTATION_STATUS: ").partition("=")
-            if separator and key in {"class", "test", "numtests"}:
+            if separator:
+                duplicate = duplicate or key in block
                 block[key] = value
         elif line.startswith("INSTRUMENTATION_STATUS_CODE: "):
-            code = int(line.split(": ", 1)[1])
+            code = status_code(line)
+            if code == 2 or any(key.startswith("sc241_") for key in block):
+                require(code == 2 and events == [1] and not terminal and not duplicate,
+                        "DIAGNOSTIC_OUTSIDE_ACTIVE_CASE")
+                diagnostic_fields(block)
+                require(len(diagnostics) < 4, "DIAGNOSTIC_COUNT_EXCEEDED")
+                diagnostics.append(block)
+                block = {}
+                duplicate = False
+                continue
             require((block.get("class"), block.get("test")) == CASE, "UNEXPECTED_OR_MISSING_CASE")
             require(block.get("numtests") == "1", "VISUAL_REQUIRES_EXACTLY_ONE_TEST")
             events.append(code)
             block = {}
+            duplicate = False
         elif line.startswith("INSTRUMENTATION_CODE: "):
-            terminal.append(int(line.split(": ", 1)[1]))
-    require(terminal == [-1], "INSTRUMENTATION_DID_NOT_COMPLETE")
+            terminal.append(status_code(line))
+    require(not any(key.startswith("sc241_") for key in block), "UNTERMINATED_DIAGNOSTIC")
+    if terminal != [-1]:
+        raise GateError("INSTRUMENTATION_DID_NOT_COMPLETE", 2)
     if events == [1, 0]:
+        require(not diagnostics, "FAILURE_DIAGNOSTIC_WITH_SUCCESS")
         require(re.search(r"^OK \(1 test\)$", text, re.MULTILINE) is not None, "SUCCESS_SUMMARY_MISSING")
-        return "passed"
+        return "passed", diagnostics
     if events == [1, -2]:
-        return "assertion_failed"
+        return "assertion_failed", diagnostics
+    if events == [1, -1]:
+        return "execution_failed", diagnostics
+    if not events:
+        raise GateError("VISUAL_CASE_DID_NOT_START", 2)
     raise GateError("VISUAL_CASE_SKIPPED_MISSING_OR_FAILED_TO_START")
+
+
+def protocol(data: bytes) -> str:
+    outcome, _ = execution(data)
+    if outcome == "execution_failed":
+        raise GateError("VISUAL_EXECUTION_FAILURE", 2)
+    return outcome
+
+
+def failure_labels(outcome: str, diagnostics: list[dict]) -> list[str]:
+    require(outcome in {"passed", "assertion_failed", "execution_failed"}, "UNAPPROVED_EXECUTION_OUTCOME")
+    require(len(diagnostics) <= 4, "DIAGNOSTIC_COUNT_EXCEEDED")
+    if outcome == "passed":
+        require(not diagnostics, "FAILURE_DIAGNOSTIC_WITH_SUCCESS")
+        return []
+    if not diagnostics:
+        kind = "ASSERTION" if outcome == "assertion_failed" else "EXECUTION"
+        return [f"CONTACT_VISUAL_FAILURE:{kind}:UNREPORTED"]
+    return [f"CONTACT_VISUAL_FAILURE:{failure}:{phase}"
+            for phase, failure in map(diagnostic_fields, diagnostics)]
 
 
 def original_cases(data: bytes) -> None:
@@ -246,9 +311,15 @@ def collect(result: Path, ordinary_result: Path, output: Path, head: str, tree: 
     require(result.stat().st_size <= 256 * 1024, "PROTOCOL_TOO_LARGE")
     require(ordinary_result.stat().st_size <= 1024 * 1024, "SMOKE_PROTOCOL_TOO_LARGE")
     original_cases(ordinary_result.read_bytes())
-    outcome = protocol(result.read_bytes())
+    outcome, diagnostics = execution(result.read_bytes())
+    if outcome != "passed":
+        print(f"CONTACT_VISUAL_DIAGNOSTIC_SOURCE:{head}:{tree}", file=sys.stderr)
+    for label in failure_labels(outcome, diagnostics):
+        print(label, file=sys.stderr)
     if outcome == "assertion_failed":
         print("CONTACT_VISUAL_CASE_ASSERTION_FAILURE", file=sys.stderr)
+    if outcome == "execution_failed":
+        raise GateError("VISUAL_EXECUTION_FAILURE", 2)
     require(bounded_command(["adb", "shell", "getprop", "ro.kernel.qemu"], 64).strip() == b"1", "QEMU_REQUIRED")
     sdk = bounded_command(["adb", "shell", "getprop", "ro.build.version.sdk"], 64).strip()
     require(sdk in (b"24", b"36"), "UNAPPROVED_API")

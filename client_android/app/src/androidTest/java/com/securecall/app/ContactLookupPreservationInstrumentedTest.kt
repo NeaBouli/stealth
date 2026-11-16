@@ -69,7 +69,13 @@ class ContactLookupPreservationInstrumentedTest {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         if (testName.methodName == "syntheticContactWindowMatrix") {
             ContactVisualMatrix.admit(context)
+            ContactVisualMatrix.diagnose(ContactVisualMatrix.Phase.FIXTURE_SETUP) { prepareContactFixture() }
+        } else {
+            prepareContactFixture()
         }
+    }
+
+    private fun prepareContactFixture() {
         val contactsPrefs = context.getSharedPreferences("securecall_contacts", Context.MODE_PRIVATE)
         // Refuse to replace existing data; this suite is for a fresh hosted-CI app sandbox.
         assertTrue("Contact fixture requires empty app storage", contactsPrefs.all.isEmpty())
@@ -115,6 +121,14 @@ class ContactLookupPreservationInstrumentedTest {
 
     @After
     fun tearDown() {
+        if (testName.methodName == "syntheticContactWindowMatrix") {
+            ContactVisualMatrix.diagnose(ContactVisualMatrix.Phase.FIXTURE_CLEANUP) { cleanUpContactFixture() }
+        } else {
+            cleanUpContactFixture()
+        }
+    }
+
+    private fun cleanUpContactFixture() {
         try {
             try {
                 dismissOwnedDialogs()

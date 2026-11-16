@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.Build
+import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import android.util.DisplayMetrics
 import android.view.View
@@ -42,18 +43,65 @@ internal object ContactVisualMatrix {
     private const val API_LIMIT = 8 * 1024 * 1024
     private const val METADATA_LIMIT = 128 * 1024
 
+    enum class Phase {
+        ADMIT_OPT_IN, ADMIT_BUILD, ADMIT_API, ADMIT_HARDWARE, ADMIT_QEMU, ADMIT_FREE, SOURCE_RECEIPT,
+        FIXTURE_SETUP, FIXTURE_CLEANUP, INITIAL_STORE, CAPTURE_DIRECTORY, DISPLAY_SNAPSHOT,
+        DISPLAY_OVERRIDE, HOST_LAUNCH, STORAGE_SEED, RENDER_BEFORE, PARTIAL_SNAPSHOT, SAVED_DATA,
+        LIST_READY, ADAPTER_STATE, TOUCH_SCROLL, ROW_LAYOUT, CONTROL_LAYOUT, WINDOW_SECURE,
+        WINDOW_FOCUS, WINDOW_FREE, WINDOW_METRICS, WINDOW_FONT, WINDOW_BOUNDS, SCREENSHOT,
+        SCREENSHOT_SIZE, SCREENSHOT_PIXELS, PNG_ENCODE, PNG_BUDGET, PNG_WRITE, API_BUDGET,
+        MATRIX_LOOP, HOST_CLOSE, DISPLAY_RESTORE, CAPTURE_CLEANUP, METADATA, CAPTURE_COUNT, LAYOUT_ASSERTION,
+    }
+
+    private val reportedFailures = mutableListOf<Throwable>()
+
+    fun <T> diagnose(phase: Phase, action: () -> T): T = try {
+        action()
+    } catch (failure: Throwable) {
+        reportFailure(phase, failure)
+        throw failure
+    }
+
+    @Synchronized
+    private fun reportFailure(phase: Phase, failure: Throwable) {
+        if (reportedFailures.any { it === failure } || reportedFailures.size >= 4) return
+        reportedFailures.add(failure)
+        try {
+            instrumentation.sendStatus(2, Bundle().apply {
+                putString("sc241_phase", phase.name)
+                putString("sc241_failure", if (failure is AssertionError) "ASSERTION" else "EXECUTION")
+            })
+        } catch (_: Throwable) {
+            // Reporting must never replace the original test or restoration failure.
+        }
+    }
+
     fun admit(context: Context) {
         val args = InstrumentationRegistry.getArguments()
-        assertEquals("Explicit synthetic CI admission is required", "true",
-            args.getString("securecallContactVisualGate"))
-        assertTrue("Only DEBUG Free builds are admitted", BuildConfig.DEBUG && BuildConfig.FLAVOR == "free")
-        assertTrue("Only the ordinary API24/36 matrix is admitted", Build.VERSION.SDK_INT in listOf(24, 36))
-        assertTrue("QEMU hardware is required", Build.HARDWARE in listOf("ranchu", "goldfish"))
-        assertEquals("Actual QEMU guest property is required", "1", shell("getprop ro.kernel.qemu"))
-        assertTrue("Effective FREE is required; never supply paid rights", TierManager.isFreeTier(context))
-        for (key in listOf("securecallVisualHead", "securecallVisualTree")) {
-            assertTrue("Exact source receipt is required", Regex("[0-9a-f]{40}")
-                .matches(args.getString(key, "").orEmpty()))
+        diagnose(Phase.ADMIT_OPT_IN) {
+            assertEquals("Explicit synthetic CI admission is required", "true",
+                args.getString("securecallContactVisualGate"))
+        }
+        diagnose(Phase.ADMIT_BUILD) {
+            assertTrue("Only DEBUG Free builds are admitted", BuildConfig.DEBUG && BuildConfig.FLAVOR == "free")
+        }
+        diagnose(Phase.ADMIT_API) {
+            assertTrue("Only the ordinary API24/36 matrix is admitted", Build.VERSION.SDK_INT in listOf(24, 36))
+        }
+        diagnose(Phase.ADMIT_HARDWARE) {
+            assertTrue("QEMU hardware is required", Build.HARDWARE in listOf("ranchu", "goldfish"))
+        }
+        diagnose(Phase.ADMIT_QEMU) {
+            assertEquals("Actual QEMU guest property is required", "1", shell("getprop ro.kernel.qemu"))
+        }
+        diagnose(Phase.ADMIT_FREE) {
+            assertTrue("Effective FREE is required; never supply paid rights", TierManager.isFreeTier(context))
+        }
+        diagnose(Phase.SOURCE_RECEIPT) {
+            for (key in listOf("securecallVisualHead", "securecallVisualTree")) {
+                assertTrue("Exact source receipt is required", Regex("[0-9a-f]{40}")
+                    .matches(args.getString(key, "").orEmpty()))
+            }
         }
     }
 
@@ -69,11 +117,17 @@ internal object ContactVisualMatrix {
         partialSnapshot: () -> Unit,
     ) {
         admit(context)
-        assertTrue("Visual fixture must start empty", ContactRepository.getAll(context).isEmpty())
+        diagnose(Phase.INITIAL_STORE) {
+            assertTrue("Visual fixture must start empty", ContactRepository.getAll(context).isEmpty())
+        }
         val directory = File(context.filesDir, DIRECTORY)
-        assertTrue("Refuse stale or unowned capture directory", !directory.exists())
-        val prior = GuestDisplay.read()
-        assertTrue("Cannot create owned capture directory", directory.mkdir())
+        diagnose(Phase.CAPTURE_DIRECTORY) {
+            assertTrue("Refuse stale or unowned capture directory", !directory.exists())
+        }
+        val prior = diagnose(Phase.DISPLAY_SNAPSHOT) { GuestDisplay.read() }
+        diagnose(Phase.CAPTURE_DIRECTORY) {
+            assertTrue("Cannot create owned capture directory", directory.mkdir())
+        }
         val synthetic = fixtures.mapIndexed { index, contact ->
             contact.copy(name = when (index) {
                 0 -> "A very long synthetic contact name for wrapping and large font inspection"
@@ -90,73 +144,85 @@ internal object ContactVisualMatrix {
         var complete = false
         try {
             for ((width, height) in viewports) for (font in listOf(1, 2)) {
-                closeHost()
-                shell("settings put system accelerometer_rotation 0")
-                shell("settings put system user_rotation 0")
-                shell("wm density 160")
-                shell("wm size ${width}x$height")
-                shell("settings put system font_scale $font.0")
-                instrumentation.waitForIdleSync()
-                launchHost()
-                seed(synthetic)
-                withHost { activity ->
-                    val fragment = activity.supportFragmentManager
-                        .findFragmentById(R.id.settingsContainer) as ContactsFragment
-                    ContactsFragment::class.java.getDeclaredMethod("dedupAndRefresh").apply {
-                        isAccessible = true
-                        invoke(fragment)
+                diagnose(Phase.HOST_CLOSE) { closeHost() }
+                diagnose(Phase.DISPLAY_OVERRIDE) {
+                    shell("settings put system accelerometer_rotation 0")
+                    shell("settings put system user_rotation 0")
+                    shell("wm density 160")
+                    shell("wm size ${width}x$height")
+                    shell("settings put system font_scale $font.0")
+                    instrumentation.waitForIdleSync()
+                }
+                diagnose(Phase.HOST_LAUNCH) { launchHost() }
+                diagnose(Phase.STORAGE_SEED) { seed(synthetic) }
+                diagnose(Phase.RENDER_BEFORE) {
+                    withHost { activity ->
+                        val fragment = activity.supportFragmentManager
+                            .findFragmentById(R.id.settingsContainer) as ContactsFragment
+                        ContactsFragment::class.java.getDeclaredMethod("dedupAndRefresh").apply {
+                            isAccessible = true
+                            invoke(fragment)
+                        }
                     }
                 }
                 var adapterBefore: RecyclerView.Adapter<*>? = null
                 for (state in states) {
-                    if (state == "after") partialSnapshot()
+                    if (state == "after") diagnose(Phase.PARTIAL_SNAPSHOT) { partialSnapshot() }
                     val expected = if (state == "before") synthetic else associated
-                    assertEquals("Saved identities/metadata must be preserved", expected.associateBy { it.id },
-                        ContactRepository.getAll(context).associateBy { it.id })
+                    diagnose(Phase.SAVED_DATA) {
+                        assertEquals("Saved identities/metadata must be preserved", expected.associateBy { it.id },
+                            ContactRepository.getAll(context).associateBy { it.id })
+                    }
                     idleList()
                     var recycler: RecyclerView? = null
                     var currentAdapter: RecyclerView.Adapter<*>? = null
                     var shownRows: List<Contact> = emptyList()
-                    withHost { activity ->
-                        assertWindow(activity, width, height, font)
-                        recycler = activity.findViewById(R.id.recyclerContacts)
-                        currentAdapter = recycler!!.adapter
-                        assertTrue("Production adapter is required", currentAdapter is ContactAdapter)
-                        val field = ContactAdapter::class.java.getDeclaredField("contacts").apply { isAccessible = true }
-                        @Suppress("UNCHECKED_CAST")
-                        val displayed = field.get(currentAdapter) as List<Contact>
-                        shownRows = displayed
-                        assertEquals(expected.associateBy { it.id }, displayed.associateBy { it.id })
-                        if (state == "after") assertEquals(positiveId, displayed.first().id)
+                    diagnose(Phase.ADAPTER_STATE) {
+                        withHost { activity ->
+                            assertWindow(activity, width, height, font)
+                            recycler = activity.findViewById(R.id.recyclerContacts)
+                            currentAdapter = recycler!!.adapter
+                            assertTrue("Production adapter is required", currentAdapter is ContactAdapter)
+                            val field = ContactAdapter::class.java.getDeclaredField("contacts").apply { isAccessible = true }
+                            @Suppress("UNCHECKED_CAST")
+                            val displayed = field.get(currentAdapter) as List<Contact>
+                            shownRows = displayed
+                            assertEquals(expected.associateBy { it.id }, displayed.associateBy { it.id })
+                            if (state == "after") assertEquals(positiveId, displayed.first().id)
+                        }
                     }
                     if (state == "before") adapterBefore = currentAdapter
-                    assertTrue("Partial snapshot must retain adapter identity", currentAdapter === adapterBefore)
-                    val list = checkNotNull(recycler)
+                    diagnose(Phase.ADAPTER_STATE) {
+                        assertTrue("Partial snapshot must retain adapter identity", currentAdapter === adapterBefore)
+                    }
+                    val list = diagnose(Phase.ADAPTER_STATE) { checkNotNull(recycler) }
                     val measured = Measurement()
-                    onView(withId(R.id.recyclerContacts)).perform(swipeUp())
+                    diagnose(Phase.TOUCH_SCROLL) { onView(withId(R.id.recyclerContacts)).perform(swipeUp()) }
                     idleList()
                     var touchScroll = false
                     withHost { touchScroll = list.computeVerticalScrollOffset() > 0 }
                     measured.check(touchScroll, "touch_scroll")
-                    for (position in expected.indices) {
-                        withHost { (list.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, 0) }
-                        idleList()
-                        withHost { activity ->
-                            val row = list.findViewHolderForAdapterPosition(position)?.itemView
-                            measured.check(row != null, "missing_row")
-                            if (row != null) {
-                                measured.rows++
-                                val expectedRow = shownRows[position]
-                                measured.check(row.contentDescription == expectedRow.name, "row_identity")
-                                measured.check(row.findViewById<TextView>(R.id.txtName).text
-                                    .startsWith(expectedRow.name), "name_binding")
-                                val subtitle = if (expectedRow.secureId != null &&
-                                    !IdentityProtocol.isDirectClientId(expectedRow.phoneOrId)) {
-                                    "${expectedRow.phoneOrId} | ${expectedRow.secureId}"
-                                } else expectedRow.phoneOrId
-                                measured.check(row.findViewById<TextView>(R.id.txtPhoneOrId).text.toString() ==
-                                    subtitle, "identity_binding")
-                                measureRow(row, list, activity.findViewById(R.id.fabAddContact), measured, true)
+                    diagnose(Phase.ROW_LAYOUT) {
+                        for (position in expected.indices) {
+                            withHost { (list.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, 0) }
+                            idleList()
+                            withHost { activity ->
+                                val row = list.findViewHolderForAdapterPosition(position)?.itemView
+                                measured.check(row != null, "missing_row")
+                                if (row != null) {
+                                    measured.rows++
+                                    val expectedRow = shownRows[position]
+                                    measured.check(row.contentDescription == expectedRow.name, "row_identity")
+                                    measured.check(row.findViewById<TextView>(R.id.txtName).text
+                                        .startsWith(expectedRow.name), "name_binding")
+                                    val subtitle = if (expectedRow.secureId != null &&
+                                        !IdentityProtocol.isDirectClientId(expectedRow.phoneOrId)) {
+                                        "${expectedRow.phoneOrId} | ${expectedRow.secureId}"
+                                    } else expectedRow.phoneOrId
+                                    measured.check(row.findViewById<TextView>(R.id.txtPhoneOrId).text.toString() ==
+                                        subtitle, "identity_binding")
+                                    measureRow(row, list, activity.findViewById(R.id.fabAddContact), measured, true)
+                                }
                             }
                         }
                     }
@@ -165,18 +231,20 @@ internal object ContactVisualMatrix {
                     measured.check(reachedEnd, "scroll_end")
                     withHost { (list.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(0, 0) }
                     idleList()
-                    withHost { activity ->
-                        val frame = bounds(activity.findViewById(R.id.settingsContainer))
-                        val search = activity.findViewById<View>(R.id.searchInput)
-                        val add = activity.findViewById<View>(R.id.fabAddContact)
-                        for (control in listOf(search, add)) {
-                            measured.check(frame.contains(bounds(control)), "control_bounds")
-                            measured.target(control)
+                    diagnose(Phase.CONTROL_LAYOUT) {
+                        withHost { activity ->
+                            val frame = bounds(activity.findViewById(R.id.settingsContainer))
+                            val search = activity.findViewById<View>(R.id.searchInput)
+                            val add = activity.findViewById<View>(R.id.fabAddContact)
+                            for (control in listOf(search, add)) {
+                                measured.check(frame.contains(bounds(control)), "control_bounds")
+                                measured.target(control)
+                            }
+                            for (index in 0 until list.childCount) {
+                                measureRow(list.getChildAt(index), list, add, measured, false)
+                            }
+                            assertWindow(activity, width, height, font)
                         }
-                        for (index in 0 until list.childCount) {
-                            measureRow(list.getChildAt(index), list, add, measured, false)
-                        }
-                        assertWindow(activity, width, height, font)
                     }
                     val name = "sc241-${width}x$height-f$font-$state.png"
                     val colors = capture(directory, name, width, height)
@@ -192,52 +260,79 @@ internal object ContactVisualMatrix {
                         put("touchScroll", touchScroll)
                         put("savedDataPreserved", true); put("windowFocused", true); put("pixelColors", colors)
                     })
-                    assertTrue("Per-API capture budget exceeded; never downscale/drop states",
-                        directory.listFiles()!!.sumOf { it.length() } <= API_LIMIT - METADATA_LIMIT)
+                    diagnose(Phase.API_BUDGET) {
+                        assertTrue("Per-API capture budget exceeded; never downscale/drop states",
+                            directory.listFiles()!!.sumOf { it.length() } <= API_LIMIT - METADATA_LIMIT)
+                    }
                 }
             }
             complete = true
+        } catch (failure: Throwable) {
+            reportFailure(Phase.MATRIX_LOOP, failure)
+            throw failure
         } finally {
             try {
-                closeHost()
+                diagnose(Phase.HOST_CLOSE) { closeHost() }
             } finally {
                 try {
-                    prior.restore()
+                    diagnose(Phase.DISPLAY_RESTORE) { prior.restore() }
                 } finally {
                     if (!complete) {
-                        expectedNames().forEach { File(directory, it).delete() }
-                        directory.delete()
+                        diagnose(Phase.CAPTURE_CLEANUP) {
+                            expectedNames().forEach { File(directory, it).delete() }
+                            directory.delete()
+                        }
                     }
                 }
             }
         }
         val args = InstrumentationRegistry.getArguments()
-        val metadata = JSONObject().apply {
-            put("schema", 1); put("captureMode", "uiAutomation-window")
-            put("head", args.getString("securecallVisualHead")); put("tree", args.getString("securecallVisualTree"))
-            put("api", Build.VERSION.SDK_INT); put("status", if (violations == 0) "passed" else "failed")
-            put("restored", true); put("violations", violations); put("captures", captures)
-        }.toString().toByteArray(Charsets.UTF_8)
-        assertTrue("Aggregate metadata exceeds fixed bound", metadata.size <= METADATA_LIMIT)
-        File(directory, "matrix.json").writeBytes(metadata)
-        assertEquals("Exactly sixteen actual-window captures are required", 16, captures.length())
-        assertTrue("Per-API export cap exceeded", directory.listFiles()!!.sumOf { it.length() } <= API_LIMIT)
+        diagnose(Phase.METADATA) {
+            val metadata = JSONObject().apply {
+                put("schema", 1); put("captureMode", "uiAutomation-window")
+                put("head", args.getString("securecallVisualHead")); put("tree", args.getString("securecallVisualTree"))
+                put("api", Build.VERSION.SDK_INT); put("status", if (violations == 0) "passed" else "failed")
+                put("restored", true); put("violations", violations); put("captures", captures)
+            }.toString().toByteArray(Charsets.UTF_8)
+            assertTrue("Aggregate metadata exceeds fixed bound", metadata.size <= METADATA_LIMIT)
+            File(directory, "matrix.json").writeBytes(metadata)
+        }
+        diagnose(Phase.CAPTURE_COUNT) {
+            assertEquals("Exactly sixteen actual-window captures are required", 16, captures.length())
+        }
+        diagnose(Phase.API_BUDGET) {
+            assertTrue("Per-API export cap exceeded", directory.listFiles()!!.sumOf { it.length() } <= API_LIMIT)
+        }
         // Keep all sixteen images on a layout failure; collector must export them only as FAILED evidence.
-        assertEquals("Synthetic contact visual layout violations (see bounded aggregate)", 0, violations)
+        diagnose(Phase.LAYOUT_ASSERTION) {
+            assertEquals("Synthetic contact visual layout violations (see bounded aggregate)", 0, violations)
+        }
     }
 
     private fun assertWindow(activity: SettingsActivity, width: Int, height: Int, font: Int) {
-        assertTrue("Refuse FLAG_SECURE; never clear it", activity.window.attributes.flags and
-            WindowManager.LayoutParams.FLAG_SECURE == 0)
-        assertTrue("Actual owned window must be focused", activity.hasWindowFocus())
-        assertTrue("Effective FREE must remain unchanged", TierManager.isFreeTier(activity))
-        val metrics = DisplayMetrics()
-        @Suppress("DEPRECATION")
-        activity.windowManager.defaultDisplay.getRealMetrics(metrics)
-        assertEquals(width, metrics.widthPixels); assertEquals(height, metrics.heightPixels)
-        assertEquals(160, metrics.densityDpi)
-        assertTrue("Font configuration did not apply", abs(activity.resources.configuration.fontScale - font) < 0.01f)
-        assertEquals(width, activity.window.decorView.width); assertEquals(height, activity.window.decorView.height)
+        diagnose(Phase.WINDOW_SECURE) {
+            assertTrue("Refuse FLAG_SECURE; never clear it", activity.window.attributes.flags and
+                WindowManager.LayoutParams.FLAG_SECURE == 0)
+        }
+        diagnose(Phase.WINDOW_FOCUS) {
+            assertTrue("Actual owned window must be focused", activity.hasWindowFocus())
+        }
+        diagnose(Phase.WINDOW_FREE) {
+            assertTrue("Effective FREE must remain unchanged", TierManager.isFreeTier(activity))
+        }
+        diagnose(Phase.WINDOW_METRICS) {
+            val metrics = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            activity.windowManager.defaultDisplay.getRealMetrics(metrics)
+            assertEquals(width, metrics.widthPixels); assertEquals(height, metrics.heightPixels)
+            assertEquals(160, metrics.densityDpi)
+        }
+        diagnose(Phase.WINDOW_FONT) {
+            assertTrue("Font configuration did not apply", abs(activity.resources.configuration.fontScale - font) < 0.01f)
+        }
+        diagnose(Phase.WINDOW_BOUNDS) {
+            assertEquals(width, activity.window.decorView.width); assertEquals(height, activity.window.decorView.height)
+        }
     }
 
     private class Measurement {
@@ -303,25 +398,39 @@ internal object ContactVisualMatrix {
     }
 
     private fun idleList() {
-        onView(withId(R.id.recyclerContacts)).check(matches(isDisplayed()))
-        instrumentation.waitForIdleSync()
+        diagnose(Phase.LIST_READY) {
+            onView(withId(R.id.recyclerContacts)).check(matches(isDisplayed()))
+            instrumentation.waitForIdleSync()
+        }
     }
 
     private fun capture(directory: File, name: String, width: Int, height: Int): Int {
-        val bitmap = checkNotNull(instrumentation.uiAutomation.takeScreenshot()) { "Actual-window capture unavailable" }
+        val bitmap = diagnose(Phase.SCREENSHOT) {
+            checkNotNull(instrumentation.uiAutomation.takeScreenshot()) { "Actual-window capture unavailable" }
+        }
         try {
-            assertEquals(width, bitmap.width); assertEquals(height, bitmap.height)
-            val colors = mutableSetOf<Int>()
-            for (y in 0 until height step 13) for (x in 0 until width step 13) colors.add(bitmap.getPixel(x, y))
-            assertTrue("Actual window is blank", colors.size >= 8)
-            val bytes = ByteArrayOutputStream().use {
-                assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
-                it.toByteArray()
+            diagnose(Phase.SCREENSHOT_SIZE) {
+                assertEquals(width, bitmap.width); assertEquals(height, bitmap.height)
             }
-            assertTrue("PNG exceeds cap; never crop/resize/drop a state", bytes.size <= PNG_LIMIT)
-            val file = File(directory, name)
-            assertTrue("Refuse duplicate capture", file.createNewFile())
-            file.writeBytes(bytes)
+            val colors = mutableSetOf<Int>()
+            diagnose(Phase.SCREENSHOT_PIXELS) {
+                for (y in 0 until height step 13) for (x in 0 until width step 13) colors.add(bitmap.getPixel(x, y))
+                assertTrue("Actual window is blank", colors.size >= 8)
+            }
+            val bytes = diagnose(Phase.PNG_ENCODE) {
+                ByteArrayOutputStream().use {
+                    assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+                    it.toByteArray()
+                }
+            }
+            diagnose(Phase.PNG_BUDGET) {
+                assertTrue("PNG exceeds cap; never crop/resize/drop a state", bytes.size <= PNG_LIMIT)
+            }
+            diagnose(Phase.PNG_WRITE) {
+                val file = File(directory, name)
+                assertTrue("Refuse duplicate capture", file.createNewFile())
+                file.writeBytes(bytes)
+            }
             return colors.size
         } finally {
             bitmap.recycle()

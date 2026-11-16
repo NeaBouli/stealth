@@ -4,6 +4,7 @@ import binascii
 import importlib.util
 import json
 from pathlib import Path
+import re
 import struct
 import sys
 import unittest
@@ -24,6 +25,17 @@ def result(codes=(1, 0), count=1, terminal=-1):
                       f"INSTRUMENTATION_STATUS: numtests={count}", f"INSTRUMENTATION_STATUS_CODE: {code}"))
     lines.extend(("OK (1 test)" if codes == (1, 0) else "FAILURES!!!", f"INSTRUMENTATION_CODE: {terminal}"))
     return "\n".join(lines).encode()
+
+
+def diagnostic_block(phase="DISPLAY_RESTORE", failure="ASSERTION", extra=""):
+    return (f"INSTRUMENTATION_STATUS: sc241_phase={phase}\n"
+            f"INSTRUMENTATION_STATUS: sc241_failure={failure}\n{extra}"
+            "INSTRUMENTATION_STATUS_CODE: 2\n").encode()
+
+
+def diagnosed_result(block=None, codes=(1, -2)):
+    marker = b"INSTRUMENTATION_STATUS_CODE: 1\n"
+    return result(codes).replace(marker, marker + (diagnostic_block() if block is None else block), 1)
 
 
 def metadata():
@@ -123,6 +135,73 @@ class MetadataTests(unittest.TestCase):
         value["captures"][0]["rowsChecked"] = True
         with self.assertRaises(collector.GateError):
             self.validate(value)
+
+
+class FailureDiagnosticTests(unittest.TestCase):
+    def test_assertion_phase_survives_without_any_image_or_matrix_file(self):
+        outcome, diagnostics = collector.execution(diagnosed_result())
+        self.assertEqual("assertion_failed", outcome)
+        self.assertEqual(["CONTACT_VISUAL_FAILURE:ASSERTION:DISPLAY_RESTORE"],
+                         collector.failure_labels(outcome, diagnostics))
+
+    def test_snapshot_loop_restore_and_final_metadata_have_fixed_labels(self):
+        for phase in ("DISPLAY_SNAPSHOT", "MATRIX_LOOP", "SCREENSHOT", "DISPLAY_RESTORE", "METADATA",
+                      "CAPTURE_COUNT", "API_BUDGET", "LAYOUT_ASSERTION", "FIXTURE_CLEANUP"):
+            outcome, diagnostics = collector.execution(diagnosed_result(diagnostic_block(phase)))
+            self.assertEqual([f"CONTACT_VISUAL_FAILURE:ASSERTION:{phase}"],
+                             collector.failure_labels(outcome, diagnostics))
+
+    def test_cleanup_failure_does_not_hide_observed_primary_failure(self):
+        blocks = diagnostic_block("SCREENSHOT", "EXECUTION") + diagnostic_block("DISPLAY_RESTORE")
+        outcome, diagnostics = collector.execution(diagnosed_result(blocks))
+        self.assertEqual(["CONTACT_VISUAL_FAILURE:EXECUTION:SCREENSHOT",
+                          "CONTACT_VISUAL_FAILURE:ASSERTION:DISPLAY_RESTORE"],
+                         collector.failure_labels(outcome, diagnostics))
+
+    def test_legacy_missing_diagnostic_stays_unreported_not_a_guessed_cause(self):
+        outcome, diagnostics = collector.execution(result((1, -2)))
+        self.assertEqual(["CONTACT_VISUAL_FAILURE:ASSERTION:UNREPORTED"],
+                         collector.failure_labels(outcome, diagnostics))
+
+    def test_private_unrecognized_extra_and_duplicate_payloads_are_rejected(self):
+        private = "PRIVATE_SENTINEL_CONTACT_DEVICE_EXCEPTION"
+        blocks = (diagnostic_block(phase=private), diagnostic_block(failure=private),
+                  diagnostic_block(extra=f"INSTRUMENTATION_STATUS: stack={private}\n"),
+                  diagnostic_block(extra=f"INSTRUMENTATION_STATUS: contact={private}\n"),
+                  diagnostic_block(extra="INSTRUMENTATION_STATUS: sc241_phase=METADATA\n"),
+                  diagnostic_block().replace(b"STATUS_CODE: 2", f"STATUS_CODE: {private}".encode()),
+                  diagnostic_block(phase="UNKNOWN_PHASE"))
+        for block in blocks:
+            with self.assertRaises(collector.GateError) as error:
+                collector.execution(diagnosed_result(block))
+            self.assertNotIn(private, str(error.exception))
+        with self.assertRaises(collector.GateError) as error:
+            collector.failure_labels("assertion_failed", [{"sc241_phase": private, "sc241_failure": "ASSERTION"}])
+        self.assertNotIn(private, str(error.exception))
+
+    def test_diagnostic_cannot_create_success_or_attach_to_an_unstarted_case(self):
+        for data in (diagnosed_result(codes=(1, 0)), diagnostic_block() + result((1, -2)),
+                     result((1, -2)) + b"\n" + diagnostic_block(), diagnosed_result(diagnostic_block() * 5),
+                     result() + b"\nINSTRUMENTATION_STATUS: sc241_phase=METADATA"):
+            with self.assertRaises(collector.GateError):
+                collector.execution(data)
+
+    def test_startup_is_not_classified_as_a_test_assertion(self):
+        for data in (b"INSTRUMENTATION_FAILED: synthetic startup failure", result((), count=0), result(terminal=0)):
+            with self.assertRaises(collector.GateError) as error:
+                collector.execution(data)
+            self.assertEqual(2, error.exception.code)
+        outcome, diagnostics = collector.execution(diagnosed_result(diagnostic_block("HOST_LAUNCH", "EXECUTION"),
+                                                                   codes=(1, -1)))
+        self.assertEqual("execution_failed", outcome)
+        self.assertEqual(["CONTACT_VISUAL_FAILURE:EXECUTION:HOST_LAUNCH"],
+                         collector.failure_labels(outcome, diagnostics))
+
+    def test_producer_enum_and_collector_vocabulary_are_identical(self):
+        source = (Path(__file__).resolve().parents[2] / "client_android/app/src/androidTest/java/"
+                  "com/securecall/app/ContactVisualMatrix.kt").read_text()
+        body = re.search(r"enum class Phase\s*\{([^}]+)\}", source).group(1)
+        self.assertEqual(collector.PHASES, set(re.findall(r"\b[A-Z][A-Z_]+\b", body)))
 
 
 class PngAndBudgetTests(unittest.TestCase):

@@ -465,3 +465,39 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   No larger runner, live-pin opt-in, paid tier, new provider or policy waiver.
   Runtime admission is one bounded candidate qualification after parent source
   review, not a PASS claim or automatic retry loop.
+
+## SC241 visual failure diagnostics (source-only follow-up)
+
+- Base: `a1e1267c5a68932edfee5749a028a581e94a5848`. Parent reports run
+  `43921548638`: API24 ordinary37 completed, visual statuses [1,-2], then
+  `GUEST_FILE_ALLOWLIST` for incomplete captures; discarded raw output leaves
+  the exact failed guard UNKNOWN. API36 failed before instrumentation on Maven
+  Central HTTP429 for error_prone_annotations2.30.0, not a proven app defect.
+- Hop: visual diagnostic wrapper -> at most four code2 Instrumentation status
+  bundles -> existing collector parser -> stable safe failure labels before
+  guest-file validation. Payload is exactly `sc241_phase` (closed enum) and
+  `sc241_failure` (ASSERTION/EXECUTION). No exception message/stack, contact or
+  device text, settings/preference content, extra guest file or base64 transport.
+  A separate fixed source label binds diagnostics to the validated head/tree.
+- Coverage includes admission/fixture, loop/render/capture, finally host close,
+  display restoration/cleanup, and final metadata/count/budget/layout checks.
+  Same-Throwable rethrows are deduplicated; separate observed restoration or
+  teardown errors can retain their own bounded labels. Reporting failure never
+  replaces the original exception; restore actions and every assertion remain.
+- Collector accepts markers only inside the exact started visual case, rejects
+  extra/duplicate/unknown fields, phases, failure kinds, malformed codes and
+  more than four records. Startup/transport, execution and assertion outcomes
+  remain distinct. No marker means UNREPORTED, not an inferred cause; any failure
+  diagnostic paired with code0 is rejected rather than accepted as a PASS.
+- Missing PNG/matrix states still fail the original file allowlist. Labels are
+  emitted before that check, so temporary raw-log deletion no longer discards
+  a valid stage diagnostic. Existing artifact paths/allowlists, caps, timeouts,
+  production/dependencies/verification/workflow and original seven bodies stay
+  unchanged; this patch diagnoses, not fixes, the unobserved original cause.
+- Twenty pure collector tests, shell syntax and preservation checks are local
+  source evidence only. Kotlin/Android, actual marker delivery, screenshots,
+  any next CI qualification and final scoped Security remain NOT_RUN here.
+  Parent owns review and a separate changed-source admission; no rerun started.
+- Local preservation checks PASS: all eight test method bodies and every
+  existing assertion/check call unchanged, geometry/target implementation and
+  GuestDisplay restoration byte-identical, exact five-file scope, MAP append-only.
