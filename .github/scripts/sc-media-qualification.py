@@ -299,7 +299,8 @@ def hosted() -> None:
     require(re.fullmatch(r"sc-stx24-rust-input-[a-z0-9-]{1,50}", tag) is not None
             and asset == "sc-stx24-rust-input.tar"
             and re.fullmatch(r"[0-9a-f]{64}", expected) is not None)
-    release = gh_json(f"repos/{REPO}/releases/tags/{tag}")
+    # The tag endpoint only resolves published releases; this owned input stays draft.
+    release = gh_json(f"repos/{REPO}/releases/447713710")
     require(release["draft"] is True and release["tag_name"] == tag)
     matches = [item for item in release["assets"] if item["name"] == asset]
     require(len(matches) == 1 and 0 < matches[0]["size"] <= MAX_BUNDLE)
