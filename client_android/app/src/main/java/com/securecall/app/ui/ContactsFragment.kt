@@ -399,9 +399,7 @@ class ContactsFragment : Fragment() {
         if (ctx != null) persistRegisteredPhones(ctx, regPhones)
         Log.d(TAG, "Finalized: ${regPhones.size} registered, ${onPhones.size} online phones, ${onClientIds.size} online clientIds, ${cidToPhone.size} clientId→phone mappings")
 
-        // Clean up stale SecureIDs: app contacts with SecureIDs not found in server response
-        cleanupStaleSecureIds(cidToPhone.keys)
-
+        // Lookup results cover queried phones, not the validity of all saved identities.
         // Re-run dedup merge with updated mappings
         dedupAndRefresh()
         // Immediately refresh online status with dedicated endpoint for freshest data (Pro/Premium only)
@@ -526,39 +524,6 @@ class ContactsFragment : Fragment() {
         cachedContacts = allContacts
         activity?.runOnUiThread {
             if (isAdded) filterContacts(searchInput.text?.toString() ?: "")
-        }
-    }
-
-    /**
-     * Remove stale SecureIDs from contacts.
-     * If an app contact is saved only by a SecureCall ID and that ID is no longer
-     * registered on the server, delete it — the device probably reinstalled and has a new ID.
-     */
-    private fun cleanupStaleSecureIds(activeClientIds: Set<String>) {
-        val ctx = context ?: return
-        if (activeClientIds.isEmpty()) return // No server data yet, don't delete anything
-        val appContacts = ContactRepository.getAll(ctx)
-        val staleContacts = appContacts.filter { c ->
-            IdentityProtocol.isDirectClientId(c.phoneOrId) && c.phoneOrId !in activeClientIds
-        }
-        if (staleContacts.isNotEmpty()) {
-            Log.d(TAG, "Cleaning up ${staleContacts.size} stale SecureID contacts: ${staleContacts.map { it.phoneOrId }}")
-            val remaining = appContacts.filter { it.id !in staleContacts.map { s -> s.id }.toSet() }
-            ContactRepository.replaceAll(ctx, remaining)
-        }
-        // Also clear stale secureId metadata from phone contacts
-        val contactsWithStaleSecureId = appContacts.filter { c ->
-            c.secureId != null && c.secureId !in activeClientIds
-        }
-        if (contactsWithStaleSecureId.isNotEmpty()) {
-            val current = ContactRepository.getAll(ctx).toMutableList()
-            for (i in current.indices) {
-                if (current[i].secureId != null && current[i].secureId !in activeClientIds) {
-                    current[i] = current[i].copy(secureId = null)
-                }
-            }
-            ContactRepository.replaceAll(ctx, current)
-            Log.d(TAG, "Cleared ${contactsWithStaleSecureId.size} stale secureId metadata entries")
         }
     }
 

@@ -279,3 +279,64 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   Syntax/source checks are not transport acceptance. Executed 12+20 PASS
   remains separate; parent hosted locked npm-ci/full CI must run all cases
   and perform scoped exact-candidate security review before integration.
+
+---
+
+# Narrow trace: contact lookup preserves saved identities (2026-11-16)
+
+- Task: `SC-CONTACT-LOOKUP-PRESERVATION-20261116`.
+- Module: Android contact discovery results and local saved-contact storage.
+- Hop: `WebSocketService::BATCH_PHONE_LOOKUP_RESULT` ->
+  `ContactsFragment::checkSecureCallMembers` -> `finalizeResults` ->
+  existing positive `dedupAndRefresh` -> `ContactRepository::replaceAll`.
+- Lookup results cover only queried phone hashes, and accumulated results can
+  contain a nonempty successful subset followed by failed/empty batches or
+  service loss. Absence from that subset is not global identity revocation.
+- Removed hop: `finalizeResults` -> `cleanupStaleSecureIds` -> removal of
+  unrelated direct-ID contacts / clearing saved `secureId` metadata. The
+  now-unused helper is removed; result absence never authorizes those writes.
+- Preserve positive association, positive duplicate merging, registration and
+  online caches, existing discovery/presence refresh, and the explicit user
+  delete/confirmation -> repository delete/hide path. No protocol, identity,
+  authentication, rights, tier, presence-policy or remote revocation change.
+- Regression requirements: real result-path/storage checks for nonempty
+  subsets, missing metadata IDs, partial/error coverage, positive association
+  and explicit deletion. Baseline has JUnit/Mockito but no Robolectric;
+  test framework resolution remains parent-owned under the no-new-dependency
+  boundary. Kotlin compilation/tests are NOT_RUN locally.
+- Hosted compile/tests, scoped Security and UI/state acceptance remain parent
+  integration gates. No build, runtime, device, provider or release proof is
+  claimed; qualification240, media mapping and diagram files are untouched.
+
+## Clarified test boundary and regression source
+
+- Parent clarified that Robolectric is not required; no dependency is added.
+  `ContactLookupPreservationInstrumentedTest.kt` uses the existing AndroidJUnit4,
+  ActivityScenario and Espresso stack with real `ContactRepository` JSON and
+  Android SharedPreferences, not mocked storage or string-only source checks.
+- Host: existing `SettingsActivity`, its theme and `settingsContainer`; no
+  MainActivity, new activity, manifest entry, permission or test runner. The
+  real `ContactsFragment` is attached at CREATED and its real layout is bound
+  only for synchronous result refresh; ordinary onViewCreated/onResume loading
+  and permission requests do not run. Reflection invokes production private
+  `finalizeResults`; no production test seam or rights override is introduced.
+- Seven source cases cover nonempty subsets preserving unrelated direct IDs,
+  absent `secureId` metadata, incomplete queried coverage, an empty failure-shaped
+  result following success, positive phone association, positive duplicate
+  merging, and the actual explicit-delete menu/confirmation/hide path. The
+  failure-shaped case starts at the result boundary, not the network protocol.
+- Explicit-delete coverage cancels once, then confirms after fragment removal:
+  the real dialog retains its storage context while its later async reload has
+  no attached context and cannot read the device phonebook. The test asserts
+  that only the chosen contact disappears and its phone is hidden.
+- Fixtures require an empty hosted-CI contact store, contain synthetic contacts
+  only, clear owned storage, and restore the prior discovery cache/registered
+  phone preference. Normal application/SettingsActivity startup is not mocked;
+  hosted CI owns application-startup isolation and API24/36 runtime acceptance.
+- Kotlin compilation, JVM tests, instrumentation, Gradle/build, UI/state and
+  scoped Security are NOT_RUN locally. This is regression source, not an
+  executed red/green result or release acceptance; parent runs ordinary CI.
+- Local static checks PASS: `git diff --check`, exact cleanup-only production
+  delta, baseline MAP-prefix preservation, exact three-file allowlist, and
+  seven test declarations wired to the real repository/private result entry.
+  These source assertions do not execute the behavioral regression cases.
