@@ -5,6 +5,7 @@ import android.content.Intent
 import com.securecall.app.BuildConfig
 import com.securecall.app.R
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Answers
@@ -16,6 +17,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -50,10 +52,11 @@ class SettingsFragmentExternalPurchaseLinksTest {
                 verify(upgrade, never()).setOnPreferenceClickListener(any())
             } else {
                 val listener = argumentCaptor<Preference.OnPreferenceClickListener>()
-                verify(upgrade).setOnPreferenceClickListener(listener.capture())
+                verify(upgrade, times(2)).setOnPreferenceClickListener(listener.capture())
+                assertNull(listener.firstValue)
                 doNothing().whenever(settings).startActivity(any())
                 Mockito.mockConstruction(Intent::class.java).use { construction ->
-                    assertTrue(listener.firstValue.onPreferenceClick(upgrade))
+                    assertTrue(listener.lastValue.onPreferenceClick(upgrade))
                     val intent = construction.constructed().single()
                     verify(intent).setClassName(eq(BuildConfig.APPLICATION_ID), eq("com.securecall.app.billing.UpgradeActivity"))
                     verify(settings).startActivity(intent)
