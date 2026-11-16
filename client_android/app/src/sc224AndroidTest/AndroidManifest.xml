@@ -1,0 +1,17 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="com.securecall.app.sc224.Sc224ReceiverActivity"
+            android:exported="true"
+            android:taskAffinity="com.securecall.sc224.synthetic"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="stealthx.tech"
+                    android:path="/download.html" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
