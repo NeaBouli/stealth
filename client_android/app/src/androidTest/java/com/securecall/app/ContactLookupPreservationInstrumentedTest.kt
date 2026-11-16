@@ -256,7 +256,7 @@ class ContactLookupPreservationInstrumentedTest {
     private fun rememberDialogRoot(title: String) {
         onView(withText(title)).inRoot(isDialog()).check { view, error ->
             matches(isDisplayed()).check(view, error)
-            ownedDialogRoots.add(view.rootView)
+            ownedDialogRoots.add(checkNotNull(view).rootView)
         }
     }
 
