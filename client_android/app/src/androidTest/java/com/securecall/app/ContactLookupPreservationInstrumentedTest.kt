@@ -29,11 +29,16 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ContactLookupPreservationInstrumentedTest {
+    @get:Rule
+    val testName = TestName()
+
     private lateinit var context: Context
     private lateinit var fragment: ContactsFragment
     private var scenario: ActivityScenario<SettingsActivity>? = null
@@ -62,6 +67,9 @@ class ContactLookupPreservationInstrumentedTest {
     @Before
     fun setUp() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
+        if (testName.methodName == "syntheticContactWindowMatrix") {
+            ContactVisualMatrix.admit(context)
+        }
         val contactsPrefs = context.getSharedPreferences("securecall_contacts", Context.MODE_PRIVATE)
         // Refuse to replace existing data; this suite is for a fresh hosted-CI app sandbox.
         assertTrue("Contact fixture requires empty app storage", contactsPrefs.all.isEmpty())
@@ -77,6 +85,10 @@ class ContactLookupPreservationInstrumentedTest {
             CACHE_FIELDS.forEach { name -> previousCache[name] = cacheField(name).get(null) }
             resetCache(emptyList())
         }
+        launchContactHost()
+    }
+
+    private fun launchContactHost() {
         scenario = ActivityScenario.launch(Intent(context, SettingsActivity::class.java))
         scenario!!.onActivity { activity ->
             fragment = ContactsFragment()
@@ -217,6 +229,26 @@ class ContactLookupPreservationInstrumentedTest {
 
         assertSaved(direct, positive.copy(secureId = POSITIVE_ID))
         assertEquals(setOf(LINKED_PHONE), ContactRepository.getHiddenPhones(context))
+    }
+
+    @Test
+    fun syntheticContactWindowMatrix() {
+        ContactVisualMatrix.run(
+            context = context,
+            fixtures = listOf(direct, linked, positive),
+            positiveId = positive.id,
+            positiveSecureId = POSITIVE_ID,
+            closeHost = {
+                scenario?.close()
+                scenario = null
+            },
+            launchHost = { launchContactHost() },
+            withHost = { action -> scenario!!.onActivity { action(it) } },
+            seed = { contacts -> seed(*contacts.toTypedArray()) },
+            partialSnapshot = {
+                finalizeResults(successfulResult, positiveQuery + (hash(LINKED_PHONE) to LINKED_PHONE))
+            },
+        )
     }
 
     private fun seed(vararg contacts: Contact) {

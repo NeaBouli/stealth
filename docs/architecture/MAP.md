@@ -391,3 +391,69 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   those measurements demonstrate a missing precondition and parent reviews it.
 - All seven cases/storage invariants, production and CI/VPN code remain intact.
   Causal/runtime verification is pending; no additional execution is admitted here.
+
+---
+
+# Narrow trace: SC241 synthetic actual-window visual matrix (2026-11-16)
+
+- Task: `SC241-CONTACT-VISUAL-GATE-20261116`; source base `7852bdac`, tree
+  `aa72bbb92c86f2c253963b77f72019e6d116c27a`. Parent reports all ten prior CI
+  checks PASS and all seven contact cases code0 on API24/36; these results do
+  not execute or qualify this new visual source.
+- Hop: explicit `securecallContactVisualGate=true` smoke-script option ->
+  exactly `ContactLookupPreservationInstrumentedTest#syntheticContactWindowMatrix`
+  -> existing synthetic storage/SettingsActivity fixture -> production contact
+  adapter/list and partial-result path -> UiAutomation actual display capture
+  -> fixed-file structured collector -> existing instrumentation artifact path.
+- Normal smoke invocation excludes only the new opt-in method, preserving the
+  seven original case bodies and the existing two assumptions. The opt-in case
+  must start once and finish code0 to qualify; zero tests, skips, assumptions,
+  duplicate cases, missing states and startup/transport failures fail closed.
+  No workflow, retention, runner, cache or automatic runtime admission is added.
+- Guards precede visual fixture storage reads: explicit argument, DEBUG Free,
+  effective FREE, actual `ro.kernel.qemu=1`, ranchu/goldfish and API24/36. The
+  existing fixture requires empty owned contact preferences. No rights, keys,
+  permission, component or production test seam is introduced. FLAG_SECURE and
+  an unfocused/blank/incorrectly sized actual window refuse capture, never bypass.
+- Matrix: 320x676, 390x844, 820x1180, 1180x820 native logical viewports at
+  density160, fonts1/2, before/after a nonempty partial snapshot =16 PNG/API.
+  Twenty synthetic saved contacts include an unrelated direct ID, a preserved
+  metadata ID, positive phone association and a long name. Assert saved record
+  equality, adapter identity/content, real Espresso swipe/all-row reachability, scroll end, text
+  bounds/line fit/no ellipsis, row/control bounds/overlap and native48px targets.
+- Frames are actual SettingsActivity windows with the production contact layout
+  mounted by the existing lifecycle-capped fixture; no offscreen Canvas, bitmap
+  resize, crop, fallback renderer or silent omitted state. This does not test
+  ordinary phonebook/network startup, paid UI or physical-device acceptance.
+  Layout violations accumulate closed numeric error codes across all16 frames
+  and still fail the case. Complete failed evidence can be exported as FAILED,
+  never qualified PASS; incomplete/unsafe capture is rejected, not substituted.
+- Display size/density and exact font/rotation setting values are snapshotted
+  before changing only the disposable guest, restored in finally (all restore
+  actions attempted), and checked against the original snapshot before emitting
+  `restored=true`. No local guest/SDK/ADB execution is admitted or performed.
+- Export: only16 fixed `sc241-{width}x{height}-f{1|2}-{before|after}.png`, bounded
+  `matrix.json` and generated `source-receipt.json`. Collector validates exact
+  names/count/schema/source/API, PNG CRC/chunks/pixel stream/dimensions, numeric
+  invariants and actual case protocol. Private text/extra JSON/PNG metadata,
+  arbitrary paths and stale output are rejected. No APK, key, token, preferences,
+  device identity, raw visual log or base64-log transport is exported.
+- Cap: PNG <=4MiB individually; all images/metadata/receipt <=8MiB/API,
+  <=16MiB for both APIs; metadata <=128KiB. No resampling/dropped states to meet
+  the cap. Current7-day retention is unchanged. Parent owns included-storage
+  recheck/cost admission, publication and final inspection of every source PNG.
+- Source interface only: the existing workflow does not automatically pass the
+  new option. Parent must review/admit and arrange the ordinary hosted invocation;
+  the script requires real GitHub-hosted environment markers and never sets them.
+- Local pure collector tests, shell syntax and source-preservation checks are
+  separate from Kotlin compilation/instrumentation, actual display restoration,
+  generated screenshots, image inspection and final scoped Security: all of the
+  latter remain NOT_RUN here. UI gate remains NOT_RUN pending parent acceptance.
+- The collector also requires actual code0 outcomes for each of the original
+  seven cases in the ordinary invocation, not merely an OK summary. Row checks
+  compare actual bound names/identity subtitles with the production adapter's
+  expected synthetic model; numeric error categories contain no contact text.
+- Source-freeze checks: twelve pure synthetic collector tests PASS; shell
+  `bash -n`, `git diff --check`, exact six-file scope and original seven method
+  bodies/production/dependency/workflow preservation checks PASS. No CI markers
+  were fabricated and no Android command was executed by these checks.

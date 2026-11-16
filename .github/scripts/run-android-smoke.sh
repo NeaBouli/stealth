@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "$#" -lt 3 || "$#" -gt 4 ]]; then
-  echo "usage: $0 <app-apk> <test-apk> <instrumentation-component> [securecallLivePinTest=true]" >&2
+if [[ "$#" -lt 3 || "$#" -gt 5 ]]; then
+  echo "usage: $0 <app-apk> <test-apk> <instrumentation-component> [securecallLivePinTest=true] [securecallContactVisualGate=true]" >&2
   exit 2
 fi
 
@@ -46,12 +46,32 @@ app_apk="$(resolve_apk "$1")"
 test_apk="$(resolve_apk "$2")"
 instrumentation="$3"
 instrumentation_args=()
-if [[ -n "${4:-}" ]]; then
-  if [[ "$4" != "securecallLivePinTest=true" ]]; then
-    echo "unsupported instrumentation option: $4" >&2
-    exit 2
-  fi
-  instrumentation_args=(-e securecallLivePinTest true)
+visual=false
+live_pin=false
+for option in "${@:4}"; do
+  case "$option" in
+    "") ;;
+    securecallLivePinTest=true)
+      [[ "$live_pin" == false ]] || exit 2
+      live_pin=true
+      instrumentation_args+=(-e securecallLivePinTest true)
+      ;;
+    securecallContactVisualGate=true)
+      [[ "$visual" == false ]] || exit 2
+      visual=true
+      ;;
+    *) echo 'unsupported instrumentation option' >&2; exit 2 ;;
+  esac
+done
+
+visual_case='com.securecall.app.ContactLookupPreservationInstrumentedTest#syntheticContactWindowMatrix'
+if [[ "$visual" == true ]]; then
+  # This is an explicit opt-in, not permission to emulate/fabricate a hosted environment.
+  [[ "${GITHUB_ACTIONS:-}" == true && "${RUNNER_ENVIRONMENT:-}" == github-hosted ]] || {
+    echo 'CONTACT_VISUAL_REJECTED:PUBLIC_HOSTED_CI_REQUIRED' >&2; exit 2;
+  }
+  [[ "$instrumentation" == com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner ]] || exit 2
+  command -v python3 >/dev/null || { echo 'CONTACT_VISUAL_REJECTED:PYTHON_MISSING' >&2; exit 2; }
 fi
 
 du -h "$app_apk" "$test_apk"
@@ -61,5 +81,25 @@ timeout 600 adb install --no-streaming -r -t -g "$test_apk"
 
 result="${GITHUB_WORKSPACE:?}/client_android/app/build/outputs/androidTest-results/instrumentation/result.txt"
 mkdir -p "$(dirname "$result")"
-adb shell am instrument -w -r "${instrumentation_args[@]}" "$instrumentation" | tee "$result"
+adb shell am instrument -w -r -e notClass "$visual_case" "${instrumentation_args[@]}" "$instrumentation" | tee "$result"
 grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$result"
+
+if [[ "$visual" == true ]]; then
+  head="$(git rev-parse HEAD)"
+  tree="$(git rev-parse 'HEAD^{tree}')"
+  visual_tmp="$(mktemp -d)"
+  trap 'rm -f "$visual_tmp/result.txt"; rmdir "$visual_tmp"' EXIT
+  # Keep protocol/stack output outside artifacts. Export only validated fixed synthetic files.
+  if ! timeout 900 adb shell am instrument -w -r -e class "$visual_case" \
+      -e securecallContactVisualGate true -e securecallVisualHead "$head" \
+      -e securecallVisualTree "$tree" "$instrumentation" >"$visual_tmp/result.txt"; then
+    echo 'CONTACT_VISUAL_REJECTED:INSTRUMENTATION_STARTUP_OR_TRANSPORT_FAILURE' >&2
+    exit 2
+  fi
+  api="$(adb shell getprop ro.build.version.sdk | tr -d '\r\n')"
+  [[ "$api" == 24 || "$api" == 36 ]] || exit 2
+  python3 "${GITHUB_WORKSPACE:?}/.github/scripts/collect_contact_visual.py" \
+    --result "$visual_tmp/result.txt" --ordinary-result "$result" \
+    --output "$(dirname "$result")/contact-visual-api$api" \
+    --head "$head" --tree "$tree"
+fi
