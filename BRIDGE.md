@@ -6169,3 +6169,27 @@ Open next:
 - **Risk:** Low, navigation-only; a corrected destination is not checkout acceptance.
 - **Ready for:** Parent source review, responsive browser checks and publication.
   No visual PASS, checkout-readiness claim, commit, push, PR or deployment here.
+
+## 2026-11-16 [AUTHOR: CODEX] - SC-XML-PARSER-38 bounded source candidate
+
+- Branch `agent/codex/SC-XML-PARSER-20261116`, base `4c270ad1`, initially clean.
+- Public GHSA-474x-hrwr-fgx4 confirms affected `<=5.11.2`, first patched
+  `5.12.0`. Existing storage parent range `^5.3.4` accepts the patched parser.
+- Lockfile-only dependency change: fast-xml-parser 5.7.2 -> 5.12.0;
+  @nodable/entities 2.1.0 -> 3.1.0; fast-xml-builder 1.2.0 -> 1.3.1;
+  path-expression-matcher 1.5.0 -> 1.6.2; strnum 2.2.3 -> 2.5.1;
+  xml-naming 0.1.0 -> 0.3.0; added is-unsafe 2.0.3 and anynum 1.0.1.
+  Support changes are required by the patched package dependency closure.
+- PASS: exact official npm metadata/integrity fields, all changed dependency
+  edges and existing parser parent range, eight-record allowlist, 243 unchanged
+  existing records, byte-identical manifest, canonical JSON, preserved entry
+  order, single patched parser record, and `git diff --check`.
+- A strict global sort assertion failed on the pre-existing string_decoder /
+  string-width order; baseline-aware preservation check passed, no reorder made.
+- NOT_RUN: installation, npm resolution/audit, exploit reproduction, runtime
+  compatibility, application tests, lint, build and CI (host CPU HOLD; parent
+  owns checks after actual diff review). No claim of complete fix verification
+  or remote alert closure. Narrow MAP trace appended.
+- Left uncommitted. No provider/Google/payment request, inherited secrets,
+  additional agents, other worktree edits, PR, push, merge, deployment or
+  production action. Stop at bounded source result.

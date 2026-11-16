@@ -162,3 +162,26 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - Open: parent-owned responsive browser checks and publication. No visual or
   checkout-readiness acceptance is asserted; application/runtime and diagrams
   remain unchanged.
+
+---
+
+# Narrow trace: signaling XML dependency lock (alert #38, 2026-11-16)
+
+- Module: signaling optional XML dependency closure, not application code.
+- Hop: `backend/signaling/package.json::firebase-admin` -> locked
+  `firebase-admin@13.10.0::optionalDependencies[@google-cloud/storage]` ->
+  `@google-cloud/storage@7.19.0::dependencies[fast-xml-parser]` (`^5.3.4`).
+- The existing range permits `fast-xml-parser@5.12.0`, the first patched
+  version for GHSA-474x-hrwr-fgx4 (affected `<=5.11.2`). The advisory concerns
+  quadratic CPU consumption with non-default `stopNodes`; application-level
+  exposure was not traced or tested in this lockfile-only task.
+- Only `backend/signaling/package-lock.json` changes: parser 5.7.2 -> 5.12.0,
+  five required XML support-package upgrades, and two required new support
+  packages. All eight records match exact official npm version metadata.
+- Direct policy, overrides, scripts, existing parent packages and every other
+  lockfile record are preserved. No override, source or runtime-path change.
+- Source checks: JSON/metadata/dependency-range/preservation assertions and
+  `git diff --check` PASS. Full install, reproducer, tests, lint, build and CI
+  NOT_RUN under host CPU HOLD; parent owns subsequent diff review and checks.
+- This is an uncommitted source candidate, not runtime compatibility, alert
+  closure or release acceptance. Diagram files remain unchanged.
