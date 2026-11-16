@@ -145,6 +145,124 @@ jobs:
             "cmake;3.22.1" \
             "ndk;27.0.12077973"
 
+      # Temporary, unmerged SC-223 qualification; never ship this harness.
+      - name: Qualify historical paid Direct regression
+        timeout-minutes: 20
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="${RUNNER_TEMP}/sc-223-red-control"
+          source=app/src/main/java/com/securecall/app/update/UpdateManager.kt
+          test_source=app/src/test/java/com/securecall/app/update/UpdateManagerTest.java
+          baseline=42b336da8c18eb7f0a12bb3e6dc3cc4c834c6781
+          mkdir "$evidence"
+          cp -p "$source" "$evidence/UpdateManager.candidate.kt"
+          # Invoked indirectly by the EXIT trap on success, failure or signal.
+          # shellcheck disable=SC2329
+          restore_candidate() {
+            local status=$?
+            trap - EXIT
+            cp -p "$evidence/UpdateManager.candidate.kt" "$source" || exit 1
+            cmp "$evidence/UpdateManager.candidate.kt" "$source" || exit 1
+            sha256sum "$source" > "$evidence/restored-source.sha256"
+            exit "$status"
+          }
+          trap 'restore_candidate' EXIT
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
+          sha256sum "$source" "$test_source" > "$evidence/candidate.sha256"
+          git rev-parse HEAD 'HEAD^{tree}' > "$evidence/candidate-git.txt"
+          curl --fail --silent --show-error --location \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 120 \
+            "https://raw.githubusercontent.com/NeaBouli/stealth/$baseline/client_android/$source" \
+            -o "$evidence/UpdateManager.historical.kt"
+          # Verify the immutable Git blob, not just the download's exit status.
+          git fetch --no-tags --depth=1 \
+            https://github.com/NeaBouli/stealth.git "$baseline"
+          expected_blob="$(git rev-parse "$baseline:client_android/$source")"
+          test "$(git hash-object "$evidence/UpdateManager.historical.kt")" = "$expected_blob"
+          printf '%s %s\n' "$baseline" "$expected_blob" > "$evidence/baseline.txt"
+          sha256sum "$evidence/UpdateManager.historical.kt" > "$evidence/historical.sha256"
+          cp "$evidence/UpdateManager.historical.kt" "$source"
+          result=0
+          for variant in Pro Premium; do
+            task="test${variant}DebugUnitTest"
+            reports="app/build/test-results/$task"
+            if [ -d "$reports" ]; then
+              find "$reports" -type f -name '*.xml' -delete
+            fi
+            status=0
+            timeout --signal=TERM --kill-after=30s 8m \
+              bash ./gradlew --no-daemon --max-workers=1 -Pinternal \
+              ":app:$task" --rerun-tasks --console=plain \
+              --tests com.securecall.app.update.UpdateManagerTest.paidDirectManualCheckOpensOnlyOfficialDownloadPage \
+              > "$evidence/$variant.log" 2>&1 || status=$?
+            printf '%s\n' "$status" > "$evidence/$variant.exit"
+            mkdir "$evidence/$variant"
+            if [ -d "$reports" ]; then
+              cp -R "$reports/." "$evidence/$variant/"
+            fi
+            if ! python3 - "$evidence/$variant" "$test_source" "$status" \
+              > "$evidence/$variant-validation.log" 2>&1 <<'PY'
+          import pathlib
+          import sys
+          import xml.etree.ElementTree as ET
+
+          reports, test_source, status = sys.argv[1:]
+          assert status == "1", f"Unexpected Gradle exit: {status}"
+          files = list(pathlib.Path(reports).rglob("*.xml"))
+          assert len(files) == 1, f"Expected one JUnit XML, got {files}"
+          suite = ET.parse(files[0]).getroot()
+          assert suite.tag == "testsuite", suite.tag
+          expected = {"tests": "1", "failures": "1", "errors": "0", "skipped": "0"}
+          assert all(suite.get(k) == v for k, v in expected.items()), suite.attrib
+          cases = suite.findall("testcase")
+          assert len(cases) == 1, f"Expected one testcase, got {len(cases)}"
+          case = cases[0]
+          assert case.get("classname") == "com.securecall.app.update.UpdateManagerTest"
+          method = "paidDirectManualCheckOpensOnlyOfficialDownloadPage"
+          assert case.get("name") == method, case.attrib
+          assert not list(suite.iter("error")) and not list(suite.iter("skipped"))
+          failures = list(suite.iter("failure"))
+          assert len(failures) == 1 and case.find("failure") is failures[0]
+          failure = failures[0]
+          assert failure.get("type") == "java.lang.AssertionError", failure.attrib
+          message = "expected:<1> but was:<0>"
+          assert failure.get("message") == message, failure.attrib
+          lines = pathlib.Path(test_source).read_text().splitlines()
+          assertion = "assertEquals(1, intents.constructed().size());"
+          start = next(i for i, line in enumerate(lines) if "private void checkPaidHandoff(" in line)
+          number = next(i + 1 for i in range(start, len(lines)) if lines[i].strip() == assertion)
+          frame = f"com.securecall.app.update.UpdateManagerTest.checkPaidHandoff(UpdateManagerTest.java:{number})"
+          trace = failure.text or ""
+          assert trace.startswith(f"java.lang.AssertionError: {message}\n"), trace
+          assert frame in trace, "Wrong assertion site"
+          assert f"com.securecall.app.update.UpdateManagerTest.{method}(" in trace
+          print("PASS: exactly 1 test / 1 expected intent-count failure / 0 errors / 0 skips")
+          PY
+            then
+              result=1
+            fi
+          done
+          # Test source must remain byte-identical even during the negative control.
+          tail -n 1 "$evidence/candidate.sha256" | sha256sum --check
+          exit "$result"
+
+      - name: Ensure candidate source restored
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="${RUNNER_TEMP}/sc-223-red-control"
+          source=app/src/main/java/com/securecall/app/update/UpdateManager.kt
+          if [ -f "$evidence/UpdateManager.candidate.kt" ]; then
+            cp -p "$evidence/UpdateManager.candidate.kt" "$source"
+            cmp "$evidence/UpdateManager.candidate.kt" "$source"
+            sha256sum --check "$evidence/candidate.sha256" \
+              > "$evidence/restoration-validation.log" 2>&1
+          fi
+
       - name: Verify Android client
         run: |
           export SECURECALL_STORE_FILE="${RUNNER_TEMP}/securecall-ci-only.jks"
@@ -190,6 +308,15 @@ jobs:
           entries="$(unzip -Z1 "$aab")"
           grep -Eq '^META-INF/[^/]+\.SF$' <<< "$entries"
           grep -Eq '^META-INF/[^/]+\.(RSA|DSA|EC)$' <<< "$entries"
+
+      - name: Retain historical regression qualification evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sc-223-red-control-${{ github.sha }}
+          path: ${{ runner.temp }}/sc-223-red-control/
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Remove ephemeral signing material
         if: always()
