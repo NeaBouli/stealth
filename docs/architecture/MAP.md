@@ -378,3 +378,16 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   preservation, all seven case names/original storage assertions retained,
   dialog-root scoping and unchanged production/VPN/CI/dependency files. No
   emulator or test runner was started; screen-lock/leak causality is unproven.
+
+### Final efficiency boundary
+
+- Keep this correction to explicit dialog roots/title checks and owned-window
+  cleanup. The diagnostic PowerManager/Keyguard assertions from the preceding
+  candidate are removed; no observed lock/screen state justifies a new gate.
+- If scoped dialog input still fails in parent-admitted CI, a separate bounded
+  diagnostic proposal is to capture interactive/keyguard/device-lock state,
+  Activity focus and the failing selected-root type once at the failure site,
+  without waking/unlocking, waits, retries or skips. Do not alter CI setup until
+  those measurements demonstrate a missing precondition and parent reviews it.
+- All seven cases/storage invariants, production and CI/VPN code remain intact.
+  Causal/runtime verification is pending; no additional execution is admitted here.

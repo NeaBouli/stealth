@@ -1,9 +1,7 @@
 package com.securecall.app
 
-import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
-import android.os.PowerManager
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -245,17 +243,6 @@ class ContactLookupPreservationInstrumentedTest {
 
     private fun openDeleteConfirmation(contact: Contact) {
         scenario!!.onActivity {
-            val power = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-            val interactive = power.isInteractive
-            val keyguardLocked = keyguard.isKeyguardLocked
-            val deviceLocked = keyguard.isDeviceLocked
-            assertTrue(
-                "Dialog input requires an interactive, unlocked device: " +
-                    "interactive=$interactive, keyguardLocked=$keyguardLocked, " +
-                    "deviceLocked=$deviceLocked, activityFocus=${it.hasWindowFocus()}",
-                interactive && !keyguardLocked && !deviceLocked,
-            )
             ContactsFragment::class.java.getDeclaredMethod("showContactMenu", Contact::class.java).apply {
                 isAccessible = true
                 invoke(fragment, contact)
