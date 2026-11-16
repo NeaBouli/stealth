@@ -6144,3 +6144,30 @@ Open next:
 - Focused source regressions added; local execution/compile/lint NOT_RUN because actual shared-host capacity was insufficient. Whitespace, exact source-scope and unchanged Free/background suffix checks PASS. Existing Android CI now also runs Pro unit tests alongside Free/Premium; no gate is disabled.
 - Candidate is unverified and must remain Draft until exact-head CI and missing runtime/visual acceptance are complete. New source does not change already-signed78020artifacts; reconnect delivery222and this future Direct correction are separate. No release, sale or deployment acceptance is inferred.
 - Codex owns integration and device acceptance. Source worker is finished with no remaining build/process. Financial coordination is handled separately by the VLABS operator.
+
+## 2026-11-16 06:57 UTC SC-PLAY-DE-METADATA-20261116 German Play metadata -> Review
+
+- **Branch:** `agent/codex/SC-PLAY-DE-METADATA-20261116`
+- **Base:** `42b336da8c18eb7f0a12bb3e6dc3cc4c834c6781`.
+- **Changed:** Three German Play listing text files mirror the accepted English
+  meaning; `SecureCall` and all three public URLs are unchanged. A narrow manual
+  metadata-transfer trace is appended to `docs/architecture/MAP.md`.
+- **Tests:** Local metadata validation covers the exact five-file allowlist, UTF-8,
+  Unicode character limits, URL parity and mandatory caveats; `git diff --check`.
+  English/German semantic review covers each feature and limitation.
+- **Risk:** Low, public text only; no new feature, offer or runtime claim.
+- **Ready for:** Parent review and final integration, then manual German listing
+  transfer in Play Console. Google review and public listing verification remain open.
+- No English, changelog, app/runtime, permission or screenshot changes. No delegation,
+  device/browser access, build, push, PR, merge or deployment performed.
+
+## 2026-11-16 [AUTHOR: CODEX] - Issue223 current-main synchronization
+
+- Merged current main668be288 into the existing Direct update candidate. Only
+  append conflicts in Bridge and architecture MAP required resolution; retained
+  both original entries verbatim. No app-code, policy, price or metadata rewrite.
+- Previous exact-head10/10CI retained as historical evidence; the synchronized
+  candidate needs its own checks. Local red-control and runtime/visual gates
+  remain open; current CPU admission failed before starting any Android task.
+- No device/test installation, signing, production release or commerce activation.
+  Financial coordination is handled separately by the VLABS operator.
