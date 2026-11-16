@@ -340,3 +340,41 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   delta, baseline MAP-prefix preservation, exact three-file allowlist, and
   seven test declarations wired to the real repository/private result entry.
   These source assertions do not execute the behavioral regression cases.
+
+## API24 dialog harness follow-up (parent CI evidence)
+
+- Parent reports API36 job `133446743884` SUCCESS, including all seven new
+  cases, on the published candidate through `b4e67b3d`. API24 job
+  `133446744322` passed the six storage/preservation cases but failed the
+  explicit-delete case at its first menu selection: `RootViewWithoutFocusException`
+  selected the unfocused base Activity root (window type 1), not a dialog.
+  A later existing MainActivity VPN test reported the same focus exception.
+  These are parent-provided results, not a locally reproduced root cause.
+- Source-confirmed harness gap: the menu data action and confirmation buttons
+  used Espresso's default root selection despite production creating platform
+  AlertDialogs. They now use `inRoot(isDialog())`; displayed menu/confirmation
+  titles are checked, and acquired dialog roots are retained for cleanup.
+- The dialog-only case now asserts interactive/unlocked PowerManager/Keyguard
+  state and records Activity focus in the failure message. It does not unlock,
+  wake, bypass focus, skip assertions or change timeouts. An unfocused Activity
+  alone does not establish screen lock, emulator readiness or dialog leakage;
+  those remain hypotheses until hosted diagnostics distinguish them.
+- Teardown cancels still-attached acquired dialogs through their actual negative
+  buttons, drains queued dismissal, and closes ActivityScenario in finally even
+  if dialog cleanup fails. The existing storage/preference/cache restoration
+  still runs. Test actions remain real Espresso clicks; cleanup never confirms
+  deletion. A dialog not yet acquired by Espresso still falls under host close.
+- Relevant read-only CI source: `android-instrumentation.yml` invokes
+  `run-android-smoke.sh`; the checked-in script installs APKs and instruments
+  them without an explicit interactive/keyguard check. The pinned emulator
+  action may perform additional setup; its execution was not inspected here.
+  Missing script checks do not prove the API24 device was locked. No workflow,
+  script, VPN test, manifest, dependency or production file is changed.
+- All seven cases and original storage assertions remain; the production
+  cleanup-removal patch is unchanged. This follow-up is test + append-only MAP
+  only. Compilation, API24/36 rerun, UI/state and scoped Security are NOT_RUN
+  locally and remain parent-owned; prior green jobs do not validate this patch.
+- Local static checks PASS: whitespace, exact two-file scope, MAP-prefix
+  preservation, all seven case names/original storage assertions retained,
+  dialog-root scoping and unchanged production/VPN/CI/dependency files. No
+  emulator or test runner was started; screen-lock/leak causality is unproven.

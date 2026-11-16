@@ -1,7 +1,9 @@
 package com.securecall.app
 
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -12,7 +14,11 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers.isDialog
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.securecall.app.data.Contact
@@ -37,6 +43,7 @@ class ContactLookupPreservationInstrumentedTest {
     private var hadRegisteredPhones = false
     private var previousRegisteredPhones: Set<String>? = null
     private val previousCache = mutableMapOf<String, Any?>()
+    private val ownedDialogRoots = mutableSetOf<View>()
 
     private val direct = Contact(
         id = "lookup-fixture-direct", name = "Lookup direct", phoneOrId = DIRECT_ID,
@@ -99,7 +106,11 @@ class ContactLookupPreservationInstrumentedTest {
     @After
     fun tearDown() {
         try {
-            scenario?.close()
+            try {
+                dismissOwnedDialogs()
+            } finally {
+                scenario?.close()
+            }
         } finally {
             try {
                 if (ownsFixture) {
@@ -195,7 +206,7 @@ class ContactLookupPreservationInstrumentedTest {
         finalizeResults(successfulResult, positiveQuery)
 
         openDeleteConfirmation(linked)
-        onView(withId(android.R.id.button2)).perform(click())
+        onView(withId(android.R.id.button2)).inRoot(isDialog()).perform(click())
         assertSaved(direct, linked, positive.copy(secureId = POSITIVE_ID))
 
         openDeleteConfirmation(linked)
@@ -204,7 +215,7 @@ class ContactLookupPreservationInstrumentedTest {
             // subsequent async reload from reading the device phonebook in this storage test.
             activity.supportFragmentManager.beginTransaction().remove(fragment).commitNow()
         }
-        onView(withId(android.R.id.button1)).perform(click())
+        onView(withId(android.R.id.button1)).inRoot(isDialog()).perform(click())
 
         assertSaved(direct, positive.copy(secureId = POSITIVE_ID))
         assertEquals(setOf(LINKED_PHONE), ContactRepository.getHiddenPhones(context))
@@ -234,12 +245,51 @@ class ContactLookupPreservationInstrumentedTest {
 
     private fun openDeleteConfirmation(contact: Contact) {
         scenario!!.onActivity {
+            val power = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            val interactive = power.isInteractive
+            val keyguardLocked = keyguard.isKeyguardLocked
+            val deviceLocked = keyguard.isDeviceLocked
+            assertTrue(
+                "Dialog input requires an interactive, unlocked device: " +
+                    "interactive=$interactive, keyguardLocked=$keyguardLocked, " +
+                    "deviceLocked=$deviceLocked, activityFocus=${it.hasWindowFocus()}",
+                interactive && !keyguardLocked && !deviceLocked,
+            )
             ContactsFragment::class.java.getDeclaredMethod("showContactMenu", Contact::class.java).apply {
                 isAccessible = true
                 invoke(fragment, contact)
             }
         }
-        onData(anything()).atPosition(2).perform(click())
+        rememberDialogRoot(contact.name)
+        onData(anything()).inRoot(isDialog()).atPosition(2).perform(click())
+        rememberDialogRoot("Delete ${contact.name}?")
+    }
+
+    private fun rememberDialogRoot(title: String) {
+        onView(withText(title)).inRoot(isDialog()).check { view, error ->
+            matches(isDisplayed()).check(view, error)
+            ownedDialogRoots.add(view.rootView)
+        }
+    }
+
+    private fun dismissOwnedDialogs() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.runOnMainSync {
+            try {
+                ownedDialogRoots.toList().asReversed().forEach { root ->
+                    if (root.isAttachedToWindow) {
+                        // Cleanup only: never select a positive/delete button, even after failure.
+                        val cancel = checkNotNull(root.findViewById<View>(android.R.id.button2))
+                        assertTrue("Owned dialog must handle cancellation", cancel.performClick())
+                    }
+                }
+            } finally {
+                ownedDialogRoots.clear()
+            }
+        }
+        // Negative-button dismissal is queued by AlertDialog; drain it before closing the host.
+        instrumentation.waitForIdleSync()
     }
 
     private fun savedContacts(): Map<String, Contact> =
