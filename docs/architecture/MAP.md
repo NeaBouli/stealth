@@ -122,3 +122,24 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   delivery, and refreshes an already-connected replacement without reconnecting it.
 - Process-local only: cold startup/call startup, task removal, FCM, Android API35+
   background policy and preference defaults are unchanged. Device proof is separate.
+
+---
+
+# Narrow trace: German Google Play listing metadata (2026-11-16)
+
+- Module: static Play listing metadata, not application runtime or direct-download offers.
+- Source: `fastlane/metadata/android/en-US/{title,short_description,full_description}.txt`.
+- Hop: accepted English listing meaning -> German
+  `fastlane/metadata/android/de-DE/{title,short_description,full_description}.txt`
+  -> manual transfer by the parent operator to the German Play Console listing.
+- Gap: German listing text was missing locally; the parent reports stale public
+  auto-translation and only an English Console locale. The new files supply an
+  explicit translation, not an automated uploader or a Console acceptance receipt.
+- Preserve the three public URLs, no Play-owned VPN, no WalletConnect/in-app IFR
+  unlock, and unavailable paid controls pending separate release gates.
+- Checks: exact five-file allowlist, strict UTF-8, Unicode character limits,
+  URL parity, mandatory caveats, semantic review and `git diff --check`.
+- Open: parent-owned Console language addition/manual transfer, Google review and
+  public German listing verification. No language-tag or changelog edit here.
+- Untouched: English metadata, all changelogs, app/runtime, permissions, screenshots,
+  distribution matrix, offers and diagram files. No build or deployment.
