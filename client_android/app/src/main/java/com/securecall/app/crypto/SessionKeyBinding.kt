@@ -5,18 +5,49 @@ import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-object SessionKeyBinding {
-    private const val HMAC = "HmacSHA256"
-    private val aeadInfo = "SecureCall-AEAD-Key-v2".toByteArray(Charsets.US_ASCII)
+/**
+ * STX-24 call key schedule (call protocol 3). All keys are HKDF-SHA256 outputs of the
+ * authenticated X25519 base key, salted with the signed invite/accept context.
+ * [callKey] only feeds CALL_KEY_CONFIRM and the security code; media uses the two
+ * direction keys. [clear] wipes every key together.
+ */
+class CallKeysV3 internal constructor(
+    val callKey: ByteArray,
+    val callerToCallee: ByteArray,
+    val calleeToCaller: ByteArray,
+    val context: ByteArray,
+) {
+    fun clear() {
+        callKey.fill(0)
+        callerToCallee.fill(0)
+        calleeToCaller.fill(0)
+    }
+}
 
-    fun bind(baseKey: ByteArray, inviteTranscript: String, acceptTranscript: String): ByteArray? {
+object SessionKeyBinding {
+    const val CALL_PROTOCOL = 3
+    private const val HMAC = "HmacSHA256"
+    private val callKeyInfo = "SecureCall-Call-Key-v3".toByteArray(Charsets.US_ASCII)
+    private val callerToCalleeInfo = "SecureCall-Media-Key-v3 caller->callee".toByteArray(Charsets.US_ASCII)
+    private val calleeToCallerInfo = "SecureCall-Media-Key-v3 callee->caller".toByteArray(Charsets.US_ASCII)
+    private val digest = Regex("^[A-Za-z0-9_-]{43}$")
+
+    fun deriveV3(baseKey: ByteArray, inviteDigest: String, acceptDigest: String): CallKeysV3? {
         if (baseKey.size != 32) return null
-        val context = contextDigest(inviteTranscript, acceptTranscript) ?: return null
+        val context = contextDigest(inviteDigest, acceptDigest) ?: return null
+        var pseudoRandomKey: ByteArray? = null
         return try {
-            val pseudoRandomKey = hmac(context, baseKey)
-            hkdfExpand(pseudoRandomKey, aeadInfo, 32)
+            val prk = hmac(context, baseKey).also { pseudoRandomKey = it }
+            CallKeysV3(
+                callKey = hkdfExpand(prk, callKeyInfo, 32),
+                callerToCallee = hkdfExpand(prk, callerToCalleeInfo, 32),
+                calleeToCaller = hkdfExpand(prk, calleeToCallerInfo, 32),
+                context = context,
+            )
         } catch (_: Exception) {
             null
+        } finally {
+            pseudoRandomKey?.fill(0)
         }
     }
 
@@ -29,7 +60,7 @@ object SessionKeyBinding {
     ): String? {
         if (sessionKey.size != 32 || role !in setOf("caller", "callee")) return null
         val message = listOf(
-            "securecall-key-confirm-v2", sessionId, role, inviteDigest, acceptDigest,
+            "securecall-key-confirm-v3", sessionId, role, inviteDigest, acceptDigest,
         ).joinToString("\n").toByteArray(Charsets.UTF_8)
         return try { IdentityProtocol.encodeBase64Url(hmac(sessionKey, message)) } catch (_: Exception) { null }
     }
@@ -42,7 +73,7 @@ object SessionKeyBinding {
     ): String? {
         if (sessionKey.size != 32) return null
         val message = listOf(
-            "securecall-security-code-v2", sessionId, inviteDigest, acceptDigest,
+            "securecall-security-code-v3", sessionId, inviteDigest, acceptDigest,
         ).joinToString("\n").toByteArray(Charsets.UTF_8)
         return try {
             val bytes = hmac(sessionKey, message)
@@ -76,16 +107,16 @@ object SessionKeyBinding {
         receivedConfirmation: String?,
     ): Boolean = !established
         && localConfirmationSent
-        && protocol == 2
+        && protocol == CALL_PROTOCOL
         && expectedSessionId == receivedSessionId
         && expectedRole in setOf("caller", "callee")
         && expectedRole == receivedRole
         && matches(expectedConfirmation, receivedConfirmation)
 
-    private fun contextDigest(inviteTranscript: String, acceptTranscript: String): ByteArray? {
-        val invite = IdentityProtocol.transcriptDigest(inviteTranscript) ?: return null
-        val accept = IdentityProtocol.transcriptDigest(acceptTranscript) ?: return null
-        val value = "securecall-session-context-v2\n$invite\n$accept"
+    /** 32-byte call context digest; also carried in every media frame header. */
+    fun contextDigest(inviteDigest: String, acceptDigest: String): ByteArray? {
+        if (!digest.matches(inviteDigest) || !digest.matches(acceptDigest)) return null
+        val value = "securecall-session-context-v3\n$inviteDigest\n$acceptDigest"
         return MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8))
     }
 

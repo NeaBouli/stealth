@@ -22,6 +22,7 @@ import com.securecall.app.R
 import com.securecall.app.call.IncomingCallAlertPolicy
 import com.securecall.app.call.IncomingCallTelecom
 import com.securecall.app.notifications.IncomingCallNotifications
+import com.securecall.app.crypto.MediaSessionV3
 import com.securecall.app.crypto.SessionKeyBinding
 import com.securecall.app.security.IdentityProtocol
 import com.securecall.app.security.IdentitySigningKey
@@ -104,7 +105,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // E2E encryption state (X25519 + XChaCha20-Poly1305)
     private var localPrivKey: ByteArray? = null
     private var remotePubKey: ByteArray? = null
-    private var sessionKey: ByteArray? = null
+    // STX-24: per-call direction keys, outbound sequence and inbound replay window.
+    @Volatile private var mediaSession: MediaSessionV3? = null
+    @Volatile private var lastLegacyRejectedSessionId: String? = null
     @Volatile private var callSecurityState: CallSecurityState? = null
 
     @Volatile private var registrationIdentity: com.securecall.app.security.CallIdentity? = null
@@ -206,8 +209,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         localPrivKey?.fill(0)
         localPrivKey = null
         remotePubKey = null
-        sessionKey?.fill(0)
-        sessionKey = null
+        // Keys and replay state clear together before the transport closes.
+        mediaSession?.close()
+        mediaSession = null
         callSecurityState = null
         webRtcManager?.close()
         webRtcManager = null
@@ -296,13 +300,47 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     fun acceptFcmInvite(payload: String): Boolean {
-        val invite = parseVerifiedInvite(payload) ?: return false
+        val invite = parseVerifiedInvite(payload)
+        if (invite == null) {
+            rejectAuthenticLegacyInvite(payload)
+            return false
+        }
         if (!acceptAuthenticatedInvite(invite)) return false
         fcmPendingSessionId = invite.sessionId
         return true
     }
 
-    private fun parseVerifiedInvite(payload: String): VerifiedCallInvite? {
+    private fun parseVerifiedInvite(payload: String): VerifiedCallInvite? =
+        parseInviteFields(payload)?.takeIf {
+            IdentityProtocol.verifyCallInvite(it, System.currentTimeMillis() / 1000)
+        }
+
+    /**
+     * STX-24: a genuinely signed v2 invite comes from a caller without authenticated
+     * media. It is never accepted or answered with media; the caller is ended and the
+     * local user sees the existing call-error path (only when no call is in progress).
+     */
+    private fun rejectAuthenticLegacyInvite(payload: String): Boolean {
+        val invite = parseInviteFields(payload) ?: return false
+        if (!IdentityProtocol.isAuthenticLegacyInvite(invite, System.currentTimeMillis() / 1000)) return false
+        if (lastLegacyRejectedSessionId == invite.sessionId) return true
+        lastLegacyRejectedSessionId = invite.sessionId
+        Log.w("WS_SERVICE", "Rejected protocol-2 invite: peer must update for authenticated media")
+        client?.send(org.json.JSONObject().apply {
+            put("type", "CALL_END")
+            put("sessionId", invite.sessionId)
+            put("reason", "media_upgrade_required")
+        }.toString())
+        if (_currentSessionId == null && callSecurityState == null) {
+            _onCallError?.invoke(
+                "peer_media_upgrade_required",
+                "The caller must update SecureCall before a protected call is possible",
+            )
+        }
+        return true
+    }
+
+    private fun parseInviteFields(payload: String): VerifiedCallInvite? {
         return try {
             val obj = org.json.JSONObject(payload)
             if (obj.optString("type") !in setOf("CALL_INVITE", "CALL_INVITE_V2")) return null
@@ -323,9 +361,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             )
             val localIdentity = IdentitySigningKey.existingIdentity() ?: return null
             if (invite.to != localIdentity.identityId || getLocalClientId() != localIdentity.identityId) return null
-            invite.takeIf {
-                IdentityProtocol.verifyCallInvite(it, System.currentTimeMillis() / 1000)
-            }
+            invite
         } catch (_: Exception) {
             null
         }
@@ -443,6 +479,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         if (intent?.action == ACTION_FCM_CALL_INVITE_V2) {
             val payload = intent.getStringExtra(EXTRA_FCM_PAYLOAD).orEmpty()
             val invite = parseVerifiedInvite(payload)
+            if (invite == null) rejectAuthenticLegacyInvite(payload)
             if (invite != null && acceptAuthenticatedInvite(invite)) {
                 fcmPendingSessionId = invite.sessionId
                 showIncomingCallNotification(invite.sessionId, invite.fromClientId, invite.callerPhone)
@@ -656,17 +693,15 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     fun sendBinary(data: ByteArray): Boolean {
         // Fail closed: never send plaintext. If crypto unavailable or encryption fails, drop the frame.
         if (callSecurityState?.established != true) return false
-        val key = sessionKey ?: return false
+        val media = mediaSession ?: return false
         if (!com.securecall.crypto.CoreCrypto.isNativeAvailable()) return false
-        val encrypted = com.securecall.crypto.CoreCrypto.encrypt(key, data) ?: return false
         // Send via P2P DataChannel only — no WS relay fallback.
         // During call setup, audio frames before DataChannel opens would
         // flood the signaling WebSocket and trigger server rate limits.
         val rtc = webRtcManager
-        if (rtc != null && rtc.isDataChannelOpen) {
-            return rtc.send(encrypted)
-        }
-        return false
+        if (rtc == null || !rtc.isDataChannelOpen) return false
+        val frame = media.seal(data) ?: return false
+        return rtc.send(frame)
     }
 
     fun lastSeen(): Long {
@@ -1094,27 +1129,38 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     override fun onBinaryMessage(data: ByteArray) {
-        if (callSecurityState?.established != true || !com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
-            Log.w("WS_SERVICE", "Dropping media before authenticated key confirmation")
-            return
-        }
-        val key = sessionKey ?: return
-        val audioData = try {
-            com.securecall.crypto.CoreCrypto.decrypt(key, data)
-        } catch (e: Exception) {
-            Log.w("WS_SERVICE", "E2E decrypt failed, dropping frame", e)
-            return
-        }
-        if (audioData == null || audioData.isEmpty()) return
+        // STX-24: signaling WebSocket binary never enters media decryption or playback.
+        Log.w("WS_SERVICE", "Dropping WebSocket binary frame; call media is DataChannel-only")
+    }
 
-        if (!opusDecoderInitialized) {
-            com.securecall.app.ghostnet.media.codec.OpusDecoder.init(48000, 1)
-            opusDecoderInitialized = true
+    /** Only the current call's current DataChannel manager may feed the media receiver. */
+    private fun receiveDataChannelMedia(
+        source: WebRtcManager?,
+        sessionId: String,
+        owner: MediaSessionV3,
+        data: ByteArray,
+    ) {
+        val state = callSecurityState
+        if (source == null || source !== webRtcManager || owner !== mediaSession
+            || owner.sessionId != sessionId || state?.established != true
+            || state.invite.sessionId != sessionId) {
+            Log.w("WS_SERVICE", "Dropping media from a stale call transport")
+            return
         }
-        val pcm = com.securecall.app.ghostnet.media.codec.OpusDecoder.decode(audioData)
-        if (pcm.isNotEmpty()) {
-            com.securecall.app.audio.jitter.JitterBuffer.push(pcm)
-            startJitterPlayback()
+        if (!com.securecall.crypto.CoreCrypto.isNativeAvailable()) return
+        // Decode/enqueue run inside the media session's consume/close boundary:
+        // clearSession() closes the session first, so once close() returns no
+        // authenticated frame from this call can reach the decoder or playback.
+        owner.consume(data) { audioData ->
+            if (!opusDecoderInitialized) {
+                com.securecall.app.ghostnet.media.codec.OpusDecoder.init(48000, 1)
+                opusDecoderInitialized = true
+            }
+            val pcm = com.securecall.app.ghostnet.media.codec.OpusDecoder.decode(audioData)
+            if (pcm.isNotEmpty()) {
+                com.securecall.app.audio.jitter.JitterBuffer.push(pcm)
+                startJitterPlayback()
+            }
         }
     }
 
@@ -1403,7 +1449,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         callSecurityState = CallSecurityState(SecureCallRole.CALLER, invite, transcript)
         val sent = client?.send(org.json.JSONObject().apply {
             put("type", "CALL_INVITE")
-            put("protocol", 2)
+            put("protocol", SessionKeyBinding.CALL_PROTOCOL)
             put("sessionId", sessionId)
             put("to", targetId)
             put("ephemeralPublicKey", publicKey)
@@ -1494,19 +1540,20 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         val baseKey = if (privateKey != null) {
             com.securecall.crypto.CoreCrypto.deriveSessionKey(privateKey, remotePub)
         } else null
-        val boundKey = if (baseKey != null && acceptTranscript != null) {
-            SessionKeyBinding.bind(baseKey, state.inviteTranscript, acceptTranscript)
+        val keys = if (baseKey != null && acceptDigest != null) {
+            SessionKeyBinding.deriveV3(baseKey, state.invite.inviteDigest, acceptDigest)
         } else null
         baseKey?.fill(0)
         localPrivKey?.fill(0)
         localPrivKey = null
-        if (acceptTranscript == null || signature == null || acceptDigest == null || boundKey == null) {
-            boundKey?.fill(0)
+        if (acceptTranscript == null || signature == null || acceptDigest == null || keys == null) {
+            keys?.clear()
             _onCallError?.invoke("secure_session_unavailable", "Authenticated key agreement failed")
             return
         }
-        sessionKey?.fill(0)
-        sessionKey = boundKey
+        val boundKey = keys.callKey
+        mediaSession?.close()
+        mediaSession = MediaSessionV3(sessionId, localIsCaller = false, keys = keys)
         state.acceptTranscript = acceptTranscript
         state.accept = VerifiedCallAccept(
             sessionId, state.invite.inviteDigest, acceptDigest, identity.identityId,
@@ -1519,9 +1566,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         state.securityCode = SessionKeyBinding.securityCode(
             boundKey, sessionId, state.invite.inviteDigest, acceptDigest,
         )
+        val localConfirmation = SessionKeyBinding.confirmation(
+            boundKey, sessionId, "callee", state.invite.inviteDigest, acceptDigest,
+        )
+        keys.clear()
         val acceptSent = client?.send(org.json.JSONObject().apply {
             put("type", "CALL_ACCEPT")
-            put("protocol", 2)
+            put("protocol", SessionKeyBinding.CALL_PROTOCOL)
             put("sessionId", sessionId)
             put("inviteDigest", state.invite.inviteDigest)
             put("toIdentityId", state.invite.fromIdentityId)
@@ -1530,13 +1581,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             put("nonce", nonce)
             put("signature", signature)
         }.toString()) == true
-        val localConfirmation = SessionKeyBinding.confirmation(
-            boundKey, sessionId, "callee", state.invite.inviteDigest, acceptDigest,
-        )
         val confirmationSent = acceptSent && localConfirmation != null && client?.send(
             org.json.JSONObject().apply {
                 put("type", "CALL_KEY_CONFIRM")
-                put("protocol", 2)
+                put("protocol", SessionKeyBinding.CALL_PROTOCOL)
                 put("sessionId", sessionId)
                 put("role", "callee")
                 put("confirmation", localConfirmation)
@@ -1583,10 +1631,18 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     private fun startWebRtc(sessionId: String, isOfferer: Boolean) {
         Log.d("WS_SERVICE", "Starting WebRTC (offerer=$isOfferer) for session=$sessionId")
+        val owner = mediaSession
+        if (owner == null || owner.sessionId != sessionId) {
+            Log.e("WS_SERVICE", "WebRTC start rejected: no authenticated media session")
+            sendCallEnd(sessionId, "secure_session_unavailable")
+            _onCallEnded?.invoke(sessionId)
+            return
+        }
+        var created: WebRtcManager? = null
         val mgr = WebRtcManager(
             onLocalSdp = { type, sdp -> sendWebRtcSdp(sessionId, type, sdp) },
             onLocalIceCandidate = { candidate -> sendIceCandidate(sessionId, candidate) },
-            onDataReceived = { data -> onBinaryMessage(data) },
+            onDataReceived = { data -> receiveDataChannelMedia(created, sessionId, owner, data) },
             onPeerDisconnect = {
                 Log.d("WS_SERVICE", "WebRTC peer disconnected — ending call")
                 cancelCallEndGrace() // BUG-011: cancel any pending server CALL_END grace
@@ -1594,6 +1650,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             },
             isExternalVpnActive = { NetworkManager.isExternalVpnActive(this) }
         )
+        created = mgr
         // BUG-031: if ICE recovers while a CALL_END grace is pending, cancel it
         mgr.onIceRecovered = { cancelCallEndGrace() }
         webRtcManager = mgr
@@ -1767,13 +1824,14 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         val privateKey = localPrivKey ?: return false
         if (!com.securecall.crypto.CoreCrypto.isNativeAvailable()) return false
         val baseKey = com.securecall.crypto.CoreCrypto.deriveSessionKey(privateKey, remoteKey) ?: return false
-        val boundKey = SessionKeyBinding.bind(baseKey, state.inviteTranscript, acceptTranscript)
+        val keys = SessionKeyBinding.deriveV3(baseKey, accept.inviteDigest, accept.acceptDigest)
         baseKey.fill(0)
         privateKey.fill(0)
         localPrivKey = null
-        if (boundKey == null) return false
-        sessionKey?.fill(0)
-        sessionKey = boundKey
+        if (keys == null) return false
+        val boundKey = keys.callKey
+        mediaSession?.close()
+        mediaSession = MediaSessionV3(accept.sessionId, localIsCaller = true, keys = keys)
         remotePubKey = remoteKey
         state.accept = accept
         cancelOutgoingRingTimeout()
@@ -1786,10 +1844,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         )
         val localConfirmation = SessionKeyBinding.confirmation(
             boundKey, accept.sessionId, "caller", accept.inviteDigest, accept.acceptDigest,
-        ) ?: return false
+        )
+        keys.clear()
+        if (localConfirmation == null) return false
         val sent = client?.send(org.json.JSONObject().apply {
             put("type", "CALL_KEY_CONFIRM")
-            put("protocol", 2)
+            put("protocol", SessionKeyBinding.CALL_PROTOCOL)
             put("sessionId", accept.sessionId)
             put("role", "caller")
             put("confirmation", localConfirmation)
@@ -1835,7 +1895,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 "CALL_INVITE" -> {
                     val invite = parseVerifiedInvite(obj.toString())
                     if (invite == null) {
-                        Log.w("WS_SERVICE", "Rejected invalid authenticated CALL_INVITE")
+                        if (!rejectAuthenticLegacyInvite(obj.toString())) {
+                            Log.w("WS_SERVICE", "Rejected invalid authenticated CALL_INVITE")
+                        }
                         return
                     }
                     if (_currentSessionId != null && _currentSessionId != invite.sessionId) {
@@ -1864,7 +1926,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     val ok = obj.optBoolean("ok", false)
                     val sessionId = obj.optString("sessionId", "")
                     val state = callSecurityState
-                    if (ok && obj.optInt("protocol", -1) == 2
+                    if (ok && obj.optInt("protocol", -1) == SessionKeyBinding.CALL_PROTOCOL
                         && state?.role == SecureCallRole.CALLER && state.invite.sessionId == sessionId) {
                         _currentSessionId = sessionId
                         Log.d("WS_SERVICE", "Authenticated CALL_INVITE acknowledged")
@@ -1880,7 +1942,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     }
                 }
                 "CALL_ACCEPT_ACK" -> {
-                    if (obj.optInt("protocol", -1) == 2) {
+                    if (obj.optInt("protocol", -1) == SessionKeyBinding.CALL_PROTOCOL) {
                         Log.d("WS_SERVICE", "Authenticated CALL_ACCEPT acknowledged")
                         killAllAudio()
                     }

@@ -100,13 +100,27 @@ function registrationTranscript({ challengeId, requestedClientId, identityId, ke
   ].join("\n");
 }
 
+// Signed call protocols. 2 is the existing path kept for old-to-old clients;
+// 3 (STX-24) binds the authenticated media frame version into both signatures.
+const CALL_PROTOCOL_V2 = 2;
+const CALL_PROTOCOL_V3 = 3;
+const CALL_PROTOCOLS = new Set([CALL_PROTOCOL_V2, CALL_PROTOCOL_V3]);
+const MEDIA_FRAME_LABEL_V3 = "securecall-media-frame-v3";
+
+function callTranscript(kind, protocol, fields) {
+  if (protocol === CALL_PROTOCOL_V2) return [`securecall-call-${kind}-v2`, ...fields].join("\n");
+  if (protocol === CALL_PROTOCOL_V3) {
+    return [`securecall-call-${kind}-v3`, ...fields, MEDIA_FRAME_LABEL_V3].join("\n");
+  }
+  return fail();
+}
+
 function callInviteTranscript({ sessionId, fromClientId, fromIdentityId, to, ephemeralPublicKey,
-  issuedAt, nonce }) {
+  issuedAt, nonce, protocol = CALL_PROTOCOL_V2 }) {
   if (!UUID.test(sessionId) || !CLIENT_ID.test(fromClientId) || !IDENTITY_ID.test(fromIdentityId)
       || !CLIENT_ID.test(to) || !X25519_PUBLIC_KEY.test(ephemeralPublicKey)
       || !Number.isSafeInteger(issuedAt) || issuedAt <= 0 || !NONCE.test(nonce)) fail();
-  return [
-    "securecall-call-invite-v2",
+  return callTranscript("invite", protocol, [
     sessionId,
     fromClientId,
     fromIdentityId,
@@ -114,17 +128,16 @@ function callInviteTranscript({ sessionId, fromClientId, fromIdentityId, to, eph
     ephemeralPublicKey,
     String(issuedAt),
     nonce,
-  ].join("\n");
+  ]);
 }
 
 function callAcceptTranscript({ sessionId, inviteDigest, fromClientId, fromIdentityId,
-  toIdentityId, ephemeralPublicKey, issuedAt, nonce }) {
+  toIdentityId, ephemeralPublicKey, issuedAt, nonce, protocol = CALL_PROTOCOL_V2 }) {
   if (!UUID.test(sessionId) || !BASE64URL.test(inviteDigest) || inviteDigest.length !== 43
       || !CLIENT_ID.test(fromClientId) || !IDENTITY_ID.test(fromIdentityId)
       || !IDENTITY_ID.test(toIdentityId) || !X25519_PUBLIC_KEY.test(ephemeralPublicKey)
       || !Number.isSafeInteger(issuedAt) || issuedAt <= 0 || !NONCE.test(nonce)) fail();
-  return [
-    "securecall-call-accept-v2",
+  return callTranscript("accept", protocol, [
     sessionId,
     inviteDigest,
     fromClientId,
@@ -133,7 +146,7 @@ function callAcceptTranscript({ sessionId, inviteDigest, fromClientId, fromIdent
     ephemeralPublicKey,
     String(issuedAt),
     nonce,
-  ].join("\n");
+  ]);
 }
 
 function transcriptDigest(transcript) {
@@ -162,6 +175,10 @@ module.exports = {
   UUID,
   X25519_PUBLIC_KEY,
   MAX_TRANSITION_WINDOW_SECONDS,
+  CALL_PROTOCOL_V2,
+  CALL_PROTOCOL_V3,
+  CALL_PROTOCOLS,
+  MEDIA_FRAME_LABEL_V3,
   readIdentityProtocolConfig,
   isLegacyTransitionActive,
   parseIdentityPublicKey,

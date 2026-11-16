@@ -131,6 +131,10 @@ function attach(ctx, connId, identity) {
     assert.strictEqual(last(wsBob).fromIdentityId, alice.identityId);
     assert.strictEqual(last(wsBob).inviteDigest, transcriptDigest(inviteTranscript));
     assert.strictEqual(ctx.routingTable.get(sessionId).state, "INVITE");
+    // Old-to-old clients keep the unchanged protocol-2 server path.
+    assert.strictEqual(last(wsBob).protocol, 2);
+    assert.strictEqual(last(wsAlice).protocol, 2);
+    assert.strictEqual(ctx.routingTable.get(sessionId).protocol, 2);
 
     ctx.handlers.CALL_INVITE(wsAlice, "conn-alice", invite);
     assert.strictEqual(last(wsAlice).error, "invalid_call_invite");
@@ -232,6 +236,108 @@ function attach(ctx, connId, identity) {
     ctx.handlers.CALL_END(wsAlice, "conn-alice", { sessionId });
     assert.strictEqual(last(wsAlice).type, "CALL_END_ACK");
     assert.strictEqual(ctx.routingTable.has(sessionId), false);
+
+    // ---- STX-24 protocol 3: media version bound into the signed invite and accept ----
+    const v3SessionId = crypto.randomUUID();
+    const v3InviteFields = {
+      ...inviteFields, sessionId: v3SessionId, ephemeralPublicKey: randomKey(), nonce: randomNonce(),
+    };
+    const v3InviteTranscript = callInviteTranscript({ ...v3InviteFields, protocol: 3 });
+    const v2RelabelTranscript = callInviteTranscript({ ...v3InviteFields, protocol: 2 });
+    assert.ok(v3InviteTranscript.startsWith("securecall-call-invite-v3\n"));
+    assert.ok(v3InviteTranscript.endsWith("\nsecurecall-media-frame-v3"));
+    assert.throws(() => callInviteTranscript({ ...v3InviteFields, protocol: 4 }));
+    const v3Invite = {
+      protocol: 3,
+      sessionId: v3SessionId,
+      to: v3InviteFields.to,
+      ephemeralPublicKey: v3InviteFields.ephemeralPublicKey,
+      issuedAt: now,
+      nonce: v3InviteFields.nonce,
+      signature: sign(alice.pair, v3InviteTranscript),
+    };
+    ctx.handlers.CALL_INVITE(wsAlice, "conn-alice", { ...v3Invite, protocol: 2 });
+    assert.strictEqual(last(wsAlice).error, "invalid_call_signature");
+    ctx.handlers.CALL_INVITE(wsAlice, "conn-alice", { ...v3Invite, signature: sign(alice.pair, v2RelabelTranscript) });
+    assert.strictEqual(last(wsAlice).error, "invalid_call_signature");
+    for (const protocol of [4, "3", undefined]) {
+      ctx.handlers.CALL_INVITE(wsAlice, "conn-alice", { ...v3Invite, protocol });
+      assert.strictEqual(last(wsAlice).error, "invalid_call_invite");
+    }
+    assert.strictEqual(ctx.routingTable.has(v3SessionId), false);
+
+    ctx.handlers.CALL_INVITE(wsAlice, "conn-alice", v3Invite);
+    assert.strictEqual(last(wsAlice).type, "CALL_INVITE_ACK");
+    assert.strictEqual(last(wsAlice).protocol, 3);
+    assert.strictEqual(last(wsBob).type, "CALL_INVITE");
+    assert.strictEqual(last(wsBob).protocol, 3);
+    assert.strictEqual(last(wsBob).inviteDigest, transcriptDigest(v3InviteTranscript));
+    assert.strictEqual(ctx.routingTable.get(v3SessionId).protocol, 3);
+
+    const v3AcceptFields = {
+      sessionId: v3SessionId,
+      inviteDigest: transcriptDigest(v3InviteTranscript),
+      fromClientId: bob.identityId,
+      fromIdentityId: bob.identityId,
+      toIdentityId: alice.identityId,
+      ephemeralPublicKey: randomKey(),
+      issuedAt: now,
+      nonce: randomNonce(),
+    };
+    const v3AcceptTranscript = callAcceptTranscript({ ...v3AcceptFields, protocol: 3 });
+    assert.ok(v3AcceptTranscript.startsWith("securecall-call-accept-v3\n"));
+    assert.ok(v3AcceptTranscript.endsWith("\nsecurecall-media-frame-v3"));
+    const v3Accept = {
+      protocol: 3,
+      sessionId: v3SessionId,
+      inviteDigest: v3AcceptFields.inviteDigest,
+      toIdentityId: alice.identityId,
+      ephemeralPublicKey: v3AcceptFields.ephemeralPublicKey,
+      issuedAt: now,
+      nonce: v3AcceptFields.nonce,
+      signature: sign(bob.pair, v3AcceptTranscript),
+    };
+    // Downgrade of the accept to the invite's non-matching protocol is rejected.
+    ctx.handlers.CALL_ACCEPT(wsBob, "conn-bob", {
+      ...v3Accept, protocol: 2,
+      signature: sign(bob.pair, callAcceptTranscript({ ...v3AcceptFields, protocol: 2 })),
+    });
+    assert.strictEqual(last(wsBob).error, "invalid_call_accept");
+    ctx.handlers.CALL_ACCEPT(wsBob, "conn-bob", {
+      ...v3Accept, signature: sign(bob.pair, callAcceptTranscript({ ...v3AcceptFields, protocol: 2 })),
+    });
+    assert.strictEqual(last(wsBob).error, "invalid_call_signature");
+    assert.strictEqual(ctx.routingTable.get(v3SessionId).state, "INVITE");
+
+    ctx.handlers.CALL_ACCEPT(wsBob, "conn-bob", v3Accept);
+    assert.strictEqual(last(wsBob).type, "CALL_ACCEPT_ACK");
+    assert.strictEqual(last(wsBob).protocol, 3);
+    assert.strictEqual(last(wsAlice).type, "CALL_ACCEPT");
+    assert.strictEqual(last(wsAlice).protocol, 3);
+    assert.strictEqual(last(wsAlice).acceptDigest, transcriptDigest(v3AcceptTranscript));
+    assert.strictEqual(ctx.routingTable.get(v3SessionId).state, "KEY_CONFIRM");
+
+    ctx.handlers.CALL_KEY_CONFIRM(wsAlice, "conn-alice", {
+      protocol: 2, sessionId: v3SessionId, role: "caller", confirmation: randomKey(),
+    });
+    assert.strictEqual(last(wsAlice).error, "invalid_key_confirmation");
+    assert.strictEqual(ctx.routingTable.get(v3SessionId).callerConfirmed, false);
+    const v3CallerConfirmation = randomKey();
+    ctx.handlers.CALL_KEY_CONFIRM(wsAlice, "conn-alice", {
+      protocol: 3, sessionId: v3SessionId, role: "caller", confirmation: v3CallerConfirmation,
+    });
+    assert.strictEqual(last(wsAlice).type, "CALL_KEY_CONFIRM_ACK");
+    assert.strictEqual(last(wsAlice).protocol, 3);
+    assert.strictEqual(last(wsBob).type, "CALL_KEY_CONFIRM");
+    assert.strictEqual(last(wsBob).protocol, 3);
+    assert.strictEqual(last(wsBob).confirmation, v3CallerConfirmation);
+    ctx.handlers.CALL_KEY_CONFIRM(wsBob, "conn-bob", {
+      protocol: 3, sessionId: v3SessionId, role: "callee", confirmation: randomKey(),
+    });
+    assert.strictEqual(last(wsBob).active, true);
+    assert.strictEqual(ctx.routingTable.get(v3SessionId).state, "ACTIVE");
+    ctx.handlers.CALL_END(wsBob, "conn-bob", { sessionId: v3SessionId });
+    assert.strictEqual(ctx.routingTable.has(v3SessionId), false);
 
     ctx.clientIds.delete(bob.identityId);
     ctx.clients.delete("conn-bob");

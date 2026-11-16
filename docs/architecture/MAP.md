@@ -279,3 +279,56 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   Syntax/source checks are not transport acceptance. Executed 12+20 PASS
   remains separate; parent hosted locked npm-ci/full CI must run all cases
   and perform scoped exact-candidate security review before integration.
+
+---
+
+# Narrow trace: STX24 authenticated call media (SC-STX24-AUTHENTICATED-MEDIA-20261116)
+
+- Module: call media path + shared signed call transcript, not registration,
+  routing lifecycle, SDP/ICE, VPN flavors or UI.
+- Send hop: `WebSocketService.sendBinary` -> current `MediaSessionV3.seal`
+  (per-direction key, monotonically increasing sequence) -> JNI
+  `CoreCrypto.mediaSeal` -> `aead::seal_media_frame` -> `WebRtcManager.send`
+  (DataChannel only; unchanged).
+- Receive hop: `WebRtcManager.dcObserver.onMessage` -> `onDataReceived` of the
+  manager that `startWebRtc` created -> `WebSocketService.receiveDataChannelMedia`
+  (exact current manager + session + media session, else drop) ->
+  `MediaSessionV3.open` (lock; length check; replay state passed in, committed
+  only after AEAD success) -> JNI `CoreCrypto.mediaOpen` ->
+  `aead::open_media_frame` (bounded header checks before allocation, existing
+  `ReplayDetector` on a copy, XChaCha20Poly1305 with header AAD) ->
+  `OpusDecoder` -> `JitterBuffer`.
+- Removed entry: `HeartbeatClient.Listener.onBinaryMessage` (WebSocket binary)
+  no longer reaches decryption/playback; it only drops and logs.
+- Key hop: `CoreCrypto.deriveSessionKey` (X25519 + HKDF, unchanged) ->
+  `SessionKeyBinding.deriveV3(base, inviteDigest, acceptDigest)` -> HKDF
+  expand: call key (CALL_KEY_CONFIRM + SAS, v3 labels) and two media keys
+  (`caller->callee`, `callee->caller`). Base/private keys are wiped as before.
+- Negotiation hop: signed `CALL_INVITE`/`CALL_ACCEPT` transcript v3 with
+  `securecall-call-*-v3` labels and an explicit `securecall-media-frame-v3`
+  field -> server `call.js` protocol 3 path (session pinned to its protocol;
+  accept/confirm must match) -> peer verification. Protocol 2 server path is
+  unchanged for old-to-old clients. New clients verify v3 only; a valid v2
+  invite is rejected explicitly (`peer_media_upgrade_required`), never served.
+- Teardown: `clearSession` closes the media session (keys + replay state
+  cleared together) before the WebRTC manager is closed.
+- Untouched: identity registration v2, `WebRtcManager`, SDP/ICE, heartbeat/
+  reconnect, FCM payload builder, generic `CoreCrypto.encrypt/decrypt`,
+  routing/admission/timeouts, manifests, flavors, UI layout, dependencies.
+- Release limitation: new-to-old and old-to-new calls fail (update required);
+  this is not a compatibility pass. Runtime/codec/transport evidence NOT_RUN.
+
+## Delta cycle (parent findings A-E)
+
+- Consume hop (A): `receiveDataChannelMedia` -> `MediaSessionV3.consume(frame,
+  consumer)`. Under the session lock: open, atomic replay commit, then the
+  consumer (Opus decode -> `JitterBuffer.push` -> `startJitterPlayback`), then
+  plaintext wipe. `close()` takes the same lock, so it waits for an in-flight
+  consumer and no consumer starts after it returns. `clearSession` calls it
+  before `webRtcManager.close()`/`killAllAudio()`; no service-wide lock is held
+  across native transport dispose, and the consumer takes no service monitor.
+- Plaintext bound (D): `native-lib.cpp` encodes into `MAX_PACKET = 4000`, so the
+  media plaintext limit is 4000 in Rust (`MEDIA_MAX_PLAINTEXT`) and Kotlin
+  (`MediaSessionV3.MAX_PLAINTEXT`); frame max 4060. Codec untouched.
+- Interop (E) unchanged: v3 -> old callee still ends as ring timeout, not as a
+  detected-old-peer error; no capability handshake added.
