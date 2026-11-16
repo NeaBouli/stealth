@@ -1,0 +1,20 @@
+SecureCall bietet Ende-zu-Ende-verschlüsselte Sprachanrufe zwischen zwei Personen über eine SecureID. Für Anrufe über eine SecureID ist kein herkömmliches Konto erforderlich.
+
+Funktionen:
+* XChaCha20-Poly1305-Verschlüsselung der Anwendungsframes
+* Schlüsselableitung mit X25519 und HKDF-SHA256 für jeden Anruf
+* Opus-Audio mit Unterstützung für WLAN und mobile Daten
+* Optionale lokale Kontakte zur Anzeige von Namen
+* Benachrichtigungen über eingehende Anrufe über Firebase Cloud Messaging
+* STEALTH-DELETE zum Löschen lokaler Daten im Notfall
+* Öffentlicher Quellcode und aktueller Auditstatus
+
+Der Signalisierungsdienst speichert keine Gesprächsinhalte. Er verarbeitet begrenzte Routing- und Zustellmetadaten, wie in der Datenschutzerklärung beschrieben.
+
+Die Google-Play-Version stellt keinen eigenen VPN-Dienst bereit und installiert keinen VPN-Dienst. Sie folgt dem aktiven Netzwerk von Android, einschließlich eines VPNs, das von Android oder einer anderen vertrauenswürdigen App verwaltet wird.
+
+Die aktuelle Android-App enthält weder WalletConnect noch eine Freischaltung per IFR-Token innerhalb der App. Kostenpflichtige Bedienelemente bleiben nicht verfügbar, bis die separaten Produkt- und Finanzfreigaben für die Veröffentlichung erteilt sind.
+
+Datenschutz: https://stealthx.tech/privacy.html
+Sicherheit: https://stealthx.tech/security.html
+Quellcode: https://github.com/NeaBouli/stealth

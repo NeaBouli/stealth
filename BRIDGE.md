@@ -6137,3 +6137,19 @@ Open next:
 - MainActivity rebinds current-service callbacks on resume and ignores obsolete callback deliveries. Destruction clears only its own connection/registration/singleton state. Architecture trace updated for this hop; no additional retry loop or permanent wake lock.
 - Red scaffold:19 lifecycle tests,7 expected assertion failures. Final focused green:48/48 cases after independent review added the registered-session guard. Full Free/Pro/Premium suites and lint running; not yet accepted. Device proof of this fixed candidate, long-idle/FCM/call acceptance and Codex Security review remain separate gates.
 - Source candidate is not a signed release and does not update installed1.0.51. Codex owns review/integration; source worker has no server/device/signing/provider access. No server restart, app data reset, reinstall, payment or activation performed. Financial coordination is handled separately by the VLABS operator.
+
+## 2026-11-16 06:57 UTC SC-PLAY-DE-METADATA-20261116 German Play metadata -> Review
+
+- **Branch:** `agent/codex/SC-PLAY-DE-METADATA-20261116`
+- **Base:** `42b336da8c18eb7f0a12bb3e6dc3cc4c834c6781`.
+- **Changed:** Three German Play listing text files mirror the accepted English
+  meaning; `SecureCall` and all three public URLs are unchanged. A narrow manual
+  metadata-transfer trace is appended to `docs/architecture/MAP.md`.
+- **Tests:** Local metadata validation covers the exact five-file allowlist, UTF-8,
+  Unicode character limits, URL parity and mandatory caveats; `git diff --check`.
+  English/German semantic review covers each feature and limitation.
+- **Risk:** Low, public text only; no new feature, offer or runtime claim.
+- **Ready for:** Parent review and final integration, then manual German listing
+  transfer in Play Console. Google review and public listing verification remain open.
+- No English, changelog, app/runtime, permission or screenshot changes. No delegation,
+  device/browser access, build, push, PR, merge or deployment performed.
