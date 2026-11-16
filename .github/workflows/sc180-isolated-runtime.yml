@@ -1,0 +1,149 @@
+---
+name: SC-180 Isolated Runtime Qualification
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: sc180-isolated-runtime-20261116
+  cancel-in-progress: false
+
+jobs:
+  isolated-runtime:
+    if: >-
+      github.event.action == 'opened' && github.run_attempt == 1 &&
+      github.repository == 'NeaBouli/stealth' &&
+      github.event.repository.private == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/codex/SC-180-RUNTIME-CI-20261116' &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.base.sha == 'eea4aadd8d658bfc3831615d4a3344e73b81b2b6'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact candidate without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+          submodules: false
+          lfs: false
+
+      - name: Prepare source receipt and attempt confined runtime once
+        id: qualification
+        timeout-minutes: 16
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          work="$(mktemp -d "$RUNNER_TEMP/sc180.XXXXXXXX")"
+          receipt="$(mktemp -d "$RUNNER_TEMP/sc180-receipts.XXXXXXXX")"
+          echo "receipt=$receipt" >> "$GITHUB_OUTPUT"
+          image="sc180-qualification:${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          container="sc180-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          create_attempted=false
+          build_attempted=false
+          phase=source
+          runtime_exit=not_run
+          cleanup() {
+            rc=$?
+            trap - EXIT INT TERM
+            set +e
+            container_removed=true
+            image_removed=true
+            temp_removed=true
+            if [ "$create_attempted" = true ]; then
+              timeout 20s docker rm --force "$container" >/dev/null 2>&1
+              if ! remaining="$(timeout 10s docker container ls --all --quiet --filter "name=^/${container}$" 2>/dev/null)"; then
+                container_removed=false
+              elif [ -n "$remaining" ]; then
+                container_removed=false
+              fi
+            fi
+            if [ "$build_attempted" = true ]; then
+              timeout 20s docker image rm "$image" >/dev/null 2>&1
+              if ! remaining="$(timeout 10s docker image ls --quiet --filter "reference=$image" 2>/dev/null)"; then
+                image_removed=false
+              elif [ -n "$remaining" ]; then
+                image_removed=false
+              fi
+            fi
+            rm -rf -- "$work"
+            if [ -e "$work" ]; then temp_removed=false; fi
+            if [ "$container_removed" != true ] || [ "$image_removed" != true ] || [ "$temp_removed" != true ]; then rc=1; fi
+            printf '{"schema":1,"phase":"%s","exit":%s,"runtimeExit":"%s",' \
+              "$phase" "$rc" "$runtime_exit" > "$receipt/execution.json"
+            printf '"cleanup":{"containerRemoved":%s,"imageRemoved":%s,"tempRemoved":%s}}\n' \
+              "$container_removed" "$image_removed" "$temp_removed" >> "$receipt/execution.json"
+            exit "$rc"
+          }
+          trap cleanup EXIT
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
+          node .github/scripts/sc180-runtime.cjs source "$receipt/source.json"
+          phase=build
+          mkdir "$work/context"
+          git archive HEAD:backend/signaling Dockerfile .dockerignore package.json package-lock.json src \
+            | tar -x -C "$work/context"
+          build_attempted=true
+          # No remote cache, push, modified Dockerfile, or application test command.
+          timeout --signal=TERM --kill-after=15s 600s docker build --pull --no-cache \
+            --tag "$image" "$work/context" >/dev/null 2>&1
+          phase=create
+          # Only the harness is mounted. No repo, host store, socket, port or env file.
+          create_attempted=true
+          timeout 30s docker create --name "$container" --restart=no --no-healthcheck \
+            --network none --ipc private --cgroupns private --read-only --user 1001:1001 \
+            --cap-drop ALL --security-opt no-new-privileges:true \
+            --cpus 1 --memory 512m --memory-swap 512m --pids-limit 64 --shm-size 8m \
+            --ulimit core=0:0 --ulimit nofile=256:256 --log-driver none \
+            --tmpfs /sc180:rw,noexec,nosuid,nodev,size=32m,uid=1001,gid=1001,mode=0700 \
+            --mount "type=bind,src=$GITHUB_WORKSPACE/.github/scripts/sc180-runtime.cjs,dst=/harness/sc180-runtime.cjs,readonly" \
+            --entrypoint /usr/bin/dumb-init "$image" -- /usr/bin/env -i \
+            PATH=/usr/local/bin:/usr/bin:/bin HOME=/sc180/home TMPDIR=/sc180 NODE_ENV=production \
+            /usr/local/bin/node /harness/sc180-runtime.cjs runtime >/dev/null 2>&1
+          phase=runtime
+          set +e
+          timeout --signal=TERM --kill-after=10s 120s docker start --attach "$container" \
+            > "$work/runtime.json" 2>/dev/null
+          attach_exit=$?
+          set -e
+          runtime_exit="$(timeout 10s docker inspect --format '{{.State.ExitCode}}' "$container")"
+          # docker start's status alone is not the container's exit status.
+          node .github/scripts/sc180-runtime.cjs collect "$work/runtime.json" "$receipt/runtime.json"
+          test "$attach_exit" -eq 0
+          test "$runtime_exit" -eq 0
+          phase=complete
+
+      - name: Retain aggregate receipts only
+        if: ${{ always() && steps.qualification.outputs.receipt != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sc180-aggregate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ steps.qualification.outputs.receipt }}/source.json
+            ${{ steps.qualification.outputs.receipt }}/runtime.json
+            ${{ steps.qualification.outputs.receipt }}/execution.json
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Remove this job's aggregate receipt directory
+        if: ${{ always() && steps.qualification.outputs.receipt != '' }}
+        env:
+          RECEIPT: ${{ steps.qualification.outputs.receipt }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$RECEIPT" in
+            "$RUNNER_TEMP"/sc180-receipts.*) rm -rf -- "$RECEIPT" ;;
+            *) exit 1 ;;
+          esac
