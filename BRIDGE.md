@@ -6193,3 +6193,23 @@ Open next:
 - Left uncommitted. No provider/Google/payment request, inherited secrets,
   additional agents, other worktree edits, PR, push, merge, deployment or
   production action. Stop at bounded source result.
+
+## 2026-11-16 - Call Session Lifecycle Source (Issue237)
+
+- Narrow heartbeat/current-connection ownership fix: retain healthy ACTIVE
+  signaling routes, preserve metadata until existing WS close cleanup, terminate
+  ping failures, keep pending and client-idle deadlines. No client/crypto rewrite.
+- Both invite protocols apply bounded technical routing admission before peer/
+  push/store side effects, without evicting existing calls or reserving recipient
+  quotas. No tier, price, IFR eligibility or conversation-duration policy change.
+- Worker red lifecycle5/11 and capacity4/18 -> focused12/12 +20/20PASS;
+  parent independently ran those32cases with allowlisted environment. Three
+  added real-loopback WebSocket cases are wired into the same normal pretest
+  chain for hosted execution, NOT_RUN locally (no dependency install under HOLD).
+- Parent reviewed the exact production/test delta, scope/hash/syntax/whitespace;
+  full locked CI and scoped Codex Security acceptance are recorded on this PR's
+  immutable candidate before integration. No passed-stage inference from mocks.
+- This is source/component work, not production/customer call/audio/drain or
+  commercial release acceptance. No server install/restart, provider/customer
+  mutation or financial activation. Financial coordination remains separate
+  with the VLABS operator; whole product remains NOT_READY.

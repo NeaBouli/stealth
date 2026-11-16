@@ -224,7 +224,7 @@ loadActivationCodes();
 loadWalletMappings();
 
 // --- Heartbeat Manager starten ---
-const hb = new HeartbeatManager(routingTable, clients);
+const hb = new HeartbeatManager(routingTable, clients, clientIds);
 hb.start();
 
 // --- HTTP Endpoint ---

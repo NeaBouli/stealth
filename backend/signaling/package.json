@@ -14,7 +14,8 @@
     "test:turn-deploy": "sh ../../deploy/coturn/test-render-config.sh",
     "test:authenticated-call": "node src/__tests__/authenticated_call.test.js",
     "prepare:identity-migration-routes": "node scripts/prepare_identity_migration_routes.js",
-    "pretest": "npm run test:tester && npm run test:turn-deploy && npm run test:authenticated-call"
+    "test:call-lifecycle": "node src/__tests__/heartbeat_lifecycle.test.js && node src/__tests__/call_capacity.test.js && node src/__tests__/heartbeat_transport.test.js",
+    "pretest": "npm run test:tester && npm run test:turn-deploy && npm run test:authenticated-call && npm run test:call-lifecycle"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -12,6 +12,9 @@ const {
   UUID,
 } = require("../../security/identity_protocol");
 
+const MAX_ROUTING_ENTRIES = 10000;
+const MAX_ORIGINATING_ENTRIES = 32;
+
 module.exports = function callHandlers(ctx) {
   const {
     clients, clientIds, routingTable, fcmTokens, phoneNumbers,
@@ -29,6 +32,15 @@ module.exports = function callHandlers(ctx) {
   function respond(ws, fields) { ws.send(JSON.stringify(fields)); }
   function sendError(ws, code, message = code) {
     return respond(ws, { type: "ERROR", error: code, message });
+  }
+
+  function hasInviteCapacity(callerId) {
+    if (routingTable.size >= MAX_ROUTING_ENTRIES) return false;
+    let originating = 0;
+    for (const session of routingTable.values()) {
+      if (session.from === callerId && ++originating >= MAX_ORIGINATING_ENTRIES) return false;
+    }
+    return true;
   }
 
   function resolveTarget(requested) {
@@ -75,7 +87,7 @@ module.exports = function callHandlers(ctx) {
 
   function authenticatedInvite(ws, connId, msg) {
     const client = authenticatedClient(connId);
-    if (!client) return sendError(ws, "not_authenticated");
+    if (!client || clientIds.get(client.clientId) !== connId) return sendError(ws, "not_authenticated");
     if (msg.protocol !== 2 || !UUID.test(msg.sessionId || "") || routingTable.has(msg.sessionId)
         || typeof msg.to !== "string" || typeof msg.ephemeralPublicKey !== "string"
         || typeof msg.nonce !== "string" || typeof msg.signature !== "string") {
@@ -101,6 +113,7 @@ module.exports = function callHandlers(ctx) {
     if (!verifySignature(identity.publicKey, transcript, msg.signature)) {
       return sendError(ws, "invalid_call_signature");
     }
+    if (!hasInviteCapacity(client.clientId)) return respond(ws, { type: "ERROR", error: "rate_limited" });
 
     const targetClientId = resolveTarget(msg.to);
     if (!targetClientId) return sendError(ws, "identity_service_unavailable");
@@ -248,8 +261,9 @@ module.exports = function callHandlers(ctx) {
   function legacyInvite(ws, connId, msg) {
     if (!legacyTransitionActive()) return sendError(ws, "identity_protocol_required");
     const myClientId = getClientId(connId);
-    if (!myClientId) return sendError(ws, "not_registered");
+    if (!myClientId || clientIds.get(myClientId) !== connId) return sendError(ws, "not_registered");
     if (!msg.to) return sendError(ws, "missing_to");
+    if (!hasInviteCapacity(myClientId)) return respond(ws, { type: "ERROR", error: "rate_limited" });
     const sessionId = crypto.randomUUID();
     const targetClientId = resolveTarget(msg.to);
     if (!targetClientId) return sendError(ws, "identity_service_unavailable");

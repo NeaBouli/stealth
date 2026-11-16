@@ -12,14 +12,19 @@ const SESSION_TIMEOUT = 60000;         // Session + Client idle timeout (60s)
 const ACTIVE_CALL_TIMEOUT = 180000;    // 3 minutes — grace during media stalls
 
 class HeartbeatManager {
-  constructor(routingTable, clients) {
+  constructor(routingTable, clients, clientIds) {
     this.routingTable = routingTable;
-    this.clients = clients; // Map<clientId, { ws, lastSeen }>
+    this.clients = clients; // Map<connId, { ws, lastSeen, clientId }>
+    this.clientIds = clientIds; // Map<clientId, current connId>
   }
 
   start() {
     setInterval(() => {
       const now = Date.now();
+      const hasCurrentClient = (clientId) => {
+        const connId = this.clientIds.get(clientId);
+        return Boolean(connId && this.clients.get(connId)?.clientId === clientId);
+      };
 
       // Fix HIGH-005 (2026-04-16): compute which clients are in an active call.
       // Those get a longer timeout so a brief media stall (tunnel, network hop)
@@ -32,17 +37,17 @@ class HeartbeatManager {
         }
       }
 
-      // --- WS Clients prüfen (collect first, delete after) ---
-      const clientsToRemove = [];
+      // Close owns client metadata, binding, peer notification and IP cleanup.
       for (const [id, obj] of this.clients.entries()) {
         const ws = obj.ws;
+        if (ws.readyState !== 1) continue;
 
         // Ping senden
         try {
           ws.ping();
         } catch (e) {
-          console.log("[HB] WS error, removing:", id);
-          clientsToRemove.push(id);
+          console.log("[HB] WS error, terminating:", id);
+          try { ws.terminate(); } catch {}
           continue;
         }
 
@@ -53,14 +58,16 @@ class HeartbeatManager {
         if (now - obj.lastSeen > timeoutMs) {
           console.log("[HB] Client timed out:", id, `(after ${Math.round(timeoutMs/1000)}s idle)`);
           try { ws.terminate(); } catch {}
-          clientsToRemove.push(id);
         }
       }
-      for (const id of clientsToRemove) this.clients.delete(id);
 
       // --- Routing-Sessions prüfen (collect first, delete after) ---
       const sessionsToRemove = [];
       for (const [sessionId, session] of this.routingTable.entries()) {
+        // Ordinary pong/message liveness does not refresh session.updated.
+        // Keep terminating owners until their close callback releases the route.
+        if (session.state === "ACTIVE"
+            && hasCurrentClient(session.from) && hasCurrentClient(session.to)) continue;
         if (now - session.updated > SESSION_TIMEOUT) {
           console.log("[HB] Session expired:", sessionId);
           sessionsToRemove.push(sessionId);
