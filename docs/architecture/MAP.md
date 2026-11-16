@@ -310,3 +310,8 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   admitted. DRAFT transfer, validated extraction, create/inspect/start caps,
   capture/result verification and cleanup remain unimplemented. Workflow has
   read-only contents permission and no token injection until that gate exists.
+- Parent continuation23:04UTC supersedes that checkpoint: hosted admission,
+  transfer and cleanup implemented at7ebf8b87. Run43974736259 executed16Rust
+  AEAD cases once, all8new media cases PASS. Exact owned container/image/DRAFT/
+  remote ref cleaned; component receipt retained privately. NEVER MERGE this
+  controller; no Android/JNI/call/full-release acceptance is implied.
