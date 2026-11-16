@@ -16,7 +16,7 @@ Scope: only the static landing -> lifetime offer / IFR holder section hop
 ## 2. Trace
 
 1. `website/index.html::nav a[href="#pricing"|"#lifetime"]` -> `website/index.html::section#pricing` (fragment; `#lifetime` is a legacy anchor on its section head)
-2. `section#pricing::.pricing-grid` -> `https://vlabs.gr/en/shop?focus=one-click-apps` (Pro/Premium Lifetime buy links)
+2. `section#pricing::.pricing-grid` -> `https://vlabs.gr/en/shop?focus=security` (Pro/Premium Lifetime buy links)
 3. `section#pricing::.pricing-grid` Free card -> `website/index.html::section#download` (`#download`)
 4. `section#pricing::div#ifr[data-ifr-checkout]` -> `website/js/ifr-checkout.js::root` (DOM query; controls stay disabled)
 5. `website/js/main.js::revealObserver` -> `.reveal` cards (visibility only)
@@ -174,3 +174,22 @@ No CI gate is skipped; this is qualification wiring for the mapped manual hop.
   public German listing verification. No language-tag or changelog edit here.
 - Untouched: English metadata, all changelogs, app/runtime, permissions, screenshots,
   distribution matrix, offers and diagram files. No build or deployment.
+
+---
+
+# Narrow trace: SecureCall purchase category links (issue #226)
+
+- Module: public landing purchase links and their download/help/template mirrors.
+- Hop: `website/index.html::section#pricing` and existing SecureCall purchase
+  references -> `https://vlabs.gr/{en|de|el}/shop?focus=security`.
+- Only the category query changes; language, prices, licence scope, download
+  destinations, Free/Play/direct distribution copy and IFR gates stay unchanged.
+- README and `docs/WIKI` contain no affected category URL and remain untouched;
+  the separate SecureChat/Chameleon FAQ purchase link is outside this task.
+- Regression: `website/js/product-truth.test.cjs` checks all 26 static SecureCall
+  purchase targets; existing template tests exercise both paid CTAs in en/de/el.
+- Source suite: `node --test website/js/*.test.cjs` -> 61/61 PASS; the new category
+  regression fails on the original links and passes after the URL-only correction.
+- Open: parent-owned responsive browser checks and publication. No visual or
+  checkout-readiness acceptance is asserted; application/runtime and diagrams
+  remain unchanged.
