@@ -5,6 +5,8 @@
   "private": true,
   "main": "src/server.js",
   "scripts": {
+    "posttest": "node --test src/__tests__/google_play_rtdn_retry.test.js",
+    "test:play-source": "node src/__tests__/google_play_billing.test.js && node src/__tests__/subscriptions_payment.test.js && node --test src/__tests__/google_play_rtdn_retry.test.js",
     "test:tester": "node src/__tests__/tester_entitlement_tokens.test.js && node src/__tests__/tester_license_registry.test.js && node src/__tests__/tester_license_transport.test.js",
     "start": "node src/server.js",
     "dev": "NODE_ENV=development node src/server.js",

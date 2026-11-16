@@ -11,6 +11,8 @@
     <!-- Main -->
     <string name="new_call">New Call</string>
     <string name="upgrade_to_pro">Upgrade to Pro</string>
+    <string name="pref_play_upgrade">Upgrade to Pro / Premium</string>
+    <string name="pref_play_upgrade_premium">Upgrade to Premium</string>
     <string name="upgrade_choose_edition">Choose your edition</string>
     <string name="upgrade_current_edition">Current edition: %1$s</string>
     <string name="upgrade_pro_price">One-time purchase · lifetime</string>

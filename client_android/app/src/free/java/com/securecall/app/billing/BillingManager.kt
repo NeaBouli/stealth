@@ -21,14 +21,13 @@ class BillingManager(
 
     interface BillingListener {
         fun onProductsLoaded(products: List<ProductDetails>)
-        fun onPurchaseCompleted(tier: SubscriptionTier, token: String)
+        fun onPurchaseCompleted(tier: SubscriptionTier, token: String, productId: String)
         fun onPurchaseFailed(errorCode: Int, message: String)
         fun onBillingDisconnected()
     }
 
     private var billingClient: BillingClient? = null
     private var productDetailsList: List<ProductDetails> = emptyList()
-    private var lastPurchasedProductId: String? = null
 
     private val subscriptionSkus = listOf(
         BuildConfig.SKU_PRO_MONTHLY,
@@ -215,11 +214,9 @@ class BillingManager(
         }
     }
 
-    fun getLastPurchasedProductId(): String? = lastPurchasedProductId
-
     private fun handlePurchase(purchase: Purchase) {
-        val productId = purchase.products.firstOrNull() ?: return
-        lastPurchasedProductId = productId
+        val productId = purchase.products.singleOrNull()
+            ?.takeIf { it in subscriptionSkus || it in lifetimeSkus } ?: return
         val tier = SubscriptionTier.fromProductId(productId)
         val token = purchase.purchaseToken
 
@@ -227,7 +224,7 @@ class BillingManager(
 
         // The backend acknowledges only after authoritative verification and
         // durable entitlement persistence.
-        listener.onPurchaseCompleted(tier, token)
+        listener.onPurchaseCompleted(tier, token, productId)
     }
 
     fun destroy() {

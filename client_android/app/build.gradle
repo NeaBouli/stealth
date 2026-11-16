@@ -626,10 +626,11 @@ tasks.register('verifyFreeReleaseBillingClosed') {
         }
         if (!upgradeSource.contains('R.id.billingPurchaseContent).visibility = View.GONE') ||
             !upgradeSource.contains('oneTimePurchaseOfferDetails?.formattedPrice') ||
-            !upgradeSource.contains('pricingPhaseList') ||
+            !upgradeSource.contains('details.productType != BillingClient.ProductType.INAPP') ||
+            upgradeSource.contains('subscriptionOfferDetails') ||
             !upgradeLayout.contains('android:id="@+id/billingPurchaseContent"')) {
             throw new GradleException(
-                'Closed Billing must hide the entire paid surface and future prices must come from ProductDetails.'
+                'Closed Billing must hide the paid surface; lifetime prices must come only from matching INAPP ProductDetails.'
             )
         }
     }

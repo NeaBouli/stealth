@@ -6169,3 +6169,45 @@ Open next:
 - **Risk:** Low, navigation-only; a corrected destination is not checkout acceptance.
 - **Ready for:** Parent source review, responsive browser checks and publication.
   No visual PASS, checkout-readiness claim, commit, push, PR or deployment here.
+
+## 2026-11-16 11:23 UTC SC-PLAY-UPGRADE-20261116 -> PARTIAL / Parent Integration
+
+- Exclusive source work on `agent/codex/SC-PLAY-UPGRADE-20261116`, exact base
+  `4c270ad18a03c5bda7993ca96476018efd59b061`; initial worktree clean.
+- Settings now exposes the existing internal Play upgrade activity for Free/Pro
+  without enabling external buy links. Lifetime controls reject SUBS/mismatched
+  details and blank prices. Billing callbacks carry product ID with their token
+  rather than reading mutable last-purchase state during queued UI delivery.
+- RTDN dedup now commits IDs to disk before marking them processed in memory.
+  Real atomic-write-failure regression: original RED, fixed GREEN, including
+  retry, idempotent revocation and restart deduplication.
+- `npm run test:play-source`, JS syntax, XML parse, source contract preservation
+  checks and `git diff --check` PASS. Added Kotlin tests NOT RUN. No Gradle/native
+  build, dependency install, device, browser, server/provider access or agents.
+- BLOCKER: lifetime purchases still lead to activation codes, not a persisted
+  entitlement accepted by the Play `TierManager`. Direct verifier rejects Free;
+  source SKUs are not evidence of configured Play one-time products. Do not use
+  historical subscriptions, change commerce flags or invent ownership/lease policy.
+- All commerce/readiness flags, SKU/catalog values, server entitlement behavior,
+  distribution/VPN boundaries and unrelated source preserved. No commit or
+  external mutation. Retain this worktree for parent review/integration.
+- Full implementation trace, tests, exact contract gaps and operator questions:
+  `/Users/gio/agent-fleet/evidence/stealth/sales-readiness-20261116/SC-PLAY-UPGRADE-IMPLEMENTATION.md`.
+
+`SAFE SOURCE CORRECTIONS IMPLEMENTED / LIFETIME SAME-PACKAGE UNLOCK STILL INCOMPLETE / NOT RELEASED`
+
+### 2026-11-16 11:45 UTC - Play Upgrade Parent Review / Draft Only
+
+- Owner-reported missing Play upgrade is tracked in issue231. Same installed
+  Free package must support server-verified Pro/Premium; the new entry alone
+  does not complete purchasing. No commerce flag, SKU, price or entitlement
+  grant was enabled. Financial coordination is handled separately by VLABS.
+- Independent bounded specialist review found one P2: new RTDN write-failure
+  regression was not reached by ordinary CI. Added the absent npm posttest hook
+  for that test only; all existing test/pretest commands retained verbatim.
+  No other concrete regression identified in that source review; this is not
+  an official Codex Security scan or Android runtime/visual acceptance.
+- Worker small backend red/green proof retained. Parent publishes a Draft for
+  full existing hosted compilation, test, lint and distribution guards; Android
+  results remain NOT_RUN until that exact-head run completes. No local heavy
+  build, personal-phone test install, release or production deployment.
