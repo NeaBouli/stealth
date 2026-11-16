@@ -229,7 +229,7 @@ jobs:
           failure = failures[0]
           assert failure.get("type") == "java.lang.AssertionError", failure.attrib
           message = "expected:<1> but was:<0>"
-          assert failure.get("message") == message, failure.attrib
+          assert failure.get("message") in (message, f"java.lang.AssertionError: {message}"), failure.attrib
           lines = pathlib.Path(test_source).read_text().splitlines()
           assertion = "assertEquals(1, intents.constructed().size());"
           start = next(i for i, line in enumerate(lines) if "private void checkPaidHandoff(" in line)
