@@ -44,6 +44,9 @@ public class MainActivity extends AppCompatActivity {
     private MaterialToolbar toolbar;
     private ExternalVpnMonitor externalVpnMonitor;
     private int wireRetryCount = 0;
+    private com.securecall.app.net.WebSocketService statusService;
+    private kotlin.jvm.functions.Function0<kotlin.Unit> statusOnlineCallback;
+    private kotlin.jvm.functions.Function0<kotlin.Unit> statusOfflineCallback;
     private androidx.appcompat.app.AlertDialog phoneNumberDialog;
 
     private static final String TAG = "MainActivity";
@@ -822,6 +825,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        wireRetryCount = 0;
+        wireConnectionStatusCallbacks();
         // Re-apply the effective build/server-verified tier before refreshing
         // UI, ads and feature gates.
         com.securecall.app.config.TierManager.INSTANCE.applyTier(this);
@@ -924,50 +929,68 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void wireConnectionStatusCallbacks() {
+        if (isDestroyed()) return;
         com.securecall.app.net.WebSocketService ws =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
+        if (statusService != ws) {
+            detachConnectionStatusCallbacks();
+            statusService = ws;
+        }
         if (ws != null) {
-            ws.setStatusCallbackOnline(() -> {
+            statusOnlineCallback = () -> {
                 runOnUiThread(() -> {
-                    if (toolbar != null) {
-                        toolbar.setSubtitle("\u25CF Connected");
-                        toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_active_green, null));
-                    }
-                    tintConnectionButton(0xFF4CAF50); // green
+                    if (isDestroyed() || statusService != ws ||
+                            ws.getStatusCallbackOnline() != statusOnlineCallback ||
+                            com.securecall.app.net.WebSocketService.Companion.getInstance() != ws) return;
+                    renderConnectionStatus(ws.isConnected());
                 });
                 return kotlin.Unit.INSTANCE;
-            });
-            ws.setStatusCallbackOffline(() -> {
+            };
+            statusOfflineCallback = () -> {
                 runOnUiThread(() -> {
-                    if (toolbar != null) {
-                        toolbar.setSubtitle("\u25CF Disconnected");
-                        toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_end_red, null));
+                    if (isDestroyed() || statusService != ws ||
+                            ws.getStatusCallbackOffline() != statusOfflineCallback) return;
+                    if (com.securecall.app.net.WebSocketService.Companion.getInstance() != ws) {
+                        wireConnectionStatusCallbacks();
+                    } else {
+                        renderConnectionStatus(ws.isConnected());
                     }
-                    tintConnectionButton(0xFF9E9E9E); // gray
                 });
                 return kotlin.Unit.INSTANCE;
-            });
-            // Set initial state
-            if (ws.isConnected()) {
-                toolbar.setSubtitle("\u25CF Connected");
-                toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_active_green, null));
-                tintConnectionButton(0xFF4CAF50);
-            } else {
-                toolbar.setSubtitle("\u25CF Disconnected");
-                toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_end_red, null));
-                tintConnectionButton(0xFF9E9E9E);
-            }
+            };
+            ws.setStatusCallbackOnline(statusOnlineCallback);
+            ws.setStatusCallbackOffline(statusOfflineCallback);
+            renderConnectionStatus(ws.isConnected());
         } else {
+            renderConnectionStatus(false);
             // Service not started yet — retry after a short delay (max 10 retries)
             wireRetryCount++;
             if (wireRetryCount <= 10 && !isDestroyed()) {
                 new android.os.Handler(getMainLooper()).postDelayed(this::wireConnectionStatusCallbacks, 1000);
-            } else if (toolbar != null) {
-                toolbar.setSubtitle("\u25CF Disconnected");
-                toolbar.setSubtitleTextColor(getResources().getColor(R.color.call_end_red, null));
-                tintConnectionButton(0xFF9E9E9E);
             }
         }
+    }
+
+    private void detachConnectionStatusCallbacks() {
+        if (statusService != null) {
+            if (statusService.getStatusCallbackOnline() == statusOnlineCallback) {
+                statusService.setStatusCallbackOnline(null);
+            }
+            if (statusService.getStatusCallbackOffline() == statusOfflineCallback) {
+                statusService.setStatusCallbackOffline(null);
+            }
+        }
+        statusService = null;
+        statusOnlineCallback = null;
+        statusOfflineCallback = null;
+    }
+
+    private void renderConnectionStatus(boolean connected) {
+        if (toolbar == null) return;
+        toolbar.setSubtitle(connected ? "\u25CF Connected" : "\u25CF Disconnected");
+        toolbar.setSubtitleTextColor(getResources().getColor(
+                connected ? R.color.call_active_green : R.color.call_end_red, null));
+        tintConnectionButton(connected ? 0xFF4CAF50 : 0xFF9E9E9E);
     }
 
     /** Tint the connection toolbar button to reflect current status. */
@@ -1017,6 +1040,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        detachConnectionStatusCallbacks();
         if (audioCapture != null) {
             audioCapture.stop();
         }

@@ -6111,3 +6111,85 @@ Open next:
 - impressum.html (EN/DE/EL) + success.html: Adresse nur clientseitig aus data-Teilen (js/mail-assemble.js); noscript = PNG ohne Metadaten.
 - Kontaktformular mailt jetzt an support@ (vorher private proton-Adresse) — erst live schalten, wenn Alias empfängt.
 - security.txt unverändert (RFC 9116). Test js/no-plain-support-mail.test.cjs; node --test 34/34; curl: 0 Treffer. Kein Merge/Deploy (Pages = Gio).
+
+## 2026-10-29 [AUTHOR: CODEX] - Issue211 / Source verification checkpoint
+- Separate bounded Android fix for a missed reconnect after heartbeat staleness:
+  clearing the socket before cancel causes the stale-callback guard to discard the
+  cancellation callback. Explicitly use the existing reconnect scheduler instead.
+- Four deterministic tests cover exactly one retry and preserve intentional-close,
+  auth-hard-stop and recovery suppression. On original code exactly the stale-retry
+  test fails (4 tests / 1 expected failure); the fixed full suites pass: Free297,
+  Premium298, zero failures/errors, 9 existing skips in total. Debug Kotlin/Java
+  compilation passes. Lint requested; not a PASS at this checkpoint.
+- Kimi quota-limited; Claude implemented the scoped source/tests/map. Its dispatcher
+  timed out before a report; Codex retained the work, reviewed the actual diff and
+  completed explicit red/green verification without duplicate implementation.
+- No URL, TLS, identity, license, backoff or normal-close policy changes. Lightweight
+  changed-file credential-pattern check clean; Codex Security scan NOT RUN.
+- Both attached official Free1.0.51 apps were Connected over validated Wi-Fi at two
+  readbacks more than two minutes apart. Earlier network access and old local-test
+  configuration problems were diagnosed separately. No app data/key reset, uninstall,
+  signing, installed source fix or production deployment. Socket status is not full
+  call/audio/release acceptance; frozen unsigned78020 remains a separate candidate.
+
+## 2026-11-12 [AUTHOR: CODEX] - Issue220 policy stop / warm return - Review
+- Additional bounded Android lifecycle candidate after merged212. Application owns a one-shot, instance-scoped policy-stop resume intent and waits for actual destruction. Only a previously registered, stable connected client is eligible; manual/auth/clean-close/retry/recovery suppression is retained. No Android idle/FCM policy, permission, dependency, version, endpoint, TLS or license change.
+- MainActivity rebinds current-service callbacks on resume and ignores obsolete callback deliveries. Destruction clears only its own connection/registration/singleton state. Architecture trace updated for this hop; no additional retry loop or permanent wake lock.
+- Red scaffold:19 lifecycle tests,7 expected assertion failures. Final focused green:48/48 cases after independent review added the registered-session guard. Full Free/Pro/Premium suites and lint running; not yet accepted. Device proof of this fixed candidate, long-idle/FCM/call acceptance and Codex Security review remain separate gates.
+- Source candidate is not a signed release and does not update installed1.0.51. Codex owns review/integration; source worker has no server/device/signing/provider access. No server restart, app data reset, reinstall, payment or activation performed. Financial coordination is handled separately by the VLABS operator.
+
+## 2026-11-16 06:57 UTC SC-PLAY-DE-METADATA-20261116 German Play metadata -> Review
+
+- **Branch:** `agent/codex/SC-PLAY-DE-METADATA-20261116`
+- **Base:** `42b336da8c18eb7f0a12bb3e6dc3cc4c834c6781`.
+- **Changed:** Three German Play listing text files mirror the accepted English
+  meaning; `SecureCall` and all three public URLs are unchanged. A narrow manual
+  metadata-transfer trace is appended to `docs/architecture/MAP.md`.
+- **Tests:** Local metadata validation covers the exact five-file allowlist, UTF-8,
+  Unicode character limits, URL parity and mandatory caveats; `git diff --check`.
+  English/German semantic review covers each feature and limitation.
+- **Risk:** Low, public text only; no new feature, offer or runtime claim.
+- **Ready for:** Parent review and final integration, then manual German listing
+  transfer in Play Console. Google review and public listing verification remain open.
+- No English, changelog, app/runtime, permission or screenshot changes. No delegation,
+  device/browser access, build, push, PR, merge or deployment performed.
+
+## 2026-11-16 09:19 UTC SC-SHOP-LINK-20261116 SecureCall shop links -> Review
+
+- **Issue:** [#226](https://github.com/NeaBouli/stealth/issues/226), supplied by parent.
+- **Branch:** `agent/codex/SC-SHOP-LINK-20261116`; base `668be288`.
+- **Hop:** Public SecureCall purchase links -> existing VLABS Security category.
+- **Changed:** 27 category-only URL substitutions across landing, download/help
+  mirrors and templates; source regressions and the narrow MAP trace updated.
+  Languages, prices, licence scope, Free/Play/direct downloads, availability and
+  IFR gates are unchanged. README/Markdown Wiki and unrelated links are untouched.
+- **Tests:** New category regression: original links 1 expected failure, corrected
+  links 1 PASS. `node --test website/js/*.test.cjs` -> 61/61 PASS. JS/template
+  syntax, landing JSON-LD, category-only byte comparison and `git diff --check` PASS.
+- **Risk:** Low, navigation-only; a corrected destination is not checkout acceptance.
+- **Ready for:** Parent source review, responsive browser checks and publication.
+  No visual PASS, checkout-readiness claim, commit, push, PR or deployment here.
+
+## 2026-11-16 [AUTHOR: CODEX] - SC-XML-PARSER-38 bounded source candidate
+
+- Branch `agent/codex/SC-XML-PARSER-20261116`, base `4c270ad1`, initially clean.
+- Public GHSA-474x-hrwr-fgx4 confirms affected `<=5.11.2`, first patched
+  `5.12.0`. Existing storage parent range `^5.3.4` accepts the patched parser.
+- Lockfile-only dependency change: fast-xml-parser 5.7.2 -> 5.12.0;
+  @nodable/entities 2.1.0 -> 3.1.0; fast-xml-builder 1.2.0 -> 1.3.1;
+  path-expression-matcher 1.5.0 -> 1.6.2; strnum 2.2.3 -> 2.5.1;
+  xml-naming 0.1.0 -> 0.3.0; added is-unsafe 2.0.3 and anynum 1.0.1.
+  Support changes are required by the patched package dependency closure.
+- PASS: exact official npm metadata/integrity fields, all changed dependency
+  edges and existing parser parent range, eight-record allowlist, 243 unchanged
+  existing records, byte-identical manifest, canonical JSON, preserved entry
+  order, single patched parser record, and `git diff --check`.
+- A strict global sort assertion failed on the pre-existing string_decoder /
+  string-width order; baseline-aware preservation check passed, no reorder made.
+- NOT_RUN: installation, npm resolution/audit, exploit reproduction, runtime
+  compatibility, application tests, lint, build and CI (host CPU HOLD; parent
+  owns checks after actual diff review). No claim of complete fix verification
+  or remote alert closure. Narrow MAP trace appended.
+- Left uncommitted. No provider/Google/payment request, inherited secrets,
+  additional agents, other worktree edits, PR, push, merge, deployment or
+  production action. Stop at bounded source result.

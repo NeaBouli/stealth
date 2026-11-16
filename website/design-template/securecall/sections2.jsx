@@ -63,7 +63,7 @@
             h("ul", { className: "price-feats" }, t.feats.map((f) => h("li", { key: f }, h("span", { className: "pf-tick" }), f))),
             i === 0
               ? h("a", { href: "#download", className: "btn btn-ghost btn-block" }, t.cta)
-              : h("a", { href: `https://vlabs.gr/${shopLanguage}/shop?focus=one-click-apps`, className: "btn btn-" + (best ? "solid" : "ghost") + " btn-block" }, t.cta));
+              : h("a", { href: `https://vlabs.gr/${shopLanguage}/shop?focus=security`, className: "btn btn-" + (best ? "solid" : "ghost") + " btn-block" }, t.cta));
         }))
     );
   }

@@ -16,7 +16,7 @@ Scope: only the static landing -> lifetime offer / IFR holder section hop
 ## 2. Trace
 
 1. `website/index.html::nav a[href="#pricing"|"#lifetime"]` -> `website/index.html::section#pricing` (fragment; `#lifetime` is a legacy anchor on its section head)
-2. `section#pricing::.pricing-grid` -> `https://vlabs.gr/en/shop?focus=one-click-apps` (Pro/Premium Lifetime buy links)
+2. `section#pricing::.pricing-grid` -> `https://vlabs.gr/en/shop?focus=security` (Pro/Premium Lifetime buy links)
 3. `section#pricing::.pricing-grid` Free card -> `website/index.html::section#download` (`#download`)
 4. `section#pricing::div#ifr[data-ifr-checkout]` -> `website/js/ifr-checkout.js::root` (DOM query; controls stay disabled)
 5. `website/js/main.js::revealObserver` -> `.reveal` cards (visibility only)
@@ -68,3 +68,120 @@ mindmap
 
 Module: Landing markup, hop 1-3, including fragment clearance in `website/css/landing.css`.
 Untouched: `website/js/ifr-checkout.js`, `website/js/main.js`, sister pages.
+
+---
+
+# Narrow trace: Android heartbeat -> reconnect (issue #211)
+
+Scope: only the existing staleness hop in
+`client_android/app/src/main/java/com/securecall/app/net/HeartbeatClient.kt`.
+`HeartbeatClient` owns all reconnect scheduling; `WebSocketService` only reacts.
+
+## Trace
+
+1. `startHeartbeat()::TimerTask.run` -> staleness check (`_lastSeen` older than 45s / 120s in call)
+2. staleness -> `Handler(mainLooper).post` -> `state = DISCONNECTED`, `ws = null`, `oldWs.cancel()`, `listener.onDisconnected()`
+3. same main-thread block -> `scheduleReconnect()` (guards: `isClosed`, `inRecoveryMode`, `reconnectPending`; backoff unchanged)
+4. `scheduleReconnect()::postDelayed` -> `connect()` -> `okClient.newWebSocket`
+
+## Gap resolved
+
+- Before #211 hop 3 relied on `onFailure` from `oldWs.cancel()`; because `ws` was cleared
+  first, the stale-socket guard (`webSocket !== ws`) dropped that callback and no reconnect was
+  scheduled. Hop 3 now calls the existing `scheduleReconnect()` directly; the cancelled socket's
+  `onFailure` stays ignored, so exactly one retry is queued.
+- Untouched: `onClosing` 1000 policy, 4000..4099 hard stop, `close()`, flap recovery, backoff,
+  TLS/pins, URLs. Guarded by `app/src/test/.../net/HeartbeatClientStaleReconnectTest.kt`.
+
+---
+
+# Narrow trace: Android policy stop -> warm resume (issue #220)
+
+Scope: `SecureCallApplication`, `WebSocketService`, a read-only lifecycle accessor
+in `HeartbeatClient`, and existing status wiring in `MainActivity`. No call,
+foreground-service API, preference, authentication or reconnect-policy redesign.
+
+| Module | Ownership | Hop |
+| --- | --- | --- |
+| Application lifecycle | Main-thread activity count, 15s stop and one-shot resume intent | activity stop -> policy stop -> service destruction -> foreground start |
+| Signaling service | Own client teardown and instance-scoped offline publication | onDestroy -> client close -> Application completion |
+| Heartbeat client | Read-only eligibility; all socket retries stay here | connected, not closed/recovering/retrying -> eligible snapshot before close |
+| Main activity | Current service's status callbacks and bounded existing binding retries | onResume/offline -> rebind -> current-state refresh |
+
+- Application remembers the exact service requested to stop, not an arbitrary absence.
+  It waits for that instance's destruction before starting via its existing
+  foreground-service startup path. A return before the delayed stop only cancels it.
+- Eligibility is sampled immediately before intentional client close. Only an
+  established CONNECTED client with no pending retry/recovery and no connection
+  attempt in the existing 10s flap window is resumable. A
+  disconnected/connecting client, manual close, auth400x or clean1000 is not.
+  Interrupted retry/backoff/recovery is deliberately not reconstructed in a new client.
+- Service destruction clears its own connection/registration state; only the current
+  instance clears the singleton and publishes offline. A replacement is untouched.
+- MainActivity detaches obsolete callbacks, checks instance ownership again on UI
+  delivery, and refreshes an already-connected replacement without reconnecting it.
+- Process-local only: cold startup/call startup, task removal, FCM, Android API35+
+  background policy and preference defaults are unchanged. Device proof is separate.
+
+---
+
+# Narrow trace: German Google Play listing metadata (2026-11-16)
+
+- Module: static Play listing metadata, not application runtime or direct-download offers.
+- Source: `fastlane/metadata/android/en-US/{title,short_description,full_description}.txt`.
+- Hop: accepted English listing meaning -> German
+  `fastlane/metadata/android/de-DE/{title,short_description,full_description}.txt`
+  -> manual transfer by the parent operator to the German Play Console listing.
+- Gap: German listing text was missing locally; the parent reports stale public
+  auto-translation and only an English Console locale. The new files supply an
+  explicit translation, not an automated uploader or a Console acceptance receipt.
+- Preserve the three public URLs, no Play-owned VPN, no WalletConnect/in-app IFR
+  unlock, and unavailable paid controls pending separate release gates.
+- Checks: exact five-file allowlist, strict UTF-8, Unicode character limits,
+  URL parity, mandatory caveats, semantic review and `git diff --check`.
+- Open: parent-owned Console language addition/manual transfer, Google review and
+  public German listing verification. No language-tag or changelog edit here.
+- Untouched: English metadata, all changelogs, app/runtime, permissions, screenshots,
+  distribution matrix, offers and diagram files. No build or deployment.
+
+---
+
+# Narrow trace: SecureCall purchase category links (issue #226)
+
+- Module: public landing purchase links and their download/help/template mirrors.
+- Hop: `website/index.html::section#pricing` and existing SecureCall purchase
+  references -> `https://vlabs.gr/{en|de|el}/shop?focus=security`.
+- Only the category query changes; language, prices, licence scope, download
+  destinations, Free/Play/direct distribution copy and IFR gates stay unchanged.
+- README and `docs/WIKI` contain no affected category URL and remain untouched;
+  the separate SecureChat/Chameleon FAQ purchase link is outside this task.
+- Regression: `website/js/product-truth.test.cjs` checks all 26 static SecureCall
+  purchase targets; existing template tests exercise both paid CTAs in en/de/el.
+- Source suite: `node --test website/js/*.test.cjs` -> 61/61 PASS; the new category
+  regression fails on the original links and passes after the URL-only correction.
+- Open: parent-owned responsive browser checks and publication. No visual or
+  checkout-readiness acceptance is asserted; application/runtime and diagrams
+  remain unchanged.
+
+---
+
+# Narrow trace: signaling XML dependency lock (alert #38, 2026-11-16)
+
+- Module: signaling optional XML dependency closure, not application code.
+- Hop: `backend/signaling/package.json::firebase-admin` -> locked
+  `firebase-admin@13.10.0::optionalDependencies[@google-cloud/storage]` ->
+  `@google-cloud/storage@7.19.0::dependencies[fast-xml-parser]` (`^5.3.4`).
+- The existing range permits `fast-xml-parser@5.12.0`, the first patched
+  version for GHSA-474x-hrwr-fgx4 (affected `<=5.11.2`). The advisory concerns
+  quadratic CPU consumption with non-default `stopNodes`; application-level
+  exposure was not traced or tested in this lockfile-only task.
+- Only `backend/signaling/package-lock.json` changes: parser 5.7.2 -> 5.12.0,
+  five required XML support-package upgrades, and two required new support
+  packages. All eight records match exact official npm version metadata.
+- Direct policy, overrides, scripts, existing parent packages and every other
+  lockfile record are preserved. No override, source or runtime-path change.
+- Source checks: JSON/metadata/dependency-range/preservation assertions and
+  `git diff --check` PASS. Full install, reproducer, tests, lint, build and CI
+  NOT_RUN under host CPU HOLD; parent owns subsequent diff review and checks.
+- This is an uncommitted source candidate, not runtime compatibility, alert
+  closure or release acceptance. Diagram files remain unchanged.

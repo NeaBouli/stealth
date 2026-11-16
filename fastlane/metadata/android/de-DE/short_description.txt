@@ -1,0 +1,1 @@
+Ende-zu-Ende-verschlüsselte 1:1-Sprachanrufe über eine SecureID.
