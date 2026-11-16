@@ -1,4 +1,4 @@
-name: TEMP Rust AEAD CHECKPOINT - NOT ADMITTED - NEVER MERGE
+name: TEMP Node authenticated-call - PARENT QUALIFICATION PENDING - NEVER MERGE
 
 on:
   workflow_dispatch:
@@ -24,13 +24,13 @@ permissions:
   contents: write # Trusted transfer to the owned temporary DRAFT only.
 
 concurrency:
-  group: temp-sc-stx24-rust-hosted-20261117
+  group: temp-sc-stx24-node-hosted-20261117
   cancel-in-progress: false
 
 jobs:
-  rust-aead:
-    name: TEMP isolated offline Rust AEAD only
-    if: github.repository == 'NeaBouli/stealth' && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-stx24-rust-hosted-20261117' && inputs.controller_sha == github.sha
+  node-authenticated-call:
+    name: TEMP isolated offline Node authenticated-call only
+    if: github.repository == 'NeaBouli/stealth' && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-stx24-node-hosted-20261117' && inputs.controller_sha == github.sha
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

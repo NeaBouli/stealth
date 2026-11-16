@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Temporary single-run private Rust qualification; never merge this controller."""
+"""Temporary single-script private Node qualification; never merge this controller."""
 
 import argparse
+import base64
 import hashlib
 import io
 import json
@@ -17,29 +18,50 @@ import sys
 import tarfile
 import tempfile
 import time
-import tomllib
 
 SOURCE = "5222690fb51cc49b68d25199c9d87a7a8ed0c9a0"
 TREE = "fdf7e6cd495cf19db48f63dfa29e135daf212e97"
-REGISTRY = "index.crates.io-1949cf8c6b5b557f"
 MAX_BUNDLE = 64 * 1024 * 1024
+BASE = "backend/signaling/"
 SOURCE_HASHES = {
-    "core_crypto/Cargo.lock": "d32eb2f9d43c579de6da02e96eac3d358dfc6d98172f95ee033636e4ce56c67f",
-    "core_crypto/Cargo.toml": "b37d8bca590f49f1c2805af659aaaf56807aa86021c0a66a40b9d7b41573a40c",
-    "core_crypto/src/aead/mod.rs": "b07c2d0593d06fbc8ff855524f57d07d5a39bba679c48b77b4f492b703cf8050",
-    "core_crypto/src/ffi/mod.rs": "49cfb166023b201b481cadb8a4d5850b6b7e167ea085850a580c7652b9cc9a0e",
-    "core_crypto/src/identity/mod.rs": "1febf37e94cd96561ef6a871210ea09d76e95eecfe5cfe49910d8e63d72ee0a7",
-    "core_crypto/src/lib.rs": "c5c4d6a13d50377ef6a6427bc4e5f44a3d63e610bdf53dafaa085a6350aff167",
-    "core_crypto/src/session/mod.rs": "e98fa0207beea6ec0be2f13eba327737ad396d545dea96ea94b514f93864471a",
-    "core_crypto/src/utils/mod.rs": "817b404ece9c73dfde75ceaa30eb64a5a55c430fc41ccece8a47438d2dbf8898",
-}
-# Exact absent archives, not a broad platform-name exclusion.
-OMITTED = {
-    ("windows-sys", "0.45.0"), ("windows-targets", "0.42.2"),
-    *((name, "0.42.2") for name in (
-        "windows_aarch64_gnullvm", "windows_aarch64_msvc", "windows_i686_gnu",
-        "windows_i686_msvc", "windows_x86_64_gnu", "windows_x86_64_gnullvm",
-        "windows_x86_64_msvc")),
+    BASE + "package.json": "9c589bdde1d06ed10bbdd36f0a96901f9ac5540a7e57129fd940e77836538ac4",
+    BASE + "package-lock.json": "6751953df2cb47fad21d4665df45639b35f9303bf38039da314afa5e8e8334cf",
+    BASE + "src/__tests__/authenticated_call.test.js": "9438be0cd9e5857e1931b6e7c14740a09d0eca2a4f89f6525498441d66c93138",
+    BASE + "src/context.js": "ac6fa9a241ff91fe2ae85ada8296124df77864189f9c10026393e54acc24a60a",
+    BASE + "src/state.js": "4fff97ddb7dbf1d1485ecd78844be49f64b95742b47e99457bfa5b18981d71de",
+    BASE + "src/data_dir.js": "228648d2769fdd4a341bc8dfa863bcde694005b10319b7ca08a8bc5eaf5d6023",
+    BASE + "src/utils/phone.js": "cbeea2117e4fc4d1de938c1068c1237b85bf552122de904b6fa7beb79eeb9a1f",
+    BASE + "src/utils/sanitize.js": "8cd51d6f4fb82e4daf49280744f219ad8cec10694b8e405f426871f12fa286ca",
+    BASE + "src/utils/json_store.js": "599f9482eb1fe8a027c93b7dbe1eea2928dcac4d5b2a7467780aec2d2798721e",
+    BASE + "src/utils/network_key.js": "69a98c7a239099a61e1a872bf413d74d6a117daa2b7568667961c2c184d2aea3",
+    BASE + "src/middleware/ip.js": "c261f86f82c33c870b6df1095c75c40102f9f0339c4de80420de2b66ed7a1144",
+    BASE + "src/middleware/cors.js": "4f31153c70e539eaedcdd99bfa2f1d7f916ee07750420ac1260251cc0aa71f4d",
+    BASE + "src/middleware/admin.js": "e1612d99addfd41a65a3c893517d6cebffc1dc624a24ea194a44e3f7a381edc2",
+    BASE + "src/services/identity_registry.js": "6ee2a7ded7137643869bd995ee3a0fc03859658b065af2c64fb315482d56659d",
+    BASE + "src/services/fcm_store.js": "81153615020a8b18cabb01c8e5d03bc8f63616f3642c7371df550c72adc3dd33",
+    BASE + "src/services/activation_store.js": "d138d93ce41b67992ae533c77d7169bc766b62d7030deeed3b216a790512494a",
+    BASE + "src/services/wallet_store.js": "323ac8571f07182152258081824c304b58104c1a7bcdcdf383248bf7d6c69374",
+    BASE + "src/services/ifr.js": "ae75bba7c1242a854b4beca81b0038b5e46f16b5fd17bf5575556449f6feb681",
+    BASE + "src/security/identity_protocol.js": "4e8692d0621c6cd673a9b7939cdbd66e4365df7d062cefb47a7b942b8f7167bb",
+    BASE + "src/security/pkd_registration_limiter.js": "d45ae78cdf7ef65d639cb54f75e298a35b46e2d81450ad0866247df02e587831",
+    BASE + "src/security/log_ip.js": "c18657ec1d00f53de463f7b3491d3125408fb201c5ea2725dc9895dae852763e",
+    BASE + "src/routes/health.js": "f4f1b74e0df89fa3426baad9d1c12a2bcf24b7a039ab978e5807ecd88c3bc920",
+    BASE + "src/routes/pkd.js": "8fef2f65b448674e9f0abab986c9bc195667f1df99174d069040e384eea72e6c",
+    BASE + "src/routes/licenses.js": "a6f716bb9be1229bd1bd60c7b07f4f1a587cefccd9d94ca38608accdece74012",
+    BASE + "src/ws/index.js": "65db233c5f8012b2def53f1e28ee8addd232cf460240d62d0722c664946aa7db",
+    BASE + "src/ws/handlers/index.js": "195f99b902975261be5c614877d962f117d9dbe11441a71395f056cebbbe824c",
+    BASE + "src/ws/handlers/register.js": "41cda353459d9a6d27ca9ef7bc61bb589d7a7e13e631f43ce0200875de0786a6",
+    BASE + "src/ws/handlers/call.js": "62f58c13aad31f63a00d715d2809f6b5ba51e19e9fd4a3294f8140ea29fab36f",
+    BASE + "src/ws/handlers/webrtc.js": "d7df9377022e26b38a14d4e7aad72a6b2cabd17d52f7223fba313aebdf743ede",
+    BASE + "src/ws/handlers/phone.js": "d8bd9346fd420393de625eca64c318c501a1bd50a7724e4fc672410f1a74afe0",
+    BASE + "src/ws/handlers/subscription.js": "cd2685212ee7a3e99342266875ed5df6c3eb39ee77da5f6a26aa2d1ea5687ea6",
+    BASE + "src/ws/handlers/contact.js": "6e911bf3105fc17f6e3113bcc337dec53da71e0b0725e9eea0df7407206dea43",
+    BASE + "src/ws/handlers/tester_license.js": "76a40aac7dc5ad5342ece51f41f510af9b95f0ddd4c175e2d6a2901a8ad03726",
+    BASE + "src/payments/entitlement_tokens.js": "1bd10d7a0dbf52fc02d028e3d2cbd7f6a8be2816f668c79c83805224a520a2bf",
+    BASE + "src/payments/vlabs_fulfillment.js": "ee5bdb7f3fd360b5171bd0382378035fbc0dc043aeb4334d8ac8b882a4d659d8",
+    BASE + "src/payments/stripe_handler.js": "c1c40f0212b6ec80f7c49e0b5a3e8ae9d175a41ce9ee6fbd049f5d59d340fade",
+    BASE + "src/payments/sold_codes.js": "64ebad8f2d69707a4218b2b87fa0f93b02549b73f46dc2830fa096b08dedeee9",
+    BASE + "src/payments/email_handler.js": "50ffd5b2bf0faad7ad70202ec95780992a3ece734ad1e29c1ad56d06863dc58f",
 }
 ENV = {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "HOME": "/nonexistent",
        "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null",
@@ -69,30 +91,84 @@ def read_public(path: Path) -> bytes:
     return data
 
 
-def index_path(name: str) -> str:
-    name = name.lower()
-    if len(name) < 3:
-        return f"{len(name)}/{name}"
-    return f"3/{name[0]}/{name}" if len(name) == 3 else f"{name[:2]}/{name[2:4]}/{name}"
+def locked_packages(lock: bytes) -> dict:
+    packages = json.loads(lock)["packages"]
+    selected: dict[str, dict] = {}
+    pending = ["node_modules/ws", "node_modules/ethers"]
+    while pending:
+        path = pending.pop()
+        if path in selected:
+            continue
+        package = packages[path]
+        require(re.fullmatch(r"[0-9A-Za-z.+-]+", package["version"]) is not None
+                and package["resolved"].startswith("https://registry.npmjs.org/")
+                and not package.get("link"))
+        integrity = package["integrity"]
+        require(integrity.startswith("sha512-"))
+        require(len(base64.b64decode(integrity[7:], validate=True)) == 64)
+        selected[path] = package
+        for name in package.get("dependencies", {}):
+            require(re.fullmatch(r"(?:@[a-z0-9._-]+/)?[a-z0-9._-]+", name) is not None)
+            parent = Path(path)
+            while True:
+                candidate = str(parent / "node_modules" / name)
+                if candidate in packages:
+                    pending.append(candidate)
+                    break
+                require(parent != Path("."))
+                parent = parent.parent
+                if parent.name == "node_modules":
+                    parent = parent.parent
+    require(len(selected) <= 20)
+    return selected
 
 
-def sparse_records(data: bytes) -> dict:
-    require(data.startswith(b"\x03\x02\x00\x00\x00"))
-    fields = data[5:].split(b"\0")
-    require(len(fields) % 2 == 0 and fields[-1] == b"")
-    records = {}
-    for i in range(1, len(fields) - 1, 2):
-        record = json.loads(fields[i + 1])
-        version = fields[i].decode()
-        require(record["vers"] == version and version not in records)
-        records[version] = record
-    return records
+def runtime_file(path: Path) -> bool:
+    excluded = {"bin", ".bin", "test", "tests", "__tests__", "scripts", "docs",
+                "examples", "misc", "node_modules", "config", "configs",
+                "secrets", "customer", "customers", "finance"}
+    return (not any(p.startswith(".") or p.lower() in excluded for p in path.parts)
+            and ".config." not in path.name.lower()
+            and (path.suffix in {".js", ".cjs", ".mjs"}
+                 or path.name == "package.json"
+                 or re.fullmatch(r"LICENSE(?:[.-][A-Za-z0-9]+)?", path.name, re.I) is not None))
+
+
+def dependency_files(archive: bytes, package: dict, name: str) -> dict[str, bytes]:
+    files: dict[str, bytes] = {}
+    seen: set[str] = set()
+    expanded = 0
+    with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as tar:
+        for member in tar:
+            path = Path(member.name)
+            require(not path.is_absolute() and ".." not in path.parts
+                    and len(path.parts) >= 1
+                    and path.parts[0] == ("node" if name == "@types/node" else "package")
+                    and (member.isfile() or member.isdir())
+                    and member.name not in seen and len(seen) < 5000)
+            seen.add(member.name)
+            expanded += member.size
+            require(0 <= member.size <= 16 * 1024**2 and expanded <= MAX_BUNDLE)
+            if len(path.parts) == 1:
+                require(member.isdir() and member.size == 0)
+                continue
+            relative = Path(*path.parts[1:])
+            if not member.isfile() or not runtime_file(relative):
+                continue
+            stream = tar.extractfile(member)
+            require(stream is not None)
+            data = stream.read(member.size + 1)
+            require(len(data) == member.size and str(relative) not in files)
+            files[str(relative)] = data
+    metadata = json.loads(files["package.json"])
+    require(metadata["name"] == name and metadata["version"] == package["version"])
+    return files
 
 
 def pack(args: argparse.Namespace) -> None:
     repo = Path(args.repo).resolve(strict=True)
     registry = Path(args.registry).absolute()
-    require(registry == Path.home() / ".cargo/registry")
+    require(registry == Path("/Users/gio/.npm/_cacache"))
     git = shutil.which("git")
     require(git is not None)
 
@@ -102,8 +178,7 @@ def pack(args: argparse.Namespace) -> None:
                               check=True, timeout=15).stdout
 
     require(git_read("cat-file", "commit", SOURCE).splitlines()[0] == f"tree {TREE}".encode())
-    tree = git_read("ls-tree", "-rz", SOURCE, "core_crypto/Cargo.toml",
-                    "core_crypto/Cargo.lock", "core_crypto/src")
+    tree = git_read("ls-tree", "-rz", SOURCE, *sorted(SOURCE_HASHES))
     files = {}
     for entry in tree.rstrip(b"\0").split(b"\0"):
         metadata, path_bytes = entry.split(b"\t")
@@ -116,42 +191,24 @@ def pack(args: argparse.Namespace) -> None:
         require(len(data) == size and digest(data) == SOURCE_HASHES[path])
         files[path] = data
     require(set(files) == set(SOURCE_HASHES) and sum(map(len, files.values())) <= 5 * 1024 * 1024)
-    packages = tomllib.loads(files["core_crypto/Cargo.lock"].decode())["package"]
-    packages = [p for p in packages if "source" in p]
-    require(len(packages) == 75 and all(
-        p["source"] == "registry+https://github.com/rust-lang/crates.io-index"
-        and re.fullmatch(r"[a-zA-Z0-9_-]+", p["name"])
-        and re.fullmatch(r"[a-zA-Z0-9.+-]+", p["version"])
-        and re.fullmatch(r"[0-9a-f]{64}", p["checksum"]) for p in packages))
-    indices = {}
-    archives = 0
-    for package in packages:
-        name, version = package["name"], package["version"]
-        if (name, version) not in OMITTED:
-            path = f"cache/{REGISTRY}/{name}-{version}.crate"
-            data = read_public(registry / path)
-            require(digest(data) == package["checksum"])
-            files["registry/" + path] = data
-            archives += 1
-        indices.setdefault(name, []).append(package)
-    require(archives == 66 and len(indices) == 73)
-    for name, expected in sorted(indices.items()):
-        path = f"index/{REGISTRY}/.cache/{index_path(name)}"
-        records = sparse_records(read_public(registry / path))
-        data = bytearray(b'\x03\x02\x00\x00\x00etag: "sc-stx24-offline"\x00')
-        for package in sorted(expected, key=lambda p: p["version"]):
-            record = records[package["version"]]
-            require(record["cksum"] == package["checksum"] and record["name"] == name)
-            data.extend(package["version"].encode() + b"\0"
-                        + canonical(record).rstrip(b"\n") + b"\0")
-        files["registry/" + path] = bytes(data)
-    files[f"registry/index/{REGISTRY}/config.json"] = (
-        b'{"api":"https://crates.io","dl":"https://static.crates.io/crates"}\n')
-    manifest = {"format": 1, "source": SOURCE, "tree": TREE,
+    packages = locked_packages(files[BASE + "package-lock.json"])
+    for path, package in sorted(packages.items()):
+        checksum = base64.b64decode(package["integrity"][7:], validate=True).hex()
+        cached = registry / "content-v2/sha512" / checksum[:2] / checksum[2:4] / checksum[4:]
+        if not cached.is_file():
+            print(f"PACK missing_cache={path}@{package['version']}", file=sys.stderr)
+            raise ValueError("Exact locked cache absent")
+        data = read_public(cached)
+        require(hashlib.sha512(data).hexdigest() == checksum)
+        name = path.rsplit("node_modules/", 1)[1]
+        for relative, content in dependency_files(data, package, name).items():
+            files[BASE + path + "/" + relative] = content
+        require(len(files) <= 2000 and sum(map(len, files.values())) <= MAX_BUNDLE)
+    manifest = {"format": 2, "source": SOURCE, "tree": TREE,
                 "files": {p: digest(data) for p, data in sorted(files.items())},
-                "lock_checksums": {f"{p['name']}@{p['version']}": p["checksum"] for p in packages}}
+                "lock_integrities": {p: v["integrity"] for p, v in sorted(packages.items())}}
     files["manifest.json"] = canonical(manifest)
-    require(len(files) <= 1000 and sum(map(len, files.values())) + len(files) * 1024 + 10240 <= MAX_BUNDLE)
+    require(len(files) <= 2000 and sum(map(len, files.values())) + len(files) * 1024 + 10240 <= MAX_BUNDLE)
     output = Path(args.output).absolute()
     # Caller supplies an MCP-prepared private directory outside the checkout.
     require(output.parent.resolve(strict=True) == output.parent
@@ -169,7 +226,7 @@ def pack(args: argparse.Namespace) -> None:
                     member.uid = member.gid = member.mtime = 0
                     tar.addfile(member, io.BytesIO(data))
         require(output.stat().st_size <= MAX_BUNDLE)
-        print(f"PACK source={SOURCE} tree={TREE} archives=66 index_versions=75")
+        print(f"PACK source={SOURCE} tree={TREE} packages={len(packages)} scripts=1")
         with output.open("rb") as stream:
             print("PACK bundle_sha256=" + hashlib.file_digest(stream, "sha256").hexdigest())
     except Exception:
@@ -182,16 +239,8 @@ def pack(args: argparse.Namespace) -> None:
 
 
 REPO = "NeaBouli/stealth"
-REF = "refs/heads/temp/sc-stx24-rust-hosted-20261117"
+REF = "refs/heads/temp/sc-stx24-node-hosted-20261117"
 LABEL = "sc-stx24-qualification"
-MEDIA_CASES = (
-    "two_direction_roundtrip", "rejects_reflection_and_unknown_role",
-    "rejects_duplicate_old_and_accepts_in_window_reorder",
-    "forged_high_sequence_cannot_poison_window",
-    "rejects_wrong_version_type_context_key_and_tag",
-    "rejects_truncation_oversize_and_sequence_overflow",
-    "replay_bitmap_bit63_roundtrip", "encoder_max_packet_boundary",
-)
 
 
 def host_command(arguments: list[str], *, token: bool = False,
@@ -233,7 +282,7 @@ def extract_input(bundle: bytes, root: Path) -> None:
     with tarfile.open(fileobj=io.BytesIO(bundle), mode="r:") as archive:
         for member in archive:
             path = Path(member.name)
-            require(member.isfile() and len(files) < 1000
+            require(member.isfile() and len(files) < 2000
                     and not path.is_absolute() and ".." not in path.parts
                     and str(path) == member.name and member.name not in files
                     and 0 <= member.size <= 16 * 1024 * 1024)
@@ -242,24 +291,24 @@ def extract_input(bundle: bytes, root: Path) -> None:
             data = stream.read(member.size + 1)
             require(len(data) == member.size)
             files[member.name] = data
+            require(sum(map(len, files.values())) <= MAX_BUNDLE)
     manifest = json.loads(files.pop("manifest.json"))
-    require(manifest["format"] == 1 and manifest["source"] == SOURCE
+    require(manifest["format"] == 2 and manifest["source"] == SOURCE
             and manifest["tree"] == TREE
             and manifest["files"] == {p: digest(v) for p, v in files.items()})
-    require({p: digest(v) for p, v in files.items() if p.startswith("core_crypto/")}
+    require({p: digest(files[p]) for p in SOURCE_HASHES}
             == SOURCE_HASHES)
-    packages = [p for p in tomllib.loads(files["core_crypto/Cargo.lock"].decode())["package"]
-                if "source" in p]
-    checksums = {f"{p['name']}@{p['version']}": p["checksum"] for p in packages}
-    require(len(packages) == 75 and manifest["lock_checksums"] == checksums)
-    allowed = set(SOURCE_HASHES) | {f"registry/index/{REGISTRY}/config.json"}
-    for package in packages:
-        allowed.add(f"registry/index/{REGISTRY}/.cache/{index_path(package['name'])}")
-        if (package["name"], package["version"]) not in OMITTED:
-            path = f"registry/cache/{REGISTRY}/{package['name']}-{package['version']}.crate"
-            allowed.add(path)
-            require(digest(files[path]) == package["checksum"])
-    require(set(files) == allowed)
+    packages = locked_packages(files[BASE + "package-lock.json"])
+    require(manifest["lock_integrities"] == {p: v["integrity"] for p, v in packages.items()})
+    for path in set(files) - set(SOURCE_HASHES):
+        matches = [p for p in packages if path.startswith(BASE + p + "/")]
+        require(bool(matches))
+        package_path = max(matches, key=len)
+        require(runtime_file(Path(path[len(BASE + package_path + "/"):])))
+    for path, package in packages.items():
+        metadata = json.loads(files[BASE + path + "/package.json"])
+        require(metadata["name"] == path.rsplit("node_modules/", 1)[1]
+                and metadata["version"] == package["version"])
     for path, data in files.items():
         target = root / path
         target.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
@@ -286,21 +335,26 @@ def hosted() -> None:
     processes = host_command(["ps", "-e", "-o", "comm="]).decode().splitlines()
     require(not {"cargo", "rustc", "gradle", "java"}.intersection(p.strip() for p in processes))
     print("phase=resources accepted=true", flush=True)
-    toolchains = Path(os.environ.get("RUSTUP_HOME", str(Path.home() / ".rustup"))) / "toolchains"
-    choices = sorted(p.resolve() for p in toolchains.glob("stable-*-unknown-linux-gnu")
-                     if (p / "bin/rustc").is_file() and (p / "bin/cargo").is_file())
-    require(len(choices) == 1)
-    toolchain = choices[0]
-    linker = Path(shutil.which("cc") or "/nonexistent").resolve(strict=True)
-    require(str(linker).startswith("/usr/") and linker.is_file())
+    toolcache = Path("/opt/hostedtoolcache/node")
+    choices = sorted((p for p in toolcache.glob("22.*/x64")
+                      if re.fullmatch(r"22\.[0-9]+\.[0-9]+", p.parent.name)
+                      and (p / "bin/node").is_file()
+                      and p == p.resolve(strict=True)),
+                     key=lambda p: tuple(map(int, p.parent.name.split("."))))
+    require(bool(choices))
+    toolchain = choices[-1]
+    version = subprocess.run([str(toolchain / "bin/node"), "--version"], env={},
+                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                             check=True, timeout=15).stdout.decode().strip()
+    require(version == "v" + toolchain.parent.name)
     print("phase=toolchain accepted=true", flush=True)
     tag, asset, expected = (os.environ[key] for key in (
         "SC_RELEASE_TAG", "SC_ASSET", "SC_BUNDLE_SHA256"))
-    require(re.fullmatch(r"sc-stx24-rust-input-[a-z0-9-]{1,50}", tag) is not None
-            and asset == "sc-stx24-rust-input.tar"
+    require(tag == "sc-stx24-node-input-20261116-2315"
+            and asset == "sc-stx24-node-input.tar"
             and re.fullmatch(r"[0-9a-f]{64}", expected) is not None)
     # The tag endpoint only resolves published releases; this owned input stays draft.
-    release = gh_json(f"repos/{REPO}/releases/447713710")
+    release = gh_json(f"repos/{REPO}/releases/447731929")
     require(release["draft"] is True and release["tag_name"] == tag)
     matches = [item for item in release["assets"] if item["name"] == asset]
     require(len(matches) == 1 and 0 < matches[0]["size"] <= MAX_BUNDLE)
@@ -326,36 +380,32 @@ def hosted() -> None:
         image = name + ":empty"
         empty = io.BytesIO()
         with tarfile.open(fileobj=empty, mode="w", format=tarfile.USTAR_FORMAT) as archive:
-            for path in ("usr", "bin", "lib", "lib64", "etc", "source", "cache", "toolchain", "scratch"):
+            for path in ("usr", "bin", "lib", "lib64", "etc", "source", "toolchain", "scratch"):
                 member = tarfile.TarInfo(path)
                 member.type, member.mode = tarfile.DIRTYPE, 0o755
                 archive.addfile(member)
         image_id = host_command(["docker", "import", "--change", f"LABEL {LABEL}={name}",
                                  "-", image], stdin=empty.getvalue()).decode().strip()
         try:
-            mounts = [(str(root / "core_crypto"), "/source"),
-                      (str(root / "registry"), "/cache"), (str(toolchain), "/toolchain")]
+            mounts = [(str(root / "backend"), "/source/backend"),
+                      (str(toolchain), "/toolchain")]
             mounts += [(str(Path(path).resolve(strict=True)), path)
                        for path in ("/usr", "/bin", "/lib", "/lib64")]
             if Path("/etc/ld.so.cache").is_file():
                 mounts.append(("/etc/ld.so.cache", "/etc/ld.so.cache"))
             environment = {"PATH": "/toolchain/bin:/usr/bin:/bin", "HOME": "/scratch/home",
-                           "RUSTC": "/toolchain/bin/rustc", "CARGO_HOME": "/scratch/cargo",
-                           "TMPDIR": "/scratch/tmp", "CARGO_TARGET_DIR": "/scratch/target",
-                           "CARGO_NET_OFFLINE": "true", "CARGO_BUILD_JOBS": "1",
-                           "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER": str(linker),
-                           "CC": str(linker),
-                           "CARGO_INCREMENTAL": "0", "LC_ALL": "C"}
+                           "TMPDIR": "/scratch/tmp", "DATA_DIR": "/scratch/data",
+                           "STRIPE_PROCESSED_FILE": "/scratch/data/stripe-processed.json",
+                           "LC_ALL": "C"}
             script = ("test \"$(cat /sys/fs/cgroup/memory.max)\" = 2147483648; "
                       "test \"$(cat /sys/fs/cgroup/memory.swap.max)\" = 0; "
                       "test \"$(cat /sys/fs/cgroup/pids.max)\" = 64; "
                       "set -- $(cat /sys/fs/cgroup/cpu.max); test \"$1\" = \"$2\"; "
-                      "echo SC_CAPS_OK; mkdir -p /scratch/home /scratch/cargo /scratch/tmp; "
-                      "cp -R /cache /scratch/cargo/registry; "
-                      "exec cargo test --manifest-path /source/Cargo.toml --locked --offline "
-                      "--lib aead -- --test-threads=1")
+                      "echo SC_CAPS_OK; mkdir -p /scratch/home /scratch/data /scratch/tmp; "
+                      "exec node /source/backend/signaling/src/__tests__/authenticated_call.test.js")
             command = ["docker", "create", "--name", name, "--label", f"{LABEL}={name}",
                        "--network", "none", "--read-only", "--user", "65534:65534",
+                       "--workdir", "/scratch",
                        "--cap-drop", "ALL", "--security-opt", "no-new-privileges=true",
                        "--memory", "2g", "--memory-swap", "2g", "--cpus", "1",
                        "--pids-limit", "64", "--cgroupns", "private", "--ipc", "none",
@@ -372,6 +422,7 @@ def hosted() -> None:
             info = json.loads(host_command(["docker", "inspect", name]))[0]
             config, limits = info["Config"], info["HostConfig"]
             require(info["Image"] == image_id and config["User"] == "65534:65534"
+                    and config["WorkingDir"] == "/scratch"
                     and config["Cmd"] == target and len(config["Env"]) == len(environment)
                     and set(config["Env"]) == {f"{k}={v}" for k, v in environment.items()}
                     and limits["ReadonlyRootfs"] is True and limits["NetworkMode"] == "none"
@@ -406,6 +457,7 @@ def hosted() -> None:
                         data.extend(block)
                         require(len(data) <= 256 * 1024)
                 code = process.wait(timeout=10)
+                state = json.loads(host_command(["docker", "inspect", name]))[0]["State"]
             finally:
                 selector.close()
                 cleanup()
@@ -413,16 +465,18 @@ def hosted() -> None:
                     process.kill()
                     process.wait(timeout=10)
             text = data.decode("utf8", errors="replace")
-            accepted = code == 0 and "SC_CAPS_OK\n" in text and all(
-                f"test aead::tests::media_v3_{case} ... ok" in text for case in MEDIA_CASES)
-            accepted = accepted and re.search(
-                r"test result: ok\. 16 passed; 0 failed; 0 ignored;", text) is not None
-            diagnostic = root / "rust-aead.txt"
+            lines = text.splitlines()
+            marker = "authenticated_call.test.js: PASS"
+            accepted = (code == 0 and state["ExitCode"] == 0
+                        and state["Running"] is False and state["OOMKilled"] is False
+                        and "SC_CAPS_OK" in lines
+                        and bool(lines) and lines[-1] == marker and lines.count(marker) == 1)
+            diagnostic = root / "node-authenticated-call.txt"
             diagnostic.write_bytes(bytes(data))
             diagnostic.chmod(0o600)
             require(gh_json(f"repos/{REPO}/releases/{release['id']}")["draft"] is True)
             host_command(["gh", "release", "upload", tag, str(diagnostic), "--repo", REPO], token=True)
-            print(f"phase=result source={SOURCE} passed={16 if accepted else 0} accepted={str(accepted).lower()}")
+            print(f"phase=result source={SOURCE} scripts=1 accepted={str(accepted).lower()}")
             require(accepted)
         finally:
             cleanup()

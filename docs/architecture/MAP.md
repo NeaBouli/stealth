@@ -315,3 +315,23 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   AEAD cases once, all8new media cases PASS. Exact owned container/image/DRAFT/
   remote ref cleaned; component receipt retained privately. NEVER MERGE this
   controller; no Android/JNI/call/full-release acceptance is implied.
+
+## Temporary Node Adapter (SC-STX24-NODE-QUALIFICATION-20261117)
+
+- Module: existing temporary trusted qualification controller; NEVER MERGE.
+- Hop 1: parent -> `sc-media-qualification.py::pack`: exact private 5222690f
+  signaling blobs/package/lock -> ws + ethers locked dependency closure ->
+  exact integrity-selected npm content-v2 tarballs -> bounded deterministic tar.
+- Hop 2: `android-instrumentation.yml::node-authenticated-call` -> existing
+  host admission -> owned still-DRAFT release ID 447731929 -> verified input.
+- Hop 3: existing empty-image CREATE/INSPECT/cgroup gates -> readonly cached
+  Node22 toolchain/source/dependencies -> scratch-only state -> exactly
+  `node /source/backend/signaling/src/__tests__/authenticated_call.test.js`.
+- Hop 4: exit zero + exact final PASS line -> one-script boolean; bounded
+  private diagnostic `node-authenticated-call.txt` to the same owned DRAFT.
+- Existing no-network/nonroot/cgroup/ulimit/wall/output/owned cleanup profile
+  is reused, not redesigned. No npm lifecycle, install, download or new mode.
+- Gap: parent must review, PACK and execute once. Source/static checks do not
+  establish authenticated-call, real transport, FCM, audio or release acceptance.
+- Diagrams unchanged for this narrow adapter. Frozen Rust receipt, application,
+  tests and all parent coordination/ops files remain untouched.
