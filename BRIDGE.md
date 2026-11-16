@@ -6171,3 +6171,19 @@ Open next:
   remain open; current CPU admission failed before starting any Android task.
 - No device/test installation, signing, production release or commerce activation.
   Financial coordination is handled separately by the VLABS operator.
+
+## 2026-11-16 09:19 UTC SC-SHOP-LINK-20261116 SecureCall shop links -> Review
+
+- **Issue:** [#226](https://github.com/NeaBouli/stealth/issues/226), supplied by parent.
+- **Branch:** `agent/codex/SC-SHOP-LINK-20261116`; base `668be288`.
+- **Hop:** Public SecureCall purchase links -> existing VLABS Security category.
+- **Changed:** 27 category-only URL substitutions across landing, download/help
+  mirrors and templates; source regressions and the narrow MAP trace updated.
+  Languages, prices, licence scope, Free/Play/direct downloads, availability and
+  IFR gates are unchanged. README/Markdown Wiki and unrelated links are untouched.
+- **Tests:** New category regression: original links 1 expected failure, corrected
+  links 1 PASS. `node --test website/js/*.test.cjs` -> 61/61 PASS. JS/template
+  syntax, landing JSON-LD, category-only byte comparison and `git diff --check` PASS.
+- **Risk:** Low, navigation-only; a corrected destination is not checkout acceptance.
+- **Ready for:** Parent source review, responsive browser checks and publication.
+  No visual PASS, checkout-readiness claim, commit, push, PR or deployment here.

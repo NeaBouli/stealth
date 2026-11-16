@@ -124,14 +124,14 @@ test("landing and pricing record the same direct-channel prices", () => {
     assert.ok(pricing.includes(amount), `pricing is missing ${amount}`);
   }
 
-  assert.match(landing, /https:\/\/vlabs\.gr\/en\/shop\?focus=one-click-apps/);
+  assert.match(landing, /https:\/\/vlabs\.gr\/en\/shop\?focus=security/);
   assert.match(landing, /activation code arrives by email/);
   assert.doesNotMatch(landing, /Sales (?:are not open yet|not yet available|are closed)/i);
   assert.match(pricing, /PRODUCT_READY/);
   assert.match(pricing, /FINANCE_READY/);
 });
 
-test("pricing links to the VLABS app shop in the page language", () => {
+test("pricing links to the VLABS Security shop in the page language", () => {
   const landing = read("website/index.html");
   const language = landing.match(/<html\b[^>]*\blang="([^"]+)"/)[1];
   const shopLanguage = ["en", "de", "el"].includes(language) ? language : "en";
@@ -139,7 +139,7 @@ test("pricing links to the VLABS app shop in the page language", () => {
   const shopLinks = [...pricing.matchAll(/<a\b[^>]*\bhref="([^"]+)"[^>]*>Visit VLABS shop<\/a>/g)];
 
   assert.equal(shopLinks.length, 1, "pricing must offer a visible VLABS shop link");
-  assert.equal(shopLinks[0][1], `https://vlabs.gr/${shopLanguage}/shop?focus=one-click-apps`);
+  assert.equal(shopLinks[0][1], `https://vlabs.gr/${shopLanguage}/shop?focus=security`);
   assert.doesNotMatch(shopLinks[0][0], /\baria-disabled\s*=|\bonclick=/);
 });
 
@@ -185,7 +185,7 @@ test("landing preserves the Free offer and links paid lifetime cards to the shop
     assert.match(card, /incl\. VAT · one-time/);
     const links = [...card.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)];
     assert.equal(links.length, 1, "each paid card must offer a purchase link");
-    assert.match(links[0][0], /href="https:\/\/vlabs\.gr\/en\/shop\?focus=one-click-apps"/);
+    assert.match(links[0][0], /href="https:\/\/vlabs\.gr\/en\/shop\?focus=security"/);
     assert.match(links[0][0], /class="btn primary block"/);
     assert.doesNotMatch(card, /\baria-disabled\s*=|Sales not yet available|Launch gated|>Planned</);
   }
@@ -199,7 +199,7 @@ test("shop product pages no longer describe licence sales as closed", () => {
     const source = read(`website/${name}`);
     const language = source.match(/<html\b[^>]*\blang="([^"]+)"/)?.[1] || "en";
     const shopLanguage = ["en", "de", "el"].includes(language) ? language : "en";
-    assert.ok(source.includes(`https://vlabs.gr/${shopLanguage}/shop?focus=one-click-apps`), name);
+    assert.ok(source.includes(`https://vlabs.gr/${shopLanguage}/shop?focus=security`), name);
     assert.doesNotMatch(source,
       /sales (?:are )?not (?:yet )?open(?: yet)?|Sales not yet available|sales are closed|sales[^.\n]*remain closed|licen[cs]es are not on sale yet|paid checkout is closed|No (?:paid SecureCall|SecureCall paid) checkout is currently active|purchases are currently disabled|once sales open|Verkauf ist noch nicht geöffnet|Verkauf noch geschlossen/i,
       `${name} must not close shop product sales`);
@@ -210,6 +210,27 @@ test("shop product pages no longer describe licence sales as closed", () => {
       `${name} must keep Custom ID purchases closed`);
   }
   assert.match(read("website/wiki/custom-id.html"), /const CUSTOM_ID_SALES_ENABLED = false/);
+});
+
+test("SecureCall purchase category stays Security across public entry points", () => {
+  const surfaces = [
+    ["index.html", 3], ["download.html", 5], ["faq.html", 5], ["ifr.html", 1],
+    ["llms.txt", 2], ["terms.html", 2], ["wiki/faq.html", 4],
+    ["wiki/getting-started.html", 1], ["wiki/ifr-unlock.html", 1],
+    ["wiki/user-manual.html", 1], ["design-template/securecall/StealthX Design-Konzept.html", 1],
+  ];
+  for (const [name, count] of surfaces) {
+    const source = read(`website/${name}`);
+    // The separate SecureChat/Chameleon FAQ purchase link is outside this task.
+    const secureCallSource = name === "faq.html"
+      ? source.replace(/^.*SecureChat and Chameleon each have final one-time prices.*$/m, "")
+      : source;
+    const targets = [...secureCallSource.matchAll(/https:\/\/vlabs\.gr\/(?:en|de|el)\/shop\?focus=[a-z-]+/g)];
+    assert.equal(targets.length, count, `${name} must retain its purchase links`);
+    for (const [target] of targets) {
+      assert.equal(new URL(target).searchParams.get("focus"), "security", `${name}: ${target}`);
+    }
+  }
 });
 
 test("design-template paid CTAs use the active language and remain enabled", () => {
@@ -234,7 +255,7 @@ test("design-template paid CTAs use the active language and remain enabled", () 
     assert.equal(links.length, 3);
     assert.equal(links[0].props.href, "#download");
     for (const link of links.slice(1)) {
-      assert.equal(link.props.href, `https://vlabs.gr/${lang}/shop?focus=one-click-apps`);
+      assert.equal(link.props.href, `https://vlabs.gr/${lang}/shop?focus=security`);
       assert.equal(link.props["aria-disabled"], undefined);
       assert.match(link.children[0], /^(?:Buy in VLABS shop|Im VLABS-Shop kaufen)$/);
     }

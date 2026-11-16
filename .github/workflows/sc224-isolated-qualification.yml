@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      SC224_BASE: c9b5d2dcec66232d1b8627ffe9b353fae4cbdf93
+      SC224_BASE: 4abfa7dfdd3bfa9a68617f0697bd204c28a8e5d7
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:

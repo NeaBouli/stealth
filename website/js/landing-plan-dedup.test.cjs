@@ -9,7 +9,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const html = readFileSync(join(__dirname, '..', 'index.html'), 'utf8');
-const SHOP = 'https://vlabs.gr/en/shop?focus=one-click-apps';
+const SHOP = 'https://vlabs.gr/en/shop?focus=security';
 
 function pricingSection() {
     const sections = [...html.matchAll(/<section\b[^>]*\bid="pricing"[^>]*>[\s\S]*?<\/section>/g)];
