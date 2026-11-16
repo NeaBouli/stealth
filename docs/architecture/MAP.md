@@ -457,3 +457,11 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   `bash -n`, `git diff --check`, exact six-file scope and original seven method
   bodies/production/dependency/workflow preservation checks PASS. No CI markers
   were fabricated and no Android command was executed by these checks.
+
+- Parent integration: existing instrumentation workflow exposes an explicitly
+  manual `contact_visual_gate` boolean (default false); ordinary PR runs do not
+  opt in. The existing standard hosted API24/36 matrix, source checkout and
+  seven-day artifacts are reused. Collector pure tests are wired before builds.
+  No larger runner, live-pin opt-in, paid tier, new provider or policy waiver.
+  Runtime admission is one bounded candidate qualification after parent source
+  review, not a PASS claim or automatic retry loop.

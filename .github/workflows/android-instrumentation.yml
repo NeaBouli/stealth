@@ -12,6 +12,10 @@ on:
         description: "Run the network-dependent live certificate-pin test (SecureCall endpoints)"
         type: boolean
         default: false
+      contact_visual_gate:
+        description: "Capture the bounded synthetic contact visual matrix on disposable hosted guests"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -43,6 +47,10 @@ jobs:
         with:
           java-version: "17"
           distribution: temurin
+
+      - name: Validate synthetic contact export rules
+        working-directory: ${{ github.workspace }}
+        run: python3 .github/scripts/test_collect_contact_visual.py
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
@@ -87,6 +95,7 @@ jobs:
             "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/androidTest/free/debug/app-free-debug-androidTest.apk"
             com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner
             ${{ (github.event_name == 'workflow_dispatch' && inputs.live_pin_test) && 'securecallLivePinTest=true' || '' }}
+            ${{ (github.event_name == 'workflow_dispatch' && inputs.contact_visual_gate) && 'securecallContactVisualGate=true' || '' }}
 
       - name: Upload instrumentation results
         if: always()
