@@ -185,3 +185,97 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   NOT_RUN under host CPU HOLD; parent owns subsequent diff review and checks.
 - This is an uncommitted source candidate, not runtime compatibility, alert
   closure or release acceptance. Diagram files remain unchanged.
+
+---
+
+# Narrow trace: ACTIVE signaling session lifecycle (2026-11-16)
+
+- Module: signaling heartbeat and existing WS/call route ownership.
+- Hop: `server.js::new HeartbeatManager(routingTable, clients, clientIds)` ->
+  `heartbeat.js::start` -> shared `clients` / `routingTable` maps.
+- Liveness: `ws/index.js::pong|message` -> `updateClient(connId)` updates
+  `lastSeen`, not `session.updated`. `call.js::CALL_KEY_CONFIRM` enters ACTIVE;
+  `webrtc.js::activeSession` subsequently requires that route to exist.
+- Teardown: heartbeat timeout -> `ws.terminate()` -> asynchronous
+  `ws/index.js::close` -> current `clientIds` owner check -> peer CALL_END,
+  route deletion, binding deletion, IP decrement and rate-limit cleanup.
+- Replacement: registration/contact handlers rebind `clientIds`; close of a
+  superseded connection must not delete the replacement's route or binding.
+- Red evidence: actual manager + dispatcher + call/WebRTC handlers, synthetic
+  peers and bounded fake time in `heartbeat_lifecycle.test.js`: healthy ACTIVE
+  disappears at 65s; delete-before-close loses teardown metadata; failed ping
+  deletes a client without terminating its socket. Four of eight cases pass
+  (pending expiry, current close, superseded close, explicit END/BUSY).
+- Initial scope/design blocker: heartbeat had no authoritative `clientIds` reference.
+  A safe ownership-aware fix needs the existing map passed at the server
+  construction hop (one additional source file), not a second registry.
+  The traced call handlers have no ACTIVE route-count/per-peer admission cap;
+  the WS message limiter bounds rate, not lifetime accumulation. Keeping every
+  ACTIVE route while both peers answer pings is not a bounded session policy.
+- Initial next step: parent decides the bounded ACTIVE-retention/admission contract and
+  authorizes the exact extra ownership wiring before implementation. No new
+  timeout, transfer, registry or maintenance policy is selected here.
+- Initial changes were test + this map only; heartbeat, package test chain, server,
+  Android, security/protocol, limits and diagram files remain untouched.
+  No green fix, full-suite, live call, media, drain or device proof is claimed.
+
+## Parent-bounded extension (approved before feature edits)
+
+- Ownership hop: `server.js` passes the existing `clientIds` map to the
+  manager; ACTIVE lifetime follows both current participant records, including
+  termination until WS close owns notification and metadata cleanup. Unowned
+  ACTIVE and pending routes retain the existing 60s timestamp expiry.
+- Admission hop: both `call.js::authenticatedInvite|legacyInvite` -> shared
+  in-module admission check over `routingTable` -> existing forward/push/set.
+  Before those side effects, reject at 10000 global routes or 32 originating
+  routes (all states) with the existing `rate_limited` shape. Originator comes
+  from trusted connection context, never `msg.from`; no recipient quota,
+  eviction, second registry, config flag, tier or conversation-duration rule.
+- Exact scope: heartbeat, one server constructor line, call admission, the
+  lifecycle test, one capacity test, package test-chain wiring and this map.
+  Parent owns full locked CI, exact-head security and release acceptance.
+
+## Implemented candidate and focused evidence
+
+- `HeartbeatManager` now resolves both ACTIVE participant IDs through the
+  authoritative binding map and checks the current record's `clientId`.
+  Open clients retain the existing idle deadlines; ping errors terminate.
+  Non-open sockets and their metadata remain for real WS close cleanup.
+- Both invite paths check current caller ownership and the shared admission
+  bounds before forwarding, push or insertion. Denial never evicts routes;
+  counts derive from the existing table, so END/BUSY, expiry and close release
+  capacity without a separate counter. Recipient load does not consume the
+  caller's quota, and a supplied `msg.from` cannot choose the charged identity.
+- Before feature edits: lifecycle 5/11 PASS (healthy ACTIVE lost at 65s,
+  termination metadata lost, failed-ping socket not terminated); capacity
+  4/18 PASS (both protocols admitted beyond the intended ceilings).
+- Before the transport extension, `npm run test:call-lifecycle` ran only the
+  standard-Node tests: lifecycle 12/12 and capacity 20/20 PASS.
+  This includes a 10-minute synthetic ACTIVE lifecycle with later WebRTC
+  signaling, pending/orphan deadlines, one-peer timeout notification,
+  superseded ownership, exact capacity boundaries, no-side-effect denials,
+  both protocols and quota reuse after END/BUSY, expiry and close.
+- The package pretest chain includes the focused chain. Full backend/Android,
+  lint, secret CI and scoped security review remain parent-owned and NOT_RUN
+  locally. No app server, install, network, device, provider or live call/media/
+  drain test was performed; diagram files and WS close implementation are unchanged.
+
+## Real-transport regression source (parent execution required)
+
+- Eighth file: `src/__tests__/heartbeat_transport.test.js`, included in the
+  same `test:call-lifecycle` / pretest chain. Production logic is unchanged.
+- Hop: test-owned `127.0.0.1:0` HTTP/WSS -> real `ws` peers -> existing
+  `ws/index.js::setup` + `HeartbeatManager` -> real terminate/close callbacks.
+  Synthetic already-verified records and a test-owned limiter isolate stores,
+  registration, providers, application startup and media from this test.
+- Three source cases: current timeout cleanup + peer notification, injected
+  ping failure + actual termination/close, superseded old-socket termination
+  preserving the replacement binding and ACTIVE route without CALL_END.
+- Fake interval capture and clock are synchronous and immediately restored.
+  Each case has a 4s deadline, cleanup a 2s deadline, the suite a 20s deadline;
+  finally terminates only owned peers, destroys owned TCP sockets, closes WSS/
+  HTTP, clears timers and restores logging. Results contain fixed labels only.
+- New transport test and expanded chain: NOT_RUN locally under host HOLD.
+  Syntax/source checks are not transport acceptance. Executed 12+20 PASS
+  remains separate; parent hosted locked npm-ci/full CI must run all cases
+  and perform scoped exact-candidate security review before integration.
