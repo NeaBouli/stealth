@@ -279,3 +279,34 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   Syntax/source checks are not transport acceptance. Executed 12+20 PASS
   remains separate; parent hosted locked npm-ci/full CI must run all cases
   and perform scoped exact-candidate security review before integration.
+## Temporary Hosted Rust Controller (SC-STX24-RUST-HOSTED-20261117)
+
+- Purpose: one parent-dispatched offline AEAD qualification; never merge this
+  temporary controller into main. Public base b59f9742; private target 5222690f,
+  tree fdf7e6cd495cf19db48f63dfa29e135daf212e97. No application changes.
+- Planned hop: parent -> `sc-media-qualification.py::pack` reads exact Git blobs
+  and explicitly selected public registry files -> deterministic private tar.
+- Planned hop: `android-instrumentation.yml::rust-aead` -> trusted Python host
+  validates dispatch/head/runner/resources and owned still-DRAFT release ->
+  bounded download, pinned hashes, manual regular-file extraction.
+- Planned hop: trusted host -> directory-only imported empty image -> Docker
+  create -> exact inspect gate -> start one offline cargo command. Target sees
+  readonly source/cache/toolchain/OS libraries, no host token/home/socket.
+- Planned hop: bounded private pipe -> exact AEAD/media_v3 results -> fixed
+  public booleans/counts; diagnostics only to the same still-DRAFT release.
+- Cleanup: exact owned container cgroup and empty image, including on failure;
+  no shared prune, build, artifact/cache upload, source publication or install.
+- Metadata correction: 66 cached locked archives include six Windows-related
+  archives; only the nine absent Windows packages are omitted. 73 sparse index
+  files cover all 75 locked registry versions. Nothing is downloaded by PACK.
+- Modules: workflow (manual admission), Python (trusted PACK/host/bootstrap),
+  frozen `core_crypto` (unmodified, private input only). Implementation and real
+  hosted acceptance are initially open; parent alone executes the latter.
+- Diagrams: this narrow trace supersedes no existing diagram; no diagram edits.
+- Next: implement this hop in the workflow/Python only. All media/application,
+  dependency, normal branch, release policy and private handoff docs untouched.
+- Owner-requested checkpoint: PACK source is saved but UNEXECUTED. `hosted`
+  always refuses before token/network/Docker/target access. No sandbox is
+  admitted. DRAFT transfer, validated extraction, create/inspect/start caps,
+  capture/result verification and cleanup remain unimplemented. Workflow has
+  read-only contents permission and no token injection until that gate exists.
