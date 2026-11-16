@@ -533,3 +533,33 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   Mixed root/visual/live-pin modes reject before builds. Explicit fresh-AVD
   setting equals the existing pinned action's default, not a changed policy.
   These are prospective admission fixes, not causes of the prior focus failure.
+
+## SC241 corrected normal-lifecycle qualification (implementation only)
+
+- Base: clean `12756b9591db`; task `SC241-NORMAL-LIFECYCLE-IMPLEMENT-20261116`.
+- Module/hop: fresh hosted disposable QEMU -> pre-app IPv4/IPv6 OUTPUT DROP
+  witness -> real Application -> existing SettingsActivity -> normal
+  FragmentManager contact lifecycle -> fixture-owned loader completion ->
+  before/partial/after captures -> display restoration/owned cleanup.
+  Isolation is HELD UNTIL guest shutdown, never restored to ACCEPT.
+- Cause: the previous visual host capped lifecycle/manually inflated the view;
+  ordinary ContactsLoader can publish an older snapshot, including global cache
+  writes outside the attachment guard. Main-looper idle alone is not completion.
+- Implementation boundary: visual-only normal attachment with pre-seeded synthetic
+  repository/cache, current FragmentManager instance resolution, and off-main
+  bounded joins of the source-unique fixture-owned ContactsLoader threads before
+  mutations/captures/teardown. Original seven bodies and capped fixture stay intact.
+- Guest-only admission/witness: existing manual visual mode, first-attempt real
+  hosted clean source, one rooted API24/36 QEMU, no pre-existing target packages
+  or processes; no OUTPUT allow exceptions. Positive IPv4 probe DROP delta;
+  IPv6 probe evidence is distinguished from policy-only proof. Fixed source-bound
+  booleans/counts only, with shutdown attempted on every isolated exit.
+- Files: this map, the existing ContactLookupPreservationInstrumentedTest.kt and
+  ContactVisualMatrix.kt, run-android-smoke.sh, sc241-guest-isolation.sh, and one
+  pure source/parser/guard test. Parent owns operator/handover/security integration.
+- No production, manifest, dependency, permission, rights, provider or host/server
+  policy change. Collector schema, privacy, 16MiB/7day bounds, geometry and capture
+  assertions remain unchanged. Direct224 controller/paid qualification stays closed.
+- Verification here is pure source/parser/collector/shell only. Compilation,
+  runtime isolation, instrumentation, screenshots and visual/security acceptance
+  are NOT_RUN and require parent review/freeze before a separately admitted run.

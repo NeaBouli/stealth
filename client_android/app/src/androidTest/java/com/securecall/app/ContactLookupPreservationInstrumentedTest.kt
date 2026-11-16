@@ -1,7 +1,12 @@
 package com.securecall.app
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Looper
+import android.os.SystemClock
+import android.provider.ContactsContract
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -50,6 +55,9 @@ class ContactLookupPreservationInstrumentedTest {
     private val previousCache = mutableMapOf<String, Any?>()
     private val ownedDialogRoots = mutableSetOf<View>()
     private var rootObservation: ContactRootObservation? = null
+    private var visualFailure: Throwable? = null
+    private var ownsVisualLoaders = false
+    private val isVisual get() = testName.methodName == "syntheticContactWindowMatrix"
 
     private val direct = Contact(
         id = "lookup-fixture-direct", name = "Lookup direct", phoneOrId = DIRECT_ID,
@@ -70,9 +78,24 @@ class ContactLookupPreservationInstrumentedTest {
     @Before
     fun setUp() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
-        if (testName.methodName == "syntheticContactWindowMatrix") {
-            ContactVisualMatrix.admit(context)
-            ContactVisualMatrix.diagnose(ContactVisualMatrix.Phase.FIXTURE_SETUP) { prepareContactFixture() }
+        if (isVisual) {
+            try {
+                ContactVisualMatrix.admit(context)
+                ContactVisualMatrix.diagnose(ContactVisualMatrix.Phase.FIXTURE_SETUP) {
+                    assertEquals(PackageManager.PERMISSION_GRANTED,
+                        context.checkSelfPermission(Manifest.permission.READ_CONTACTS))
+                    context.contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                        arrayOf(ContactsContract.CommonDataKinds.Phone._ID), null, null, null).use { cursor ->
+                        assertEquals("Fresh guest phone provider must be empty", 0, checkNotNull(cursor).count)
+                    }
+                    assertTrue("No pre-fixture contact loader is owned", contactLoaders().isEmpty())
+                    ownsVisualLoaders = true
+                    prepareContactFixture()
+                }
+            } catch (failure: Throwable) {
+                visualFailure = failure
+                throw failure
+            }
         } else {
             prepareContactFixture()
         }
@@ -95,7 +118,7 @@ class ContactLookupPreservationInstrumentedTest {
             CACHE_FIELDS.forEach { name -> previousCache[name] = cacheField(name).get(null) }
             resetCache(emptyList())
         }
-        launchContactHost()
+        if (!isVisual) launchContactHost()
     }
 
     private fun launchContactHost() {
@@ -125,8 +148,36 @@ class ContactLookupPreservationInstrumentedTest {
 
     @After
     fun tearDown() {
-        if (testName.methodName == "syntheticContactWindowMatrix") {
-            ContactVisualMatrix.diagnose(ContactVisualMatrix.Phase.FIXTURE_CLEANUP) { cleanUpContactFixture() }
+        if (isVisual) {
+            ContactVisualMatrix.cleanup(visualFailure,
+                { ContactVisualMatrix.diagnose(ContactVisualMatrix.Phase.HOST_CLOSE) { closeVisualHost() } },
+                {
+                    ContactVisualMatrix.diagnose(ContactVisualMatrix.Phase.FIXTURE_CLEANUP) {
+                        // Never restore storage/cache while a fixture loader can still publish.
+                        awaitVisualLoaders()
+                        ContactVisualMatrix.cleanup(null,
+                            {
+                                if (ownsFixture) assertTrue(context.getSharedPreferences(
+                                    "securecall_contacts", Context.MODE_PRIVATE).edit().clear().commit())
+                            },
+                            {
+                                if (ownsFixture) {
+                                    val editor = context.getSharedPreferences("securecall_prefs", Context.MODE_PRIVATE).edit()
+                                    if (hadRegisteredPhones) editor.putStringSet("cached_registered_phones", previousRegisteredPhones)
+                                    else editor.remove("cached_registered_phones")
+                                    assertTrue(editor.commit())
+                                }
+                            },
+                            {
+                                InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                                    assertTrue("Loader appeared during restoration", contactLoaders().isEmpty())
+                                    previousCache.forEach { (name, value) -> cacheField(name).set(null, value) }
+                                }
+                            },
+                        )
+                    }
+                },
+            )
         } else {
             cleanUpContactFixture()
         }
@@ -251,21 +302,101 @@ class ContactLookupPreservationInstrumentedTest {
 
     @Test
     fun syntheticContactWindowMatrix() {
-        ContactVisualMatrix.run(
-            context = context,
-            fixtures = listOf(direct, linked, positive),
-            positiveId = positive.id,
-            positiveSecureId = POSITIVE_ID,
-            closeHost = {
-                scenario?.close()
+        try {
+            ContactVisualMatrix.run(
+                context = context,
+                fixtures = listOf(direct, linked, positive),
+                positiveId = positive.id,
+                positiveSecureId = POSITIVE_ID,
+                closeHost = { closeVisualHost() },
+                launchHost = { launchVisualContactHost() },
+                withHost = { action -> withVisualHost(action) },
+                seed = { contacts ->
+                    awaitVisualLoaders()
+                    ContactRepository.replaceAll(context, contacts)
+                    InstrumentationRegistry.getInstrumentation().runOnMainSync { resetCache(contacts) }
+                    assertSaved(*contacts.toTypedArray())
+                },
+                partialSnapshot = {
+                    withVisualHost {
+                        ContactsFragment::class.java.getDeclaredMethod(
+                            "finalizeResults", Map::class.java, Map::class.java,
+                        ).apply {
+                            isAccessible = true
+                            invoke(fragment, successfulResult, positiveQuery + (hash(LINKED_PHONE) to LINKED_PHONE))
+                        }
+                    }
+                },
+            )
+        } catch (failure: Throwable) {
+            visualFailure = failure
+            throw failure
+        }
+    }
+
+    private fun launchVisualContactHost() {
+        assertTrue("Visual host must be closed before seeding/launch", scenario == null)
+        scenario = ActivityScenario.launch(Intent(context, SettingsActivity::class.java))
+        scenario!!.onActivity { activity ->
+            activity.supportFragmentManager.executePendingTransactions()
+            activity.supportFragmentManager.beginTransaction()
+                .replace(R.id.settingsContainer, ContactsFragment())
+                .commitNow()
+        }
+        withVisualHost { }
+    }
+
+    private fun contactLoaders(): List<Thread> = Thread.getAllStackTraces().keys
+        .filter { it.isAlive && it.name == "ContactsLoader" }
+
+    private fun awaitVisualLoaders() {
+        if (!ownsVisualLoaders) {
+            assertTrue("No visual host may precede ownership", scenario == null)
+            return
+        }
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        assertTrue("Loader joins must run off the UI thread", Looper.myLooper() != Looper.getMainLooper())
+        var loaders = emptyList<Thread>()
+        instrumentation.runOnMainSync { loaders = contactLoaders() }
+        // Source-unique name + empty pre-fixture baseline + exclusive fresh process establish ownership.
+        // Joining actual producers also covers cache writes outside ContactsFragment's isAdded guard.
+        val deadline = SystemClock.uptimeMillis() + 5_000L
+        for (loader in loaders) {
+            val remaining = deadline - SystemClock.uptimeMillis()
+            assertTrue("Fixture loader completion deadline", remaining > 0)
+            loader.join(remaining)
+            assertTrue("Fixture loader did not complete", !loader.isAlive)
+        }
+        instrumentation.waitForIdleSync()
+        instrumentation.runOnMainSync {
+            assertTrue("Unproven concurrent fixture loader", contactLoaders().isEmpty())
+        }
+    }
+
+    private fun withVisualHost(action: (SettingsActivity) -> Unit) {
+        ContactVisualMatrix.diagnose(ContactVisualMatrix.Phase.LIST_READY) {
+            awaitVisualLoaders()
+            scenario!!.onActivity { activity ->
+                assertTrue("Loader appeared before visual action", contactLoaders().isEmpty())
+                val manager = activity.supportFragmentManager
+                fragment = manager.findFragmentById(R.id.settingsContainer) as ContactsFragment
+                assertEquals(1, manager.fragments.count { it is ContactsFragment })
+                assertTrue(fragment.isAdded && fragment.view != null)
+                assertEquals(Lifecycle.State.RESUMED, fragment.lifecycle.currentState)
+                action(activity)
+            }
+        }
+    }
+
+    private fun closeVisualHost() {
+        ContactVisualMatrix.cleanup(null,
+            { awaitVisualLoaders() },
+            {
+                val owned = scenario
                 scenario = null
+                owned?.close()
             },
-            launchHost = { launchContactHost() },
-            withHost = { action -> scenario!!.onActivity { action(it) } },
-            seed = { contacts -> seed(*contacts.toTypedArray()) },
-            partialSnapshot = {
-                finalizeResults(successfulResult, positiveQuery + (hash(LINKED_PHONE) to LINKED_PHONE))
-            },
+            { awaitVisualLoaders() },
         )
     }
 

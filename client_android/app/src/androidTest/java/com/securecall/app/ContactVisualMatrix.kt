@@ -62,6 +62,16 @@ internal object ContactVisualMatrix {
         throw failure
     }
 
+    fun cleanup(primary: Throwable?, vararg actions: () -> Unit) {
+        var failure = primary
+        for (action in actions) try {
+            action()
+        } catch (error: Throwable) {
+            if (failure == null) failure = error else if (failure !== error) failure!!.addSuppressed(error)
+        }
+        if (primary == null && failure != null) throw failure!!
+    }
+
     @Synchronized
     private fun reportFailure(phase: Phase, failure: Throwable) {
         if (reportedFailures.any { it === failure } || reportedFailures.size >= 4) return
@@ -81,6 +91,8 @@ internal object ContactVisualMatrix {
         diagnose(Phase.ADMIT_OPT_IN) {
             assertEquals("Explicit synthetic CI admission is required", "true",
                 args.getString("securecallContactVisualGate"))
+            assertEquals("Pre-app guest isolation witness is required", "true",
+                args.getString("securecallVisualPreAppIsolation"))
         }
         diagnose(Phase.ADMIT_BUILD) {
             assertTrue("Only DEBUG Free builds are admitted", BuildConfig.DEBUG && BuildConfig.FLAVOR == "free")
@@ -142,6 +154,7 @@ internal object ContactVisualMatrix {
         val captures = JSONArray()
         var violations = 0
         var complete = false
+        var primaryFailure: Throwable? = null
         try {
             for ((width, height) in viewports) for (font in listOf(1, 2)) {
                 diagnose(Phase.HOST_CLOSE) { closeHost() }
@@ -153,16 +166,13 @@ internal object ContactVisualMatrix {
                     shell("settings put system font_scale $font.0")
                     instrumentation.waitForIdleSync()
                 }
-                diagnose(Phase.HOST_LAUNCH) { launchHost() }
                 diagnose(Phase.STORAGE_SEED) { seed(synthetic) }
+                diagnose(Phase.HOST_LAUNCH) { launchHost() }
                 diagnose(Phase.RENDER_BEFORE) {
                     withHost { activity ->
                         val fragment = activity.supportFragmentManager
                             .findFragmentById(R.id.settingsContainer) as ContactsFragment
-                        ContactsFragment::class.java.getDeclaredMethod("dedupAndRefresh").apply {
-                            isAccessible = true
-                            invoke(fragment)
-                        }
+                        assertTrue("Normal FragmentManager view must be attached", fragment.requireView().isAttachedToWindow)
                     }
                 }
                 var adapterBefore: RecyclerView.Adapter<*>? = null
@@ -247,6 +257,11 @@ internal object ContactVisualMatrix {
                         }
                     }
                     val name = "sc241-${width}x$height-f$font-$state.png"
+                    // Re-resolve the current host and join producers immediately before capture.
+                    withHost { activity ->
+                        assertTrue("Refuse stale recreated list", list === activity.findViewById<RecyclerView>(R.id.recyclerContacts))
+                        assertWindow(activity, width, height, font)
+                    }
                     val colors = capture(directory, name, width, height)
                     violations += measured.violations
                     captures.put(JSONObject().apply {
@@ -268,23 +283,22 @@ internal object ContactVisualMatrix {
             }
             complete = true
         } catch (failure: Throwable) {
+            primaryFailure = failure
             reportFailure(Phase.MATRIX_LOOP, failure)
             throw failure
         } finally {
-            try {
-                diagnose(Phase.HOST_CLOSE) { closeHost() }
-            } finally {
-                try {
-                    diagnose(Phase.DISPLAY_RESTORE) { prior.restore() }
-                } finally {
+            cleanup(primaryFailure,
+                { diagnose(Phase.HOST_CLOSE) { closeHost() } },
+                { diagnose(Phase.DISPLAY_RESTORE) { prior.restore() } },
+                {
                     if (!complete) {
                         diagnose(Phase.CAPTURE_CLEANUP) {
                             expectedNames().forEach { File(directory, it).delete() }
                             directory.delete()
                         }
                     }
-                }
-            }
+                },
+            )
         }
         val args = InstrumentationRegistry.getArguments()
         diagnose(Phase.METADATA) {
@@ -445,20 +459,16 @@ internal object ContactVisualMatrix {
         val size: String, val density: String, val font: String, val autoRotation: String, val userRotation: String,
     ) {
         fun restore() {
-            var failure: Throwable? = null
             val actions = listOf<() -> Unit>(
                 { shell("wm size ${overrideValue(size, "size") ?: "reset"}") },
                 { shell("wm density ${overrideValue(density, "density") ?: "reset"}") },
                 { restoreSetting("font_scale", font) },
                 { restoreSetting("user_rotation", userRotation) },
                 { restoreSetting("accelerometer_rotation", autoRotation) },
+                { instrumentation.waitForIdleSync() },
+                { assertEquals("Guest overrides must restore exactly", this, read()) },
             )
-            for (action in actions) try { action() } catch (error: Throwable) {
-                if (failure == null) failure = error else failure!!.addSuppressed(error)
-            }
-            instrumentation.waitForIdleSync()
-            if (failure != null) throw failure!!
-            assertEquals("Guest overrides must restore exactly", this, read())
+            cleanup(null, *actions.toTypedArray())
         }
 
         companion object {

@@ -89,6 +89,33 @@ if [[ "$visual" == true ]]; then
   }
   [[ "$instrumentation" == com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner ]] || exit 2
   command -v python3 >/dev/null || { echo 'CONTACT_VISUAL_REJECTED:PYTHON_MISSING' >&2; exit 2; }
+  [[ "$live_pin" == false && "$root_probe" == false ]] || exit 2
+  [[ "$(git rev-parse --show-toplevel)" == "${GITHUB_WORKSPACE:?}" ]] || exit 2
+  source "${GITHUB_WORKSPACE:?}/.github/scripts/sc241-guest-isolation.sh"
+  head="$(git rev-parse HEAD)"
+  tree="$(git rev-parse 'HEAD^{tree}')"
+  sc241_host_guard "${GITHUB_ACTIONS:-}" "${RUNNER_ENVIRONMENT:-}" "${GITHUB_EVENT_NAME:-}" \
+    "${GITHUB_RUN_ATTEMPT:-}" "${GITHUB_SHA:-}" "$head" "$tree" "$(git status --porcelain)" \
+    "$instrumentation" || { echo 'CONTACT_VISUAL_REJECTED:MANUAL_FRESH_SOURCE_REQUIRED' >&2; exit 2; }
+  sc241_visual_exit() {
+    local primary=$? cleanup_failed=false
+    trap - EXIT HUP INT TERM
+    if [[ "${sc241_shutdown_required:-false}" == true ]]; then
+      if ! sc241_shutdown_guest; then
+        echo 'CONTACT_VISUAL_REJECTED:GUEST_SHUTDOWN_OR_HOLD' >&2
+        cleanup_failed=true
+      fi
+    fi
+    if [[ -n "${visual_tmp:-}" ]]; then
+      rm -f "$visual_tmp/result.txt" || cleanup_failed=true
+      rmdir "$visual_tmp" || cleanup_failed=true
+    fi
+    if [[ "$primary" == 0 && "$cleanup_failed" == true ]]; then primary=2; fi
+    exit "$primary"
+  }
+  trap sc241_visual_exit EXIT
+  trap 'exit 2' HUP INT TERM
+  sc241_prepare_isolation || { echo 'CONTACT_VISUAL_REJECTED:PRE_APP_ISOLATION' >&2; exit 2; }
 fi
 
 du -h "$app_apk" "$test_apk"
@@ -102,21 +129,25 @@ adb shell am instrument -w -r -e notClass "$visual_case" "${instrumentation_args
 grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$result"
 
 if [[ "$visual" == true ]]; then
-  head="$(git rev-parse HEAD)"
-  tree="$(git rev-parse 'HEAD^{tree}')"
+  sc241_verify_isolation || { echo 'CONTACT_VISUAL_REJECTED:ISOLATION_HOLD' >&2; exit 2; }
+  [[ "$(git rev-parse HEAD)" == "$head" && "$(git rev-parse 'HEAD^{tree}')" == "$tree" &&
+    -z "$(git status --porcelain)" ]] || exit 2
   visual_tmp="$(mktemp -d)"
-  trap 'rm -f "$visual_tmp/result.txt"; rmdir "$visual_tmp"' EXIT
   # Keep protocol/stack output outside artifacts. Export only validated fixed synthetic files.
   if ! timeout 900 adb shell am instrument -w -r -e class "$visual_case" \
       -e securecallContactVisualGate true -e securecallVisualHead "$head" \
+      -e securecallVisualPreAppIsolation true \
       -e securecallVisualTree "$tree" "$instrumentation" >"$visual_tmp/result.txt"; then
     echo 'CONTACT_VISUAL_REJECTED:INSTRUMENTATION_STARTUP_OR_TRANSPORT_FAILURE' >&2
     exit 2
   fi
   api="$(adb shell getprop ro.build.version.sdk | tr -d '\r\n')"
   [[ "$api" == 24 || "$api" == 36 ]] || exit 2
+  [[ "$api" == "$sc241_api" ]] || exit 2
+  sc241_verify_isolation || { echo 'CONTACT_VISUAL_REJECTED:ISOLATION_HOLD' >&2; exit 2; }
   python3 "${GITHUB_WORKSPACE:?}/.github/scripts/collect_contact_visual.py" \
     --result "$visual_tmp/result.txt" --ordinary-result "$result" \
     --output "$(dirname "$result")/contact-visual-api$api" \
     --head "$head" --tree "$tree"
+  sc241_verify_isolation || { echo 'CONTACT_VISUAL_REJECTED:ISOLATION_HOLD' >&2; exit 2; }
 fi
