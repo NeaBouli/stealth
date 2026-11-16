@@ -1,0 +1,117 @@
+name: SC224 Temporary Synthetic Debug Qualification
+
+# Temporary branch only; NEVER merge. One opened event, no synchronize/dispatch/retry loop.
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+    paths: [.github/workflows/sc224-isolated-qualification.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sc224-isolated-qualification
+  cancel-in-progress: false
+
+jobs:
+  synthetic-debug-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SC224_BASE: 0dafd8135b8a6c675a6a3be870d18aa09c555909
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Admit exact temporary source and one run
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$HEAD_REPO" = "$GITHUB_REPOSITORY"
+          test "$HEAD_BRANCH" = agent/codex/SC224-SDK37-QUALIFY-20261116
+          git merge-base --is-ancestor "$SC224_BASE" HEAD
+          git diff --exit-code "$SC224_BASE" HEAD -- . \
+            ':(exclude).github/workflows/sc224-isolated-qualification.yml' \
+            ':(exclude).github/scripts/sc224-fixture.mjs' \
+            ':(exclude)client_android/app/src/sc224AndroidTest/AndroidManifest.xml' \
+            ':(exclude)client_android/app/src/sc224AndroidTest/java/com/securecall/app/sc224/Sc224Qualification.kt' \
+            ':(exclude)client_android/app/src/sc224AndroidTest/java/com/securecall/app/sc224/Sc224ReceiverActivity.java'
+          test -z "$(git status --porcelain)"
+          mkdir -p "$RUNNER_TEMP/sc224-receipts"
+          git rev-parse HEAD 'HEAD^{tree}' > "$RUNNER_TEMP/sc224-receipts/source.txt"
+          git ls-tree -r "$SC224_BASE" client_android .github/workflows > "$RUNNER_TEMP/sc224-receipts/base-blobs.txt"
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          java-version: '17'
+          distribution: temurin
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
+        with:
+          cache-read-only: true
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd
+        with:
+          packages: platform-tools
+      - name: Prepare existing SDK dependencies and synthetic fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            'platforms;android-37.0' 'build-tools;36.0.0' 'cmake;3.22.1' 'ndk;27.0.12077973'
+          node .github/scripts/sc224-fixture.mjs prepare
+
+      - name: Build only isolated debug APKs once, serially
+        working-directory: client_android
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 900 ./gradlew --no-daemon --no-parallel --max-workers=1 --console=plain \
+            -I "$RUNNER_TEMP/sc224.init.gradle" \
+            -Pinternal -PisolatedDeviceTest "-PentitlementPublicKey=$SC224_PUBLIC_KEY" \
+            :app:assembleProDebug :app:assembleProDebugAndroidTest \
+            :app:assemblePremiumDebug :app:assemblePremiumDebugAndroidTest
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Fresh API36 guest, pre-app IPv4/IPv6 block, serial qualification
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-boot-timeout: 300
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -gpu swiftshader_indirect
+          script: node .github/scripts/sc224-fixture.mjs run
+
+      - name: Remove disposable fixture and raw output, never upload APKs or tokens
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f client_android/app/src/sc224AndroidTest/assets/sc224-synthetic.json
+          rm -f "$RUNNER_TEMP/sc224.init.gradle"
+          rm -f "$RUNNER_TEMP/sc224-pro.txt" "$RUNNER_TEMP/sc224-premium.txt"
+          rm -rf client_android/app/build
+
+      - name: Retain aggregate receipts and synthetic receiver captures only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sc224-synthetic-debug-only
+          path: ${{ runner.temp }}/sc224-receipts/
+          if-no-files-found: error
+          retention-days: 7
