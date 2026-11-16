@@ -501,3 +501,28 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - Local preservation checks PASS: all eight test method bodies and every
   existing assertion/check call unchanged, geometry/target implementation and
   GuestDisplay restoration byte-identical, exact five-file scope, MAP append-only.
+
+## SC241 root observation (source only, 2026-11-16)
+
+- Hop: synthetic contact menu -> existing public Espresso `isDialog()` predicate
+  -> bounded candidate observer -> first MENU acquisition failure status only.
+  Base `e415853b` / tree `73c0616b`; actual ordinary API24 run `43925574706`
+  failed at the first `rememberDialogRoot`, before Delete selection/confirmation.
+  Six storage cases passed; API36 passed all seven. Exact cause remains UNKNOWN.
+- `ContactRootObservation` never changes the delegate result or selected root.
+  Default-off uses the original delegate; no failure means no payload. Only the
+  first failing menu acquisition is reported, at most one status, original error rethrown.
+- Admission follows the empty synthetic-store guard: manual hosted fresh QEMU,
+  API24, DEBUG Free/effective FREE, visual/live-pin off, exact clean SHA/tree.
+  Manual `contact_root_probe=false` selects the unchanged API24/36 matrix; true
+  selects API24 ordinary cases only, never bypassing a failed ordinary outcome.
+- Fixed `sc241_root_*` fields: source SHA/tree, MENU, selected=UNKNOWN, candidate
+  count<=8/incomplete flag; host lifecycle/focus and interactive/keyguard booleans;
+  eight candidate slots with public type (-1 unavailable), attachment/focus,
+  synthetic-title and host-context tri-state booleans (UNKNOWN unavailable).
+  Title traversal<=128 nodes/queued views per candidate, context chain<=8 hops.
+  Candidates/title/context matches do not prove selection or ownership. No text,
+  hierarchy, identifiers, exceptions, preferences, keys or paths are exported.
+- No focus/settings/PIN/security/production/dependency/timeout/skip changes.
+  Visual capture/transport/caps unchanged. Kotlin/Android/runtime NOT_RUN;
+  parent owns complete privacy review, source integration and any hosted probe.

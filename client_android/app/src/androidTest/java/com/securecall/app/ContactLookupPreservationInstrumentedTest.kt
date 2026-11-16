@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Root
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers.isDialog
@@ -24,6 +25,7 @@ import com.securecall.app.data.ContactRepository
 import com.securecall.app.security.IdentityProtocol
 import com.securecall.app.ui.ContactsFragment
 import java.security.MessageDigest
+import org.hamcrest.Matcher
 import org.hamcrest.Matchers.anything
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -47,6 +49,7 @@ class ContactLookupPreservationInstrumentedTest {
     private var previousRegisteredPhones: Set<String>? = null
     private val previousCache = mutableMapOf<String, Any?>()
     private val ownedDialogRoots = mutableSetOf<View>()
+    private var rootObservation: ContactRootObservation? = null
 
     private val direct = Contact(
         id = "lookup-fixture-direct", name = "Lookup direct", phoneOrId = DIRECT_ID,
@@ -79,6 +82,7 @@ class ContactLookupPreservationInstrumentedTest {
         val contactsPrefs = context.getSharedPreferences("securecall_contacts", Context.MODE_PRIVATE)
         // Refuse to replace existing data; this suite is for a fresh hosted-CI app sandbox.
         assertTrue("Contact fixture requires empty app storage", contactsPrefs.all.isEmpty())
+        rootObservation = ContactRootObservation.admit(context)
         assertTrue(IdentityProtocol.isDirectClientId(DIRECT_ID))
         assertTrue(IdentityProtocol.isDirectClientId(LINKED_ID))
         assertTrue(IdentityProtocol.isDirectClientId(POSITIVE_ID))
@@ -294,16 +298,20 @@ class ContactLookupPreservationInstrumentedTest {
                 invoke(fragment, contact)
             }
         }
-        rememberDialogRoot(contact.name)
+        rememberDialogRoot(contact.name, menu = true)
         onData(anything()).inRoot(isDialog()).atPosition(2).perform(click())
         rememberDialogRoot("Delete ${contact.name}?")
     }
 
-    private fun rememberDialogRoot(title: String) {
-        onView(withText(title)).inRoot(isDialog()).check { view, error ->
-            matches(isDisplayed()).check(view, error)
-            ownedDialogRoots.add(checkNotNull(view).rootView)
+    private fun rememberDialogRoot(title: String, menu: Boolean = false) {
+        val acquire: (Matcher<Root>) -> Unit = { matcher ->
+            onView(withText(title)).inRoot(matcher).check { view, error ->
+                matches(isDisplayed()).check(view, error)
+                ownedDialogRoots.add(checkNotNull(view).rootView)
+            }
         }
+        val observer = rootObservation
+        if (menu && observer != null) observer.acquire(title, scenario!!, acquire) else acquire(isDialog())
     }
 
     private fun dismissOwnedDialogs() {

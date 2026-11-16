@@ -16,6 +16,10 @@ on:
         description: "Capture the bounded synthetic contact visual matrix on disposable hosted guests"
         type: boolean
         default: false
+      contact_root_probe:
+        description: "Observe the first synthetic menu root failure on a fresh hosted API24 guest"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -32,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api-level: [24, 36]
+        api-level: ${{ github.event_name == 'workflow_dispatch' && inputs.contact_root_probe && fromJSON('[24]') || fromJSON('[24,36]') }}
     defaults:
       run:
         working-directory: client_android
@@ -83,6 +87,7 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_2
+          force-avd-creation: true
           emulator-boot-timeout: 900
           working-directory: client_android
           ndk: 27.0.12077973
@@ -94,8 +99,9 @@ jobs:
             "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/free/debug/app-free-debug.apk"
             "${GITHUB_WORKSPACE}/client_android/app/build/outputs/apk/androidTest/free/debug/app-free-debug-androidTest.apk"
             com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner
-            ${{ (github.event_name == 'workflow_dispatch' && inputs.live_pin_test) && 'securecallLivePinTest=true' || '' }}
-            ${{ (github.event_name == 'workflow_dispatch' && inputs.contact_visual_gate) && 'securecallContactVisualGate=true' || '' }}
+            ${{ (github.event_name == 'workflow_dispatch' && inputs.live_pin_test && !inputs.contact_root_probe) && 'securecallLivePinTest=true' || '' }}
+            ${{ (github.event_name == 'workflow_dispatch' && inputs.contact_visual_gate && !inputs.contact_root_probe) && 'securecallContactVisualGate=true' || '' }}
+            ${{ (github.event_name == 'workflow_dispatch' && inputs.contact_root_probe) && 'securecallContactRootProbe=true' || '' }}
 
       - name: Upload instrumentation results
         if: always()

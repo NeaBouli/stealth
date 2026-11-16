@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ "$#" -lt 3 || "$#" -gt 5 ]]; then
-  echo "usage: $0 <app-apk> <test-apk> <instrumentation-component> [securecallLivePinTest=true] [securecallContactVisualGate=true]" >&2
+  echo "usage: $0 <app-apk> <test-apk> <instrumentation-component> [securecallLivePinTest=true] [securecallContactVisualGate=true] [securecallContactRootProbe=true]" >&2
   exit 2
 fi
 
@@ -48,6 +48,7 @@ instrumentation="$3"
 instrumentation_args=()
 visual=false
 live_pin=false
+root_probe=false
 for option in "${@:4}"; do
   case "$option" in
     "") ;;
@@ -60,9 +61,25 @@ for option in "${@:4}"; do
       [[ "$visual" == false ]] || exit 2
       visual=true
       ;;
+    securecallContactRootProbe=true)
+      [[ "$root_probe" == false ]] || exit 2
+      root_probe=true
+      ;;
     *) echo 'unsupported instrumentation option' >&2; exit 2 ;;
   esac
 done
+
+if [[ "$root_probe" == true ]]; then
+  [[ "$visual" == false && "$live_pin" == false ]] || exit 2
+  [[ "${GITHUB_ACTIONS:-}" == true && "${RUNNER_ENVIRONMENT:-}" == github-hosted && "${GITHUB_EVENT_NAME:-}" == workflow_dispatch ]] || exit 2
+  [[ "$instrumentation" == com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner ]] || exit 2
+  [[ "$(adb shell getprop ro.build.version.sdk | tr -d '\r\n')" == 24 ]] || exit 2
+  head="$(git rev-parse HEAD)"
+  tree="$(git rev-parse 'HEAD^{tree}')"
+  [[ "${GITHUB_SHA:-}" == "$head" && -z "$(git status --porcelain)" ]] || exit 2
+  instrumentation_args+=(-e securecallContactRootProbe true -e securecallRootProbeHosted true
+    -e securecallRootProbeHead "$head" -e securecallRootProbeTree "$tree")
+fi
 
 visual_case='com.securecall.app.ContactLookupPreservationInstrumentedTest#syntheticContactWindowMatrix'
 if [[ "$visual" == true ]]; then
