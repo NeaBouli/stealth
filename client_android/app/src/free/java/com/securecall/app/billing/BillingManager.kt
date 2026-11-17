@@ -22,9 +22,12 @@ class BillingManager(
     interface BillingListener {
         fun onProductsLoaded(products: List<ProductDetails>)
         fun onPurchaseCompleted(tier: SubscriptionTier, token: String, productId: String)
+        fun onPurchasesRestored(purchases: List<RestoredPurchase>)
         fun onPurchaseFailed(errorCode: Int, message: String)
         fun onBillingDisconnected()
     }
+
+    data class RestoredPurchase(val tier: SubscriptionTier, val token: String, val productId: String)
 
     private var billingClient: BillingClient? = null
     private var productDetailsList: List<ProductDetails> = emptyList()
@@ -128,19 +131,34 @@ class BillingManager(
     }
 
     private fun queryExistingPurchases() {
+        val client = billingClient ?: return
+        val results = mutableMapOf<String, List<RestoredPurchase>>()
+        var failed: BillingResult? = null
+        var delivered = false
+        fun completed(type: String, result: BillingResult, purchases: List<Purchase>) {
+            synchronized(results) {
+                if (delivered || billingClient !== client || results.containsKey(type)) return
+                if (result.responseCode != BillingClient.BillingResponseCode.OK) failed = result
+                results[type] = purchases.mapNotNull { purchaseReceipt(it) }
+                if (results.size != 2) return
+                delivered = true
+                val error = failed
+                if (error != null) {
+                    // A missing half is not evidence that only the other purchase exists.
+                    listener.onPurchaseFailed(error.responseCode, "Unable to restore all purchases")
+                } else {
+                    listener.onPurchasesRestored((results.getValue(BillingClient.ProductType.SUBS)
+                        + results.getValue(BillingClient.ProductType.INAPP)).distinct())
+                }
+            }
+        }
         // Check subscriptions
         val subsParams = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
 
-        billingClient?.queryPurchasesAsync(subsParams) { result, purchases ->
-            if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                for (purchase in purchases) {
-                    if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                        handlePurchase(purchase)
-                    }
-                }
-            }
+        client.queryPurchasesAsync(subsParams) { result, purchases ->
+            completed(BillingClient.ProductType.SUBS, result, purchases)
         }
 
         // Check in-app purchases (lifetime)
@@ -148,14 +166,8 @@ class BillingManager(
             .setProductType(BillingClient.ProductType.INAPP)
             .build()
 
-        billingClient?.queryPurchasesAsync(inappParams) { result, purchases ->
-            if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                for (purchase in purchases) {
-                    if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                        handlePurchase(purchase)
-                    }
-                }
-            }
+        client.queryPurchasesAsync(inappParams) { result, purchases ->
+            completed(BillingClient.ProductType.INAPP, result, purchases)
         }
     }
 
@@ -215,16 +227,21 @@ class BillingManager(
     }
 
     private fun handlePurchase(purchase: Purchase) {
+        val receipt = purchaseReceipt(purchase) ?: return
+        // The backend acknowledges only after verification and durable persistence.
+        listener.onPurchaseCompleted(receipt.tier, receipt.token, receipt.productId)
+    }
+
+    private fun purchaseReceipt(purchase: Purchase): RestoredPurchase? {
+        if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) return null
         val productId = purchase.products.singleOrNull()
-            ?.takeIf { it in subscriptionSkus || it in lifetimeSkus } ?: return
+            ?.takeIf { it in subscriptionSkus || it in lifetimeSkus } ?: return null
         val tier = SubscriptionTier.fromProductId(productId)
         val token = purchase.purchaseToken
 
         Log.d(TAG, "Purchase completed: productId=$productId, tier=$tier")
 
-        // The backend acknowledges only after authoritative verification and
-        // durable entitlement persistence.
-        listener.onPurchaseCompleted(tier, token, productId)
+        return RestoredPurchase(tier, token, productId)
     }
 
     fun destroy() {

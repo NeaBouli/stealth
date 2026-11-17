@@ -23,7 +23,7 @@ test("RTDN retries revocation after processed-ID persistence fails, then dedupli
   let expirations = 0;
   let saves = 0;
   const deps = {
-    subscriptions: { expireByPurchaseToken() { expirations++; } },
+    subscriptions: { expireByPurchaseToken() { expirations++; }, revokeLifetimeByPurchaseToken() { return 0; } },
     activationCodes: activations,
     saveActivationCodes() { saves++; return true; },
     giftCodes: new Map(),

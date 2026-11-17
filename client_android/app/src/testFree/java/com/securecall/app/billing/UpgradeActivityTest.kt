@@ -1,5 +1,7 @@
 package com.securecall.app.billing
 
+import android.content.Intent
+import android.content.SharedPreferences
 import android.widget.TextView
 import android.widget.Button
 import com.android.billingclient.api.BillingClient
@@ -11,8 +13,13 @@ import org.junit.Test
 import org.mockito.Answers
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -123,6 +130,74 @@ class UpgradeActivityTest {
 
         verify(button).isEnabled = false
         verify(button).text = "Pro Lifetime"
+    }
+
+    @Test
+    fun lifetimePurchaseUsesInPackageVerificationNotTheCodeScreen() {
+        val subscriptions = routeCompletionsThroughUiThread()
+        whenever(subscriptions.recordPendingPurchase(any(), any()))
+            .thenThrow(IllegalStateException("synthetic pending persistence failure"))
+
+        for (sku in listOf(BuildConfig.SKU_PRO_LIFETIME, BuildConfig.SKU_PREMIUM_LIFETIME)) {
+            activity.onPurchaseCompleted(SubscriptionTier.fromProductId(sku), "synthetic-token", sku)
+            verify(subscriptions).recordPendingPurchase(eq("synthetic-token"), eq(sku))
+        }
+        verify(activity, never()).startActivity(anyOrNull<Intent>())
+    }
+
+    @Test
+    fun explicitActivationCodePurchaseKeepsTheCodeScreen() {
+        val subscriptions = routeCompletionsThroughUiThread()
+
+        activity.onPurchaseCompleted(SubscriptionTier.PREMIUM, "synthetic-token",
+            BuildConfig.SKU_PREMIUM_ACTIVATION_CODE)
+
+        verify(activity).startActivity(anyOrNull<Intent>())
+        verify(subscriptions, never()).recordPendingPurchase(any(), any())
+    }
+
+    @Test
+    fun restoreRegistersEveryReceiptBeforeAttemptingVerification() {
+        val subscriptions = routeCompletionsThroughUiThread()
+        whenever(subscriptions.recordPendingPurchase("synthetic-monthly", BuildConfig.SKU_PRO_MONTHLY))
+            .thenReturn("request-monthly")
+        whenever(subscriptions.recordPendingPurchase("synthetic-lifetime", BuildConfig.SKU_PREMIUM_LIFETIME))
+            .thenReturn("request-lifetime")
+        whenever(subscriptions.getCurrentTier()).thenReturn(SubscriptionTier.FREE)
+        UpgradeActivity::class.java.getDeclaredField("tvCurrentTier").apply {
+            isAccessible = true
+            set(activity, mock<TextView>())
+        }
+
+        activity.onPurchasesRestored(listOf(
+            BillingManager.RestoredPurchase(SubscriptionTier.PRO, "synthetic-monthly", BuildConfig.SKU_PRO_MONTHLY),
+            BillingManager.RestoredPurchase(SubscriptionTier.PREMIUM, "synthetic-lifetime", BuildConfig.SKU_PREMIUM_LIFETIME)
+        ))
+
+        // No service is connected: each send takes the discard path, after both records.
+        inOrder(subscriptions) {
+            verify(subscriptions).recordPendingPurchase("synthetic-monthly", BuildConfig.SKU_PRO_MONTHLY)
+            verify(subscriptions).recordPendingPurchase("synthetic-lifetime", BuildConfig.SKU_PREMIUM_LIFETIME)
+            verify(subscriptions).discardPendingPurchase("request-monthly")
+            verify(subscriptions).discardPendingPurchase("request-lifetime")
+        }
+        verify(activity, never()).startActivity(anyOrNull<Intent>())
+    }
+
+    private fun routeCompletionsThroughUiThread(): SubscriptionManager {
+        val subscriptions: SubscriptionManager = mock()
+        val prefs: SharedPreferences = mock()
+        UpgradeActivity::class.java.getDeclaredField("subscriptionManager").apply {
+            isAccessible = true
+            set(activity, subscriptions)
+        }
+        doAnswer { (it.arguments[0] as Runnable).run(); null }.whenever(activity).runOnUiThread(any())
+        doNothing().whenever(activity).startActivity(anyOrNull<Intent>())
+        doReturn(prefs).whenever(activity).getSharedPreferences(any(), any())
+        doReturn(activity).whenever(activity).applicationContext
+        doReturn("pending").whenever(activity).getString(R.string.upgrade_verification_pending)
+        doReturn("unable").whenever(activity).getString(R.string.upgrade_unable_to_verify_purchase)
+        return subscriptions
     }
 
     private fun launchPurchase(sku: String) {

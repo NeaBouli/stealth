@@ -2,6 +2,9 @@
 
 const { networkKey } = require("../../utils/network_key");
 const { validateV2Contract } = require("../../payments/entitlement_tokens");
+const {
+  LIFETIME_PRODUCTS, MAX_PROOF_EXPIRY_MS, findCodeByPurchaseToken, resolveLifetimeProduct,
+} = require("../../payments/google_play_billing");
 
 module.exports = function subscriptionHandlers(ctx) {
   const {
@@ -10,6 +13,7 @@ module.exports = function subscriptionHandlers(ctx) {
     saveActivationCodes, saveGiftCodes,
     subscriptions, fcm, issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
+    verifyPlayOneTimePurchase, acknowledgePlayOneTimePurchase, playLifetimePolicy,
     identityRegistry,
   } = ctx;
   // STX-05: unknown-code guesses are budgeted per peer address and per client, so short
@@ -144,6 +148,105 @@ module.exports = function subscriptionHandlers(ctx) {
     return null;
   }
 
+  // Current durable lifetime record still bound to this identity and approved tuple, or throws.
+  function currentLifetimeGrant(clientId, purchaseToken, product) {
+    const current = subscriptions.getLifetimeEntitlement(
+      clientId, purchaseToken, product.packageName, product.catalogVersion
+    );
+    if (!current) {
+      throw new Error(subscriptions.hasLifetimePurchase(purchaseToken)
+        ? "purchase_binding_mismatch" : "purchase_not_recorded");
+    }
+    if (current.revoked === true) throw new Error("purchase_revoked");
+    if (current.productId !== product.productId || current.tier !== product.tier
+        || current.offerVersion !== product.offerVersion) {
+      throw new Error("purchase_binding_mismatch");
+    }
+    return current;
+  }
+
+  function proofExpiry(product) {
+    const expiresAt = Date.now() + product.proofTtlMs;
+    if (!Number.isSafeInteger(expiresAt) || expiresAt > MAX_PROOF_EXPIRY_MS) {
+      throw new Error("lifetime_policy_unsupported");
+    }
+    return expiresAt;
+  }
+
+  // Same-package Pro/Premium lifetime: authoritative one-time verification, durable
+  // identity-bound record and acknowledgement before the client may apply the tier.
+  function verifyLifetimePurchase(ws, myClientId, request) {
+    const { requestId, purchaseToken, productId, packageName, catalogVersion } = request;
+    const fail = error => ws.send(JSON.stringify({
+      type: "SUBSCRIPTION_VERIFY_ACK",
+      success: false,
+      requestId,
+      tier: "FREE",
+      expiresAt: 0,
+      productId,
+      packageName,
+      catalogVersion,
+      error,
+    }));
+    const product = resolveLifetimeProduct(playLifetimePolicy, packageName, productId, catalogVersion);
+    if (!product || typeof verifyPlayOneTimePurchase !== "function"
+        || typeof acknowledgePlayOneTimePurchase !== "function"
+        || typeof subscriptions.recordVerifiedLifetime !== "function") {
+      return fail("lifetime_entitlement_unavailable");
+    }
+    // A token that already minted an activation/gift code keeps that explicit code path.
+    if (findCodeByPurchaseToken(activationCodes, purchaseToken)
+        || findCodeByPurchaseToken(giftCodes, purchaseToken)) {
+      return fail("subscription_verification_failed");
+    }
+    const allowedSubjects = product.rebindAuthority === "identity_registry_alias"
+      ? authorizedSubjects(myClientId) : [myClientId];
+    Promise.resolve()
+      .then(() => verifyPlayOneTimePurchase(packageName, productId, purchaseToken))
+      .then(async verified => {
+        if (!verified || verified.productId !== productId || verified.tier !== product.tier
+            || verified.packageName !== packageName || verified.catalogVersion !== catalogVersion) {
+          throw new Error("purchase_binding_mismatch");
+        }
+        subscriptions.recordVerifiedLifetime({
+          clientId: myClientId,
+          purchaseToken,
+          productId,
+          tier: product.tier,
+          packageName,
+          catalogVersion,
+          offerVersion: product.offerVersion,
+          acknowledged: verified.needsAcknowledgement === false,
+          allowedSubjects,
+        });
+        if (verified.needsAcknowledgement !== false) {
+          await acknowledgePlayOneTimePurchase(packageName, productId, purchaseToken);
+        }
+        // A revoke, rebind or tombstone may have landed during the provider await. Re-read
+        // the authoritative durable record and decide success synchronously from it: no
+        // await between this check, the acknowledgement mark and the success send.
+        const current = currentLifetimeGrant(myClientId, purchaseToken, product);
+        const expiresAt = proofExpiry(product);
+        if (current.acknowledged !== true) subscriptions.markLifetimeAcknowledged(purchaseToken);
+        ws.send(JSON.stringify({
+          type: "SUBSCRIPTION_VERIFY_ACK",
+          success: true,
+          requestId,
+          tier: current.tier,
+          expiresAt,
+          productId,
+          packageName,
+          catalogVersion,
+        }));
+        console.log("[SUBSCRIPTION] Lifetime verification completed");
+      })
+      .catch(error => {
+        console.warn("[SUBSCRIPTION] Google Play lifetime verification rejected");
+        fail(error && error.message === "subscription_persistence_failed"
+          ? "entitlement_temporarily_unavailable" : "subscription_verification_failed");
+      });
+  }
+
   return {
     SUBSCRIPTION_VERIFY(ws, connId, msg) {
       const myClientId = getClientId(connId);
@@ -180,6 +283,10 @@ module.exports = function subscriptionHandlers(ctx) {
           catalogVersion: "",
           error: "invalid_subscription_verification_request",
         }));
+        return;
+      }
+      if (Object.prototype.hasOwnProperty.call(LIFETIME_PRODUCTS, productId)) {
+        verifyLifetimePurchase(ws, myClientId, { requestId, purchaseToken, productId, packageName, catalogVersion });
         return;
       }
       const complete = result => {

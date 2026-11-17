@@ -63,12 +63,15 @@ assert.equal(explicitOverride.VLABS_FULFILLMENT_ORDERS_FILE, "/srv/securecall-da
 // permission-checked immutable authority (services/identity_migration_routes.js);
 // its DATA_DIR default only covers the absent-file empty-routes case and an
 // explicit path must survive alignment.
+// GOOGLE_PLAY_LIFETIME_POLICY_FILE is likewise read-only operator configuration,
+// with no default file or writable store; DATA_DIR must not relocate that input.
 const NON_STORE_FILE_VARIABLES = new Set([
   "LOG_TO_FILE",
   "TURN_SECRET_FILE",
   "SECURECALL_TESTER_SIGNER_FILE",
   "SECURECALL_TESTER_REGISTRY_FILE",
   "IDENTITY_MIGRATION_ROUTES_FILE",
+  "GOOGLE_PLAY_LIFETIME_POLICY_FILE",
 ]);
 const sourceRoot = path.join(__dirname, "..");
 function sources(directory) {

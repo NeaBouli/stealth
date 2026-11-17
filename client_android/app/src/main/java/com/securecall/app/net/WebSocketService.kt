@@ -2239,7 +2239,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         try {
             val success = obj.optBoolean("success", false)
             val requestId = obj.optString("requestId", "")
-            val tierStr = obj.getString("tier")
+            val tierStr = obj.optString("tier", "FREE")
             val expiresAt = obj.optLong("expiresAt", 0L)
             val productId = obj.optString("productId", "")
             val packageName = obj.optString("packageName", "")
@@ -2248,8 +2248,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             Log.d("WS_SERVICE", "SUBSCRIPTION_VERIFY_ACK: tier=$tierStr, expiresAt=$expiresAt")
 
             val ctx = applicationContext
-            val manager = com.securecall.app.billing.SubscriptionManager(ctx)
-            val accepted = success && manager.applyServerVerification(
+            // Only an answer for a currently pending receipt can change state; stale,
+            // unrelated or failed answers never clear another receipt or a verified right.
+            val outcome = com.securecall.app.billing.SubscriptionManager(ctx).onVerificationAck(
+                success = success,
                 requestId = requestId,
                 tier = tier,
                 expiresAt = expiresAt,
@@ -2257,15 +2259,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 packageName = packageName,
                 catalogVersion = catalogVersion
             )
-            if (accepted) {
-                com.securecall.app.config.TierManager.applyTier(ctx)
-            } else {
-                manager.clearSubscription()
-                com.securecall.app.config.TierManager.applyTier(ctx)
-            }
+            Log.d("WS_SERVICE", "SUBSCRIPTION_VERIFY_ACK outcome=$outcome")
+            com.securecall.app.config.TierManager.applyTier(ctx)
         } catch (t: Throwable) {
+            // A malformed answer grants nothing and leaves verified state to its finite expiry.
             Log.e("WS_SERVICE", "handleSubscriptionVerifyAck() failed", t)
-            com.securecall.app.billing.SubscriptionManager(applicationContext).clearSubscription()
             com.securecall.app.config.TierManager.applyTier(applicationContext)
         }
     }

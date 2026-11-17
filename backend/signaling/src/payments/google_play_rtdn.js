@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const { writeJsonAtomic } = require("../utils/json_store");
-const { verifyPlaySubscriptionToken } = require("./google_play_billing");
+const { findCodeByPurchaseToken, verifyPlaySubscriptionToken } = require("./google_play_billing");
 
 const MAX_DATA_BYTES = 64 * 1024;
 const TERMINAL_SUBSCRIPTION_TYPES = new Set([5, 10, 12, 13, 20]);
@@ -79,6 +79,18 @@ function decodeNotification(body) {
   return { messageId: message.messageId, notification };
 }
 
+// One-time tokens that never minted an activation/gift code may back a same-package
+// lifetime right. Their revoke persists a durable tombstone (also for tokens not yet
+// recorded) before the delivery is marked processed; a persistence failure throws and
+// keeps the delivery retryable. Subscription and code-backed tokens keep their paths.
+function tombstoneLifetimeToken(deps, purchaseToken) {
+  if (findCodeByPurchaseToken(deps.activationCodes, purchaseToken)
+      || findCodeByPurchaseToken(deps.giftCodes, purchaseToken)) {
+    return 0;
+  }
+  return deps.subscriptions.revokeLifetimeByPurchaseToken(purchaseToken);
+}
+
 function installGooglePlayRtdnRoute(app, deps) {
   const filePath = process.env.GOOGLE_PLAY_RTDN_FILE || path.join(process.cwd(), "data", "google_play_rtdn.json");
   const processed = loadProcessed(filePath);
@@ -124,6 +136,7 @@ function installGooglePlayRtdnRoute(app, deps) {
         const event = value.voidedPurchaseNotification;
         if (!event.purchaseToken || ![1, 2].includes(event.refundType)) throw new Error("invalid_voided_purchase");
         deps.subscriptions.expireByPurchaseToken(event.purchaseToken);
+        if (event.productType !== 1) tombstoneLifetimeToken(deps, event.purchaseToken);
 
         const activationSnapshot = deps.activationCodes.slice();
         const activationRevoked = revokeActivationByPurchaseToken(deps.activationCodes, event.purchaseToken);
@@ -147,7 +160,17 @@ function installGooglePlayRtdnRoute(app, deps) {
             throw error;
           }
         }
-      } else if (!value.testNotification && !value.oneTimeProductNotification) {
+      } else if (value.oneTimeProductNotification) {
+        // ONE_TIME_PRODUCT_CANCELED (2) closes the same lifetime record; purchases are
+        // granted only through the identity-bound client verification.
+        const event = value.oneTimeProductNotification;
+        if (event.notificationType === 2) {
+          if (typeof event.purchaseToken !== "string" || !event.purchaseToken) {
+            throw new Error("invalid_one_time_product_notification");
+          }
+          tombstoneLifetimeToken(deps, event.purchaseToken);
+        }
+      } else if (!value.testNotification) {
         throw new Error("unsupported_notification");
       }
 

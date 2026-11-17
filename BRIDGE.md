@@ -6299,3 +6299,16 @@ Open next:
 - Checks: YAML parse ok; synthetic `resolve_ndk`: ambient mismatch -> exit 1 (reproduced),
   pinned -> resolves and proceeds to tool check, pinned-but-missing -> fail-closed.
 - NOT_RUN: CI/Gradle/device; parent pushes and reruns integration once.
+
+## 2026-11-17 [AUTHOR: CLAUDE] SC-PLAY-LIFETIME-SAME-PACKAGE-20261117 -> PARTIAL (source staged, policy-gated)
+
+- Hop: Free UpgradeActivity -> SubscriptionManager pending -> SUBSCRIPTION_VERIFY lifetime branch ->
+  Play one-time verify -> durable identity-bound record in subscriptions store -> Play ack -> finite ACK ->
+  existing client apply/TierManager. Restore/refresh/revoke use the same record (MAP section).
+- Policy inputs required, none supplied: approved package/product tuple + offerVersion (bound to
+  PLAY_CATALOG_VERSION), `proofTtlMs` (offline/refresh/revoke-propagation bound), `rebindAuthority`
+  (`none` | `identity_registry_alias`). `server.js::PLAY_LIFETIME_POLICY = null` -> fails closed.
+- Tests: `npm test` (incl. pre/posttest) exit 0, 364 assertions ✓ / 0 ✗ + node:test files;
+  new `google_play_lifetime.test.js` 8/8 (RED 0/8 on base sources); `test:play-source` PASS.
+  Kotlin UpgradeActivity routing tests added, NOT RUN (no local Gradle). Commerce flags unchanged.
+- Not PRODUCT_READY: owner policy, Android CI/device run, Play Console products absent.

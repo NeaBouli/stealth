@@ -113,6 +113,33 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
 
     // ===================== BillingListener =====================
 
+    override fun onPurchasesRestored(purchases: List<BillingManager.RestoredPurchase>) {
+        runOnUiThread {
+            val pending = mutableListOf<Pair<BillingManager.RestoredPurchase, String>>()
+            try {
+                // Register the whole restore before any request can receive an answer.
+                for (purchase in purchases.filter { it.productId != BuildConfig.SKU_PREMIUM_ACTIVATION_CODE }) {
+                    pending += purchase to subscriptionManager.recordPendingPurchase(purchase.token, purchase.productId)
+                }
+            } catch (_: IllegalStateException) {
+                pending.forEach { subscriptionManager.discardPendingPurchase(it.second) }
+                tvStatus.text = getString(R.string.upgrade_unable_to_verify_purchase)
+                return@runOnUiThread
+            } catch (_: IllegalArgumentException) {
+                pending.forEach { subscriptionManager.discardPendingPurchase(it.second) }
+                tvStatus.text = getString(R.string.upgrade_unable_to_verify_purchase)
+                return@runOnUiThread
+            }
+            pending.forEach { (purchase, requestId) ->
+                sendVerificationToBackend(purchase.token, purchase.productId, requestId)
+            }
+            purchases.filter { it.productId == BuildConfig.SKU_PREMIUM_ACTIVATION_CODE }.forEach {
+                onPurchaseCompleted(it.tier, it.token, it.productId)
+            }
+            updateCurrentTierDisplay()
+        }
+    }
+
     override fun onProductsLoaded(products: List<ProductDetails>) {
         runOnUiThread {
             bindPurchaseButton(products, R.id.btnProLifetime, BuildConfig.SKU_PRO_LIFETIME, getString(R.string.upgrade_pro_lifetime))
@@ -141,13 +168,9 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
 
     override fun onPurchaseCompleted(tier: SubscriptionTier, token: String, productId: String) {
         runOnUiThread {
-            // Check if this is an activation code purchase
-            if (productId in setOf(
-                    BuildConfig.SKU_PRO_LIFETIME,
-                    BuildConfig.SKU_PREMIUM_LIFETIME,
-                    BuildConfig.SKU_PREMIUM_ACTIVATION_CODE
-                )
-            ) {
+            // Only the explicit activation-code product shows a code. Pro/Premium
+            // lifetime purchases unlock this package through server verification below.
+            if (productId == BuildConfig.SKU_PREMIUM_ACTIVATION_CODE) {
                 // Launch PurchaseResultActivity to show generated code
                 val intent = Intent(this, PurchaseResultActivity::class.java).apply {
                     putExtra(PurchaseResultActivity.EXTRA_PURCHASE_TOKEN, token)
@@ -162,7 +185,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
             val requestId = runCatching {
                 subscriptionManager.recordPendingPurchase(token, productId)
             }.getOrElse {
-                subscriptionManager.clearSubscription()
+                // A receipt that could not be stored grants nothing and leaves verified state intact.
                 com.securecall.app.config.TierManager.applyTier(this)
                 tvStatus.text = getString(R.string.upgrade_unable_to_verify_purchase)
                 return@runOnUiThread
@@ -195,7 +218,7 @@ class UpgradeActivity : AppCompatActivity(), BillingManager.BillingListener {
     ) {
         val ws = WebSocketService.instance
         if (ws == null || !ws.isConnected) {
-            subscriptionManager.clearSubscription()
+            subscriptionManager.discardPendingPurchase(requestId)
             com.securecall.app.config.TierManager.applyTier(this)
             tvStatus.text = getString(R.string.upgrade_verification_unavailable)
             return

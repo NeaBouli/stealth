@@ -562,3 +562,49 @@ and matching product/finance readiness. A paid Play tier never adds Direct VPN
   `Pkg.Revision`). Runner ambient `ANDROID_NDK_HOME` pointed at another NDK; the step now
   exports `ANDROID_NDK_HOME`/`ANDROID_NDK_ROOT` = `$ANDROID_HOME/ndk/27.0.12077973`.
   Guard, NDK revision and fail-closed behaviour unchanged.
+
+---
+
+# Narrow trace: same-package Play lifetime (SC-PLAY-LIFETIME-SAME-PACKAGE-20261117)
+
+Module/hop: Free `UpgradeActivity::onPurchaseCompleted` -> `SubscriptionManager::recordPendingPurchase`
+-> `subscription.js::SUBSCRIPTION_VERIFY` (lifetime branch `verifyLifetimePurchase`) ->
+`google_play_billing::resolveLifetimeProduct` (policy) + `verifyPlayOneTimePurchase` ->
+`subscriptions::recordVerifiedLifetime` (durable, identity-bound) -> `acknowledgePlayOneTimePurchase`
+-> `markLifetimeAcknowledged` -> `SUBSCRIPTION_VERIFY_ACK` (finite `expiresAt`) ->
+`WebSocketService::handleSubscriptionVerifyAck` -> `SubscriptionManager::applyServerVerification` -> `TierManager`.
+Restore: same hop (Play INAPP query -> same token record; same identity idempotent).
+Refresh: `/subscription/status` -> `getLifetimeEntitlement` -> `lifetimeStatusResponse` (now + policy `proofTtlMs`).
+Revoke: RTDN voided / one-time CANCELED -> `revokeLifetimeByPurchaseToken` (tombstone on the same record).
+
+| Node | Change | State |
+| --- | --- | --- |
+| Upgrade UI | lifetime SKUs no longer open `PurchaseResultActivity`; activation-code SKU unchanged | built |
+| Play catalog | `LIFETIME_PRODUCTS`, `normalizeLifetimePolicy`, `resolveLifetimeProduct`, `lifetimeStatusResponse` | built |
+| Subscription store | `inapp:<sha256(token)>` lifetime records in the same `subscriptions.json`; monthly paths skip them | built |
+| WS handler | lifetime branch inside existing `SUBSCRIPTION_VERIFY`; monthly branch unchanged | built |
+| Code route | `/billing/verify-purchase` rejects lifetime products/tokens (code path = activation-code product only) | built |
+| RTDN | voided + one-time CANCELED revoke lifetime record; dedup unchanged | built |
+| Policy input | `server.js::PLAY_LIFETIME_POLICY = null` (owner-approved tuple/TTL/rebind) | open: owner input |
+
+No new flag, module, database, protocol message or checkout. `PLAY_BILLING_ENABLED`/`BILLING_ENABLED`
+stay closed. Missing policy -> `lifetime_entitlement_unavailable`.
+
+## Consistency completion (SC-PLAY-LIFETIME-CONSISTENCY-20261117)
+
+- Same module/hops; preserve the existing lifetime implementation and monthly/gift paths.
+- RTDN -> durable unbound token tombstone -> first-record rejection, including restart;
+  provider acknowledgement -> synchronous current binding/revocation recheck -> success.
+- `server.js` -> read-only `GOOGLE_PLAY_LIFETIME_POLICY_FILE` -> strict normalization;
+  no public values/defaults, new enable flag or commerce activation.
+- `BillingManager::queryExistingPurchases` joins SUBS+INAPP query results before
+  `UpgradeActivity::onPurchasesRestored` records every receipt before sending any request.
+  An incomplete query returns an error, not a commercially selected subset.
+- `SubscriptionManager` isolates pending receipts and finite verified rights. Final ACKs
+  cannot be overwritten by duplicates; HTTP answers are bound to a receipt generation.
+  Distinct verified purchases require explicit coexistence policy, never tier ranking.
+  Failed preference commits restore the prior in-memory view and remain retryable.
+- Scope includes those existing client hops, handler/store/policy/RTDN and focused synthetic
+  regression sources only. Direct verification, authentication, Free VPN separation, native
+  code and commerce flags stay unchanged. Parent owns Android, visual, security and integration
+  gates; source tests do not imply runtime, provider, policy or release acceptance.
