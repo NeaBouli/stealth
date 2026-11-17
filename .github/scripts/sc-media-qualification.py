@@ -19,9 +19,9 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 
-SOURCE = "b840ada3faea56782f81b234945ef6ad4c7e5e56"
-TREE = "c3c7094d1c07441ffaf3dd1bbfee07c60686ed6c"
-SOURCE_TABLE_SHA256 = "42b2c32180253648dd3787ba42a8a4d8ef49c4c972a8654d53a81d3a6bae4f28"
+SOURCE = "6ba8fddd0319666dad9567e886d5d6655ee23d16"
+TREE = "129dcb4e2982674bf7ee7958cfa0ba18047515fb"
+SOURCE_TABLE_SHA256 = "e12de5018c07dc14a8d9b6b2e35c626539c45ad5b653b9ba217397ca08544454"
 FIXTURE_SHA256 = "a466488db1f666da3f1b941ad4c389a6b7940d5c93662adf25f77fb781fd63c7"
 PROVIDER = "client_android/app/google-services.json"
 PACKAGES = ("com.securecall.app.free", "com.securecall.app.premium", "com.securecall.app.pro")
@@ -30,7 +30,7 @@ CLASSES = ("com.securecall.app.crypto.MediaSessionV3Test",
            "com.securecall.app.net.CallMediaReceiveGateTest",
            "com.securecall.app.security.IdentityProtocolTest",
            "com.securecall.app.net.AudioPlaybackLifecycleTest")
-CASES = (11, 4, 5, 5, 4)
+CASES = (11, 4, 7, 5, 4)
 FLAVORS = ("Free", "Premium")
 WRAPPER_SHA256 = "46ac66d47f30f3dacfdf306e0b714a91a34fb94a22ba0a744b280933f47bc0cf"
 WRAPPER_PATH = "wrapper/dists/gradle-9.8.0-all/619e6l8zt76uzaekhqdol0b60/gradle-9.8.0-all.zip"
