@@ -70,6 +70,13 @@ MAX_OUTPUT = 512 * 1024
 PUBLIC_DIAGNOSTIC_ASSET = "public-preparation-diagnostic.json"
 MAX_PUBLIC_TAIL = 8192
 MAX_PUBLIC_DIAGNOSTIC = 16 * 1024
+PRIVATE_FAILURE_ASSET = "private-container-failure.json"
+MAX_PRIVATE_FAILURE = 16 * 1024
+PRIVATE_FAILURE_CATEGORIES = frozenset({
+    "UNKNOWN", "capture_limit", "oom", "offline_dependency_missing",
+    "dependency_verification", "compilation_failed", "build_failed",
+    "launcher_exit", "container_exit", "running", "caps_missing", "export_missing",
+})
 SYSTEM_JAVA_CACERTS = Path("/etc/ssl/certs/adoptium/cacerts")
 MAX_PUBLIC_CACERTS = 4 * 1024**2
 REPO = "NeaBouli/stealth"
@@ -967,6 +974,120 @@ def validate_public_diagnostic(payload: bytes) -> None:
             and canonical(record) == payload, "diagnostic_state_shape")
 
 
+def private_failure_receipt(data: bytes, *, public: bool, code: int | None, state: dict,
+                            bounded: bool, exported: bool, run_id: str,
+                            controller_sha: str, input_sha256: str) -> bytes:
+    require(public is False and type(data) is bytes and len(data) <= MAX_OUTPUT,
+            "private_failure_only")
+    lines = data.splitlines()
+    reached = {"launcher_started": True, "caps": b"SC_CAPS_OK" in lines,
+               "export": b"SC_EXPORT_READY" in lines, "apk_exported": exported,
+               "headless_started": False}
+    # Only fixed observations escape this capture, never text extracted from it.
+    category = "UNKNOWN"
+    if bounded is False:
+        category = "capture_limit"
+    elif state.get("OOMKilled") is True:
+        category = "oom"
+    elif b"No cached version of " in data and b"available for offline mode." in data:
+        category = "offline_dependency_missing"
+    elif b"Dependency verification failed for configuration" in data:
+        category = "dependency_verification"
+    elif b"Compilation error." in data or b"Compilation failed;" in data:
+        category = "compilation_failed"
+    elif b"BUILD FAILED" in lines:
+        category = "build_failed"
+    elif code is not None and code != 0:
+        category = "launcher_exit"
+    elif state.get("ExitCode") is not None and state["ExitCode"] != 0:
+        category = "container_exit"
+    elif state.get("Running") is True:
+        category = "running"
+    elif not reached["caps"]:
+        category = "caps_missing"
+    elif not reached["export"] or not exported:
+        category = "export_missing"
+    payload = canonical({
+        "format": 1, "kind": "private-container-failure", "public_only": False,
+        "qualification": "NOT_ACCEPTED", "app_tests": "NOT_RUN",
+        "run_id": run_id, "controller_sha": controller_sha, "source": SOURCE,
+        "tree": TREE, "source_table_sha256": SOURCE_TABLE_SHA256,
+        "input_sha256": input_sha256, "reached": reached,
+        "launcher_exit": code, "container_exit": state.get("ExitCode"),
+        "oom": state.get("OOMKilled"), "running": state.get("Running"),
+        "bounded": bounded, "output_bytes": len(data), "category": category,
+        "missing_artifact": "UNKNOWN",
+        "limits": {"wall_seconds": 900, "output_bytes": MAX_OUTPUT}})
+    validate_private_failure(payload)
+    return payload
+
+
+def validate_private_failure(payload: bytes) -> None:
+    require(type(payload) is bytes and 0 < len(payload) <= MAX_PRIVATE_FAILURE,
+            "private_failure_size")
+    try:
+        record = json.loads(payload)
+    except (ValueError, UnicodeError):
+        raise Refusal("private_failure_json") from None
+    require(type(record) is dict and set(record) == {
+        "format", "kind", "public_only", "qualification", "app_tests", "run_id",
+        "controller_sha", "source", "tree", "source_table_sha256", "input_sha256",
+        "reached", "launcher_exit", "container_exit", "oom", "running", "bounded",
+        "output_bytes", "category", "missing_artifact", "limits"}, "private_failure_schema")
+    require(type(record["format"]) is int and record["format"] == 1
+            and record["kind"] == "private-container-failure" and record["public_only"] is False
+            and record["qualification"] == "NOT_ACCEPTED" and record["app_tests"] == "NOT_RUN"
+            and record["source"] == SOURCE and record["tree"] == TREE
+            and record["source_table_sha256"] == SOURCE_TABLE_SHA256
+            and record["missing_artifact"] == "UNKNOWN", "private_failure_constants")
+    require(all(type(record[key]) is str and re.fullmatch(pattern, record[key]) is not None
+                for key, pattern in (("run_id", r"[0-9]{1,20}"),
+                                     ("controller_sha", r"[0-9a-f]{40}"),
+                                     ("input_sha256", r"[0-9a-f]{64}"))), "private_failure_identity")
+    require(type(record["reached"]) is dict and set(record["reached"]) == {
+        "launcher_started", "caps", "export", "apk_exported", "headless_started"}
+            and all(type(value) is bool for value in record["reached"].values())
+            and record["reached"]["launcher_started"] is True
+            and record["reached"]["headless_started"] is False, "private_failure_reached")
+    require(all(record[key] is None or type(record[key]) is int and -255 <= record[key] <= 255
+                for key in ("launcher_exit", "container_exit"))
+            and all(record[key] is None or type(record[key]) is bool for key in ("oom", "running"))
+            and type(record["bounded"]) is bool and type(record["output_bytes"]) is int
+            and 0 <= record["output_bytes"] <= MAX_OUTPUT
+            and type(record["category"]) is str and record["category"] in PRIVATE_FAILURE_CATEGORIES
+            and type(record["limits"]) is dict
+            and all(type(value) is int for value in record["limits"].values())
+            and record["limits"] == {"wall_seconds": 900, "output_bytes": MAX_OUTPUT}
+            and canonical(record) == payload, "private_failure_state")
+
+
+def publish_private_failure(root: Path, payload: bytes) -> None:
+    validate_private_failure(payload)
+    record = json.loads(payload)
+    require(os.environ.get("GITHUB_REPOSITORY") == REPO
+            and os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
+            and os.environ.get("GITHUB_RUN_ATTEMPT") == "1"
+            and os.environ.get("SC_RUNNER_ENVIRONMENT") == "github-hosted"
+            and os.environ.get("GITHUB_REF") == REF
+            and os.environ.get("SC_RELEASE_TAG") == TAG and os.environ.get("SC_ASSET") == ASSET
+            and record["run_id"] == os.environ.get("GITHUB_RUN_ID")
+            and record["controller_sha"] == os.environ.get("SC_CONTROLLER_SHA") == os.environ.get("GITHUB_SHA")
+            and record["input_sha256"] == os.environ.get("SC_BUNDLE_SHA256"), "private_failure_binding")
+    cleanup()  # Tokenized publication is host-only and requires successful cleanup.
+    current = draft()
+    require(len(current["assets"]) == 1 and current["assets"][0]["name"] == ASSET,
+            "private_failure_fresh_input_only")
+    path = root / PRIVATE_FAILURE_ASSET
+    with path.open("xb") as output:
+        output.write(payload)
+    path.chmod(0o600)
+    require(draft()["assets"] == current["assets"], "private_failure_draft_changed")
+    host_command(["gh", "api", "--method", "POST",
+                  f"https://uploads.github.com/repos/{REPO}/releases/{RELEASE}/assets?name={PRIVATE_FAILURE_ASSET}",
+                  "-H", "Content-Type: application/json", "--input", str(path)], token=True)
+    print("phase=private_failure stored=true app_tests=NOT_RUN qualification=NOT_ACCEPTED")
+
+
 def lineage_checks() -> None:
     """Pure synthetic fixtures only; never invoke strip, Docker, Gradle or JNI."""
     import copy
@@ -1105,7 +1226,7 @@ def run_container(root: Path, source: Path, dependencies: Path,
             member.size, member.mode = len(data), 0o644
             archive.addfile(member, io.BytesIO(data))
     data, code, state = bytearray(), None, {}
-    bounded, exported = True, False
+    bounded, exported, launched, failed = True, False, False, False
     try:
         image_id = host_command(["docker", "import", "--change", f"LABEL {LABEL}={name}", "-", image], stdin=empty.getvalue()).decode().strip()
         mounts += [(str(source), "/source"), (str(dependencies), "/dependencies"), (str(root / "wrapper.zip"), "/wrapper.zip"),
@@ -1162,6 +1283,7 @@ def run_container(root: Path, source: Path, dependencies: Path,
         print(f"phase=admitted public={str(public).lower()} offline={str(not public).lower()} memory_mib=4096 pids=256 cpu=1", flush=True)
         started, data, bounded, exported = time.monotonic(), bytearray(), True, False
         process = subprocess.Popen(["docker", "start", "--attach", name], env=ENV, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        launched = True
         require(process.stdout is not None)
         selector = selectors.DefaultSelector()
         selector.register(process.stdout, selectors.EVENT_READ)
@@ -1194,8 +1316,13 @@ def run_container(root: Path, source: Path, dependencies: Path,
             state = json.loads(host_command(["docker", "inspect", name]))[0]["State"]
         finally:
             selector.close()
+            pending_failure = sys.exc_info()[0] is not None
             try:
                 cleanup()
+            except Exception:
+                if public or not pending_failure:
+                    raise
+                print("phase=private_failure cleanup=false qualification=NOT_ACCEPTED", file=sys.stderr)
             finally:
                 if process.poll() is None:
                     process.kill()
@@ -1208,13 +1335,27 @@ def run_container(root: Path, source: Path, dependencies: Path,
                 "container_result")
         return root / "exported"
     except Exception:
+        failed = True
         if diagnose:
             raise PublicPreparationFailure(public_diagnostic(
                 bytes(data), public=public, code=code, state=state, bounded=bounded, exported=exported,
                 run_id=os.environ["GITHUB_RUN_ID"], controller_sha=os.environ["SC_CONTROLLER_SHA"])) from None
+        if not public and launched:
+            try:
+                publish_private_failure(root, private_failure_receipt(
+                    bytes(data), public=False, code=code, state=state, bounded=bounded, exported=exported,
+                    run_id=os.environ["GITHUB_RUN_ID"], controller_sha=os.environ["SC_CONTROLLER_SHA"],
+                    input_sha256=os.environ["SC_BUNDLE_SHA256"]))
+            except Exception:
+                print("phase=private_failure stored=false qualification=NOT_ACCEPTED", file=sys.stderr)
         raise
     finally:
-        cleanup()
+        try:
+            cleanup()
+        except Exception:
+            if public or not failed:
+                raise
+            print("phase=private_failure cleanup=false qualification=NOT_ACCEPTED", file=sys.stderr)
 
 
 def dispatch_guard() -> None:
@@ -1553,6 +1694,261 @@ def public_diagnostic_checks() -> None:
     print(f"SC_SOURCE_CHECKS public_diagnostic={checks} host_target_network_execution=false")
 
 
+def private_failure_checks() -> None:
+    """Pure synthetic receipt and mocked host-flow checks; no target execution."""
+    from collections.abc import Callable
+    from contextlib import ExitStack, redirect_stderr, redirect_stdout
+    from types import SimpleNamespace
+    from unittest.mock import Mock, patch
+
+    checks = 0
+    def checked(ok: bool) -> None:
+        nonlocal checks
+        require(ok, "private_failure_fixture")
+        checks += 1
+
+    def rejected(operation: Callable[[], object]) -> None:
+        nonlocal checks
+        try:
+            operation()
+        except Refusal:
+            checks += 1
+        else:
+            raise Refusal("negative_private_failure_fixture_accepted")
+
+    args = {"public": False, "code": 1, "state": {"ExitCode": 1, "OOMKilled": False, "Running": False},
+            "bounded": True, "exported": False, "run_id": "123", "controller_sha": "a" * 40,
+            "input_sha256": digest(b"synthetic input")}
+    canaries = ("ghp_SYNTHETIC_PRIVATE_TOKEN_12345", "/private/customer/source.kt:123",
+                "customer-device-id", "user@private.invalid", "password=SHORT_SECRET",
+                "java.lang.PrivateException: SECRET_EXCEPTION", "internal.private:thing:9.8.7")
+    raw = ("SC_CAPS_OK\nNo cached version of internal.private:thing:9.8.7 available for offline mode.\n"
+           + "\n".join(canaries)).encode()
+    payload = private_failure_receipt(raw, **args)
+    record = json.loads(payload)
+    checked(record["category"] == "offline_dependency_missing" and record["missing_artifact"] == "UNKNOWN"
+            and record["reached"]["caps"] and not record["reached"]["headless_started"])
+    checked(all(canary.encode() not in payload for canary in canaries) and b"tail" not in payload)
+    large = private_failure_receipt(b"x" * MAX_OUTPUT, **args)
+    checked(len(large) <= MAX_PRIVATE_FAILURE and json.loads(large)["output_bytes"] == MAX_OUTPUT)
+    checked(private_failure_receipt(raw, **{**args, "state": {**args["state"], "Error": canaries[0]}}) == payload)
+    rejected(lambda: private_failure_receipt(raw, **{**args, "public": True}))
+    rejected(lambda: private_failure_receipt(b"x" * (MAX_OUTPUT + 1), **args))
+    rejected(lambda: validate_private_failure(b"not-json"))
+    rejected(lambda: validate_private_failure(b"x" * (MAX_PRIVATE_FAILURE + 1)))
+    rejected(lambda: validate_private_failure(payload + b" "))
+    rejected(lambda: validate_private_failure(b"[]"))
+    rejected(lambda: validate_public_diagnostic(payload))
+    public = public_diagnostic(b"public only", **{k: v for k, v in {**args, "public": True}.items()
+                                                   if k != "input_sha256"})
+    rejected(lambda: validate_private_failure(public))
+    for field, value in (
+        ("tail", canaries[0]), ("exception", canaries[-2]), ("kind", "public-preparation-diagnostic"),
+        ("format", True), ("public_only", True), ("qualification", "PASS"), ("app_tests", "PASS"),
+        ("source", "b" * 40), ("tree", "b" * 40), ("source_table_sha256", "b" * 64),
+        ("input_sha256", canaries[0]), ("controller_sha", canaries[0]), ("run_id", canaries[0]),
+        ("launcher_exit", True), ("container_exit", 256), ("oom", 1), ("running", "false"),
+        ("bounded", 1), ("output_bytes", True), ("output_bytes", MAX_OUTPUT + 1),
+        ("category", canaries[0]), ("category", []), ("missing_artifact", canaries[-1]),
+        ("limits", {"wall_seconds": 901, "output_bytes": MAX_OUTPUT}),
+        ("limits", {"wall_seconds": 900, "output_bytes": MAX_OUTPUT, "tail": canaries[0]}),
+        ("reached", {**record["reached"], "headless_started": True}),
+        ("reached", {**record["reached"], "caps": 1}),
+        ("reached", {**record["reached"], "path": canaries[1]}),
+    ):
+        rejected(lambda: validate_private_failure(canonical({**record, field: value})))
+    for data, changes, category in (
+        (b"", {"bounded": False}, "capture_limit"),
+        (b"", {"state": {"OOMKilled": True}}, "oom"),
+        (b"Dependency verification failed for configuration PRIVATE", {}, "dependency_verification"),
+        (b"Compilation error. PRIVATE", {}, "compilation_failed"),
+        (b"Compilation failed; PRIVATE", {}, "compilation_failed"),
+        (b"BUILD FAILED\n", {}, "build_failed"),
+        (b"", {}, "launcher_exit"),
+        (b"", {"code": 0}, "container_exit"),
+        (b"", {"code": 0, "state": {"Running": True}}, "running"),
+        (b"", {"code": None, "state": {}}, "caps_missing"),
+        (b"SC_CAPS_OK\n", {"code": None, "state": {}}, "export_missing"),
+        (b"SC_CAPS_OK\nSC_EXPORT_READY\n", {"code": None, "state": {}, "exported": True}, "UNKNOWN"),
+    ):
+        checked(json.loads(private_failure_receipt(data, **{**args, **changes}))["category"] == category)
+    forbidden = Mock(side_effect=AssertionError("host/target/network operation in pure fixture"))
+    environment = {"GITHUB_REPOSITORY": REPO, "GITHUB_EVENT_NAME": "workflow_dispatch",
+                   "GITHUB_RUN_ATTEMPT": "1", "SC_RUNNER_ENVIRONMENT": "github-hosted",
+                   "GITHUB_REF": REF, "SC_RELEASE_TAG": TAG, "SC_ASSET": ASSET,
+                   "GITHUB_RUN_ID": "123", "SC_CONTROLLER_SHA": "a" * 40, "GITHUB_SHA": "a" * 40,
+                   "SC_BUNDLE_SHA256": args["input_sha256"], "GH_TOKEN": "SYNTHETIC_NOT_A_TOKEN"}
+    owned = {"id": RELEASE, "draft": True, "tag_name": TAG, "prerelease": False,
+             "assets": [{"id": 123, "name": ASSET, "size": len(b"synthetic input")}]}
+    with tempfile.TemporaryDirectory(prefix="sc-private-fixtures-", dir=Path.cwd()) as directory, ExitStack() as stack:
+        root = Path(directory)
+        environment["RUNNER_TEMP"] = directory
+        stack.enter_context(patch.dict(os.environ, environment, clear=True))
+        for name in ("host_command", "gh_json", "cleanup", "tool_mounts", "run_headless"):
+            stack.enter_context(patch.dict(globals(), {name: forbidden}))
+        stack.enter_context(patch.object(subprocess, "run", forbidden))
+        stack.enter_context(patch.object(subprocess, "Popen", forbidden))
+        events: list[str] = []
+        def fake_draft(path: str) -> dict:
+            checked(path == f"repos/{REPO}/releases/{RELEASE}")
+            events.append("draft")
+            return owned
+
+        def fake_upload(arguments: list[str], **kwargs: object) -> bytes:
+            checked(events == ["cleanup", "draft", "draft"] and kwargs == {"token": True})
+            checked(arguments == ["gh", "api", "--method", "POST",
+                    f"https://uploads.github.com/repos/{REPO}/releases/{RELEASE}/assets?name={PRIVATE_FAILURE_ASSET}",
+                    "-H", "Content-Type: application/json", "--input", str(root / PRIVATE_FAILURE_ASSET)])
+            checked((root / PRIVATE_FAILURE_ASSET).read_bytes() == payload
+                    and stat.S_IMODE((root / PRIVATE_FAILURE_ASSET).stat().st_mode) == 0o600)
+            events.append("upload")
+            return b"{}"
+
+        with patch.dict(globals(), {"cleanup": lambda: events.append("cleanup"),
+                                   "gh_json": fake_draft, "host_command": fake_upload}), redirect_stdout(io.StringIO()):
+            publish_private_failure(root, payload)
+        checked(events.count("upload") == 1)
+        for key in environment:
+            if key not in {"GH_TOKEN", "RUNNER_TEMP"}:
+                with patch.dict(os.environ, {key: "unbound"}):
+                    rejected(lambda: publish_private_failure(root, payload))
+        for key, value in (("run_id", "124"), ("controller_sha", "b" * 40), ("input_sha256", "b" * 64)):
+            rejected(lambda: publish_private_failure(root, canonical({**record, key: value})))
+        for key, value in (("id", RELEASE + 1), ("draft", False), ("tag_name", "other"), ("prerelease", True),
+                           ("assets", []), ("assets", [*owned["assets"], {"name": PRIVATE_FAILURE_ASSET}])):
+            with patch.dict(globals(), {"cleanup": Mock(), "gh_json": lambda _: {**owned, key: value}}):
+                rejected(lambda: publish_private_failure(root, payload))
+        with patch.dict(globals(), {"cleanup": Mock(side_effect=Refusal("cleanup_failed"))}):
+            rejected(lambda: publish_private_failure(root, payload))
+        with patch.dict(globals(), {"cleanup": Mock(), "gh_json": lambda _: owned}):
+            try:
+                publish_private_failure(root, payload)
+            except FileExistsError:
+                checks += 1
+            else:
+                raise Refusal("private_failure_overwrite")
+        (root / PRIVATE_FAILURE_ASSET).unlink()
+        with patch.dict(globals(), {"cleanup": Mock(), "gh_json": Mock(side_effect=[owned, {**owned, "draft": False}])}):
+            rejected(lambda: publish_private_failure(root, payload))
+        (root / PRIVATE_FAILURE_ASSET).unlink()
+        with patch.dict(globals(), {"cleanup": Mock(), "gh_json": Mock(side_effect=[owned, {**owned, "assets": []}])}):
+            rejected(lambda: publish_private_failure(root, payload))
+
+        # Exercise the existing real hosted/container functions with every external
+        # operation replaced. No Docker process, private source or APK is executed.
+        for scenario in ("failure", "metadata_failure", "receipt_failure", "export_failure", "prelaunch_failure", "success"):
+            scenario_root = root / scenario
+            scenario_root.mkdir()
+            created: list[str] = []
+            inspections = 0
+            success = scenario == "success"
+            captured = b"SC_CAPS_OK\nSC_EXPORT_READY\n" if success or scenario == "export_failure" else raw
+            final_state = {"ExitCode": 0 if success else 1, "OOMKilled": False, "Running": False}
+            if scenario == "receipt_failure":
+                final_state["OOMKilled"] = canaries[0]
+            publisher = Mock(side_effect=RuntimeError(canaries[0]) if scenario == "metadata_failure" else None)
+            original = Refusal("synthetic_export_failure")
+            export = Mock(side_effect=original if scenario == "export_failure" else None)
+            headless = Mock(return_value={}) if success else forbidden
+            selector = Mock()
+            selector.get_map.side_effect = [True, False]
+            selector.select.return_value = [(SimpleNamespace(fd=123), 1)]
+            process = Mock(stdout=object())
+            process.wait.return_value = process.poll.return_value = final_state["ExitCode"]
+
+            def host(arguments: list[str], **kwargs: object) -> bytes:
+                nonlocal inspections
+                if arguments[:3] == ["docker", "info", "--format"]:
+                    return b"2" if "Version" in arguments[-1] else b"systemd"
+                if arguments[:2] == ["docker", "import"]:
+                    if scenario == "prelaunch_failure":
+                        raise Refusal("synthetic_prelaunch_failure")
+                    return b"c" * 64
+                if arguments[:2] == ["docker", "create"]:
+                    created[:] = arguments
+                    return b""
+                if arguments[:2] == ["docker", "inspect"]:
+                    inspections += 1
+                    if inspections > 1:
+                        return canonical([{"State": final_state}])
+                    mount_values = [created[i + 1] for i, value in enumerate(created) if value == "--mount"]
+                    env_values = [created[i + 1] for i, value in enumerate(created) if value == "--env"]
+                    target = created[created.index(owned_name() + ":empty") + 1:]
+                    return canonical([{"Image": "c" * 64, "Id": "d" * 64, "State": {"Status": "created"},
+                        "Config": {"User": "65534:65534", "Entrypoint": None, "Labels": {LABEL: owned_name()},
+                                   "WorkingDir": "/scratch", "Cmd": target, "Env": env_values},
+                        "Mounts": [{"Type": "bind", "Source": m.split(",")[1][4:],
+                                    "Destination": m.split(",")[2][4:], "RW": False} for m in mount_values],
+                        "HostConfig": {"ReadonlyRootfs": True, "NetworkMode": "none", "Memory": 4 * 1024**3,
+                            "MemorySwap": 4 * 1024**3, "NanoCpus": 10**9, "PidsLimit": 256, "CgroupnsMode": "private",
+                            "CgroupParent": "system.slice", "IpcMode": "none", "Privileged": False,
+                            "PidMode": "", "CapDrop": ["ALL"], "CapAdd": [],
+                            "SecurityOpt": ["no-new-privileges=true"], "LogConfig": {"Type": "none"},
+                            "Ulimits": [{"Name": k, "Soft": v, "Hard": v} for k, v in
+                                        (("cpu", 840), ("fsize", 536870912), ("nofile", 1024))],
+                            "Tmpfs": {"/scratch": "rw,exec,nosuid,nodev,size=3221225472,uid=65534,gid=65534,mode=0700"}}}])
+                if arguments[:2] == ["docker", "exec"] or arguments[:4] == ["gh", "api", "--method", "POST"]:
+                    return b"{}"
+                raise AssertionError("unexpected mocked command")
+
+            def download(arguments: list[str], **kwargs: object) -> None:
+                checked(arguments[:3] == ["gh", "api", f"repos/{REPO}/releases/assets/123"])
+                kwargs["stdout"].write(b"synthetic input")
+
+            def exported(*arguments: object, **kwargs: object) -> None:
+                export(*arguments, **kwargs)
+                destination = arguments[1]
+                destination.mkdir()
+                (destination / "apk-receipt.json").write_bytes(canonical({}))
+
+            output, errors = io.StringIO(), io.StringIO()
+            with ExitStack() as flow:
+                flow.enter_context(patch.dict(os.environ, {"RUNNER_TEMP": str(scenario_root)}))
+                replacements = {"dispatch_guard": Mock(), "tool_mounts": lambda: [],
+                    "public_preparation": Mock(return_value=root), "draft": lambda: owned,
+                    "extract_input": Mock(), "trusted_strip_proof": Mock(return_value={}),
+                    "validate_strip_proof": Mock(), "stage_cache": Mock(return_value=root),
+                    "host_command": host, "publish_private_failure": publisher,
+                    "receive_export": exported, "run_headless": headless,
+                    "cleanup": Mock(side_effect=Refusal("synthetic_cleanup_failure")
+                                    if scenario == "export_failure" else None)}
+                flow.enter_context(patch.dict(globals(), replacements))
+                flow.enter_context(patch.object(subprocess, "run", download))
+                flow.enter_context(patch.object(subprocess, "Popen", Mock(return_value=process)))
+                flow.enter_context(patch.object(selectors, "DefaultSelector", lambda: selector))
+                flow.enter_context(patch.object(os, "read", lambda *_: captured))
+                flow.enter_context(patch.object(time, "monotonic", lambda: 1))
+                flow.enter_context(redirect_stdout(output))
+                flow.enter_context(redirect_stderr(errors))
+                try:
+                    hosted()
+                except Refusal as error:
+                    checked(not success)
+                    checked(error is original if scenario == "export_failure" else
+                            str(error) == ("synthetic_prelaunch_failure" if scenario == "prelaunch_failure" else "container_result"))
+                else:
+                    checked(success)
+            checked(all(c not in output.getvalue() + errors.getvalue() for c in canaries))
+            checked(publisher.call_count == (0 if scenario in {"success", "prelaunch_failure", "receipt_failure"} else 1))
+            if publisher.called:
+                validate_private_failure(publisher.call_args.args[1])
+                checked(json.loads(publisher.call_args.args[1])["reached"]["headless_started"] is False)
+            if success:
+                checked(headless.call_count == 1 and "accepted=true" in output.getvalue())
+            else:
+                checked("phase=result" not in output.getvalue())
+        with patch.dict(globals(), {"hosted": Mock(side_effect=Refusal("container_result"))}), \
+                patch.object(sys, "argv", ["controller", "hosted"]), redirect_stderr(io.StringIO()):
+            try:
+                main()
+            except SystemExit as error:
+                checked(error.code == 1)
+            else:
+                raise Refusal("private_failure_exit_zero")
+        checked(forbidden.call_count == 0)
+    print(f"SC_SOURCE_CHECKS private_failure={checks} host_target_network_execution=false")
+
+
 def hosted() -> None:
     dispatch_guard()
     mounts = tool_mounts()  # Public tools and awk resolve before private input.
@@ -1673,6 +2069,7 @@ def main() -> None:
     commands.add_parser("hosted")
     commands.add_parser("diagnose-public")
     commands.add_parser("public-diagnostic-checks")
+    commands.add_parser("private-failure-checks")
     commands.add_parser("public-ca-checks")
     commands.add_parser("admission")
     commands.add_parser("cleanup")
@@ -1691,6 +2088,8 @@ def main() -> None:
             diagnose_public()
         elif args.mode == "public-diagnostic-checks":
             public_diagnostic_checks()
+        elif args.mode == "private-failure-checks":
+            private_failure_checks()
         elif args.mode == "public-ca-checks":
             public_ca_checks()
         elif args.mode == "cleanup":

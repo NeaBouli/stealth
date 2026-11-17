@@ -761,3 +761,31 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   API24 headless JNI stages; no private download on public failure.
 - Existing resource/cap/network/secret/guest-isolation guards remain unchanged.
   No UI241/GUI/API36 or customer-phone prerelease test is included.
+
+### Private Failure Metadata (SC-JNI-PRIVATE-FAILURE-METADATA-20261117)
+
+1. **Core idea:** The temporary qualification controller retains bounded failure
+   facts, not private logs (`.github/scripts/sc-media-qualification.py`). Parent
+   evidence run44107089297 failed after public export/private admission; its
+   actual inner cause remains UNKNOWN. No worker runtime admission is implied.
+2. **Trace:** `hosted -> run_container(public=False) -> private_failure_receipt
+   -> publish_private_failure -> cleanup -> draft -> host_command` carries only
+   canonical fixed-schema JSON after an actually started private launcher fails.
+3. **Module:** Temporary qualification controller; entry `run_container`;
+   failure-receipt hop is the sole source change, plus synthetic pure checks.
+4. **Wiring:** Existing bounded capture becomes fixed enums/booleans/numbers;
+   the host alone validates identities and publishes once to the exact owned
+   still-DRAFT, without overwrite. Original failure is re-raised; failure cannot
+   continue to APK acceptance/headless or subsequent private stages. Success
+   and the separate public-only tail diagnostic retain their existing behavior.
+5. **Gaps:** No raw tail, compiler/source lines, paths, exceptions or arbitrary
+   identifiers are serialized. Missing-artifact identity is always `UNKNOWN`:
+   no private token is treated as public catalog authorization. Categories are
+   observed fixed signatures/state, not a proven root-cause diagnosis.
+6. **Diagrams:** Existing diagram files remain untouched under this bounded
+   append-only controller assignment; the scoped hop above is the change map.
+7. **Next:** Parent reviews the exact local commit and separately owns all
+   runtime/ref/draft/input admissions. App, workflow, credentials, kernel,
+   network, cache, checksum, CPU/memory/file/output/export/time/cgroup/KVM
+   boundaries remain untouched. Runtime qualification remains NOT_ACCEPTED;
+   APK/ART acceptance and all real execution remain NOT_RUN in this task.
