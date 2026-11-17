@@ -67,7 +67,7 @@ private data class CallSecurityState(
     var securityCode: String? = null,
 ) {
     /**
-     * Local callee accept ownership for exactly this invite. Taken once with a CAS before
+     * Local callee accept ownership for exactly this invite. Claimed once under admission before
      * any audio stop, key generation or media replacement; never released, so a repeated
      * or concurrent accept cannot rekey this call. A new invite gets a new state and claim.
      * Declared in the body so it stays out of the data-class equality.

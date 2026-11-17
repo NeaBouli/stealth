@@ -301,7 +301,7 @@ class CallAcceptOnceTest {
             val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
             while (registered.state != Thread.State.BLOCKED && registered.state != Thread.State.TERMINATED &&
                 System.nanoTime() < deadline) {
-                Thread.sleep(1)
+                Thread.yield()
             }
         } finally {
             release.countDown()
