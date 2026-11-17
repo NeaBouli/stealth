@@ -7,6 +7,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const crypto = require("node:crypto");
 const { execFileSync } = require("node:child_process");
 const { after, test } = require("node:test");
 
@@ -22,6 +23,8 @@ const subscriptions = require("../subscriptions");
 const billing = require("../payments/google_play_billing");
 const { installGooglePlayRtdnRoute } = require("../payments/google_play_rtdn");
 const { buildContext } = require("../context");
+const { createIdentityRegistry } = require("../services/identity_registry");
+const { parseIdentityPublicKey } = require("../security/identity_protocol");
 
 const PKG = "com.securecall.app.free";
 const CATALOG = billing.PLAY_CATALOG_VERSION;
@@ -43,8 +46,8 @@ function flush() {
   return new Promise(resolve => setImmediate(resolve)).then(() => new Promise(r => setImmediate(r)));
 }
 
-function harness({ policy = POLICY, aliases = {}, verify, acknowledge, activationCodes = [], enabled = true } = {}) {
-  const calls = { verify: 0, acknowledge: 0, subscriptionVerify: 0, ackSawDurableRecord: [] };
+function harness({ policy = POLICY, aliases = {}, identityRegistry, verify, acknowledge, activationCodes = [], enabled = true } = {}) {
+  const calls = { verify: 0, acknowledge: 0, subscriptionVerify: 0, subscriptionAcknowledge: 0, ackSawDurableRecord: [] };
   const ctx = buildContext({
     pkd: { registerKey: () => ({}), getKey: () => null },
     subscriptions,
@@ -68,7 +71,7 @@ function harness({ policy = POLICY, aliases = {}, verify, acknowledge, activatio
       if (!billing.SUBSCRIPTION_PRODUCTS[productId]) throw new Error("unsupported_package_or_product");
       return { tier: "pro", expiresAt: Date.now() + 86400000, catalogVersion: CATALOG, needsAcknowledgement: false };
     },
-    acknowledgePlaySubscription: () => true,
+    acknowledgePlaySubscription: () => { calls.subscriptionAcknowledge += 1; return true; },
     playBillingEnabled: enabled,
     verifyPlayOneTimePurchase: async (packageName, productId, purchaseToken) => {
       calls.verify += 1;
@@ -87,7 +90,7 @@ function harness({ policy = POLICY, aliases = {}, verify, acknowledge, activatio
       if (acknowledge) return acknowledge(packageName, productId, purchaseToken);
     },
     playLifetimePolicy: policy,
-    identityRegistry: { aliasesFor: clientId => aliases[clientId] || [] },
+    identityRegistry: identityRegistry || { aliasesFor: clientId => aliases[clientId] || [] },
   });
   ctx.activationCodes.splice(0, ctx.activationCodes.length, ...activationCodes);
   const sockets = new Map();
@@ -218,6 +221,95 @@ test("closed commerce gate rejects lifetime before provider or persistence work"
   assert.equal(h.calls.verify, 0);
   assert.equal(h.calls.acknowledge, 0);
   assert.equal(subscriptions.hasLifetimePurchase("tok-closed"), false);
+  const malformed = await h.send("alice", { purchaseToken: {}, productId: { toString: null, valueOf: null } });
+  assert.equal(malformed.error, "play_billing_disabled", "disabled commerce keeps its existing error precedence");
+  assert.equal(h.calls.verify + h.calls.subscriptionVerify, 0);
+});
+
+test("receipt fields reject malformed JSON values before lookup or provider work", async t => {
+  const fields = { requestId: 36, purchaseToken: 8192, productId: 256, packageName: 255, catalogVersion: 128 };
+  for (const [field, limit] of Object.entries(fields)) {
+    const cases = {
+      coercionObject: { toString: null, valueOf: null },
+      object: {},
+      emptyArray: [],
+      array: [PRO],
+      booleanTrue: true,
+      booleanFalse: false,
+      number: 1,
+      null: null,
+      empty: "",
+      blank: " ",
+      overlong: field === "requestId" ? REQUEST_ID + "\n" : "x".repeat(limit + 1),
+    };
+    for (const [name, value] of Object.entries(cases)) {
+      await t.test(`${field}: ${name}`, async () => {
+        const h = harness();
+        const before = fs.existsSync(SUBS_FILE) ? fs.readFileSync(SUBS_FILE, "utf8") : null;
+        const input = JSON.parse(JSON.stringify({ purchaseToken: "tok-malformed", productId: PRO, [field]: value }));
+        let ws;
+        assert.doesNotThrow(() => { ws = h.start("malformed-client", input); });
+        await flush();
+        assert.deepEqual(ws.messages, [{
+          type: "SUBSCRIPTION_VERIFY_ACK", success: false,
+          requestId: field === "requestId" ? "" : REQUEST_ID,
+          tier: "FREE", expiresAt: 0, productId: "", packageName: "", catalogVersion: "",
+          error: "invalid_subscription_verification_request",
+        }]);
+        assert.equal(h.calls.verify + h.calls.subscriptionVerify + h.calls.acknowledge + h.calls.subscriptionAcknowledge, 0);
+        const after = fs.existsSync(SUBS_FILE) ? fs.readFileSync(SUBS_FILE, "utf8") : null;
+        assert.equal(after, before, "malformed input must not change the durable entitlement store");
+      });
+    }
+  }
+});
+
+function registryWithAlias(name, alias) {
+  const keys = crypto.generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  const identity = parseIdentityPublicKey(keys.publicKey.export({ type: "spki", format: "der" }).toString("base64url"));
+  const registry = createIdentityRegistry({ file: path.join(directory, name + ".json") });
+  registry.bind({ requestedClientId: alias, identityId: identity.identityId,
+    publicKey: identity.publicKeyBase64Url, migrationAuthorized: true });
+  return { registry, identityId: identity.identityId };
+}
+
+test("alias revoked during provider verification cannot authorize a lifetime transfer", async () => {
+  const owner = "legacy-before-verify";
+  const token = "tok-alias-before-verify";
+  const policy = { ...POLICY, rebindAuthority: "identity_registry_alias" };
+  const { registry, identityId } = registryWithAlias("alias-before-verify", owner);
+  assert.equal((await harness().send(owner, { purchaseToken: token, productId: PRO })).success, true);
+  assert.deepEqual(registry.aliasesFor(identityId), [owner]);
+  const gate = deferred();
+  const racing = harness({ policy, identityRegistry: registry, verify: () => gate.promise });
+  const ws = racing.start(identityId, { purchaseToken: token, productId: PRO });
+  await flush();
+  assert.equal(racing.calls.verify, 1);
+  assert.equal(ws.messages.length, 0, "verification is still awaiting the provider");
+  registry.revokeAlias(owner);
+  assert.deepEqual(registry.aliasesFor(identityId), []);
+  gate.resolve(restoredAnswer(PKG, PRO));
+  await flush();
+  assert.equal(ws.messages.at(-1).success, false, "revoked authority cannot transfer the purchase");
+  assert.equal(racing.calls.acknowledge, 0);
+  assert.equal(status(identityId, token), null);
+  assert.equal(status(owner, token).valid, true, "the original owner keeps the right");
+  assert.equal((await harness({ policy, identityRegistry: registry, verify: restoredAnswer })
+    .send(owner, { purchaseToken: token, productId: PRO })).success, true, "same-identity restore still works");
+});
+
+test("completed lifetime transfer and same-identity restore survive a later alias revocation", async () => {
+  const owner = "legacy-after-transfer";
+  const token = "tok-alias-after-transfer";
+  const policy = { ...POLICY, rebindAuthority: "identity_registry_alias" };
+  const { registry, identityId } = registryWithAlias("alias-after-transfer", owner);
+  assert.equal((await harness().send(owner, { purchaseToken: token, productId: PRO })).success, true);
+  const current = harness({ policy, identityRegistry: registry, verify: restoredAnswer });
+  assert.equal((await current.send(identityId, { purchaseToken: token, productId: PRO })).success, true);
+  assert.equal(status(owner, token), null);
+  registry.revokeAlias(owner);
+  assert.equal(status(identityId, token).valid, true, "later revocation is not retroactive");
+  assert.equal((await current.send(identityId, { purchaseToken: token, productId: PRO })).success, true);
 });
 
 test("forged, replayed, cross-identity, cross-package and cross-product claims fail closed", async () => {

@@ -608,3 +608,15 @@ stay closed. Missing policy -> `lifetime_entitlement_unavailable`.
   regression sources only. Direct verification, authentication, Free VPN separation, native
   code and commerce flags stay unchanged. Parent owns Android, visual, security and integration
   gates; source tests do not imply runtime, provider, policy or release acceptance.
+
+## Bounded handler security remediation (SC-PLAY-SECURITY-FIX-20261117)
+
+- Same WS subscription module and mapped hops only: receipt ingress -> catalog lookup,
+  and verified provider answer -> current identity alias authority -> durable lifetime record.
+- Validate bounded primitive receipt fields before any catalog lookup or provider call;
+  malformed requests use the existing fixed error response, with commerce-gate precedence intact.
+- Evaluate alias authority after provider verification, immediately before persistence;
+  later alias revocation does not retroactively invalidate a completed transfer or same-owner restore.
+- Scope: subscription handler and existing synthetic lifetime regression suite only, plus
+  this append and a bounded report. Policy, flags, monthly/gift rules, Android, dispatcher,
+  provider configuration and independent scan/fix finalization remain with the parent.

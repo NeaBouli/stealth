@@ -199,8 +199,6 @@ module.exports = function subscriptionHandlers(ctx) {
         || findCodeByPurchaseToken(giftCodes, purchaseToken)) {
       return fail("subscription_verification_failed");
     }
-    const allowedSubjects = product.rebindAuthority === "identity_registry_alias"
-      ? authorizedSubjects(myClientId) : [myClientId];
     Promise.resolve()
       .then(() => verifyPlayOneTimePurchase(packageName, productId, purchaseToken))
       .then(async verified => {
@@ -208,6 +206,9 @@ module.exports = function subscriptionHandlers(ctx) {
             || verified.packageName !== packageName || verified.catalogVersion !== catalogVersion) {
           throw new Error("purchase_binding_mismatch");
         }
+        // Alias authority may change while provider verification is in flight.
+        const allowedSubjects = product.rebindAuthority === "identity_registry_alias"
+          ? authorizedSubjects(myClientId) : [myClientId];
         subscriptions.recordVerifiedLifetime({
           clientId: myClientId,
           purchaseToken,
@@ -255,7 +256,8 @@ module.exports = function subscriptionHandlers(ctx) {
         return;
       }
       const { requestId, purchaseToken, productId, packageName, catalogVersion } = msg;
-      const validRequestId = typeof requestId === "string" && /^[a-f0-9-]{36}$/i.test(requestId);
+      const validRequestId = typeof requestId === "string" && requestId.length === 36
+        && /^[a-f0-9-]{36}$/i.test(requestId);
       if (playBillingEnabled !== true) {
         ws.send(JSON.stringify({
           type: "SUBSCRIPTION_VERIFY_ACK",
@@ -270,7 +272,12 @@ module.exports = function subscriptionHandlers(ctx) {
         }));
         return;
       }
-      if (!validRequestId || !purchaseToken || !productId || !packageName || !catalogVersion
+      // Validate primitives before catalog/property lookup; never coerce receipt input.
+      const validReceipt = [
+        [purchaseToken, 8192], [productId, 256], [packageName, 255], [catalogVersion, 128],
+      ].every(([value, maxLength]) => typeof value === "string" && value.length > 0
+        && value.length <= maxLength && value.trim().length > 0);
+      if (!validRequestId || !validReceipt
           || typeof verifyPlaySubscription !== "function") {
         ws.send(JSON.stringify({
           type: "SUBSCRIPTION_VERIFY_ACK",
