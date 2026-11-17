@@ -481,3 +481,76 @@ No CI gate is skipped; this is qualification wiring for the mapped manual hop.
 - This is build/ELF/package-guard proof, not Android execution. The eight JNI
   instrumentation tests, codec/audio, calls, interoperability and final release
   integration remain separate open acceptance gates. No customer release.
+
+---
+
+# Narrow trace: Play in-package upgrades (SC-PLAY-UPGRADE-20261116)
+
+## Core Idea And Boundary
+
+Settings must offer Pro/Premium upgrades within `com.securecall.app.free`.
+Purchases require authoritative Play verification, durable server entitlement
+and matching product/finance readiness. A paid Play tier never adds Direct VPN
+(`AGENTS.md`, `docs/DISTRIBUTION_MATRIX.md`). No provider changes in this task.
+
+## Trace And Modules
+
+| Module | Hop and data | Source state before correction |
+| --- | --- | --- |
+| Settings | `SettingsFragment::configureExternalPurchaseLinks` -> Free-only `UpgradeActivity` (explicit internal intent) | Missing: external-link gate hides the internal upgrade entry too |
+| Upgrade UI | `UpgradeActivity::launchPurchase/bindPurchaseButton` -> `BillingManager::launchInAppPurchaseFlow` (`ProductDetails`, price) | Lifetime buttons can fall back to subscription offers |
+| Play Billing | `BillingManager::queryExistingPurchases/handlePurchase` -> `UpgradeActivity::onPurchaseCompleted` (tier, token, mutable last product) | Existing SUBS/INAPP restore; callback product association is mutable |
+| One-time verification | `PurchaseResultActivity::verifyPurchase` -> `server.js::POST /billing/verify-purchase` -> `google_play_billing::verifyPlayOneTimePurchase/issuePlayActivationCode` | Verified/persisted activation code, not an in-package entitlement |
+| Subscription verification | `UpgradeActivity::sendVerificationToBackend` -> `subscription.js::SUBSCRIPTION_VERIFY` -> `verifyPlaySubscription` -> `subscriptions::recordVerifiedSubscription` -> server acknowledgement -> `WebSocketService::handleSubscriptionVerifyAck` | Existing server-authoritative SUBS path only |
+| Effective tier | `SubscriptionManager::applyServerVerification/verifyAgainstServer` -> `TierManager::getCurrentTier/applyTier` -> feature registry | Free flavor reads subscription state only; legacy activation strings are not proof |
+| Refund/revoke | authenticated `google_play_rtdn::installGooglePlayRtdnRoute` -> subscription expiry/refresh or activation/gift removal -> durable processed IDs | Existing revocation stores; processed ID enters memory before disk write, breaking same-process retry on write failure |
+
+## Wiring And Gaps
+
+- Settings must separate internal Play navigation from forbidden external buy links.
+- Lifetime controls must accept only matching INAPP details and Play-provided prices,
+  never a historical SUBS offer. Historical subscription restore is not a lifetime sale.
+- One-time products currently mint a code with a one-year redemption expiry and two
+  uses; `ACTIVATION_CODE_ENABLED=false`, and Play tier resolution does not consume
+  that code. No lifetime entitlement lease/ownership/restore contract exists here.
+- RTDN removes persisted records; the app learns subscription revocation on its
+  existing status revalidation/expiry, not an immediate push to the active UI.
+  One-time notifications currently have no entitlement refresh handler.
+- Scope of correction: Settings navigation, strict lifetime offer binding, immutable
+  callback product binding, and durable RTDN deduplication. Keep both commerce gates
+  closed; do not invent SKUs, prices, transfer policy or lifetime access duration.
+- Visual contract: visible internal upgrade entry for Free/Pro; external custom-ID
+  buy stays hidden; closed purchases show unavailable state; absent/mismatched offers
+  cannot enable a buy button. Required later device/layout/state gate is NOT RUN.
+- Diagrams for this narrow source trace: this table only; existing landing diagram
+  files are unrelated and unchanged. Next hop remains the missing authoritative
+  one-time purchase -> persisted same-package lifetime entitlement contract.
+
+## Source Correction Outcome (2026-11-16)
+
+- Internal Settings navigation is now separate from external-link policy and
+  refreshed on return. Free/Pro can reach the existing Free-only activity; the
+  unavailable state and purchase execution gate remain closed.
+- Lifetime/gift controls bind matching INAPP details and nonblank Play prices
+  only. Billing callbacks carry their own product/token tuple; unknown or
+  ambiguous products do not start verification. No new payment path exists.
+- RTDN persists the next processed-ID set before marking the ID in memory. A
+  real atomic-write failure regression was RED on the original code and GREEN
+  after correction, including duplicate delivery and restart deduplication.
+- `npm run test:play-source` PASS: existing Play billing and subscription-store
+  assertions plus the new synthetic RTDN route regression. No HTTP server or
+  provider client was started. Source contracts and XML syntax PASS.
+- Kotlin regressions added/updated but NOT RUN: Settings route/external-link
+  isolation, INAPP binding/no SUBS fallback, immutable restore callbacks and
+  pending/unknown/ambiguous purchase rejection. Gradle/native/visual tests NOT RUN
+  under the Mac heavy-build HOLD. This is PARTIAL, not a sale-ready upgrade.
+- Additional inspected gap: `DirectEntitlementStore::verify` explicitly rejects
+  `free`; routing Play codes through the Direct verifier is not a valid shortcut.
+
+---
+
+# Assembly note: final candidate (SC-FINAL-CANDIDATE-ASSEMBLY-20261117)
+
+- Direct UpdateManager download handoff (PR224) and Free Settings -> UpgradeActivity ->
+  verified Billing/RTDN hops (PR232) merged unchanged onto the media/native candidate
+  `d1eefa87`. No new node, path, flag or wrapper; both traces above remain authoritative.

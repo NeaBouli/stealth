@@ -151,8 +151,11 @@ function installGooglePlayRtdnRoute(app, deps) {
         throw new Error("unsupported_notification");
       }
 
+      // A failed durable write must leave this delivery retryable in this process.
+      const nextProcessed = new Set(processed);
+      nextProcessed.add(decoded.messageId);
+      saveProcessed(filePath, nextProcessed);
       processed.add(decoded.messageId);
-      saveProcessed(filePath, processed);
       return res.sendStatus(204);
     } catch (error) {
       console.error("[GOOGLE-PLAY-RTDN] Processing failed:", error.message);
