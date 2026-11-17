@@ -31,6 +31,16 @@ NATIVE = {
     "armeabi-v7a": "01b0ec8a1fda6363baf30eda275cd142f4857743ced8b012798c47afd74d4280",
     "x86_64": "4a932002caab2e585f56950f5ea35d587d4f13b588c62549f5ad513eaf207c59",
 }
+NDK_REVISION = "27.0.12077973"
+STRIP_TOOL = "toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+NATIVE_ENCODINGS = {
+    "raw": (NATIVE["x86_64"], 618624),
+    "ndk27-strip-unneeded": (
+        "abc5e77e3f17c7137ef94700266d7969643dc6f8f4a48f6097ca53befcd8d0ff", 477088),
+}
+STRIP_ARGV = ["--strip-unneeded", "-o", "stripped.so", "raw.so"]
+STRIP_LIMITS = {"wall_seconds": 30, "cpu_seconds": 30,
+                "file_bytes": 512 * 1024, "output_bytes": 512 * 1024}
 GUARD = "tools/verify_android_crypto_exports.sh"
 GUARD_SHA256 = "a20d3740d7ef133e8ea9c4937440eed603468b6331e234908e53f85f6401d964"
 TEST_CLASS = "com.securecall.app.CoreCryptoMediaV3InstrumentedTest"
@@ -42,7 +52,7 @@ EXPECTED_METHODS = frozenset({
     "plaintextSizeBoundaries4000And4001", "sequenceZeroNegativeAndMaxBoundaries",
     "legacyAndMalformedEnvelopesAreRejected",
 })
-# Parent must first resolve the AGP strip lineage, then bind the reviewed diff.
+# Parent binds only the reviewed diff; host Linux strip proof remains mandatory.
 ADMISSION = "NOT_READY"
 REF = "NOT_READY"
 RELEASE = 0
@@ -565,8 +575,104 @@ def instrumentation(data: bytes) -> None:
             "instrumentation_complete")
 
 
+def native_encoding(checksum: str, size: int) -> str:
+    require(isinstance(checksum, str) and type(size) is int, "native_identity_shape")
+    for encoding, expected in NATIVE_ENCODINGS.items():
+        if (checksum, size) == expected:
+            return encoding
+    raise Refusal("apk_native_identity")
+
+
+def validate_strip_proof(proof: dict | None) -> None:
+    if not isinstance(proof, dict):
+        raise Refusal("strip_proof_required")
+    require(set(proof) == {
+        "ndk_revision", "tool", "flags", "argv", "input", "output", "limits", "exit_code"},
+        "strip_proof_required")
+    require(proof["ndk_revision"] == NDK_REVISION and proof["flags"] == ["--strip-unneeded"]
+            and proof["argv"] == STRIP_ARGV and proof["limits"] == STRIP_LIMITS
+            and type(proof["exit_code"]) is int and proof["exit_code"] == 0, "strip_proof_profile")
+    tool = proof["tool"]
+    require(isinstance(tool, dict) and set(tool) == {"path", "resolved_path", "sha256", "bytes"},
+            "strip_proof_tool")
+    require(tool["path"] == STRIP_TOOL and isinstance(tool["resolved_path"], str)
+            and str(Path(tool["resolved_path"])) == tool["resolved_path"]
+            and ".." not in Path(tool["resolved_path"]).parts
+            and Path(tool["resolved_path"]).parent == Path(STRIP_TOOL).parent
+            and isinstance(tool["sha256"], str)
+            and re.fullmatch(r"[0-9a-f]{64}", tool["sha256"]) is not None
+            and type(tool["bytes"]) is int and 0 < tool["bytes"] <= 256 * 1024**2,
+            "strip_proof_tool")
+    for field, expected_encoding in (("input", "raw"), ("output", "ndk27-strip-unneeded")):
+        identity = proof[field]
+        require(isinstance(identity, dict) and set(identity) == {"sha256", "bytes"}
+                and native_encoding(identity["sha256"], identity["bytes"]) == expected_encoding,
+                "strip_proof_identity")
+
+
+def trusted_strip_proof(root: Path, source: Path, mounts: list[tuple[str, str]]) -> dict:
+    require(os.getuid() != 0, "strip_host_nonroot")
+    candidates = [Path(path) for path, target in mounts if target == "/sdk/ndk/" + NDK_REVISION]
+    require(len(candidates) == 1, "strip_ndk_mount")
+    ndk = candidates[0]
+    properties = ndk / "source.properties"
+    regular(properties, 64 * 1024, "strip_ndk_properties")
+    properties_bytes = properties.read_bytes()
+    require(re.search(rb"(?m)^Pkg\.Revision\s*=\s*" + re.escape(NDK_REVISION.encode()) + rb"\s*$",
+                      properties_bytes) is not None, "strip_ndk_revision")
+    tool = ndk / STRIP_TOOL
+    binary = tool.resolve(strict=True)
+    require(binary.is_relative_to(ndk) and binary.parent == (ndk / STRIP_TOOL).parent
+            and os.access(binary, os.X_OK), "strip_tool_path")
+    regular(binary, 256 * 1024**2, "strip_tool_shape")
+    with binary.open("rb") as stream:
+        require(stream.read(4) == b"\x7fELF", "strip_linux_tool")
+        stream.seek(0)
+        tool_hash = hashlib.file_digest(stream, "sha256").hexdigest()
+    tool_size = binary.stat().st_size
+    raw_source = source / "client_android/app/src/main/jniLibs/x86_64/libsecurecall_core_crypto.so"
+    regular(raw_source, NATIVE_ENCODINGS["raw"][1], "strip_raw_bound")
+    raw_bytes = raw_source.read_bytes()
+    require(native_encoding(digest(raw_bytes), len(raw_bytes)) == "raw", "strip_raw_pin")
+    with tempfile.TemporaryDirectory(prefix="strip-proof-", dir=root) as directory:
+        work = Path(directory)
+        (work / "raw.so").write_bytes(raw_bytes)
+        def limits() -> None:
+            resource.setrlimit(resource.RLIMIT_CPU, (30, 30))
+            resource.setrlimit(resource.RLIMIT_FSIZE, (512 * 1024, 512 * 1024))
+            resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
+            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        # Keep argv[0] as llvm-strip even when NDK aliases it to llvm-objcopy.
+        with (work / "diagnostic").open("xb") as diagnostic:
+            subprocess.run([str(tool), *STRIP_ARGV], executable=str(binary), cwd=work,
+                           env={**ENV, "TMPDIR": str(work)}, stdout=diagnostic,
+                           stderr=subprocess.STDOUT, check=True, timeout=30, preexec_fn=limits)
+        regular(work / "stripped.so", NATIVE_ENCODINGS["ndk27-strip-unneeded"][1], "strip_output_bound")
+        result = (work / "stripped.so").read_bytes()
+        require(native_encoding(digest(result), len(result)) == "ndk27-strip-unneeded",
+                "strip_output_pin")
+        require((work / "raw.so").read_bytes() == raw_bytes and raw_source.read_bytes() == raw_bytes
+                and properties.read_bytes() == properties_bytes, "strip_input_unchanged")
+        with binary.open("rb") as stream:
+            require(hashlib.file_digest(stream, "sha256").hexdigest() == tool_hash
+                    and binary.stat().st_size == tool_size and tool.resolve(strict=True) == binary,
+                    "strip_tool_unchanged")
+        proof = {"ndk_revision": NDK_REVISION,
+                 "tool": {"path": STRIP_TOOL, "resolved_path": str(binary.relative_to(ndk)),
+                          "sha256": tool_hash, "bytes": tool_size},
+                 "flags": ["--strip-unneeded"], "argv": list(STRIP_ARGV),
+                 "input": {"sha256": digest(raw_bytes), "bytes": len(raw_bytes)},
+                 "output": {"sha256": digest(result), "bytes": len(result)},
+                 "limits": dict(STRIP_LIMITS), "exit_code": 0}
+        validate_strip_proof(proof)
+        return proof
+
+
 def apk_info(path: Path, *, application: bool) -> dict[str, object]:
     regular(path, MAX_BUNDLE, "apk_bound")
+    checksum: str | None = None
+    size: int | None = None
+    encoding: str | None = None
     with zipfile.ZipFile(path) as archive:
         names = archive.namelist()
         require(len(names) == len(set(names)) <= 20000, "apk_duplicate_entries")
@@ -575,10 +681,11 @@ def apk_info(path: Path, *, application: bool) -> dict[str, object]:
         if application or native in names:
             entry = archive.getinfo(native)
             require(0 < entry.file_size <= 16 * 1024**2, "apk_native_bound")
-            require(digest(archive.read(entry)) == NATIVE["x86_64"], "apk_native_digest")
+            checksum, size = digest(archive.read(entry)), entry.file_size
+            encoding = native_encoding(checksum, size)
     return {"sha256": digest(path.read_bytes()), "bytes": path.stat().st_size,
-            "x86_64_jni_sha256": NATIVE["x86_64"] if application else
-            (NATIVE["x86_64"] if native in names else None)}
+            "x86_64_jni_sha256": checksum, "x86_64_jni_bytes": size,
+            "x86_64_jni_encoding": encoding}
 
 
 def container_profile() -> None:
@@ -747,8 +854,115 @@ def receive_export(name: str, destination: Path, *, public: bool, timeout: int) 
         capture.unlink(missing_ok=True)
 
 
+def nsswitch_config(public: bool) -> bytes:
+    return b"passwd: files\ngroup: files\nhosts: " + (b"files dns\n" if public else b"files\n")
+
+
+def lineage_checks() -> None:
+    """Pure synthetic fixtures only; never invoke strip, Docker, Gradle or JNI."""
+    import copy
+    from collections.abc import Callable
+    from unittest.mock import Mock, patch
+    import warnings
+
+    checks = 0
+    require(NATIVE_ENCODINGS == {
+        "raw": ("4a932002caab2e585f56950f5ea35d587d4f13b588c62549f5ad513eaf207c59", 618624),
+        "ndk27-strip-unneeded": (
+            "abc5e77e3f17c7137ef94700266d7969643dc6f8f4a48f6097ca53befcd8d0ff", 477088)},
+        "approved_encoding_constants_fixture")
+    require(STRIP_ARGV == ["--strip-unneeded", "-o", "stripped.so", "raw.so"]
+            and NDK_REVISION == "27.0.12077973", "strip_invocation_fixture")
+    def rejected(operation: Callable[[], object]) -> None:
+        nonlocal checks
+        try:
+            operation()
+        except Refusal:
+            checks += 1
+        else:
+            raise Refusal("negative_lineage_fixture_accepted")
+
+    for encoding, (checksum, size) in NATIVE_ENCODINGS.items():
+        require(native_encoding(checksum, size) == encoding, "identity_fixture")
+        checks += 1
+        rejected(lambda: native_encoding(checksum, size + 1))
+        rejected(lambda: native_encoding("0" * 64, size))
+    raw_hash, raw_size = NATIVE_ENCODINGS["raw"]
+    stripped_hash, stripped_size = NATIVE_ENCODINGS["ndk27-strip-unneeded"]
+    # Dummy tool identity exercises receipt shape, never claims Linux execution.
+    proof = {"ndk_revision": NDK_REVISION,
+             "tool": {"path": STRIP_TOOL, "resolved_path": STRIP_TOOL,
+                      "sha256": "1" * 64, "bytes": 100},
+             "flags": ["--strip-unneeded"], "argv": list(STRIP_ARGV),
+             "input": {"sha256": raw_hash, "bytes": raw_size},
+             "output": {"sha256": stripped_hash, "bytes": stripped_size},
+             "limits": dict(STRIP_LIMITS), "exit_code": 0}
+    validate_strip_proof(proof)
+    checks += 1
+    rejected(lambda: validate_strip_proof(None))
+    rejected(lambda: validate_strip_proof({}))
+    for keys, value in (
+        (("ndk_revision",), "26.0.0"), (("flags",), ["--strip-all"]),
+        (("argv",), ["--strip-unneeded", "raw.so"]), (("exit_code",), 1),
+        (("tool", "path"), "untrusted/llvm-strip"),
+        (("tool", "resolved_path"), str(Path(STRIP_TOOL).parent / "..")),
+        (("tool", "sha256"), "not-a-hash"), (("tool", "bytes"), 0),
+        (("input", "sha256"), stripped_hash), (("input", "bytes"), raw_size + 1),
+        (("output", "sha256"), raw_hash), (("output", "bytes"), stripped_size + 1),
+        (("limits", "wall_seconds"), 900),
+    ):
+        bad = copy.deepcopy(proof)
+        target = bad
+        for key in keys[:-1]:
+            target = target[key]
+        target[keys[-1]] = value
+        rejected(lambda: validate_strip_proof(bad))
+    with patch.dict(globals(), {"host_command": Mock(side_effect=AssertionError("unexpected host call"))}):
+        rejected(lambda: run_container(Path("."), Path("."), Path("."), [], public=False))
+
+    with tempfile.TemporaryDirectory(prefix="sc-lineage-fixtures-", dir=Path.cwd()) as directory:
+        root = Path(directory)
+        payloads = {"raw": b"synthetic raw", "ndk27-strip-unneeded": b"synthetic stripped"}
+        with patch.dict(NATIVE_ENCODINGS, {key: (digest(data), len(data))
+                                          for key, data in payloads.items()}, clear=True):
+            native = "lib/x86_64/libsecurecall_core_crypto.so"
+            for encoding, data in payloads.items():
+                path = root / (encoding + ".apk")
+                with zipfile.ZipFile(path, "w") as archive:
+                    archive.writestr(native, data)
+                for application in (True, False):
+                    info = apk_info(path, application=application)
+                    require(info["x86_64_jni_encoding"] == encoding
+                            and info["x86_64_jni_sha256"] == digest(data)
+                            and info["x86_64_jni_bytes"] == len(data), "zip_encoding_fixture")
+                    checks += 1
+            empty = root / "empty.apk"
+            with zipfile.ZipFile(empty, "w") as archive:
+                archive.writestr("AndroidManifest.xml", b"synthetic")
+            require(apk_info(empty, application=False)["x86_64_jni_encoding"] is None, "zip_absence_fixture")
+            checks += 1
+            rejected(lambda: apk_info(empty, application=True))
+            wrong = root / "wrong.apk"
+            with zipfile.ZipFile(wrong, "w") as archive:
+                archive.writestr(native, b"arbitrary mismatch")
+            for application in (True, False):
+                rejected(lambda: apk_info(wrong, application=application))
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                with zipfile.ZipFile(wrong, "w") as archive:
+                    archive.writestr(native, payloads["raw"])
+                    archive.writestr(native, payloads["raw"])
+            rejected(lambda: apk_info(wrong, application=True))
+    require(nsswitch_config(True) == b"passwd: files\ngroup: files\nhosts: files dns\n"
+            and nsswitch_config(False) == b"passwd: files\ngroup: files\nhosts: files\n",
+            "generated_dns_profile_fixture")
+    print(f"SC_SOURCE_CHECKS lineage_zip={checks} generated_profiles=2 target_execution=false")
+
+
 def run_container(root: Path, source: Path, dependencies: Path,
-                  mounts: list[tuple[str, str]], *, public: bool) -> Path:
+                  mounts: list[tuple[str, str]], *, public: bool, lineage: dict | None = None) -> Path:
+    if not public:
+        validate_strip_proof(lineage)
     network = "bridge" if public else "none"
     require(host_command(["docker", "info", "--format", "{{.CgroupVersion}}"]).strip() == b"2",
             "cgroup_v2")
@@ -775,7 +989,7 @@ def run_container(root: Path, source: Path, dependencies: Path,
         archive.addfile(member)
         for path, data in {"etc/passwd": b"nobody:x:65534:65534:Qualification:/scratch/home:/bin/sh\n",
                            "etc/group": b"nogroup:x:65534:\n",
-                           "etc/nsswitch.conf": b"passwd: files\ngroup: files\nhosts: files\n"}.items():
+                           "etc/nsswitch.conf": nsswitch_config(public)}.items():
             member = tarfile.TarInfo(path)
             member.size, member.mode = len(data), 0o644
             archive.addfile(member, io.BytesIO(data))
@@ -886,9 +1100,6 @@ def dispatch_guard() -> None:
             and ASSET == "sc-jni-art-input.tar"
             and EMULATOR_REVISION != "NOT_READY" and IMAGE_REVISION != "NOT_READY",
             "bindings_NOT_READY")
-    # Pinned AGP registers a --strip-unneeded path. Raw equality remains strict,
-    # but is not statically proven; no CI trial is admitted to discover it.
-    require(False, "apk_native_strip_lineage_unresolved")
     require(os.getuid() != 0 and Path(f"/run/user/{os.getuid()}/bus").is_socket(),
             "headless_user_cgroup_admission")
     require(Path("/dev/kvm").exists() and stat.S_ISCHR(Path("/dev/kvm").stat().st_mode)
@@ -1072,8 +1283,9 @@ def hosted() -> None:
         source.mkdir(mode=0o755)
         extract_input(raw, source)
         raw = b""
+        lineage = trusted_strip_proof(private, source, mounts)
         dependencies = stage_cache(private, source, cache=public_cache)
-        apks = run_container(private, source, dependencies, list(mounts), public=False)
+        apks = run_container(private, source, dependencies, list(mounts), public=False, lineage=lineage)
         # No token or private source is passed to the headless scope.
         receipt = run_headless(root, apks, mounts)
         data = canonical({"kind": "sc-jni-art", "source": SOURCE, "tree": TREE,
@@ -1081,6 +1293,7 @@ def hosted() -> None:
                           "controller_sha": os.environ["SC_CONTROLLER_SHA"],
                           "run_id": os.environ["GITHUB_RUN_ID"], "api": 24,
                           "class": TEST_CLASS, "tests": 8, "skipped": 0,
+                          "strip_lineage": lineage,
                           "apks": json.loads((apks / "apk-receipt.json").read_bytes()),
                           "isolation": receipt})
         require(len(data) <= 16384, "receipt_bound")
@@ -1103,6 +1316,7 @@ def main() -> None:
     commands.add_parser("hosted")
     commands.add_parser("cleanup")
     commands.add_parser("container-work")
+    commands.add_parser("lineage-checks")
     result = commands.add_parser("instrumentation")
     result.add_argument("--result", required=True)
     args = parser.parse_args()
@@ -1113,6 +1327,8 @@ def main() -> None:
             cleanup()
         elif args.mode == "container-work":
             container_work()
+        elif args.mode == "lineage-checks":
+            lineage_checks()
         elif args.mode == "instrumentation":
             path = Path(args.result)
             regular(path, MAX_OUTPUT, "instrumentation_result")

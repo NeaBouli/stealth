@@ -506,7 +506,8 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
    cases. No application, Rust build, UI241/focus/API36 or release work.
 2. **Trace:** `hosted::dispatch_guard -> public_preparation -> stage_cache ->
    run_container(public=True) -> stage_cache(host recheck) -> extract_input ->
-   run_container(public=False) -> run_headless -> draft receipt upload`.
+   trusted_strip_proof -> run_container(public=False, lineage=proof) ->
+   run_headless -> draft receipt upload`.
 3. **Modules:**
 
    | Module | Entry | Source status |
@@ -521,6 +522,8 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
    Read-only host fetch pins the original d1eefa87 verification XML SHA256
    `51e401f56ef9e68cf1fa279b731fc7b94d1404fbd4d1d7a31a5ec46b3965c4f5`.
    No repository wrapper, build script or application code runs with network.
+   Generated public nsswitch uses `hosts: files dns`; private stays files-only,
+   with its empty resolver/network-none unchanged. No new mount or TLS exception.
    Sanitized SHA256-verified restored artifacts seed a fresh tmpfs Gradle home;
    Gradle generates metadata-2.107. Only checksum-selected files and the
    original metadata allowlist are exported and rechecked before private input.
@@ -557,7 +560,7 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
    No APK/raw log/Actions artifact retention. Owned containers/image/cgroups,
    scope, emulator/ADB and temporary files are cleaned; kernel scope path is
    recorded for empty/absent verification even after unit collection.
-5. **Gaps:** All runtime NOT_RUN. **Hard packaging admission blocker:** source
+5. **Gaps:** All runtime NOT_RUN. **Packaging lineage prerequisite:** source
    app/build.gradle has no keepDebugSymbols/doNotStrip/jniDebuggable declaration.
    Installed AGP9.4.1 JAR SHA256 matches the source verification pin:
    `4021fa6ea76b6fac076dd0bdacbb3e1b76c31f33b6c392e1a49a2e42072196bf`.
@@ -569,12 +572,24 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
    the selected strip executable with `--strip-unneeded -o output input`
    (fallback copying on absent/failed tool does not prove identity in advance).
    Thus FreeDebug has a strip path, not a guaranteed byte-preserving debug path.
-   Raw SHA equality remains mandatory in both APK checks, but is NOT_PROVEN;
-   legitimate stripping may change bytes. `dispatch_guard` unconditionally
-   refuses `apk_native_strip_lineage_unresolved` even if bindings are later set.
-   Parent must resolve raw identity or adopt an exact trusted pinned NDK
-   transform/tool/output receipt before changing this gate. No strip executed,
-   no expected hash guessed, no fallback/identity omission or app config edit.
+   Parent now authorizes one exact transform based on its retained metadata-only
+   Darwin NDK27 receipt: raw x86_64 SHA256
+   `4a932002caab2e585f56950f5ea35d587d4f13b588c62549f5ad513eaf207c59`
+   (618624 bytes) -> `--strip-unneeded` -> SHA256
+   `abc5e77e3f17c7137ef94700266d7969643dc6f8f4a48f6097ca53befcd8d0ff`
+   (477088 bytes), seven JNI exports unchanged per parent (not rerun here).
+   After fully verified input arrives, before private application code, trusted
+   host `trusted_strip_proof` uses only the mounted/pinned NDK27.0.12077973 Linux
+   llvm-strip, on an owned bounded copy, with clean token-free environment,
+   CPU30/wall30/file512KiB/output512KiB. Exact output must reproduce the parent
+   hash AND size. Receipt records actual tool SHA256 (never guessed), resolved
+   public tool path/size, NDK revision, flags/argv, input/output and bounds.
+   The former unresolved-strip hard refusal is replaced by mandatory proof
+   validation before any private container operation. Both APK checks accept
+   ONLY those exact raw/stripped hash+size pairs, labeling the encoding; test
+   APK JNI absence is unchanged. No app/Gradle config, source pin, private cap,
+   export mount or other admission guard changes. Linux reproduction remains
+   NOT_RUN and must succeed before app execution; no identity bypass/fallback.
    Hosted cache contents, standalone variant
    selection/repository-id compatibility, usable JDK CA store, scratch capacity,
    exact APK names/sizes, emulator/image revisions, existing non-root KVM access
@@ -583,9 +598,25 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
    another launcher or weaker limits. No offline/ART/native-device PASS claim.
 6. **Diagrams:** Existing diagram paths are unchanged; only this admitted TEMP
    controller trace is extended. No application architecture change.
-7. **Next:** Resolve the native packaging-lineage blocker first. Parent then
-   independently reviews this exact diff and explicitly adopts
+7. **Next:** Parent independently reviews this continuation atop dc56369b;
+   Linux transform proof is mandatory during any admitted run. Parent adopts
    the user-scope runtime, pins immutable controller/ref/draft/input SHA plus
    emulator/image revisions, then admits any execution. ADMISSION/ref/draft and
    revision bindings remain NOT_READY. All application/other worker paths stay
    untouched; parent exclusively owns app d1eefa87 and execution/review.
+
+### Append-Only R1 Baseline Correction (Parent-Verified 2026-11-17)
+
+- The earlier R1 statements about "main never used setup-gradle/AndroidTest"
+  and AGP8.11.1 came from stale local main `e9a36ad4`, not current remote main.
+  They must not be used as current-source evidence or proof of cache absence.
+- Parent reverified authoritative remote main `b59f9742`: Android root build
+  already uses AGP9.4.1/Kotlin2.4.20; `ci-basic.yml` already uses setup-gradle
+  and builds Free Debug/Release APK+AAB; `android-instrumentation.yml` already
+  runs AndroidTest API24/36. These are parent-provided current facts; this
+  source-only worker did not fetch/query the remote or execute those workflows.
+- R1's actual result remains: hosted AndroidTest dependency/cache/metadata
+  contents UNKNOWN, not proven absent or "likely absent" from stale main.
+  The accepted metadata pin inspection is distinct from runtime cache coverage.
+  Deterministic public pre-input strict preparation remains valid; no design,
+  app/controller scope, stopped-series admission or runtime acceptance changes.
