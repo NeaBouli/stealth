@@ -692,3 +692,9 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - Source d1eefa87, profiles, dependency/native hashes and private entry point
   unchanged. Only a real public preparation PASS permits separate private-hop
   admission; never a TLS/verification exception or GUI/UI241 retry.
+
+- First resumed44083251072 stopped BEFORE container/JVM at public_cacerts_provenance;
+  no application cause or TLS success. Next is a read-only metadata observation
+  of the exact preinstalled selected JDK cacerts, bounded4MiB/public namespaces.
+  Cache restore, SDK provisioning and Gradle execution disabled for this probe;
+  guards remain closed until the actual public source path is evidenced.

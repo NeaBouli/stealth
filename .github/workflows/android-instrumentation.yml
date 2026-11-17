@@ -1,4 +1,4 @@
-name: TEMP PUBLIC DIAG - NO APP TESTS - NEVER MERGE
+name: TEMP PUBLIC CA METADATA - NO JVM OR APP - NEVER MERGE
 
 on:
   workflow_dispatch:
@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   android-client:
-    name: PUBLIC DIAG / NO APP TESTS - one public preparation only
+    name: Read-only preinstalled JDK CA metadata - no JVM or app
     # Exact parent-reviewed controller; no automatic branch or PR execution.
     if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-jni-art-resume-20261117' && inputs.controller_sha == github.sha
     runs-on: ubuntu-latest
@@ -56,6 +56,7 @@ jobs:
           SC_CONTROLLER_SHA: ${{ inputs.controller_sha }}
         run: python3 -I .github/scripts/sc-media-qualification.py admission
       - name: Restore public main Gradle cache only (no Gradle execution)
+        if: ${{ false }}
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
         with:
           cache-read-only: true
@@ -64,11 +65,13 @@ jobs:
           build-scan-publish: false
           add-job-summary: never
       - name: Provision only pinned public NDK and CMake tools - no emulator or app
+        if: ${{ false }}
         run: |
           export JAVA_HOME="$JAVA_HOME_17_X64"
           timeout 360 "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --channel=0 \
             "ndk;27.0.12077973" "cmake;3.22.1"
       - name: Stage exact SHA256-pinned Gradle wrapper archive before private input
+        if: ${{ false }}
         run: |
           curl --fail --location --proto '=https' --proto-redir '=https' \
             --max-time 180 --max-filesize 268435456 \
@@ -77,13 +80,27 @@ jobs:
           printf '%s  %s\n' \
             46ac66d47f30f3dacfdf306e0b714a91a34fb94a22ba0a744b280933f47bc0cf \
             "$RUNNER_TEMP/sc-gradle-9.8.0-all.zip" | sha256sum --check --status
-      - name: PUBLIC DIAG / NO APP TESTS - never download private input
+      - name: Public JDK CA metadata only - no JVM, dependency fetch or app input
         env:
           GH_TOKEN: ${{ github.token }}
           SC_RUNNER_ENVIRONMENT: ${{ runner.environment }}
           SC_RELEASE_TAG: ${{ inputs.cache_release_tag }}
           SC_CONTROLLER_SHA: ${{ inputs.controller_sha }}
-        run: python3 -I .github/scripts/sc-media-qualification.py diagnose-public
+        run: |
+          python3 -I - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          jdk = Path(os.environ['JAVA_HOME_17_X64']).resolve(strict=True)
+          source = (jdk / 'lib/security/cacerts').resolve(strict=True)
+          allowed = any(source.is_relative_to(p) for p in ('/etc/ssl', '/etc/pki', '/usr/lib/jvm', '/opt/hostedtoolcache'))
+          assert allowed and source.name == 'cacerts'
+          info = source.stat()
+          assert source.is_file() and 0 < info.st_size <= 4194304
+          print(json.dumps({'kind': 'public_ca_metadata', 'path': str(source), 'uid': info.st_uid,
+                            'mode': oct(info.st_mode & 0o777), 'bytes': info.st_size,
+                            'sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+                            'jvm': 'NOT_RUN', 'app': 'NOT_RUN'}))
+          PY
       - name: Exact owned container cgroup and image cleanup fallback
         if: always()
         run: python3 -I .github/scripts/sc-media-qualification.py cleanup
