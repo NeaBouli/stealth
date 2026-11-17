@@ -47,6 +47,11 @@ jobs:
           dependency-graph: disabled
           build-scan-publish: false
           add-job-summary: never
+      - name: Provision exact public native configuration tools before private input
+        run: |
+          export JAVA_HOME="$JAVA_HOME_17_X64"
+          timeout 360 "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --channel=0 \
+            "ndk;27.0.12077973" "cmake;3.22.1"
       - name: Trusted admission and bounded offline JVM qualification
         env:
           GH_TOKEN: ${{ github.token }}

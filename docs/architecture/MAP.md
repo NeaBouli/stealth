@@ -409,3 +409,17 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   eight reports remain parent real-run gates. Prior Rust/Node receipts unchanged.
 - Primary cache contracts: pinned setup-gradle action.yml/docs from the brief;
   https://docs.gradle.org/current/userguide/dependency_caching.html#sub:shared-readonly-cache
+
+### Actual Host Admission Correction 2026-11-17T00:31Z
+
+- Run43987695480 stopped before input download/image/target at the controller's
+  obsolete android-37 path assumption. Official runner20261111.196 has stable
+  android-37.0; both package.xml/API37.0 and empty codename are now checked.
+  Actual SDK directory is mounted unchanged; no fake alias, app SDK edit or task skip.
+- Runner metadata also confirms requested NDK27.0.12077973/CMake3.22.1 are not
+  preinstalled. Reuse the normal CI's exact official sdkmanager packages, bounded
+  360seconds on the disposable host BEFORE private input arrives. No paid runner,
+  target egress, credentials, SDK update-all or alteration of shared resources.
+- Rust/Node unchanged. This is a concrete changed admission, not a repeated JVM
+  test: no Gradle/target invocation has occurred yet. Primary vendor metadata:
+  https://raw.githubusercontent.com/actions/runner-images/ubuntu26/20261111.196/images/ubuntu/Ubuntu2604-Readme.md

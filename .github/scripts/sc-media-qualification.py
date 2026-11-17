@@ -361,10 +361,16 @@ def tool_mounts() -> list[tuple[str, str]]:
     require(jdk is not None, "preinstalled_jdk17_absent")
     require((jdk / "conf/security/java.security").resolve(strict=True).is_relative_to(jdk), "jdk17_external_config")
     sdk = Path("/usr/local/lib/android/sdk")
-    regular(sdk / "platforms/android-37/android.jar", 100 * 1024**2, "preinstalled_sdk37_absent")
-    props = (sdk / "platforms/android-37/source.properties").read_text()
-    require(re.search(r"(?m)^AndroidVersion.ApiLevel\s*=\s*37\s*$", props) is not None, "sdk37_identity")
-    selected = ["platforms/android-37", "ndk/27.0.12077973", "cmake/3.22.1"]
+    # The current official SDK names stable API37 "android-37.0", not "android-37".
+    platform = sdk / "platforms/android-37.0"
+    regular(platform / "android.jar", 100 * 1024**2, "preinstalled_sdk37_absent")
+    props = (platform / "source.properties").read_text()
+    package = ET.parse(platform / "package.xml").getroot().find("localPackage")
+    require(re.search(r"(?m)^AndroidVersion.ApiLevel\s*=\s*37[.]0\s*$", props) is not None
+            and package is not None and package.attrib["path"] == "platforms;android-37.0"
+            and package.find("type-details/api-level").text == "37.0"
+            and not (package.find("type-details/codename").text or "").strip(), "sdk37_identity")
+    selected = ["platforms/android-37.0", "ndk/27.0.12077973", "cmake/3.22.1"]
     require((sdk / selected[1] / "source.properties").is_file(), "preinstalled_ndk27_absent")
     require((sdk / selected[2] / "bin/cmake").is_file(), "preinstalled_cmake_absent")
     build_tools = sorted(p for p in (sdk / "build-tools").glob("*") if re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", p.name))
