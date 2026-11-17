@@ -19,17 +19,18 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 
-SOURCE = "5222690fb51cc49b68d25199c9d87a7a8ed0c9a0"
-TREE = "fdf7e6cd495cf19db48f63dfa29e135daf212e97"
-SOURCE_TABLE_SHA256 = "0d281d67749fad7022abeb9af405b83805e5ef67499015f4fb957c96a200ad9a"
+SOURCE = "b840ada3faea56782f81b234945ef6ad4c7e5e56"
+TREE = "c3c7094d1c07441ffaf3dd1bbfee07c60686ed6c"
+SOURCE_TABLE_SHA256 = "42b2c32180253648dd3787ba42a8a4d8ef49c4c972a8654d53a81d3a6bae4f28"
 FIXTURE_SHA256 = "a466488db1f666da3f1b941ad4c389a6b7940d5c93662adf25f77fb781fd63c7"
 PROVIDER = "client_android/app/google-services.json"
 PACKAGES = ("com.securecall.app.free", "com.securecall.app.premium", "com.securecall.app.pro")
 CLASSES = ("com.securecall.app.crypto.MediaSessionV3Test",
            "com.securecall.app.crypto.SessionKeyBindingTest",
            "com.securecall.app.net.CallMediaReceiveGateTest",
-           "com.securecall.app.security.IdentityProtocolTest")
-CASES = (11, 4, 2, 5)
+           "com.securecall.app.security.IdentityProtocolTest",
+           "com.securecall.app.net.AudioPlaybackLifecycleTest")
+CASES = (11, 4, 5, 5, 4)
 FLAVORS = ("Free", "Premium")
 WRAPPER_SHA256 = "46ac66d47f30f3dacfdf306e0b714a91a34fb94a22ba0a744b280933f47bc0cf"
 WRAPPER_PATH = "wrapper/dists/gradle-9.8.0-all/619e6l8zt76uzaekhqdol0b60/gradle-9.8.0-all.zip"
@@ -129,7 +130,7 @@ def pack(args: argparse.Namespace) -> None:
         files[path] = data
         require(len(files) <= 1000 and sum(map(len, files.values())) <= MAX_BUNDLE)
     table = {p: digest(data) for p, data in files.items()}
-    require(len(table) == 795 and digest(canonical(table)) == SOURCE_TABLE_SHA256, "source_table_pin")
+    require(len(table) == 796 and digest(canonical(table)) == SOURCE_TABLE_SHA256, "source_table_pin")
     for name, count in zip(CLASSES, CASES):
         methods(files["client_android/app/src/test/java/" + name.replace(".", "/") + ".kt"], count)
     files[PROVIDER] = provider_fixture()
@@ -157,7 +158,7 @@ def pack(args: argparse.Namespace) -> None:
         require(output.stat().st_size <= MAX_BUNDLE)
         with output.open("rb") as stream:
             checksum = hashlib.file_digest(stream, "sha256").hexdigest()
-        print(f"PACK source={SOURCE} code_files=795 synthetic_provider=true bundle_sha256={checksum}")
+        print(f"PACK source={SOURCE} code_files=796 synthetic_provider=true bundle_sha256={checksum}")
     except Exception:
         if created:
             output.unlink(missing_ok=True)
@@ -201,7 +202,7 @@ def extract_input(bundle: bytes, root: Path) -> None:
     table_bytes = files.pop("source-table.json")
     require(digest(table_bytes) == SOURCE_TABLE_SHA256, "source_table_pin")
     table = json.loads(table_bytes)
-    require(len(table) == 795 and canonical(table) == table_bytes
+    require(len(table) == 796 and canonical(table) == table_bytes
             and all(source_path(p) and p != PROVIDER for p in table)
             and files.pop(PROVIDER) == provider_fixture(), "fixture_or_source_paths")
     require(table == {p: digest(data) for p, data in files.items()}, "source_file_hashes")
@@ -427,7 +428,7 @@ def receipts() -> None:
                     and all(not list(suite.iter(k)) for k in ("failure", "error", "skipped")), "junit_cases")
             lines.append(f"SC_JUNIT flavor={f} class={c} tests={count} failures=0 errors=0 skipped=0")
     print("\n".join(lines))
-    print("SC_JUNIT_OK classes=8 tests=44")
+    print(f"SC_JUNIT_OK classes={len(CLASSES) * len(FLAVORS)} tests={sum(CASES) * len(FLAVORS)}")
 
 
 def hosted() -> None:
@@ -591,10 +592,11 @@ def hosted() -> None:
                         process.wait(timeout=10)
             lines = data.decode("utf8", errors="replace").splitlines()
             expected_lines = [f"SC_JUNIT flavor={f} class={c} tests={n} failures=0 errors=0 skipped=0"
-                              for f in range(2) for c, n in enumerate(CASES)] + ["SC_JUNIT_OK classes=8 tests=44"]
+                              for f in range(2) for c, n in enumerate(CASES)] + [f"SC_JUNIT_OK classes={len(CLASSES) * len(FLAVORS)} tests={sum(CASES) * len(FLAVORS)}"]
             accepted = (bounded and code == 0 and state["ExitCode"] == 0 and state["Running"] is False
                         and state["OOMKilled"] is False and lines.count("SC_CAPS_OK") == 1
-                        and lines[-9:] == expected_lines and sum(line.startswith("SC_JUNIT") for line in lines) == 9)
+                        and lines[-len(expected_lines):] == expected_lines
+                        and sum(line.startswith("SC_JUNIT") for line in lines) == len(expected_lines))
             diagnostic = root / "jvm-filtered.txt"
             diagnostic.write_bytes(bytes(data))
             diagnostic.chmod(0o600)
@@ -606,7 +608,7 @@ def hosted() -> None:
             if accepted:
                 for receipt in expected_lines[:-1]:
                     print("phase=class_receipt " + receipt.removeprefix("SC_JUNIT "))
-            print(f"phase=result expected_classes=8 expected_tests=44 synthetic_provider=true accepted={str(accepted).lower()}")
+            print(f"phase=result expected_classes={len(CLASSES) * len(FLAVORS)} expected_tests={sum(CASES) * len(FLAVORS)} synthetic_provider=true accepted={str(accepted).lower()}")
             require(accepted, "jvm_result")
         finally:
             cleanup()
