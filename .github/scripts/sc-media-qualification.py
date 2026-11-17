@@ -785,8 +785,11 @@ def container_work() -> None:
     executable.chmod(0o700)
     command = [str(executable), "--no-daemon", "--max-workers=1", "--console=plain",
                "--dependency-verification=strict"]
+    # The private compiler shares the fixed 4-GiB cgroup with tmpfs; avoid a second JVM.
     command += (["resolvePublic"] if public else
-                ["--offline", ":app:assembleFreeDebug", ":app:assembleFreeDebugAndroidTest"])
+                ["-Dorg.gradle.jvmargs=-Xmx1024m -XX:MaxMetaspaceSize=384m -XX:+UseSerialGC -Dfile.encoding=UTF-8",
+                 "-Pkotlin.compiler.execution.strategy=in-process",
+                 "--offline", ":app:assembleFreeDebug", ":app:assembleFreeDebugAndroidTest"])
     subprocess.run(command, cwd=project, check=True, timeout=850)
     events = dict(line.split() for line in (Path("/sys/fs/cgroup") / "memory.events").read_text().splitlines())
     require(all(int(events.get(k, "0")) == 0 for k in ("oom", "oom_kill", "oom_group_kill")), "cgroup_oom")

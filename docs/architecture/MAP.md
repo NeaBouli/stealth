@@ -789,3 +789,11 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
    network, cache, checksum, CPU/memory/file/output/export/time/cgroup/KVM
    boundaries remain untouched. Runtime qualification remains NOT_ACCEPTED;
    APK/ART acceptance and all real execution remain NOT_RUN in this task.
+
+2026-11-17 private-compiler hop: run44111912984 fixed-schema receipt confirms
+kernelOOM under the unchanged4GiB/3GiBtmpfs profile. Keep those caps and all
+guards; private Gradle JVM alone gets1GiBheap/384MiBmetaspace/SerialGC and Kotlin
+in-process compilation (no second compiler JVM). Public preparation unchanged.
+References: https://kotlinlang.org/docs/compiler-execution-strategy.html and
+https://docs.gradle.org/current/userguide/gradle_command_line.html .
+122purechecks PASS; actual memory-shaped build/JNI still NOT_RUN at this entry.
