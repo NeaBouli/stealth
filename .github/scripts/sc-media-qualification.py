@@ -37,10 +37,10 @@ WRAPPER_PATH = "wrapper/dists/gradle-9.8.0-all/619e6l8zt76uzaekhqdol0b60/gradle-
 MAX_BUNDLE = 64 * 1024**2
 MAX_OUTPUT = 512 * 1024
 REPO = "NeaBouli/stealth"
-REF = "refs/heads/temp/sc-stx24-jvm-hosted-20261117"
-RELEASE = 447762646
-TAG = "sc-stx24-jvm-input-20261116-2346"
-ASSET = "sc-stx24-jvm-input.tar"
+REF = "refs/heads/temp/sc-media-audio-jvm-20261117"
+RELEASE = 448233448
+TAG = "sc-media-audio-jvm-input-20261117-0620"
+ASSET = "sc-media-audio-jvm-input.tar"
 LABEL = "sc-stx24-qualification"
 ENV = {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "HOME": "/nonexistent",
        "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null",

@@ -24,13 +24,13 @@ permissions:
   contents: write # Host-only transfer to the exact owned still-DRAFT release.
 
 concurrency:
-  group: temp-sc-stx24-jvm-hosted-20261117
+  group: temp-sc-media-audio-jvm-20261117
   cancel-in-progress: false
 
 jobs:
   android-client:
-    name: TEMP offline Free/Premium four-class JVM qualification
-    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-stx24-jvm-hosted-20261117' && inputs.controller_sha == github.sha
+    name: TEMP offline Free/Premium five-class 62-case JVM qualification
+    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-media-audio-jvm-20261117' && inputs.controller_sha == github.sha
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

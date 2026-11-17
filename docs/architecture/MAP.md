@@ -445,3 +445,15 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   No dependency/policy pin change, bad-cache exception or SHA1 authorization.
 - Remote metadata-only ref removed/absence404 verified; receipt retained privately.
   Existing JVM series remainsSTOPPED/NOT_RUN; no fourth qualification dispatched.
+
+### Owner-Resumed Consolidated Qualification 2026-11-17
+
+- Explicit owner answer resumes only5classes/62Free+Premium cases on frozen
+  source6ba8fddd/tree129d. Root-cause cache correction retained, SHA256 policy
+  never bypassed; official Gradle cache table confirms metadata-2.107 for8.11+.
+- Fresh owned STILL-DRAFT448233448 and temp/sc-media-audio-jvm-20261117 bind
+  the private synthetic-config payload. No reused failed-run assets or bindings.
+- Existing enforced offline/nonroot/readonly/cgroup/caps/scratch profile and
+  positive exact JUnit receipt checks unchanged. No Rust/backend/emulator rerun.
+- No personal-device install, production config, provider/payment or release.
+  https://docs.gradle.org/current/userguide/dependency_caching.html
