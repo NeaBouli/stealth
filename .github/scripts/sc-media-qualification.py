@@ -282,6 +282,8 @@ def stage_cache(root: Path, source: Path) -> Path:
     # home/init/properties/daemon/config-cache; authenticate selected artifacts.
     cache = Path("/home/runner/.gradle")
     wrapper = cache / WRAPPER_PATH
+    if not wrapper.is_file():
+        wrapper = Path(os.environ["RUNNER_TEMP"]) / "sc-gradle-9.8.0-all.zip"
     regular(wrapper, 300 * 1024**2, "cached_gradle_9_8_0_zip_absent")
     with wrapper.open("rb") as stream:
         require(hashlib.file_digest(stream, "sha256").hexdigest() == WRAPPER_SHA256, "wrapper_checksum")

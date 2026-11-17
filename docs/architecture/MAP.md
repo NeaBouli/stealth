@@ -423,3 +423,12 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - Rust/Node unchanged. This is a concrete changed admission, not a repeated JVM
   test: no Gradle/target invocation has occurred yet. Primary vendor metadata:
   https://raw.githubusercontent.com/actions/runner-images/ubuntu26/20261111.196/images/ubuntu/Ubuntu2604-Readme.md
+
+- Second admission43988072867: real JDK17/SDK37.0/native tools PASS, private
+  source input validated; missing cached raw Gradle ZIP before image/target.
+  The restored wrapper cache entry is not proof that the original ZIP exists.
+  Trusted host now stages only the source-pinned official9.8.0-all distribution
+  over HTTPS, 180seconds/256MiB and exact SHA256, before private input; target
+  remains offline with readonly archive and no automatic dependency installs.
+  No app test has run. Third changed-admission continuation is bounded; on
+  another failure stop this qualification series, retain the concrete blocker.

@@ -52,6 +52,15 @@ jobs:
           export JAVA_HOME="$JAVA_HOME_17_X64"
           timeout 360 "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --channel=0 \
             "ndk;27.0.12077973" "cmake;3.22.1"
+      - name: Stage exact SHA256-pinned Gradle wrapper archive before private input
+        run: |
+          curl --fail --location --proto '=https' --proto-redir '=https' \
+            --max-time 180 --max-filesize 268435456 \
+            --output "$RUNNER_TEMP/sc-gradle-9.8.0-all.zip" \
+            https://services.gradle.org/distributions/gradle-9.8.0-all.zip
+          printf '%s  %s\n' \
+            46ac66d47f30f3dacfdf306e0b714a91a34fb94a22ba0a744b280933f47bc0cf \
+            "$RUNNER_TEMP/sc-gradle-9.8.0-all.zip" | sha256sum --check --status
       - name: Trusted admission and bounded offline JVM qualification
         env:
           GH_TOKEN: ${{ github.token }}
