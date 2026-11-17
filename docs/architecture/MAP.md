@@ -433,3 +433,20 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - Native proof: `CoreCryptoMediaV3InstrumentedTest` (8 tests, real JNI, synthetic keys,
   fails rather than skips when the library is missing/stale). NOT_RUN until the parent
   rebuilds the three libs from pinned source and runs it on an admitted emulator.
+
+## Native artifact qualification, 2026-11-17
+
+- Actual isolated build44051364431 succeeded: core subtree
+  `f08686c2628aabdfdd5123bc363d3b4efb5d0232`, source354913fb,
+  Rust1.99.1/NDK27.0.12077973/API24, locked offline dependencies.
+  Temporary controllere87aae6c is not application source and must never merge.
+- Parent verified receipt/source/controller/hash/ABI bindings, seven JNI exports,
+  and 16KiB LOAD alignment on all three artifacts, then replaced only these
+  prebuilt libraries. The real packaging export guard passed (all three ABIs).
+  Receipt SHA256: `dbfe5ddcf18ac3f463a2ce01479f3b605a8d80b4c845160839e82fdcab7453da`.
+- SHA256 arm64-v8a: `2782617de7793cc0040bae2ffff3588350e78734dffe91aaa83edf1f461e4f9f`;
+  armeabi-v7a: `01b0ec8a1fda6363baf30eda275cd142f4857743ced8b012798c47afd74d4280`;
+  x86_64: `4a932002caab2e585f56950f5ea35d587d4f13b588c62549f5ad513eaf207c59`.
+- This is build/ELF/package-guard proof, not Android execution. The eight JNI
+  instrumentation tests, codec/audio, calls, interoperability and final release
+  integration remain separate open acceptance gates. No customer release.
