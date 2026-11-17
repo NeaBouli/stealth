@@ -53,7 +53,7 @@ EXPECTED_METHODS = frozenset({
     "legacyAndMalformedEnvelopesAreRejected",
 })
 # Parent binds only the reviewed diff; host Linux strip proof remains mandatory.
-ADMISSION = "PARENT_REVIEWED"
+ADMISSION = "HOLD"
 REF = "refs/heads/temp/sc-jni-art-resume-20261117"
 RELEASE = 448597305
 TAG = "sc-jni-art-resume-20261117"

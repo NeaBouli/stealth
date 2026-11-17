@@ -740,3 +740,12 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   traversal/absolute/symlink/hardlink/duplicate/unexpected rejected). Actual
   Docker tar runtime NOT_RUN. ART remains HOLD after three resumed admissions;
   this correction authorizes no fourth run.
+
+### Retained Inactive Controller - 2026-11-17
+
+- Parent merged53ccffef graph pins with8c5f8d4d tmpfs-export correction as
+  ced435fb, resolving only the append-only MAP conflict and preserving both
+  source changes. Eleven pure export groups passed in the worker; no runtime.
+- ADMISSION is now HOLD. Deleted draft/ref cannot be reused; the retained
+  agent branch is not the admitted TEMP ref and has no automatic CI trigger.
+  New runtime requires a fresh, exact reviewed resumption, never a fourth retry.
