@@ -682,3 +682,13 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   dependency fetch, TLS, JVM or ART PASS is claimed. Parent owns retained evidence
   and draft/ref cleanup. ART remains HOLD after the third admission; this source
   correction authorizes no redispatch or resumption.
+
+### Owner-Resumed Qualification - 2026-11-17
+
+- Owner explicitly resumed after the recorded hold. First admission verifies
+  the exact reviewed public CA correction only, not app/ART acceptance.
+- Fresh owned draft448597305/tag `sc-jni-art-resume-20261117`, temporary branch
+  `temp/sc-jni-art-resume-20261117`; old deleted bindings are not reused.
+- Source d1eefa87, profiles, dependency/native hashes and private entry point
+  unchanged. Only a real public preparation PASS permits separate private-hop
+  admission; never a TLS/verification exception or GUI/UI241 retry.

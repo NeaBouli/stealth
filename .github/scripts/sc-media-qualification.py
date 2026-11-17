@@ -54,9 +54,9 @@ EXPECTED_METHODS = frozenset({
 })
 # Parent binds only the reviewed diff; host Linux strip proof remains mandatory.
 ADMISSION = "PARENT_REVIEWED"
-REF = "refs/heads/temp/sc-jni-art-20261117"
-RELEASE = 448471483
-TAG = "sc-jni-art-input-20261117"
+REF = "refs/heads/temp/sc-jni-art-resume-20261117"
+RELEASE = 448597305
+TAG = "sc-jni-art-resume-20261117"
 ASSET = "sc-jni-art-input.tar"
 EMULATOR_REVISION = "37.2.13"
 IMAGE_REVISION = "27"

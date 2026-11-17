@@ -24,17 +24,17 @@ permissions:
   contents: write # Host-only transfer to the exact owned still-DRAFT release.
 
 concurrency:
-  group: temp-sc-jni-art-20261117
+  group: temp-sc-jni-art-resume-20261117
   cancel-in-progress: false
 
-# Third admission only: stop afterward, regardless of result. Further ART runs
-# require explicit new resumption/corrective evidence, never a blind retry.
+# Owner resumed on 2026-11-17 after the reviewed public CA correction.
+# This first corrected admission remains public-only; app tests cannot run here.
 
 jobs:
   android-client:
     name: PUBLIC DIAG / NO APP TESTS - one public preparation only
     # Exact parent-reviewed controller; no automatic branch or PR execution.
-    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-jni-art-20261117' && inputs.controller_sha == github.sha
+    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-jni-art-resume-20261117' && inputs.controller_sha == github.sha
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
