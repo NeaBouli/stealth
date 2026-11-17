@@ -659,3 +659,26 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - Worker checks are pure fixtures/AST/lint only. Parent reviews and admits
   exactly one third public diagnostic; ART series then STOPS pending explicit
   new resumption/corrective evidence. No fourth/blind retry or runtime acceptance.
+
+### Public CA Availability Correction (Source-Only, ART HOLD)
+
+- Parent's third diagnostic44071447626 FAILED before app/input/VM: caps1,
+  export0, exit1, OOMfalse, boundedtrue, public output5735bytes. Retained asset
+  758730777 is4334byte JSON, SHA256
+  `8a14a9a179b1adf225ae5b5f10b90d4fb0ac0864f1ad5a0d42d78fe9bfd1c5f8`.
+  All four AndroidTest roots failed truststore availability/trustAnchors. The
+  JDK cacerts symlink likely escapes its RO mount; actual host path is unverified
+  here. This supersedes the earlier UNKNOWN cause, not the failed runtime result.
+- Same public hop: selected `/jdk` -> resolve its exact `lib/security/cacerts`
+  -> bounded readable regular public source -> identical owned snapshot/RO file
+  alias `/public-cacerts` -> public JVM trustStore property -> SHA recheck after
+  public-container cleanup, on success or failure. Allowed resolved provenance:
+  inside that selected JDK or exactly `/etc/ssl/certs/java/cacerts`, nothing else.
+  Size<=4MiB; original/snapshot SHA256 must agree before and after. No substitute
+  roots, entire `/etc` mount, credentials, TLS exception or permissive verification.
+- Private mounts/environment/profile and workflow remain unchanged; PUBLIC DIAG
+  still cannot enter private input/strip/app/VM. Worker runs only synthetic
+  filesystem/hash fixtures and static lint. No actual CA host path, Gradle,
+  dependency fetch, TLS, JVM or ART PASS is claimed. Parent owns retained evidence
+  and draft/ref cleanup. ART remains HOLD after the third admission; this source
+  correction authorizes no redispatch or resumption.

@@ -70,6 +70,8 @@ MAX_OUTPUT = 512 * 1024
 PUBLIC_DIAGNOSTIC_ASSET = "public-preparation-diagnostic.json"
 MAX_PUBLIC_TAIL = 8192
 MAX_PUBLIC_DIAGNOSTIC = 16 * 1024
+SYSTEM_JAVA_CACERTS = Path("/etc/ssl/certs/java/cacerts")
+MAX_PUBLIC_CACERTS = 4 * 1024**2
 REPO = "NeaBouli/stealth"
 LABEL = "sc-stx24-qualification"
 ENV = {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "HOME": "/nonexistent",
@@ -1096,6 +1098,10 @@ def run_container(root: Path, source: Path, dependencies: Path,
                        "GRADLE_RO_DEP_CACHE": "/dependencies", "TMPDIR": "/scratch/tmp", "LC_ALL": "C.UTF-8",
                        "GRADLE_OPTS": "-Dorg.gradle.jvmargs=-Xmx1024m -Dorg.gradle.java.installations.auto-download=false -Dorg.gradle.project.android.builder.sdkDownload=false",
                        "JAVA_TOOL_OPTIONS": "-XX:ActiveProcessorCount=1 -XX:ParallelGCThreads=1 -XX:ConcGCThreads=1 -XX:CICompilerCount=2 -XX:MaxMetaspaceSize=384m -XX:ReservedCodeCacheSize=128m -Xss512k -Djava.io.tmpdir=/scratch/tmp -Duser.home=/scratch/home"}
+        if public:
+            require(sum(target == "/public-cacerts" for _, target in mounts) == 1,
+                    "public_cacerts_mount")
+            environment["JAVA_TOOL_OPTIONS"] += " -Djavax.net.ssl.trustStore=/public-cacerts"
         environment["SC_MOUNT_DESTINATIONS"] = json.dumps(sorted(
             destination for _, destination in mounts), separators=(",", ":"))
         environment["SC_NETWORK"] = network
@@ -1223,6 +1229,44 @@ def dispatch_guard() -> None:
         p.strip() for p in processes), "foreign_workload")
 
 
+def public_cacerts_source(jdk: Path) -> Path:
+    require(jdk.is_absolute() and jdk == jdk.resolve(strict=True), "public_cacerts_jdk")
+    try:
+        source = (jdk / "lib/security/cacerts").resolve(strict=True)
+    except (OSError, RuntimeError):
+        raise Refusal("public_cacerts_missing") from None
+    require(source.is_relative_to(jdk) or source == SYSTEM_JAVA_CACERTS,
+            "public_cacerts_provenance")
+    regular(source, MAX_PUBLIC_CACERTS, "public_cacerts_shape")
+    require(os.access(source, os.R_OK), "public_cacerts_readable")
+    return source
+
+
+def public_cacerts_bytes(path: Path) -> bytes:
+    regular(path, MAX_PUBLIC_CACERTS, "public_cacerts_shape")
+    with path.open("rb") as stream:
+        data = stream.read(MAX_PUBLIC_CACERTS + 1)
+    require(0 < len(data) <= MAX_PUBLIC_CACERTS and len(data) == path.stat().st_size,
+            "public_cacerts_size")
+    return data
+
+
+def verify_public_cacerts(jdk: Path, staged: Path, checksum: str) -> None:
+    require(digest(public_cacerts_bytes(public_cacerts_source(jdk))) == checksum
+            and digest(public_cacerts_bytes(staged)) == checksum, "public_cacerts_changed")
+
+
+def stage_public_cacerts(root: Path, jdk: Path) -> tuple[Path, str]:
+    data = public_cacerts_bytes(public_cacerts_source(jdk))
+    checksum = digest(data)
+    staged = root / "public-cacerts"
+    with staged.open("xb") as output:
+        output.write(data)
+    staged.chmod(0o444)
+    verify_public_cacerts(jdk, staged, checksum)
+    return staged, checksum
+
+
 def public_preparation(root: Path, mounts: list[tuple[str, str]], *, diagnose: bool = False) -> Path:
     source = root / "source"
     project = source / "client_android"
@@ -1244,7 +1288,14 @@ def public_preparation(root: Path, mounts: list[tuple[str, str]], *, diagnose: b
     }.items():
         (project / path).write_bytes(data)
     seeded = stage_cache(root, source, seed=True, direct=False)
-    exported = run_container(root, source, seeded, list(mounts), public=True, diagnose=diagnose)
+    jdks = [Path(path) for path, target in mounts if target == "/jdk"]
+    require(len(jdks) == 1, "public_cacerts_jdk")
+    staged_ca, ca_sha256 = stage_public_cacerts(root, jdks[0])
+    public_mounts = [*mounts, (str(staged_ca), "/public-cacerts")]
+    try:
+        exported = run_container(root, source, seeded, public_mounts, public=True, diagnose=diagnose)
+    finally:
+        verify_public_cacerts(jdks[0], staged_ca, ca_sha256)
     # Recheck the exported bytes on the host before any private download.
     selected = root / "selected"
     dependencies = stage_cache(selected, source, cache=exported, direct=False)
@@ -1528,6 +1579,62 @@ def hosted() -> None:
         print("phase=result api=24 tests=8 skipped=0 synthetic_provider=true accepted=true")
 
 
+def public_ca_checks() -> None:
+    """Synthetic filesystem/byte fixtures only; no real CA store or JVM access."""
+    from collections.abc import Callable
+    from unittest.mock import patch
+
+    checks = 0
+    def rejected(operation: Callable[[], object]) -> None:
+        nonlocal checks
+        try:
+            operation()
+        except Refusal:
+            checks += 1
+        else:
+            raise Refusal("negative_public_ca_fixture_accepted")
+
+    with tempfile.TemporaryDirectory(prefix="sc-public-ca-fixtures-", dir=Path.cwd()) as directory:
+        root = Path(directory)
+        jdk = root / "jdk"
+        security = jdk / "lib/security"
+        security.mkdir(parents=True)
+        candidate = security / "cacerts"
+        data = b"synthetic public certificate bytes, not a real truststore"
+        candidate.write_bytes(data)
+        staged, checksum = stage_public_cacerts(root, jdk)
+        require(staged.read_bytes() == data and checksum == digest(data), "public_ca_copy_fixture")
+        checks += 1
+        candidate.unlink()
+        internal = security / "public-store"
+        internal.write_bytes(data)
+        candidate.symlink_to(internal)
+        require(public_cacerts_source(jdk) == internal, "public_ca_internal_alias_fixture")
+        checks += 1
+        system = root / "system-public-java-cacerts"
+        system.write_bytes(data)
+        candidate.unlink()
+        candidate.symlink_to(system)
+        with patch.dict(globals(), {"SYSTEM_JAVA_CACERTS": system}):
+            require(public_cacerts_source(jdk) == system, "public_ca_system_alias_fixture")
+            checks += 1
+        rejected(lambda: public_cacerts_source(jdk))
+        candidate.unlink()
+        rejected(lambda: public_cacerts_source(jdk))
+        candidate.symlink_to(internal)
+        internal.write_bytes(b"changed source")
+        rejected(lambda: verify_public_cacerts(jdk, staged, checksum))
+        internal.write_bytes(data)
+        staged.chmod(0o600)
+        staged.write_bytes(b"changed snapshot")
+        rejected(lambda: verify_public_cacerts(jdk, staged, checksum))
+        with patch.dict(globals(), {"MAX_PUBLIC_CACERTS": 1}):
+            rejected(lambda: public_cacerts_source(jdk))
+        with patch.object(os, "access", return_value=False):
+            rejected(lambda: public_cacerts_source(jdk))
+    print(f"SC_SOURCE_CHECKS public_ca={checks} actual_host_ca_jvm_network_execution=false")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="mode", required=True)
@@ -1537,6 +1644,7 @@ def main() -> None:
     commands.add_parser("hosted")
     commands.add_parser("diagnose-public")
     commands.add_parser("public-diagnostic-checks")
+    commands.add_parser("public-ca-checks")
     commands.add_parser("admission")
     commands.add_parser("cleanup")
     commands.add_parser("container-work")
@@ -1554,6 +1662,8 @@ def main() -> None:
             diagnose_public()
         elif args.mode == "public-diagnostic-checks":
             public_diagnostic_checks()
+        elif args.mode == "public-ca-checks":
+            public_ca_checks()
         elif args.mode == "cleanup":
             cleanup()
         elif args.mode == "container-work":
