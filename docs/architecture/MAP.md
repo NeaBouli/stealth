@@ -332,3 +332,43 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   (`MediaSessionV3.MAX_PLAINTEXT`); frame max 4060. Codec untouched.
 - Interop (E) unchanged: v3 -> old callee still ends as ring timeout, not as a
   detected-old-peer error; no capability handshake added.
+
+## Audio stop ownership (SC-AUDIO-STOP-OWNERSHIP-20261117)
+
+- Bounded module: `WebSocketService` audio lifecycle and direct player neighbour
+  `GhostAudioPlayer`, not media cryptography (parent feedback extension).
+- Proven source race: `handleIncomingMessage::CALL_ACCEPT_ACK` -> `killAllAudio`
+  -> `stopAudioPlayback` -> singleton `OpusDecoder.release`, independent of
+  `MediaSessionV3.consume` -> decoder init/decode -> jitter enqueue/player start.
+  The old stop could free a handle during native decode or clear playback before
+  the still-running consumer restarted it. No runtime reproduction is claimed.
+- Receive now snapshots an audio generation before admission/authentication;
+  the authenticated consumer takes `AudioPlaybackLifecycle` and rechecks current
+  manager/media/security-state ownership and service destruction before decoding.
+- Stop takes the audio lock, replaces its generation, then clears jitter,
+  interrupts playout and terminally retires the player/releases the decoder. Old admitted consumers and old
+  playout generations cannot touch replacement audio. Fresh valid current-call
+  callbacks may start audio again; a tone stop does not close the crypto session.
+- Playout prefill/pop use the generation lock, but player.write runs outside it.
+  `GhostAudioPlayer.write` prepares/plays and captures its track under a short
+  private state lock; blocking AudioTrack.write runs outside all teardown locks.
+  `retire` marks the player terminal and detaches its track under that state lock,
+  then stop/release run without that lock, able to interrupt an in-flight write.
+  A delayed old worker cannot prepare/play again; a captured old track never
+  redirects to a fresh resource. Blocking mode and transfer handling stay unchanged.
+- Direct-user check: GhostMediaRouter keeps a persistent player and uses ordinary
+  stop/release. Those methods remain reusable; only WebSocketService uses retire,
+  discards that player and creates a fresh resource for subsequent valid audio.
+- Lock order: existing media consume lock -> audio -> jitter/player-state; audio never takes
+  media/service monitors or closes native transport. Existing clearSession order
+  remains media.close (returns), transport.close (returns), then audio stop.
+- Source regressions: `AudioPlaybackLifecycleTest` has latch-bounded decode/stop,
+  pre-stop admission, old playout/current-call reuse and one-way lock-order cases;
+  `CallMediaReceiveGateTest` adds mocked blocked-write vs real service stop/retire,
+  old-player no-resurrection, fresh-resource playback and legacy release reuse.
+  Constructor-bypassed service mocks initialize the lifecycle field.
+- Tests/compilation/native/device/runtime: NOT_RUN by source-only authorization.
+  Gate tests use synthetic actions; player tests use mocked AudioTracks, not native
+  execution. No timeout-based write cancellation or non-blocking mode is introduced.
+- Unchanged: accepted consume/close implementation, protocol/keys/replay,
+  signaling decisions, reconnect, flavors, native codec and other legacy routers.

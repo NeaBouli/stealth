@@ -15,11 +15,18 @@ class GhostAudioPlayer(
     private val channels: Int = 1
 ) {
 
+    private val stateLock = Any()
+    private var retired = false
     private var audioTrack: AudioTrack? = null
     private var isPrepared = false
     private var isPlaying = false
 
     fun prepare() {
+        synchronized(stateLock) { prepareLocked() }
+    }
+
+    private fun prepareLocked() {
+        if (retired) return
         if (isPrepared) return
 
         Log.d("AUDIO_PLAYER", "prepare(): initializing AudioTrack")
@@ -62,7 +69,12 @@ class GhostAudioPlayer(
     }
 
     fun play() {
-        if (!isPrepared) prepare()
+        synchronized(stateLock) { playLocked() }
+    }
+
+    private fun playLocked() {
+        if (retired) return
+        if (!isPrepared) prepareLocked()
         if (isPlaying) return
 
         audioTrack?.play()
@@ -71,27 +83,52 @@ class GhostAudioPlayer(
     }
 
     fun write(pcm: ShortArray) {
-        if (!isPrepared) prepare()
-        if (!isPlaying) play()
+        val track = synchronized(stateLock) {
+            if (retired) return
+            if (!isPlaying) playLocked()
+            audioTrack
+        } ?: return
 
-        val track = audioTrack ?: return
-
+        // A concurrent stop/retire must be able to interrupt this blocking write.
+        // Only the captured track is used; never prepare/play again after retirement.
         val wrote = track.write(pcm, 0, pcm.size)
         Log.d("AUDIO_PLAYER", "write(): wrote=$wrote samples")
     }
 
     fun stop() {
-        if (!isPrepared) return
-        audioTrack?.stop()
-        isPlaying = false
+        synchronized(stateLock) {
+            if (!isPrepared) return
+            audioTrack?.stop()
+            isPlaying = false
+        }
         Log.d("AUDIO_PLAYER", "stop()")
     }
 
     fun release() {
-        audioTrack?.release()
-        audioTrack = null
-        isPrepared = false
-        isPlaying = false
+        synchronized(stateLock) {
+            audioTrack?.release()
+            audioTrack = null
+            isPrepared = false
+            isPlaying = false
+        }
         Log.d("AUDIO_PLAYER", "release()")
+    }
+
+    /** Terminal service-owned playback resource; release() stays reusable for legacy callers. */
+    fun retire() {
+        val track = synchronized(stateLock) {
+            if (retired) return
+            retired = true
+            val current = audioTrack
+            audioTrack = null
+            isPrepared = false
+            isPlaying = false
+            current
+        }
+        try {
+            track?.stop()
+        } finally {
+            track?.release()
+        }
     }
 }

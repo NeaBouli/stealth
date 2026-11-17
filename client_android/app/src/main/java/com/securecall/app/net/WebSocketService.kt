@@ -33,6 +33,25 @@ internal object CallEndPolicy {
     fun shouldDelay(reason: String): Boolean = reason == "peer_disconnected"
 }
 
+/** Audio-only ownership; never acquire a media/session/service lock from an action. */
+internal class AudioPlaybackLifecycle {
+    private val lock = Any()
+    @Volatile private var generation = Any()
+
+    fun snapshot(): Any = generation
+
+    fun consume(expected: Any, action: () -> Unit): Boolean = synchronized(lock) {
+        if (expected !== generation) return@synchronized false
+        action()
+        true
+    }
+
+    fun stop(release: () -> Unit) = synchronized(lock) {
+        generation = Any()
+        release()
+    }
+}
+
 private enum class SecureCallRole { CALLER, CALLEE }
 
 private data class CallSecurityState(
@@ -96,6 +115,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     @Volatile private var _onSecureSessionEstablished: ((String, String) -> Unit)? = null
 
     // Audio playback pipeline
+    private val audioPlaybackLifecycle = AudioPlaybackLifecycle()
     private var audioPlayer: com.securecall.app.ghostnet.media.playback.GhostAudioPlayer? = null
     private var opusDecoderInitialized = false
     private var jitterPlaybackThread: Thread? = null
@@ -1140,6 +1160,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         owner: MediaSessionV3,
         data: ByteArray,
     ) {
+        val playbackGeneration = audioPlaybackLifecycle.snapshot()
         val state = callSecurityState
         if (source == null || source !== webRtcManager || owner !== mediaSession
             || owner.sessionId != sessionId || state?.established != true
@@ -1152,19 +1173,23 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         // clearSession() closes the session first, so once close() returns no
         // authenticated frame from this call can reach the decoder or playback.
         owner.consume(data) { audioData ->
-            if (!opusDecoderInitialized) {
-                com.securecall.app.ghostnet.media.codec.OpusDecoder.init(48000, 1)
-                opusDecoderInitialized = true
-            }
-            val pcm = com.securecall.app.ghostnet.media.codec.OpusDecoder.decode(audioData)
-            if (pcm.isNotEmpty()) {
-                com.securecall.app.audio.jitter.JitterBuffer.push(pcm)
-                startJitterPlayback()
+            audioPlaybackLifecycle.consume(playbackGeneration) playback@{
+                if (destroyed || source !== webRtcManager || owner !== mediaSession
+                    || state !== callSecurityState) return@playback
+                if (!opusDecoderInitialized) {
+                    com.securecall.app.ghostnet.media.codec.OpusDecoder.init(48000, 1)
+                    opusDecoderInitialized = true
+                }
+                val pcm = com.securecall.app.ghostnet.media.codec.OpusDecoder.decode(audioData)
+                if (pcm.isNotEmpty()) {
+                    com.securecall.app.audio.jitter.JitterBuffer.push(pcm)
+                    startJitterPlayback(playbackGeneration)
+                }
             }
         }
     }
 
-    private fun startJitterPlayback() {
+    private fun startJitterPlayback(playbackGeneration: Any) {
         if (jitterPlaybackRunning) return
         jitterPlaybackRunning = true
         if (audioPlayer == null) {
@@ -1175,23 +1200,28 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         jitterPlaybackThread = Thread({
             Log.d("WS_SERVICE", "Jitter playout thread started, prefill=${com.securecall.app.audio.jitter.JitterBuffer.PREFILL}")
             // Wait for prefill before starting playback
-            while (jitterPlaybackRunning && com.securecall.app.audio.jitter.JitterBuffer.size() < com.securecall.app.audio.jitter.JitterBuffer.PREFILL) {
+            while (true) {
+                var waiting = false
+                if (!audioPlaybackLifecycle.consume(playbackGeneration) {
+                    waiting = com.securecall.app.audio.jitter.JitterBuffer.size() < com.securecall.app.audio.jitter.JitterBuffer.PREFILL
+                }) return@Thread
+                if (!waiting) break
                 try { Thread.sleep(5) } catch (_: InterruptedException) { return@Thread }
             }
             Log.d("WS_SERVICE", "Jitter prefill reached, starting playout")
             while (jitterPlaybackRunning) {
-                if (audioPlaybackPaused) {
-                    // During cell call: drain buffer but don't play, write silence
-                    com.securecall.app.audio.jitter.JitterBuffer.pop() // discard
-                    player.write(silence)
-                } else {
-                    val frame = com.securecall.app.audio.jitter.JitterBuffer.pop()
-                    if (frame != null) {
-                        player.write(frame)
+                var pcm = silence
+                if (!audioPlaybackLifecycle.consume(playbackGeneration) {
+                    if (audioPlaybackPaused) {
+                        // During cell call: drain buffer but don't play, write silence
+                        com.securecall.app.audio.jitter.JitterBuffer.pop() // discard
                     } else {
-                        player.write(silence)
+                        pcm = com.securecall.app.audio.jitter.JitterBuffer.pop() ?: silence
                     }
-                }
+                }) return@Thread
+                // Never hold the audio lifecycle lock across a blocking AudioTrack write.
+                // stop retires this exact player, so delayed old workers cannot recreate it.
+                player.write(pcm)
                 try { Thread.sleep(20) } catch (_: InterruptedException) { return@Thread }
             }
             Log.d("WS_SERVICE", "Jitter playout thread stopped")
@@ -1262,17 +1292,19 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     fun stopAudioPlayback() {
-        audioPlaybackPaused = false
-        jitterPlaybackRunning = false
-        jitterPlaybackThread?.interrupt()
-        jitterPlaybackThread = null
-        com.securecall.app.audio.jitter.JitterBuffer.clear()
-        audioPlayer?.stop()
-        audioPlayer?.release()
-        audioPlayer = null
-        if (opusDecoderInitialized) {
-            com.securecall.app.ghostnet.media.codec.OpusDecoder.release()
-            opusDecoderInitialized = false
+        audioPlaybackLifecycle.stop {
+            audioPlaybackPaused = false
+            jitterPlaybackRunning = false
+            jitterPlaybackThread?.interrupt()
+            jitterPlaybackThread = null
+            com.securecall.app.audio.jitter.JitterBuffer.clear()
+            val player = audioPlayer
+            audioPlayer = null
+            player?.retire()
+            if (opusDecoderInitialized) {
+                com.securecall.app.ghostnet.media.codec.OpusDecoder.release()
+                opusDecoderInitialized = false
+            }
         }
     }
 

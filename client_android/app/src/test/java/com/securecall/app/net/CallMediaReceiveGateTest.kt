@@ -1,15 +1,25 @@
 package com.securecall.app.net
 
+import android.media.AudioTrack
+import com.securecall.app.audio.jitter.JitterBuffer
 import com.securecall.app.crypto.MediaFrameCipher
 import com.securecall.app.crypto.MediaSessionV3
 import com.securecall.app.crypto.SessionKeyBinding
 import com.securecall.app.security.VerifiedCallInvite
+import com.securecall.app.ghostnet.media.playback.GhostAudioPlayer
 import com.securecall.crypto.CoreCrypto
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Answers
 import org.mockito.Mockito
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * STX-24 receive boundary: WebSocket binary and stale DataChannel callbacks must never
@@ -38,7 +48,9 @@ class CallMediaReceiveGateTest {
     }
 
     private fun service(): WebSocketService =
-        Mockito.mock(WebSocketService::class.java, Answers.CALLS_REAL_METHODS)
+        Mockito.mock(WebSocketService::class.java, Answers.CALLS_REAL_METHODS).also {
+            set(it, "audioPlaybackLifecycle", AudioPlaybackLifecycle())
+        }
 
     private fun set(target: WebSocketService, field: String, value: Any?) {
         WebSocketService::class.java.getDeclaredField(field).apply { isAccessible = true }.set(target, value)
@@ -49,6 +61,149 @@ class CallMediaReceiveGateTest {
             "receiveDataChannelMedia", WebRtcManager::class.java, String::class.java,
             MediaSessionV3::class.java, ByteArray::class.java,
         ).apply { isAccessible = true }.invoke(target, source, id, owner, ByteArray(MediaSessionV3.MIN_FRAME))
+    }
+
+    @Test
+    fun realServiceStopInvalidatesPendingAudioWithoutClosingCurrentMedia() {
+        val target = service()
+        val lifecycle = AudioPlaybackLifecycle()
+        val cipher = CountingCipher()
+        val current = media(cipher)
+        set(target, "audioPlaybackLifecycle", lifecycle)
+        set(target, "mediaSession", current)
+        val pending = lifecycle.snapshot()
+
+        target.stopAudioPlayback()
+
+        assertFalse(lifecycle.consume(pending) { error("Stopped audio restarted") })
+        assertTrue(lifecycle.consume(lifecycle.snapshot()) {})
+        // A stop of ringback/playback must leave the established crypto owner open.
+        current.consume(ByteArray(MediaSessionV3.MIN_FRAME)) {}
+        assertEquals(1, cipher.opens.get())
+        current.close()
+    }
+
+    private fun preparedPlayer(track: AudioTrack): GhostAudioPlayer = GhostAudioPlayer().also { player ->
+        GhostAudioPlayer::class.java.getDeclaredField("audioTrack").apply {
+            isAccessible = true
+        }.set(player, track)
+        GhostAudioPlayer::class.java.getDeclaredField("isPrepared").apply {
+            isAccessible = true
+        }.setBoolean(player, true)
+    }
+
+    @Test
+    fun serviceStopRetiresAndReleasesWhileNativeWriteIsStillBlocked() {
+        val target = service()
+        val lifecycle = AudioPlaybackLifecycle()
+        set(target, "audioPlaybackLifecycle", lifecycle)
+        val track = Mockito.mock(AudioTrack::class.java)
+        val player = preparedPlayer(track)
+        set(target, "audioPlayer", player)
+        val generation = lifecycle.snapshot()
+        val pcm = ShortArray(960)
+        val writing = CountDownLatch(1)
+        val finishWrite = CountDownLatch(1)
+        val writeReturned = CountDownLatch(1)
+        val writeFailure = AtomicReference<Throwable>()
+        val playout = AtomicReference<Thread>()
+        val pool = Executors.newSingleThreadExecutor()
+        Mockito.`when`(track.write(pcm, 0, pcm.size)).thenAnswer {
+            playout.set(Thread.currentThread())
+            writing.countDown()
+            try {
+                try {
+                    check(finishWrite.await(10, TimeUnit.SECONDS))
+                } catch (_: InterruptedException) {
+                    // Model a native write: Java interrupt alone does not finish it.
+                    check(finishWrite.await(10, TimeUnit.SECONDS))
+                }
+                480 // stop may interrupt a blocking transfer and return a short write.
+            } catch (failure: Throwable) {
+                writeFailure.set(failure)
+                throw failure
+            } finally {
+                writeReturned.countDown()
+            }
+        }
+        try {
+            JitterBuffer.clear()
+            repeat(JitterBuffer.PREFILL) { JitterBuffer.push(pcm) }
+            // Exercise the actual service playout thread, not a copy of its lock ordering.
+            WebSocketService::class.java.getDeclaredMethod("startJitterPlayback", Any::class.java).apply {
+                isAccessible = true
+            }.invoke(target, generation)
+            check(writing.await(2, TimeUnit.SECONDS))
+            val stop = pool.submit { target.stopAudioPlayback() }
+            stop.get(2, TimeUnit.SECONDS)
+            assertEquals(1L, writeReturned.count)
+            Mockito.verify(track).stop()
+            Mockito.verify(track).release()
+            assertFalse(lifecycle.consume(generation) { error("Old worker dequeued again") })
+
+            // Even an old worker delayed between dequeue and write cannot auto-prepare/play.
+            player.prepare()
+            player.play()
+            player.write(pcm)
+            player.retire()
+            Mockito.verify(track, Mockito.times(1)).play()
+            Mockito.verify(track, Mockito.times(1)).write(pcm, 0, pcm.size)
+            Mockito.verify(track, Mockito.times(1)).release()
+
+            val replacementTrack = Mockito.mock(AudioTrack::class.java)
+            val replacement = preparedPlayer(replacementTrack)
+            set(target, "audioPlayer", replacement)
+            assertTrue(lifecycle.consume(lifecycle.snapshot()) {})
+            replacement.write(pcm)
+            Mockito.verify(replacementTrack).play()
+            Mockito.verify(replacementTrack).write(pcm, 0, pcm.size)
+            set(target, "jitterPlaybackRunning", true)
+            JitterBuffer.push(ShortArray(960) { 7 })
+
+            finishWrite.countDown()
+            check(writeReturned.await(2, TimeUnit.SECONDS))
+            playout.get().join(2_000)
+            assertFalse(playout.get().isAlive)
+            assertNull(writeFailure.get())
+            // Old worker cannot consume fresh jitter frames after its short write returns.
+            assertEquals(1, JitterBuffer.size())
+            Mockito.verify(track, Mockito.times(1)).write(pcm, 0, pcm.size)
+            Mockito.verifyNoMoreInteractions(replacementTrack)
+            target.stopAudioPlayback()
+            Mockito.verify(replacementTrack).release()
+        } finally {
+            finishWrite.countDown()
+            set(target, "jitterPlaybackRunning", false)
+            playout.get()?.let {
+                it.interrupt()
+                it.join(2_000)
+                check(!it.isAlive)
+            }
+            JitterBuffer.clear()
+            pool.shutdownNow()
+            check(pool.awaitTermination(2, TimeUnit.SECONDS))
+        }
+    }
+
+    @Test
+    fun ordinaryReleaseRemainsReusableForThePersistentLegacyRouter() {
+        val firstTrack = Mockito.mock(AudioTrack::class.java)
+        val player = preparedPlayer(firstTrack)
+        player.release()
+        Mockito.verify(firstTrack).release()
+        // Supply the next prepared track without constructing Android/native resources.
+        val nextTrack = Mockito.mock(AudioTrack::class.java)
+        GhostAudioPlayer::class.java.getDeclaredField("audioTrack").apply {
+            isAccessible = true
+        }.set(player, nextTrack)
+        GhostAudioPlayer::class.java.getDeclaredField("isPrepared").apply {
+            isAccessible = true
+        }.setBoolean(player, true)
+        val pcm = ShortArray(960)
+        player.write(pcm)
+        Mockito.verify(nextTrack).play()
+        Mockito.verify(nextTrack).write(pcm, 0, pcm.size)
+        player.release()
     }
 
     @Test
