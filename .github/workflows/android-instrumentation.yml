@@ -1,4 +1,4 @@
-name: TEMP accept-once JVM qualification - SYNTHETIC PROVIDER CONFIG - NEVER MERGE
+name: TEMP JNI ART API24 - NOT_READY - SYNTHETIC ONLY - NEVER MERGE
 
 on:
   workflow_dispatch:
@@ -24,15 +24,16 @@ permissions:
   contents: write # Host-only transfer to the exact owned still-DRAFT release.
 
 concurrency:
-  group: temp-sc-accept-jvm-20261117
+  group: temp-sc-jni-art-20261117
   cancel-in-progress: false
 
 jobs:
   android-client:
-    name: TEMP offline Free/Premium changed accept-once tests only
-    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-accept-jvm-20261117' && inputs.controller_sha == github.sha
+    name: TEMP public preparation then offline APK and eight headless JNI cases
+    # Parent replaces NOT_READY only after exact diff review and runtime adoption.
+    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'NOT_READY' && inputs.controller_sha == github.sha
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 55
     steps:
       - name: Checkout reviewed public controller only
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -47,11 +48,12 @@ jobs:
           dependency-graph: disabled
           build-scan-publish: false
           add-job-summary: never
-      - name: Provision exact public native configuration tools before private input
+      - name: Provision public native tools and disposable headless API24 before private input
         run: |
           export JAVA_HOME="$JAVA_HOME_17_X64"
           timeout 360 "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --channel=0 \
-            "ndk;27.0.12077973" "cmake;3.22.1"
+            "ndk;27.0.12077973" "cmake;3.22.1" "emulator" \
+            "system-images;android-24;google_apis;x86_64"
       - name: Stage exact SHA256-pinned Gradle wrapper archive before private input
         run: |
           curl --fail --location --proto '=https' --proto-redir '=https' \
@@ -61,7 +63,7 @@ jobs:
           printf '%s  %s\n' \
             46ac66d47f30f3dacfdf306e0b714a91a34fb94a22ba0a744b280933f47bc0cf \
             "$RUNNER_TEMP/sc-gradle-9.8.0-all.zip" | sha256sum --check --status
-      - name: Trusted admission and bounded offline JVM qualification
+      - name: Trusted public-only preparation, offline APK build and exact JNI runner
         env:
           GH_TOKEN: ${{ github.token }}
           SC_RUNNER_ENVIRONMENT: ${{ runner.environment }}

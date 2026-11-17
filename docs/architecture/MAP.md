@@ -498,3 +498,94 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   then `stage_cache` from it plus the restored cache. This is a new
   network+Gradle hop and a cache expansion; it is not in the admitted hops.
 - Diagrams unchanged; application/build source and other paths untouched.
+
+### JNI/ART Native Source Continuation (SC-JNI-ART-NATIVE-20261117)
+
+1. **Purpose and boundary:** TEMP controller only, NEVER MERGE. Compose the
+   admitted public preparation, offline Free APK build and eight headless JNI
+   cases. No application, Rust build, UI241/focus/API36 or release work.
+2. **Trace:** `hosted::dispatch_guard -> public_preparation -> stage_cache ->
+   run_container(public=True) -> stage_cache(host recheck) -> extract_input ->
+   run_container(public=False) -> run_headless -> draft receipt upload`.
+3. **Modules:**
+
+   | Module | Entry | Source status |
+   | --- | --- | --- |
+   | TEMP public preparation/offline build | `sc-media-qualification.py::hosted` | implemented, NOT_RUN |
+   | Headless API24 runner | `sc-art-headless.sh::sc_art_main` | implemented, NOT_RUN |
+   | Manual public hosted dispatch | `android-instrumentation.yml` | NOT_READY, disabled ref |
+
+4. **Wiring:** Public phase runs only a controller-authored plugin-free Gradle
+   project: runner/rules1.7.0, ext-junit1.3.0, espresso-core3.7.0 (transitive),
+   prefab cli2.1.0-all and aapt2 9.4.1-15978811-linux (non-transitive).
+   Read-only host fetch pins the original d1eefa87 verification XML SHA256
+   `51e401f56ef9e68cf1fa279b731fc7b94d1404fbd4d1d7a31a5ec46b3965c4f5`.
+   No repository wrapper, build script or application code runs with network.
+   Sanitized SHA256-verified restored artifacts seed a fresh tmpfs Gradle home;
+   Gradle generates metadata-2.107. Only checksum-selected files and the
+   original metadata allowlist are exported and rechecked before private input.
+   No init scripts, verification-rule changes, cache blanket copy or paid storage.
+   Public bridge networking ends before private input; the private build remains
+   `--offline`/network-none, non-root, read-only/capdrop/NNP, 1CPU/4GiB/no swap,
+   256pids, 3GiB scratch, CPU840/wall900, file512MiB/output512KiB.
+   There is no RW host export mount: the owned container idles after checksum
+   selection; host captures a bounded tar from its existing tmpfs, verifies it,
+   then releases the hold and checks exit/cleanup. Private capture <=129MiB,
+   two APKs <=64MiB each; public selected-cache capture <=1056MiB with <=1GiB
+   expanded bytes and the original per-file/count limits. Both are deleted.
+   The single public-resolved read-only `/etc/alternatives/awk` file alias is
+   included in CREATE/INSPECT and the kernel mount allowlist, not its directory.
+   Exact d1eefa87/tree2bf04aa2 pack: independently counted799 code files,
+   root export guard, three existing .so pins and unchanged synthetic provider.
+   Source-table SHA256:
+   `66e57da8cc2b24e4d6a56354b52ec870299332a3562149947358baa2df7f13f9`.
+   Build only `assembleFreeDebug assembleFreeDebugAndroidTest`, no `-Pinternal`.
+   Export only the x86_64 split APK and test APK, <=64MiB each; compare both
+   SHA256 receipts on host and the app's embedded x86_64 JNI digest. If the test
+   APK embeds that JNI library, it must match too; absence there is expected.
+   Headless launch uses an owned transient **user scope**, not a new service,
+   no sudo/fallback. A fresh clean-env HOME/AVD/dedicated ADB port, API24 x86_64,
+   cgroup1CPU/4GiB/no swap/256pids and CPU840/file512MiB/output512KiB/wall900
+   are mandatory. Kernel limits are checked before emulator launch.
+   Only isolation/shutdown primitives from23718a78 are copied verbatim; their
+   legacy receipt labels are preserved, not the stopped visual runner. API24
+   is checked before isolation; both OUTPUT DROP policies/probe witness precede
+   install and remain held through guest shutdown. One exact JNI class only;
+   parser requires eight distinct paired starts/successes, zero skips/errors,
+   exact `OK (8 tests)` and one successful terminal instrumentation code.
+   Host publishes only capped synthetic JSON to a fresh bound STILL-DRAFT.
+   No APK/raw log/Actions artifact retention. Owned containers/image/cgroups,
+   scope, emulator/ADB and temporary files are cleaned; kernel scope path is
+   recorded for empty/absent verification even after unit collection.
+5. **Gaps:** All runtime NOT_RUN. **Hard packaging admission blocker:** source
+   app/build.gradle has no keepDebugSymbols/doNotStrip/jniDebuggable declaration.
+   Installed AGP9.4.1 JAR SHA256 matches the source verification pin:
+   `4021fa6ea76b6fac076dd0bdacbb3e1b76c31f33b6c392e1a49a2e42072196bf`.
+   Static `javap -c -p` only (no AGP/Gradle execution) shows
+   `AbstractAppTaskManager` registers `StripDebugSymbolsTask$CreationAction`;
+   the action maps MERGED_NATIVE_LIBS to STRIPPED_NATIVE_LIBS and the task's keep
+   set comes from `doNotStrip union jniLibs.keepDebugSymbols`. The delegate
+   sets justCopyInput only on keep-pattern match; the runnable otherwise invokes
+   the selected strip executable with `--strip-unneeded -o output input`
+   (fallback copying on absent/failed tool does not prove identity in advance).
+   Thus FreeDebug has a strip path, not a guaranteed byte-preserving debug path.
+   Raw SHA equality remains mandatory in both APK checks, but is NOT_PROVEN;
+   legitimate stripping may change bytes. `dispatch_guard` unconditionally
+   refuses `apk_native_strip_lineage_unresolved` even if bindings are later set.
+   Parent must resolve raw identity or adopt an exact trusted pinned NDK
+   transform/tool/output receipt before changing this gate. No strip executed,
+   no expected hash guessed, no fallback/identity omission or app config edit.
+   Hosted cache contents, standalone variant
+   selection/repository-id compatibility, usable JDK CA store, scratch capacity,
+   exact APK names/sizes, emulator/image revisions, existing non-root KVM access
+   and user-manager delegation
+   remain unproven. Missing user cgroup admission is a hard refusal, never sudo,
+   another launcher or weaker limits. No offline/ART/native-device PASS claim.
+6. **Diagrams:** Existing diagram paths are unchanged; only this admitted TEMP
+   controller trace is extended. No application architecture change.
+7. **Next:** Resolve the native packaging-lineage blocker first. Parent then
+   independently reviews this exact diff and explicitly adopts
+   the user-scope runtime, pins immutable controller/ref/draft/input SHA plus
+   emulator/image revisions, then admits any execution. ADMISSION/ref/draft and
+   revision bindings remain NOT_READY. All application/other worker paths stay
+   untouched; parent exclusively owns app d1eefa87 and execution/review.
