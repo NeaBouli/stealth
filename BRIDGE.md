@@ -6138,6 +6138,13 @@ Open next:
 - Red scaffold:19 lifecycle tests,7 expected assertion failures. Final focused green:48/48 cases after independent review added the registered-session guard. Full Free/Pro/Premium suites and lint running; not yet accepted. Device proof of this fixed candidate, long-idle/FCM/call acceptance and Codex Security review remain separate gates.
 - Source candidate is not a signed release and does not update installed1.0.51. Codex owns review/integration; source worker has no server/device/signing/provider access. No server restart, app data reset, reinstall, payment or activation performed. Financial coordination is handled separately by the VLABS operator.
 
+## 2026-11-16 [AUTHOR: CODEX] - Issue223 Direct manual update handoff - Draft
+
+- Bounded source candidate from main42b336da. Direct Pro/Premium manual Settings update action opens only the existing official HTTPS download page; missing/denied browser is handled. Existing Free/Play routing and paid automatic-check suppression remain unchanged. No installer, purchase, entitlement, version/signing or permission change.
+- Focused source regressions added; local execution/compile/lint NOT_RUN because actual shared-host capacity was insufficient. Whitespace, exact source-scope and unchanged Free/background suffix checks PASS. Existing Android CI now also runs Pro unit tests alongside Free/Premium; no gate is disabled.
+- Candidate is unverified and must remain Draft until exact-head CI and missing runtime/visual acceptance are complete. New source does not change already-signed78020artifacts; reconnect delivery222and this future Direct correction are separate. No release, sale or deployment acceptance is inferred.
+- Codex owns integration and device acceptance. Source worker is finished with no remaining build/process. Financial coordination is handled separately by the VLABS operator.
+
 ## 2026-11-16 06:57 UTC SC-PLAY-DE-METADATA-20261116 German Play metadata -> Review
 
 - **Branch:** `agent/codex/SC-PLAY-DE-METADATA-20261116`
@@ -6153,6 +6160,17 @@ Open next:
   transfer in Play Console. Google review and public listing verification remain open.
 - No English, changelog, app/runtime, permission or screenshot changes. No delegation,
   device/browser access, build, push, PR, merge or deployment performed.
+
+## 2026-11-16 [AUTHOR: CODEX] - Issue223 current-main synchronization
+
+- Merged current main668be288 into the existing Direct update candidate. Only
+  append conflicts in Bridge and architecture MAP required resolution; retained
+  both original entries verbatim. No app-code, policy, price or metadata rewrite.
+- Previous exact-head10/10CI retained as historical evidence; the synchronized
+  candidate needs its own checks. Local red-control and runtime/visual gates
+  remain open; current CPU admission failed before starting any Android task.
+- No device/test installation, signing, production release or commerce activation.
+  Financial coordination is handled separately by the VLABS operator.
 
 ## 2026-11-16 09:19 UTC SC-SHOP-LINK-20261116 SecureCall shop links -> Review
 

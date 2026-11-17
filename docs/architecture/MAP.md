@@ -125,6 +125,37 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 
 ---
 
+# Narrow trace: Android manual Direct update handoff (2026-11-16)
+
+Scope: existing `UpdateManager` manual Settings action only; not commerce or an
+automatic updater. Source base: `42b336da8c18eb7f0a12bb3e6dc3cc4c834c6781`.
+
+1. `SettingsFragment.setupAboutLinks::pref_check_update` ->
+   `UpdateManager.getUpdateLabel` / `checkAndPromptUpdate(Activity)` (manual tap).
+2. `checkAndPromptUpdate` -> `UpdateChecker.isAdbOnlyFlavor` (Pro/Premium build
+   flavor, not entitlement). Baseline incorrectly ends at an ADB-only toast.
+3. Candidate: the paid manual branch -> Android `ACTION_VIEW` with only
+   `https://stealthx.tech/download.html`; missing/denied browser -> existing-style
+   short feedback, no fallback destination or state mutation.
+
+| Module | Ownership | State |
+| --- | --- | --- |
+| Settings | Existing manual entry and summary | Built, unchanged caller |
+| UpdateManager | Manual paid handoff and launch-failure feedback | Bounded candidate |
+| UpdateChecker | Existing paid internal-check suppression | Built, unchanged |
+
+Untouched: automatic checks, legacy `openUpdate`, Free in-app checking, Play-store
+routing, entitlement/activation/proof, policy flags, pricing, website, installer,
+signing/version, resources/layout and the signed 78020 worktree/artifacts.
+JVM regression tests cover this hop only. Device/browser/visual acceptance and
+integration belong to the parent; no checkout, sale or release readiness implied.
+
+The existing Android Client CI invocation now executes Pro unit tests alongside
+Free and Premium, covering the same shared handoff under both paid build flags.
+No CI gate is skipped; this is qualification wiring for the mapped manual hop.
+
+---
+
 # Narrow trace: German Google Play listing metadata (2026-11-16)
 
 - Module: static Play listing metadata, not application runtime or direct-download offers.
