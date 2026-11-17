@@ -21,10 +21,10 @@ import time
 import xml.etree.ElementTree as ET
 import zipfile
 
-SOURCE = "d1eefa872cf9995e840e5ed671f14df983f75c87"
-TREE = "2bf04aa294f24fe246ee8ae142b19699fd5025a9"
-SOURCE_TABLE_SHA256 = "66e57da8cc2b24e4d6a56354b52ec870299332a3562149947358baa2df7f13f9"
-SOURCE_COUNT = 799
+SOURCE = "3716e8ec3009061ce1447336be0f0bb635fb6257"
+TREE = "565e6a3b06b0ea770cde9343dd35cd20274d0475"
+SOURCE_TABLE_SHA256 = "434f7a4cf7166e42d25f6f13e356418b7030a05bff95be699c917a504cffd760"
+SOURCE_COUNT = 801
 VERIFICATION_SHA256 = "51e401f56ef9e68cf1fa279b731fc7b94d1404fbd4d1d7a31a5ec46b3965c4f5"
 NATIVE = {
     "arm64-v8a": "2782617de7793cc0040bae2ffff3588350e78734dffe91aaa83edf1f461e4f9f",
@@ -53,10 +53,10 @@ EXPECTED_METHODS = frozenset({
     "legacyAndMalformedEnvelopesAreRejected",
 })
 # Parent binds only the reviewed diff; host Linux strip proof remains mandatory.
-ADMISSION = "HOLD"
-REF = "refs/heads/temp/sc-jni-art-resume-20261117"
-RELEASE = 448597305
-TAG = "sc-jni-art-resume-20261117"
+ADMISSION = "PARENT_REVIEWED"
+REF = "refs/heads/temp/sc-jni-final-20261117"
+RELEASE = 448757973
+TAG = "sc-jni-final-20261117"
 ASSET = "sc-jni-art-input.tar"
 EMULATOR_REVISION = "37.2.13"
 IMAGE_REVISION = "27"

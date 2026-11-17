@@ -749,3 +749,15 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - ADMISSION is now HOLD. Deleted draft/ref cannot be reused; the retained
   agent branch is not the admitted TEMP ref and has no automatic CI trigger.
   New runtime requires a fresh, exact reviewed resumption, never a fourth retry.
+
+### Explicit Completion Resumption - 2026-11-17
+
+- Owner explicitly resumes completion after the prior held series. Exact source
+  3716e8ec3009061ce1447336be0f0bb635fb6257/tree565e6a3b06b0ea770cde9343dd35cd20274d0475, 801 files/table434f7a4cf7166e42d25f6f13e356418b7030a05bff95be699c917a504cffd760.
+  Native, guard, verification XML and eight-case test source remain unchanged.
+- New draft448757973 and temp/sc-jni-final-20261117 bind only the corrected
+  conditional pipeline. Public verified preparation AND bounded tmpfs export
+  must return successfully before input extraction, Linux strip, offline APK or
+  API24 headless JNI stages; no private download on public failure.
+- Existing resource/cap/network/secret/guest-isolation guards remain unchanged.
+  No UI241/GUI/API36 or customer-phone prerelease test is included.
