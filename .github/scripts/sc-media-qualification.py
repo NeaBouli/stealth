@@ -812,7 +812,9 @@ def receive_export(name: str, destination: Path, *, public: bool, timeout: int) 
         resource.setrlimit(resource.RLIMIT_FSIZE, (limit, limit))
     try:
         with capture.open("xb") as stream:
-            subprocess.run(["docker", "cp", name + ":/scratch/exports/.", "-"],
+            # docker cp cannot reliably read the tmpfs mount; stream it via trusted /usr/bin/tar.
+            subprocess.run(["docker", "exec", "--user", "65534:65534", "--workdir", "/scratch/exports",
+                            name, "/usr/bin/env", "-i", "/usr/bin/tar", "--create", "--file=-", "."],
                            env=ENV, stdout=stream, stderr=subprocess.DEVNULL,
                            check=True, timeout=min(timeout, 60), preexec_fn=bound)
         destination.mkdir(mode=0o700)

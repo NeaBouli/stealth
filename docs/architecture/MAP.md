@@ -706,3 +706,22 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   location; no general /etc allowance or alternate trust roots. Public-only
   preparation restored; private profile and app paths still not admitted.
   Mistyped controller dispatch44084421384 was SKIPPED, not a metadata PASS.
+
+### Tmpfs Export Source Correction - 2026-11-17 (SC-JNI-TMPFS-EXPORT-20261117)
+
+- Third resumed44086491919 terminal FAILED after actual public `resolvePublic`
+  BUILD SUCCESSFUL, strict cache1171 files and SC_EXPORT_READY; exported=false.
+  No private input/app/VM/JNI was reached. The exact inner capture error was not
+  retained and remains UNKNOWN; this is not a full preparation PASS.
+- Same single hop, mechanism replaced: Docker documents that tmpfs/user-created
+  mount content cannot be reliably read by `docker cp`. `receive_export` now runs
+  `docker exec --user 65534:65534 --workdir /scratch/exports <owned container>
+  /usr/bin/env -i /usr/bin/tar --create --file=- .` (trusted read-only host
+  /usr/bin), stdout into the same RLIMIT_FSIZE-bounded capture, timeout<=60s.
+  The exec inherits the existing container cgroup/caps/NNP/network/ulimits; no
+  RW export mount, second path or fallback. Manual tar path/type/duplicate/
+  count/size checks and APK receipt/public-root validation are unchanged.
+- Worker ran only synthetic tar/control-command assertions (flat root accepted;
+  traversal/absolute/symlink/hardlink/duplicate/unexpected rejected). Actual
+  Docker tar runtime NOT_RUN. ART remains HOLD after three resumed admissions;
+  this correction authorizes no fourth run.
