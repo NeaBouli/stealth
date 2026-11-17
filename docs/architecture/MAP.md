@@ -698,3 +698,11 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   of the exact preinstalled selected JDK cacerts, bounded4MiB/public namespaces.
   Cache restore, SDK provisioning and Gradle execution disabled for this probe;
   guards remain closed until the actual public source path is evidenced.
+
+- Actual metadata44084473372 PASS: selected JDK source resolves exactly
+  `/etc/ssl/certs/adoptium/cacerts`, root-owned0444,134280bytes, SHA256
+  406d1f9cd2e924dab58fa9fb89fe8d06424d284cf1e5dfedd06651e46fc3c7cd.
+  Pin ONLY this evidenced system path instead of the unobserved prior Java
+  location; no general /etc allowance or alternate trust roots. Public-only
+  preparation restored; private profile and app paths still not admitted.
+  Mistyped controller dispatch44084421384 was SKIPPED, not a metadata PASS.
