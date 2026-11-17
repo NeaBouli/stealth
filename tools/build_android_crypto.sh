@@ -10,6 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CORE_CRYPTO="$PROJECT_ROOT/core_crypto"
 JNILIBS="$PROJECT_ROOT/client_android/app/src/main/jniLibs"
+NDK_VERSION="27.0.12077973"
 
 # Ensure cargo-ndk is available
 if ! command -v cargo-ndk &>/dev/null; then
@@ -17,18 +18,19 @@ if ! command -v cargo-ndk &>/dev/null; then
     exit 1
 fi
 
-# Auto-detect NDK if not set
+# Match the application's pinned NDK instead of selecting the newest installation.
 if [ -z "${ANDROID_NDK_HOME:-}" ]; then
-    NDK_BASE="$HOME/Library/Android/sdk/ndk"
-    if [ -d "$NDK_BASE" ]; then
-        ANDROID_NDK_HOME="$(ls -d "$NDK_BASE"/*/ 2>/dev/null | sort -V | tail -1)"
-        ANDROID_NDK_HOME="${ANDROID_NDK_HOME%/}"
-        export ANDROID_NDK_HOME
-        echo "Auto-detected NDK: $ANDROID_NDK_HOME"
-    else
-        echo "ERROR: ANDROID_NDK_HOME not set and no NDK found"
-        exit 1
-    fi
+    SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}"
+    export ANDROID_NDK_HOME="$SDK/ndk/$NDK_VERSION"
+fi
+if [ ! -f "$ANDROID_NDK_HOME/source.properties" ] ||
+    ! grep -Eq "^Pkg[.]Revision[[:space:]]*=[[:space:]]*${NDK_VERSION//./[.]}[[:space:]]*$" "$ANDROID_NDK_HOME/source.properties"; then
+    echo "ERROR: NDK $NDK_VERSION is required" >&2
+    exit 1
+fi
+if [ -n "${RUSTFLAGS:-}${CARGO_ENCODED_RUSTFLAGS:-}" ]; then
+    echo "ERROR: global Rust flags override the required per-target page flags; use the pinned build environment" >&2
+    exit 1
 fi
 
 TARGETS=(

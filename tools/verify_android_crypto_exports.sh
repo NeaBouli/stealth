@@ -38,6 +38,9 @@ fail() { echo "ERROR: $*" >&2; exit 1; }
 resolve_ndk() {
     if [ -n "${ANDROID_NDK_HOME:-}" ]; then
         [ -d "$ANDROID_NDK_HOME" ] || fail "ANDROID_NDK_HOME does not exist: $ANDROID_NDK_HOME"
+        if [ -n "$NDK_VERSION" ] && ! grep -Eq "^Pkg[.]Revision[[:space:]]*=[[:space:]]*${NDK_VERSION//./[.]}[[:space:]]*$" "$ANDROID_NDK_HOME/source.properties"; then
+            fail "ANDROID_NDK_HOME does not match requested NDK $NDK_VERSION"
+        fi
         echo "$ANDROID_NDK_HOME"
         return
     fi
