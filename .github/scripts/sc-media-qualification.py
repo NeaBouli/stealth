@@ -306,9 +306,16 @@ def stage_cache(root: Path, source: Path) -> Path:
         if not permitted:
             continue
         regular(path, 128 * 1024**2, "dependency_file_shape")
+        content_hash = hashlib.sha256()
+        path_hash = hashlib.sha1(usedforsecurity=False)
         with path.open("rb") as stream:
-            verified = hashlib.file_digest(stream, "sha256").hexdigest() in permitted
-        require(verified and re.fullmatch(r"[0-9a-f]{40,64}", checksum) is not None, "public_dependency_checksum")
+            while block := stream.read(1024**2):
+                content_hash.update(block)
+                path_hash.update(block)
+        require(content_hash.hexdigest() in permitted, "public_dependency_checksum")
+        # Gradle cache paths can omit leading zeroes; SHA256 still authorizes bytes.
+        sha1 = path_hash.hexdigest()
+        require(checksum in (sha1, sha1.lstrip("0") or "0"), "public_dependency_path_identity")
         destination = staged / relative
         destination.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
         shutil.copyfile(path, destination)

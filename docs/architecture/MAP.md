@@ -432,3 +432,16 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   remains offline with readonly archive and no automatic dependency installs.
   No app test has run. Third changed-admission continuation is bounded; on
   another failure stop this qualification series, retain the concrete blocker.
+
+### Proven Cache-Path Controller Defect 2026-11-17T00:55Z
+
+- Distinct read-only metadata run43990818862/95060a48SUCCESS, no app/Gradle/
+  dependency execution or private inputs. All701 examined artifacts match the
+  fixed source SHA256 policy. All37 old path-shape rejections are matching compact
+  SHA1 directory names with leading zeroes omitted, not content mismatches.
+- stage_cache now computes source SHA256 and directory SHA1 from the same stream.
+  Source SHA256 authorization is unchanged; directory identity accepts only the
+  computed full or compact SHA1, stricter than the old generic40-64hex shape.
+  No dependency/policy pin change, bad-cache exception or SHA1 authorization.
+- Remote metadata-only ref removed/absence404 verified; receipt retained privately.
+  Existing JVM series remainsSTOPPED/NOT_RUN; no fourth qualification dispatched.
