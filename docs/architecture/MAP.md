@@ -471,3 +471,30 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   remain unchanged. No emulator, native-device/call/finance/deploy acceptance.
 - Parent source review done; actual compilation/test/owned cleanup NOT_RUN
   until this exact new controller receives an admitted single execution.
+
+### JNI/ART Controller R1 BLOCKED (SC-JNI-ART-CONTROLLER-20261117)
+
+- Module/hop: existing TEMP controller Hop A (`stage_cache` -> offline Gradle)
+  before composing `assembleFreeDebug assembleFreeDebugAndroidTest` on d1eefa87.
+- R1 pin coverage PASS (metadata-only, no Gradle/network): the androidTest
+  closure of runner/rules1.7.0, ext-junit1.3.0, espresso-core3.7.0 walks 28
+  modules from local public .module/.pom files; zero missing from d1eefa87
+  verification-metadata.xml. aapt2 9.4.1 linux and prefab cli2.1.0 are pinned.
+- R1 hosted cache coverage NOT PROVABLE and likely absent: every accepted run
+  executed only `test*DebugUnitTest`, which never resolves androidTest
+  configurations (11 androidTest-only modules, e.g. test:runner/monitor/
+  services:storage/espresso). Main never ran an androidTest task, never used
+  setup-gradle, and pins AGP8.11.1/androidx.test1.5.x, not d1eefa87's 1.7.0.
+  The existing direct-coordinate check also skips androidTestImplementation.
+- Safe staging unavailable in existing hops: Gradle's read-only cache needs
+  Gradle-written metadata-2.107 records, so SHA-pinned raw downloads do not fit.
+  A file repository or init script would change app source or the no-init profile.
+- Disposition: BLOCKED before implementation. No controller/workflow change,
+  no pack, no dispatch. Steps 2-4 (source pack d1eefa87, awk alias, APK export,
+  API24 run) wait for a parent decision on one new public pre-input hop.
+- Required admission (parent): one trusted, public, pre-private-input
+  dependency warm-up, e.g. resolving only the pinned androidTest/prefab closure
+  under strict verification-metadata into a fresh RUNNER_TEMP Gradle home,
+  then `stage_cache` from it plus the restored cache. This is a new
+  network+Gradle hop and a cache expansion; it is not in the admitted hops.
+- Diagrams unchanged; application/build source and other paths untouched.
