@@ -53,13 +53,13 @@ EXPECTED_METHODS = frozenset({
     "legacyAndMalformedEnvelopesAreRejected",
 })
 # Parent binds only the reviewed diff; host Linux strip proof remains mandatory.
-ADMISSION = "NOT_READY"
-REF = "NOT_READY"
-RELEASE = 0
-TAG = "NOT_READY"
-ASSET = "NOT_READY"
-EMULATOR_REVISION = "NOT_READY"
-IMAGE_REVISION = "NOT_READY"
+ADMISSION = "PARENT_REVIEWED"
+REF = "refs/heads/temp/sc-jni-art-20261117"
+RELEASE = 448471483
+TAG = "sc-jni-art-input-20261117"
+ASSET = "sc-jni-art-input.tar"
+EMULATOR_REVISION = "37.2.13"
+IMAGE_REVISION = "27"
 FIXTURE_SHA256 = "a466488db1f666da3f1b941ad4c389a6b7940d5c93662adf25f77fb781fd63c7"
 PROVIDER = "client_android/app/google-services.json"
 PACKAGES = ("com.securecall.app.free", "com.securecall.app.premium", "com.securecall.app.pro")
@@ -1314,6 +1314,7 @@ def main() -> None:
     packing.add_argument("--repo", required=True)
     packing.add_argument("--output", required=True)
     commands.add_parser("hosted")
+    commands.add_parser("admission")
     commands.add_parser("cleanup")
     commands.add_parser("container-work")
     commands.add_parser("lineage-checks")
@@ -1323,6 +1324,9 @@ def main() -> None:
     try:
         if args.mode == "pack":
             pack(args)
+        elif args.mode == "admission":
+            dispatch_guard()
+            print("phase=admission accepted=true")
         elif args.mode == "cleanup":
             cleanup()
         elif args.mode == "container-work":

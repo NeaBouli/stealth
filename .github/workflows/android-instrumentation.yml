@@ -30,8 +30,8 @@ concurrency:
 jobs:
   android-client:
     name: TEMP public preparation then offline APK and eight headless JNI cases
-    # Parent replaces NOT_READY only after exact diff review and runtime adoption.
-    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'NOT_READY' && inputs.controller_sha == github.sha
+    # Exact parent-reviewed controller; no automatic branch or PR execution.
+    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-jni-art-20261117' && inputs.controller_sha == github.sha
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -40,6 +40,11 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+      - name: Read-only host admission before downloads or private input
+        env:
+          SC_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          SC_CONTROLLER_SHA: ${{ inputs.controller_sha }}
+        run: python3 -I .github/scripts/sc-media-qualification.py admission
       - name: Restore public main Gradle cache only (no Gradle execution)
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
         with:
