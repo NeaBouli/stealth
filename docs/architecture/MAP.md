@@ -620,3 +620,15 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   The accepted metadata pin inspection is distinct from runtime cache coverage.
   Deterministic public pre-input strict preparation remains valid; no design,
   app/controller scope, stopped-series admission or runtime acceptance changes.
+
+### CI KVM Prerequisite Adoption (2026-11-17)
+
+- Actual metadata-only44066116615 stopped at `existing_user_kvm_access`;
+  user-manager admission passed. No SDK download, private input or app run.
+- Standard main already provisions CI KVM access via udev. This TEMP job uses
+  a narrower ACL for only the existing runner UID on exactly `/dev/kvm`.
+  Original ACL/inode recorded, same inode checked and original ACL restored
+  in an always-step. No world-access rule, new service or weaker launcher.
+- This adoption is confined to the GitHub-hosted job, never Mac/production/
+  Guardian/other projects. Private container still has no device mappings,
+  capabilities or network; non-root headless/user-scope guards unchanged.

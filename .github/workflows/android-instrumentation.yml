@@ -40,6 +40,13 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+      - name: Prepare existing CI KVM access for this runner user only
+        run: |
+          test -c /dev/kvm
+          test ! -e "$RUNNER_TEMP/sc-jni-art-kvm.acl"
+          getfacl --numeric --omit-header /dev/kvm > "$RUNNER_TEMP/sc-jni-art-kvm.acl"
+          stat -c '%i' /dev/kvm > "$RUNNER_TEMP/sc-jni-art-kvm.inode"
+          sudo -n setfacl -m "u:$(id -u):rw" -- /dev/kvm
       - name: Read-only host admission before downloads or private input
         env:
           SC_RUNNER_ENVIRONMENT: ${{ runner.environment }}
@@ -80,3 +87,11 @@ jobs:
       - name: Exact owned container cgroup and image cleanup fallback
         if: always()
         run: python3 -I .github/scripts/sc-media-qualification.py cleanup
+      - name: Restore only this CI KVM device's original ACL
+        if: always()
+        run: |
+          if test -s "$RUNNER_TEMP/sc-jni-art-kvm.acl"; then
+            test -c /dev/kvm
+            test "$(stat -c '%i' /dev/kvm)" = "$(cat "$RUNNER_TEMP/sc-jni-art-kvm.inode")"
+            sudo -n setfacl --set-file="$RUNNER_TEMP/sc-jni-art-kvm.acl" -- /dev/kvm
+          fi
