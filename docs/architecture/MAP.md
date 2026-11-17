@@ -706,3 +706,18 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   location; no general /etc allowance or alternate trust roots. Public-only
   preparation restored; private profile and app paths still not admitted.
   Mistyped controller dispatch44084421384 was SKIPPED, not a metadata PASS.
+
+### Public Dependency Graph Correction (Source-Only, SC-JNI-PUBLIC-GRAPH-20261117)
+
+- Cause: public-only44084916286 passed CA/caps, then strict verification refused
+  annotation-jvm1.7.0 JAR/module and kotlin-stdlib1.9.21 JAR: the four test roots
+  alone select versions the pinned app graph never selects. No checksum mismatch.
+- Same hop (controller PUBLIC_BUILD -> strictly verified public closure before private
+  input): add `constraints` for annotation1.10.0, annotation-jvm1.10.0, kotlin-stdlib
+  2.4.20 mirroring app selection at d1eefa87 (fragment1.9.1 -> tracing2.0.0 runtime ->
+  annotation1.10.0; built-in Kotlin 2.4.20 stdlib). Root constraint needed because
+  annotation-jvm1.10.0 constrains annotation>=1.8.0 (1.8.0 unpinned in XML).
+- `verify_public_constraints` refuses before any Gradle run unless every constraint
+  is declared and its JAR/module exists in the SHA-bound XML. XML, repositories,
+  four test roots, two packaging roots, private profile/app/native unchanged.
+- Actual public Gradle, private APK and JNI remain NOT_RUN.

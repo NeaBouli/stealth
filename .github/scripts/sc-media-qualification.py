@@ -516,6 +516,16 @@ PUBLIC_TOOLS = (
     ("com.google.prefab", "cli", "2.1.0", "cli-2.1.0-all.jar"),
     ("com.android.tools.build", "aapt2", "9.4.1-15978811", "aapt2-9.4.1-15978811-linux.jar"),
 )
+# Versions the pinned app runtime graph selects at SOURCE (fragment 1.9.1 -> tracing 2.0.0 ->
+# annotation 1.10.0; built-in Kotlin 2.4.20 stdlib). The four test roots alone select
+# annotation-jvm 1.7.0 / kotlin-stdlib 1.9.21, which the unchanged XML does not verify.
+PUBLIC_CONSTRAINTS = (
+    ("androidx.annotation", "annotation", "1.10.0", ("annotation-1.10.0.module",)),
+    ("androidx.annotation", "annotation-jvm", "1.10.0",
+     ("annotation-jvm-1.10.0.jar", "annotation-jvm-1.10.0.module")),
+    ("org.jetbrains.kotlin", "kotlin-stdlib", "2.4.20",
+     ("kotlin-stdlib-2.4.20.jar", "kotlin-stdlib-2.4.20.module")),
+)
 PUBLIC_BUILD = """import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.Category
 repositories { google(); mavenCentral() }
@@ -536,6 +546,11 @@ dependencies {
     androidTestPublic 'androidx.test.espresso:espresso-core:3.7.0'
     packagingPublic 'com.google.prefab:cli:2.1.0:all'
     packagingPublic 'com.android.tools.build:aapt2:9.4.1-15978811:linux'
+    constraints {
+        androidTestPublic 'androidx.annotation:annotation:1.10.0'
+        androidTestPublic 'androidx.annotation:annotation-jvm:1.10.0'
+        androidTestPublic 'org.jetbrains.kotlin:kotlin-stdlib:2.4.20'
+    }
 }
 tasks.register('resolvePublic') {
     doLast {
@@ -1267,6 +1282,17 @@ def stage_public_cacerts(root: Path, jdk: Path) -> tuple[Path, str]:
     return staged, checksum
 
 
+def verify_public_constraints(xml: ET.Element, ns: dict[str, str]) -> None:
+    for group, name, version, artifacts in PUBLIC_CONSTRAINTS:
+        require(f"androidTestPublic '{group}:{name}:{version}'" in PUBLIC_BUILD,
+                "public_constraint_declared")
+        found = xml.findall(f"v:components/v:component[@group='{group}'][@name='{name}']"
+                            f"[@version='{version}']", ns)
+        require(len(found) == 1, "public_constraint_unverified")
+        names = {item.get("name") for item in found[0].findall("v:artifact", ns)}
+        require(set(artifacts) <= names, "public_constraint_unverified")
+
+
 def public_preparation(root: Path, mounts: list[tuple[str, str]], *, diagnose: bool = False) -> Path:
     source = root / "source"
     project = source / "client_android"
@@ -1281,6 +1307,7 @@ def public_preparation(root: Path, mounts: list[tuple[str, str]], *, diagnose: b
     ns = {"v": "https://schema.gradle.org/dependency-verification"}
     require(xml.findtext("v:configuration/v:verify-metadata", namespaces=ns) == "true",
             "strict_public_metadata")
+    verify_public_constraints(xml, ns)
     for path, data in {
         "gradle/verification-metadata.xml": metadata,
         "settings.gradle": b"rootProject.name = 'sc-public-pinned-preparation'\n",
