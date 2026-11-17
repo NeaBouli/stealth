@@ -1,4 +1,4 @@
-name: TEMP Node authenticated-call - PARENT QUALIFICATION PENDING - NEVER MERGE
+name: TEMP JVM qualification - SYNTHETIC PROVIDER CONFIG - NEVER MERGE
 
 on:
   workflow_dispatch:
@@ -21,25 +21,33 @@ on:
         type: string
 
 permissions:
-  contents: write # Trusted transfer to the owned temporary DRAFT only.
+  contents: write # Host-only transfer to the exact owned still-DRAFT release.
 
 concurrency:
-  group: temp-sc-stx24-node-hosted-20261117
+  group: temp-sc-stx24-jvm-hosted-20261117
   cancel-in-progress: false
 
 jobs:
-  node-authenticated-call:
-    name: TEMP isolated offline Node authenticated-call only
-    if: github.repository == 'NeaBouli/stealth' && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-stx24-node-hosted-20261117' && inputs.controller_sha == github.sha
+  android-client:
+    name: TEMP offline Free/Premium four-class JVM qualification
+    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-stx24-jvm-hosted-20261117' && inputs.controller_sha == github.sha
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout reviewed public controller only
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           fetch-depth: 1
-      - name: Trusted bootstrap and bounded offline qualification
+      - name: Restore public main Gradle cache only (no Gradle execution)
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
+        with:
+          cache-read-only: true
+          cache-cleanup: never
+          dependency-graph: disabled
+          build-scan-publish: false
+          add-job-summary: never
+      - name: Trusted admission and bounded offline JVM qualification
         env:
           GH_TOKEN: ${{ github.token }}
           SC_RUNNER_ENVIRONMENT: ${{ runner.environment }}
@@ -48,6 +56,6 @@ jobs:
           SC_BUNDLE_SHA256: ${{ inputs.bundle_sha256 }}
           SC_CONTROLLER_SHA: ${{ inputs.controller_sha }}
         run: python3 -I .github/scripts/sc-media-qualification.py hosted
-      - name: Exact owned resource cleanup fallback
+      - name: Exact owned container cgroup and image cleanup fallback
         if: always()
         run: python3 -I .github/scripts/sc-media-qualification.py cleanup

@@ -338,3 +338,74 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - Parent result23:45UTC: run43979656186SUCCESS, one actual pinned Node script
   exit0/finalPASS, inspected notOOM; owned DRAFT/ref removed, private receipt
   retained. Rust proof unchanged. Android/JNI/call/full-release gates stay open.
+
+## JVM Source Admission HOLD (SC-STX24-JVM-QUALIFICATION-20261117)
+
+- Module: existing temporary qualification helper/workflow, NEVER MERGE.
+- Hop: `android-instrumentation.yml::android-client` -> helper `hosted` ->
+  `jvm_admission`; local `pack` uses the same gate before any source/cache IO.
+- Symptom: the requested normal Free/Premium build needs a credential-free
+  source admission decision before the existing sandbox can be reused.
+- Fixed source/tree: 5222690fb51cc49b68d25199c9d87a7a8ed0c9a0 /
+  fdf7e6cd495cf19db48f63dfa29e135daf212e97, not the public controller checkout.
+- Blocker: tracked `client_android/app/google-services.json` contains three
+  nonempty Google-format API key entries, without recognized synthetic markers.
+  SHA256: 04e7bfaf5f58a6a551cfc074d7984a5c390889f04d6699a01603fcd5d9ddcaaf.
+  Key validity/restrictions are UNKNOWN; no online validation was performed.
+- `client_android/app/build.gradle` applies Google Services unconditionally;
+  only the prohibited `isolatedDeviceTest` path disables DebugGoogleServices.
+  Silently dropping its tracked input is not an admitted unchanged build.
+  Generated AGP task edges remain unverified, not claimed as proven here.
+- Implemented disposition: fixed numeric/blocker receipt, then refusal before
+  PACK, token/private input, cache restoration, image or target access. Workflow
+  uses the requested JVM ref/job ID but read-only permission and no GH_TOKEN.
+- Existing Node implementation below the gate is retained, unreachable, not a
+  JVM adapter. No filtered Gradle invocation or new sandbox is claimed ready.
+- Next: parent resolves whether this exact client configuration is admissible
+  under the no-API-credentials boundary, or supplies an approved credential-free
+  source contract. Only then implement source-table pinning, trusted public cache
+  staging and the exact four-class/eight-report JVM hop in the existing profile.
+- Diagrams unchanged; application/test/build source, previous proof/reports,
+  parent metadata/cleanup and all unrelated files remain untouched.
+
+### Authorized Fixture Continuation (Parent Decision 23:58UTC)
+
+- The HOLD above is historical, superseded by the explicit synthetic provider
+  seam. The observation was format-only, not a confirmed live-secret finding.
+- Hop 1: fixed Git blobs -> 795-file path/SHA256 table (9,130,079 bytes), pinned
+  digest `0d281d67749fad7022abeb9af405b83805e5ef67499015f4fb957c96a200ad9a`.
+  Original Google config contents are excluded. PACK consults schema/packages
+  only; a deterministic invalid provider fixture preserves the three public
+  package names and resource fields. Fixture digest is independently pinned:
+  `a466488db1f666da3f1b941ad4c389a6b7940d5c93662adf25f77fb781fd63c7`.
+- Hop 2: public controller checkout -> pinned read-only setup-gradle cache
+  restoration (no gradle-version/install, graph, scan or cache write). Only then
+  the trusted host receives the private bundle from exact still-DRAFT ID 447762646.
+  Host checks bundle, canonical source table, each file, fixture and source/tree.
+- Hop 3: preinstalled JDK17/real SDK37 and required native configuration tools
+  -> readonly component mounts. Exact wrapper ZIP SHA256 and public artifacts
+  pinned in source verification-metadata.xml -> bounded isolated staging.
+  Only modules-2/files-2.1 plus selected metadata-2.107 records are staged;
+  no home, init, user properties, configuration cache, daemon or transform state.
+  Missing essentials refuse admission before Docker import/CREATE/target.
+- Hop 4: existing imported empty image -> CREATE -> exact INSPECT gate ->
+  kernel cgroup/uid/NNP/capability checks -> disposable scratch project/Gradle
+  home. Profile: network-none, readonly mounts/root, uid65534, capdrop/NNP,
+  private cgroup, 1CPU/4GiB/no swap/256pids, 3GiB scratch, CPU840s,
+  file512MiB/nofile1024, wall900s/output512KiB. Fixed /tmp symlink and synthetic
+  passwd/group only. No actual provider config, credentials, source patches or skips.
+- Hop 5: one normal offline project Gradle invocation, -Pinternal, exactly
+  four --tests filters for each of FreeDebug and PremiumDebug. No plugin/policy
+  bypass. Trusted receipt verifier checks exactly eight XML class reports and
+  pinned method names/counts (11/4/2/5 each flavor), zero failures/errors/skips.
+  Public output is fixed numeric/boolean receipts only; raw bounded diagnostics
+  go only to the same revalidated still-DRAFT release. Exit0/notOOM required.
+- Hop 6: exact owned container/image removal plus exact cgroup descendant-empty
+  verification, repeated safely by workflow fallback; no shared prune/cleanup.
+- Provenance: exact 522 code with declared synthetic provider configuration,
+  NOT production-config, FCM, JNI/native/device/call/customer-artifact acceptance.
+- Static-only checkpoint: no PACK/import/target/CI run here. Actual hosted cache
+  contents/tool availability, generated AGP graph, scratch fit, full compile and
+  eight reports remain parent real-run gates. Prior Rust/Node receipts unchanged.
+- Primary cache contracts: pinned setup-gradle action.yml/docs from the brief;
+  https://docs.gradle.org/current/userguide/dependency_caching.html#sub:shared-readonly-cache
