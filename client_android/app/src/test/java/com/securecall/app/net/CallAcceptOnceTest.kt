@@ -264,4 +264,64 @@ class CallAcceptOnceTest {
         assertTrue(h.queue.isEmpty())
         Mockito.verifyNoInteractions(h.client)
     }
+
+    @Test
+    fun unregisteredAcceptPausedBeforeAudioStopCannotStopAudioAfterRegisteredClaim() {
+        val h = harness(registered = false)
+        val state = securityState(sessionId)
+        set(h.service, "callSecurityState", state)
+        // Each audio stop records its thread and whether the invite was already claimed when it ran.
+        val stops = Collections.synchronizedList(mutableListOf<Pair<String, Boolean>>())
+        val unregisteredAtStop = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        Mockito.doAnswer { invocation ->
+            val name = Thread.currentThread().name
+            if (name == "unregistered-accept") {
+                unregisteredAtStop.countDown()
+                assertTrue(release.await(5, TimeUnit.SECONDS))
+            }
+            // Recorded at the actual side effect, after any pause.
+            stops.add(name to claim(state).get())
+            invocation.callRealMethod()
+        }.`when`(h.service).killAllAudio()
+        val failures = Collections.synchronizedList(mutableListOf<Throwable>())
+        fun worker(name: String) = Thread({
+            try { h.service.sendCallAccept(sessionId) } catch (t: Throwable) { failures.add(t) }
+        }, name)
+        val unregistered = worker("unregistered-accept")
+        val registered = worker("registered-accept")
+        try {
+            unregistered.start()
+            assertTrue("Unregistered accept did not reach its audio stop", unregisteredAtStop.await(5, TimeUnit.SECONDS))
+            assertFalse(claim(state).get())
+            set(h.service, "isRegistered", true)
+            registered.start()
+            // Bounded wait: the registered accept either waits at the admission or (without
+            // it) runs to completion, claiming and stopping audio before the paused stop.
+            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+            while (registered.state != Thread.State.BLOCKED && registered.state != Thread.State.TERMINATED &&
+                System.nanoTime() < deadline) {
+                Thread.sleep(1)
+            }
+        } finally {
+            release.countDown()
+            unregistered.join(5_000)
+            registered.join(5_000)
+        }
+        assertFalse(unregistered.isAlive || registered.isAlive)
+        assertTrue(failures.toString(), failures.isEmpty())
+
+        // The unregistered stop ran strictly before the legitimate claim; the claim owner stopped
+        // ringing once afterwards. No unregistered audio stop observed a claimed invite.
+        assertEquals(listOf("unregistered-accept" to false, "registered-accept" to true), stops.toList())
+        assertTrue(claim(state).get())
+        assertEquals(listOf("invalid_secure_invite"), h.errors)
+        // The unregistered accept queued without reserving; its late callback is now a no-op.
+        assertEquals(1, h.queue.size)
+        val queued = h.queue.toList()
+        h.queue.clear()
+        queued.single().invoke()
+        assertEquals(2, stops.size)
+        assertEquals(listOf("invalid_secure_invite"), h.errors)
+    }
 }

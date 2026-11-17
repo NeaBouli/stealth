@@ -392,5 +392,17 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   existing fail-closed error and allows no second rekey. A new invite = new state = new claim.
 - Unregistered path: stops ringing and queues as before but takes no claim (the queue can
   be cleared on disconnect); the queued callback claims when it runs, extra ones no-op.
+- Admission (SC-CALL-ACCEPT-RACE-20261117): `CallSecurityState.acceptAdmission` is a short
+  per-invite monitor around the fresh `callSecurityState === state`/claim/accept recheck, the
+  registered-vs-queue decision (+ queue add) and the owner's `killAllAudio`. Not held across
+  identity, key agreement, `client.send`, `mediaSession.close` or `forceReconnect`; order is
+  admission -> audio lifecycle lock only (no caller of `sendCallAccept` holds media/audio locks).
+  The lock-free pre-check stays so duplicates return while the owner is stopping ringing.
+  Closes: unregistered caller paused after the pre-check stopping audio after another caller
+  claimed the invite. Stale state (replaced before admission) returns silently.
+- Residual (out of scope): no current state + unregistered still stops audio/queues without
+  admission; invite clear/replace concurrent with an admitted caller and the unsynchronized
+  `pendingCallQueue` remain broader lifecycle concurrency, intentionally not globally locked.
 - Invalid session without an accepted current call keeps `killAllAudio` + `invalid_secure_invite`.
-- Regression: `CallAcceptOnceTest` (real entry, synthetic state, bounded latches). NOT_RUN.
+- Regression: `CallAcceptOnceTest` (real entry, synthetic state, bounded latches; 8 tests incl.
+  `unregisteredAcceptPausedBeforeAudioStopCannotStopAudioAfterRegisteredClaim`). NOT_RUN.

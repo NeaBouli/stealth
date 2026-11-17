@@ -73,6 +73,13 @@ private data class CallSecurityState(
      * Declared in the body so it stays out of the data-class equality.
      */
     val acceptClaim = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    /**
+     * Per-invite local accept admission. Held only for the fresh current/claim check, the
+     * registered-vs-queue decision and the owner's ring stop; never across key agreement,
+     * network send or media close, and never taken while holding a media or audio lock.
+     */
+    val acceptAdmission = Any()
 }
 
 /**
@@ -1538,43 +1545,75 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         outgoingRingTimeout = null
     }
 
+    private fun queueCallAcceptUntilRegistered(sessionId: String) {
+        Log.w("WS_SERVICE", "CALL_ACCEPT queued — WS not registered for session $sessionId")
+        com.securecall.app.debug.SecLogManager.log("WS", "CALL_ACCEPT queued — waiting for registration")
+        pendingCallQueue.add { sendCallAccept(sessionId) }
+    }
+
     fun sendCallAccept(sessionId: String) {
         // A claimed or accepted current call owns keys, media and audio. A repeated, overlapping
         // or stale local accept must not rekey it, replace its media session or stop playback.
-        val current = callSecurityState
-        if (current != null && (current.acceptClaim.get() || current.accept != null)) {
+        // This lock-free pre-check lets duplicates return while the owner is still stopping ringing.
+        val state = callSecurityState
+        if (state != null && (state.acceptClaim.get() || state.accept != null)) {
             Log.w("WS_SERVICE", "Ignored CALL_ACCEPT for $sessionId — current call already accepted")
             return
         }
+        if (state == null) {
+            // No verified invite: unchanged queue / fail-closed behavior. Its lifetime against a
+            // concurrently installed invite is outside the per-invite admission.
+            if (!isRegistered) {
+                killAllAudio()
+                queueCallAcceptUntilRegistered(sessionId)
+                if (!isConnected) {
+                    try { client?.forceReconnect() } catch (_: Exception) {}
+                }
+            } else {
+                killAllAudio()
+                _onCallError?.invoke("invalid_secure_invite", "The authenticated invitation is unavailable")
+            }
+            return
+        }
 
-        if (!isRegistered) {
-            // Accept is the authoritative local transition out of ringing. Stop both
-            // service-owned incoming audio and any activity-owned tones before network
-            // signaling so delayed ACKs cannot leave the device audibly ringing. No claim is
-            // taken here: the queue may be cleared, and the queued callback claims when it runs.
-            killAllAudio()
-            Log.w("WS_SERVICE", "CALL_ACCEPT queued — WS not registered for session $sessionId")
-            com.securecall.app.debug.SecLogManager.log("WS", "CALL_ACCEPT queued — waiting for registration")
-            pendingCallQueue.add { sendCallAccept(sessionId) }
+        // Admission: fresh state/claim check, registered-vs-queue decision and the ring stop are
+        // one step per invite, so an unregistered caller paused after the pre-check can no longer
+        // stop audio after another caller claimed this invite and started the accepted call.
+        var queued = false
+        var invalid = false
+        synchronized(state.acceptAdmission) {
+            if (callSecurityState !== state || state.acceptClaim.get() || state.accept != null) {
+                Log.w("WS_SERVICE", "Ignored stale or already claimed CALL_ACCEPT for $sessionId")
+                return
+            }
+            if (!isRegistered) {
+                // Accept is the authoritative local transition out of ringing. Stop both
+                // service-owned incoming audio and any activity-owned tones before network
+                // signaling so delayed ACKs cannot leave the device audibly ringing. No claim is
+                // taken here: the queue may be cleared, and the queued callback claims when it runs.
+                killAllAudio()
+                queueCallAcceptUntilRegistered(sessionId)
+                queued = true
+            } else if (state.role != SecureCallRole.CALLEE || state.invite.sessionId != sessionId) {
+                killAllAudio()
+                invalid = true
+            } else {
+                // Only the claim owner stops ringing; a later local failure keeps the claim (fail
+                // closed, no retry). The call ends through the existing error path.
+                state.acceptClaim.set(true)
+                killAllAudio()
+            }
+        }
+        if (queued) {
             if (!isConnected) {
                 try { client?.forceReconnect() } catch (_: Exception) {}
             }
             return
         }
-
-        val state = current
-        if (state?.role != SecureCallRole.CALLEE || state.invite.sessionId != sessionId) {
-            killAllAudio()
+        if (invalid) {
             _onCallError?.invoke("invalid_secure_invite", "The authenticated invitation is unavailable")
             return
         }
-        if (!state.acceptClaim.compareAndSet(false, true)) {
-            Log.w("WS_SERVICE", "Ignored overlapping CALL_ACCEPT for $sessionId")
-            return
-        }
-        // Only the claim owner stops ringing; a later local failure keeps the claim (fail
-        // closed, no retry). The call ends through the existing error path.
-        killAllAudio()
         val identity = IdentitySigningKey.existingIdentity()
         val remotePub = remotePubKey
         if (identity == null || identity.identityId != getLocalClientId() || remotePub == null
