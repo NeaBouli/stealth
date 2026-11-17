@@ -632,3 +632,30 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - This adoption is confined to the GitHub-hosted job, never Mac/production/
   Guardian/other projects. Private container still has no device mappings,
   capabilities or network; non-root headless/user-scope guards unchanged.
+
+### PUBLIC DIAG / NO APP TESTS (Source Continuation Atop b276d321)
+
+- Parent evidence:44066116615 stopped at KVM; corrected44067214109 passed
+  KVM/setup/cache restore/SDK/host admission, then PUBLIC `container_result`
+  after about12seconds. JDK17/SDK37 toolchain and1118 selected cache files
+  were reported. No private input/strip/app/JNI/VM ran; KVM ACL restoration
+  and owned cleanup passed. Root cause remains UNKNOWN, not an app failure.
+- Same TEMP module, one diagnostic hop: `diagnose_public -> public_preparation
+  (diagnose=True) -> run_container(public=True) -> owned cleanup -> bounded
+  public diagnostic -> host-only exact STILL-DRAFT asset`. No new build path.
+  The entry point has no private download/extraction/strip/build/VM continuation,
+  on either success or failure. No private-stage output capture is permitted.
+- Only public-container failure produces `public-preparation-diagnostic.json`:
+  fixed/numeric exit/OOM/marker/capture/bounds state and a defensively redacted
+  last<=8192byte public-log tail; canonical JSON total<=16KiB. Raw output is
+  never printed or uploaded to Actions artifacts. Tokenized DRAFT API use occurs
+  only after owned container/image/cgroup cleanup, with exact ID/tag/draft checks
+  and no overwrite. Original public failure stays nonzero; no qualification PASS.
+- Parent bindings cdc18284 and scoped CI KVM ACL preparation/restoration b276d321
+  remain intact. Workflow explicitly dispatches PUBLIC DIAG / NO APP TESTS and
+  omits emulator/system-image downloads, retaining NDK/CMake and all existing
+  host/profile/strict verification/secret guards. No app source or qualified
+  d1eefa87 native/security/secret delta changes or repeated acceptance tests.
+- Worker checks are pure fixtures/AST/lint only. Parent reviews and admits
+  exactly one third public diagnostic; ART series then STOPS pending explicit
+  new resumption/corrective evidence. No fourth/blind retry or runtime acceptance.

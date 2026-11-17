@@ -67,6 +67,9 @@ WRAPPER_SHA256 = "46ac66d47f30f3dacfdf306e0b714a91a34fb94a22ba0a744b280933f47bc0
 WRAPPER_PATH = "wrapper/dists/gradle-9.8.0-all/619e6l8zt76uzaekhqdol0b60/gradle-9.8.0-all.zip"
 MAX_BUNDLE = 64 * 1024**2
 MAX_OUTPUT = 512 * 1024
+PUBLIC_DIAGNOSTIC_ASSET = "public-preparation-diagnostic.json"
+MAX_PUBLIC_TAIL = 8192
+MAX_PUBLIC_DIAGNOSTIC = 16 * 1024
 REPO = "NeaBouli/stealth"
 LABEL = "sc-stx24-qualification"
 ENV = {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "HOME": "/nonexistent",
@@ -76,6 +79,12 @@ ENV = {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "HOME": "/nonexistent",
 
 class Refusal(ValueError):
     """Fixed trusted reason, never text from source, tool or target exceptions."""
+
+
+class PublicPreparationFailure(Refusal):
+    def __init__(self, payload: bytes) -> None:
+        super().__init__("public_container_failure")
+        self.payload = payload
 
 
 def require(ok: bool, blocker: str = "metadata") -> None:
@@ -858,6 +867,87 @@ def nsswitch_config(public: bool) -> bytes:
     return b"passwd: files\ngroup: files\nhosts: " + (b"files dns\n" if public else b"files\n")
 
 
+def redact_public_log(data: bytes) -> str:
+    text = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", data.decode("utf8", errors="replace"))
+    text = "".join(c if c in "\n\t" or 32 <= ord(c) < 127 else "?" for c in text)
+    patterns = (
+        r"(?im)\b(?:proxy-)?authorization\s*[:=][^\n]*",
+        r'''(?i)\b(?:\w*(?:token|password|passwd|secret|credential)\w*|api[_-]?key)["']?\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;]+)''',
+        r"(?i)\bBearer\s+\S+",
+        r"\b(?:gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|(?:sk|rk)-[A-Za-z0-9_-]+|AKIA[0-9A-Z]{16})\b",
+        r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b",
+        r'''[A-Za-z][A-Za-z0-9+.-]*://[^\s<>"']+''',
+        r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}",
+        r"(?<!\w)(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?::[0-9]{1,5})?",
+        r"(?<!\w)\[?(?:[0-9a-fA-F]{0,4}:){2,}[0-9a-fA-F:.]*(?:%[A-Za-z0-9_.-]+)?\]?(?::[0-9]{1,5})?",
+        r"(?i)\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\b(?::[0-9]{1,5})?",
+        r"(?i)\blocalhost\b(?::[0-9]{1,5})?",
+        r"[A-Za-z0-9_+=/-]{20,}",
+    )
+    for pattern in patterns:
+        text = re.sub(pattern, "[redacted]", text)
+    return text
+
+
+def public_diagnostic(data: bytes, *, public: bool, code: int | None, state: dict,
+                      bounded: bool, exported: bool, run_id: str, controller_sha: str) -> bytes:
+    require(public is True and isinstance(data, bytes) and len(data) <= MAX_OUTPUT,
+            "diagnostic_public_only")
+    require(re.fullmatch(r"[0-9]{1,20}", run_id) is not None
+            and re.fullmatch(r"[0-9a-f]{40}", controller_sha) is not None, "diagnostic_identity")
+    container_exit = state.get("ExitCode")
+    require(all(value is None or type(value) is int and -255 <= value <= 255
+                for value in (code, container_exit)), "diagnostic_exit_shape")
+    require(all(value is None or type(value) is bool
+                for value in (state.get("OOMKilled"), state.get("Running")))
+            and type(bounded) is type(exported) is bool, "diagnostic_state_shape")
+    lines = data.decode("utf8", errors="replace").splitlines()
+    record = {"format": 1, "kind": "public-preparation-diagnostic", "public_only": True,
+              "private_input_fetched": False, "qualification": "NOT_RUN",
+              "run_id": run_id, "controller_sha": controller_sha,
+              "launcher_exit": code, "container_exit": container_exit,
+              "oom": state.get("OOMKilled"), "running": state.get("Running"),
+              "caps_markers": lines.count("SC_CAPS_OK"), "export_markers": lines.count("SC_EXPORT_READY"),
+              "exported": exported, "output_bytes": len(data), "bounded": bounded,
+              "limits": {"wall_seconds": 900, "output_bytes": MAX_OUTPUT},
+              "tail": redact_public_log(data)[-MAX_PUBLIC_TAIL:]}
+    while True:
+        payload = canonical(record)
+        if len(payload) <= MAX_PUBLIC_DIAGNOSTIC:
+            validate_public_diagnostic(payload)
+            return payload
+        record["tail"] = record["tail"][max(1, len(record["tail"]) // 4):]
+
+
+def validate_public_diagnostic(payload: bytes) -> None:
+    require(isinstance(payload, bytes) and 0 < len(payload) <= MAX_PUBLIC_DIAGNOSTIC,
+            "diagnostic_size")
+    try:
+        record = json.loads(payload)
+    except (ValueError, UnicodeError):
+        raise Refusal("diagnostic_json") from None
+    require(isinstance(record, dict) and set(record) == {
+        "format", "kind", "public_only", "private_input_fetched", "qualification", "run_id",
+        "controller_sha", "launcher_exit", "container_exit", "oom", "running", "caps_markers",
+        "export_markers", "exported", "output_bytes", "bounded", "limits", "tail"}, "diagnostic_schema")
+    require(record["public_only"] is True and record["private_input_fetched"] is False
+            and record["qualification"] == "NOT_RUN" and record["kind"] == "public-preparation-diagnostic"
+            and type(record["format"]) is int and record["format"] == 1, "diagnostic_public_only")
+    require(isinstance(record["tail"], str) and len(record["tail"].encode()) <= MAX_PUBLIC_TAIL
+            and redact_public_log(record["tail"].encode()) == record["tail"], "diagnostic_redaction")
+    require(all(type(record[key]) is int and 0 <= record[key] <= MAX_OUTPUT
+                for key in ("output_bytes", "caps_markers", "export_markers"))
+            and all(record[key] is None or type(record[key]) is int and -255 <= record[key] <= 255
+                    for key in ("launcher_exit", "container_exit"))
+            and all(record[key] is None or type(record[key]) is bool for key in ("oom", "running"))
+            and all(type(record[key]) is bool for key in ("exported", "bounded"))
+            and record["limits"] == {"wall_seconds": 900, "output_bytes": MAX_OUTPUT}
+            and isinstance(record["run_id"], str) and re.fullmatch(r"[0-9]{1,20}", record["run_id"])
+            and isinstance(record["controller_sha"], str)
+            and re.fullmatch(r"[0-9a-f]{40}", record["controller_sha"])
+            and canonical(record) == payload, "diagnostic_state_shape")
+
+
 def lineage_checks() -> None:
     """Pure synthetic fixtures only; never invoke strip, Docker, Gradle or JNI."""
     import copy
@@ -960,7 +1050,9 @@ def lineage_checks() -> None:
 
 
 def run_container(root: Path, source: Path, dependencies: Path,
-                  mounts: list[tuple[str, str]], *, public: bool, lineage: dict | None = None) -> Path:
+                  mounts: list[tuple[str, str]], *, public: bool, lineage: dict | None = None,
+                  diagnose: bool = False) -> Path:
+    require(not diagnose or public is True, "diagnostic_public_only")
     if not public:
         validate_strip_proof(lineage)
     network = "bridge" if public else "none"
@@ -993,6 +1085,8 @@ def run_container(root: Path, source: Path, dependencies: Path,
             member = tarfile.TarInfo(path)
             member.size, member.mode = len(data), 0o644
             archive.addfile(member, io.BytesIO(data))
+    data, code, state = bytearray(), None, {}
+    bounded, exported = True, False
     try:
         image_id = host_command(["docker", "import", "--change", f"LABEL {LABEL}={name}", "-", image], stdin=empty.getvalue()).decode().strip()
         mounts += [(str(source), "/source"), (str(dependencies), "/dependencies"), (str(root / "wrapper.zip"), "/wrapper.zip"),
@@ -1090,6 +1184,12 @@ def run_container(root: Path, source: Path, dependencies: Path,
                 and lines.count("SC_EXPORT_READY") == 1 and exported,
                 "container_result")
         return root / "exported"
+    except Exception:
+        if diagnose:
+            raise PublicPreparationFailure(public_diagnostic(
+                bytes(data), public=public, code=code, state=state, bounded=bounded, exported=exported,
+                run_id=os.environ["GITHUB_RUN_ID"], controller_sha=os.environ["SC_CONTROLLER_SHA"])) from None
+        raise
     finally:
         cleanup()
 
@@ -1123,7 +1223,7 @@ def dispatch_guard() -> None:
         p.strip() for p in processes), "foreign_workload")
 
 
-def public_preparation(root: Path, mounts: list[tuple[str, str]]) -> Path:
+def public_preparation(root: Path, mounts: list[tuple[str, str]], *, diagnose: bool = False) -> Path:
     source = root / "source"
     project = source / "client_android"
     (project / "gradle").mkdir(parents=True, mode=0o755)
@@ -1144,7 +1244,7 @@ def public_preparation(root: Path, mounts: list[tuple[str, str]]) -> Path:
     }.items():
         (project / path).write_bytes(data)
     seeded = stage_cache(root, source, seed=True, direct=False)
-    exported = run_container(root, source, seeded, list(mounts), public=True)
+    exported = run_container(root, source, seeded, list(mounts), public=True, diagnose=diagnose)
     # Recheck the exported bytes on the host before any private download.
     selected = root / "selected"
     dependencies = stage_cache(selected, source, cache=exported, direct=False)
@@ -1252,6 +1352,127 @@ def draft() -> dict:
     return current
 
 
+def publish_public_diagnostic(root: Path, payload: bytes) -> None:
+    validate_public_diagnostic(payload)
+    cleanup()  # No tokenized API use unless exact owned cleanup has succeeded.
+    current = draft()
+    require(not any(asset["name"] == PUBLIC_DIAGNOSTIC_ASSET for asset in current["assets"]),
+            "diagnostic_asset_exists")
+    path = root / PUBLIC_DIAGNOSTIC_ASSET
+    with path.open("xb") as output:
+        output.write(payload)
+    path.chmod(0o600)
+    draft()
+    host_command(["gh", "api", "--method", "POST",
+                  f"https://uploads.github.com/repos/{REPO}/releases/{RELEASE}/assets?name={PUBLIC_DIAGNOSTIC_ASSET}",
+                  "-H", "Content-Type: application/json", "--input", str(path)], token=True)
+    print("phase=public_diagnostic stored=true app_tests=NOT_RUN qualification=NOT_RUN")
+
+
+def diagnose_public() -> None:
+    dispatch_guard()
+    require(os.environ.get("SC_RELEASE_TAG") == TAG, "diagnostic_draft_binding")
+    mounts = tool_mounts()
+    with tempfile.TemporaryDirectory(prefix=owned_name() + "-public-diag-",
+                                     dir=os.environ["RUNNER_TEMP"]) as directory:
+        root = Path(directory)
+        prep = root / "public"
+        prep.mkdir(mode=0o755)
+        try:
+            public_preparation(prep, mounts, diagnose=True)
+        except PublicPreparationFailure as error:
+            publish_public_diagnostic(root, error.payload)
+            raise Refusal("public_preparation_failed") from None
+        # Success ends here too: never enter the hosted/private qualification path.
+        print("phase=public_diagnostic completed=true app_tests=NOT_RUN qualification=NOT_RUN")
+
+
+def public_diagnostic_checks() -> None:
+    """Synthetic JSON/redaction/control-flow fixtures, without host/target execution."""
+    from contextlib import ExitStack, redirect_stdout
+    from collections.abc import Callable
+    from unittest.mock import Mock, patch
+
+    checks = 0
+    def rejected(operation: Callable[[], object]) -> None:
+        nonlocal checks
+        try:
+            operation()
+        except Refusal:
+            checks += 1
+        else:
+            raise Refusal("negative_public_diagnostic_fixture_accepted")
+
+    args = {"public": True, "code": 1, "state": {"ExitCode": 1, "OOMKilled": False, "Running": False},
+            "bounded": True, "exported": False, "run_id": "123", "controller_sha": "a" * 40}
+    canaries = ("192.0.2.7:443", "[2001:db8::7]:443", "repo.example.org", "user@example.org",
+                "ghp_SYNTHETIC_FAKE_TOKEN_12345", "github_pat_SYNTHETIC_123456789",
+                "SHORT_BEARER", "SHORT_PASSWORD", "SHORT_API_KEY")
+    data = ("SC_CAPS_OK\nGET https://repo.example.org/path\n" + " ".join(canaries[:6])
+            + '\nAuthorization: Bearer SHORT_BEARER\npassword=SHORT_PASSWORD\napi_key="SHORT_API_KEY"\n').encode()
+    payload = public_diagnostic(data, **args)
+    record = json.loads(payload)
+    require(record["caps_markers"] == 1 and record["export_markers"] == 0
+            and record["container_exit"] == 1 and all(c not in record["tail"] for c in canaries),
+            "diagnostic_redaction_fixture")
+    checks += 1
+    large = public_diagnostic((b'"\\\n' * 20000) + b"END_OF_PUBLIC_LOG", **args)
+    require(len(large) <= MAX_PUBLIC_DIAGNOSTIC and len(json.loads(large)["tail"].encode()) <= MAX_PUBLIC_TAIL
+            and json.loads(large)["tail"].endswith("END_OF_PUBLIC_LOG"), "diagnostic_size_fixture")
+    checks += 1
+    rejected(lambda: public_diagnostic(b"PRIVATE MUST NOT BE CAPTURED", **{**args, "public": False}))
+    rejected(lambda: public_diagnostic(b"x" * (MAX_OUTPUT + 1), **args))
+    rejected(lambda: public_diagnostic(data, **{**args, "code": True}))
+    rejected(lambda: validate_public_diagnostic(b"not-json"))
+    rejected(lambda: validate_public_diagnostic(b"x" * (MAX_PUBLIC_DIAGNOSTIC + 1)))
+    for field, value in (("public_only", False), ("private_input_fetched", True),
+                         ("tail", "https://unredacted.example.org/"), ("qualification", "PASS")):
+        rejected(lambda: validate_public_diagnostic(canonical({**record, field: value})))
+    forbidden = Mock(side_effect=AssertionError("private/host operation in pure public fixture"))
+    with patch.dict(globals(), {"host_command": forbidden}):
+        rejected(lambda: run_container(Path("."), Path("."), Path("."), [], public=False, diagnose=True))
+    with tempfile.TemporaryDirectory(prefix="sc-public-diag-fixtures-", dir=Path.cwd()) as directory:
+        root = Path(directory)
+        events: list[str] = []
+        def fake_upload(arguments: list[str], **kwargs: object) -> bytes:
+            require(kwargs == {"token": True} and events == ["cleanup", "draft", "draft"]
+                    and arguments[4] == f"https://uploads.github.com/repos/{REPO}/releases/{RELEASE}/assets?name={PUBLIC_DIAGNOSTIC_ASSET}"
+                    and arguments[-1] == str(root / PUBLIC_DIAGNOSTIC_ASSET)
+                    and (root / PUBLIC_DIAGNOSTIC_ASSET).read_bytes() == payload,
+                    "diagnostic_upload_order")
+            return b"{}"
+        with patch.dict(globals(), {"cleanup": lambda: events.append("cleanup"),
+                                   "draft": lambda: events.append("draft") or {"assets": []},
+                                   "host_command": fake_upload}), redirect_stdout(io.StringIO()):
+            publish_public_diagnostic(root, payload)
+        checks += 1
+        with patch.dict(globals(), {"cleanup": Mock(side_effect=Refusal("cleanup_failed")),
+                                   "draft": forbidden, "host_command": forbidden}):
+            rejected(lambda: publish_public_diagnostic(root, payload))
+        with ExitStack() as stack:
+            stack.enter_context(patch.dict(os.environ, {"RUNNER_TEMP": directory, "GITHUB_RUN_ID": "123",
+                                                       "SC_RELEASE_TAG": TAG}))
+            for name in ("hosted", "extract_input", "trusted_strip_proof", "run_headless", "gh_json"):
+                stack.enter_context(patch.dict(globals(), {name: forbidden}))
+            stack.enter_context(patch.dict(globals(), {"dispatch_guard": Mock(), "tool_mounts": lambda: []}))
+            publisher = Mock()
+            prep = Mock(return_value=root)
+            stack.enter_context(patch.dict(globals(), {"publish_public_diagnostic": publisher,
+                                                       "public_preparation": prep}))
+            with redirect_stdout(io.StringIO()):
+                diagnose_public()
+                publisher.assert_not_called()
+                require(prep.call_args.kwargs == {"diagnose": True}, "diagnostic_public_route")
+                checks += 1
+                prep.side_effect = PublicPreparationFailure(payload)
+                rejected(diagnose_public)
+                require(publisher.call_count == 1, "diagnostic_failure_publish")
+                prep.side_effect = Refusal("public_metadata_failure")
+                rejected(diagnose_public)
+                require(publisher.call_count == 1, "diagnostic_only_container_failure")
+    print(f"SC_SOURCE_CHECKS public_diagnostic={checks} host_target_network_execution=false")
+
+
 def hosted() -> None:
     dispatch_guard()
     mounts = tool_mounts()  # Public tools and awk resolve before private input.
@@ -1314,6 +1535,8 @@ def main() -> None:
     packing.add_argument("--repo", required=True)
     packing.add_argument("--output", required=True)
     commands.add_parser("hosted")
+    commands.add_parser("diagnose-public")
+    commands.add_parser("public-diagnostic-checks")
     commands.add_parser("admission")
     commands.add_parser("cleanup")
     commands.add_parser("container-work")
@@ -1327,6 +1550,10 @@ def main() -> None:
         elif args.mode == "admission":
             dispatch_guard()
             print("phase=admission accepted=true")
+        elif args.mode == "diagnose-public":
+            diagnose_public()
+        elif args.mode == "public-diagnostic-checks":
+            public_diagnostic_checks()
         elif args.mode == "cleanup":
             cleanup()
         elif args.mode == "container-work":

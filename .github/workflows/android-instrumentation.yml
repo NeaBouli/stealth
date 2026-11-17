@@ -1,4 +1,4 @@
-name: TEMP JNI ART API24 - NOT_READY - SYNTHETIC ONLY - NEVER MERGE
+name: TEMP PUBLIC DIAG - NO APP TESTS - NEVER MERGE
 
 on:
   workflow_dispatch:
@@ -27,9 +27,12 @@ concurrency:
   group: temp-sc-jni-art-20261117
   cancel-in-progress: false
 
+# Third admission only: stop afterward, regardless of result. Further ART runs
+# require explicit new resumption/corrective evidence, never a blind retry.
+
 jobs:
   android-client:
-    name: TEMP public preparation then offline APK and eight headless JNI cases
+    name: PUBLIC DIAG / NO APP TESTS - one public preparation only
     # Exact parent-reviewed controller; no automatic branch or PR execution.
     if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-jni-art-20261117' && inputs.controller_sha == github.sha
     runs-on: ubuntu-latest
@@ -60,12 +63,11 @@ jobs:
           dependency-graph: disabled
           build-scan-publish: false
           add-job-summary: never
-      - name: Provision public native tools and disposable headless API24 before private input
+      - name: Provision only pinned public NDK and CMake tools - no emulator or app
         run: |
           export JAVA_HOME="$JAVA_HOME_17_X64"
           timeout 360 "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --channel=0 \
-            "ndk;27.0.12077973" "cmake;3.22.1" "emulator" \
-            "system-images;android-24;google_apis;x86_64"
+            "ndk;27.0.12077973" "cmake;3.22.1"
       - name: Stage exact SHA256-pinned Gradle wrapper archive before private input
         run: |
           curl --fail --location --proto '=https' --proto-redir '=https' \
@@ -75,15 +77,13 @@ jobs:
           printf '%s  %s\n' \
             46ac66d47f30f3dacfdf306e0b714a91a34fb94a22ba0a744b280933f47bc0cf \
             "$RUNNER_TEMP/sc-gradle-9.8.0-all.zip" | sha256sum --check --status
-      - name: Trusted public-only preparation, offline APK build and exact JNI runner
+      - name: PUBLIC DIAG / NO APP TESTS - never download private input
         env:
           GH_TOKEN: ${{ github.token }}
           SC_RUNNER_ENVIRONMENT: ${{ runner.environment }}
           SC_RELEASE_TAG: ${{ inputs.cache_release_tag }}
-          SC_ASSET: ${{ inputs.asset }}
-          SC_BUNDLE_SHA256: ${{ inputs.bundle_sha256 }}
           SC_CONTROLLER_SHA: ${{ inputs.controller_sha }}
-        run: python3 -I .github/scripts/sc-media-qualification.py hosted
+        run: python3 -I .github/scripts/sc-media-qualification.py diagnose-public
       - name: Exact owned container cgroup and image cleanup fallback
         if: always()
         run: python3 -I .github/scripts/sc-media-qualification.py cleanup
