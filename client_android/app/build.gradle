@@ -434,6 +434,22 @@ android {
     }
 }
 
+// The Rust crypto engine is a committed prebuilt (src/main/jniLibs) that Gradle does not
+// rebuild. Fail closed before any APK/AAB/androidTest native merge when a supported ABI
+// lacks a CoreCrypto JNI export (incl. media v3) or 16 KB 64-bit alignment.
+// Host unit tests do not merge native libs and are unaffected.
+def coreCryptoExportGuard = file('../../tools/verify_android_crypto_exports.sh')
+
+tasks.register('verifyCoreCryptoExports', Exec) {
+    group = 'verification'
+    description = 'Fails when a packaged libsecurecall_core_crypto.so misses a CoreCrypto JNI export.'
+    commandLine 'bash', coreCryptoExportGuard.absolutePath, '--ndk-version', android.ndkVersion
+}
+
+tasks.matching { it.name ==~ /merge\w*NativeLibs/ }.configureEach {
+    dependsOn tasks.named('verifyCoreCryptoExports')
+}
+
 // ABI-specific versionCodes for split APKs and a higher universal APK code.
 // arm64-v8a: base*1000+1, armeabi-v7a: base*1000+2, x86_64: base*1000+3,
 // universal: base*1000+9 so direct-download users can update from any split APK.

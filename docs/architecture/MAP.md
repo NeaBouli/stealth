@@ -387,7 +387,8 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   local accept a no-op before audio stop, key generation or media replacement (duplicate
   or stale session id). No error is emitted, so the accepted call UI is not torn down.
 - Claim: `CallSecurityState.acceptClaim` (AtomicBoolean, body field, outside data equality)
-  is CAS-taken after role/session validation and before `killAllAudio`; overlap losers return.
+  is set inside the per-state `acceptAdmission` monitor after role/session validation and
+  the claim/accept recheck, before `killAllAudio`; no CAS. Overlap losers return.
   Never released: a later local failure (identity/native/key agreement/send) keeps the
   existing fail-closed error and allows no second rekey. A new invite = new state = new claim.
 - Unregistered path: stops ringing and queues as before but takes no claim (the queue can
@@ -406,3 +407,29 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 - Invalid session without an accepted current call keeps `killAllAudio` + `invalid_secure_invite`.
 - Regression: `CallAcceptOnceTest` (real entry, synthetic state, bounded latches; 8 tests incl.
   `unregisteredAcceptPausedBeforeAudioStopCannotStopAudioAfterRegisteredClaim`). NOT_RUN.
+- Proof (parent-recorded): exact `354913fb58470685f10cbe9a47f5399cb4302459`, hosted JVM run
+  44042171861, 8+8 new JVM cases green. JVM/mocked only: no device, native or call success.
+
+---
+
+# Narrow trace: Rust crypto JNI packaging (SC-JNI-V3-PACKAGING-20261117)
+
+- Module: native build/package path of `libsecurecall_core_crypto.so`, not Rust
+  algorithms, JNI ABI, `CoreCrypto` methods, flavors or VPN code.
+- Build hop (manual): `tools/build_android_crypto.sh` -> `cargo ndk` (3 targets,
+  `--release --locked`, 16 KB page flags for aarch64/x86_64) -> `src/main/jniLibs/<abi>/`
+  -> `tools/verify_android_crypto_exports.sh` -> stdout provenance receipt (git HEAD,
+  `core_crypto` tree, dirty count, Cargo.lock/rustc/cargo-ndk/NDK, per-ABI .so SHA-256).
+- Package hop (Gradle): committed jniLibs (not rebuilt by Gradle; CMake builds only the
+  Opus JNI lib) -> `verifyCoreCryptoExports` (Exec, NDK `llvm-nm -D --defined-only`,
+  `llvm-readelf -lW`) -> every `merge*NativeLibs` (APK, AAB, androidTest APK, all
+  flavors). Host unit tests do not merge native libs and do not run the guard.
+- Guard contract: arm64-v8a, armeabi-v7a, x86_64 each export
+  `Java_com_securecall_crypto_CoreCrypto_{encrypt,decrypt,deriveSessionKey,generateKeyPair,
+  selfTest,mediaSeal,mediaOpen}`; 64-bit LOAD align >= 16384. Missing NDK/tool/lib/symbol
+  fails; no skip. `JNI_OnLoad` is not required (Rust defines none; static name binding).
+- Verified at 354913fb: committed libs lack mediaSeal/mediaOpen on all three ABIs (guard
+  exit 1). Unreleased candidate blocker; no production crash is claimed.
+- Native proof: `CoreCryptoMediaV3InstrumentedTest` (8 tests, real JNI, synthetic keys,
+  fails rather than skips when the library is missing/stale). NOT_RUN until the parent
+  rebuilds the three libs from pinned source and runs it on an admitted emulator.
