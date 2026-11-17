@@ -1300,10 +1300,14 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             com.securecall.app.audio.jitter.JitterBuffer.clear()
             val player = audioPlayer
             audioPlayer = null
-            player?.retire()
-            if (opusDecoderInitialized) {
-                com.securecall.app.ghostnet.media.codec.OpusDecoder.release()
-                opusDecoderInitialized = false
+            try {
+                player?.retire()
+            } finally {
+                // A failing player teardown still propagates, but must not leak the decoder.
+                if (opusDecoderInitialized) {
+                    com.securecall.app.ghostnet.media.codec.OpusDecoder.release()
+                    opusDecoderInitialized = false
+                }
             }
         }
     }

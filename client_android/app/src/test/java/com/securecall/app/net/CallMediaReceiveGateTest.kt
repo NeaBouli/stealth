@@ -92,6 +92,16 @@ class CallMediaReceiveGateTest {
         }.setBoolean(player, true)
     }
 
+    private fun playerField(player: GhostAudioPlayer, field: String): Any? =
+        GhostAudioPlayer::class.java.getDeclaredField(field).apply { isAccessible = true }.get(player)
+
+    private fun assertRetired(player: GhostAudioPlayer) {
+        assertEquals(true, playerField(player, "retired"))
+        assertEquals(false, playerField(player, "isPrepared"))
+        assertEquals(false, playerField(player, "isPlaying"))
+        assertNull(playerField(player, "audioTrack"))
+    }
+
     @Test
     fun serviceStopRetiresAndReleasesWhileNativeWriteIsStillBlocked() {
         val target = service()
@@ -141,11 +151,14 @@ class CallMediaReceiveGateTest {
             Mockito.verify(track).release()
             assertFalse(lifecycle.consume(generation) { error("Old worker dequeued again") })
 
+            // Retirement is asserted on the player's own state, not inferred from an Android stub failure.
+            assertRetired(player)
             // Even an old worker delayed between dequeue and write cannot auto-prepare/play.
             player.prepare()
             player.play()
             player.write(pcm)
             player.retire()
+            assertRetired(player)
             Mockito.verify(track, Mockito.times(1)).play()
             Mockito.verify(track, Mockito.times(1)).write(pcm, 0, pcm.size)
             Mockito.verify(track, Mockito.times(1)).release()
@@ -276,6 +289,108 @@ class CallMediaReceiveGateTest {
             set(target, "callSecurityState", null)
             receive(target, currentManager, sessionId, current)
             assertEquals(1, cipher.opens.get())
+        }
+    }
+
+    /** Authenticates every frame with a fresh replay sequence and runs [onOpen] inside the media lock. */
+    private class AuthenticatingCipher : MediaFrameCipher {
+        val opens = AtomicInteger()
+        @Volatile var onOpen: () -> Unit = {}
+        override fun seal(key: ByteArray, senderRole: Int, context: ByteArray, sequence: Long, plaintext: ByteArray) =
+            ByteArray(MediaSessionV3.MIN_FRAME)
+        override fun open(
+            key: ByteArray, expectedPeerRole: Int, context: ByteArray,
+            highest: Long, bitmap: Long, frame: ByteArray,
+        ): ByteArray {
+            val sequence = opens.incrementAndGet().toLong()
+            onOpen()
+            // 8-byte big-endian highest, 8-byte bitmap, then a synthetic non-empty payload.
+            return ByteArray(16 + 4).also { out ->
+                for (i in 0 until 8) out[7 - i] = (sequence shr (8 * i)).toByte()
+            }
+        }
+    }
+
+    private fun get(target: WebSocketService, field: String): Any? =
+        WebSocketService::class.java.getDeclaredField(field).apply { isAccessible = true }.get(target)
+
+    private fun mediaField(owner: MediaSessionV3, field: String): Any? =
+        MediaSessionV3::class.java.getDeclaredField(field).apply { isAccessible = true }.get(owner)
+
+    /** Nothing past the audio gate ran: no decoder init (native), no enqueue, no player/playout start. */
+    private fun assertNoAudioStarted(target: WebSocketService) {
+        assertEquals(false, get(target, "opusDecoderInitialized"))
+        assertEquals(false, get(target, "jitterPlaybackRunning"))
+        assertNull(get(target, "jitterPlaybackThread"))
+        assertNull(get(target, "audioPlayer"))
+        assertEquals(0, JitterBuffer.size())
+    }
+
+    private fun establishedTarget(cipher: AuthenticatingCipher, manager: WebRtcManager): Pair<WebSocketService, MediaSessionV3> {
+        val target = service()
+        val current = media(cipher)
+        set(target, "mediaSession", current)
+        set(target, "webRtcManager", manager)
+        set(target, "callSecurityState", securityState(sessionId, established = true))
+        return target to current
+    }
+
+    @Test
+    fun stopDuringAuthenticationCannotReachDecodeEnqueueOrPlayoutOnTheRealReceivePath() {
+        Mockito.mockStatic(CoreCrypto::class.java).use { native ->
+            native.`when`<Boolean> { CoreCrypto.isNativeAvailable() }.thenReturn(true)
+            val cipher = AuthenticatingCipher()
+            val manager = Mockito.mock(WebRtcManager::class.java)
+            val (target, current) = establishedTarget(cipher, manager)
+            try {
+                JitterBuffer.clear()
+                // The generation was snapshotted before authentication; stop lands inside it.
+                cipher.onOpen = { target.stopAudioPlayback() }
+                receive(target, manager, sessionId, current)
+
+                assertEquals(1, cipher.opens.get())
+                // Replay state committed => the authenticated consumer really was invoked.
+                assertEquals(1L, mediaField(current, "highest"))
+                // Ownership is unchanged, so only the stale generation can have rejected it.
+                assertNoAudioStarted(target)
+                // Playback stop never closes the current call's crypto owner.
+                assertEquals(false, mediaField(current, "closed"))
+                assertTrue(current === get(target, "mediaSession"))
+            } finally {
+                current.close()
+                JitterBuffer.clear()
+            }
+        }
+    }
+
+    @Test
+    fun ownerSwapDuringAuthenticationIsRejectedByTheAudioOwnershipRechecks() {
+        val swaps = listOf<Pair<String, (WebSocketService) -> Unit>>(
+            "manager" to { t: WebSocketService -> set(t, "webRtcManager", Mockito.mock(WebRtcManager::class.java)) },
+            "media" to { t: WebSocketService -> set(t, "mediaSession", media(CountingCipher())) },
+            "securityState" to { t: WebSocketService -> set(t, "callSecurityState", securityState(sessionId, established = true)) },
+            "destroyed" to { t: WebSocketService -> set(t, "destroyed", true) },
+        )
+        Mockito.mockStatic(CoreCrypto::class.java).use { native ->
+            native.`when`<Boolean> { CoreCrypto.isNativeAvailable() }.thenReturn(true)
+            for ((name, swap) in swaps) {
+                val cipher = AuthenticatingCipher()
+                val manager = Mockito.mock(WebRtcManager::class.java)
+                val (target, current) = establishedTarget(cipher, manager)
+                try {
+                    JitterBuffer.clear()
+                    // Same audio generation: only the in-lock rechecks can reject this callback.
+                    cipher.onOpen = { swap(target) }
+                    receive(target, manager, sessionId, current)
+                    assertEquals(name, 1, cipher.opens.get())
+                    assertEquals(name, 1L, mediaField(current, "highest"))
+                    assertNoAudioStarted(target)
+                } finally {
+                    (get(target, "mediaSession") as MediaSessionV3?)?.close()
+                    current.close()
+                    JitterBuffer.clear()
+                }
+            }
         }
     }
 }

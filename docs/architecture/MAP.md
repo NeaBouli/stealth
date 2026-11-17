@@ -372,3 +372,9 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   execution. No timeout-based write cancellation or non-blocking mode is introduced.
 - Unchanged: accepted consume/close implementation, protocol/keys/replay,
   signaling decisions, reconnect, flavors, native codec and other legacy routers.
+- Review fix (SC-AUDIO-STOP-REVIEW-FIX-20261117): `stopAudioPlayback` releases the
+  decoder in `finally` when `retire` throws (failure still propagates to the caller's
+  log). `CallMediaReceiveGateTest` now drives the real `receiveDataChannelMedia` path
+  with an authenticating synthetic cipher: stop during authentication, and manager/
+  media/security-state/destroyed swaps, leave decoder/jitter/player/playout untouched
+  and media open. Retirement is asserted on player fields. NOT_RUN (source-only).
