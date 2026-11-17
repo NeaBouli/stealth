@@ -147,6 +147,8 @@ jobs:
 
       - name: Verify Android client
         run: |
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.0.12077973"
+          export ANDROID_NDK_ROOT="$ANDROID_NDK_HOME"
           export SECURECALL_STORE_FILE="${RUNNER_TEMP}/securecall-ci-only.jks"
           export SECURECALL_STORE_PASSWORD="$(openssl rand -hex 24)"
           export SECURECALL_KEY_ALIAS="securecall-ci"

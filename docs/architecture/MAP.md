@@ -554,3 +554,11 @@ and matching product/finance readiness. A paid Play tier never adds Direct VPN
 - Direct UpdateManager download handoff (PR224) and Free Settings -> UpgradeActivity ->
   verified Billing/RTDN hops (PR232) merged unchanged onto the media/native candidate
   `d1eefa87`. No new node, path, flag or wrapper; both traces above remain authoritative.
+
+## CI NDK environment pin (SC-FINAL-NDK-CI-ENV-20261117)
+
+- Hop: `ci-basic.yml` Android job -> sdkmanager `ndk;27.0.12077973` -> `Verify Android client`
+  -> Gradle `verifyCoreCryptoExports` -> `resolve_ndk` (prefers `ANDROID_NDK_HOME`, checks
+  `Pkg.Revision`). Runner ambient `ANDROID_NDK_HOME` pointed at another NDK; the step now
+  exports `ANDROID_NDK_HOME`/`ANDROID_NDK_ROOT` = `$ANDROID_HOME/ndk/27.0.12077973`.
+  Guard, NDK revision and fail-closed behaviour unchanged.

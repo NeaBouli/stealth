@@ -6288,3 +6288,14 @@ Open next:
   Free/Pro/Premium unit tests, Free/Pro VPN policy, Premium runtime guard, closed-billing
   guard, signaling `npm test` (pre/posttest) and Play RTDN retry test.
 - No push, PR, merge to main, signing, release or commerce activation.
+
+## 2026-11-17 — SC-FINAL-NDK-CI-ENV-20261117 (claude)
+
+- Cause: Basic CI44083920215 Android job failed at `verifyCoreCryptoExports`: runner ambient
+  `ANDROID_NDK_HOME` did not match pinned NDK 27.0.12077973 (no app failure).
+- Fix: `.github/workflows/ci-basic.yml` `Verify Android client` step exports
+  `ANDROID_NDK_HOME` and `ANDROID_NDK_ROOT` = `$ANDROID_HOME/ndk/27.0.12077973` (the NDK the
+  previous step installs). No guard, revision, app code or test change.
+- Checks: YAML parse ok; synthetic `resolve_ndk`: ambient mismatch -> exit 1 (reproduced),
+  pinned -> resolves and proceeds to tool check, pinned-but-missing -> fail-closed.
+- NOT_RUN: CI/Gradle/device; parent pushes and reruns integration once.
