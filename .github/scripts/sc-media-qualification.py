@@ -19,28 +19,24 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 
-SOURCE = "6ba8fddd0319666dad9567e886d5d6655ee23d16"
-TREE = "129dcb4e2982674bf7ee7958cfa0ba18047515fb"
-SOURCE_TABLE_SHA256 = "e12de5018c07dc14a8d9b6b2e35c626539c45ad5b653b9ba217397ca08544454"
+SOURCE = "354913fb58470685f10cbe9a47f5399cb4302459"
+TREE = "8e46783fbdb1bb297c0dc99ec2d2028eee7bf25a"
+SOURCE_TABLE_SHA256 = "3e14c5661b52c121443fc77ab437ac2d33dd61f8c151f59f09e21a9c33a9e251"
 FIXTURE_SHA256 = "a466488db1f666da3f1b941ad4c389a6b7940d5c93662adf25f77fb781fd63c7"
 PROVIDER = "client_android/app/google-services.json"
 PACKAGES = ("com.securecall.app.free", "com.securecall.app.premium", "com.securecall.app.pro")
-CLASSES = ("com.securecall.app.crypto.MediaSessionV3Test",
-           "com.securecall.app.crypto.SessionKeyBindingTest",
-           "com.securecall.app.net.CallMediaReceiveGateTest",
-           "com.securecall.app.security.IdentityProtocolTest",
-           "com.securecall.app.net.AudioPlaybackLifecycleTest")
-CASES = (11, 4, 7, 5, 4)
+CLASSES = ("com.securecall.app.net.CallAcceptOnceTest",)
+CASES = (8,)
 FLAVORS = ("Free", "Premium")
 WRAPPER_SHA256 = "46ac66d47f30f3dacfdf306e0b714a91a34fb94a22ba0a744b280933f47bc0cf"
 WRAPPER_PATH = "wrapper/dists/gradle-9.8.0-all/619e6l8zt76uzaekhqdol0b60/gradle-9.8.0-all.zip"
 MAX_BUNDLE = 64 * 1024**2
 MAX_OUTPUT = 512 * 1024
 REPO = "NeaBouli/stealth"
-REF = "refs/heads/temp/sc-media-audio-jvm-20261117"
-RELEASE = 448233448
-TAG = "sc-media-audio-jvm-input-20261117-0620"
-ASSET = "sc-media-audio-jvm-input.tar"
+REF = "refs/heads/temp/sc-accept-jvm-20261117"
+RELEASE = 448305721
+TAG = "sc-call-accept-jvm-input-20261117"
+ASSET = "sc-accept-jvm-input.tar"
 LABEL = "sc-stx24-qualification"
 ENV = {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "HOME": "/nonexistent",
        "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null",
@@ -130,7 +126,7 @@ def pack(args: argparse.Namespace) -> None:
         files[path] = data
         require(len(files) <= 1000 and sum(map(len, files.values())) <= MAX_BUNDLE)
     table = {p: digest(data) for p, data in files.items()}
-    require(len(table) == 796 and digest(canonical(table)) == SOURCE_TABLE_SHA256, "source_table_pin")
+    require(len(table) == 797 and digest(canonical(table)) == SOURCE_TABLE_SHA256, "source_table_pin")
     for name, count in zip(CLASSES, CASES):
         methods(files["client_android/app/src/test/java/" + name.replace(".", "/") + ".kt"], count)
     files[PROVIDER] = provider_fixture()
@@ -158,7 +154,7 @@ def pack(args: argparse.Namespace) -> None:
         require(output.stat().st_size <= MAX_BUNDLE)
         with output.open("rb") as stream:
             checksum = hashlib.file_digest(stream, "sha256").hexdigest()
-        print(f"PACK source={SOURCE} code_files=796 synthetic_provider=true bundle_sha256={checksum}")
+        print(f"PACK source={SOURCE} code_files=797 synthetic_provider=true bundle_sha256={checksum}")
     except Exception:
         if created:
             output.unlink(missing_ok=True)
@@ -202,7 +198,7 @@ def extract_input(bundle: bytes, root: Path) -> None:
     table_bytes = files.pop("source-table.json")
     require(digest(table_bytes) == SOURCE_TABLE_SHA256, "source_table_pin")
     table = json.loads(table_bytes)
-    require(len(table) == 796 and canonical(table) == table_bytes
+    require(len(table) == 797 and canonical(table) == table_bytes
             and all(source_path(p) and p != PROVIDER for p in table)
             and files.pop(PROVIDER) == provider_fixture(), "fixture_or_source_paths")
     require(table == {p: digest(data) for p, data in files.items()}, "source_file_hashes")

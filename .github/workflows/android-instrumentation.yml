@@ -1,4 +1,4 @@
-name: TEMP JVM qualification - SYNTHETIC PROVIDER CONFIG - NEVER MERGE
+name: TEMP accept-once JVM qualification - SYNTHETIC PROVIDER CONFIG - NEVER MERGE
 
 on:
   workflow_dispatch:
@@ -24,13 +24,13 @@ permissions:
   contents: write # Host-only transfer to the exact owned still-DRAFT release.
 
 concurrency:
-  group: temp-sc-media-audio-jvm-20261117
+  group: temp-sc-accept-jvm-20261117
   cancel-in-progress: false
 
 jobs:
   android-client:
-    name: TEMP offline Free/Premium five-class 62-case JVM qualification
-    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-media-audio-jvm-20261117' && inputs.controller_sha == github.sha
+    name: TEMP offline Free/Premium changed accept-once tests only
+    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-accept-jvm-20261117' && inputs.controller_sha == github.sha
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

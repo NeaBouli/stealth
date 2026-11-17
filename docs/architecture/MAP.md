@@ -457,3 +457,17 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   positive exact JUnit receipt checks unchanged. No Rust/backend/emulator rerun.
 - No personal-device install, production config, provider/payment or release.
   https://docs.gradle.org/current/userguide/dependency_caching.html
+
+### Changed Accept-Once Qualification 2026-11-17
+
+- Parent accepted the previous 62-case run; it must not be repeated here.
+- Exact new source354913fb/tree8e46783f contains the reviewed call-accept
+  ownership delta. Select only CallAcceptOnceTest,8cases per Free/Premium.
+- Fixed797-file table/SHA256 and unchanged synthetic provider fixture;
+  original provider values stay excluded. Fresh STILL-DRAFT448305721 and
+  temp/sc-accept-jvm-20261117 bind this input, never customer release assets.
+- Existing trusted cache authentication, offline/nonroot/readonly/cgroup/
+  CPU/memory/output/deadline limits and exact positive XML receipt checks
+  remain unchanged. No emulator, native-device/call/finance/deploy acceptance.
+- Parent source review done; actual compilation/test/owned cleanup NOT_RUN
+  until this exact new controller receives an admitted single execution.
