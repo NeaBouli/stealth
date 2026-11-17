@@ -65,7 +65,15 @@ private data class CallSecurityState(
     var peerConfirmed: Boolean = false,
     var established: Boolean = false,
     var securityCode: String? = null,
-)
+) {
+    /**
+     * Local callee accept ownership for exactly this invite. Taken once with a CAS before
+     * any audio stop, key generation or media replacement; never released, so a repeated
+     * or concurrent accept cannot rekey this call. A new invite gets a new state and claim.
+     * Declared in the body so it stays out of the data-class equality.
+     */
+    val acceptClaim = java.util.concurrent.atomic.AtomicBoolean(false)
+}
 
 /**
  * BACKEND-22..58 / PATCH 201..204:
@@ -1531,12 +1539,20 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     fun sendCallAccept(sessionId: String) {
-        // Accept is the authoritative local transition out of ringing. Stop both
-        // service-owned incoming audio and any activity-owned tones before network
-        // signaling so delayed ACKs cannot leave the device audibly ringing.
-        killAllAudio()
+        // A claimed or accepted current call owns keys, media and audio. A repeated, overlapping
+        // or stale local accept must not rekey it, replace its media session or stop playback.
+        val current = callSecurityState
+        if (current != null && (current.acceptClaim.get() || current.accept != null)) {
+            Log.w("WS_SERVICE", "Ignored CALL_ACCEPT for $sessionId — current call already accepted")
+            return
+        }
 
         if (!isRegistered) {
+            // Accept is the authoritative local transition out of ringing. Stop both
+            // service-owned incoming audio and any activity-owned tones before network
+            // signaling so delayed ACKs cannot leave the device audibly ringing. No claim is
+            // taken here: the queue may be cleared, and the queued callback claims when it runs.
+            killAllAudio()
             Log.w("WS_SERVICE", "CALL_ACCEPT queued — WS not registered for session $sessionId")
             com.securecall.app.debug.SecLogManager.log("WS", "CALL_ACCEPT queued — waiting for registration")
             pendingCallQueue.add { sendCallAccept(sessionId) }
@@ -1546,11 +1562,22 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             return
         }
 
-        val state = callSecurityState
+        val state = current
+        if (state?.role != SecureCallRole.CALLEE || state.invite.sessionId != sessionId) {
+            killAllAudio()
+            _onCallError?.invoke("invalid_secure_invite", "The authenticated invitation is unavailable")
+            return
+        }
+        if (!state.acceptClaim.compareAndSet(false, true)) {
+            Log.w("WS_SERVICE", "Ignored overlapping CALL_ACCEPT for $sessionId")
+            return
+        }
+        // Only the claim owner stops ringing; a later local failure keeps the claim (fail
+        // closed, no retry). The call ends through the existing error path.
+        killAllAudio()
         val identity = IdentitySigningKey.existingIdentity()
         val remotePub = remotePubKey
-        if (state?.role != SecureCallRole.CALLEE || state.invite.sessionId != sessionId
-            || identity == null || identity.identityId != getLocalClientId() || remotePub == null
+        if (identity == null || identity.identityId != getLocalClientId() || remotePub == null
             || !com.securecall.crypto.CoreCrypto.isNativeAvailable()) {
             _onCallError?.invoke("invalid_secure_invite", "The authenticated invitation is unavailable")
             return

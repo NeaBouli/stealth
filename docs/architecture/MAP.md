@@ -378,3 +378,19 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   with an authenticating synthetic cipher: stop during authentication, and manager/
   media/security-state/destroyed swaps, leave decoder/jitter/player/playout untouched
   and media open. Retirement is asserted on player fields. NOT_RUN (source-only).
+
+## Callee accept once (SC-CALL-ACCEPT-ONCE-20261117)
+
+- Module/hop: `WebSocketService.sendCallAccept` (local callee accept) on the existing
+  `CallSecurityState`; signed call transcript, crypto, native, timers and queue unchanged.
+- Guard: a current state that is claimed or already holds `accept` (caller side) makes any
+  local accept a no-op before audio stop, key generation or media replacement (duplicate
+  or stale session id). No error is emitted, so the accepted call UI is not torn down.
+- Claim: `CallSecurityState.acceptClaim` (AtomicBoolean, body field, outside data equality)
+  is CAS-taken after role/session validation and before `killAllAudio`; overlap losers return.
+  Never released: a later local failure (identity/native/key agreement/send) keeps the
+  existing fail-closed error and allows no second rekey. A new invite = new state = new claim.
+- Unregistered path: stops ringing and queues as before but takes no claim (the queue can
+  be cleared on disconnect); the queued callback claims when it runs, extra ones no-op.
+- Invalid session without an accepted current call keeps `killAllAudio` + `invalid_secure_invite`.
+- Regression: `CallAcceptOnceTest` (real entry, synthetic state, bounded latches). NOT_RUN.
