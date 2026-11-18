@@ -13,60 +13,45 @@ historical revocations can still be applied.
 
 ## In-App Products to create in Play Console
 
-### Subscriptions
+### No Recurring Offers
 
-1. **securecall_pro_monthly**
-   - Type: Recurring subscription
-   - Price: Not approved; configure only after the exact Play catalog receives
-     matching PRODUCT_READY and VLABS FINANCE_READY
-   - Grace period: 3 days
-   - Description: "Pro plan — unlimited calls, anti-recording, priority connection"
-
-2. **securecall_pro_yearly**
-   - Type: Recurring subscription
-   - Price: Not approved
-   - Grace period: 3 days
-
-3. **securecall_premium_monthly**
-   - Type: Recurring subscription
-   - Price: Not approved
-   - Grace period: 3 days
-   - Description: "Premium plan — all approved Premium features"
-
-4. **securecall_premium_yearly**
-   - Type: Recurring subscription
-   - Price: Not approved
-   - Grace period: 3 days
+SecureCall sells one-time lifetime licences, not monthly or yearly plans. Do not
+create or reactivate recurring offers. The empty recurring verifier catalog
+intentionally refuses those receipts; general licence APIs named "subscription"
+do not authorize subscription sales.
 
 ### One-Time Products
 
-5. **securecall_pro_lifetime**
+1. **securecall_pro_lifetime**
    - Type: One-time product (managed/non-consumable)
    - Price: Not approved for Google Play; do not copy the separate direct-sale
      VLABS price into Play Console without a version-bound approval
    - Description: "Pro access for supported SecureCall versions"
 
-6. **securecall_premium_lifetime**
+2. **securecall_premium_lifetime**
    - Type: One-time product (managed/non-consumable)
    - Price: Not approved for Google Play
    - Description: "Premium access for supported SecureCall versions"
 
-7. **securecall_premium_activation_code**
+3. **securecall_premium_activation_code**
    - Type: One-time product (managed/non-consumable)
    - Price: Not approved for Google Play
    - Description: "Premium activation code for supported SecureCall versions"
 
 ## Service Account for Purchase Verification
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com) → IAM → Service Accounts
-2. Create new Service Account: `securecall-billing@your-project.iam.gserviceaccount.com`
-3. Grant role: "Service Account User"
-4. Enable **Google Play Android Developer API**
-5. In [Play Console](https://play.google.com/console) → Settings → API access → Link the service account
-6. Grant "View financial data" + "Manage orders" permissions
-7. Download JSON key file
-8. Base64 encode: `base64 -i service-account-key.json | tr -d '\n'`
-9. Set in Railway: `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64=<base64 string>`
+Follow the [official API setup guide](https://developers.google.com/android-publisher/getting_started).
+Reuse the approved Cloud project and a dedicated service account; enable the
+Google Play Android Developer API. In Play Console **Users & Permissions**, invite
+that account with the required Billing permissions, restricted to SecureCall:
+"View financial data, orders, and cancellation survey responses" and "Manage
+orders and subscriptions". Project-wide "Service Account User" is not a purchase
+verification requirement; do not grant unrelated project or app access.
+
+Provision credentials only through the protected server workflow and inject
+`GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64` into the actual signaling runtime. Never
+print the key/base64 value, put it in Git/CI, or leave an unprotected download.
+A Console browser login alone does not configure server-side verification.
 
 ## Real-Time Developer Notifications
 
@@ -77,10 +62,10 @@ historical revocations can still be applied.
 5. Set the push-auth service account email as `GOOGLE_PLAY_RTDN_SERVICE_ACCOUNT_EMAIL`.
 6. Send a Play Console test notification before release. The endpoint must return HTTP 204.
 
-The endpoint verifies the Google-signed OIDC token, audience, service-account email, package allowlist and Pub/Sub message ID. It then calls the Google Play Developer API for subscription state. Notifications alone never grant access. Full and quantity-based voided-purchase notifications revoke matching subscriptions and activation codes.
+The endpoint verifies the Google-signed OIDC token, audience, service-account email, package allowlist and Pub/Sub message ID. Recognized one-time purchases are verified against the Google Play Developer API; the empty recurring catalog cannot grant subscription access. Notifications alone never grant access. Full and quantity-based voided-purchase notifications revoke matching entitlements and activation codes.
 
 The Android client never acknowledges a purchase before verification. The backend
-acknowledges subscriptions and one-time products only after the corresponding
+acknowledges supported one-time products only after the corresponding
 entitlement has been durably persisted; acknowledgement failure returns a closed
 verification result and remains retryable.
 
@@ -124,7 +109,7 @@ Response:
 
 - Billing library version: 8.2.1 (`billing`)
 - Only the FREE flavor contains the dormant Billing client; the release gate keeps it disabled
-- Purchased activation codes are stored in the signed activation-code registry so refunds can revoke them
+- Purchased activation codes are stored in the server-side activation registry so refunds can revoke them
 - Codes are redeemed via WebSocket `ACTIVATE_CODE` message
-- Without `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64`, purchase and subscription verification fail closed
+- Without `GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64`, purchase verification fails closed
 - Without the RTDN audience and service-account email, the RTDN endpoint returns HTTP 503
