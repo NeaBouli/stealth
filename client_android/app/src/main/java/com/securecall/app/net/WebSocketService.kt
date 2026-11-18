@@ -1084,6 +1084,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             put("type", "IDENTITY_REGISTER_COMPLETE")
             put("challengeId", challengeId)
             put("signature", signature)
+            // SC245: advisory capability so the server can fail fast for old peers.
+            put("callProtocols", org.json.JSONArray().put(SessionKeyBinding.CALL_PROTOCOL))
         }.toString()) == true
     }
 
@@ -2176,6 +2178,12 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
                 com.securecall.app.debug.SecLogManager.log("CALL", "CALL_END immediate — reason=$reason")
                 executeCallEnd(sessionId)
+                if (reason == "media_upgrade_required") {
+                    _onCallError?.invoke(
+                        "peer_media_upgrade_required",
+                        "The other party must update SecureCall before a protected call is possible",
+                    )
+                }
             }
         } catch (_: Exception) {}
     }

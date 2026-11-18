@@ -58,7 +58,7 @@ function makeContext(registry, fcm, nowSeconds) {
   });
 }
 
-function attach(ctx, connId, identity) {
+function attach(ctx, connId, identity, callProtocols) {
   const ws = mockWs();
   ctx.clients.set(connId, {
     ws,
@@ -66,6 +66,7 @@ function attach(ctx, connId, identity) {
     identityId: identity.identityId,
     identityPublicKey: identity.publicKeyBase64Url,
     authVersion: 2,
+    ...(callProtocols ? { callProtocols: new Set(callProtocols) } : {}),
     lastSeen: Date.now(),
   });
   ctx.clientIds.set(identity.identityId, connId);
@@ -101,7 +102,8 @@ function attach(ctx, connId, identity) {
       publicKey: bob.publicKeyBase64Url, migrationAuthorized: true });
 
     const wsAlice = attach(ctx, "conn-alice", alice);
-    const wsBob = attach(ctx, "conn-bob", bob);
+    // Bob's accepted session advertises protocol 3 (SC245 advisory capability).
+    const wsBob = attach(ctx, "conn-bob", bob, [3]);
     const wsMallory = attach(ctx, "conn-mallory", mallory);
     const sessionId = crypto.randomUUID();
     const inviteFields = {

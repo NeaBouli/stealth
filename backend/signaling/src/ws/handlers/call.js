@@ -16,6 +16,8 @@ const {
 
 const MAX_ROUTING_ENTRIES = 10000;
 const MAX_ORIGINATING_ENTRIES = 32;
+// Peer-visible CALL_END reasons are a fixed allowlist; anything else relays as user_hangup.
+const RELAYED_CALL_END_REASONS = new Set(["user_hangup", "media_upgrade_required"]);
 
 module.exports = function callHandlers(ctx) {
   const {
@@ -128,6 +130,17 @@ module.exports = function callHandlers(ctx) {
     const targetConnId = clientIds.get(targetClientId);
     const target = targetConnId ? clients.get(targetConnId) : null;
     if (target && target.authVersion !== 2) return sendError(ws, "peer_identity_upgrade_required");
+    // SC245: an online callee whose accepted session did not advertise this non-legacy
+    // protocol cannot verify it; fail fast instead of ringing out. Sessions without the
+    // advisory field are legacy (protocol 2). Offline/push delivery is not classified here.
+    if (target && msg.protocol !== CALL_PROTOCOL_V2) {
+      const peerProtocols = target.callProtocols instanceof Set ? target.callProtocols
+        : new Set([CALL_PROTOCOL_V2]);
+      if (!peerProtocols.has(msg.protocol)) {
+        return sendError(ws, "peer_media_upgrade_required",
+          "The other party must update SecureCall before a protected call is possible");
+      }
+    }
 
     const inviteDigest = transcriptDigest(transcript);
     const callerPhone = typeof msg.callerPhone === "string" && msg.callerPhone.length <= 64
@@ -339,8 +352,9 @@ module.exports = function callHandlers(ctx) {
           return sendError(ws, "not_participant");
         }
         const peerClientId = getSessionPeer(msg.sessionId, myClientId);
+        const reason = RELAYED_CALL_END_REASONS.has(msg.reason) ? msg.reason : "user_hangup";
         if (peerClientId) sendToClient(peerClientId, { type: "CALL_END",
-          sessionId: msg.sessionId, from: myClientId, reason: "user_hangup" });
+          sessionId: msg.sessionId, from: myClientId, reason });
         routingTable.delete(msg.sessionId);
       }
       return respond(ws, { type: "CALL_END_ACK", ok: true, sessionId: msg.sessionId });
