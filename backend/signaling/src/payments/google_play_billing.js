@@ -13,12 +13,10 @@ const ONE_TIME_PRODUCTS = Object.freeze({
   securecall_premium_activation_code: "premium"
 });
 
-const SUBSCRIPTION_PRODUCTS = Object.freeze({
-  securecall_pro_monthly: "pro",
-  securecall_pro_yearly: "pro",
-  securecall_premium_monthly: "premium",
-  securecall_premium_yearly: "premium"
-});
+// SecureCall sells one-time lifetime products only and never sold a subscription.
+// The empty recurring catalog keeps the neutral receipt plumbing fail-closed:
+// every subscription verify, acknowledge and token lookup is refused.
+const SUBSCRIPTION_PRODUCTS = Object.freeze({});
 
 // Same-package Pro/Premium lifetime products. The tier comes from this catalog only;
 // the activation-code product keeps its own code path and is never a lifetime grant.

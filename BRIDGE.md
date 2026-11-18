@@ -6312,3 +6312,16 @@ Open next:
   new `google_play_lifetime.test.js` 8/8 (RED 0/8 on base sources); `test:play-source` PASS.
   Kotlin UpgradeActivity routing tests added, NOT RUN (no local Gradle). Commerce flags unchanged.
 - Not PRODUCT_READY: owner policy, Android CI/device run, Play Console products absent.
+
+## 2026-11-18 [AUTHOR: CLAUDE] SC-LIFETIME-ONLY-20261118 -> OK (source requirement correction)
+
+- Owner correction: SecureCall never sold subscriptions; paid upgrades are one-time Pro/Premium
+  lifetime only. Supersedes SC-PLAY-LEGACY-SKU-20261118 monthly compatibility (f3300a89).
+- Free BillingManager queries/offers only INAPP `securecall_pro_lifetime`,
+  `securecall_premium_lifetime` (+ unchanged activation-code product); SUBS query/launch and
+  `SKU_*_MONTHLY/YEARLY` removed. Backend `SUBSCRIPTION_PRODUCTS = {}` refuses all recurring ids.
+- Tests: Gradle focused `testFreeDebugUnitTest` BillingManager 7/7, UpgradeActivity 8/8,
+  SubscriptionManager 26/26; node google_play_billing, subscriptions_payment, google_play_rtdn,
+  subscription_webrtc 301/301, handlers 62/62, google_play_lifetime 75/75, rtdn_retry 1/1.
+- UI unchanged (already lifetime-only); flags closed; VPN split untouched. Not evidence that any
+  Play Console product was deactivated. NOT_RUN: full CI, artifact VPN guards (parent CI).

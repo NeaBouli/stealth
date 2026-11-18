@@ -429,12 +429,15 @@ test("refund/revoke via RTDN uses the same record, deduplicates, and never resur
     "raw purchase tokens are not used as store keys");
 });
 
-test("monthly SUBSCRIPTION_VERIFY behavior is unchanged", async () => {
+test("recurring SUBSCRIPTION_VERIFY is refused: the Play catalog is lifetime-only", async () => {
   const { calls, send } = harness();
-  const ack = await send("bob", { purchaseToken: "tok-bob-monthly", productId: "securecall_pro_monthly" });
-  assert.equal(ack.success, true);
-  assert.equal(calls.verify, 0, "monthly products never reach the one-time verifier");
-  assert.equal(subscriptions.getTier("bob"), "pro");
+  for (const productId of ["securecall_pro_monthly", "pro_monthly", "securecall_premium_yearly"]) {
+    const ack = await send("bob", { purchaseToken: `tok-bob-${productId}`, productId });
+    assert.equal(ack.success, false, productId);
+  }
+  assert.equal(calls.verify, 0, "recurring products never reach the one-time verifier");
+  assert.equal(calls.subscriptionAcknowledge, 0, "nothing recurring is acknowledged");
+  assert.equal(subscriptions.getTier("bob"), "FREE");
 });
 
 

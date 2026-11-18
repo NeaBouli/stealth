@@ -1,12 +1,15 @@
 const assert = require("assert");
 const {
   PLAY_CATALOG_VERSION,
+  SUBSCRIPTION_PRODUCTS,
+  acknowledgePlaySubscription,
   findCodeByPurchaseToken,
   issuePlayActivationCode,
   isPlayBillingEnabled,
   parseSubscriptionPurchase,
   parseSubscriptionToken,
   resolveOneTimeProduct,
+  verifyPlaySubscription,
 } = require("../payments/google_play_billing");
 
 delete process.env.PLAY_BILLING_ENABLED;
@@ -94,29 +97,33 @@ assert.throws(() => issuePlayActivationCode({
 }), /purchase_persistence_failed/);
 assert.deepStrictEqual(failedPersistenceCodes, []);
 const future = new Date(Date.now() + 86400000).toISOString();
-assert.deepStrictEqual(parseSubscriptionPurchase({
-  subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
-  acknowledgementState: "ACKNOWLEDGEMENT_STATE_PENDING",
-  lineItems: [{ productId: "securecall_pro_monthly", expiryTime: future }]
-}, "securecall_pro_monthly"), {
-  tier: "pro",
-  expiresAt: Date.parse(future),
-  catalogVersion: PLAY_CATALOG_VERSION,
-  needsAcknowledgement: true
-});
-assert.strictEqual(parseSubscriptionPurchase({
-  subscriptionState: "SUBSCRIPTION_STATE_ON_HOLD",
-  lineItems: [{ productId: "securecall_pro_monthly", expiryTime: future }]
-}, "securecall_pro_monthly"), null);
-assert.deepStrictEqual(parseSubscriptionToken({
-  subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
-  acknowledgementState: "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
-  lineItems: [{ productId: "securecall_premium_yearly", expiryTime: future }]
-}), {
-  productId: "securecall_premium_yearly",
-  tier: "premium",
-  expiresAt: Date.parse(future),
-  catalogVersion: PLAY_CATALOG_VERSION,
-  needsAcknowledgement: false
-});
-console.log("google_play_billing.test.js ok");
+assert.deepStrictEqual(Object.keys(SUBSCRIPTION_PRODUCTS), []);
+assert.ok(Object.isFrozen(SUBSCRIPTION_PRODUCTS));
+const recurringIds = ["pro_monthly", "premium_monthly", "securecall_pro_monthly",
+  "securecall_pro_yearly", "securecall_premium_monthly", "securecall_premium_yearly"];
+(async () => {
+  for (const productId of recurringIds) {
+    const receipt = { subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+      acknowledgementState: "ACKNOWLEDGEMENT_STATE_PENDING",
+      lineItems: [{ productId, expiryTime: future }] };
+    // The state parser stays neutral, but no recurring product resolves to a tier.
+    assert.deepStrictEqual(parseSubscriptionPurchase(receipt, productId), {
+      tier: null,
+      expiresAt: Date.parse(future),
+      catalogVersion: PLAY_CATALOG_VERSION,
+      needsAcknowledgement: true
+    });
+    assert.strictEqual(parseSubscriptionToken(receipt), null);
+    assert.strictEqual(resolveOneTimeProduct("com.securecall.app.free", productId), null);
+    // Refused before any provider credential or network access.
+    await assert.rejects(verifyPlaySubscription("com.securecall.app.free", productId, "synthetic-token"),
+      /unsupported_package_or_product/);
+    await assert.rejects(acknowledgePlaySubscription("com.securecall.app.free", productId, "synthetic-token"),
+      /unsupported_package_or_product/);
+  }
+  assert.strictEqual(parseSubscriptionPurchase({
+    subscriptionState: "SUBSCRIPTION_STATE_ON_HOLD",
+    lineItems: [{ productId: "securecall_pro_monthly", expiryTime: future }]
+  }, "securecall_pro_monthly"), null);
+  console.log("google_play_billing.test.js ok");
+})().catch(error => { console.error(error); process.exit(1); });

@@ -60,7 +60,6 @@ class UpgradeActivityTest {
 
             verify(manager).launchInAppPurchaseFlow(details)
         }
-        verify(manager, never()).launchPurchaseFlow(any(), any())
     }
 
     @Test
@@ -75,7 +74,6 @@ class UpgradeActivityTest {
 
         launchPurchase(BuildConfig.SKU_PREMIUM_LIFETIME)
 
-        verify(manager, never()).launchPurchaseFlow(any(), any())
         verify(manager, never()).launchInAppPurchaseFlow(any())
     }
 
@@ -91,7 +89,6 @@ class UpgradeActivityTest {
 
         verify(status).text = expectedStatus
         verify(manager, never()).launchInAppPurchaseFlow(any())
-        verify(manager, never()).launchPurchaseFlow(any(), any())
     }
 
     @Test
@@ -111,7 +108,6 @@ class UpgradeActivityTest {
         launchPurchase(sku)
 
         verify(manager, never()).launchInAppPurchaseFlow(any())
-        verify(manager, never()).launchPurchaseFlow(any(), any())
     }
 
     @Test
@@ -159,8 +155,8 @@ class UpgradeActivityTest {
     @Test
     fun restoreRegistersEveryReceiptBeforeAttemptingVerification() {
         val subscriptions = routeCompletionsThroughUiThread()
-        whenever(subscriptions.recordPendingPurchase("synthetic-monthly", BuildConfig.SKU_PRO_MONTHLY))
-            .thenReturn("request-monthly")
+        whenever(subscriptions.recordPendingPurchase("synthetic-pro-lifetime", BuildConfig.SKU_PRO_LIFETIME))
+            .thenReturn("request-pro-lifetime")
         whenever(subscriptions.recordPendingPurchase("synthetic-lifetime", BuildConfig.SKU_PREMIUM_LIFETIME))
             .thenReturn("request-lifetime")
         whenever(subscriptions.getCurrentTier()).thenReturn(SubscriptionTier.FREE)
@@ -170,15 +166,15 @@ class UpgradeActivityTest {
         }
 
         activity.onPurchasesRestored(listOf(
-            BillingManager.RestoredPurchase(SubscriptionTier.PRO, "synthetic-monthly", BuildConfig.SKU_PRO_MONTHLY),
+            BillingManager.RestoredPurchase(SubscriptionTier.PRO, "synthetic-pro-lifetime", BuildConfig.SKU_PRO_LIFETIME),
             BillingManager.RestoredPurchase(SubscriptionTier.PREMIUM, "synthetic-lifetime", BuildConfig.SKU_PREMIUM_LIFETIME)
         ))
 
         // No service is connected: each send takes the discard path, after both records.
         inOrder(subscriptions) {
-            verify(subscriptions).recordPendingPurchase("synthetic-monthly", BuildConfig.SKU_PRO_MONTHLY)
+            verify(subscriptions).recordPendingPurchase("synthetic-pro-lifetime", BuildConfig.SKU_PRO_LIFETIME)
             verify(subscriptions).recordPendingPurchase("synthetic-lifetime", BuildConfig.SKU_PREMIUM_LIFETIME)
-            verify(subscriptions).discardPendingPurchase("request-monthly")
+            verify(subscriptions).discardPendingPurchase("request-pro-lifetime")
             verify(subscriptions).discardPendingPurchase("request-lifetime")
         }
         verify(activity, never()).startActivity(anyOrNull<Intent>())

@@ -620,3 +620,37 @@ stay closed. Missing policy -> `lifetime_entitlement_unavailable`.
 - Scope: subscription handler and existing synthetic lifetime regression suite only, plus
   this append and a bounded report. Policy, flags, monthly/gift rules, Android, dispatcher,
   provider configuration and independent scan/fix finalization remain with the parent.
+
+## IFR holder handoff to the central shop (narrow trace)
+
+1. `website/js/ifr-checkout.js::checkout` -> `connect` (existing browser wallet; the script unlocks the initially disabled controls only behind `data-ifr-enabled`, default `false`, and serializes wallet actions). The existing IFR action grid wraps the tier labels and keeps its minimum button height.
+2. `checkout` -> `backend/signaling/src/payments/ifr_eligibility.js` `POST /vlabs/ifr-eligibility/challenge` -> wallet `personal_sign` -> `POST /vlabs/ifr-eligibility` (global CORS middleware in `server.js` plus route origin check; the configured origin must be in the global allow-list or the path stays closed).
+3. `checkout` -> `https://vlabs.gr/en/shop?focus=security#stealthx-ifr=<signed eligibility>`: the signed, product/offer-bound eligibility travels only in the URL fragment; the shop consumes it, keeps it in memory and submits it to its existing checkout, which verifies it again.
+
+State: built behind required operator configuration; disabled by default. No checkout, price or wallet state on the landing page.
+
+## Existing Play monthly receipt compatibility (SC-PLAY-LEGACY-SKU-20261118)
+
+BillingManager queries the existing short monthly IDs and preserves prior
+prefixed receipts; the provider verifier's exact catalog accepts both families.
+This restores the already published PR37 mapping, not a price/conversion rule.
+Unknown products, wrong package/product proofs and one-time classification stay
+closed. Lifetime policy and all purchase/activation flags are unchanged.
+
+## Lifetime-only Play catalog (SC-LIFETIME-ONLY-20261118)
+
+Requirement correction: the owner confirms SecureCall never sold a subscription;
+new paid upgrades are one-time Pro/Premium lifetime purchases only. Supersedes the
+monthly receipt compatibility section above (no subscription migration exists).
+
+Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
+(`queryInAppProducts`, `purchaseReceipt`) -> `UpgradeActivity` -> `SUBSCRIPTION_VERIFY`
+-> `google_play_billing` catalog.
+
+- Removed: `SKU_*_MONTHLY/YEARLY` BuildConfig fields, SUBS product query, SUBS
+  offer-token launch, client recurring SKU list and every backend recurring product id.
+- Retained as neutral plumbing: SUBS purchase-history query inside the atomic restore
+  (receipts are dropped), subscription parser/verifier/RTDN code paths. With
+  `SUBSCRIPTION_PRODUCTS = {}` each recurring verify/acknowledge/token lookup refuses.
+- Unchanged: lifetime policy (fail-closed when absent/mismatched), activation-code and
+  gift paths, commerce flags (all closed), distribution/VPN split, upgrade UI.

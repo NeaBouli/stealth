@@ -876,6 +876,22 @@ setupIfrCheckoutRoutes(app, {
   maxChallenges: SIWE_CHALLENGE_MAX,
 });
 
+// --- IFR holder eligibility for the central web checkout (closed unless fully configured) ---
+try {
+  const { setupIfrEligibilityRoutes } = require('./payments/ifr_eligibility');
+  const { readConfiguredTokenBalance } = require('./services/ifr');
+  setupIfrEligibilityRoutes(app, {
+    challengeStore: siweChallenges,
+    readHolderBalance: readConfiguredTokenBalance,
+    rateLimit: createCheckoutRateLimiter({ limits: new Map(), getClientIp, max: 10, maxKeys: CHECKOUT_RL_MAX_KEYS }),
+    maxChallenges: SIWE_CHALLENGE_MAX,
+    corsAllowedOrigins: ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS,
+  });
+} catch (e) {
+  // Unwired routes return 404: the eligibility path stays closed.
+  console.warn("[IFR-ELIGIBILITY] Could not load routes:", e.message);
+}
+
 // --- Wire modular WS context (replaces inline wss.on("connection",...) block) ---
 // All Maps/arrays passed here are the same singletons used by HTTP routes above,
 // so HTTP routes and WS handlers share one consistent state — no split-brain.
