@@ -31,6 +31,26 @@ import com.securecall.app.security.VerifiedCallInvite
 
 internal object CallEndPolicy {
     fun shouldDelay(reason: String): Boolean = reason == "peer_disconnected"
+
+    /**
+     * A CALL_END applies only to the current call, its pending security state or the
+     * FCM-pending invite. Empty, stale or unknown session ids must never trigger global
+     * grace, audio, current-session or error side effects for a newer call.
+     */
+    fun isRelevant(
+        endedSessionId: String,
+        currentSessionId: String?,
+        securitySessionId: String?,
+        fcmPendingSessionId: String?,
+    ): Boolean = endedSessionId.isNotEmpty() && (
+        endedSessionId == currentSessionId ||
+            endedSessionId == securitySessionId ||
+            endedSessionId == fcmPendingSessionId
+        )
+
+    /** The update-required callback is reported only for a relevant, allowlisted end. */
+    fun reportsUpgradeRequired(reason: String, relevant: Boolean): Boolean =
+        relevant && reason == "media_upgrade_required"
 }
 
 /** Audio-only ownership; never acquire a media/session/service lock from an action. */
@@ -2156,6 +2176,15 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 val reason = obj.optString("reason", "")
                 Log.d("WS_SERVICE", "CALL_END received, sessionId=$sessionId, reason=$reason")
 
+                // Capture applicability before any state is cleared; a stale or empty end
+                // only gets scoped cleanup inside executeCallEnd.
+                val relevant = isCallEndRelevant(sessionId)
+                val reportUpgrade = CallEndPolicy.reportsUpgradeRequired(reason, relevant)
+                if (!relevant) {
+                    executeCallEnd(sessionId)
+                    return
+                }
+
                 val rtc = webRtcManager
                 // Only the server's explicit disconnect event gets recovery grace.
                 // Older servers may omit the reason for a user hangup, so an empty reason
@@ -2178,7 +2207,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
                 com.securecall.app.debug.SecLogManager.log("CALL", "CALL_END immediate — reason=$reason")
                 executeCallEnd(sessionId)
-                if (reason == "media_upgrade_required") {
+                if (reportUpgrade) {
                     _onCallError?.invoke(
                         "peer_media_upgrade_required",
                         "The other party must update SecureCall before a protected call is possible",
@@ -2195,7 +2224,19 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         return true
     }
 
+    private fun isCallEndRelevant(sessionId: String): Boolean = CallEndPolicy.isRelevant(
+        sessionId, _currentSessionId, callSecurityState?.invite?.sessionId, fcmPendingSessionId,
+    )
+
     private fun executeCallEnd(sessionId: String) {
+        if (!isCallEndRelevant(sessionId)) {
+            // Stale/empty end (also a grace timer outliving its call): scoped cleanup only.
+            if (sessionId.isNotEmpty()) {
+                IncomingCallTelecom.end(sessionId, android.telecom.DisconnectCause.REMOTE)
+                com.securecall.app.IncomingCallActivity.dismissIfActive(sessionId)
+            }
+            return
+        }
         cancelCallEndGrace()
         IncomingCallTelecom.end(sessionId, android.telecom.DisconnectCause.REMOTE)
         // Release keys, invite and media of the ended session; a stale CALL_END for an older
