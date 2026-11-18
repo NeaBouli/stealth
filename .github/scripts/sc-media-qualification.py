@@ -64,6 +64,10 @@ MAX_AVD_STDERR = 8192
 MAX_AVD_SIZE = 2**53 - 1
 PUBLIC_AVD_IMAGE = "system-images;android-24;google_apis;x86_64"
 PUBLIC_AVD_USERDATA = Path("/usr/local/lib/android/sdk/system-images/android-24/google_apis/x86_64/userdata.img")
+HEADLESS_FILE_LIMIT_BYTES = 512 * 1024**2
+# The revision-27 template is copied at AVD creation. QEMU's API24 first-boot data partition starts at 6 GiB.
+PREAPP_AVD_TEMPLATE_BYTES = 550 * 1024**2
+PREAPP_DATA_PARTITION_BYTES = 6 * 1024**3
 HEADLESS_PHASES = frozenset({
     "entry", "limits", "home", "avd", "adb", "boot", "abi", "isolation", "app_install",
     "test_install", "instrument", "instrument_receipt", "memory", "complete",
@@ -1413,7 +1417,9 @@ def headless_host_admission(ref: str) -> None:
     require(Path("/dev/kvm").exists() and stat.S_ISCHR(Path("/dev/kvm").stat().st_mode)
             and os.access("/dev/kvm", os.R_OK | os.W_OK), "existing_user_kvm_access")
     exact_controller_dispatch(ref)
-    require(shutil.disk_usage(os.environ["RUNNER_TEMP"]).free >= 6 * 1024**3, "host_disk_spare")
+    # Pre-app needs the template copy plus QEMU's 1.2x free-space check for the 6 GiB partition.
+    disk_spare = (8 if ref == PREAPP_REF else 6) * 1024**3
+    require(shutil.disk_usage(os.environ["RUNNER_TEMP"]).free >= disk_spare, "host_disk_spare")
     available = re.search(r"MemAvailable:\s+(\d+)", Path("/proc/meminfo").read_text())
     require(available is not None and int(available[1]) >= 5 * 1024**2, "host_memory_spare")
     require(not host_command(["docker", "ps", "-q"]).strip(), "foreign_container")
@@ -1690,12 +1696,15 @@ def preapp_avd_create() -> int:
             and re.fullmatch(r"[0-9]{1,20}", run) is not None
             and "SC_ART_APKS" not in os.environ and "SC_ART_CONTROLLER" not in os.environ,
             "preapp_avd_owned")
+    template_bytes = public_avd_template_size(PUBLIC_AVD_USERDATA)
+    require(template_bytes == PREAPP_AVD_TEMPLATE_BYTES, "preapp_avd_template_size")
+    resource.setrlimit(resource.RLIMIT_FSIZE, (PREAPP_AVD_TEMPLATE_BYTES, PREAPP_AVD_TEMPLATE_BYTES))
     command = ["timeout", "60", "avdmanager", "create", "avd", "-n", f"sc-art-{run}",
                "-k", PUBLIC_AVD_IMAGE, "--device", "pixel_2"]
     rc, captured = capture_avd_stderr(root, command)
     if rc != 0:
         evidence = {"category": classify_avd_stderr(captured),
-                    "userdata_template_bytes": public_avd_template_size(PUBLIC_AVD_USERDATA),
+                    "userdata_template_bytes": template_bytes,
                     "fsize_limit_bytes": avd_file_size_limit()}
         try:
             fd = os.open(root / AVD_RECORD, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
@@ -1781,17 +1790,25 @@ def preapp_avd_checks() -> None:
         evidence_path = root / AVD_RECORD
         unknown = read_avd_evidence(evidence_path)
         checked(unknown == {"category": "UNKNOWN", "userdata_template_bytes": "UNKNOWN", "fsize_limit_bytes": "UNKNOWN"})
-        expected = {"category": "FILE_TOO_LARGE", "userdata_template_bytes": 17, "fsize_limit_bytes": 536870912}
+        expected = {"category": "FILE_TOO_LARGE", "userdata_template_bytes": 17, "fsize_limit_bytes": 17}
         with patch.dict(os.environ, {"SC_ART_ROOT": str(root), "SC_ART_RUN": "7"}, clear=True), patch.dict(globals(), {
-            "PUBLIC_AVD_USERDATA": template,
+            "PUBLIC_AVD_USERDATA": template, "PREAPP_AVD_TEMPLATE_BYTES": 17,
         }), patch(__name__ + ".capture_avd_stderr", return_value=(1, b"Error: path-canary: File too large\n")) as capture, \
-                patch.object(resource, "getrlimit", return_value=(536870912, 536870912)):
+                patch.object(resource, "getrlimit", return_value=(17, 17)), patch.object(resource, "setrlimit") as limit:
             checked(preapp_avd_create() == 1)
+            limit.assert_called_once_with(resource.RLIMIT_FSIZE, (17, 17))
             capture.assert_called_once_with(root, ["timeout", "60", "avdmanager", "create", "avd", "-n", "sc-art-7",
                                                    "-k", PUBLIC_AVD_IMAGE, "--device", "pixel_2"])
             checked(read_avd_evidence(evidence_path) == expected
                     and stat.S_IMODE(evidence_path.stat().st_mode) == 0o600
                     and b"path-canary" not in evidence_path.read_bytes())
+            template.write_bytes(b"x" * 18)
+            try:
+                preapp_avd_create()
+            except Refusal as error:
+                checked(str(error) == "preapp_avd_template_size" and capture.call_count == 1 and limit.call_count == 1)
+            else:
+                checked(False)
             os.environ["SC_ART_APKS"] = ""
             try:
                 preapp_avd_create()
@@ -1876,12 +1893,13 @@ def run_headless(root: Path, apks: Path | None, mounts: list[tuple[str, str]]) -
              "SC_ART_RUN": os.environ["GITHUB_RUN_ID"]}
     if not preapp:
         clean.update(SC_ART_APKS=str(apks), SC_ART_CONTROLLER=str(Path(__file__).resolve()))
+    file_hard_limit = PREAPP_DATA_PARTITION_BYTES if preapp else HEADLESS_FILE_LIMIT_BYTES
     command = ["systemd-run", "--user", "--scope", "--quiet", "--collect", "--unit=" + unit,
                "--description=SC JNI ART " + name,
                "--property=MemoryMax=4294967296", "--property=MemorySwapMax=0",
                "--property=CPUQuota=100%", "--property=TasksMax=256", "--",
                "setpriv", "--no-new-privs", "prlimit", "--cpu=840:840",
-               "--fsize=536870912:536870912", "--nofile=1024:1024", "--",
+               f"--fsize={HEADLESS_FILE_LIMIT_BYTES}:{file_hard_limit}", "--nofile=1024:1024", "--",
                "/usr/bin/env", "-i", *[f"{key}={value}" for key, value in clean.items()],
                "/bin/bash", str(Path(__file__).with_name("sc-art-headless.sh").resolve())]
     if preapp:
@@ -2033,6 +2051,25 @@ exit "$4"
             checked(child.returncode == expected and child.stdout == b""
                     and read_headless_record(record) == (phase, primary, teardown))
 
+        # Exercise the actual exec wrapper with a stub and KiB-scale process limits.
+        emulator = root / "emulator"
+        emulator.write_text("#!/bin/bash\nulimit -Sf\nulimit -Hf\n")
+        emulator.chmod(0o700)
+        boot = r"""
+set -euo pipefail
+source "$1"
+export PATH="$2:$PATH" SC_ART_RUN=7
+ulimit -Sf 512
+ulimit -Hf "$3"
+sc_art_exec_emulator "$4" &
+wait "$!"
+ulimit -Sf
+"""
+        for is_preapp, hard in (("false", "512"), ("true", "6144")):
+            child = subprocess.run(["/bin/bash", "-c", boot, "boot-check", shell, directory, hard, is_preapp],
+                                   env=ENV, capture_output=True, timeout=5)
+            checked(child.returncode == 0 and child.stdout == f"{hard}\n{hard}\n512\n".encode("ascii"))
+
     scope = "SC_ART_SCOPE cgroup=/user.slice/owned.scope"
     def receipts(head: str, tree: str, result: str) -> list[str]:
         return [scope,
@@ -2086,6 +2123,7 @@ exit "$4"
                 def fake_launcher(command, **kwargs):
                     checked(command[-1] == "--pre-app" and f"SC_ART_SOURCE={head}" in command
                             and f"SC_ART_TREE={tree}" in command)
+                    checked("--fsize=536870912:6442450944" in command)
                     checked(not any(value.startswith(("SC_ART_APKS=", "SC_ART_CONTROLLER="))
                                     for value in command))
                     (root / "headless" / HEADLESS_RECORD).write_text(f"1 {stage} {rc} 0\n")

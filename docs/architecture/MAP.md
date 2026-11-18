@@ -854,3 +854,17 @@ record. Five negative synthetic cases retain this fail-closed boundary.
 - A fresh reviewed pre-app run may identify the category; numeric size is
   context, not proof of the cause. APK, guest isolation, limits, teardown,
   KVM and CI admission behavior are unchanged.
+
+### API24 pre-app file-size contract (SC-AVD-BOUNDED-FIX-20261118)
+
+- Hop: `headless_host_admission` -> scoped `run_headless` -> `preapp_avd_create`
+  -> `sc_art_exec_emulator`. The [SDK AVD creation path](https://android.googlesource.com/platform/tools/base/+/aded20e36ace721c0c3753b3d05d30a4261a2135/sdklib/src/main/java/com/android/sdklib/internal/avd/AvdManager.kt#1319)
+  copies the full public template into the fresh AVD. Run 44315009296 measured
+  550 MiB against a 512 MiB file ceiling. The recorded exception is UNKNOWN.
+- Pre-app admits 8 GiB free on the owned scratch filesystem before and after
+  SDK provisioning. This covers the template and the [emulator's API24 first-boot
+  partition and 1.2x free-space check](https://android.googlesource.com/platform/external/qemu/+/9f0811e72acfc46edc39d3d0baedd796f7d03309/android-qemu2-glue/main.cpp#2383).
+  AVD creation is capped at the exact 550 MiB revision-27 template. Only the
+  emulator raises its soft limit to 6 GiB for first boot. The wrapper and ADB
+  retain the 512 MiB soft limit. Legacy qualification retains both 512 MiB
+  limits and its original receipts. Runtime acceptance is pending.

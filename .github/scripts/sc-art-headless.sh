@@ -197,6 +197,19 @@ sc_art_exit() {
   exit "$primary"
 }
 
+sc_art_exec_emulator() {
+  if [[ "$1" == true ]]; then
+    # Only this child needs the finite first-boot data-partition ceiling set by the controller.
+    local hard_file_blocks
+    hard_file_blocks="$(ulimit -Hf)"
+    [[ "$hard_file_blocks" =~ ^[1-9][0-9]*$ ]] || exit 2
+    ulimit -Sf "$hard_file_blocks"
+  fi
+  exec emulator -avd "sc-art-$SC_ART_RUN" -port 5554 -no-window -no-audio \
+    -no-snapshot -no-boot-anim -wipe-data -memory 2048 -cores 1 \
+    -gpu swiftshader_indirect -no-metrics -accel on
+}
+
 # Only the isolation/shutdown functions above are reused, never the visual runner.
 sc_art_main() {
   local preapp=false
@@ -253,9 +266,7 @@ sc_art_main() {
   timeout 15 adb start-server >/dev/null 2>&1
   sc_art_server=true
   sc_art_stage boot
-  emulator -avd "sc-art-$SC_ART_RUN" -port 5554 -no-window -no-audio \
-    -no-snapshot -no-boot-anim -wipe-data -memory 2048 -cores 1 \
-    -gpu swiftshader_indirect -no-metrics -accel on >/dev/null 2>&1 &
+  sc_art_exec_emulator "$preapp" >/dev/null 2>&1 &
   sc_art_emulator_pid=$!
   deadline=$((SECONDS + 480))
   until [[ "$(timeout 5 adb -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r\n')" == 1 ]]; do
