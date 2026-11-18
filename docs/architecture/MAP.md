@@ -839,3 +839,18 @@ record. Five negative synthetic cases retain this fail-closed boundary.
   Missing or invalid fields remain UNKNOWN. Qualification keeps its four
   original success receipts. Resource, network, ownership and KVM ACL guards
   remain in force. The original integrator owns review, admission and runtime.
+
+### Pre-app AVD creation diagnostics (SC-JNI-AVD-CAUSE-20261118)
+
+- Run 44312155334 reached the scoped AVD stage and returned exit 1. Its
+  command-level cause remains UNKNOWN.
+- Hop: `sc_art_main` (pre-app only) -> same `timeout 60 avdmanager create avd`
+  and stdin answer -> bounded owned stderr capture -> allowlisted AVD evidence
+  -> existing headless exit record. Legacy qualification keeps its invocation.
+- Code publishes only an explicit error category, size of the pinned public
+  userdata template when observable, and effective file-size cap in bytes.
+  Empty, incomplete, oversized, malformed, unmatched or ambiguous text yields
+  UNKNOWN. No raw output or paths survive capture.
+- A fresh reviewed pre-app run may identify the category; numeric size is
+  context, not proof of the cause. APK, guest isolation, limits, teardown,
+  KVM and CI admission behavior are unchanged.

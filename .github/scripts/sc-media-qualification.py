@@ -58,6 +58,12 @@ REF = "refs/heads/temp/sc-jni-final-20261117"
 PREAPP_REF = "refs/heads/temp/sc-jni-preapp-20261118"
 HEADLESS_RECORD = "phase-exit"
 MAX_HEADLESS_RECORD = 128
+AVD_RECORD = "avd-evidence"
+MAX_AVD_RECORD = 256
+MAX_AVD_STDERR = 8192
+MAX_AVD_SIZE = 2**53 - 1
+PUBLIC_AVD_IMAGE = "system-images;android-24;google_apis;x86_64"
+PUBLIC_AVD_USERDATA = Path("/usr/local/lib/android/sdk/system-images/android-24/google_apis/x86_64/userdata.img")
 HEADLESS_PHASES = frozenset({
     "entry", "limits", "home", "avd", "adb", "boot", "abi", "isolation", "app_install",
     "test_install", "instrument", "instrument_receipt", "memory", "complete",
@@ -1505,20 +1511,27 @@ def public_preparation(root: Path, mounts: list[tuple[str, str]], *, diagnose: b
     return verified_home
 
 
-def read_headless_record(path: Path) -> tuple[str, int | str, int | str]:
-    unknown = ("UNKNOWN", "UNKNOWN", "UNKNOWN")
+def read_owned_headless_bytes(path: Path, limit: int) -> bytes | None:
     try:
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
         with os.fdopen(fd, "rb") as stream:
             info = os.fstat(stream.fileno())
             if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
                     or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1
-                    or not 0 < info.st_size <= MAX_HEADLESS_RECORD):
-                return unknown
-            raw = stream.read(MAX_HEADLESS_RECORD + 1)
+                    or not 0 < info.st_size <= limit):
+                return None
+            raw = stream.read(limit + 1)
             if len(raw) != info.st_size:
-                return unknown
+                return None
     except OSError:
+        return None
+    return raw
+
+
+def read_headless_record(path: Path) -> tuple[str, int | str, int | str]:
+    unknown = ("UNKNOWN", "UNKNOWN", "UNKNOWN")
+    raw = read_owned_headless_bytes(path, MAX_HEADLESS_RECORD)
+    if raw is None:
         return unknown
     match = re.fullmatch(rb"1 ([a-z_]{1,32}) (UNKNOWN|[0-9]{1,3}) (UNKNOWN|[0-9]{1,3})\n", raw)
     if not match:
@@ -1529,6 +1542,276 @@ def read_headless_record(path: Path) -> tuple[str, int | str, int | str]:
         return unknown
     return phase, (primary if primary == "UNKNOWN" else int(primary)), (
         teardown if teardown == "UNKNOWN" else int(teardown))
+
+
+AVD_ERROR_PATTERNS = {
+    "FILE_TOO_LARGE": (
+        r"^(?:(?:Error:|(?:Caused by: )?java\.io\.IOException:) (?:[^:\n]+: )?)?"
+        r"(?:File too large|File size limit exceeded|EFBIG)\.?$"
+    ),
+    "UNSUPPORTED_JAVA_CLASS": (
+        r'^(?:(?:Caused by: |Exception in thread "[^\n"]+" )?java\.lang\.UnsupportedClassVersionError:'
+        r"|(?:Error: )?Unsupported class file major version [0-9]{1,3}(?:$|\s))"
+    ),
+    "INVALID_DEVICE_OR_PACKAGE": (
+        r"^Error: (?:There is no device definition named(?:[ .:]|$)|"
+        r"Package path is not valid(?:[ .:]|$)|Invalid device definition(?:[ .:]|$))"
+    ),
+    "PERMISSION_DENIED": (
+        r"^(?:(?:Error:|(?:Caused by: )?java\.io\.IOException:) (?:[^:\n]+: )?)?Permission denied\.?$"
+        r'|^(?:Caused by: |Exception in thread "[^\n"]+" )?java\.nio\.file\.AccessDeniedException:'
+    ),
+}
+
+
+def classify_avd_stderr(data: bytes | None) -> str:
+    if not data or len(data) > MAX_AVD_STDERR:
+        return "UNKNOWN"
+    try:
+        error = data.decode("utf8", errors="strict")
+    except UnicodeError:
+        return "UNKNOWN"
+    if any(not char.isprintable() and char not in "\t\r\n" for char in error):
+        return "UNKNOWN"
+    error = "\n".join(error.splitlines())
+    matches = [key for key, pattern in AVD_ERROR_PATTERNS.items() if re.search(pattern, error, re.M)]
+    return matches[0] if len(matches) == 1 else "UNKNOWN"
+
+
+def avd_size(value: object) -> int | str:
+    return value if type(value) is int and 0 <= value <= MAX_AVD_SIZE else "UNKNOWN"
+
+
+def public_avd_template_size(path: Path) -> int | str:
+    try:
+        require(path.is_absolute() and path == path.resolve(strict=True), "avd_template_path")
+        info = path.lstat()
+        return avd_size(info.st_size) if stat.S_ISREG(info.st_mode) else "UNKNOWN"
+    except (OSError, RuntimeError, Refusal):
+        return "UNKNOWN"
+
+
+def avd_file_size_limit() -> int | str:
+    try:
+        soft, _ = resource.getrlimit(resource.RLIMIT_FSIZE)
+        return "UNKNOWN" if soft == resource.RLIM_INFINITY else avd_size(soft)
+    except (OSError, ValueError):
+        return "UNKNOWN"
+
+
+def capture_avd_stderr(root: Path, command: list[str]) -> tuple[int, bytes | None]:
+    """Preserve the AVD command exit. Drain stderr without ever persisting beyond the budget."""
+    from contextlib import ExitStack
+
+    with ExitStack() as owned:
+        try:
+            captured = owned.enter_context(tempfile.TemporaryFile(mode="w+b", buffering=0, dir=root))
+        except OSError:
+            captured = None
+        try:
+            process = owned.enter_context(subprocess.Popen(
+                command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+            ))
+        except FileNotFoundError:
+            return 127, None
+        except PermissionError:
+            return 126, None
+        require(process.stdin is not None and process.stderr is not None, "avd_pipes")
+        try:
+            with process.stdin as prompt:
+                prompt.write(b"no\n")
+        except BrokenPipeError:
+            pass  # The command already exited; its exit remains the primary cause.
+        remaining = MAX_AVD_STDERR
+        oversized = False
+        complete = False
+        capture_ok = captured is not None
+        with selectors.DefaultSelector() as selector:
+            selector.register(process.stderr, selectors.EVENT_READ)
+            while True:
+                exited = process.poll() is not None
+                if not selector.select(timeout=0 if exited else 0.25):
+                    if exited:
+                        break
+                    continue
+                block = os.read(process.stderr.fileno(), 4096)
+                if not block:
+                    complete = True
+                    break
+                if captured is not None and capture_ok:
+                    part = block[:remaining]
+                    try:
+                        if part and captured.write(part) != len(part):
+                            capture_ok = False
+                    except OSError:
+                        capture_ok = False
+                if len(block) > remaining:
+                    oversized = True
+                remaining = max(0, remaining - len(block))
+                # A child still holding stderr open after the launcher exits is not a complete record.
+                if exited and oversized:
+                    break
+        raw_exit = process.wait()
+        rc = raw_exit if raw_exit >= 0 else 128 - raw_exit
+        if captured is not None and complete and capture_ok and not oversized:
+            try:
+                captured.seek(0)
+                return rc, captured.read(MAX_AVD_STDERR + 1)
+            except OSError:
+                pass
+        return rc, None
+
+
+def read_avd_evidence(path: Path) -> dict[str, int | str]:
+    unknown = {"category": "UNKNOWN", "userdata_template_bytes": "UNKNOWN", "fsize_limit_bytes": "UNKNOWN"}
+    raw = read_owned_headless_bytes(path, MAX_AVD_RECORD)
+    if raw is None:
+        return unknown
+    try:
+        evidence = json.loads(raw)
+    except (UnicodeError, ValueError):
+        return unknown
+    if (type(evidence) is not dict or evidence.keys() != unknown.keys()
+            or not isinstance(evidence["category"], str)
+            or evidence["category"] not in {*AVD_ERROR_PATTERNS, "UNKNOWN"}
+            or any(evidence[key] != "UNKNOWN" and avd_size(evidence[key]) == "UNKNOWN"
+                   for key in ("userdata_template_bytes", "fsize_limit_bytes"))):
+        return unknown
+    return evidence if raw == canonical(evidence) else unknown
+
+
+def preapp_avd_create() -> int:
+    root = Path(os.environ.get("SC_ART_ROOT", ""))
+    run = os.environ.get("SC_ART_RUN", "")
+    info = root.lstat()
+    require(root.is_absolute() and root == root.resolve(strict=True) and stat.S_ISDIR(info.st_mode)
+            and stat.S_IMODE(info.st_mode) == 0o700 and info.st_uid == os.getuid()
+            and read_headless_record(root / HEADLESS_RECORD) == ("avd", "UNKNOWN", "UNKNOWN")
+            and re.fullmatch(r"[0-9]{1,20}", run) is not None
+            and "SC_ART_APKS" not in os.environ and "SC_ART_CONTROLLER" not in os.environ,
+            "preapp_avd_owned")
+    command = ["timeout", "60", "avdmanager", "create", "avd", "-n", f"sc-art-{run}",
+               "-k", PUBLIC_AVD_IMAGE, "--device", "pixel_2"]
+    rc, captured = capture_avd_stderr(root, command)
+    if rc != 0:
+        evidence = {"category": classify_avd_stderr(captured),
+                    "userdata_template_bytes": public_avd_template_size(PUBLIC_AVD_USERDATA),
+                    "fsize_limit_bytes": avd_file_size_limit()}
+        try:
+            fd = os.open(root / AVD_RECORD, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(fd, "wb") as output:
+                output.write(canonical(evidence))
+        except OSError:
+            pass  # Missing evidence stays UNKNOWN and does not replace the command exit.
+    return rc
+
+
+def preapp_avd_checks() -> None:
+    """Exercise only the AVD capture and parsing contract, using local synthetic commands."""
+    from unittest.mock import patch
+
+    checks = 0
+
+    def checked(ok: bool) -> None:
+        nonlocal checks
+        require(ok, "synthetic_avd_check")
+        checks += 1
+
+    explicit = (
+        (b"File too large\n", "FILE_TOO_LARGE"),
+        (b"java.io.IOException: fixture: File too large\n", "FILE_TOO_LARGE"),
+        (b"Error: fixture: File size limit exceeded\n", "FILE_TOO_LARGE"),
+        (b"Caused by: java.lang.UnsupportedClassVersionError: fixture\n", "UNSUPPORTED_JAVA_CLASS"),
+        (b"Error: Unsupported class file major version 65\n", "UNSUPPORTED_JAVA_CLASS"),
+        (b'Error: There is no device definition named "pixel_2".\n', "INVALID_DEVICE_OR_PACKAGE"),
+        (b"Error: Package path is not valid. Valid system image paths are:\n", "INVALID_DEVICE_OR_PACKAGE"),
+        (b"java.nio.file.AccessDeniedException: /fixture/path\n", "PERMISSION_DENIED"),
+        (b"Error: fixture: Permission denied\r\n", "PERMISSION_DENIED"),
+    )
+    for captured, expected in explicit:
+        checked(classify_avd_stderr(captured) == expected)
+    for captured in (None, b"", b"Error: unspecified fixture failure\n", b"Warning: File too large\n",
+                     b"Error: Not File too large\n", b"File too large\x00\n", b"\xffPermission denied\n",
+                     b"File too large\nPermission denied\n", b"File too large\n" + b"x" * MAX_AVD_STDERR):
+        checked(classify_avd_stderr(captured) == "UNKNOWN")
+
+    with tempfile.TemporaryDirectory(prefix="sc-avd-source-") as directory:
+        root = Path(directory).resolve()
+        real_make_file = tempfile.TemporaryFile
+        observed = []
+
+        class ObserveCapture:
+            def __init__(self, **kwargs):
+                self.file = real_make_file(**kwargs)
+            def __enter__(self):
+                return self.file
+            def __exit__(self, *args):
+                metadata = os.fstat(self.file.fileno())
+                observed.append((metadata.st_size, stat.S_IMODE(metadata.st_mode)))
+                self.file.close()
+
+        prelude = "import os,sys; assert sys.stdin.buffer.read() == b'no\\n'; "
+        with patch.object(tempfile, "TemporaryFile", side_effect=ObserveCapture):
+            for code, raw, rc in (
+                ("print('stdout-not-evidence'); sys.stderr.write('File too large\\n'); sys.exit(17)",
+                 b"File too large\n", 17),
+                ("sys.stderr.write('File too large\\n'+'x'*65536);sys.exit(23)", None, 23),
+                ("os.kill(os.getpid(),15)", b"", 143),
+            ):
+                checked(capture_avd_stderr(root, [sys.executable, "-I", "-c", prelude + code]) == (rc, raw))
+        checked(observed == [(15, 0o600), (MAX_AVD_STDERR, 0o600), (0, 0o600)])
+        with patch.object(tempfile, "TemporaryFile", side_effect=OSError):
+            checked(capture_avd_stderr(root, [sys.executable, "-I", "-c", prelude + "sys.exit(19)"]) == (19, None))
+
+        template = root / "userdata.img"
+        checked(public_avd_template_size(template) == "UNKNOWN")
+        template.write_bytes(b"x" * 17)
+        checked(public_avd_template_size(template) == 17)
+        alias = root / "symlink"
+        alias.symlink_to(template)
+        checked(public_avd_template_size(alias) == "UNKNOWN")
+        checked(public_avd_template_size(root) == "UNKNOWN")
+        for limit, expected in ((536870912, 536870912), (resource.RLIM_INFINITY, "UNKNOWN")):
+            with patch.object(resource, "getrlimit", return_value=(limit, limit)):
+                checked(avd_file_size_limit() == expected)
+
+        phase = root / HEADLESS_RECORD
+        phase.write_bytes(b"1 avd UNKNOWN UNKNOWN\n")
+        phase.chmod(0o600)
+        evidence_path = root / AVD_RECORD
+        unknown = read_avd_evidence(evidence_path)
+        checked(unknown == {"category": "UNKNOWN", "userdata_template_bytes": "UNKNOWN", "fsize_limit_bytes": "UNKNOWN"})
+        expected = {"category": "FILE_TOO_LARGE", "userdata_template_bytes": 17, "fsize_limit_bytes": 536870912}
+        with patch.dict(os.environ, {"SC_ART_ROOT": str(root), "SC_ART_RUN": "7"}, clear=True), patch.dict(globals(), {
+            "PUBLIC_AVD_USERDATA": template,
+        }), patch(__name__ + ".capture_avd_stderr", return_value=(1, b"Error: path-canary: File too large\n")) as capture, \
+                patch.object(resource, "getrlimit", return_value=(536870912, 536870912)):
+            checked(preapp_avd_create() == 1)
+            capture.assert_called_once_with(root, ["timeout", "60", "avdmanager", "create", "avd", "-n", "sc-art-7",
+                                                   "-k", PUBLIC_AVD_IMAGE, "--device", "pixel_2"])
+            checked(read_avd_evidence(evidence_path) == expected
+                    and stat.S_IMODE(evidence_path.stat().st_mode) == 0o600
+                    and b"path-canary" not in evidence_path.read_bytes())
+            os.environ["SC_ART_APKS"] = ""
+            try:
+                preapp_avd_create()
+            except Refusal as error:
+                checked(str(error) == "preapp_avd_owned" and capture.call_count == 1)
+            else:
+                checked(False)
+
+        for invalid in (canonical({**expected, "path": "/fixture/path"}),
+                        canonical({**expected, "category": "private-error"}),
+                        canonical({**expected, "userdata_template_bytes": True}),
+                        canonical({**expected, "fsize_limit_bytes": MAX_AVD_SIZE + 1}),
+                        b"", b"{" + b"x" * MAX_AVD_RECORD):
+            evidence_path.write_bytes(invalid)
+            checked(read_avd_evidence(evidence_path) == unknown)
+        evidence_path.write_bytes(canonical(expected))
+        evidence_path.chmod(0o644)
+        checked(read_avd_evidence(evidence_path) == unknown)
+
+    print(f"SC_SOURCE_CHECKS preapp_avd={checks} app_tests=0 runtime=false")
 
 
 def headless_diagnostic(path: Path, wrapper_exit: int | None, scope_seen: bool, *, preapp: bool) -> dict:
@@ -1654,6 +1937,8 @@ def run_headless(root: Path, apks: Path | None, mounts: list[tuple[str, str]]) -
             if preapp or not accepted or not cleanup_ok:
                 status = headless_diagnostic(diagnostic, process.returncode if process else None,
                                              scope_seen, preapp=preapp)
+                if preapp and status["last_phase"] == "avd":
+                    status["avd"] = read_avd_evidence(headless / AVD_RECORD)
                 print("phase=headless_diagnostic " + canonical(status).decode("ascii").strip(), flush=True)
     if preapp:
         return {"bootstrap": "PASS", "isolation": "PASS", "shutdown": "PASS", "owned_scope_empty": True,
@@ -2417,6 +2702,8 @@ def main() -> None:
     commands.add_parser("admission")
     commands.add_parser("preapp-admission")
     commands.add_parser("preapp-probe")
+    commands.add_parser("preapp-avd-create")
+    commands.add_parser("preapp-avd-checks")
     commands.add_parser("preapp-cleanup")
     commands.add_parser("headless-preapp-checks")
     commands.add_parser("cleanup")
@@ -2436,6 +2723,10 @@ def main() -> None:
             print("phase=preapp_admission accepted=true")
         elif args.mode == "preapp-probe":
             preapp_probe()
+        elif args.mode == "preapp-avd-create":
+            sys.exit(preapp_avd_create())
+        elif args.mode == "preapp-avd-checks":
+            preapp_avd_checks()
         elif args.mode == "preapp-cleanup":
             exact_controller_dispatch(PREAPP_REF)
             cleanup_headless()

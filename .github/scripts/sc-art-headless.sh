@@ -243,8 +243,12 @@ sc_art_main() {
   [[ ! -e "$HOME/.android" ]] || exit 2
   ln -s "$ANDROID_USER_HOME" "$HOME/.android"
   sc_art_stage avd
-  printf 'no\n' | timeout 60 avdmanager create avd -n "sc-art-$SC_ART_RUN" \
-    -k 'system-images;android-24;google_apis;x86_64' --device pixel_2 >/dev/null 2>&1
+  if [[ "$preapp" == true ]]; then
+    python3 -I "${BASH_SOURCE[0]%/*}/sc-media-qualification.py" preapp-avd-create
+  else
+    printf 'no\n' | timeout 60 avdmanager create avd -n "sc-art-$SC_ART_RUN" \
+      -k 'system-images;android-24;google_apis;x86_64' --device pixel_2 >/dev/null 2>&1
+  fi
   sc_art_stage adb
   timeout 15 adb start-server >/dev/null 2>&1
   sc_art_server=true
