@@ -654,3 +654,34 @@ Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
   `SUBSCRIPTION_PRODUCTS = {}` each recurring verify/acknowledge/token lookup refuses.
 - Unchanged: lifetime policy (fail-closed when absent/mismatched), activation-code and
   gift paths, commerce flags (all closed), distribution/VPN split, upgrade UI.
+
+## Call-end ownership boundary (SC245-CALL-COMPATIBILITY-20261118, follow-up)
+
+- Hop: call adoption -> CALL_END/grace reservation -> media/audio close ->
+  Telecom/UI/callbacks/notifications and the existing FCM producer. No new class,
+  queue, retry, flag or protocol change; crypto/signature/wire untouched.
+- Owner (one rule, `CallEndPolicy.owner`): nonblank `_currentSessionId` is
+  authoritative; else the pending `callSecurityState` invite; else the FCM-pending id.
+  A CALL_END/grace/Telecom/UI end applies only when its id equals that owner.
+- State mutations under the Service monitor (`this`): incoming adoption + FCM-pending
+  assignment (`acceptAuthenticatedInvite`), outgoing security adoption, CALL_INVITE_ACK,
+  WS-duplicate FCM suppression, callee media install after accept, detach in clear.
+- Close: `reserveCallEnd` checks owner + sets `closingCallSessionId` under the monitor,
+  releases it, drains the old `acceptAdmission`, closes media/transport/audio, clears
+  the reservation in `finally` (only its own). Adoption waits while another thread
+  holds a reservation (same-thread reentry does not wait). Detach never blind-nulls a
+  replacement: it re-checks the owner before nulling fields.
+- After the reservation: scoped Telecom end, scoped activity dismiss, notification
+  cancel by session tag, captured `_onCallEnded`/upgrade `_onCallError` of the owner.
+  Grace runnables capture their owner and re-run the same reservation (stale -> no-op).
+- Lock order: acceptAdmission -> Service monitor (short); Service monitor is never held
+  across media close, audio, native, Telecom, UI or callbacks. Telecom monitor no longer
+  calls service/UI while held (decide under lock, act after). Media.consume -> audio
+  lifecycle unchanged.
+- Notifications: WS and all three byte-identical FCM producers post with tag
+  `IncomingCallNotifications.tag(session)` and a per-session PendingIntent (data URI +
+  request code); cancel/silence are session-scoped. Legacy untagged notifications from a
+  pre-update process are retained as an explicit residual (no migration cancel).
+  FCM delivery stays independent of a running service (Telecom/notification fallback).
+- Activities: IncomingCallActivity/CallActivity clear only their own callbacks,
+  stop audio / clear session only when they own the call or the service is idle.

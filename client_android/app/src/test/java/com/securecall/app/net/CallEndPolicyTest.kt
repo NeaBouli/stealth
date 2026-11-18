@@ -1,6 +1,8 @@
 package com.securecall.app.net
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -52,6 +54,17 @@ class CallEndPolicyTest {
         assertTrue(CallEndPolicy.reportsUpgradeRequired("media_upgrade_required", true))
         assertFalse(CallEndPolicy.reportsUpgradeRequired("media_upgrade_required", false))
         assertFalse(CallEndPolicy.reportsUpgradeRequired("user_hangup", true))
+    }
+
+    @Test
+    fun `nonblank current id is authoritative over stale security and fcm aliases`() {
+        assertFalse(CallEndPolicy.isRelevant("old", "new", "new", "old"))
+        assertFalse(CallEndPolicy.isRelevant("old", "new", "old", "old"))
+        assertFalse(CallEndPolicy.isRelevant("s1", null, "s2", "s1"))
+        assertTrue(CallEndPolicy.isRelevant("s2", null, "s2", "s1"))
+        assertFalse(CallEndPolicy.isRelevant("   ", "   ", null, null))
+        assertEquals("s3", CallEndPolicy.owner(" ", null, "s3"))
+        assertNull(CallEndPolicy.owner(null, "", null))
     }
 
     @Test

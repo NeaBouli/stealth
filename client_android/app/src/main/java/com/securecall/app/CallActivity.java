@@ -59,6 +59,12 @@ public class CallActivity extends AppCompatActivity {
     }
 
     private AudioCapturePlaceholder audioCapture;
+    // Session and callbacks owned by this screen: cleanup never ends or clears a newer call's.
+    private String ownedSessionId;
+    private kotlin.jvm.functions.Function2<String, String, kotlin.Unit> ownedSecureCallback;
+    private kotlin.jvm.functions.Function1<String, kotlin.Unit> ownedAcceptedCallback;
+    private kotlin.jvm.functions.Function2<String, String, kotlin.Unit> ownedErrorCallback;
+    private kotlin.jvm.functions.Function1<String, kotlin.Unit> ownedEndedCallback;
     // Saved refs for starting audio after permission grant
     private TextView pendingConnectionState;
     private Chronometer pendingCallTimer;
@@ -193,6 +199,7 @@ public class CallActivity extends AppCompatActivity {
         }
 
         String sessionId = getIntent().getStringExtra("sessionId");
+        if (sessionId != null && !sessionId.isEmpty()) ownedSessionId = sessionId;
         boolean isIncoming = getIntent().getBooleanExtra("isIncoming", false);
         boolean fromNotification = getIntent().getBooleanExtra("fromNotification", false);
 
@@ -232,7 +239,7 @@ public class CallActivity extends AppCompatActivity {
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
 
         if (ws != null) {
-            ws.setOnSecureSessionEstablished((establishedSessionId, code) -> {
+            ws.setOnSecureSessionEstablished(ownedSecureCallback = (establishedSessionId, code) -> {
                 if (sessionId != null && !sessionId.isEmpty()
                         && !sessionId.equals(establishedSessionId)) return kotlin.Unit.INSTANCE;
                 runOnUiThread(() -> {
@@ -289,16 +296,16 @@ public class CallActivity extends AppCompatActivity {
             prepareCallAudio();
 
             if (ws != null && targetId != null && !targetId.isEmpty()) {
-                ws.setOnCallAccepted(acceptedSessionId -> {
+                ws.setOnCallAccepted(ownedAcceptedCallback = acceptedSessionId -> {
                     Log.d(TAG, "Remote accepted with authenticated key confirmation");
                     stopRingbackTone();
                     return kotlin.Unit.INSTANCE;
                 });
-                ws.setOnCallError((error, message) -> {
+                ws.setOnCallError(ownedErrorCallback = (error, message) -> {
                     Log.e(TAG, "Call error: " + error + " — " + message);
                     stopRingbackTone();
-                    // Clear callback to prevent repeated error handling
-                    ws.setOnCallError(null);
+                    // Clear callback to prevent repeated error handling (only our own)
+                    ws.clearCallbacksIfOwned(null, ownedErrorCallback, null, null);
                     runOnUiThread(() -> {
                         String userMessage;
                         if ("peer_not_found".equals(error)) {
@@ -317,6 +324,8 @@ public class CallActivity extends AppCompatActivity {
                     return kotlin.Unit.INSTANCE;
                 });
                 ws.sendCallInvite(targetId);
+                // Outgoing id exists once the invite is adopted (null while queued).
+                if (ownedSessionId == null) ownedSessionId = ws.getCallerSessionId();
             } else {
                 connectionState.setText("Connection error");
             }
@@ -324,7 +333,7 @@ public class CallActivity extends AppCompatActivity {
 
         // Listen for remote hangup in all cases
         if (ws != null) {
-            ws.setOnCallEnded(endedSessionId -> {
+            ws.setOnCallEnded(ownedEndedCallback = endedSessionId -> {
                 Log.d(TAG, "Remote ended call, session=" + endedSessionId);
                 runOnUiThread(this::endCall);
                 return kotlin.Unit.INSTANCE;
@@ -1016,15 +1025,14 @@ public class CallActivity extends AppCompatActivity {
         com.securecall.app.net.WebSocketService ws =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
         if (ws != null) {
-            String sid = ws.getCurrentSessionId();
-            if (sid != null && !sid.isEmpty()) {
+            // Our own session only; a queued outgoing call learns its id late.
+            if (ownedSessionId == null) ownedSessionId = ws.getCallerSessionId();
+            String sid = ownedSessionId;
+            ws.clearCallbacksIfOwned(ownedEndedCallback, ownedErrorCallback,
+                    ownedAcceptedCallback, ownedSecureCallback);
+            if (sid != null && !sid.isEmpty() && ws.clearSessionIfOwner(sid)) {
                 ws.sendCallEnd(sid);
             }
-            ws.setOnCallAccepted(null);
-            ws.setOnSecureSessionEstablished(null);
-            ws.setOnCallEnded(null);
-            ws.setOnCallError(null);
-            ws.clearSession();
         }
 
         // Save call to history (only if user hasn't disabled it)
@@ -1061,7 +1069,7 @@ public class CallActivity extends AppCompatActivity {
         // Clear call active flag on WebSocket — restores normal staleness threshold
         com.securecall.app.net.WebSocketService wsFlag =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
-        if (wsFlag != null) wsFlag.setCallActive(false);
+        if (wsFlag != null && wsFlag.isCallOwnerOrIdle(ownedSessionId)) wsFlag.setCallActive(false);
 
         // Stop phone state monitoring and release audio focus
         stopPhoneStateMonitor();
@@ -1077,7 +1085,7 @@ public class CallActivity extends AppCompatActivity {
         com.securecall.app.net.WebSocketService wsAudio =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
         if (wsAudio != null) {
-            wsAudio.killAllAudio();
+            wsAudio.killAllAudioIfOwner(ownedSessionId);
             // Post-call recovery: ensure WebSocket reconnects cleanly
             wsAudio.postCallRecovery();
         }
@@ -1281,8 +1289,8 @@ public class CallActivity extends AppCompatActivity {
         com.securecall.app.net.WebSocketService ws =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
         if (ws != null) {
-            try { ws.killAllAudio(); } catch (Exception e) { Log.e(TAG, "Error in killAllAudio", e); }
-            ws.setOnSecureSessionEstablished(null);
+            try { ws.killAllAudioIfOwner(ownedSessionId); } catch (Exception e) { Log.e(TAG, "Error in killAllAudio", e); }
+            ws.clearCallbacksIfOwned(null, null, null, ownedSecureCallback);
         }
         if (secureCallMonitor != null) {
             secureCallMonitor.stopMonitoring(this);

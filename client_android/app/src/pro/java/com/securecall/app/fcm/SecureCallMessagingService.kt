@@ -254,9 +254,11 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             putExtra("from_fcm", true)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
+        // Tag and PendingIntent identity are bound to the verified session id.
+        IncomingCallNotifications.bindSession(intent, sessionId)
 
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
+            this, IncomingCallNotifications.requestCode(sessionId), intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -279,6 +281,8 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             // until answer, decline or the ring deadline.
             notification.flags = notification.flags or android.app.Notification.FLAG_INSISTENT
         }
-        manager.notify(IncomingCallNotifications.FCM_BACKUP_NOTIFICATION_ID, notification)
+        manager.notify(
+            IncomingCallNotifications.tag(sessionId), IncomingCallNotifications.FCM_BACKUP_NOTIFICATION_ID, notification,
+        )
     }
 }

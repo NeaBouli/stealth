@@ -41,8 +41,10 @@ object IncomingCallTelecom {
         var timeout: Runnable? = null,
     )
 
-    /** Only call after authenticating the invite. False means use the existing UI fallback. */
-    @Synchronized
+    /**
+     * Only call after authenticating the invite. False means use the existing UI fallback.
+     * Lock order: the Telecom monitor is never held while calling the service or UI.
+     */
     fun reportIncomingCall(
         context: Context,
         sessionId: String,
@@ -50,11 +52,23 @@ object IncomingCallTelecom {
         incomingIntent: Intent,
         showUi: () -> Unit,
     ): Boolean {
-        if (endedCalls.contains(sessionId)) {
+        if (synchronized(this) { endedCalls.contains(sessionId) }) {
             // A delayed transport delivery may have re-adopted this invite before UI routing.
-            WebSocketService.instance?.takeIf { it.getCurrentSessionId() == sessionId }?.clearSession()
+            WebSocketService.instance?.clearSessionIfOwner(sessionId)
             return true
         }
+        return admitIncomingCall(context, sessionId, callerName, incomingIntent, showUi)
+    }
+
+    @Synchronized
+    private fun admitIncomingCall(
+        context: Context,
+        sessionId: String,
+        callerName: String,
+        incomingIntent: Intent,
+        showUi: () -> Unit,
+    ): Boolean {
+        if (endedCalls.contains(sessionId)) return true
         if (IncomingCallActivity.isAcceptedSession(sessionId) || calls.containsKey(sessionId)) return true
         // FEATURE_TELECOM only exists from Android 13; older devices declare the
         // connection-service feature instead (Galaxy A21s/Tab S4 QA, 2026-10-16).
@@ -78,11 +92,8 @@ object IncomingCallTelecom {
             // The activity's 60 s deadline cannot run if the screen never opens.
             // Keep the same ring limit while Telecom is binding or showing its conflict UI.
             call.timeout = Runnable {
-                synchronized(this) {
-                    if (calls[sessionId] === call && call.lifecycle.shouldTimeout()) {
-                        terminate(sessionId, DisconnectCause.MISSED, "no_answer")
-                    }
-                }
+                val expired = synchronized(this) { calls[sessionId] === call && call.lifecycle.shouldTimeout() }
+                if (expired) terminate(sessionId, call, DisconnectCause.MISSED, "no_answer")
             }.also { handler.postDelayed(it, RingTimeoutPolicy.OUTGOING_RING_TIMEOUT_MS) }
             val address = Uri.fromParts(PhoneAccount.SCHEME_SIP, incomingIntent.getStringExtra("callerClientId"), null)
             telecom.addNewIncomingCall(account, Bundle().apply {
@@ -109,26 +120,23 @@ object IncomingCallTelecom {
         }
         return object : Connection() {
             override fun onShowIncomingCallUi() {
-                synchronized(this@IncomingCallTelecom) {
-                    if (calls[sessionId] === call && call.lifecycle.showUi()) call.showUi()
+                val show = synchronized(this@IncomingCallTelecom) {
+                    calls[sessionId] === call && call.lifecycle.showUi()
                 }
+                if (show) call.showUi()
             }
 
             override fun onAnswer() = answerFromTelecom(sessionId, call)
             override fun onAnswer(videoState: Int) = onAnswer()
-            override fun onReject() = terminateIfCurrent(sessionId, call, DisconnectCause.REJECTED)
+            override fun onReject() = terminate(sessionId, call, DisconnectCause.REJECTED, "user_hangup")
             override fun onReject(rejectReason: Int) = onReject()
             override fun onReject(replyMessage: String?) = onReject()
-            override fun onDisconnect() = terminateIfCurrent(sessionId, call, DisconnectCause.LOCAL)
+            override fun onDisconnect() = terminate(sessionId, call, DisconnectCause.LOCAL, "user_hangup")
             override fun onAbort() = onDisconnect()
             override fun onSilence() {
-                synchronized(this@IncomingCallTelecom) {
-                    if (calls[sessionId] === call) {
-                        WebSocketService.instance?.takeIf { it.getCurrentSessionId() == sessionId }
-                            ?.stopIncomingRingtone()
-                        IncomingCallNotifications.silence(call.context)
-                    }
-                }
+                if (synchronized(this@IncomingCallTelecom) { calls[sessionId] !== call }) return
+                WebSocketService.instance?.stopIncomingRingtoneIfOwner(sessionId)
+                IncomingCallNotifications.silence(call.context, sessionId)
             }
         }.apply {
             connectionProperties = Connection.PROPERTY_SELF_MANAGED
@@ -144,9 +152,9 @@ object IncomingCallTelecom {
     }
 
     /** A policy denial (including emergency calls) must never fall back to ringing UI. */
-    @Synchronized
     internal fun rejectIncomingCall(sessionId: String) {
-        if (calls.containsKey(sessionId)) terminate(sessionId, DisconnectCause.REJECTED, "busy")
+        val call = synchronized(this) { calls[sessionId] } ?: return
+        terminate(sessionId, call, DisconnectCause.REJECTED, "busy")
     }
 
     @Synchronized
@@ -154,21 +162,22 @@ object IncomingCallTelecom {
         val call = calls[sessionId] ?: return
         if (call.lifecycle.answer()) {
             call.timeout?.let(handler::removeCallbacks)
-            IncomingCallNotifications.cancelAll(call.context)
+            IncomingCallNotifications.cancel(call.context, sessionId)
             call.connection?.setActive()
         }
     }
 
-    @Synchronized
     private fun answerFromTelecom(sessionId: String, call: Call) {
-        if (calls[sessionId] !== call || !call.lifecycle.shouldTimeout()) return
-        accepted(sessionId)
+        val admitted = synchronized(this) {
+            (calls[sessionId] === call && call.lifecycle.shouldTimeout()).also { if (it) accepted(sessionId) }
+        }
+        if (!admitted) return
         try {
             // Enter the same accept path used by the in-app answer button.
             call.context.startActivity(Intent(call.intent).putExtra(EXTRA_ANSWER, true))
         } catch (e: RuntimeException) {
             Log.w(TAG, "Unable to open call UI for Telecom answer", e)
-            terminate(sessionId, DisconnectCause.ERROR, "user_hangup")
+            terminate(sessionId, call, DisconnectCause.ERROR, "user_hangup")
         }
     }
 
@@ -178,17 +187,13 @@ object IncomingCallTelecom {
     @Synchronized
     fun hasCall(sessionId: String): Boolean = calls.containsKey(sessionId)
 
-    @Synchronized
-    private fun terminateIfCurrent(sessionId: String, call: Call, cause: Int) {
-        if (calls[sessionId] === call) terminate(sessionId, cause, "user_hangup")
-    }
-
-    private fun terminate(sessionId: String, cause: Int, reason: String) {
-        val context = calls[sessionId]?.context ?: return
-        end(sessionId, cause)
+    /** Ends only this admitted call; service/UI side effects run after the monitor is released. */
+    private fun terminate(sessionId: String, call: Call, cause: Int, reason: String) {
+        val owned = synchronized(this) { (calls[sessionId] === call).also { if (it) end(sessionId, cause) } }
+        if (!owned) return
         if (WebSocketService.instance?.endCallFromTelecom(sessionId, reason) != true) {
             IncomingCallActivity.dismissIfActive(sessionId)
-            IncomingCallNotifications.cancelAll(context)
+            IncomingCallNotifications.cancel(call.context, sessionId)
         }
     }
 
@@ -203,7 +208,7 @@ object IncomingCallTelecom {
         val call = calls.remove(sessionId) ?: return
         call.lifecycle.end()
         call.timeout?.let(handler::removeCallbacks)
-        IncomingCallNotifications.cancelAll(call.context)
+        IncomingCallNotifications.cancel(call.context, sessionId)
         call.connection?.apply {
             setDisconnected(DisconnectCause(cause))
             destroy()

@@ -33,20 +33,25 @@ internal object CallEndPolicy {
     fun shouldDelay(reason: String): Boolean = reason == "peer_disconnected"
 
     /**
-     * A CALL_END applies only to the current call, its pending security state or the
-     * FCM-pending invite. Empty, stale or unknown session ids must never trigger global
-     * grace, audio, current-session or error side effects for a newer call.
+     * The single call owner: a nonblank current session is authoritative; the pending
+     * security invite applies only without it, the FCM-pending id only without both.
+     */
+    fun owner(currentSessionId: String?, securitySessionId: String?, fcmPendingSessionId: String?): String? =
+        currentSessionId?.takeIf { it.isNotBlank() }
+            ?: securitySessionId?.takeIf { it.isNotBlank() }
+            ?: fcmPendingSessionId?.takeIf { it.isNotBlank() }
+
+    /**
+     * A CALL_END applies only to the call owner. Empty, stale, aliased or unknown session ids
+     * must never trigger global grace, audio, current-session or error side effects.
      */
     fun isRelevant(
         endedSessionId: String,
         currentSessionId: String?,
         securitySessionId: String?,
         fcmPendingSessionId: String?,
-    ): Boolean = endedSessionId.isNotEmpty() && (
-        endedSessionId == currentSessionId ||
-            endedSessionId == securitySessionId ||
-            endedSessionId == fcmPendingSessionId
-        )
+    ): Boolean = endedSessionId.isNotBlank() &&
+        endedSessionId == owner(currentSessionId, securitySessionId, fcmPendingSessionId)
 
     /** The update-required callback is reported only for a relevant, allowlisted end. */
     fun reportsUpgradeRequired(reason: String, relevant: Boolean): Boolean =
@@ -148,6 +153,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     @Volatile private var _onCallEnded: ((String) -> Unit)? = null
     @Volatile private var _onCallError: ((String, String) -> Unit)? = null
     @Volatile private var _onSecureSessionEstablished: ((String, String) -> Unit)? = null
+
+    // Call-end reservation, guarded by the service monitor (`this`). Set while one thread
+    // closes the owned call's media/transport/audio; new adoption waits for it.
+    private var closingCallSessionId: String? = null
+    private var closingCallThread: Thread? = null
 
     // Audio playback pipeline
     private val audioPlaybackLifecycle = AudioPlaybackLifecycle()
@@ -256,21 +266,106 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
     fun isSecureSessionEstablished(): Boolean = callSecurityState?.established == true
     fun getSecurityCode(): String? = callSecurityState?.takeIf { it.established }?.securityCode
+    /** Unconditional local wipe (own failed invite, stealth delete). Prefer [clearSessionIfOwner]. */
     fun clearSession() {
-        callSecurityState?.invite?.sessionId?.let { IncomingCallTelecom.end(it) }
+        closeDetachedCall(synchronized(this) { detachCallLocked(null) })
+    }
+
+    /** Clears only while [sessionId] still owns the call; a replacement call is never touched. */
+    fun clearSessionIfOwner(sessionId: String): Boolean = closeOwnedCall(sessionId)
+
+    /** True when [sessionId] owns the call, or no call is owned at all. */
+    fun isCallOwnerOrIdle(sessionId: String?): Boolean = synchronized(this) {
+        val owner = CallEndPolicy.owner(_currentSessionId, callSecurityState?.invite?.sessionId, fcmPendingSessionId)
+        owner == null || owner == sessionId
+    }
+
+    fun stopIncomingRingtoneIfOwner(sessionId: String) {
+        if (isCallOwnerOrIdle(sessionId)) stopIncomingRingtone()
+    }
+
+    fun killAllAudioIfOwner(sessionId: String?) {
+        if (isCallOwnerOrIdle(sessionId)) killAllAudio()
+    }
+
+    /** Outgoing session of this device, also before CALL_INVITE_ACK set the current id. */
+    fun getCallerSessionId(): String? =
+        callSecurityState?.takeIf { it.role == SecureCallRole.CALLER }?.invite?.sessionId
+
+    /** Clears only callbacks still registered by the caller; a newer screen's callbacks stay. */
+    fun clearCallbacksIfOwned(ended: Any?, error: Any?, accepted: Any?, secure: Any?) = synchronized(this) {
+        if (ended != null && _onCallEnded === ended) _onCallEnded = null
+        if (error != null && _onCallError === error) _onCallError = null
+        if (accepted != null && _onCallAccepted === accepted) _onCallAccepted = null
+        if (secure != null && _onSecureSessionEstablished === secure) _onSecureSessionEstablished = null
+    }
+
+    /**
+     * Caller holds the monitor. Detaches the call state of [sessionId] (null = any) without
+     * closing anything; security/media/keys of a different pending invite are kept.
+     */
+    private fun detachCallLocked(sessionId: String?): Triple<CallSecurityState?, MediaSessionV3?, WebRtcManager?> {
+        val state = callSecurityState
+        val releaseSecurity = sessionId == null ||
+            com.securecall.app.call.CallEndPolicy.releasesSecurityState(state?.invite?.sessionId, sessionId)
         cancelOutgoingRingTimeout()
         _currentSessionId = null
         fcmPendingSessionId = null
+        if (!releaseSecurity) return Triple(null, null, null)
+        val detached = Triple(state, mediaSession, webRtcManager)
         localPrivKey?.fill(0)
         localPrivKey = null
         remotePubKey = null
-        // Keys and replay state clear together before the transport closes.
-        mediaSession?.close()
         mediaSession = null
         callSecurityState = null
-        webRtcManager?.close()
         webRtcManager = null
+        return detached
+    }
+
+    /** Runs without the service monitor: Telecom, media, transport, then audio. */
+    private fun closeDetachedCall(detached: Triple<CallSecurityState?, MediaSessionV3?, WebRtcManager?>) {
+        detached.first?.invite?.sessionId?.let { IncomingCallTelecom.end(it) }
+        // Keys and replay state clear together before the transport closes.
+        detached.second?.close()
+        detached.third?.close()
         killAllAudio()
+    }
+
+    /**
+     * Reserve -> detach under the monitor, then close outside it. Only the current owner
+     * closes, exactly once; a duplicate or stale request returns false with no side effect.
+     */
+    private fun closeOwnedCall(sessionId: String): Boolean {
+        val detached = synchronized(this) {
+            if (closingCallSessionId != null || !isCallEndRelevantLocked(sessionId)) return false
+            closingCallSessionId = sessionId
+            closingCallThread = Thread.currentThread()
+            detachCallLocked(sessionId)
+        }
+        try {
+            // An accept admitted before the detach finishes its ring stop before the close.
+            detached.first?.acceptAdmission?.let { synchronized(it) {} }
+            closeDetachedCall(detached)
+        } finally {
+            synchronized(this) {
+                if (closingCallSessionId == sessionId) {
+                    closingCallSessionId = null
+                    closingCallThread = null
+                }
+                (this as java.lang.Object).notifyAll()
+            }
+        }
+        return true
+    }
+
+    /** Caller holds the monitor. New adoption must not interleave with another thread's close. */
+    private fun awaitCallCloseLocked() {
+        val deadline = System.currentTimeMillis() + CLOSE_WAIT_BOUND_MS
+        while (closingCallSessionId != null && closingCallThread !== Thread.currentThread()) {
+            val remaining = deadline - System.currentTimeMillis()
+            if (remaining <= 0) break // bounded: never hang an adoption thread
+            (this as java.lang.Object).wait(remaining)
+        }
     }
 
     /** Stop ALL audio resources globally — ringtone, ringback, playback. Belt-and-suspenders. */
@@ -360,9 +455,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             rejectAuthenticLegacyInvite(payload)
             return false
         }
-        if (!acceptAuthenticatedInvite(invite)) return false
-        fcmPendingSessionId = invite.sessionId
-        return true
+        return acceptAuthenticatedInvite(invite, fromFcm = true)
     }
 
     private fun parseVerifiedInvite(payload: String): VerifiedCallInvite? =
@@ -423,9 +516,14 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     @Synchronized
-    private fun acceptAuthenticatedInvite(invite: VerifiedCallInvite): Boolean {
+    private fun acceptAuthenticatedInvite(invite: VerifiedCallInvite, fromFcm: Boolean = false): Boolean {
+        awaitCallCloseLocked()
         val existing = callSecurityState
-        if (existing != null) return existing.invite == invite
+        if (existing != null) {
+            val same = existing.invite == invite
+            if (same && fromFcm) fcmPendingSessionId = invite.sessionId
+            return same
+        }
         if (_currentSessionId != null && _currentSessionId != invite.sessionId) return false
         val transcript = IdentityProtocol.callInviteTranscript(
             invite.sessionId, invite.fromClientId, invite.fromIdentityId, invite.requestedTo,
@@ -435,6 +533,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         callSecurityState = CallSecurityState(SecureCallRole.CALLEE, invite, transcript)
         remotePubKey = remoteKey
         _currentSessionId = invite.sessionId
+        if (fromFcm) fcmPendingSessionId = invite.sessionId
         return true
     }
 
@@ -484,6 +583,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     }
 
     companion object {
+        /** Upper bound an adoption waits for another thread's call close (no hang). */
+        private const val CLOSE_WAIT_BOUND_MS = 2_000L
         private const val PREF_BACKGROUND_SERVICE = "pref_background_service"
 
         @Volatile
@@ -535,8 +636,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             val payload = intent.getStringExtra(EXTRA_FCM_PAYLOAD).orEmpty()
             val invite = parseVerifiedInvite(payload)
             if (invite == null) rejectAuthenticLegacyInvite(payload)
-            if (invite != null && acceptAuthenticatedInvite(invite)) {
-                fcmPendingSessionId = invite.sessionId
+            if (invite != null && acceptAuthenticatedInvite(invite, fromFcm = true)) {
                 showIncomingCallNotification(invite.sessionId, invite.fromClientId, invite.callerPhone)
                 Log.d("WS_SERVICE", "Authenticated FCM call wake action accepted")
             } else {
@@ -993,7 +1093,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
         // Also show high-priority notification as backup (for lock screen / DND / Android 10+ restrictions)
         val fullScreenPending = android.app.PendingIntent.getActivity(
-            this, 0, intent,
+            this, IncomingCallNotifications.requestCode(sessionId),
+            IncomingCallNotifications.bindSession(Intent(intent), sessionId),
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -1014,7 +1115,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
         if (!serviceHandlesRingtone) notification.flags = notification.flags or Notification.FLAG_INSISTENT
 
         val nm = getSystemService(android.app.NotificationManager::class.java)
-        nm.notify(IncomingCallNotifications.WS_NOTIFICATION_ID, notification)
+        nm.notify(IncomingCallNotifications.tag(sessionId), IncomingCallNotifications.WS_NOTIFICATION_ID, notification)
         Log.d("WS_SERVICE", "Incoming call notification shown for $callerName")
 
         // Telecom invokes this path only when it permits our incoming-call UI.
@@ -1519,7 +1620,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             sessionId, identity.identityId, identity.identityId, targetId, targetId,
             publicKey, identity.publicKey, issuedAt, nonce, signature, inviteDigest, callerPhone,
         )
-        callSecurityState = CallSecurityState(SecureCallRole.CALLER, invite, transcript)
+        synchronized(this) {
+            awaitCallCloseLocked()
+            callSecurityState = CallSecurityState(SecureCallRole.CALLER, invite, transcript)
+        }
         val sent = client?.send(org.json.JSONObject().apply {
             put("type", "CALL_INVITE")
             put("protocol", SessionKeyBinding.CALL_PROTOCOL)
@@ -1554,7 +1658,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 )) return@Runnable
             Log.d("WS_SERVICE", "Outgoing call unanswered — ending session $sessionId")
             sendCallEnd(sessionId, "no_answer")
-            clearSession()
+            clearSessionIfOwner(sessionId)
             setCallActive(false)
             _onCallError?.invoke("no_answer", "No answer")
         }
@@ -1676,8 +1780,19 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             return
         }
         val boundKey = keys.callKey
-        mediaSession?.close()
-        mediaSession = MediaSessionV3(sessionId, localIsCaller = false, keys = keys)
+        val installed = synchronized(this) {
+            // A close that detached this invite meanwhile must not get a fresh media session.
+            (callSecurityState === state).also {
+                if (it) {
+                    mediaSession?.close()
+                    mediaSession = MediaSessionV3(sessionId, localIsCaller = false, keys = keys)
+                }
+            }
+        }
+        if (!installed) {
+            keys.clear()
+            return
+        }
         state.acceptTranscript = acceptTranscript
         state.accept = VerifiedCallAccept(
             sessionId, state.invite.inviteDigest, acceptDigest, identity.identityId,
@@ -2034,8 +2149,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                         Log.w("WS_SERVICE", "Rejected conflicting authenticated CALL_INVITE")
                         return
                     }
-                    if (fcmPendingSessionId == invite.sessionId) {
-                        fcmPendingSessionId = null
+                    val duplicateOfFcm = synchronized(this) {
+                        (fcmPendingSessionId == invite.sessionId).also { if (it) fcmPendingSessionId = null }
+                    }
+                    if (duplicateOfFcm) {
                         Log.d("WS_SERVICE", "Suppressed duplicate authenticated WS invite after FCM")
                         return
                     }
@@ -2049,10 +2166,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 "CALL_INVITE_ACK" -> {
                     val ok = obj.optBoolean("ok", false)
                     val sessionId = obj.optString("sessionId", "")
-                    val state = callSecurityState
-                    if (ok && obj.optInt("protocol", -1) == SessionKeyBinding.CALL_PROTOCOL
-                        && state?.role == SecureCallRole.CALLER && state.invite.sessionId == sessionId) {
-                        _currentSessionId = sessionId
+                    val adopted = ok && obj.optInt("protocol", -1) == SessionKeyBinding.CALL_PROTOCOL &&
+                        synchronized(this) {
+                            val state = callSecurityState
+                            (state?.role == SecureCallRole.CALLER && state.invite.sessionId == sessionId)
+                                .also { if (it) _currentSessionId = sessionId }
+                        }
+                    if (adopted) {
                         Log.d("WS_SERVICE", "Authenticated CALL_INVITE acknowledged")
                     } else {
                         Log.w("WS_SERVICE", "Rejected invalid CALL_INVITE acknowledgement")
@@ -2160,12 +2280,18 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
     // BUG-011: Delayed CALL_END handler for peer_disconnected during active call
     private var callEndGraceHandler: android.os.Handler? = null
     private var callEndGraceRunnable: Runnable? = null
+    private var callEndGraceSessionId: String? = null
 
     /** Cancel any pending CALL_END grace timer (e.g. peer reconnected). */
     fun cancelCallEndGrace() {
         callEndGraceRunnable?.let { callEndGraceHandler?.removeCallbacks(it) }
         callEndGraceHandler = null
         callEndGraceRunnable = null
+        callEndGraceSessionId = null
+    }
+
+    private fun cancelCallEndGraceFor(sessionId: String) {
+        if (callEndGraceSessionId == sessionId) cancelCallEndGrace()
     }
 
     private fun handleIncomingCallEnd(json: String) {
@@ -2176,14 +2302,13 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 val reason = obj.optString("reason", "")
                 Log.d("WS_SERVICE", "CALL_END received, sessionId=$sessionId, reason=$reason")
 
-                // Capture applicability before any state is cleared; a stale or empty end
-                // only gets scoped cleanup inside executeCallEnd.
-                val relevant = isCallEndRelevant(sessionId)
-                val reportUpgrade = CallEndPolicy.reportsUpgradeRequired(reason, relevant)
-                if (!relevant) {
+                // Owner check before any grace/audio/state/callback effect; a stale, aliased or
+                // empty end only gets scoped cleanup inside executeCallEnd.
+                if (!isCallEndRelevant(sessionId)) {
                     executeCallEnd(sessionId)
                     return
                 }
+                val reportUpgrade = CallEndPolicy.reportsUpgradeRequired(reason, relevant = true)
 
                 val rtc = webRtcManager
                 // Only the server's explicit disconnect event gets recovery grace.
@@ -2195,64 +2320,75 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     Log.d("WS_SERVICE", "BUG-011: $logReason — delaying CALL_END 15s")
                     com.securecall.app.debug.SecLogManager.log("CALL", "Delaying CALL_END ($logReason) — waiting 15s for peer reconnect")
                     cancelCallEndGrace()
-                    callEndGraceHandler = android.os.Handler(android.os.Looper.getMainLooper())
-                    callEndGraceRunnable = Runnable {
-                        Log.w("WS_SERVICE", "BUG-011: peer did not reconnect in 15s — ending call now")
-                        com.securecall.app.debug.SecLogManager.log("CALL", "Peer reconnect timeout — ending call")
-                        executeCallEnd(sessionId)
+                    val graceHandler = android.os.Handler(android.os.Looper.getMainLooper())
+                    // Tied to its admitted owner: executeCallEnd re-runs the owner reservation,
+                    // so a grace that outlives its call is a scoped no-op for a newer call.
+                    val grace = object : Runnable {
+                        override fun run() {
+                            if (callEndGraceRunnable === this) {
+                                callEndGraceHandler = null
+                                callEndGraceRunnable = null
+                                callEndGraceSessionId = null
+                            }
+                            Log.w("WS_SERVICE", "BUG-011: peer did not reconnect in 15s — ending call now")
+                            com.securecall.app.debug.SecLogManager.log("CALL", "Peer reconnect timeout — ending call")
+                            executeCallEnd(sessionId)
+                        }
                     }
-                    callEndGraceHandler?.postDelayed(callEndGraceRunnable!!, 15_000)
+                    callEndGraceHandler = graceHandler
+                    callEndGraceRunnable = grace
+                    callEndGraceSessionId = sessionId
+                    graceHandler.postDelayed(grace, 15_000)
                     return
                 }
 
                 com.securecall.app.debug.SecLogManager.log("CALL", "CALL_END immediate — reason=$reason")
-                executeCallEnd(sessionId)
-                if (reportUpgrade) {
-                    _onCallError?.invoke(
-                        "peer_media_upgrade_required",
-                        "The other party must update SecureCall before a protected call is possible",
-                    )
-                }
+                executeCallEnd(sessionId, reportUpgrade)
             }
         } catch (_: Exception) {}
     }
 
     internal fun endCallFromTelecom(sessionId: String, reason: String): Boolean {
-        if (_currentSessionId != sessionId) return false
+        if (!isCallEndRelevant(sessionId)) return false
         sendCallEnd(sessionId, reason)
         executeCallEnd(sessionId)
         return true
     }
 
-    private fun isCallEndRelevant(sessionId: String): Boolean = CallEndPolicy.isRelevant(
+    private fun isCallEndRelevantLocked(sessionId: String): Boolean = CallEndPolicy.isRelevant(
         sessionId, _currentSessionId, callSecurityState?.invite?.sessionId, fcmPendingSessionId,
     )
 
-    private fun executeCallEnd(sessionId: String) {
-        if (!isCallEndRelevant(sessionId)) {
-            // Stale/empty end (also a grace timer outliving its call): scoped cleanup only.
-            if (sessionId.isNotEmpty()) {
+    private fun isCallEndRelevant(sessionId: String): Boolean =
+        synchronized(this) { isCallEndRelevantLocked(sessionId) }
+
+    private fun executeCallEnd(sessionId: String, reportUpgrade: Boolean = false) {
+        // Capture the owner's callbacks before cleanup can clear or replace them.
+        val onEnded = _onCallEnded
+        val onError = _onCallError
+        if (!closeOwnedCall(sessionId)) {
+            // Stale/aliased/empty/duplicate end (also a grace outliving its call): scoped
+            // Telecom/UI/notification cleanup of that session only, never global resources.
+            if (sessionId.isNotBlank()) {
                 IncomingCallTelecom.end(sessionId, android.telecom.DisconnectCause.REMOTE)
                 com.securecall.app.IncomingCallActivity.dismissIfActive(sessionId)
+                IncomingCallNotifications.cancel(this, sessionId)
             }
             return
         }
-        cancelCallEndGrace()
+        cancelCallEndGraceFor(sessionId)
         IncomingCallTelecom.end(sessionId, android.telecom.DisconnectCause.REMOTE)
-        // Release keys, invite and media of the ended session; a stale CALL_END for an older
-        // session must not tear down a newer call.
-        if (com.securecall.app.call.CallEndPolicy.releasesSecurityState(
-                callSecurityState?.invite?.sessionId, sessionId)) {
-            clearSession()
-        }
-        _currentSessionId = null
-        // Kill all audio immediately — belt-and-suspenders
-        killAllAudio()
         // Dismiss IncomingCallActivity if it's showing (caller cancelled during ringing)
         com.securecall.app.IncomingCallActivity.dismissIfActive(sessionId)
-        // Also dismiss incoming call notifications shown by WS or FCM fallback paths.
-        IncomingCallNotifications.cancelAll(this)
-        _onCallEnded?.invoke(sessionId)
+        // Also dismiss this session's incoming call notifications (WS or FCM fallback).
+        IncomingCallNotifications.cancel(this, sessionId)
+        if (reportUpgrade && onError != null) {
+            // The existing error display ends the call screen after showing the message.
+            onError("peer_media_upgrade_required",
+                "The other party must update SecureCall before a protected call is possible")
+        } else {
+            onEnded?.invoke(sessionId)
+        }
     }
 
     /** Handle SECUREID_CHANGED: a device reinstalled and got a new SecureID for the same phone number. */
