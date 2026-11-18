@@ -819,3 +819,8 @@ https://docs.gradle.org/current/userguide/gradle_command_line.html .
   are unchanged. Synthetic checks: collected/owned pass; foreign description,
   cgroup mismatch and foreign record refuse; reverting the gate reproduces
   `scope_owner`. Runtime qualification remains NOT_RUN/NOT_ACCEPTED.
+
+2026-11-18 integrator boundary: only a successful, explicit not-found LoadState
+may skip the unit ownership check. Failed/empty/unknown states and a loaded
+unit with failed/empty Description refuse without dropping either ownership
+record. Five negative synthetic cases retain this fail-closed boundary.

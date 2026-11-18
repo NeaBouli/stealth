@@ -319,9 +319,11 @@ def cleanup_headless() -> None:
     # systemd reports an unloaded unit's id as Description; --collect unloads the
     # scope once its process exits, so only a loaded unit is an ownership claim.
     state = user_manager(["show", unit, "--property=LoadState", "--value"], check=False)
-    loaded = state.returncode == 0 and state.stdout.strip() not in (b"", b"not-found")
-    description = user_manager(["show", unit, "--property=Description", "--value"], check=False)
-    if loaded and description.returncode == 0 and description.stdout.strip():
+    require(state.returncode == 0 and state.stdout.strip() in (b"loaded", b"not-found"),
+            "scope_load_state")
+    if state.stdout.strip() == b"loaded":
+        description = user_manager(["show", unit, "--property=Description", "--value"], check=False)
+        require(description.returncode == 0 and description.stdout.strip(), "scope_owner")
         require(description.stdout.decode().strip() == "SC JNI ART " + name, "scope_owner")
         actual = user_manager(["show", unit, "--property=ControlGroup", "--value"]).stdout.decode().strip()
         require(actual.startswith("/user.slice/") and ".." not in actual
@@ -1958,6 +1960,11 @@ def private_failure_checks() -> None:
     unit = "sc-stx24-123.scope"
     group = "/user.slice/user-1001.slice/user@1001.service/app.slice/" + unit
     for scope_case, blocker in (("collected", None), ("owned", None), ("foreign", "scope_owner"),
+                                ("state_failure", "scope_load_state"),
+                                ("empty_state", "scope_load_state"),
+                                ("unknown_state", "scope_load_state"),
+                                ("empty_description", "scope_owner"),
+                                ("description_failure", "scope_owner"),
                                 ("cgroup_mismatch", "scope_cgroup_owner"),
                                 ("foreign_record", "scope_owner_record")):
         with tempfile.TemporaryDirectory() as raw_directory:
@@ -1967,13 +1974,20 @@ def private_failure_checks() -> None:
                           "Description": {"collected": unit, "foreign": "SC JNI ART other"}.get(
                               scope_case, "SC JNI ART sc-stx24-123"),
                           "ControlGroup": group + ("x" if scope_case == "cgroup_mismatch" else "")}
+            if scope_case in {"empty_state", "unknown_state"}:
+                properties["LoadState"] = "" if scope_case == "empty_state" else "error"
+            if scope_case == "empty_description":
+                properties["Description"] = ""
             stops: list[list[str]] = []
             def manager(arguments: list[str], *, check: bool = True) -> SimpleNamespace:
                 if arguments[0] == "stop":
                     stops.append(arguments)
                     return SimpleNamespace(returncode=0, stdout=b"")
                 key = arguments[2].removeprefix("--property=")
-                return SimpleNamespace(returncode=0, stdout=(properties[key] + "\n").encode())
+                failed = ((scope_case == "state_failure" and key == "LoadState")
+                          or (scope_case == "description_failure" and key == "Description"))
+                return SimpleNamespace(returncode=1 if failed else 0,
+                                       stdout=(properties[key] + "\n").encode())
             temp = Path(directory)
             record, group_record = temp / "sc-stx24-123.scope-owned", temp / "sc-stx24-123.scope-cgroup"
             record.write_text(("sc-stx24-999" if scope_case == "foreign_record" else "sc-stx24-123") + "\n")
