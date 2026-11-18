@@ -316,8 +316,12 @@ def cleanup_headless() -> None:
         group = group_record.read_text().strip()
         require(group.startswith("/user.slice/") and ".." not in group
                 and group.endswith("/" + unit), "scope_cgroup_owner")
+    # systemd reports an unloaded unit's id as Description; --collect unloads the
+    # scope once its process exits, so only a loaded unit is an ownership claim.
+    state = user_manager(["show", unit, "--property=LoadState", "--value"], check=False)
+    loaded = state.returncode == 0 and state.stdout.strip() not in (b"", b"not-found")
     description = user_manager(["show", unit, "--property=Description", "--value"], check=False)
-    if description.returncode == 0 and description.stdout.strip():
+    if loaded and description.returncode == 0 and description.stdout.strip():
         require(description.stdout.decode().strip() == "SC JNI ART " + name, "scope_owner")
         actual = user_manager(["show", unit, "--property=ControlGroup", "--value"]).stdout.decode().strip()
         require(actual.startswith("/user.slice/") and ".." not in actual
@@ -1949,6 +1953,44 @@ def private_failure_checks() -> None:
             else:
                 raise Refusal("private_failure_exit_zero")
         checked(forbidden.call_count == 0)
+    # Headless scope cleanup: a collected --collect scope reads back as not-found
+    # with its unit id as Description; only a loaded unit must prove ownership.
+    unit = "sc-stx24-123.scope"
+    group = "/user.slice/user-1001.slice/user@1001.service/app.slice/" + unit
+    for scope_case, blocker in (("collected", None), ("owned", None), ("foreign", "scope_owner"),
+                                ("cgroup_mismatch", "scope_cgroup_owner"),
+                                ("foreign_record", "scope_owner_record")):
+        with tempfile.TemporaryDirectory() as raw_directory:
+            directory = str(Path(raw_directory).resolve())  # regular() refuses symlinked parents.
+            loaded = scope_case != "collected"
+            properties = {"LoadState": "loaded" if loaded else "not-found",
+                          "Description": {"collected": unit, "foreign": "SC JNI ART other"}.get(
+                              scope_case, "SC JNI ART sc-stx24-123"),
+                          "ControlGroup": group + ("x" if scope_case == "cgroup_mismatch" else "")}
+            stops: list[list[str]] = []
+            def manager(arguments: list[str], *, check: bool = True) -> SimpleNamespace:
+                if arguments[0] == "stop":
+                    stops.append(arguments)
+                    return SimpleNamespace(returncode=0, stdout=b"")
+                key = arguments[2].removeprefix("--property=")
+                return SimpleNamespace(returncode=0, stdout=(properties[key] + "\n").encode())
+            temp = Path(directory)
+            record, group_record = temp / "sc-stx24-123.scope-owned", temp / "sc-stx24-123.scope-cgroup"
+            record.write_text(("sc-stx24-999" if scope_case == "foreign_record" else "sc-stx24-123") + "\n")
+            group_record.write_text(group + "\n")
+            with patch.dict(os.environ, {"RUNNER_TEMP": directory, "GITHUB_RUN_ID": "123"}), \
+                    patch.dict(globals(), {"user_manager": manager}):
+                if blocker is None:
+                    cleanup_headless()
+                    checked(not record.exists() and not group_record.exists())
+                    checked(stops == ([["stop", unit]] if scope_case == "owned" else []))
+                else:
+                    try:
+                        cleanup_headless()
+                    except Refusal as error:
+                        checked(str(error) == blocker and record.exists() and stops == [])
+                    else:
+                        raise Refusal("negative_scope_cleanup_fixture_accepted")
     print(f"SC_SOURCE_CHECKS private_failure={checks} host_target_network_execution=false")
 
 

@@ -797,3 +797,25 @@ in-process compilation (no second compiler JVM). Public preparation unchanged.
 References: https://kotlinlang.org/docs/compiler-execution-strategy.html and
 https://docs.gradle.org/current/userguide/gradle_command_line.html .
 122purechecks PASS; actual memory-shaped build/JNI still NOT_RUN at this entry.
+
+### Headless Scope Cleanup Owner (SC-JNI-SCOPE-OWNER-20261118)
+
+- Hop: `hosted -> run_headless -> finally cleanup_headless` (and fallback
+  `cleanup -> cleanup_headless`). Sole source change: ownership check gated on
+  `LoadState` before `Description`.
+- Evidence run44114171046 (b52fd6d0): fixed markers show private offline
+  admission, then `phase=hosted blocker=scope_owner` and
+  `phase=cleanup blocker=scope_owner`. `scope_owner` is only raised in
+  `cleanup_headless`, reached only after `run_container(public=False)` returned
+  (private APK export/strip completed) and the scope record was written.
+- Cause: `systemd-run --scope --collect` unloads the scope once its process
+  exits; `systemctl --user show <unit> -p Description --value` then returns the
+  unit id (exit 0), which never equals `SC JNI ART <name>`. Every exited-scope
+  path therefore refused, and the `finally` refusal masked the actual headless
+  result. JNI outcome of that run is UNKNOWN (not assumed passed or failed).
+- Correction: a `not-found` unit is not an ownership claim; a loaded unit must
+  still match Description and ControlGroup. Record/cgroup-record/populated
+  checks, stop, resources, network, export, TLS, checksum and guest shutdown
+  are unchanged. Synthetic checks: collected/owned pass; foreign description,
+  cgroup mismatch and foreign record refuse; reverting the gate reproduces
+  `scope_owner`. Runtime qualification remains NOT_RUN/NOT_ACCEPTED.
