@@ -1,19 +1,19 @@
-name: TEMP CONDITIONAL JNI API24 - SYNTHETIC - NEVER MERGE
+name: TEMP JNI API24 OR PRE-APP PROBE - NEVER MERGE
 
 on:
   workflow_dispatch:
     inputs:
       cache_release_tag:
         description: Owned temporary DRAFT input release tag
-        required: true
+        required: false
         type: string
       asset:
         description: Private input tar asset name
-        required: true
+        required: false
         type: string
       bundle_sha256:
         description: Parent-verified private input SHA256
-        required: true
+        required: false
         type: string
       controller_sha:
         description: Exact reviewed TEMP controller commit
@@ -34,7 +34,11 @@ jobs:
   android-client:
     name: Conditional public preparation then offline APK and eight JNI cases
     # Exact parent-reviewed controller; no automatic branch or PR execution.
-    if: github.repository == 'NeaBouli/stealth' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && github.ref == 'refs/heads/temp/sc-jni-final-20261117' && inputs.controller_sha == github.sha
+    if: >-
+      github.repository == 'NeaBouli/stealth' && github.event.repository.private == false &&
+      github.event_name == 'workflow_dispatch' && github.run_attempt == 1 &&
+      github.ref == 'refs/heads/temp/sc-jni-final-20261117' && inputs.controller_sha == github.sha &&
+      inputs.cache_release_tag != '' && inputs.asset != '' && inputs.bundle_sha256 != ''
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -97,4 +101,62 @@ jobs:
             test -c /dev/kvm
             test "$(stat -c '%i' /dev/kvm)" = "$(cat "$RUNNER_TEMP/sc-jni-art-kvm.inode")"
             sudo -n setfacl --set-file="$RUNNER_TEMP/sc-jni-art-kvm.acl" -- /dev/kvm
+          fi
+
+  pre-app-probe:
+    name: Manual API24 bootstrap, isolation and shutdown only
+    # Same registered dispatch path, separate exact temp ref and no input release.
+    if: >-
+      github.repository == 'NeaBouli/stealth' && github.event.repository.private == false &&
+      github.event_name == 'workflow_dispatch' && github.run_attempt == 1 &&
+      github.ref == 'refs/heads/temp/sc-jni-preapp-20261118' && inputs.controller_sha == github.sha &&
+      inputs.cache_release_tag == '' && inputs.asset == '' && inputs.bundle_sha256 == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      SC_CONTROLLER_SHA: ${{ inputs.controller_sha }}
+    steps:
+      - name: Checkout exact reviewed public controller only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Prepare existing CI KVM access for this runner user only
+        run: |
+          umask 077
+          test -c /dev/kvm
+          test ! -e "$RUNNER_TEMP/sc-jni-art-kvm.acl"
+          test ! -e "$RUNNER_TEMP/sc-jni-art-kvm.inode"
+          getfacl --numeric --omit-header /dev/kvm > "$RUNNER_TEMP/sc-jni-art-kvm.acl"
+          stat -c '%i' /dev/kvm > "$RUNNER_TEMP/sc-jni-art-kvm.inode"
+          sudo -n setfacl -m "u:$(id -u):rw" -- /dev/kvm
+      - name: Read-only host admission before public SDK provisioning
+        env:
+          SC_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: python3 -I .github/scripts/sc-media-qualification.py preapp-admission
+      - name: Provision only the reviewed public emulator and API24 image
+        run: |
+          export JAVA_HOME="$JAVA_HOME_17_X64"
+          timeout 360 "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --channel=0 \
+            "emulator" "system-images;android-24;google_apis;x86_64" >/dev/null 2>&1
+      - name: Probe isolated API24 before application input or installation
+        env:
+          SC_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: python3 -I .github/scripts/sc-media-qualification.py preapp-probe
+      - name: Check and clean only this run's owned headless scope
+        if: always()
+        env:
+          SC_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: python3 -I .github/scripts/sc-media-qualification.py preapp-cleanup
+      - name: Restore and verify this runner's original KVM ACL
+        if: always()
+        run: |
+          if test -s "$RUNNER_TEMP/sc-jni-art-kvm.acl"; then
+            test -c /dev/kvm
+            test "$(stat -c '%i' /dev/kvm)" = "$(cat "$RUNNER_TEMP/sc-jni-art-kvm.inode")"
+            sudo -n setfacl --set-file="$RUNNER_TEMP/sc-jni-art-kvm.acl" -- /dev/kvm
+            getfacl --numeric --omit-header /dev/kvm | cmp - "$RUNNER_TEMP/sc-jni-art-kvm.acl"
           fi

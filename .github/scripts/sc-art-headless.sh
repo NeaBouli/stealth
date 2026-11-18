@@ -152,12 +152,79 @@ sc241_shutdown_guest() {
   return "$failed"
 }
 
+# The host pre-creates this file. It is outside the four stdout receipts.
+sc_art_record() {
+  if [[ -n "$sc_art_diagnostic" ]]; then
+    printf '1 %s %s %s\n' "$sc_art_phase" "$1" "$2" > "$sc_art_diagnostic" || true
+  fi
+}
+
+sc_art_stage() {
+  sc_art_phase="$1"
+  sc_art_record UNKNOWN UNKNOWN
+}
+
+sc_art_exit() {
+  local primary=$? teardown=0 status=0
+  trap - EXIT HUP INT TERM
+  sc_art_record "$primary" UNKNOWN
+  if [[ "${sc241_shutdown_required:-false}" == true ]]; then
+    sc241_shutdown_guest || teardown=$?
+  fi
+  if [[ -n "$sc_art_emulator_pid" ]]; then
+    if kill -0 "$sc_art_emulator_pid" 2>/dev/null; then
+      kill -TERM "$sc_art_emulator_pid" 2>/dev/null || {
+        status=$?
+        if (( teardown == 0 )); then teardown=$status; fi
+      }
+    fi
+    wait "$sc_art_emulator_pid" 2>/dev/null || true
+  fi
+  if [[ "$sc_art_server" == true ]]; then
+    timeout 10 adb kill-server >/dev/null 2>&1 || {
+      status=$?
+      if (( teardown == 0 )); then teardown=$status; fi
+    }
+  fi
+  if [[ -n "$sc_art_result" ]]; then
+    rm -f "$sc_art_result" || {
+      status=$?
+      if (( teardown == 0 )); then teardown=$status; fi
+    }
+  fi
+  sc_art_record "$primary" "$teardown"
+  if (( primary == 0 && teardown != 0 )); then exit 2; fi
+  exit "$primary"
+}
+
 # Only the isolation/shutdown functions above are reused, never the visual runner.
 sc_art_main() {
+  local preapp=false
+  sc_art_emulator_pid=''
+  sc_art_server=false
+  sc_art_result=''
+  sc_art_diagnostic=''
+  if [[ "${SC_ART_ROOT:-}" == /* && -d "$SC_ART_ROOT" && ! -L "$SC_ART_ROOT" && -O "$SC_ART_ROOT" ]] &&
+     [[ "$(stat -c '%a' "$SC_ART_ROOT")" == 700 ]]; then
+    local record="$SC_ART_ROOT/phase-exit"
+    if [[ -f "$record" && ! -L "$record" && -O "$record" && "$(stat -c '%a:%h' "$record")" == 600:1 ]]; then
+      sc_art_diagnostic="$record"
+    fi
+  fi
+  sc_art_stage entry
+  trap sc_art_exit EXIT
+  trap 'exit 2' HUP INT TERM
+  if [[ "$#" == 1 && "$1" == --pre-app ]]; then
+    [[ -n "$sc_art_diagnostic" && -z "${SC_ART_APKS+x}" && -z "${SC_ART_CONTROLLER+x}" ]] || exit 2
+    preapp=true
+    shift
+  fi
   [[ "$#" == 0 && "${SC_ART_SOURCE:-}" =~ ^[0-9a-f]{40}$ &&
     "${SC_ART_TREE:-}" =~ ^[0-9a-f]{40}$ && "${SC_ART_RUN:-}" =~ ^[0-9]{1,20}$ ]] || exit 2
   [[ "$(id -u)" != 0 && "${HOME:-}" == "${SC_ART_ROOT:?}/home" &&
     "${ANDROID_AVD_HOME:-}" == "$SC_ART_ROOT/avd" ]] || exit 2
+  if [[ "$preapp" == false ]]; then sc_art_result="$SC_ART_ROOT/result.txt"; fi
+  sc_art_stage limits
   head="$SC_ART_SOURCE"
   tree="$SC_ART_TREE"
   group="$(sed -n 's/^0:://p' /proc/self/cgroup)"
@@ -171,36 +238,17 @@ sc_art_main() {
   grep -q '^NoNewPrivs:[[:space:]]*1$' /proc/self/status
   grep -q '^CapEff:[[:space:]]*0000000000000000$' /proc/self/status
   printf 'SC_ART_SCOPE cgroup=%s\n' "${group#/sys/fs/cgroup}"
+  sc_art_stage home
   mkdir -m 700 "$HOME" "$ANDROID_AVD_HOME" "$ANDROID_USER_HOME" "$TMPDIR"
   [[ ! -e "$HOME/.android" ]] || exit 2
   ln -s "$ANDROID_USER_HOME" "$HOME/.android"
-  sc_art_emulator_pid=''
-  sc_art_server=false
-  sc_art_exit() {
-    local primary=$? failed=false
-    trap - EXIT HUP INT TERM
-    if [[ "${sc241_shutdown_required:-false}" == true ]]; then
-      sc241_shutdown_guest || failed=true
-    fi
-    if [[ -n "$sc_art_emulator_pid" ]]; then
-      if kill -0 "$sc_art_emulator_pid" 2>/dev/null; then
-        kill -TERM "$sc_art_emulator_pid" 2>/dev/null || failed=true
-      fi
-      wait "$sc_art_emulator_pid" 2>/dev/null || true
-    fi
-    if [[ "$sc_art_server" == true ]]; then
-      timeout 10 adb kill-server >/dev/null 2>&1 || failed=true
-    fi
-    rm -f "$SC_ART_ROOT/result.txt"
-    if [[ "$primary" == 0 && "$failed" == true ]]; then primary=2; fi
-    exit "$primary"
-  }
-  trap sc_art_exit EXIT
-  trap 'exit 2' HUP INT TERM
+  sc_art_stage avd
   printf 'no\n' | timeout 60 avdmanager create avd -n "sc-art-$SC_ART_RUN" \
     -k 'system-images;android-24;google_apis;x86_64' --device pixel_2 >/dev/null 2>&1
+  sc_art_stage adb
   timeout 15 adb start-server >/dev/null 2>&1
   sc_art_server=true
+  sc_art_stage boot
   emulator -avd "sc-art-$SC_ART_RUN" -port 5554 -no-window -no-audio \
     -no-snapshot -no-boot-anim -wipe-data -memory 2048 -cores 1 \
     -gpu swiftshader_indirect -no-metrics -accel on >/dev/null 2>&1 &
@@ -211,31 +259,42 @@ sc_art_main() {
     (( SECONDS < deadline )) || exit 2
     sleep 2
   done
+  sc_art_stage abi
   [[ "$(adb -s emulator-5554 shell getprop ro.build.version.sdk | tr -d '\r\n')" == 24 &&
     "$(adb -s emulator-5554 shell getprop ro.product.cpu.abi | tr -d '\r\n')" == x86_64 ]] || exit 2
+  sc_art_stage isolation
   sc241_prepare_isolation
   [[ "$sc241_api" == 24 ]]
   sc241_verify_isolation
-  timeout 90 adb -s "$sc241_serial" install --no-streaming -t "$SC_ART_APKS/0.apk" >/dev/null 2>&1
-  sc241_verify_isolation
-  timeout 90 adb -s "$sc241_serial" install --no-streaming -t "$SC_ART_APKS/1.apk" >/dev/null 2>&1
-  sc241_verify_isolation
-  (
-    ulimit -f 512
-    timeout 180 adb -s "$sc241_serial" shell am instrument -w -r \
-      -e class com.securecall.app.CoreCryptoMediaV3InstrumentedTest \
-      com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner \
-      >"$SC_ART_ROOT/result.txt" 2>/dev/null
-  )
-  sc241_verify_isolation
-  python3 -I "$SC_ART_CONTROLLER" instrumentation --result "$SC_ART_ROOT/result.txt"
-  sc241_verify_isolation
+  if [[ "$preapp" == false ]]; then
+    sc_art_stage app_install
+    timeout 90 adb -s "$sc241_serial" install --no-streaming -t "$SC_ART_APKS/0.apk" >/dev/null 2>&1
+    sc241_verify_isolation
+    sc_art_stage test_install
+    timeout 90 adb -s "$sc241_serial" install --no-streaming -t "$SC_ART_APKS/1.apk" >/dev/null 2>&1
+    sc241_verify_isolation
+    sc_art_stage instrument
+    (
+      ulimit -f 512
+      timeout 180 adb -s "$sc241_serial" shell am instrument -w -r \
+        -e class com.securecall.app.CoreCryptoMediaV3InstrumentedTest \
+        com.securecall.app.free.test/androidx.test.runner.AndroidJUnitRunner \
+        >"$SC_ART_ROOT/result.txt" 2>/dev/null
+    )
+    sc241_verify_isolation
+    sc_art_stage instrument_receipt
+    python3 -I "$SC_ART_CONTROLLER" instrumentation --result "$SC_ART_ROOT/result.txt"
+    sc241_verify_isolation
+  fi
+  sc_art_stage memory
   python3 -I - "$group/memory.events" <<'PY'
 import sys
 from pathlib import Path
 events = dict(line.split() for line in Path(sys.argv[1]).read_text().splitlines())
 assert all(int(events.get(key, "0")) == 0 for key in ("oom", "oom_kill", "oom_group_kill"))
 PY
+  sc_art_stage complete
+  if [[ "$preapp" == true ]]; then printf 'SC_ART_PREAPP tests_executed=0\n'; fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

@@ -824,3 +824,18 @@ https://docs.gradle.org/current/userguide/gradle_command_line.html .
 may skip the unit ownership check. Failed/empty/unknown states and a loaded
 unit with failed/empty Description refuse without dropping either ownership
 record. Five negative synthetic cases retain this fail-closed boundary.
+
+### API24 pre-app probe and headless exit evidence (SC-JNI-PREAPP-DIAG-20261118)
+
+- For run 44291072291, `run_headless` reported a nonzero systemd wrapper exit
+  after APK export. The exact child stage was absent from the receipt.
+- Existing manual workflow path, separate `temp/sc-jni-preapp-20261118` ref:
+  exact controller -> public SDK admission -> shared scoped headless runner ->
+  disposable API24 boot/ABI and guest isolation -> owned shutdown/cleanup.
+  This path has no APK input, installation, test or result upload. Its strict
+  marker and outcome carry `tests_executed=0` and leave application/JNI UNKNOWN.
+- Shell phase/exit -> owned bounded file -> allowlisted controller diagnostic:
+  wrapper exit, scope marker, phase and separate primary/teardown codes only.
+  Missing or invalid fields remain UNKNOWN. Qualification keeps its four
+  original success receipts. Resource, network, ownership and KVM ACL guards
+  remain in force. The original integrator owns review, admission and runtime.

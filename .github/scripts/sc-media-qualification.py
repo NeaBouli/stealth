@@ -55,6 +55,13 @@ EXPECTED_METHODS = frozenset({
 # Parent binds only the reviewed diff; host Linux strip proof remains mandatory.
 ADMISSION = "PARENT_REVIEWED"
 REF = "refs/heads/temp/sc-jni-final-20261117"
+PREAPP_REF = "refs/heads/temp/sc-jni-preapp-20261118"
+HEADLESS_RECORD = "phase-exit"
+MAX_HEADLESS_RECORD = 128
+HEADLESS_PHASES = frozenset({
+    "entry", "limits", "home", "avd", "adb", "boot", "abi", "isolation", "app_install",
+    "test_install", "instrument", "instrument_receipt", "memory", "complete",
+})
 RELEASE = 448757973
 TAG = "sc-jni-art-final-20261117"
 ASSET = "sc-jni-art-input.tar"
@@ -468,7 +475,7 @@ def stage_cache(root: Path, source: Path, *, cache: Path | None = None,
     return root / "dependencies"
 
 
-def tool_mounts() -> list[tuple[str, str]]:
+def headless_jdk17() -> Path:
     candidates = [os.environ.get("JAVA_HOME_17_X64", "")]
     candidates += [str(p) for p in sorted(Path("/usr/lib/jvm").glob("*17*"))]
     jdk = None
@@ -482,6 +489,11 @@ def tool_mounts() -> list[tuple[str, str]]:
             break
     require(jdk is not None, "preinstalled_jdk17_absent")
     require((jdk / "conf/security/java.security").resolve(strict=True).is_relative_to(jdk), "jdk17_external_config")
+    return jdk
+
+
+def tool_mounts() -> list[tuple[str, str]]:
+    jdk = headless_jdk17()
     sdk = Path("/usr/local/lib/android/sdk")
     # The current official SDK names stable API37 "android-37.0", not "android-37".
     platform = sdk / "platforms/android-37.0"
@@ -1373,20 +1385,28 @@ def dispatch_guard() -> None:
             and ASSET == "sc-jni-art-input.tar"
             and EMULATOR_REVISION != "NOT_READY" and IMAGE_REVISION != "NOT_READY",
             "bindings_NOT_READY")
-    require(os.getuid() != 0 and Path(f"/run/user/{os.getuid()}/bus").is_socket(),
-            "headless_user_cgroup_admission")
-    require(Path("/dev/kvm").exists() and stat.S_ISCHR(Path("/dev/kvm").stat().st_mode)
-            and os.access("/dev/kvm", os.R_OK | os.W_OK), "existing_user_kvm_access")
+    headless_host_admission(REF)
+
+
+def exact_controller_dispatch(ref: str) -> None:
     require(os.environ.get("GITHUB_REPOSITORY") == REPO
             and os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
             and os.environ.get("GITHUB_RUN_ATTEMPT") == "1"
             and os.environ.get("SC_RUNNER_ENVIRONMENT") == "github-hosted"
-            and os.environ.get("GITHUB_REF") == REF
+            and os.environ.get("GITHUB_REF") == ref
             and os.environ.get("SC_CONTROLLER_SHA") == os.environ.get("GITHUB_SHA")
             and re.fullmatch(r"[0-9a-f]{40}", os.environ.get("SC_CONTROLLER_SHA", "")) is not None,
             "dispatch")
     require(host_command(["git", "rev-parse", "HEAD"]).decode().strip() == os.environ["SC_CONTROLLER_SHA"],
             "controller_commit")
+
+
+def headless_host_admission(ref: str) -> None:
+    require(os.getuid() != 0 and Path(f"/run/user/{os.getuid()}/bus").is_socket(),
+            "headless_user_cgroup_admission")
+    require(Path("/dev/kvm").exists() and stat.S_ISCHR(Path("/dev/kvm").stat().st_mode)
+            and os.access("/dev/kvm", os.R_OK | os.W_OK), "existing_user_kvm_access")
+    exact_controller_dispatch(ref)
     require(shutil.disk_usage(os.environ["RUNNER_TEMP"]).free >= 6 * 1024**3, "host_disk_spare")
     available = re.search(r"MemAvailable:\s+(\d+)", Path("/proc/meminfo").read_text())
     require(available is not None and int(available[1]) >= 5 * 1024**2, "host_memory_spare")
@@ -1485,7 +1505,54 @@ def public_preparation(root: Path, mounts: list[tuple[str, str]], *, diagnose: b
     return verified_home
 
 
-def run_headless(root: Path, apks: Path, mounts: list[tuple[str, str]]) -> dict[str, object]:
+def read_headless_record(path: Path) -> tuple[str, int | str, int | str]:
+    unknown = ("UNKNOWN", "UNKNOWN", "UNKNOWN")
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(fd, "rb") as stream:
+            info = os.fstat(stream.fileno())
+            if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+                    or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1
+                    or not 0 < info.st_size <= MAX_HEADLESS_RECORD):
+                return unknown
+            raw = stream.read(MAX_HEADLESS_RECORD + 1)
+            if len(raw) != info.st_size:
+                return unknown
+    except OSError:
+        return unknown
+    match = re.fullmatch(rb"1 ([a-z_]{1,32}) (UNKNOWN|[0-9]{1,3}) (UNKNOWN|[0-9]{1,3})\n", raw)
+    if not match:
+        return unknown
+    phase, primary, teardown = (value.decode("ascii") for value in match.groups())
+    if phase not in HEADLESS_PHASES or any(value != "UNKNOWN" and int(value) > 255
+                                           for value in (primary, teardown)):
+        return unknown
+    return phase, (primary if primary == "UNKNOWN" else int(primary)), (
+        teardown if teardown == "UNKNOWN" else int(teardown))
+
+
+def headless_diagnostic(path: Path, wrapper_exit: int | None, scope_seen: bool, *, preapp: bool) -> dict:
+    phase, primary, teardown = read_headless_record(path)
+    return {"format": 1, "mode": "pre_app" if preapp else "qualification",
+            "scope_marker_seen": scope_seen,
+            "wrapper_exit": wrapper_exit if type(wrapper_exit) is int and -255 <= wrapper_exit <= 255 else "UNKNOWN",
+            "last_phase": phase, "primary_exit": primary, "teardown_exit": teardown}
+
+
+def check_headless_receipts(lines: list[str], scope_seen: bool, *, preapp: bool,
+                            head: str = SOURCE, tree: str = TREE) -> None:
+    prefix = f"CONTACT_VISUAL_ISOLATION:head={head} tree={tree} api=24 pre_app=true ipv4_drop=true ipv6_drop=true ipv4_probe=true "
+    expected = "SC_ART_PREAPP tests_executed=0" if preapp else "SC_ART_OK tests=8 skipped=0"
+    require(len(lines) == 4 and scope_seen and lines[1].startswith(prefix)
+            and re.fullmatch(r"ipv4_delta=[1-9][0-9]{0,8} ipv6_probe=(?:true|false) ipv6_delta=[0-9]{1,9} held=true",
+                             lines[1][len(prefix):]) is not None
+            and lines[2] == expected
+            and lines[3] == f"CONTACT_VISUAL_SHUTDOWN:head={head} tree={tree} held=true disconnected=true",
+            "headless_preapp_receipts" if preapp else "headless_exact_receipts")
+
+
+def run_headless(root: Path, apks: Path | None, mounts: list[tuple[str, str]]) -> dict[str, object]:
+    preapp = apks is None
     require(os.getuid() != 0, "headless_nonroot")
     for port in (5039, 5554, 5555):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
@@ -1500,6 +1567,13 @@ def run_headless(root: Path, apks: Path, mounts: list[tuple[str, str]]) -> dict[
     jdk = next(source for source, destination in mounts if destination == "/jdk")
     headless = root / "headless"
     headless.mkdir(mode=0o700)
+    diagnostic = headless / HEADLESS_RECORD
+    os.close(os.open(diagnostic, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600))
+    head, tree = SOURCE, TREE
+    if preapp:
+        head = os.environ["SC_CONTROLLER_SHA"]
+        tree = host_command(["git", "rev-parse", "HEAD^{tree}"]).decode("ascii").strip()
+        require(re.fullmatch(r"[0-9a-f]{40}", tree) is not None, "preapp_controller_tree")
     name = owned_name()
     unit = name + ".scope"
     previous = user_manager(["show", unit, "--property=LoadState", "--value"], check=False)
@@ -1515,10 +1589,10 @@ def run_headless(root: Path, apks: Path, mounts: list[tuple[str, str]]) -> dict[
              "HOME": str(headless / "home"), "ANDROID_AVD_HOME": str(headless / "avd"),
              "ANDROID_USER_HOME": str(headless / "android"), "TMPDIR": str(headless / "tmp"),
              "ANDROID_ADB_SERVER_PORT": "5039", "LC_ALL": "C.UTF-8",
-             "SC_ART_ROOT": str(headless), "SC_ART_APKS": str(apks),
-             "SC_ART_CONTROLLER": str(Path(__file__).resolve()),
-             "SC_ART_SOURCE": SOURCE, "SC_ART_TREE": TREE,
+             "SC_ART_ROOT": str(headless), "SC_ART_SOURCE": head, "SC_ART_TREE": tree,
              "SC_ART_RUN": os.environ["GITHUB_RUN_ID"]}
+    if not preapp:
+        clean.update(SC_ART_APKS=str(apks), SC_ART_CONTROLLER=str(Path(__file__).resolve()))
     command = ["systemd-run", "--user", "--scope", "--quiet", "--collect", "--unit=" + unit,
                "--description=SC JNI ART " + name,
                "--property=MemoryMax=4294967296", "--property=MemorySwapMax=0",
@@ -1527,7 +1601,11 @@ def run_headless(root: Path, apks: Path, mounts: list[tuple[str, str]]) -> dict[
                "--fsize=536870912:536870912", "--nofile=1024:1024", "--",
                "/usr/bin/env", "-i", *[f"{key}={value}" for key, value in clean.items()],
                "/bin/bash", str(Path(__file__).with_name("sc-art-headless.sh").resolve())]
+    if preapp:
+        command.append("--pre-app")
     process = None
+    scope_seen = False
+    accepted = False
     selector = selectors.DefaultSelector()
     data = bytearray()
     try:
@@ -1554,25 +1632,231 @@ def run_headless(root: Path, apks: Path, mounts: list[tuple[str, str]]) -> dict[
                         with group_record.open("x") as output:
                             output.write(group + "\n")
                         group_record.chmod(0o600)
+                        scope_seen = True
         require(process.wait(timeout=5) == 0, "headless_exit")
-        lines = data.decode("ascii").splitlines()
-        prefix = f"CONTACT_VISUAL_ISOLATION:head={SOURCE} tree={TREE} api=24 pre_app=true ipv4_drop=true ipv6_drop=true ipv4_probe=true "
-        require(len(lines) == 4 and group_record.exists() and lines[1].startswith(prefix)
-                and re.fullmatch(r"ipv4_delta=[1-9][0-9]{0,8} ipv6_probe=(?:true|false) ipv6_delta=[0-9]{1,9} held=true",
-                                 lines[1][len(prefix):]) is not None
-                and lines[2] == "SC_ART_OK tests=8 skipped=0"
-                and lines[3] == f"CONTACT_VISUAL_SHUTDOWN:head={SOURCE} tree={TREE} held=true disconnected=true",
-                "headless_exact_receipts")
+        check_headless_receipts(data.decode("ascii").splitlines(),
+                                scope_seen and group_record.exists(), preapp=preapp, head=head, tree=tree)
+        if preapp:
+            require(read_headless_record(diagnostic) == ("complete", 0, 0), "headless_preapp_record")
+        accepted = True
     finally:
         selector.close()
+        cleanup_ok = False
         try:
-            cleanup_headless()
+            try:
+                cleanup_headless()
+            finally:
+                if process is not None and process.poll() is None:
+                    process.kill()
+                    process.wait(timeout=10)
+            cleanup_ok = True
         finally:
-            if process is not None and process.poll() is None:
-                process.kill()
-                process.wait(timeout=10)
+            if preapp or not accepted or not cleanup_ok:
+                status = headless_diagnostic(diagnostic, process.returncode if process else None,
+                                             scope_seen, preapp=preapp)
+                print("phase=headless_diagnostic " + canonical(status).decode("ascii").strip(), flush=True)
+    if preapp:
+        return {"bootstrap": "PASS", "isolation": "PASS", "shutdown": "PASS", "owned_scope_empty": True,
+                "tests_executed": 0, "application": "UNKNOWN", "jni": "UNKNOWN"}
     return {"pre_app": True, "held_through_shutdown": True, "disconnected": True,
             "owned_scope_empty": True, "tests": 8, "skipped": 0}
+
+
+def headless_preapp_checks() -> None:
+    """Synthetic record, exit and receipt checks; no emulator, devices or networking."""
+    from unittest.mock import Mock, patch
+
+    checks = 0
+
+    def checked(ok: bool) -> None:
+        nonlocal checks
+        require(ok, "synthetic_headless_check")
+        checks += 1
+
+    unknown = ("UNKNOWN", "UNKNOWN", "UNKNOWN")
+    with tempfile.TemporaryDirectory(prefix="sc-headless-source-") as directory:
+        root = Path(directory)
+        record = root / HEADLESS_RECORD
+        checked(read_headless_record(record) == unknown)
+        record.touch(mode=0o600)
+        checked(read_headless_record(record) == unknown)
+        for raw, expected in (
+            (b"1 boot UNKNOWN UNKNOWN\n", ("boot", "UNKNOWN", "UNKNOWN")),
+            (b"1 isolation 124 1\n", ("isolation", 124, 1)),
+            (b"1 complete 0 0\n", ("complete", 0, 0)),
+            (b"1 install /private/path 0\n", unknown),
+            (b"1 caller_phase 1 0\n", unknown),
+            (b"1 entry 256 0\n", unknown),
+            (b"1 entry 2 -1\n", unknown),
+            (b"1 entry 2 0\nextra\n", unknown),
+            (b"1 entry 2 0", unknown),
+            (b"2 entry 2 0\n", unknown),
+            (b"x" * (MAX_HEADLESS_RECORD + 1), unknown),
+        ):
+            record.write_bytes(raw)
+            checked(read_headless_record(record) == expected)
+        record.write_bytes(b"1 boot 2 0\n")
+        record.chmod(0o644)
+        checked(read_headless_record(record) == unknown)
+        record.chmod(0o600)
+        link = root / "foreign"
+        link.symlink_to(record)
+        checked(read_headless_record(link) == unknown)
+        link.unlink()
+        os.link(record, link)
+        checked(read_headless_record(record) == unknown)
+        link.unlink()
+        checked(read_headless_record(root) == unknown)
+        checked(headless_diagnostic(record, -9, True, preapp=True) == {
+            "format": 1, "mode": "pre_app", "scope_marker_seen": True, "wrapper_exit": -9,
+            "last_phase": "boot", "primary_exit": 2, "teardown_exit": 0})
+        checked(headless_diagnostic(record, None, False, preapp=False)["wrapper_exit"] == "UNKNOWN")
+        checked(headless_diagnostic(record, 256, False, preapp=True)["wrapper_exit"] == "UNKNOWN")
+
+        # Run only the entry refusal and isolated EXIT trap, never the platform guards.
+        shell = str(Path(__file__).with_name("sc-art-headless.sh").resolve())
+        entry = r"""
+set -euo pipefail
+source "$1"
+stat() { if [[ "$2" == '%a' ]]; then printf 700; else printf 600:1; fi; }
+export SC_ART_ROOT="$2"
+sc_art_main --pre-app
+"""
+        for extra in ({}, {"SC_ART_APKS": "", "SC_ART_SOURCE": SOURCE, "SC_ART_TREE": TREE, "SC_ART_RUN": "1"}):
+            child = subprocess.run(["/bin/bash", "-c", entry, "entry-check", shell, directory],
+                                   env={**ENV, **extra}, capture_output=True, timeout=5)
+            checked(child.returncode == 2 and child.stdout == b""
+                    and read_headless_record(record) == ("entry", 2, 0))
+        child_exit = r"""
+set -euo pipefail
+source "$1"
+sc_art_diagnostic="$2"
+sc_art_phase="$3"
+sc_art_server=false
+sc_art_emulator_pid=''
+sc_art_result=''
+sc241_shutdown_required=true
+sc241_shutdown_guest() { return "$shutdown_exit"; }
+shutdown_exit="$5"
+trap sc_art_exit EXIT
+exit "$4"
+"""
+        for phase, primary, teardown, expected in (("avd", 124, 4, 124), ("complete", 0, 4, 2), ("complete", 0, 0, 0)):
+            child = subprocess.run(["/bin/bash", "-c", child_exit, "exit-check", shell, str(record),
+                                    phase, str(primary), str(teardown)],
+                                   env=ENV, capture_output=True, timeout=5)
+            checked(child.returncode == expected and child.stdout == b""
+                    and read_headless_record(record) == (phase, primary, teardown))
+
+    scope = "SC_ART_SCOPE cgroup=/user.slice/owned.scope"
+    def receipts(head: str, tree: str, result: str) -> list[str]:
+        return [scope,
+                f"CONTACT_VISUAL_ISOLATION:head={head} tree={tree} api=24 pre_app=true ipv4_drop=true ipv6_drop=true ipv4_probe=true ipv4_delta=1 ipv6_probe=false ipv6_delta=0 held=true",
+                result, f"CONTACT_VISUAL_SHUTDOWN:head={head} tree={tree} held=true disconnected=true"]
+
+    head, tree = "a" * 40, "b" * 40
+    pre = receipts(head, tree, "SC_ART_PREAPP tests_executed=0")
+    qualification = receipts(SOURCE, TREE, "SC_ART_OK tests=8 skipped=0")
+    check_headless_receipts(pre, True, preapp=True, head=head, tree=tree)
+    checked(True)
+    check_headless_receipts(qualification, True, preapp=False)
+    checked(True)
+    for lines, seen, is_preapp, head_ref, tree_ref in (
+        (pre, False, True, head, tree),
+        (qualification, True, True, SOURCE, TREE),
+        (pre, True, False, head, tree),
+        (pre, True, True, SOURCE, TREE),
+        (pre[:3], True, True, head, tree),
+        (pre + ["extra"], True, True, head, tree),
+        ([*pre[:2], "SC_ART_PREAPP tests_executed=1", pre[-1]], True, True, head, tree),
+        ([*pre[:3], pre[-1].replace("disconnected=true", "disconnected=false")], True, True, head, tree),
+        ([pre[0], pre[1].replace("ipv4_delta=1", "ipv4_delta=0"), *pre[2:]], True, True, head, tree),
+    ):
+        try:
+            check_headless_receipts(lines, seen, preapp=is_preapp, head=head_ref, tree=tree_ref)
+        except Refusal:
+            checked(True)
+        else:
+            checked(False)
+
+    # Feed the real host parser via an in-memory fixture pipe, without starting a launcher.
+    from contextlib import nullcontext
+    original_read = Path.read_text
+    prefixes = {"emulator": EMULATOR_REVISION, "x86_64": IMAGE_REVISION}
+    def fake_properties(path: Path, *args, **kwargs) -> str:
+        if path.name == "source.properties" and path.parent.name in prefixes:
+            return f"Pkg.Revision={prefixes[path.parent.name]}\n"
+        return original_read(path, *args, **kwargs)
+
+    for rc, stage in ((0, "complete"), (17, "avd")):
+        with tempfile.TemporaryDirectory(prefix="sc-headless-wrapper-source-") as temp:
+            root = Path(temp)
+            run = "7"
+            scope_path = f"/user.slice/sc-stx24-{run}.scope"
+            fixture = [f"SC_ART_SCOPE cgroup={scope_path}", *pre[1:]] if rc == 0 else []
+            read_fd, write_fd = os.pipe()
+            with os.fdopen(write_fd, "wb") as output:
+                output.write(("\n".join(fixture) + "\n").encode("ascii") if fixture else b"")
+            with os.fdopen(read_fd, "rb") as stdout:
+                def fake_launcher(command, **kwargs):
+                    checked(command[-1] == "--pre-app" and f"SC_ART_SOURCE={head}" in command
+                            and f"SC_ART_TREE={tree}" in command)
+                    checked(not any(value.startswith(("SC_ART_APKS=", "SC_ART_CONTROLLER="))
+                                    for value in command))
+                    (root / "headless" / HEADLESS_RECORD).write_text(f"1 {stage} {rc} 0\n")
+                    return Mock(stdout=stdout, wait=Mock(return_value=rc), poll=Mock(return_value=rc), returncode=rc)
+
+                with patch.dict(os.environ, {"RUNNER_TEMP": temp, "GITHUB_RUN_ID": run,
+                                            "SC_CONTROLLER_SHA": head}, clear=True), patch.dict(globals(), {
+                    "user_manager": Mock(return_value=Mock(stdout=b"not-found")),
+                    "host_command": Mock(return_value=(tree + "\n").encode("ascii")),
+                    "cleanup_headless": Mock(),
+                    "print": Mock(),
+                }), patch.object(Path, "read_text", fake_properties), patch.object(
+                    socket, "socket", return_value=nullcontext(Mock())), patch.object(
+                    subprocess, "Popen", side_effect=fake_launcher
+                ):
+                    try:
+                        result = run_headless(root, None, [("/synthetic-jdk", "/jdk")])
+                    except Refusal as error:
+                        checked(rc != 0 and str(error) == "headless_exit")
+                    else:
+                        checked(rc == 0 and result["tests_executed"] == 0 and result["jni"] == "UNKNOWN")
+                    cleanup_headless.assert_called_once_with()
+                    record_text = globals()["print"].call_args.args[0]
+                    prefix = "phase=headless_diagnostic "
+                    checked(record_text.startswith(prefix))
+                    diagnostic = json.loads(record_text[len(prefix):])
+                    checked(diagnostic["wrapper_exit"] == rc and diagnostic["scope_marker_seen"] == (rc == 0)
+                            and diagnostic["last_phase"] == stage and diagnostic["primary_exit"] == rc)
+
+    events = []
+    def synthetic_run(root: Path, apks: Path | None, mounts: list[tuple[str, str]]) -> dict:
+        checked(stat.S_IMODE(root.stat().st_mode) == 0o700)
+        checked(apks is None and mounts == [("/synthetic-jdk", "/jdk")])
+        events.append("probe")
+        return {"tests_executed": 0, "application": "UNKNOWN", "jni": "UNKNOWN"}
+
+    with tempfile.TemporaryDirectory(prefix="sc-headless-dispatch-source-") as temp, patch.dict(os.environ, {
+        "RUNNER_TEMP": temp, "GITHUB_RUN_ID": "7",
+    }, clear=True), patch.dict(globals(), {
+        "headless_host_admission": lambda ref: events.append(ref),
+        "headless_jdk17": lambda: Path("/synthetic-jdk"),
+        "run_headless": synthetic_run,
+        "print": lambda *args, **kwargs: events.append(args[0]),
+    }):
+        preapp_probe()
+    checked(events[:2] == [PREAPP_REF, "probe"] and len(events) == 3)
+    checked(events[2] == 'phase=preapp_probe {"application":"UNKNOWN","jni":"UNKNOWN","tests_executed":0}')
+    print(f"SC_SOURCE_CHECKS headless_preapp={checks} app_tests=0 runtime=false")
+
+
+def preapp_probe() -> None:
+    headless_host_admission(PREAPP_REF)
+    jdk = headless_jdk17()
+    with tempfile.TemporaryDirectory(prefix=owned_name() + "-preapp-", dir=os.environ["RUNNER_TEMP"]) as directory:
+        result = run_headless(Path(directory), None, [(str(jdk), "/jdk")])
+    print("phase=preapp_probe " + canonical(result).decode("ascii").strip(), flush=True)
 
 
 def draft() -> dict:
@@ -2131,6 +2415,10 @@ def main() -> None:
     commands.add_parser("private-failure-checks")
     commands.add_parser("public-ca-checks")
     commands.add_parser("admission")
+    commands.add_parser("preapp-admission")
+    commands.add_parser("preapp-probe")
+    commands.add_parser("preapp-cleanup")
+    commands.add_parser("headless-preapp-checks")
     commands.add_parser("cleanup")
     commands.add_parser("container-work")
     commands.add_parser("lineage-checks")
@@ -2143,6 +2431,16 @@ def main() -> None:
         elif args.mode == "admission":
             dispatch_guard()
             print("phase=admission accepted=true")
+        elif args.mode == "preapp-admission":
+            headless_host_admission(PREAPP_REF)
+            print("phase=preapp_admission accepted=true")
+        elif args.mode == "preapp-probe":
+            preapp_probe()
+        elif args.mode == "preapp-cleanup":
+            exact_controller_dispatch(PREAPP_REF)
+            cleanup_headless()
+        elif args.mode == "headless-preapp-checks":
+            headless_preapp_checks()
         elif args.mode == "diagnose-public":
             diagnose_public()
         elif args.mode == "public-diagnostic-checks":
@@ -2166,7 +2464,8 @@ def main() -> None:
             hosted()
     except Exception as error:
         label = str(error) if type(error) is Refusal else "operation"
-        print("phase=" + args.mode + " accepted=false blocker=" + label, file=sys.stderr)
+        outcome = " tests_executed=0 application=UNKNOWN jni=UNKNOWN" if args.mode == "preapp-probe" else ""
+        print("phase=" + args.mode + " accepted=false blocker=" + label + outcome, file=sys.stderr)
         sys.exit(1)
 
 
