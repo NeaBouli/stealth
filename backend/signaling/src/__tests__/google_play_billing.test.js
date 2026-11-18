@@ -94,6 +94,15 @@ assert.throws(() => issuePlayActivationCode({
 }), /purchase_persistence_failed/);
 assert.deepStrictEqual(failedPersistenceCodes, []);
 const future = new Date(Date.now() + 86400000).toISOString();
+for (const [productId, tier] of [["pro_monthly", "pro"], ["premium_monthly", "premium"]]) {
+  const receipt = { subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+    acknowledgementState: "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+    lineItems: [{ productId, expiryTime: future }] };
+  assert.strictEqual(parseSubscriptionPurchase(receipt, productId)?.tier, tier);
+  assert.strictEqual(parseSubscriptionToken(receipt)?.productId, productId);
+  assert.strictEqual(parseSubscriptionPurchase(receipt, `securecall_${productId}`), null);
+  assert.strictEqual(resolveOneTimeProduct("com.securecall.app.free", productId), null);
+}
 assert.deepStrictEqual(parseSubscriptionPurchase({
   subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
   acknowledgementState: "ACKNOWLEDGEMENT_STATE_PENDING",

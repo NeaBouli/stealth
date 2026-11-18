@@ -628,3 +628,11 @@ stay closed. Missing policy -> `lifetime_entitlement_unavailable`.
 3. `checkout` -> `https://vlabs.gr/en/shop?focus=security#stealthx-ifr=<signed eligibility>`: the signed, product/offer-bound eligibility travels only in the URL fragment; the shop consumes it, keeps it in memory and submits it to its existing checkout, which verifies it again.
 
 State: built behind required operator configuration; disabled by default. No checkout, price or wallet state on the landing page.
+
+## Existing Play monthly receipt compatibility (SC-PLAY-LEGACY-SKU-20261118)
+
+BillingManager queries the existing short monthly IDs and preserves prior
+prefixed receipts; the provider verifier's exact catalog accepts both families.
+This restores the already published PR37 mapping, not a price/conversion rule.
+Unknown products, wrong package/product proofs and one-time classification stay
+closed. Lifetime policy and all purchase/activation flags are unchanged.

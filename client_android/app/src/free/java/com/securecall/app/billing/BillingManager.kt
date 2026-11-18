@@ -36,7 +36,8 @@ class BillingManager(
         BuildConfig.SKU_PRO_MONTHLY,
         BuildConfig.SKU_PRO_YEARLY,
         BuildConfig.SKU_PREMIUM_MONTHLY,
-        BuildConfig.SKU_PREMIUM_YEARLY
+        BuildConfig.SKU_PREMIUM_YEARLY,
+        "securecall_pro_monthly", "securecall_premium_monthly"
     )
 
     private val lifetimeSkus = listOf(

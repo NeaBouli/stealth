@@ -14,6 +14,8 @@ const ONE_TIME_PRODUCTS = Object.freeze({
 });
 
 const SUBSCRIPTION_PRODUCTS = Object.freeze({
+  pro_monthly: "pro",
+  premium_monthly: "premium",
   securecall_pro_monthly: "pro",
   securecall_pro_yearly: "pro",
   securecall_premium_monthly: "premium",

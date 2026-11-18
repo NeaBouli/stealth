@@ -58,6 +58,16 @@ class BillingManagerTest {
     }
 
     @Test
+    fun actualMonthlyProductsAndPriorPrefixedReceiptsRemainRestorable() {
+        assertEquals("pro_monthly", BuildConfig.SKU_PRO_MONTHLY)
+        assertEquals("premium_monthly", BuildConfig.SKU_PREMIUM_MONTHLY)
+        for (sku in listOf("pro_monthly", "premium_monthly", "securecall_pro_monthly", "securecall_premium_monthly")) {
+            manager.onPurchasesUpdated(result, listOf(purchase(listOf(sku), "synthetic-$sku")))
+            verify(listener).onPurchaseCompleted(SubscriptionTier.fromProductId(sku), "synthetic-$sku", sku)
+        }
+    }
+
+    @Test
     fun subsAndInappQueriesDeliverOneImmutableRestoreBatchInEitherOrder() {
         for (inappFirst in listOf(true, false)) {
             val observer: BillingManager.BillingListener = mock()
