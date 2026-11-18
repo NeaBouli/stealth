@@ -185,10 +185,10 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             // push whose service appeared later lets that service adopt the never-ended invite.
             // Service absent keeps the existing cold wake / start-failure fallback.
             if (viaTelecom && !IncomingCallTelecom.hasCall(sessionId)) return@showUi
-            if (IncomingCallTelecom.isEnded(sessionId)) return@showUi
-            if (service != null && !service.isRingingOwner(sessionId) &&
-                !(existingService == null && service.acceptFcmInvite(payload) && service.isRingingOwner(sessionId))
-            ) return@showUi
+            val serviceAbsentAtDelivery = existingService == null
+            if (!com.securecall.app.net.WebSocketService.admitFcmUiEffect(sessionId, payload, serviceAbsentAtDelivery)) {
+                return@showUi
+            }
             val serviceHandlesRingtone = IncomingCallAlertPolicy.serviceHandlesRingtone(
                 IncomingCallTelecom.hasCall(sessionId), service != null,
             )
@@ -198,9 +198,11 @@ class SecureCallMessagingService : FirebaseMessagingService() {
                 sessionId, callerName, invite.fromClientId, invite.callerPhone,
                 serviceHandlesRingtone = serviceHandlesRingtone
             )
-            if (service != null && !service.isRingingOwner(sessionId)) {
-                // Lost ownership while posting: withdraw only this session's own tag.
-                IncomingCallNotifications.cancel(this, sessionId)
+            // Post-check re-reads the CURRENT service: one that appeared (or changed owner)
+            // while posting must still admit this session; otherwise withdraw only its own tag.
+            if (!com.securecall.app.net.WebSocketService.admitFcmUiEffect(sessionId, payload, serviceAbsentAtDelivery) {
+                    IncomingCallNotifications.cancel(this, sessionId)
+                }) {
                 return@showUi
             }
             if (!com.securecall.app.IncomingCallActivity.isShowingSession(sessionId)) {

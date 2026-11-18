@@ -327,7 +327,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
      * True when an owned call was closed (the caller then signals CALL_END).
      */
     fun clearSessionIfOwner(sessionId: String): Boolean {
-        synchronized(this) { pendingInviteOwners?.remove(sessionId) }
+        synchronized(this) {
+            if (pendingInviteOwners?.remove(sessionId) == true) (this as java.lang.Object).notifyAll()
+        }
         return closeOwnedCall(sessionId) != null
     }
 
@@ -480,10 +482,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
      * Caller holds the monitor. Fail-closed: false on same-thread reentry or when another
      * thread's reservation outlives the bound; the caller then rejects without side effects.
      */
-    private fun awaitCallCloseLocked(): Boolean {
+    private fun awaitCallCloseLocked(inviteRequestId: String? = null): Boolean {
         if (closingCallSessionId != null && closingCallThread === Thread.currentThread()) return false
         val deadline = System.currentTimeMillis() + CLOSE_WAIT_BOUND_MS
         while (closingCallSessionId != null) {
+            if (inviteRequestId != null && pendingInviteOwners?.contains(inviteRequestId) != true) return false
             val remaining = deadline - System.currentTimeMillis()
             if (remaining <= 0) return false
             (this as java.lang.Object).wait(remaining)
@@ -713,6 +716,24 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
         @Volatile
         var instance: WebSocketService? = null
+
+        /**
+         * Effect-time admission for a delayed FCM incoming-call UI effect. Re-reads the CURRENT
+         * service at every call (never a delivery-time snapshot). A genuinely absent service
+         * keeps the cold wake; a present service must own the same still-ringing call, or —
+         * only when no service existed at delivery — adopt the never-ended invite now.
+         */
+        fun admitFcmUiEffect(
+            sessionId: String, payload: String, serviceAbsentAtDelivery: Boolean,
+            onRejected: (() -> Unit)? = null,
+        ): Boolean {
+            val service = instance
+            val admitted = !com.securecall.app.call.IncomingCallTelecom.isEnded(sessionId) &&
+                (service == null || service.isRingingOwner(sessionId) ||
+                    (serviceAbsentAtDelivery && service.acceptFcmInvite(payload) && service.isRingingOwner(sessionId)))
+            if (!admitted) onRejected?.invoke()
+            return admitted
+        }
         private const val CHANNEL_ID = "securecall_foreground"
         private const val CHANNEL_INCOMING = "securecall_incoming_call_urgent"
         private const val NOTIFICATION_ID = 1001
@@ -1774,20 +1795,10 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             sessionId, identity.identityId, identity.identityId, targetId, targetId,
             publicKey, identity.publicKey, issuedAt, nonce, signature, inviteDigest, callerPhone,
         )
-        // Admission: consume the live request, fail closed on reentry/timeout, idle owner only.
-        var cancelled = false
-        val admitted = synchronized(this) {
-            cancelled = pendingInviteOwners?.remove(sessionId) != true
-            (!cancelled && awaitCallCloseLocked() && ownerLocked() == null).also {
-                if (it) {
-                    localPrivKey = privateKey
-                    callSecurityState = CallSecurityState(SecureCallRole.CALLER, invite, transcript)
-                }
-            }
-        }
-        if (!admitted) {
-            privateKey.fill(0)
-            if (!cancelled) reportOwnedError(sessionId, "busy", "Another call is in progress")
+        val admission = admitOutgoingInvite(sessionId, privateKey,
+            CallSecurityState(SecureCallRole.CALLER, invite, transcript))
+        if (admission != true) {
+            if (admission == false) refuseInvite(sessionId, "busy", "Another call is in progress")
             return
         }
         val sent = client?.send(org.json.JSONObject().apply {
@@ -1807,11 +1818,46 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             reportOwnedError(sessionId, "not_connected", "Unable to send authenticated call invitation")
             return
         }
-        // BUG-032: Mark call active during ringing — prevents heartbeat staleness from killing the WS
-        withCallReservation(sessionId, requireOwner = true, wait = true) { client?.setCallActive(true) }
+        if (!armOutgoingInvite(sessionId)) {
+            Log.w("WS_SERVICE", "CALL_INVITE sent for a call that no longer owns; tail ignored")
+            return
+        }
         Log.d("WS_SERVICE", "Authenticated CALL_INVITE sent")
-        scheduleOutgoingRingTimeout(sessionId)
     }
+
+    /**
+     * Admission of an outgoing request. The request stays cancellable through the bounded
+     * wait: its validity is re-read after the wait and consumed only here, atomically with the
+     * decision. null = cancelled (never starts), false = refused while live (caller refuses),
+     * true = admitted (key and state published). A non-admitted local key is wiped.
+     */
+    private fun admitOutgoingInvite(sessionId: String, privateKey: ByteArray, state: CallSecurityState): Boolean? {
+        val result: Boolean? = synchronized(this) {
+            val ready = awaitCallCloseLocked(sessionId)
+            if (pendingInviteOwners?.contains(sessionId) != true) return@synchronized null
+            (ready && ownerLocked() == null).also {
+                if (it) {
+                    pendingInviteOwners?.remove(sessionId)
+                    localPrivKey = privateKey
+                    callSecurityState = state
+                }
+            }
+        }
+        if (result != true) privateKey.fill(0)
+        return result
+    }
+
+    /**
+     * Post-send tail: heartbeat activity and the ring timeout are armed only inside the
+     * reservation of the still-owning request; a late A send never touches B's timer/state.
+     */
+    private fun armOutgoingInvite(sessionId: String): Boolean =
+        withCallReservation(sessionId, requireOwner = true, wait = true) {
+            // BUG-032: Mark call active during ringing — prevents heartbeat staleness from killing the WS
+            client?.setCallActive(true)
+            scheduleOutgoingRingTimeout(sessionId)
+            true
+        } == true
 
     private fun scheduleOutgoingRingTimeout(sessionId: String) {
         cancelOutgoingRingTimeout()
@@ -2341,9 +2387,11 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                     val sessionId = obj.optString("sessionId", "")
                     val adopted = ok && obj.optInt("protocol", -1) == SessionKeyBinding.CALL_PROTOCOL &&
                         synchronized(this) {
+                            // Wait first, then read: nothing captured before the wait authorizes.
+                            if (!awaitCallCloseLocked()) return@synchronized false
                             val state = callSecurityState
-                            (awaitCallCloseLocked() && state?.role == SecureCallRole.CALLER &&
-                                state.invite.sessionId == sessionId)
+                            (state?.role == SecureCallRole.CALLER && state.invite.sessionId == sessionId &&
+                                ownerLocked() == sessionId)
                                 .also { if (it) _currentSessionId = sessionId }
                         }
                     if (adopted) {

@@ -43,10 +43,10 @@ class CallEndOwnershipTest {
         "synthetic-identity", 2_000_000_000L, "N".repeat(22), "synthetic-signature", "synthetic-digest",
     )
 
-    private fun securityState(id: String): Any {
+    private fun securityState(id: String, role: String = "CALLEE"): Any {
         val stateClass = Class.forName("com.securecall.app.net.CallSecurityState")
         val roleClass = Class.forName("com.securecall.app.net.SecureCallRole")
-        val roleValue = roleClass.enumConstants.first { (it as Enum<*>).name == "CALLEE" }
+        val roleValue = roleClass.enumConstants.first { (it as Enum<*>).name == role }
         val constructor = stateClass.declaredConstructors.first {
             it.parameterCount == 10 && it.parameterTypes[0] == roleClass
         }.apply { isAccessible = true }
@@ -417,6 +417,230 @@ class CallEndOwnershipTest {
         assertFalse(ws.isRingingOwner(a))
         assertFalse(ws.startIncomingRingtoneIfRinging(a))
         assertNull(get(ws, "closingCallSessionId"))
+    }
+
+    private fun awaitReservationWait(thread: Thread) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+        while (thread.isAlive && thread.state != Thread.State.TIMED_WAITING && System.nanoTime() < deadline) {
+            Thread.sleep(1)
+        }
+        assertEquals("must reach the service reservation wait", Thread.State.TIMED_WAITING, thread.state)
+    }
+
+    private fun releaseReservation(target: WebSocketService, id: String) {
+        WebSocketService::class.java.getDeclaredMethod("releaseCallReservation", String::class.java)
+            .apply { isAccessible = true }.invoke(target, id)
+    }
+
+    private fun admitOutgoing(target: WebSocketService, id: String, key: ByteArray): Boolean? =
+        WebSocketService::class.java.getDeclaredMethod(
+            "admitOutgoingInvite", String::class.java, ByteArray::class.java,
+            Class.forName("com.securecall.app.net.CallSecurityState"),
+        ).apply { isAccessible = true }.invoke(target, id, key, securityState(id, "CALLER")) as Boolean?
+
+    private fun armOutgoing(target: WebSocketService, id: String): Boolean =
+        WebSocketService::class.java.getDeclaredMethod("armOutgoingInvite", String::class.java)
+            .apply { isAccessible = true }.invoke(target, id) as Boolean
+
+    @Test
+    fun `ACK waiting behind A effect reads B state only after the wait`() {
+        val ws = service()
+        owned(ws, a)
+        set(ws, "callSecurityState", securityState(a, "CALLER"))
+        val messages = WebSocketService::class.java.getDeclaredMethod("handleIncomingMessage", String::class.java)
+            .apply { isAccessible = true }
+        val ack = Thread { messages.invoke(ws, """{"type":"CALL_INVITE_ACK","ok":true,"protocol":3,"sessionId":"$a"}""") }
+        val ended = mutableListOf<String>()
+        val player = Mockito.mock(android.media.MediaPlayer::class.java)
+        var bState: Any? = null
+        withReservation(ws, a, requireOwner = true, wait = true) {
+            ack.start()
+            awaitReservationWait(ack)
+            // Force close/adopt to win the released monitor before the queued ACK resumes.
+            synchronized(ws) {
+                releaseReservation(ws, a)
+                callEnd(ws, a)
+                assertTrue(adopt(ws, invite(b), fromFcm = true))
+                assertTrue(bind(ws, b, { ended.add(it) }, null))
+                set(ws, "incomingRingtone", player)
+                bState = get(ws, "callSecurityState")
+            }
+        }
+        ack.join(3_000)
+        assertFalse(ack.isAlive)
+        assertEquals(b, ws.getCurrentSessionId())
+        assertSame(bState, get(ws, "callSecurityState"))
+        assertSame(player, get(ws, "incomingRingtone"))
+        assertTrue(ended.isEmpty())
+        Mockito.verify(player, Mockito.never()).stop()
+    }
+
+    @Test
+    fun `matching caller ACK remains admitted`() {
+        val ws = service()
+        set(ws, "callSecurityState", securityState(a, "CALLER"))
+        WebSocketService::class.java.getDeclaredMethod("handleIncomingMessage", String::class.java)
+            .apply { isAccessible = true }
+            .invoke(ws, """{"type":"CALL_INVITE_ACK","ok":true,"protocol":3,"sessionId":"$a"}""")
+        assertEquals(a, ws.getCurrentSessionId())
+    }
+
+    @Test
+    fun `cancel during outgoing admission wait wipes local key and never adopts after idle`() {
+        val ws = service()
+        owned(ws, b)
+        set(ws, "pendingInviteOwners", mutableSetOf(a))
+        val key = ByteArray(32) { 7 }
+        var admitted: Any? = "not returned"
+        val waiter = Thread { admitted = admitOutgoing(ws, a, key) }
+        withReservation(ws, b, requireOwner = true, wait = true) {
+            waiter.start()
+            awaitReservationWait(waiter)
+            assertFalse(ws.clearSessionIfOwner(a))
+            waiter.join(3_000) // cancel wakes the real wait even while B's effect remains reserved
+            assertFalse(waiter.isAlive)
+            assertNull(admitted)
+            assertTrue(key.all { it == 0.toByte() })
+            assertNull(get(ws, "localPrivKey"))
+        }
+        callEnd(ws, b)
+        assertNull(ws.getCurrentSessionId())
+        assertNull(get(ws, "callSecurityState"))
+        assertNull(get(ws, "localPrivKey"))
+    }
+
+    @Test
+    fun `live outgoing admission consumes only success and reentry wipes a rejected key`() {
+        val ws = service()
+        set(ws, "pendingInviteOwners", mutableSetOf(a))
+        val rejectedKey = ByteArray(32) { 7 }
+        withReservation(ws, null, requireOwner = false, wait = true) {
+            assertEquals(false, admitOutgoing(ws, a, rejectedKey))
+            assertTrue(rejectedKey.all { it == 0.toByte() })
+            assertNull(get(ws, "callSecurityState"))
+            assertEquals(setOf(a), get(ws, "pendingInviteOwners"))
+        }
+        val admittedKey = ByteArray(32) { 8 }
+        assertEquals(true, admitOutgoing(ws, a, admittedKey))
+        assertSame(admittedKey, get(ws, "localPrivKey"))
+        assertTrue((get(ws, "pendingInviteOwners") as Set<*>).isEmpty())
+        assertTrue(get(ws, "callSecurityState") != null)
+    }
+
+    @Test
+    fun `late successful A send tail leaves B active state and timer untouched`() {
+        val ws = service()
+        owned(ws, a)
+        val handler = Mockito.mock(android.os.Handler::class.java)
+        val client = Mockito.mock(HeartbeatClient::class.java)
+        set(ws, "outgoingRingHandler", handler)
+        set(ws, "client", client)
+        val sendEntered = CountDownLatch(1)
+        val sendReturned = CountDownLatch(1)
+        var armed: Boolean? = null
+        val sender = Thread {
+            sendEntered.countDown()
+            sendReturned.await(5, TimeUnit.SECONDS)
+            armed = armOutgoing(ws, a) // exact successful-send continuation used by dispatch
+        }.apply { start() }
+        assertTrue(sendEntered.await(2, TimeUnit.SECONDS))
+        callEnd(ws, a)
+        assertTrue(adopt(ws, invite(b), fromFcm = false))
+        assertTrue(armOutgoing(ws, b))
+        val bTimer = get(ws, "outgoingRingTimeout")
+        val bState = get(ws, "callSecurityState")
+        Mockito.clearInvocations(client, handler)
+        sendReturned.countDown()
+        sender.join(3_000)
+        assertFalse(sender.isAlive)
+        assertEquals(false, armed)
+        assertSame(bTimer, get(ws, "outgoingRingTimeout"))
+        assertSame(bState, get(ws, "callSecurityState"))
+        assertEquals(b, ws.getCurrentSessionId())
+        Mockito.verifyNoInteractions(client, handler)
+    }
+
+    @Test
+    fun `valid send tail reserves ownership across heartbeat and timer effects`() {
+        val ws = service()
+        owned(ws, a)
+        val handler = Mockito.mock(android.os.Handler::class.java)
+        val client = Mockito.mock(HeartbeatClient::class.java)
+        set(ws, "outgoingRingHandler", handler)
+        set(ws, "client", client)
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        Mockito.doAnswer {
+            assertFalse(Thread.holdsLock(ws))
+            entered.countDown()
+            release.await(5, TimeUnit.SECONDS)
+            Unit
+        }.`when`(client).setCallActive(true)
+        var armed: Boolean? = null
+        val sender = Thread { armed = armOutgoing(ws, a) }.apply { start() }
+        assertTrue(entered.await(2, TimeUnit.SECONDS))
+        assertNull(withReservation(ws, b, requireOwner = false, wait = false) { "must not run" })
+        assertNull(get(ws, "outgoingRingTimeout"))
+        release.countDown()
+        sender.join(3_000)
+        assertFalse(sender.isAlive)
+        assertEquals(true, armed)
+        val timer = get(ws, "outgoingRingTimeout") as Runnable
+        Mockito.verify(handler).postDelayed(timer, com.securecall.app.call.RingTimeoutPolicy.OUTGOING_RING_TIMEOUT_MS)
+        assertNull(get(ws, "closingCallSessionId"))
+    }
+
+    @Test
+    fun `cold FCM post-check withdraws only A when B service appeared during posting`() {
+        val oldInstance = WebSocketService.instance
+        val postedA = "00000000-0000-4000-8000-0000000000c1"
+        val liveB = "00000000-0000-4000-8000-0000000000c2"
+        val cancelled = mutableListOf<String>()
+        try {
+            WebSocketService.instance = null
+            assertTrue(WebSocketService.admitFcmUiEffect(postedA, "synthetic", true))
+            val ws = service()
+            owned(ws, liveB)
+            val bState = get(ws, "callSecurityState")
+            Mockito.doReturn(false).`when`(ws).acceptFcmInvite("synthetic")
+            WebSocketService.instance = ws // notification post returns after a new service owns B
+            assertFalse(WebSocketService.admitFcmUiEffect(postedA, "synthetic", true) {
+                cancelled.add(IncomingCallNotifications.tag(postedA))
+            })
+            assertEquals(listOf(IncomingCallNotifications.tag(postedA)), cancelled)
+            assertFalse(cancelled.contains(IncomingCallNotifications.tag(liveB)))
+            assertEquals(liveB, ws.getCurrentSessionId())
+            assertSame(bState, get(ws, "callSecurityState"))
+        } finally {
+            WebSocketService.instance = oldInstance
+        }
+    }
+
+    @Test
+    fun `FCM post-check preserves absent and ringing paths but withdraws accepted or ended`() {
+        val oldInstance = WebSocketService.instance
+        val id = "00000000-0000-4000-8000-0000000000c3"
+        val cancelled = mutableListOf<String>()
+        val withdraw = { cancelled.add(IncomingCallNotifications.tag(id)); Unit }
+        try {
+            WebSocketService.instance = null
+            assertTrue(WebSocketService.admitFcmUiEffect(id, "synthetic", true, withdraw))
+            val ws = service()
+            owned(ws, id)
+            WebSocketService.instance = ws
+            assertTrue(WebSocketService.admitFcmUiEffect(id, "synthetic", false, withdraw))
+            val stateClass = Class.forName("com.securecall.app.net.CallSecurityState")
+            val claim = stateClass.getDeclaredMethod("getAcceptClaim").apply { isAccessible = true }
+                .invoke(get(ws, "callSecurityState")) as java.util.concurrent.atomic.AtomicBoolean
+            claim.set(true)
+            assertFalse(WebSocketService.admitFcmUiEffect(id, "synthetic", false, withdraw))
+            com.securecall.app.call.IncomingCallTelecom.end(id)
+            WebSocketService.instance = null
+            assertFalse(WebSocketService.admitFcmUiEffect(id, "synthetic", true, withdraw))
+            assertEquals(listOf(IncomingCallNotifications.tag(id), IncomingCallNotifications.tag(id)), cancelled)
+        } finally {
+            WebSocketService.instance = oldInstance
+        }
     }
 
     @Test

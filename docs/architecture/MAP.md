@@ -712,3 +712,8 @@ Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
   callee owner) or, only for a cold push whose service appeared later, a not-ended invite
   that the service accepts now. Service absent keeps the existing cold wake. Late stale
   UI cancels only its own tag. IncomingCallActivity rechecks activation before effects.
+- Four-case follow-up: ACK reads state/owner only after the close wait; outgoing requests
+  remain cancellable through each wait and publish keys only while consuming a live request.
+  The successful-send tail reserves both heartbeat activation and ring-timer installation.
+  All three FCM producers re-read the current service after posting and withdraw only the
+  posted session's tag on rejection; genuine service-absent cold wake remains available.
