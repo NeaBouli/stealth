@@ -74,6 +74,8 @@ class IncomingCallActivity : AppCompatActivity() {
     private var ringTimeoutRunnable: Runnable? = null
     // Own callback reference: onDestroy clears it only if a newer screen has not replaced it.
     private var endedCallback: ((String) -> Unit)? = null
+    // False for a refused/stale launch: onDestroy then has no audio/callback side effects.
+    private var activated = false
 
     @Suppress("DEPRECATION")
     private fun wakeScreen() {
@@ -133,6 +135,17 @@ class IncomingCallActivity : AppCompatActivity() {
             finish()
             return
         }
+        // Activation-time ownership: with a service present only the same still-ringing owner
+        // may open; a cold push whose service has not adopted yet is allowed only while the
+        // invite was never ended. Service absent keeps the existing cold-wake path.
+        val owner = com.securecall.app.net.WebSocketService.instance
+        if (owner != null && !owner.isRingingOwner(sessionId) &&
+            !(fromFcm && owner.isCallIdle() && !IncomingCallTelecom.isEnded(sessionId))) {
+            Log.w(TAG, "Stale incoming UI for session=$sessionId — finishing without side effects")
+            finish()
+            return
+        }
+        activated = true
 
         setContentView(R.layout.activity_incoming_call)
         EdgeToEdgeHelper.applySystemBarPaddingToContent(this)
@@ -203,7 +216,14 @@ class IncomingCallActivity : AppCompatActivity() {
             }
         }
         endedCallback = onEnded
-        ws?.setOnCallEnded(onEnded)
+        if (ws != null && !ws.bindCallCallbacks(sessionId, onEnded, null)) {
+            // Another live call owns the service callbacks: leave it untouched.
+            Log.w(TAG, "Incoming UI refused callback ownership for session=$sessionId")
+            endedCallback = null
+            activated = false
+            finish()
+            return
+        }
         if (intent.getBooleanExtra(IncomingCallTelecom.EXTRA_ANSWER, false) &&
             IncomingCallTelecom.isAnswered(sessionId)) acceptCall()
     }
@@ -436,6 +456,13 @@ class IncomingCallActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         cancelRingTimeout()
+        if (!activated) {
+            if (com.securecall.app.net.WebSocketService.instance?.isCallIdle() != false) {
+                com.securecall.app.ads.AdMobManager.resumeAfterCall()
+            }
+            super.onDestroy()
+            return
+        }
         stopRingtoneAndVibration()
         // Only clear activeInstance if WE are the current instance (avoids race with new instance)
         if (activeInstance === this) {

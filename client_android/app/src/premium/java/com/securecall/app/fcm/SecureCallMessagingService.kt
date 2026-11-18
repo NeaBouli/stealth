@@ -177,18 +177,33 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             putExtra("callerName", callerName)
             putExtra("from_fcm", true) // Flag: came from FCM, WS may not be connected
         }
-        val showUi = {
+        val showUi: (Boolean) -> Unit = showUi@{ viaTelecom ->
+            val sessionId = invite.sessionId
             val service = com.securecall.app.net.WebSocketService.instance
+            // Effect-time admission: an ended, accepted or replaced call never rings, posts or
+            // reopens. With a service present only the same still-ringing owner passes; a cold
+            // push whose service appeared later lets that service adopt the never-ended invite.
+            // Service absent keeps the existing cold wake / start-failure fallback.
+            if (viaTelecom && !IncomingCallTelecom.hasCall(sessionId)) return@showUi
+            if (IncomingCallTelecom.isEnded(sessionId)) return@showUi
+            if (service != null && !service.isRingingOwner(sessionId) &&
+                !(existingService == null && service.acceptFcmInvite(payload) && service.isRingingOwner(sessionId))
+            ) return@showUi
             val serviceHandlesRingtone = IncomingCallAlertPolicy.serviceHandlesRingtone(
-                IncomingCallTelecom.hasCall(invite.sessionId), service != null,
+                IncomingCallTelecom.hasCall(sessionId), service != null,
             )
-            if (serviceHandlesRingtone) service?.startIncomingRingtone()
+            if (serviceHandlesRingtone && service?.startIncomingRingtoneIfRinging(sessionId) == false) return@showUi
             // Post FSI before the direct launch; a successful start is not proof of visibility.
             showIncomingCallNotification(
-                invite.sessionId, callerName, invite.fromClientId, invite.callerPhone,
+                sessionId, callerName, invite.fromClientId, invite.callerPhone,
                 serviceHandlesRingtone = serviceHandlesRingtone
             )
-            if (!com.securecall.app.IncomingCallActivity.isShowingSession(invite.sessionId)) {
+            if (service != null && !service.isRingingOwner(sessionId)) {
+                // Lost ownership while posting: withdraw only this session's own tag.
+                IncomingCallNotifications.cancel(this, sessionId)
+                return@showUi
+            }
+            if (!com.securecall.app.IncomingCallActivity.isShowingSession(sessionId)) {
                 try {
                     startActivity(intent)
                 } catch (e: Exception) {
@@ -196,8 +211,8 @@ class SecureCallMessagingService : FirebaseMessagingService() {
                 }
             }
         }
-        if (!IncomingCallTelecom.reportIncomingCall(this, invite.sessionId, callerName, intent, showUi)) {
-            showUi()
+        if (!IncomingCallTelecom.reportIncomingCall(this, invite.sessionId, callerName, intent) { showUi(true) }) {
+            showUi(false)
         }
 
         // E) Force reconnect if an existing service instance is disconnected.

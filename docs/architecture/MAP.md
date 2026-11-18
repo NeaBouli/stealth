@@ -685,3 +685,30 @@ Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
   FCM delivery stays independent of a running service (Telecom/notification fallback).
 - Activities: IncomingCallActivity/CallActivity clear only their own callbacks,
   stop audio / clear session only when they own the call or the service is idle.
+
+### Owner correction (SC245 plan P1-P7, accepted with parent corrections)
+
+- Immutable owner: outgoing `CallActivity` generates its session UUID in `onCreate` and
+  passes it to `sendCallInvite(target, sessionId)`; the id is registered in
+  `pendingInviteOwners` (only live queued/in-flight requests, cleared with the queue).
+  Admission consumes it under the monitor; `clearSessionIfOwner` removes it first, so a
+  queued or copied/in-flight request ended before admission never starts. The local
+  private key is published to `localPrivKey` only inside the admitting block. The UI
+  never reloads a global id (`getCallerSessionId` removed).
+- Admission is fail-closed: `awaitCallCloseLocked(): Boolean` is false on same-thread
+  reentry or after the 2 s bound; incoming adoption, outgoing admission, CALL_INVITE_ACK,
+  caller/callee media install reject without key/id/callback/heartbeat mutation.
+- Callbacks: `bindCallCallbacks(owner, ended, error)` binds owner+ended+error as one
+  unit under the monitor and refuses while another bound owner is still the call owner
+  or closing. `closeOwnedCall` snapshots the bound callbacks in the same block that
+  reserves+detaches; they run outside the monitor. Owner-scoped errors use
+  `reportOwnedError(session, ...)`; error paths clear only by their own immutable owner.
+- Effects under reservation: `withCallReservation(session, requireOwner)` sets a
+  non-null reservation (idle uses an internal identity) across the effect for ringtone
+  start/stop, kill-audio and `setCallActiveIfOwner`; reentry/another reservation rejects.
+  Old callee media is detached under the monitor and closed after release.
+- Effect-time FCM/WS UI: `showUi` re-admits at execution: Telecom route requires the
+  call still live; with a service present it requires `isRingingOwner` (same unaccepted
+  callee owner) or, only for a cold push whose service appeared later, a not-ended invite
+  that the service accepts now. Service absent keeps the existing cold wake. Late stale
+  UI cancels only its own tag. IncomingCallActivity rechecks activation before effects.

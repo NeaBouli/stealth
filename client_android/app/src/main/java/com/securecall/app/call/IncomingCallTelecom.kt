@@ -187,6 +187,10 @@ object IncomingCallTelecom {
     @Synchronized
     fun hasCall(sessionId: String): Boolean = calls.containsKey(sessionId)
 
+    /** True once [sessionId] was ended (Telecom-managed or not); delayed UI must not revive it. */
+    @Synchronized
+    fun isEnded(sessionId: String): Boolean = endedCalls.contains(sessionId)
+
     /** Ends only this admitted call; service/UI side effects run after the monitor is released. */
     private fun terminate(sessionId: String, call: Call, cause: Int, reason: String) {
         val owned = synchronized(this) { (calls[sessionId] === call).also { if (it) end(sessionId, cause) } }
