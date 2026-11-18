@@ -24,6 +24,7 @@
  */
 
 const crypto = require("crypto");
+const fs = require("fs");
 const { ethers } = require("ethers");
 const {
   buildChallengeMessage,
@@ -32,6 +33,7 @@ const {
   IFR_PROOF_TTL_MS,
 } = require("./ifr_checkout");
 const { PRODUCTS } = require("./vlabs_fulfillment");
+const { resolveTurnSecret } = require("../security/turn_secret");
 
 const ELIGIBILITY_PURPOSE = "vlabs_ifr_eligibility";
 const ELIGIBILITY_SIGNING_PURPOSE = "vlabs.stealthx-ifr-eligibility.v1";
@@ -40,9 +42,16 @@ const ELIGIBILITY_SOURCE = "stealthx";
 const ELIGIBILITY_VERSION = "1";
 const ELIGIBILITY_LIFETIME_S = 300;
 const MIN_SECRET_LENGTH = 32;
+// Raw value or a protected 64-hex secret file, read by the existing bounded reader.
+const ELIGIBILITY_SECRET_NAMES = Object.freeze({
+  value: "VLABS_IFR_ELIGIBILITY_SECRET",
+  file: "VLABS_IFR_ELIGIBILITY_SECRET_FILE",
+  code: "invalid_ifr_eligibility_secret_configuration",
+  protectedFile: true,
+});
 
 // Returns the complete approved configuration, or null when anything is missing.
-function eligibilityConfig(env) {
+function eligibilityConfig(env, fileSystem = fs) {
   if (env.VLABS_IFR_ELIGIBILITY_ENABLED !== "true") return null;
   try {
     const origin = new URL(String(env.VLABS_IFR_ELIGIBILITY_ORIGIN || ""));
@@ -53,7 +62,7 @@ function eligibilityConfig(env) {
     const rpcUrls = String(env.VLABS_IFR_ELIGIBILITY_RPC_URLS || "").split(",").map((url) => url.trim()).filter(Boolean);
     if (!rpcUrls.length || rpcUrls.some((url) => new URL(url).protocol !== "https:")) return null;
     const keyId = String(env.VLABS_IFR_ELIGIBILITY_KEY_ID || "");
-    const secret = env.VLABS_IFR_ELIGIBILITY_SECRET;
+    const secret = resolveTurnSecret(env, fileSystem, ELIGIBILITY_SECRET_NAMES);
     if (!/^[A-Za-z0-9._-]{1,64}$/.test(keyId) || typeof secret !== "string" || secret.length < MIN_SECRET_LENGTH) return null;
     return { origin: origin.origin, domain: origin.host, chainId: Number(chainText), tokenAddress, rpcUrls, keyId, secret };
   } catch (_e) {
@@ -135,12 +144,20 @@ function setupIfrEligibilityRoutes(app, {
   maxChallenges = 10000,
   now = () => Date.now(),
   randomBytes = crypto.randomBytes,
+  // The global CORS allow-list; a configured origin outside it could never reach the
+  // routes from a browser, so the path stays closed instead of half-open.
+  corsAllowedOrigins = null,
 }) {
   const closed = (res) => res.status(503).json({ error: "ifr_eligibility_unavailable" });
+  const routeConfig = () => {
+    const config = eligibilityConfig(env);
+    if (config && Array.isArray(corsAllowedOrigins) && !corsAllowedOrigins.includes(config.origin)) return null;
+    return config;
+  };
   const requireOrigin = (req, config) => req.get("origin") === config.origin;
 
   app.post("/vlabs/ifr-eligibility/challenge", rateLimit, (req, res) => {
-    const config = eligibilityConfig(env);
+    const config = routeConfig();
     if (!config) return closed(res);
     if (!requireOrigin(req, config)) return res.status(403).json({ error: "origin_not_allowed" });
     const productId = typeof req.body?.productId === "string" ? req.body.productId : "";
@@ -165,7 +182,7 @@ function setupIfrEligibilityRoutes(app, {
   });
 
   app.post("/vlabs/ifr-eligibility", rateLimit, async (req, res) => {
-    const config = eligibilityConfig(env);
+    const config = routeConfig();
     if (!config) return closed(res);
     if (!requireOrigin(req, config)) return res.status(403).json({ error: "origin_not_allowed" });
     const nonce = typeof req.body?.nonce === "string" ? req.body.nonce : "";

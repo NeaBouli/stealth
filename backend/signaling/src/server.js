@@ -885,6 +885,7 @@ try {
     readHolderBalance: readConfiguredTokenBalance,
     rateLimit: createCheckoutRateLimiter({ limits: new Map(), getClientIp, max: 10, maxKeys: CHECKOUT_RL_MAX_KEYS }),
     maxChallenges: SIWE_CHALLENGE_MAX,
+    corsAllowedOrigins: ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS,
   });
 } catch (e) {
   // Unwired routes return 404: the eligibility path stays closed.
