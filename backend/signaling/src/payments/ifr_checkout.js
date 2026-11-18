@@ -60,7 +60,7 @@ function buildChallengeMessage(contract) {
   return contract.domain + " wants you to sign in with your Ethereum account:\n" +
     contract.walletAddress + "\n" +
     "\n" +
-    buildChallengeStatement(contract.tier) + "\n" +
+    (contract.statement || buildChallengeStatement(contract.tier)) + "\n" +
     "\n" +
     "URI: " + contract.uri + "\n" +
     "Version: " + contract.version + "\n" +
@@ -73,9 +73,9 @@ function buildChallengeMessage(contract) {
 // One-way proof reference for Stripe metadata: binds the exact canonical
 // message and the presented signature without revealing either. Domain-
 // separated by the proof purpose so digests cannot be reused across purposes.
-function buildProofDigest(message, signature) {
+function buildProofDigest(message, signature, purpose = IFR_PROOF_PURPOSE) {
   return crypto.createHash("sha256")
-    .update(IFR_PROOF_PURPOSE + "\n" + message + "\n" + signature, "utf8")
+    .update(purpose + "\n" + message + "\n" + signature, "utf8")
     .digest("hex");
 }
 
