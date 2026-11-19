@@ -559,3 +559,14 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   Never reads/prints stack, message, UI text or ids.
 - Ordinary, visual and live-pin paths unchanged; the visual collector still rejects
   `sc241_root_*` fields. Runtime NOT_RUN.
+
+## SC241 root probe protocol/stderr hardening (source only, 2026-11-19)
+
+- Same hop (`root_probe` -> `am instrument -e class` -> `--root-probe` collector). Parser
+  now also rejects status after terminal (covers terminal-before-case), duplicate ordinary
+  status fields, a pending status block at terminal/EOF and multiple terminal markers.
+- Root-mode adb/timeout stderr goes to the same private `mktemp` dir as the protocol and is
+  removed by the existing EXIT trap; job log gets only `INSTRUMENTATION_TIMEOUT` or
+  `INSTRUMENTATION_STARTUP_OR_TRANSPORT_FAILURE`.
+- Workflow: reuses the accepted public 2cb55a84 `ANDROID_NDK_HOME`/`ANDROID_NDK_ROOT`
+  exports before gradlew; no SDK/version/verification change. Runtime NOT_RUN.

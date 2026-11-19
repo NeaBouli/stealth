@@ -102,9 +102,15 @@ if [[ "$root_probe" == true ]]; then
   # only the closed sc241_root_* whitelist is printed by the collector.
   root_case='com.securecall.app.ContactLookupPreservationInstrumentedTest#explicitUserDeleteStillRequiresConfirmationAndRemovesOnlyChosenContact'
   root_tmp="$(mktemp -d)"
-  trap 'rm -f "$root_tmp/result.txt"; rmdir "$root_tmp"' EXIT
-  if ! timeout 900 adb shell am instrument -w -r -e class "$root_case" "${instrumentation_args[@]}" \
-      "$instrumentation" >"$root_tmp/result.txt"; then
+  # adb/timeout stderr stays private; only fixed categories reach the job log.
+  trap 'rm -f "$root_tmp/result.txt" "$root_tmp/stderr.txt"; rmdir "$root_tmp"' EXIT
+  root_transport=0
+  timeout 900 adb shell am instrument -w -r -e class "$root_case" "${instrumentation_args[@]}" \
+    "$instrumentation" >"$root_tmp/result.txt" 2>"$root_tmp/stderr.txt" || root_transport=$?
+  if [[ "$root_transport" -eq 124 ]]; then
+    echo 'SC241_ROOT_REJECTED:INSTRUMENTATION_TIMEOUT' >&2
+    exit 2
+  elif [[ "$root_transport" -ne 0 ]]; then
     echo 'SC241_ROOT_REJECTED:INSTRUMENTATION_STARTUP_OR_TRANSPORT_FAILURE' >&2
     exit 2
   fi

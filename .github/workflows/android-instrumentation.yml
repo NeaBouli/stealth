@@ -99,6 +99,8 @@ jobs:
           ndk: 27.0.12077973
           cmake: 3.22.1
           script: >-
+            export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.0.12077973" &&
+            export ANDROID_NDK_ROOT="$ANDROID_NDK_HOME" &&
             ./gradlew --no-daemon --max-workers=1
             assembleFreeDebug assembleFreeDebugAndroidTest --console=plain &&
             bash "${GITHUB_WORKSPACE}/.github/scripts/run-android-smoke.sh"

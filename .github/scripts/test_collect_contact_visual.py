@@ -335,6 +335,39 @@ class RootProbeTests(unittest.TestCase):
         outside = root_status().encode() + root_result()
         self.assert_rejected(outside, "ROOT_DIAGNOSTIC_OUTSIDE_ACTIVE_CASE")
 
+    def test_protocol_order_and_block_counterexamples_rejected(self):
+        ok = root_result()
+        terminal_first = b"INSTRUMENTATION_CODE: -1\n" + ok.replace(b"INSTRUMENTATION_CODE: -1\n", b"")
+        self.assert_rejected(terminal_first, "ROOT_STATUS_AFTER_TERMINAL")
+        self.assert_rejected(ok + b"INSTRUMENTATION_STATUS_CODE: -2\n", "ROOT_STATUS_AFTER_TERMINAL")
+        self.assert_rejected(ok + b"INSTRUMENTATION_STATUS: class=X\n", "ROOT_STATUS_AFTER_TERMINAL")
+        klass, test = collector.ROOT_CASE
+        duplicate = ok.replace(f"INSTRUMENTATION_STATUS: test={test}\n".encode(),
+                               f"INSTRUMENTATION_STATUS: test={test}\nINSTRUMENTATION_STATUS: test=other\n"
+                               f"INSTRUMENTATION_STATUS: test={test}\n".encode(), 1)
+        self.assert_rejected(duplicate, "ROOT_DUPLICATE_STATUS_FIELD")
+        pending = ok.replace(b"INSTRUMENTATION_CODE: -1\n",
+                             f"INSTRUMENTATION_STATUS: class={klass}\nINSTRUMENTATION_CODE: -1\n".encode())
+        self.assert_rejected(pending, "ROOT_INCOMPLETE_STATUS_BLOCK")
+        self.assert_rejected(ok + f"INSTRUMENTATION_STATUS: class={klass}\n".encode(), "ROOT_STATUS_AFTER_TERMINAL")
+        self.assert_rejected(ok.replace(b"INSTRUMENTATION_CODE: -1\n", f"INSTRUMENTATION_STATUS: class={klass}\n".encode()),
+                             "ROOT_INCOMPLETE_STATUS_BLOCK")
+        self.assert_rejected(ok + b"INSTRUMENTATION_CODE: -1\n", "ROOT_MULTIPLE_TERMINAL_MARKERS")
+
+    def test_real_runner_protocol_shape_still_classified(self):
+        klass, test = collector.ROOT_CASE
+        def block(code, extra=""):
+            return (f"INSTRUMENTATION_STATUS: class={klass}\nINSTRUMENTATION_STATUS: current=1\n"
+                    f"INSTRUMENTATION_STATUS: id=AndroidJUnitRunner\nINSTRUMENTATION_STATUS: numtests=1\n{extra}"
+                    f"INSTRUMENTATION_STATUS: stream=\ncom.securecall.app.X:\nINSTRUMENTATION_STATUS: test={test}\n"
+                    f"INSTRUMENTATION_STATUS_CODE: {code}\n")
+        tail = "INSTRUMENTATION_RESULT: stream=\n\nTime: 1\n\n{}\n\nINSTRUMENTATION_CODE: -1\n"
+        failed = block(1) + root_status() + block(-2, "INSTRUMENTATION_STATUS: stack=java.lang.X: private\n\tat a\n") \
+            + tail.format("FAILURES!!!\nTests run: 1,  Failures: 1")
+        outcome, diagnostics = self.run_root(failed.encode())
+        self.assertEqual((outcome, len(diagnostics)), ("assertion_failed", 1))
+        self.assertEqual(self.run_root((block(1) + block(0) + tail.format("OK (1 test)")).encode()), ("passed", []))
+
     def test_visual_collector_still_rejects_root_fields(self):
         with self.assertRaisesRegex(collector.GateError, "UNAPPROVED_DIAGNOSTIC_FIELDS"):
             collector.execution(diagnosed_result(root_status().encode()))
