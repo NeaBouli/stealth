@@ -758,3 +758,6 @@ Bounded variant-data node (no new client/wrapper/engine):
   refusals) and inspects BuildConfig/APK outputs. No emulator, device, connected test, network to
   an owned service, artifact upload or secret. Indirect Release graph case: NOT_RUN (no existing
   debug-labelled task depends on a Release task).
+- Parent qualification refinement: run the three scoped owned-network/relay JVM test classes
+  for Free and Premium, then require nonempty JUnit XML results with zero failures/errors/skips.
+  Compilation alone is not assertion acceptance; no whole unit suite or emulator is added.
