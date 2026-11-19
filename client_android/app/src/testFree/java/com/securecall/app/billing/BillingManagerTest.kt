@@ -13,6 +13,8 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.securecall.app.BuildConfig
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -368,6 +370,22 @@ class BillingManagerTest {
             SubscriptionTier.PREMIUM, "synthetic-restore", BuildConfig.SKU_PREMIUM_LIFETIME)))
     }
 
+    @Test
+    fun billing82BuilderRequiresPackageMetadataEvenForAnInAppProduct() {
+        val details: ProductDetails = mock()
+        whenever(details.productId).thenReturn(BuildConfig.SKU_PREMIUM_LIFETIME)
+        whenever(details.productType).thenReturn(BillingClient.ProductType.INAPP)
+        val product = BillingFlowParams.ProductDetailsParams.newBuilder()
+            .setProductDetails(details).build()
+
+        // Billing8.2.1 calls ProductDetails.zza().isEmpty(); an unstubbed mock returns null.
+        assertThrows(NullPointerException::class.java) {
+            BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(product)).build()
+        }
+        whenever(details.zza()).thenReturn("com.securecall.app.free")
+        assertNotNull(BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(product)).build())
+    }
+
     private fun purchaseClient(subject: BillingManager = manager): Pair<BillingClient, MutableList<PurchasesResponseListener>> {
         val client: BillingClient = mock()
         val callbacks = mutableListOf<PurchasesResponseListener>()
@@ -390,6 +408,8 @@ class BillingManagerTest {
         val details: ProductDetails = mock()
         whenever(details.productId).thenReturn(sku)
         whenever(details.productType).thenReturn(BillingClient.ProductType.INAPP)
+        // SDK8.2.1's public obfuscated accessor reads packageName from real ProductDetails JSON.
+        whenever(details.zza()).thenReturn("com.securecall.app.free")
         // Exercise the real query->launch hop without enabling the closed BuildConfig sales flag.
         BillingManager::class.java.getDeclaredMethod("queryExistingPurchases", ProductDetails::class.java).apply {
             isAccessible = true
