@@ -720,3 +720,26 @@ Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
 - `CALL_ACCEPT_ACK` is informational only: it retains its protocol check and logging,
   but never stops audio, including after replacement or same-call playback start. Local
   `sendCallAccept` remains the authoritative ring-stop transition before signaling.
+
+## Pre-charge lifetime ownership guard (SC-PLAY-DOUBLE-PURCHASE-GUARD-20261119)
+
+- Existing module/hop: Free `UpgradeActivity::launchPurchase` ->
+  `BillingManager::launchInAppPurchaseFlow` -> `queryExistingPurchases` ->
+  `BillingClient::launchBillingFlow`. A Pro/Premium lifetime launch now requires a
+  fresh, successful and complete SUBS+INAPP query, both empty, with no locally
+  recorded token or pending receipt. Unknown/pending/malformed inventory is not empty.
+- The query-to-purchase attempt stays reserved through the billing result. Duplicate
+  taps cannot query or launch again; purchase updates, disconnect, destroy and
+  overlapping restore completion invalidate older inventory. Observed ownership is
+  never erased by a later empty response on that manager. Missing callbacks remain
+  fail-closed until manager teardown/restore; no timer or automatic retry was added.
+- Existing verified rights are read, never rewritten by this guard. Same-item restore
+  still uses the original joined restore callback and server verification. Activation-code
+  launch, closed commerce flags, backend, WS/media and entitlement data models are unchanged.
+- Owner decision received during this task: permanent Play right with renewable30-day
+  proof; Pro-to-Premium only verified price difference via central VLABS, never a second
+  full-price purchase. This guard adds no upgrade/credit/tier-selection path. Play offer
+  version and separate upgrade implementation/configuration remain parent-owned.
+- Focused JVM regression sources exercise the real guarded query-to-launch hop through
+  mocked BillingClient callbacks while the BuildConfig sales gate remains closed. Tests
+  and compilation NOT_RUN in this source-only task; independent review/execution owed.

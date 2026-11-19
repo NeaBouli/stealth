@@ -32,6 +32,10 @@ class BillingManager(
 
     private var billingClient: BillingClient? = null
     private var productDetailsList: List<ProductDetails> = emptyList()
+    private val purchaseLock = Any()
+    private var purchaseInFlight: Any? = null
+    private var inventoryVersion = 0L
+    private var ownershipObserved = false
 
     private val lifetimeSkus = listOf(
         BuildConfig.SKU_PRO_LIFETIME,
@@ -69,6 +73,10 @@ class BillingManager(
             }
 
             override fun onBillingServiceDisconnected() {
+                synchronized(purchaseLock) {
+                    inventoryVersion++
+                    purchaseInFlight = null
+                }
                 Log.w(TAG, "Billing service disconnected")
                 listener.onBillingDisconnected()
             }
@@ -99,19 +107,84 @@ class BillingManager(
         }
     }
 
-    private fun queryExistingPurchases() {
+    private fun queryExistingPurchases(productDetails: ProductDetails? = null) {
         val client = billingClient ?: return
+        val attempt = synchronized(purchaseLock) {
+            if (productDetails == null) null else {
+                if (!client.isReady || purchaseInFlight != null) {
+                    listener.onPurchaseFailed(BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE,
+                        "Purchase ownership check unavailable or already in progress")
+                    return
+                }
+                Any().also { purchaseInFlight = it }
+            }
+        }
+        val version = synchronized(purchaseLock) { inventoryVersion }
         val results = mutableMapOf<String, List<RestoredPurchase>>()
         var failed: BillingResult? = null
+        var unresolvedInventory = false
+        var ownedInventory = false
         var delivered = false
         fun completed(type: String, result: BillingResult, purchases: List<Purchase>) {
             synchronized(results) {
                 if (delivered || billingClient !== client || results.containsKey(type)) return
                 if (result.responseCode != BillingClient.BillingResponseCode.OK) failed = result
+                // Do not filter pending/unknown receipts into an apparently empty inventory.
+                unresolvedInventory = unresolvedInventory || purchases.any {
+                    it.purchaseState != Purchase.PurchaseState.PURCHASED
+                        || it.products.singleOrNull() !in lifetimeSkus
+                        || it.purchaseToken.isBlank()
+                }
+                ownedInventory = ownedInventory || purchases.isNotEmpty()
+                if (purchases.isNotEmpty()) synchronized(purchaseLock) { ownershipObserved = true }
                 results[type] = purchases.mapNotNull { purchaseReceipt(it) }
                 if (results.size != 2) return
                 delivered = true
                 val error = failed
+                if (attempt != null && productDetails != null) {
+                    synchronized(purchaseLock) {
+                        if (billingClient !== client || purchaseInFlight !== attempt) return
+                        val failure = when {
+                            error != null -> error.responseCode to "Unable to restore all purchases"
+                            inventoryVersion != version || !client.isReady || unresolvedInventory ->
+                                BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE to "Purchase ownership is unresolved"
+                            ownedInventory || ownershipObserved -> BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED to
+                                "Restore existing purchases; another lifetime purchase is unavailable"
+                            else -> try {
+                                val verifiedState = SubscriptionManager(activity)
+                                if (verifiedState.getPurchaseToken().isNotBlank()
+                                    || verifiedState.pendingReceiptCount() != 0) {
+                                    BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED to
+                                        "Restore existing purchases; another lifetime purchase is unavailable"
+                                } else null
+                            } catch (_: RuntimeException) {
+                                BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE to "Purchase ownership is unresolved"
+                            }
+                        }
+                        if (failure != null) {
+                            purchaseInFlight = null
+                            listener.onPurchaseFailed(failure.first, failure.second)
+                            return
+                        }
+                        try {
+                            val params = BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(
+                                BillingFlowParams.ProductDetailsParams.newBuilder()
+                                    .setProductDetails(productDetails).build()
+                            )).build()
+                            val launchResult = client.launchBillingFlow(activity, params)
+                            if (launchResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                                if (purchaseInFlight === attempt) purchaseInFlight = null
+                                listener.onPurchaseFailed(launchResult.responseCode, launchResult.debugMessage)
+                            }
+                        } catch (_: RuntimeException) {
+                            if (purchaseInFlight === attempt) purchaseInFlight = null
+                            listener.onPurchaseFailed(BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE,
+                                "Unable to launch purchase")
+                        }
+                    }
+                    return
+                }
+                synchronized(purchaseLock) { inventoryVersion++ }
                 if (error != null) {
                     // A missing half is not evidence that only the other purchase exists.
                     listener.onPurchaseFailed(error.responseCode, "Unable to restore all purchases")
@@ -143,6 +216,10 @@ class BillingManager(
 
     fun launchInAppPurchaseFlow(productDetails: ProductDetails) {
         if (!BuildConfig.BILLING_ENABLED) return
+        if (productDetails.productId in listOf(BuildConfig.SKU_PRO_LIFETIME, BuildConfig.SKU_PREMIUM_LIFETIME)) {
+            queryExistingPurchases(productDetails)
+            return
+        }
         val productDetailsParamsList = listOf(
             BillingFlowParams.ProductDetailsParams.newBuilder()
                 .setProductDetails(productDetails)
@@ -161,6 +238,11 @@ class BillingManager(
     }
 
     override fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {
+        synchronized(purchaseLock) {
+            inventoryVersion++
+            purchaseInFlight = null
+            if (!purchases.isNullOrEmpty()) ownershipObserved = true
+        }
         when (result.responseCode) {
             BillingClient.BillingResponseCode.OK -> {
                 purchases?.forEach { purchase ->
@@ -199,7 +281,11 @@ class BillingManager(
     }
 
     fun destroy() {
-        billingClient?.endConnection()
-        billingClient = null
+        val client = synchronized(purchaseLock) {
+            inventoryVersion++
+            purchaseInFlight = null
+            billingClient.also { billingClient = null }
+        }
+        client?.endConnection()
     }
 }
