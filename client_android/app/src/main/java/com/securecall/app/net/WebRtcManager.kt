@@ -164,6 +164,8 @@ class WebRtcManager(
     private fun buildStunFallback(): List<PeerConnection.IceServer> {
         Log.w(TAG, "Dynamic ICE fetch unavailable — using configured STUN fallback")
         com.securecall.app.debug.SecLogManager.log("ICE", "Fallback: configured STUN only")
+        // Empty only in an owned-test debug build without owned STUN: host candidates only.
+        if (BuildConfig.STUN_URL.isEmpty()) return emptyList()
         return listOf(PeerConnection.IceServer.builder(BuildConfig.STUN_URL).createIceServer())
     }
 

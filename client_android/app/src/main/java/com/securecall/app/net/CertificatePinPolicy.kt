@@ -20,4 +20,25 @@ internal object CertificatePinPolicy {
         "sha256/sCkq5UWXjg+7mKu9lMhhYF5bGLsy7VI/UNW3tccdR7w=", // Root YE
         "sha256/diGVwiVYbubAI3RW4hB9xU8e/CH2GnkuvVFZE8zmgzI="  // ISRG Root X2
     )
+
+    /**
+     * Host/pin pairs for OkHttp. Production pins are always present. An owned-test
+     * debug build (Gradle `-PisolatedDeviceTest` plus validated owned-test inputs)
+     * adds exactly one pin for its loopback/emulator-gateway host; release builds
+     * carry empty owned-test fields and therefore never add an entry.
+     */
+    fun entries(
+        debug: Boolean = com.securecall.app.BuildConfig.DEBUG,
+        ownedHost: String = com.securecall.app.BuildConfig.OWNED_TEST_PIN_HOST,
+        ownedPin: String = com.securecall.app.BuildConfig.OWNED_TEST_PIN
+    ): List<Pair<String, String>> {
+        val production = PINS.map { HOST to it }
+        if (!debug || ownedHost.isEmpty() || ownedPin.isEmpty()) return production
+        require(ownedHost in OWNED_TEST_HOSTS) { "owned-test pin host is not loopback/emulator gateway" }
+        require(OWNED_PIN_FORMAT.matches(ownedPin)) { "owned-test pin is not a sha256 SPKI digest" }
+        return production + (ownedHost to ownedPin)
+    }
+
+    private val OWNED_TEST_HOSTS = setOf("10.0.2.2", "127.0.0.1")
+    private val OWNED_PIN_FORMAT = Regex("^sha256/[A-Za-z0-9+/]{43}=$")
 }

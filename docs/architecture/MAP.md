@@ -720,3 +720,24 @@ Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
 - `CALL_ACCEPT_ACK` is informational only: it retains its protocol check and logging,
   but never stops audio, including after replacement or same-call playback start. Local
   `sendCallAccept` remains the authoritative ring-stop transition before signaling.
+
+# Narrow trace: owned-test network variant data (SC-OWNED-CALL-CONFIG-20261119)
+
+Module: Android build variant data -> transport hop. Existing hop only:
+`app/build.gradle` debug `buildConfigField SIGNAL_WS_URL/STUN_URL` -> `WebSocketService.wsUrl`
+-> `HeartbeatClient(url)` (OkHttp + `NetworkManager.buildCertificatePinner()`), and
+`WebRtcManager.buildStunFallback()` (`BuildConfig.STUN_URL`); TURN stays server-issued.
+TLS: `network_security_config.xml` + `CertificatePinPolicy`.
+
+Bounded variant-data node (no new client/wrapper/engine):
+- Inputs `ownedTestSignalUrl`, `ownedTestStunUrl` (optional, empty = host candidates only),
+  `ownedTestCaCert` (public PEM path), `ownedTestPin` (sha256 SPKI of that CA).
+- Effective only for the `debug` build type when `-PisolatedDeviceTest` is also set.
+  `-PisolatedDeviceTest` alone keeps production WSS/STUN. Any input without
+  `isolatedDeviceTest`, on release/bundle tasks, or incomplete/invalid -> GradleException.
+- Host allow-list: literal `10.0.2.2` / `127.0.0.1`, port 1024-65535, path `/signal`,
+  no userinfo/query/fragment; STUN `stun:<same host>:<port>` only, no TURN/public DNS.
+- TLS: generated debug-only res overlay (main NSC + `domain-config` for the owned host with
+  the public CA and pin); pin must equal the CA SPKI digest. PEM with private-key material is
+  refused. Release/main source sets and production pins unchanged.
+- `CertificatePinPolicy.entries()` adds the owned host pin only when `BuildConfig.DEBUG`.

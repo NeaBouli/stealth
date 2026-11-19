@@ -41,6 +41,86 @@ if (isolatedDeviceTest) {
     }
 }
 
+// Owned-test network (SC-OWNED-CALL-CONFIG-20261119): explicit loopback/emulator-gateway
+// signaling for isolated debug qualification only. Release defaults are never touched.
+def ownedTestInputNames = ['ownedTestSignalUrl', 'ownedTestStunUrl', 'ownedTestCaCert', 'ownedTestPin']
+def ownedTestNetwork = null
+if (ownedTestInputNames.any { project.hasProperty(it) }) {
+    def refuse = { String reason -> throw new GradleException("Owned-test network refused: ${reason}") }
+    if (!isolatedDeviceTest) refuse('requires -PisolatedDeviceTest')
+    def requestedTasks = gradle.startParameter.taskNames.collect { it.toLowerCase() }
+    if (!requestedTasks || requestedTasks.any { !it.contains('debug') || it.contains('release') || it.contains('bundle') }) {
+        refuse('inputs are accepted only for explicit debug tasks')
+    }
+    def input = { String name -> (project.findProperty(name) ?: '').toString() }
+    ['ownedTestSignalUrl', 'ownedTestCaCert', 'ownedTestPin'].each { if (!input(it)) refuse("missing ${it}") }
+    def ownedHosts = ['10.0.2.2', '127.0.0.1']
+    def validPort = { String port -> port ==~ /[1-9][0-9]{3,4}/ && (port as int) in (1024..65535) }
+
+    def signalRaw = input('ownedTestSignalUrl')
+    URI signal = null
+    try { signal = new URI(signalRaw) } catch (URISyntaxException ignored) { refuse('ownedTestSignalUrl is not a URI') }
+    if (signal.scheme != 'wss' || !(signal.host in ownedHosts) || signal.rawUserInfo != null ||
+            signal.rawQuery != null || signal.rawFragment != null || signal.rawPath != '/signal' ||
+            signal.port < 0 || !validPort(signal.port as String) ||
+            signal.rawAuthority != "${signal.host}:${signal.port}".toString() || signal.toString() != signalRaw) {
+        refuse('ownedTestSignalUrl must be wss://10.0.2.2|127.0.0.1:<1024-65535>/signal')
+    }
+    def stunRaw = input('ownedTestStunUrl')
+    if (stunRaw) {
+        def stun = stunRaw =~ /^stun:([0-9.]+):([0-9]+)$/
+        if (!stun.matches() || stun.group(1) != signal.host || !validPort(stun.group(2))) {
+            refuse('ownedTestStunUrl must be stun:<signal host>:<1024-65535> or empty')
+        }
+    }
+
+    def caFile = file(input('ownedTestCaCert'))
+    if (!caFile.isFile()) refuse('ownedTestCaCert is not a readable file')
+    def caPem = caFile.getText('US-ASCII')
+    if (caPem.contains('PRIVATE KEY') || caPem.count('-----BEGIN ') != 1 ||
+            caPem.count('-----BEGIN CERTIFICATE-----') != 1) {
+        refuse('ownedTestCaCert must contain exactly one public certificate and no key material')
+    }
+    def caCert = null
+    try {
+        caCert = java.security.cert.CertificateFactory.getInstance('X.509')
+            .generateCertificate(new ByteArrayInputStream(caPem.getBytes('US-ASCII')))
+        caCert.checkValidity()
+    } catch (Exception ignored) { refuse('ownedTestCaCert is not a valid X.509 certificate') }
+    if (caCert.basicConstraints < 0) refuse('ownedTestCaCert must be a CA certificate')
+    def caPin = 'sha256/' + java.util.Base64.encoder.encodeToString(
+        java.security.MessageDigest.getInstance('SHA-256').digest(caCert.publicKey.encoded))
+    if (input('ownedTestPin') != caPin) refuse('ownedTestPin must equal the SHA-256 SPKI pin of ownedTestCaCert')
+
+    // Debug-only overlay: production pins stay; the owned host gets the public CA and its pin.
+    def mainNsc = file('src/main/res/xml/network_security_config.xml').getText('UTF-8')
+    def loopbackCleartext = '        <domain includeSubdomains="true">127.0.0.1</domain>\n'
+    def nscClosing = '</network-security-config>'
+    if (mainNsc.count(nscClosing) != 1 || mainNsc.count(loopbackCleartext) != 1) {
+        refuse('unexpected main network_security_config layout')
+    }
+    if (signal.host == '127.0.0.1') mainNsc = mainNsc.replace(loopbackCleartext, '')
+    def ownedNsc = mainNsc.replace(nscClosing, """    <!-- Generated debug-only owned-test host. Never present in release source sets. -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">${signal.host}</domain>
+        <trust-anchors>
+            <certificates src="@raw/owned_test_ca" />
+        </trust-anchors>
+        <pin-set>
+            <pin digest="SHA-256">${caPin.substring('sha256/'.length())}</pin>
+        </pin-set>
+    </domain-config>
+${nscClosing}
+""")
+    def ownedResDir = layout.buildDirectory.dir('generated/ownedTestNetwork/debug/res').get().asFile
+    project.delete(ownedResDir)
+    new File(ownedResDir, 'xml').mkdirs()
+    new File(ownedResDir, 'raw').mkdirs()
+    new File(ownedResDir, 'xml/network_security_config.xml').setText(ownedNsc, 'UTF-8')
+    new File(ownedResDir, 'raw/owned_test_ca.pem').setText(caPem, 'US-ASCII')
+    ownedTestNetwork = [signalUrl: signalRaw, stunUrl: stunRaw, host: signal.host, pin: caPin, resDir: ownedResDir]
+}
+
 android {
     namespace "com.securecall.app"
     compileSdk 37
@@ -58,6 +138,9 @@ android {
         targetSdkVersion 36
         versionCode 78020
         versionName "1.0.52"
+        // Empty everywhere except an explicit isolated owned-test debug build.
+        buildConfigField "String", "OWNED_TEST_PIN_HOST", '""'
+        buildConfigField "String", "OWNED_TEST_PIN", '""'
 
         // Public verifier only. Empty until the exact signed release is configured.
         buildConfigField "String", "ENTITLEMENT_PUBLIC_KEY", "\"${entitlementPublicKey}\""
@@ -219,7 +302,18 @@ android {
             }
             buildConfigField "String", "SIGNAL_WS_URL", "\"wss://api.stealthx.tech/signal\""
             buildConfigField "String", "STUN_URL", "\"stun:stun.l.google.com:19302\""
+            if (ownedTestNetwork) {
+                buildConfigField "String", "SIGNAL_WS_URL", "\"${ownedTestNetwork.signalUrl}\""
+                buildConfigField "String", "STUN_URL", "\"${ownedTestNetwork.stunUrl}\""
+                buildConfigField "String", "OWNED_TEST_PIN_HOST", "\"${ownedTestNetwork.host}\""
+                buildConfigField "String", "OWNED_TEST_PIN", "\"${ownedTestNetwork.pin}\""
+            }
         }
+    }
+
+    sourceSets {
+        // Generated owned-test TLS overlay; attached to the debug build type only.
+        if (ownedTestNetwork) debug.res.srcDir(ownedTestNetwork.resDir)
     }
 
     compileOptions {
