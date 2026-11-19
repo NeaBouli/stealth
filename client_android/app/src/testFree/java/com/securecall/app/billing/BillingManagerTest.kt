@@ -3,6 +3,7 @@ package com.securecall.app.billing
 import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
+import android.text.TextUtils
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
@@ -12,11 +13,15 @@ import com.android.billingclient.api.PurchasesResponseListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.securecall.app.BuildConfig
+import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.mockito.MockedStatic
+import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.inOrder
@@ -27,6 +32,24 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class BillingManagerTest {
+    private lateinit var textUtils: MockedStatic<TextUtils>
+
+    @Before
+    fun provideAndroidTextSemanticsForTheRealBillingBuilder() {
+        // android.jar default-value stubs incorrectly report isEmpty(null) as false.
+        textUtils = Mockito.mockStatic(TextUtils::class.java)
+        textUtils.`when`<Boolean> { TextUtils.isEmpty(Mockito.nullable(CharSequence::class.java)) }
+            .thenAnswer { invocation ->
+                val value = invocation.getArgument<CharSequence?>(0)
+                value == null || value.length == 0
+            }
+    }
+
+    @After
+    fun releaseAndroidTextSemantics() {
+        textUtils.close()
+    }
+
     private val activity: Activity = mock()
     private val listener: BillingManager.BillingListener = mock()
     private val manager = BillingManager(activity, listener)
@@ -372,6 +395,9 @@ class BillingManagerTest {
 
     @Test
     fun billing82BuilderRequiresPackageMetadataEvenForAnInAppProduct() {
+        assertTrue(TextUtils.isEmpty(null))
+        assertTrue(TextUtils.isEmpty(""))
+        assertEquals(false, TextUtils.isEmpty("synthetic"))
         val details: ProductDetails = mock()
         whenever(details.productId).thenReturn(BuildConfig.SKU_PREMIUM_LIFETIME)
         whenever(details.productType).thenReturn(BillingClient.ProductType.INAPP)
