@@ -6325,3 +6325,17 @@ Open next:
   subscription_webrtc 301/301, handlers 62/62, google_play_lifetime 75/75, rtdn_retry 1/1.
 - UI unchanged (already lifetime-only); flags closed; VPN split untouched. Not evidence that any
   Play Console product was deactivated. NOT_RUN: full CI, artifact VPN guards (parent CI).
+
+## 2026-11-16 - Contact Continuity Candidate (Issue241)
+
+SC-CONTACT-LOOKUP-PRESERVATION-20261116 removes a destructive discovery-refresh
+cleanup and preserves explicit user deletion and positive contact association.
+Seven synthetic instrumented regressions exercise real storage/result handling
+and delete confirmation using the existing SettingsActivity/testing stack.
+No new dependency, component, permission, protocol, tier, purchase configuration
+or customer-data fixture. Static diff/scope/whitespace checks pass.
+Actual Kotlin/build/instrumentation, affected UI/state evidence and independent
+security/integration gates are pending; no product/runtime/release readiness
+claimed. This does not close the broader privacy audit. No personal-device,
+production or provider operation. Financial coordination remains separate with
+VLABS operator.
