@@ -13,6 +13,20 @@ SCRIPTS = ROOT / ".github/scripts"
 TEST_PATH = "client_android/app/src/androidTest/java/com/securecall/app/ContactLookupPreservationInstrumentedTest.kt"
 MATRIX_PATH = "client_android/app/src/androidTest/java/com/securecall/app/ContactVisualMatrix.kt"
 PRODUCTION = "client_android/app/src/main/java/com/securecall/app/ui/ContactsFragment.kt"
+# Source-scope comparison ONLY. BASE above stays the immutable SC241 regression-contract base.
+SOURCE_SCOPE_BASE = "2e98fe370a2e007642270e8ac59717bcbdb52692"
+INTEGRATED_PATHS = frozenset({
+    ".github/scripts/collect_contact_visual.py", ".github/scripts/run-android-smoke.sh",
+    ".github/scripts/sc241-guest-isolation.sh", ".github/scripts/test_collect_contact_visual.py",
+    ".github/scripts/test_sc241_source.py", ".github/workflows/android-instrumentation.yml",
+    ".gitignore", "BRIDGE.md", "docs/architecture/MAP.md", PRODUCTION, TEST_PATH, MATRIX_PATH,
+    "client_android/app/src/androidTest/java/com/securecall/app/ContactRootObservation.kt",
+})
+LOCAL_REPORTS = frozenset({
+    ".fleet/reports/SC242-INTEGRATION-PLAN-20261119.md", ".fleet/reports/SC242-FINAL-SOURCE-20261119.md",
+    ".fleet/reports/SC241-NORMAL-LIFECYCLE-IMPLEMENT-20261116.md",
+})
+BASE_MAP_SECTION = "# Narrow trace: contact lookup preserves saved identities (2026-11-16)"
 PURE = {
     "sc241_host_guard", "sc241_one_emulator", "sc241_fresh_guard", "sc241_policy_guard",
     "sc241_read_drop_count", "sc241_positive_delta", "sc241_probe_delta",
@@ -21,6 +35,10 @@ PURE = {
 
 def git(*args):
     return subprocess.check_output(["git", *args], cwd=ROOT)
+
+
+def scope_violations(tracked, untracked):
+    return (set(tracked) - INTEGRATED_PATHS) | (set(untracked) - LOCAL_REPORTS)
 
 
 def pure(name, *args, stdin=""):
@@ -191,16 +209,28 @@ class SourceContracts(unittest.TestCase):
         self.assertIn("primaryFailure = failure", self.matrix)
 
     def test_exact_source_whitelist(self):
-        allowed = {TEST_PATH, MATRIX_PATH, "docs/architecture/MAP.md",
-                   ".github/scripts/run-android-smoke.sh", ".github/scripts/sc241-guest-isolation.sh",
-                   ".github/scripts/test_sc241_source.py",
-                   ".fleet/reports/SC241-NORMAL-LIFECYCLE-IMPLEMENT-20261116.md"}
-        changed = set(git("diff", "--name-only", BASE).decode().splitlines())
-        changed.update(git("ls-files", "--others", "--exclude-standard").decode().splitlines())
-        self.assertTrue(changed <= allowed, "Foreign/out-of-scope changes require parent reconciliation")
+        subprocess.check_call(["git", "merge-base", "--is-ancestor", SOURCE_SCOPE_BASE, "HEAD"], cwd=ROOT)
+        tracked = git("diff", "--name-only", SOURCE_SCOPE_BASE).decode().splitlines()
+        untracked = git("ls-files", "--others", "--exclude-standard").decode().splitlines()
+        self.assertEqual(scope_violations(tracked, untracked), set(),
+                         "Foreign/out-of-scope changes require parent reconciliation")
+        scope_map = git("show", f"{SOURCE_SCOPE_BASE}:docs/architecture/MAP.md")
+        current_map = (ROOT / "docs/architecture/MAP.md").read_bytes()
+        self.assertTrue(current_map.startswith(scope_map))
         original_map = git("show", f"{BASE}:docs/architecture/MAP.md")
-        self.assertTrue((ROOT / "docs/architecture/MAP.md").read_bytes().startswith(original_map))
+        own = original_map[original_map.index(BASE_MAP_SECTION.encode()):]
+        self.assertIn(own, current_map[len(scope_map):])
 
+    def test_scope_validator_accepts_integration_and_rejects_extras(self):
+        self.assertEqual(BASE, "12756b9591db809f937e6443b3d1c847a622b603")
+        self.assertNotEqual(SOURCE_SCOPE_BASE, BASE)
+        self.assertEqual(len(INTEGRATED_PATHS), 13)
+        self.assertEqual(scope_violations(INTEGRATED_PATHS, LOCAL_REPORTS), set())
+        for path in ["client_android/app/src/main/java/com/securecall/app/ui/SettingsFragment.kt",
+                     "native/securecall_crypto/src/lib.rs", ".env", "secrets/keystore.jks"]:
+            self.assertEqual(scope_violations(INTEGRATED_PATHS | {path}, ()), {path})
+            self.assertEqual(scope_violations((), {path}), {path})
+        self.assertEqual(scope_violations((), {".fleet/reports/OTHER.md"}), {".fleet/reports/OTHER.md"})
 
 if __name__ == "__main__":
     unittest.main()
