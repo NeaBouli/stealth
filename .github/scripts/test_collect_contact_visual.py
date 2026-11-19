@@ -237,5 +237,141 @@ class PngAndBudgetTests(unittest.TestCase):
         self.assertEqual(2, missing.exception.code)
 
 
+def root_status(causes=("IllegalStateException",), suppressed=(), drop=None, **override):
+    fields = {"head": HEAD, "tree": TREE, "phase": "MENU", "selected": "UNKNOWN", "candidate_count": "1",
+              "candidates_incomplete": "false", "exception_class": "RootViewWithoutFocusException",
+              "cause_count": str(len(causes)), "cause_incomplete": "false",
+              "suppressed_count": str(len(suppressed)), "suppressed_incomplete": "false"}
+    for key in ("host_started", "host_resumed", "host_destroyed", "host_finishing", "host_focus",
+                "interactive", "keyguard_locked", "device_locked"):
+        fields[key] = "UNKNOWN"
+    for index in range(8):
+        fields[f"candidate_{index}_type"] = "2" if index == 0 else "-1"
+        for key in ("attached", "focus", "synthetic_title", "host_context"):
+            fields[f"candidate_{index}_{key}"] = "false" if index == 0 else "UNKNOWN"
+    fields.update({f"cause_{i}_class": name for i, name in enumerate(causes)})
+    fields.update({f"suppressed_{i}_class": name for i, name in enumerate(suppressed)})
+    fields.update(override)
+    fields.pop(drop, None)
+    return "".join(f"INSTRUMENTATION_STATUS: sc241_root_{k}={v}\n" for k, v in fields.items()) + \
+        "INSTRUMENTATION_STATUS_CODE: 2\n"
+
+
+def root_result(codes=(1, -2), status=None, case=None, count=1, terminal=-1, starts=1):
+    klass, test = case or collector.ROOT_CASE
+    lines = []
+    for _ in range(starts):
+        for index, code in enumerate(codes):
+            lines.append(f"INSTRUMENTATION_STATUS: class={klass}\nINSTRUMENTATION_STATUS: test={test}\n"
+                         f"INSTRUMENTATION_STATUS: numtests={count}\n")
+            if code != 1:
+                lines.append("INSTRUMENTATION_STATUS: stack=java.lang.SecretMessage: private-ui-text\n")
+            lines.append(f"INSTRUMENTATION_STATUS_CODE: {code}\n")
+            if index == 0 and status is not None:
+                lines.append(status)
+    lines.append("OK (1 test)\n" if codes == (1, 0) else "FAILURES!!!\n")
+    lines.append(f"INSTRUMENTATION_CODE: {terminal}\n")
+    return "".join(lines).encode()
+
+
+class RootProbeTests(unittest.TestCase):
+    def run_root(self, data):
+        return collector.root_execution(data, HEAD, TREE)
+
+    def assert_rejected(self, data, label):
+        with self.assertRaisesRegex(collector.GateError, label):
+            self.run_root(data)
+
+    def test_failure_with_class_fields_survives_whitelist_and_stays_failure(self):
+        outcome, diagnostics = self.run_root(root_result(
+            status=root_status(causes=("A", "B"), suppressed=("C",))))
+        self.assertEqual(outcome, "assertion_failed")
+        self.assertEqual(len(diagnostics), 1)
+        value = diagnostics[0]
+        self.assertEqual(value["exception_class"], "RootViewWithoutFocusException")
+        self.assertEqual((value["cause_0_class"], value["cause_1_class"], value["suppressed_0_class"]), ("A", "B", "C"))
+        self.assertFalse(any("Secret" in item or "private" in item for item in value.values()))
+
+    def test_four_slot_caps_and_unknown_class_accepted(self):
+        status = root_status(causes=("A", "B", "C", "UNKNOWN"), suppressed=("D", "E", "F", "G"),
+                             cause_incomplete="true", suppressed_incomplete="true")
+        self.assertEqual(self.run_root(root_result(status=status))[0], "assertion_failed")
+        self.assertEqual(self.run_root(root_result(status=root_status(suppressed_count="-1")))[0], "assertion_failed")
+
+    def test_execution_failure_and_unreported_failure_remain_failures(self):
+        self.assertEqual(self.run_root(root_result(codes=(1, -1)))[0], "execution_failed")
+        self.assertEqual(self.run_root(root_result()), ("assertion_failed", []))
+
+    def test_pass_without_diagnostic_only(self):
+        self.assertEqual(self.run_root(root_result(codes=(1, 0))), ("passed", []))
+        self.assert_rejected(root_result(codes=(1, 0), status=root_status()), "FAILURE_DIAGNOSTIC_WITH_SUCCESS")
+
+    def test_zero_or_more_than_one_executed_case_rejected(self):
+        self.assert_rejected(b"INSTRUMENTATION_CODE: -1\n", "ROOT_CASE_DID_NOT_START")
+        self.assert_rejected(root_result(starts=2), "ROOT_REQUIRES_EXACTLY_ONE_TEST")
+        self.assert_rejected(root_result(count=2), "ROOT_REQUIRES_EXACTLY_ONE_TEST")
+        self.assert_rejected(root_result(case=collector.CASE), "UNEXPECTED_OR_MISSING_ROOT_CASE")
+        self.assert_rejected(root_result(terminal=0), "INSTRUMENTATION_DID_NOT_COMPLETE")
+        self.assert_rejected(root_result(codes=(1, -3)), "ROOT_CASE_SKIPPED")
+
+    def test_unapproved_or_payload_fields_rejected(self):
+        self.assert_rejected(root_result(status=root_status(exception_message="secret")), "UNAPPROVED_ROOT_FIELDS")
+        self.assert_rejected(root_result(status=root_status(exception_class="java.lang.Secret text")),
+                             "UNAPPROVED_ROOT_CLASS")
+        self.assert_rejected(root_result(status=root_status(exception_class="A" * 65)), "UNAPPROVED_ROOT_CLASS")
+        self.assert_rejected(root_result(status=root_status(cause_count="2")), "UNAPPROVED_ROOT_FIELDS")
+        self.assert_rejected(root_result(status=root_status(cause_count="5")), "UNAPPROVED_ROOT_COUNT")
+        self.assert_rejected(root_result(status=root_status(drop="host_focus")), "UNAPPROVED_ROOT_FIELDS")
+        self.assert_rejected(root_result(status=root_status(host_focus="maybe")), "UNAPPROVED_ROOT_VALUE")
+        self.assert_rejected(root_result(status=root_status(candidate_0_type="3000")), "UNAPPROVED_ROOT_VALUE")
+        self.assert_rejected(root_result(status=root_status(phase="CONFIRM")), "UNAPPROVED_ROOT_PHASE")
+        self.assert_rejected(root_result(status=root_status(head="c" * 40)), "ROOT_SOURCE_RECEIPT_MISMATCH")
+        mixed = root_status().replace("INSTRUMENTATION_STATUS_CODE", "INSTRUMENTATION_STATUS: sc241_phase=MENU\n"
+                                      "INSTRUMENTATION_STATUS_CODE", 1)
+        self.assert_rejected(root_result(status=mixed), "UNAPPROVED_ROOT_FIELDS")
+
+    def test_single_diagnostic_inside_active_case_only(self):
+        self.assert_rejected(root_result(status=root_status() + root_status()), "ROOT_DIAGNOSTIC_COUNT_EXCEEDED")
+        outside = root_status().encode() + root_result()
+        self.assert_rejected(outside, "ROOT_DIAGNOSTIC_OUTSIDE_ACTIVE_CASE")
+
+    def test_protocol_order_and_block_counterexamples_rejected(self):
+        ok = root_result()
+        terminal_first = b"INSTRUMENTATION_CODE: -1\n" + ok.replace(b"INSTRUMENTATION_CODE: -1\n", b"")
+        self.assert_rejected(terminal_first, "ROOT_STATUS_AFTER_TERMINAL")
+        self.assert_rejected(ok + b"INSTRUMENTATION_STATUS_CODE: -2\n", "ROOT_STATUS_AFTER_TERMINAL")
+        self.assert_rejected(ok + b"INSTRUMENTATION_STATUS: class=X\n", "ROOT_STATUS_AFTER_TERMINAL")
+        klass, test = collector.ROOT_CASE
+        duplicate = ok.replace(f"INSTRUMENTATION_STATUS: test={test}\n".encode(),
+                               f"INSTRUMENTATION_STATUS: test={test}\nINSTRUMENTATION_STATUS: test=other\n"
+                               f"INSTRUMENTATION_STATUS: test={test}\n".encode(), 1)
+        self.assert_rejected(duplicate, "ROOT_DUPLICATE_STATUS_FIELD")
+        pending = ok.replace(b"INSTRUMENTATION_CODE: -1\n",
+                             f"INSTRUMENTATION_STATUS: class={klass}\nINSTRUMENTATION_CODE: -1\n".encode())
+        self.assert_rejected(pending, "ROOT_INCOMPLETE_STATUS_BLOCK")
+        self.assert_rejected(ok + f"INSTRUMENTATION_STATUS: class={klass}\n".encode(), "ROOT_STATUS_AFTER_TERMINAL")
+        self.assert_rejected(ok.replace(b"INSTRUMENTATION_CODE: -1\n", f"INSTRUMENTATION_STATUS: class={klass}\n".encode()),
+                             "ROOT_INCOMPLETE_STATUS_BLOCK")
+        self.assert_rejected(ok + b"INSTRUMENTATION_CODE: -1\n", "ROOT_MULTIPLE_TERMINAL_MARKERS")
+
+    def test_real_runner_protocol_shape_still_classified(self):
+        klass, test = collector.ROOT_CASE
+        def block(code, extra=""):
+            return (f"INSTRUMENTATION_STATUS: class={klass}\nINSTRUMENTATION_STATUS: current=1\n"
+                    f"INSTRUMENTATION_STATUS: id=AndroidJUnitRunner\nINSTRUMENTATION_STATUS: numtests=1\n{extra}"
+                    f"INSTRUMENTATION_STATUS: stream=\ncom.securecall.app.X:\nINSTRUMENTATION_STATUS: test={test}\n"
+                    f"INSTRUMENTATION_STATUS_CODE: {code}\n")
+        tail = "INSTRUMENTATION_RESULT: stream=\n\nTime: 1\n\n{}\n\nINSTRUMENTATION_CODE: -1\n"
+        failed = block(1) + root_status() + block(-2, "INSTRUMENTATION_STATUS: stack=java.lang.X: private\n\tat a\n") \
+            + tail.format("FAILURES!!!\nTests run: 1,  Failures: 1")
+        outcome, diagnostics = self.run_root(failed.encode())
+        self.assertEqual((outcome, len(diagnostics)), ("assertion_failed", 1))
+        self.assertEqual(self.run_root((block(1) + block(0) + tail.format("OK (1 test)")).encode()), ("passed", []))
+
+    def test_visual_collector_still_rejects_root_fields(self):
+        with self.assertRaisesRegex(collector.GateError, "UNAPPROVED_DIAGNOSTIC_FIELDS"):
+            collector.execution(diagnosed_result(root_status().encode()))
+
+
 if __name__ == "__main__":
     unittest.main()

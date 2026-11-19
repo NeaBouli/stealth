@@ -49,7 +49,7 @@ internal class ContactRootObservation private constructor(private val head: Stri
             action(matcher)
         } catch (original: Throwable) {
             reported = true
-            try { report(title, scenario, candidates, incomplete) } catch (_: Throwable) {
+            try { report(title, scenario, candidates, incomplete, original) } catch (_: Throwable) {
                 // Observation and transport failures must never mask the original failure.
             }
             throw original
@@ -58,6 +58,7 @@ internal class ContactRootObservation private constructor(private val head: Stri
 
     private fun report(
         title: String, scenario: ActivityScenario<SettingsActivity>, roots: List<Root>, incomplete: Boolean,
+        original: Throwable,
     ) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val payload = Bundle()
@@ -68,6 +69,7 @@ internal class ContactRootObservation private constructor(private val head: Stri
         field("selected", "UNKNOWN")
         field("candidate_count", roots.size.toString())
         field("candidates_incomplete", incomplete.toString())
+        failureClasses(original).forEach { (key, value) -> field(key, value) }
         for (key in listOf("host_started", "host_resumed", "host_destroyed", "host_finishing", "host_focus",
             "interactive", "keyguard_locked", "device_locked")) field(key, "UNKNOWN")
         for (index in 0 until 8) {
@@ -114,6 +116,37 @@ internal class ContactRootObservation private constructor(private val head: Stri
         instrumentation.sendStatus(2, payload)
     }
 
+    /** Class names only: never Throwable.message, stack frames or any other payload. */
+    private fun failureClasses(original: Throwable): List<Pair<String, String>> {
+        val fields = mutableListOf("exception_class" to className(original))
+        val seen = mutableListOf(original)
+        var current: Throwable? = original
+        var depth = 0
+        var causeIncomplete = false
+        while (true) {
+            val next = try { current?.cause } catch (_: Throwable) { causeIncomplete = true; null } ?: break
+            if (seen.any { it === next }) { causeIncomplete = true; break }
+            if (depth == MAX_CLASS_SLOTS) { causeIncomplete = true; break }
+            fields += "cause_${depth}_class" to className(next)
+            seen += next
+            current = next
+            depth++
+        }
+        fields += "cause_count" to depth.toString()
+        fields += "cause_incomplete" to causeIncomplete.toString()
+        val suppressed = try { original.suppressed.toList() } catch (_: Throwable) { null }
+        suppressed.orEmpty().take(MAX_CLASS_SLOTS).forEachIndexed { index, item ->
+            fields += "suppressed_${index}_class" to className(item)
+        }
+        fields += "suppressed_count" to (suppressed?.size?.coerceAtMost(MAX_CLASS_SLOTS)?.toString() ?: "-1")
+        fields += "suppressed_incomplete" to (suppressed == null || suppressed.size > MAX_CLASS_SLOTS).toString()
+        return fields
+    }
+
+    private fun className(item: Throwable): String = try {
+        item.javaClass.simpleName.takeIf { CLASS_NAME.matches(it) } ?: "UNKNOWN"
+    } catch (_: Throwable) { "UNKNOWN" }
+
     private fun titleMatches(root: View, title: String): Boolean? {
         val pending = ArrayDeque<View>()
         pending.add(root)
@@ -144,6 +177,9 @@ internal class ContactRootObservation private constructor(private val head: Stri
     } catch (_: Throwable) { "UNKNOWN" }
 
     companion object {
+        private const val MAX_CLASS_SLOTS = 4
+        private val CLASS_NAME = Regex("[A-Za-z_][A-Za-z0-9_]{0,63}")
+
         fun admit(context: Context): ContactRootObservation? {
             val args = InstrumentationRegistry.getArguments()
             if (args.getString("securecallContactRootProbe") != "true") return null

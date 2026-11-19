@@ -77,6 +77,7 @@ if [[ "$root_probe" == true ]]; then
   head="$(git rev-parse HEAD)"
   tree="$(git rev-parse 'HEAD^{tree}')"
   [[ "${GITHUB_SHA:-}" == "$head" && -z "$(git status --porcelain)" ]] || exit 2
+  command -v python3 >/dev/null || { echo 'SC241_ROOT_REJECTED:PYTHON_MISSING' >&2; exit 2; }
   instrumentation_args+=(-e securecallContactRootProbe true -e securecallRootProbeHosted true
     -e securecallRootProbeHead "$head" -e securecallRootProbeTree "$tree")
 fi
@@ -122,6 +123,29 @@ du -h "$app_apk" "$test_apk"
 
 timeout 600 adb install --no-streaming -r -t -g "$app_apk"
 timeout 600 adb install --no-streaming -r -t -g "$test_apk"
+
+if [[ "$root_probe" == true ]]; then
+  # Exactly one previously failing case. Raw protocol (stack/messages) stays outside artifacts;
+  # only the closed sc241_root_* whitelist is printed by the collector.
+  root_case='com.securecall.app.ContactLookupPreservationInstrumentedTest#explicitUserDeleteStillRequiresConfirmationAndRemovesOnlyChosenContact'
+  root_tmp="$(mktemp -d)"
+  # adb/timeout stderr stays private; only fixed categories reach the job log.
+  trap 'rm -f "$root_tmp/result.txt" "$root_tmp/stderr.txt"; rmdir "$root_tmp"' EXIT
+  root_transport=0
+  timeout 900 adb shell am instrument -w -r -e class "$root_case" "${instrumentation_args[@]}" \
+    "$instrumentation" >"$root_tmp/result.txt" 2>"$root_tmp/stderr.txt" || root_transport=$?
+  if [[ "$root_transport" -eq 124 ]]; then
+    echo 'SC241_ROOT_REJECTED:INSTRUMENTATION_TIMEOUT' >&2
+    exit 2
+  elif [[ "$root_transport" -ne 0 ]]; then
+    echo 'SC241_ROOT_REJECTED:INSTRUMENTATION_STARTUP_OR_TRANSPORT_FAILURE' >&2
+    exit 2
+  fi
+  root_status=0
+  python3 "${GITHUB_WORKSPACE:?}/.github/scripts/collect_contact_visual.py" --root-probe \
+    --result "$root_tmp/result.txt" --head "$head" --tree "$tree" || root_status=$?
+  exit "$root_status"
+fi
 
 result="${GITHUB_WORKSPACE:?}/client_android/app/build/outputs/androidTest-results/instrumentation/result.txt"
 mkdir -p "$(dirname "$result")"
