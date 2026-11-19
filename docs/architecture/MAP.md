@@ -1060,3 +1060,14 @@ Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
   case only. Output only `SC242_FOCUS_{SOURCE,CASE,RESULT}` + `SC241_ROOT_FIELD`.
 - Exit trap: existing `sc241_visual_exit` (shutdown first) also removes the focus tmp;
   cleanup failure turns success into 2, never masks failure. Helper byte-unchanged. Runtime NOT_RUN.
+
+## SC241 PRE_APP prepare stage labels (source only, 2026-11-19)
+
+- Hop: unchanged caller `run-android-smoke.sh` -> `sc241_prepare_isolation` (helper
+  `sc241-guest-isolation.sh`). Each existing prepare failure arm first emits exactly one
+  fixed `SC241_PREPARE_REJECTED:<ENUM>` on stderr, then keeps `return 1`; the caller's
+  generic `CONTACT_VISUAL_REJECTED:PRE_APP_ISOLATION` follows unchanged.
+- Nested verify: prepare passes `PRE_PROBE`/`POST_PROBE` to `sc241_verify_isolation`, which
+  labels `VERIFY_<STAGE>_{DEVICES_READ,SERIAL,IPV4_READ,IPV6_READ,POLICY}`; argless callers
+  (focus/visual hold, shutdown) stay silent. No payload, no new command, same predicates,
+  order, return codes; IPv6 policy-only fallback stays accepted. Runtime NOT_RUN.

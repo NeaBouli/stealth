@@ -3,6 +3,7 @@
 
 import re
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -26,6 +27,7 @@ LOCAL_REPORTS = frozenset({
     ".fleet/reports/SC242-INTEGRATION-PLAN-20261119.md", ".fleet/reports/SC242-FINAL-SOURCE-20261119.md",
     ".fleet/reports/SC241-NORMAL-LIFECYCLE-IMPLEMENT-20261116.md",
     ".fleet/reports/SC242-FIVE-ISOLATED-20261119.md",
+    ".fleet/reports/SC241-PREAPP-STAGES-20261119.md",
 })
 MAIN_TEST_PATH = "client_android/app/src/androidTest/java/com/securecall/app/MainActivityInstrumentedTest.java"
 BASE_MAP_SECTION = "# Narrow trace: contact lookup preserves saved identities (2026-11-16)"
@@ -193,9 +195,9 @@ class SourceContracts(unittest.TestCase):
 
     def test_api24_process_form(self):
         self.assertIn('if [[ "$sc241_api" == 24 ]]; then\n'
-                      '    processes="$(sc241_adb shell ps)" || return 1\n'
+                      '    processes="$(sc241_adb shell ps)" || { sc241_reject PROCESSES_READ_API24; return 1; }\n'
                       '  else\n'
-                      '    processes="$(sc241_adb shell ps -A)" || return 1\n'
+                      '    processes="$(sc241_adb shell ps -A)" || { sc241_reject PROCESSES_READ; return 1; }\n'
                       '  fi', self.isolation)
 
     def test_sc242_focus_selector_is_exact_five_existing_methods(self):
@@ -282,6 +284,159 @@ class SourceContracts(unittest.TestCase):
             self.assertEqual(scope_violations(INTEGRATED_PATHS | {path}, ()), {path})
             self.assertEqual(scope_violations((), {path}), {path})
         self.assertEqual(scope_violations((), {".fleet/reports/OTHER.md"}), {".fleet/reports/OTHER.md"})
+
+# Synthetic-only harness for the side-effectful prepare/verify helpers. Every external
+# command is a shell function stub and PATH points nowhere, so no adb/timeout/ping binary,
+# device, network, root or emulator can be reached. Deliberately NOT part of PURE.
+STUB = r"""
+PATH=/nonexistent-sc241-stub
+head=h tree=t
+timeout() { shift; "$@"; }
+adb() {
+  local key="$*" n=0 line
+  [[ "$key" == "-s emulator-5554 "* ]] && key="${key#-s emulator-5554 }"
+  printf '%s\n' "$key" >> "$STUB_DIR/calls"
+  printf 'x\n' >> "$STUB_DIR/n_${key//[^A-Za-z0-9]/_}"
+  while IFS= read -r line; do n=$((n + 1)); done < "$STUB_DIR/n_${key//[^A-Za-z0-9]/_}"
+  if [[ "$key" == "${FAIL_KEY:-}" && "$n" == "${FAIL_NTH:-1}" ]]; then return 1; fi
+  if [[ "$key" == "${OVR_KEY:-}" && "$n" == "${OVR_NTH:-1}" ]]; then printf '%b' "$OVR_OUT"; return 0; fi
+  case "$key" in
+    devices) printf 'List of devices attached\nemulator-5554\tdevice\n' ;;
+    'shell getprop ro.kernel.qemu') printf '1\r\n' ;;
+    'shell getprop ro.hardware') printf 'ranchu\n' ;;
+    'shell getprop ro.build.version.sdk') printf '%s\n' "${API:-36}" ;;
+    'shell pm list packages') printf 'package:android\n' ;;
+    'shell ps' | 'shell ps -A') printf 'USER PID PPID VSZ RSS WCHAN ADDR S NAME\nroot 1 0 0 0 0 0 S init\n' ;;
+    'shell id -u') printf '0\n' ;;
+    'shell iptables -w -S OUTPUT' | 'shell ip6tables -w -S OUTPUT') printf -- '-P OUTPUT DROP\r\n' ;;
+    'shell iptables -w -L OUTPUT -v -x -n')
+      if [[ "$n" == 1 ]]; then c=5; else c=7; fi
+      printf 'Chain OUTPUT (policy DROP %s packets, 0 bytes)\n' "$c" ;;
+    'shell ip6tables -w -L OUTPUT -v -x -n')
+      if [[ "$n" == 1 ]]; then c=5; else c="${V6AFTER:-6}"; fi
+      printf 'Chain OUTPUT (policy DROP %s packets, 0 bytes)\n' "$c" ;;
+    *'ping -6 '*) return "${PING6_RC:-1}" ;;
+    *ping*) return "${PING_RC:-1}" ;;
+  esac
+}
+"""
+# (enum, env) -> each triggers exactly one existing prepare failure arm.
+PREP = "shell ip6tables -w -L OUTPUT -v -x -n"
+V4L = "shell iptables -w -L OUTPUT -v -x -n"
+ARMS = [
+    ("DEVICES_READ", {"FAIL_KEY": "devices"}),
+    ("SERIAL_SELECT", {"OVR_KEY": "devices", "OVR_OUT": "List of devices attached\\nphysical\\tdevice\\n"}),
+    ("QEMU_READ", {"FAIL_KEY": "shell getprop ro.kernel.qemu"}),
+    ("HARDWARE_READ", {"FAIL_KEY": "shell getprop ro.hardware"}),
+    ("API_READ", {"FAIL_KEY": "shell getprop ro.build.version.sdk"}),
+    ("TARGET_PREDICATE", {"API": "35"}),
+    ("PACKAGES_READ", {"FAIL_KEY": "shell pm list packages"}),
+    ("PROCESSES_READ_API24", {"API": "24", "FAIL_KEY": "shell ps"}),
+    ("PROCESSES_READ", {"FAIL_KEY": "shell ps -A"}),
+    ("FRESH_PREDICATE", {"OVR_KEY": "shell pm list packages", "OVR_OUT": "package:com.securecall.app.free\\n"}),
+    ("ROOT_RESTART", {"FAIL_KEY": "root"}),
+    ("ROOT_WAIT", {"FAIL_KEY": "wait-for-device"}),
+    ("UID_READ", {"FAIL_KEY": "shell id -u"}),
+    ("UID_PREDICATE", {"OVR_KEY": "shell id -u", "OVR_OUT": "2000\\n"}),
+    ("IPV4_POLICY_SET", {"FAIL_KEY": "shell iptables -w -P OUTPUT DROP"}),
+    ("IPV6_POLICY_SET", {"FAIL_KEY": "shell ip6tables -w -P OUTPUT DROP"}),
+    ("IPV4_FLUSH", {"FAIL_KEY": "shell iptables -w -F OUTPUT"}),
+    ("IPV6_FLUSH", {"FAIL_KEY": "shell ip6tables -w -F OUTPUT"}),
+    ("VERIFY_PRE_PROBE_DEVICES_READ", {"FAIL_KEY": "devices", "FAIL_NTH": "2"}),
+    ("VERIFY_PRE_PROBE_SERIAL", {"OVR_KEY": "devices", "OVR_NTH": "2", "OVR_OUT": "List of devices attached\\n"}),
+    ("VERIFY_PRE_PROBE_IPV4_READ", {"FAIL_KEY": "shell iptables -w -S OUTPUT"}),
+    ("VERIFY_PRE_PROBE_IPV6_READ", {"FAIL_KEY": "shell ip6tables -w -S OUTPUT"}),
+    ("VERIFY_PRE_PROBE_POLICY", {"OVR_KEY": "shell ip6tables -w -S OUTPUT", "OVR_OUT": "-P OUTPUT ACCEPT\\n"}),
+    ("IPV4_BEFORE_READ", {"FAIL_KEY": V4L}),
+    ("IPV6_BEFORE_READ", {"FAIL_KEY": PREP}),
+    ("IPV4_BEFORE_PARSE", {"OVR_KEY": V4L, "OVR_OUT": "garbage\\n"}),
+    ("IPV6_BEFORE_PARSE", {"OVR_KEY": PREP, "OVR_OUT": "Chain OUTPUT (policy ACCEPT 1 packets, 0 bytes)\\n"}),
+    ("IPV4_AFTER_READ", {"FAIL_KEY": V4L, "FAIL_NTH": "2"}),
+    ("IPV4_AFTER_PARSE", {"OVR_KEY": V4L, "OVR_NTH": "2", "OVR_OUT": "garbage\\n"}),
+    ("IPV4_PROBE_DELTA", {"PING_RC": "0"}),
+    ("IPV6_PROBE_SUCCEEDED", {"PING6_RC": "0"}),
+    ("IPV6_AFTER_READ", {"FAIL_KEY": PREP, "FAIL_NTH": "2"}),
+    ("IPV6_AFTER_PARSE", {"OVR_KEY": PREP, "OVR_NTH": "2", "OVR_OUT": "garbage\\n"}),
+    ("IPV6_COUNTER_DECREASE", {"V6AFTER": "4"}),
+    ("VERIFY_POST_PROBE_DEVICES_READ", {"FAIL_KEY": "devices", "FAIL_NTH": "3"}),
+    ("VERIFY_POST_PROBE_SERIAL", {"OVR_KEY": "devices", "OVR_NTH": "3", "OVR_OUT": "List of devices attached\\n"}),
+    ("VERIFY_POST_PROBE_IPV4_READ", {"FAIL_KEY": "shell iptables -w -S OUTPUT", "FAIL_NTH": "2"}),
+    ("VERIFY_POST_PROBE_IPV6_READ", {"FAIL_KEY": "shell ip6tables -w -S OUTPUT", "FAIL_NTH": "2"}),
+    ("VERIFY_POST_PROBE_POLICY", {"OVR_KEY": "shell iptables -w -S OUTPUT", "OVR_NTH": "2", "OVR_OUT": "-P OUTPUT ACCEPT\\n"}),
+]
+
+
+def stubbed(script, call, env):
+    with tempfile.TemporaryDirectory() as tmp:
+        stub = Path(tmp) / "stub.sh"
+        stub.write_text(STUB)
+        # Stubs are sourced before any helper call; env carries no inherited PATH.
+        result = subprocess.run(
+            ["/bin/bash", "-c", 'source "$1"; source "$2"; ' + call, "sc241-stub", script, str(stub)],
+            input="", text=True, capture_output=True, check=False, timeout=10,
+            env={"STUB_DIR": tmp, **env},
+        )
+        calls = (Path(tmp) / "calls").read_text() if (Path(tmp) / "calls").exists() else ""
+    return result, calls
+
+
+class PrepareStageLabels(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.base = Path(cls.tmp.name) / "base.sh"
+        cls.base.write_bytes(git("show", "3c0e963677b73d55c6945b35a707925862852ada:"
+                                 ".github/scripts/sc241-guest-isolation.sh"))
+        cls.current = SCRIPTS / "sc241-guest-isolation.sh"
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def test_each_existing_arm_emits_one_fixed_label_and_preserves_baseline(self):
+        for enum, env in ARMS:
+            with self.subTest(enum):
+                new, new_calls = stubbed(self.current, "sc241_prepare_isolation", env)
+                old, old_calls = stubbed(self.base, "sc241_prepare_isolation", env)
+                self.assertEqual((1, ""), (old.returncode, old.stderr))
+                self.assertEqual(old.returncode, new.returncode)
+                self.assertEqual(old.stdout, new.stdout)
+                self.assertEqual("", new.stdout)
+                self.assertEqual(old_calls, new_calls)
+                self.assertEqual(f"SC241_PREPARE_REJECTED:{enum}\n", new.stderr)
+
+    def test_success_and_ipv6_policy_only_fallback_stay_accepted_and_silent(self):
+        for env, v6 in [({}, "ipv6_probe=true ipv6_delta=1"), ({"V6AFTER": "5"}, "ipv6_probe=false ipv6_delta=0")]:
+            new, new_calls = stubbed(self.current, "sc241_prepare_isolation", env)
+            old, old_calls = stubbed(self.base, "sc241_prepare_isolation", env)
+            self.assertEqual((0, ""), (new.returncode, new.stderr))
+            self.assertEqual((old.stdout, old_calls), (new.stdout, new_calls))
+            self.assertIn(v6 + " held=true", new.stdout)
+
+    def test_argless_verify_callers_keep_silent_stderr(self):
+        for env in [{"FAIL_KEY": "devices"}, {"FAIL_KEY": "shell iptables -w -S OUTPUT"},
+                    {"OVR_KEY": "shell ip6tables -w -S OUTPUT", "OVR_OUT": "-P OUTPUT ACCEPT\\n"}]:
+            call = "sc241_serial=emulator-5554; sc241_verify_isolation"
+            new, _ = stubbed(self.current, call, env)
+            old, _ = stubbed(self.base, call, env)
+            self.assertEqual((old.returncode, old.stdout, old.stderr), (new.returncode, new.stdout, new.stderr))
+            self.assertEqual((1, ""), (new.returncode, new.stderr))
+
+    def test_labels_are_unique_literal_enums_and_cover_every_prepare_arm(self):
+        source = self.current.read_text()
+        prepare = source[source.index("sc241_prepare_isolation() {"):source.index("sc241_shutdown_guest() {")]
+        literal = re.findall(r"sc241_reject ([A-Z0-9_]+); return 1; }", prepare)
+        self.assertEqual(len(literal), len(set(literal)))
+        self.assertNotIn("|| return 1\n", prepare.replace("sc241_verify_isolation PRE_PROBE || return 1\n", "")
+                         .replace("sc241_verify_isolation POST_PROBE || return 1\n", ""))
+        verify = re.findall(r'sc241_verify_reject "\$stage" ([A-Z0-9_]+)', source)
+        self.assertEqual(len(verify), len(set(verify)))
+        expected = set(literal) | {f"VERIFY_{s}_{v}" for s in ("PRE_PROBE", "POST_PROBE") for v in verify}
+        self.assertEqual(expected, {enum for enum, _ in ARMS})
+        self.assertEqual(len(ARMS), len(expected))
+        self.assertEqual(1, source.count("SC241_PREPARE_REJECTED:"))
+        self.assertNotIn("SC241_PREPARE_REJECTED", (SCRIPTS / "run-android-smoke.sh").read_text())
+
 
 if __name__ == "__main__":
     unittest.main()
