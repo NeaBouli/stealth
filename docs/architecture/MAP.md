@@ -544,3 +544,18 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   Never Throwable.message, stack frames, UI text or ids.
 - Original Throwable is still rethrown unchanged; no new flag, runner argument,
   wait, retry, focus/dialog/unlock action or assertion change. Runtime NOT_RUN.
+
+## SC241 root probe single case + collector (source only, 2026-11-19)
+
+- Hop: existing `root_probe` mode in `run-android-smoke.sh` -> `am instrument -e class
+  ContactLookupPreservationInstrumentedTest#explicitUserDeleteStillRequiresConfirmationAndRemovesOnlyChosenContact`
+  (replaces, only in that mode, the ordinary `-e notClass` suite) -> raw protocol in
+  `mktemp` outside artifacts -> `collect_contact_visual.py --root-probe` -> stdout lines
+  `SC241_ROOT_CASE:` / `SC241_ROOT_FIELD:` only.
+- Collector: closed `sc241_root_*` whitelist (fixed keys + `cause_i`/`suppressed_i`
+  exactly per count, <=4), token/class-regex values, head/tree receipt match, at most
+  one status inside the active case. Rejects zero or >1 executed case, wrong case,
+  numtests!=1, incomplete run. Assertion/execution failure stays exit 1; rejection 2/3.
+  Never reads/prints stack, message, UI text or ids.
+- Ordinary, visual and live-pin paths unchanged; the visual collector still rejects
+  `sc241_root_*` fields. Runtime NOT_RUN.

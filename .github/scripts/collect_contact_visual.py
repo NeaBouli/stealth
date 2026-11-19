@@ -354,14 +354,140 @@ def collect(result: Path, ordinary_result: Path, output: Path, head: str, tree: 
     return 0 if outcome == "passed" else 1
 
 
+ROOT_CASE = ("com.securecall.app.ContactLookupPreservationInstrumentedTest",
+             "explicitUserDeleteStillRequiresConfirmationAndRemovesOnlyChosenContact")
+ROOT_PREFIX = "sc241_root_"
+ROOT_SLOTS = 4
+ROOT_CANDIDATES = 8
+ROOT_TRI = {"true", "false", "UNKNOWN"}
+ROOT_BOOL = {"true", "false"}
+ROOT_CLASS = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}")
+ROOT_FIXED = (
+    {"head", "tree", "phase", "selected", "candidate_count", "candidates_incomplete", "exception_class",
+     "cause_count", "cause_incomplete", "suppressed_count", "suppressed_incomplete", "host_started",
+     "host_resumed", "host_destroyed", "host_finishing", "host_focus", "interactive", "keyguard_locked",
+     "device_locked"}
+    | {f"candidate_{i}_{k}" for i in range(ROOT_CANDIDATES)
+       for k in ("type", "attached", "focus", "synthetic_title", "host_context")}
+)
+
+
+def root_fields(block: dict, head: str, tree: str) -> dict:
+    """Closed sc241_root_* whitelist: fixed tokens, counts and simple class names only."""
+    require(all(key.startswith(ROOT_PREFIX) for key in block), "UNAPPROVED_ROOT_FIELDS")
+    value = {key.removeprefix(ROOT_PREFIX): item for key, item in block.items()}
+    for key in ("cause_count", "suppressed_count"):
+        require(re.fullmatch(r"-?[0-9]", value.get(key, "")) is not None, "UNAPPROVED_ROOT_COUNT")
+    causes, suppressed = int(value["cause_count"]), int(value["suppressed_count"])
+    require(0 <= causes <= ROOT_SLOTS and -1 <= suppressed <= ROOT_SLOTS, "UNAPPROVED_ROOT_COUNT")
+    allowed = (ROOT_FIXED | {f"cause_{i}_class" for i in range(causes)}
+               | {f"suppressed_{i}_class" for i in range(max(suppressed, 0))})
+    require(set(value) == allowed, "UNAPPROVED_ROOT_FIELDS")
+    require(value["head"] == head and value["tree"] == tree, "ROOT_SOURCE_RECEIPT_MISMATCH")
+    require(value["phase"] == "MENU" and value["selected"] == "UNKNOWN", "UNAPPROVED_ROOT_PHASE")
+    require(re.fullmatch(r"[0-8]", value["candidate_count"]) is not None, "UNAPPROVED_ROOT_COUNT")
+    for key in ("candidates_incomplete", "cause_incomplete", "suppressed_incomplete"):
+        require(value[key] in ROOT_BOOL, "UNAPPROVED_ROOT_VALUE")
+    for key, item in value.items():
+        if key.endswith("_class"):
+            require(item == "UNKNOWN" or ROOT_CLASS.fullmatch(item) is not None, "UNAPPROVED_ROOT_CLASS")
+        elif key.endswith("_type"):
+            require(re.fullmatch(r"-1|[1-9][0-9]{0,3}", item) is not None
+                    and (item == "-1" or int(item) <= 2999), "UNAPPROVED_ROOT_VALUE")
+        elif key not in {"head", "tree", "phase", "selected", "candidate_count", "cause_count", "suppressed_count",
+                         "candidates_incomplete", "cause_incomplete", "suppressed_incomplete"}:
+            require(item in ROOT_TRI, "UNAPPROVED_ROOT_VALUE")
+    return value
+
+
+def root_execution(data: bytes, head: str, tree: str) -> tuple[str, list[dict]]:
+    """Exactly one executed ROOT_CASE; at most one root status inside it. Stack/message never read."""
+    require(len(data) <= 256 * 1024, "PROTOCOL_TOO_LARGE")
+    text = data.decode("utf-8", errors="strict")
+    block: dict[str, str] = {}
+    events: list[int] = []
+    terminal: list[int] = []
+    diagnostics: list[dict] = []
+    duplicate = False
+    for line in text.splitlines():
+        if line.startswith("INSTRUMENTATION_STATUS: "):
+            key, separator, value = line.removeprefix("INSTRUMENTATION_STATUS: ").partition("=")
+            if separator:
+                duplicate = duplicate or key in block
+                block[key] = value
+        elif line.startswith("INSTRUMENTATION_STATUS_CODE: "):
+            code = status_code(line)
+            if code == 2 or any(key.startswith("sc241_") for key in block):
+                require(code == 2 and events == [1] and not terminal and not duplicate,
+                        "ROOT_DIAGNOSTIC_OUTSIDE_ACTIVE_CASE")
+                require(not diagnostics, "ROOT_DIAGNOSTIC_COUNT_EXCEEDED")
+                diagnostics.append(root_fields(block, head, tree))
+            else:
+                require((block.get("class"), block.get("test")) == ROOT_CASE, "UNEXPECTED_OR_MISSING_ROOT_CASE")
+                require(block.get("numtests") == "1", "ROOT_REQUIRES_EXACTLY_ONE_TEST")
+                require(len(events) < 2, "ROOT_REQUIRES_EXACTLY_ONE_TEST")
+                events.append(code)
+            block = {}
+            duplicate = False
+        elif line.startswith("INSTRUMENTATION_CODE: "):
+            terminal.append(status_code(line))
+    require(not any(key.startswith("sc241_") for key in block), "UNTERMINATED_DIAGNOSTIC")
+    if terminal != [-1]:
+        raise GateError("INSTRUMENTATION_DID_NOT_COMPLETE", 2)
+    if not events:
+        raise GateError("ROOT_CASE_DID_NOT_START", 2)
+    if events == [1, 0]:
+        require(not diagnostics, "FAILURE_DIAGNOSTIC_WITH_SUCCESS")
+        require(re.search(r"^OK \(1 test\)$", text, re.MULTILINE) is not None, "SUCCESS_SUMMARY_MISSING")
+        return "passed", diagnostics
+    if events == [1, -2]:
+        return "assertion_failed", diagnostics
+    if events == [1, -1]:
+        return "execution_failed", diagnostics
+    raise GateError("ROOT_CASE_SKIPPED_MISSING_OR_FAILED_TO_START")
+
+
+def collect_root(result: Path, head: str, tree: str) -> int:
+    require(os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted",
+            "PUBLIC_HOSTED_CI_REQUIRED")
+    require(re.fullmatch(r"[0-9a-f]{40}", head) is not None and re.fullmatch(r"[0-9a-f]{40}", tree) is not None,
+            "INVALID_SOURCE_RECEIPT")
+    require(result.stat().st_size <= 256 * 1024, "PROTOCOL_TOO_LARGE")
+    outcome, diagnostics = root_execution(result.read_bytes(), head, tree)
+    print(f"SC241_ROOT_CASE:{ROOT_CASE[1]}:{outcome}:{head}:{tree}")
+    for value in diagnostics:
+        for key in sorted(value):
+            if key not in {"head", "tree"}:
+                print(f"SC241_ROOT_FIELD:{key}={value[key]}")
+    if outcome != "passed" and not diagnostics:
+        print("SC241_ROOT_FIELD:UNREPORTED")
+    return 0 if outcome == "passed" else 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--result", type=Path, required=True)
-    parser.add_argument("--ordinary-result", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--ordinary-result", type=Path)
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--head", required=True)
     parser.add_argument("--tree", required=True)
+    parser.add_argument("--root-probe", action="store_true")
     args = parser.parse_args()
+    if args.root_probe:
+        if args.ordinary_result is not None or args.output is not None:
+            print("SC241_ROOT_REJECTED:MIXED_COLLECTOR_MODE", file=sys.stderr)
+            return 2
+        try:
+            return collect_root(args.result, args.head, args.tree)
+        except GateError as error:
+            print(f"SC241_ROOT_REJECTED:{error}", file=sys.stderr)
+            return error.code
+        except (OSError, ValueError, UnicodeError):
+            print("SC241_ROOT_REJECTED:INPUT_OR_TOOL_FAILURE", file=sys.stderr)
+            return 2
+    if args.ordinary_result is None or args.output is None:
+        print("CONTACT_VISUAL_REJECTED:MISSING_VISUAL_ARGUMENTS", file=sys.stderr)
+        return 2
     try:
         code = collect(args.result, args.ordinary_result, args.output, args.head, args.tree)
         print("CONTACT_VISUAL_PASS" if code == 0 else "CONTACT_VISUAL_ASSERTION_FAILURE")
