@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "$#" -lt 3 || "$#" -gt 7 ]]; then
-  echo "usage: $0 <app-apk> <test-apk> <instrumentation-component> [securecallLivePinTest=true] [securecallContactVisualGate=true] [securecallContactRootProbe=true] [securecallContactFocusProbe=true]" >&2
+if [[ "$#" -lt 3 || "$#" -gt 8 ]]; then
+  echo "usage: $0 <app-apk> <test-apk> <instrumentation-component> [securecallLivePinTest=true] [securecallContactVisualGate=true] [securecallContactRootProbe=true] [securecallContactFocusProbe=true] [securecallContactFocusFailuresOnly=true]" >&2
   exit 2
 fi
 
@@ -50,6 +50,7 @@ visual=false
 live_pin=false
 root_probe=false
 focus=false
+focus_failures=false
 for option in "${@:4}"; do
   case "$option" in
     "") ;;
@@ -70,6 +71,10 @@ for option in "${@:4}"; do
       [[ "$focus" == false ]] || exit 2
       focus=true
       ;;
+    securecallContactFocusFailuresOnly=true)
+      [[ "$focus_failures" == false ]] || exit 2
+      focus_failures=true
+      ;;
     *) echo 'unsupported instrumentation option' >&2; exit 2 ;;
   esac
 done
@@ -78,6 +83,8 @@ if [[ "$focus" == true ]]; then
   # SC242: fixed five-case API24 qualification; mutually exclusive with every other opt-in.
   [[ "$visual" == false && "$live_pin" == false && "$root_probe" == false ]] || exit 2
 fi
+# SC242: failures-only subset is valid only inside the focus opt-in; no arbitrary class input.
+if [[ "$focus_failures" == true && "$focus" != true ]]; then exit 2; fi
 
 if [[ "$root_probe" == true ]]; then
   [[ "$visual" == false && "$live_pin" == false ]] || exit 2
@@ -136,6 +143,11 @@ if [[ "$visual" == true || "$focus" == true ]]; then
     # Unchanged root observer may attach closed sc241_root_* metadata to the contact case only.
     instrumentation_args+=(-e securecallContactRootProbe true -e securecallRootProbeHosted true
       -e securecallRootProbeHead "$head" -e securecallRootProbeTree "$tree")
+    if [[ "$focus_failures" == true ]]; then
+      # Closed MainActivity phase/class metadata for the fixed three failed cases only.
+      instrumentation_args+=(-e securecallMainFailureMetadata true
+        -e securecallMainFailureHead "$head" -e securecallMainFailureTree "$tree")
+    fi
   fi
 fi
 
@@ -171,6 +183,12 @@ if [[ "$focus" == true ]]; then
   # Exactly the five fixed cases; never the ordinary suite or the visual matrix. Raw protocol and
   # adb/timeout stderr stay in a private mktemp removed by sc241_visual_exit after guest shutdown.
   focus_cases='com.securecall.app.MainActivityInstrumentedTest#externalVpnIndicator_matchesCurrentTransport,com.securecall.app.MainActivityInstrumentedTest#settingsNavigationItem_click_doesNotCrash,com.securecall.app.MainActivityInstrumentedTest#bottomNavigation_isDisplayed,com.securecall.app.MainActivityInstrumentedTest#toolbar_isDisplayed,com.securecall.app.ContactLookupPreservationInstrumentedTest#explicitUserDeleteStillRequiresConfirmationAndRemovesOnlyChosenContact'
+  focus_failure_cases='com.securecall.app.MainActivityInstrumentedTest#externalVpnIndicator_matchesCurrentTransport,com.securecall.app.MainActivityInstrumentedTest#settingsNavigationItem_click_doesNotCrash,com.securecall.app.MainActivityInstrumentedTest#bottomNavigation_isDisplayed'
+  focus_mode=()
+  if [[ "$focus_failures" == true ]]; then
+    focus_cases="$focus_failure_cases"
+    focus_mode=(--focus-failures-only)
+  fi
   focus_tmp="$(mktemp -d)"
   sc241_verify_isolation || { echo 'SC242_FOCUS_REJECTED:ISOLATION_HOLD' >&2; exit 2; }
   focus_transport=0
@@ -187,7 +205,7 @@ if [[ "$focus" == true ]]; then
   [[ "$(git rev-parse HEAD)" == "$head" && "$(git rev-parse 'HEAD^{tree}')" == "$tree" &&
     -z "$(git status --porcelain)" ]] || exit 2
   focus_status=0
-  python3 "${GITHUB_WORKSPACE:?}/.github/scripts/collect_contact_visual.py" --focus-probe \
+  python3 "${GITHUB_WORKSPACE:?}/.github/scripts/collect_contact_visual.py" --focus-probe "${focus_mode[@]}" \
     --result "$focus_tmp/result.txt" --head "$head" --tree "$tree" || focus_status=$?
   exit "$focus_status"
 fi

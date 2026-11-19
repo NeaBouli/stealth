@@ -15,19 +15,22 @@ MATRIX_PATH = "client_android/app/src/androidTest/java/com/securecall/app/Contac
 PRODUCTION = "client_android/app/src/main/java/com/securecall/app/ui/ContactsFragment.kt"
 # Source-scope comparison ONLY. BASE above stays the immutable SC241 regression-contract base.
 SOURCE_SCOPE_BASE = "2e98fe370a2e007642270e8ac59717bcbdb52692"
+MAIN_TEST_PATH = "client_android/app/src/androidTest/java/com/securecall/app/MainActivityInstrumentedTest.java"
 INTEGRATED_PATHS = frozenset({
     ".github/scripts/collect_contact_visual.py", ".github/scripts/run-android-smoke.sh",
     ".github/scripts/sc241-guest-isolation.sh", ".github/scripts/test_collect_contact_visual.py",
     ".github/scripts/test_sc241_source.py", ".github/workflows/android-instrumentation.yml",
     ".gitignore", "BRIDGE.md", "docs/architecture/MAP.md", PRODUCTION, TEST_PATH, MATRIX_PATH,
     "client_android/app/src/androidTest/java/com/securecall/app/ContactRootObservation.kt",
+    # SC242 three-failure metadata: diagnostic-only androidTest change (14th path).
+    MAIN_TEST_PATH,
 })
 LOCAL_REPORTS = frozenset({
     ".fleet/reports/SC242-INTEGRATION-PLAN-20261119.md", ".fleet/reports/SC242-FINAL-SOURCE-20261119.md",
     ".fleet/reports/SC241-NORMAL-LIFECYCLE-IMPLEMENT-20261116.md",
     ".fleet/reports/SC242-FIVE-ISOLATED-20261119.md",
+    ".fleet/reports/SC242-THREE-FAILURE-METADATA-20261119.md",
 })
-MAIN_TEST_PATH = "client_android/app/src/androidTest/java/com/securecall/app/MainActivityInstrumentedTest.java"
 BASE_MAP_SECTION = "# Narrow trace: contact lookup preserves saved identities (2026-11-16)"
 PURE = {
     "sc241_host_guard", "sc241_one_emulator", "sc241_fresh_guard", "sc241_policy_guard",
@@ -247,6 +250,59 @@ class SourceContracts(unittest.TestCase):
         self.assertIn("force-avd-creation: true", workflow)
         self.assertIn('export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.0.12077973"', workflow)
 
+    def test_sc242_failures_only_selector_is_fixed_three_subset(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("collector", SCRIPTS / "collect_contact_visual.py")
+        collector = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(collector)
+        selector = re.findall(r"^  focus_failure_cases='([^']+)'$", self.smoke, re.MULTILINE)
+        self.assertEqual(selector, [collector.FAILURE_SELECTOR])
+        self.assertTrue(set(collector.FAILURE_CASES) < set(collector.FOCUS_CASES))
+        self.assertNotIn("toolbar_isDisplayed", selector[0])
+        self.assertNotIn("ContactLookupPreservation", selector[0])
+        smoke = self.smoke
+        self.assertIn('if [[ "$focus_failures" == true && "$focus" != true ]]; then exit 2; fi', smoke)
+        self.assertEqual(1, smoke.count('focus_cases="$focus_failure_cases"'))
+        self.assertIn('--focus-probe "${focus_mode[@]}"', smoke)
+        self.assertLess(smoke.index("SC242_FOCUS_REJECTED:API24_REQUIRED"), smoke.index("securecallMainFailureMetadata true"))
+        workflow = (ROOT / ".github/workflows/android-instrumentation.yml").read_text()
+        block = workflow[workflow.index("      contact_focus_failures_only:"):]
+        self.assertIn("type: boolean\n        default: false", block[:300])
+        self.assertIn("run: test '${{ inputs.contact_focus_probe }}' = 'true'", workflow)
+        self.assertIn("inputs.contact_focus_probe && inputs.contact_focus_failures_only) && "
+                      "'securecallContactFocusFailuresOnly=true'", workflow)
+
+    def test_sc242_main_metadata_only_adds_lines_and_stays_closed(self):
+        baseline = git("show", f"{SOURCE_SCOPE_BASE}:{MAIN_TEST_PATH}").decode().splitlines()
+        current = (ROOT / MAIN_TEST_PATH).read_text()
+        lines = iter(current.splitlines())
+        for line in baseline:
+            self.assertTrue(any(line == candidate for candidate in lines), f"Removed or reordered: {line!r}")
+        for name in ["bottomNavigation_isDisplayed", "settingsNavigationItem_click_doesNotCrash",
+                     "externalVpnIndicator_matchesCurrentTransport", "toolbar_isDisplayed",
+                     "callsNavigationItem_isDisplayed", "settingsNavigationItem_isDisplayed"]:
+            self.assertRegex(current, rf"@Test\s+public void {name}\(\)")
+        self.assertEqual(current.count("executeShellCommand"), 1)
+        self.assertEqual(current.count("catch ("), 1)
+        self.assertIn("catch (Throwable diagnosticFailure)", current)
+        self.assertEqual(current.count("@Rule"), 1)
+        self.assertIn("public final TestWatcher failureMetadata = new TestWatcher()", current)
+        for forbidden in ["getMessage", "getLocalizedMessage", "getStackTrace", "printStackTrace", "toString()",
+                          "Thread.sleep", "runOnMainSync", "UiDevice", "getRootView", "HttpURLConnection",
+                          "getSuppressed", "Log.", "retry", "@Ignore", "assume"]:
+            self.assertNotIn(forbidden, current, forbidden)
+        self.assertIn('"true".equals(args.getString("securecallMainFailureMetadata"))', current)
+        self.assertIn('Build.VERSION.SDK_INT != 24', current)
+        self.assertIn('"free".equals(BuildConfig.FLAVOR)', current)
+        self.assertIn("sendStatus(2, payload)", current)
+        self.assertEqual(set(re.findall(r'"(sc242_main_[a-z_]*[a-z])"', current)),
+                         {f"sc242_main_{k}" for k in ["head", "tree", "method", "phase", "exception_class",
+                                                      "cause_count", "cause_incomplete"]})
+        self.assertIn('"sc242_main_cause_" + count + "_class"', current)
+        self.assertIn("private enum Phase { SETUP, LAUNCH, CLICK, CHECK, CLOSE }", current)
+        self.assertEqual(re.findall(r"phase = Phase\.(\w+);", current),
+                         ["SETUP", "LAUNCH", "CHECK", "CLOSE", "CLICK", "CHECK", "CLOSE", "CHECK", "CLOSE"])
+
     def test_original_geometry_privacy_caps_and_failure_preservation(self):
         baseline = git("show", f"{BASE}:{MATRIX_PATH}").decode()
         for name in ["assertWindow", "measureRow", "bounds", "capture", "expectedNames", "shell"]:
@@ -275,7 +331,8 @@ class SourceContracts(unittest.TestCase):
     def test_scope_validator_accepts_integration_and_rejects_extras(self):
         self.assertEqual(BASE, "12756b9591db809f937e6443b3d1c847a622b603")
         self.assertNotEqual(SOURCE_SCOPE_BASE, BASE)
-        self.assertEqual(len(INTEGRATED_PATHS), 13)
+        self.assertEqual(len(INTEGRATED_PATHS), 14)
+        self.assertIn(MAIN_TEST_PATH, INTEGRATED_PATHS)
         self.assertEqual(scope_violations(INTEGRATED_PATHS, LOCAL_REPORTS), set())
         for path in ["client_android/app/src/main/java/com/securecall/app/ui/SettingsFragment.kt",
                      "native/securecall_crypto/src/lib.rs", ".env", "secrets/keystore.jks"]:

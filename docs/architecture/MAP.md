@@ -1060,3 +1060,22 @@ Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
   case only. Output only `SC242_FOCUS_{SOURCE,CASE,RESULT}` + `SC241_ROOT_FIELD`.
 - Exit trap: existing `sc241_visual_exit` (shutdown first) also removes the focus tmp;
   cleanup failure turns success into 2, never masks failure. Helper byte-unchanged. Runtime NOT_RUN.
+
+## SC242 three-failure closed metadata (source only, 2026-11-19)
+
+- Hop: existing `contact_focus_probe` lane + new `contact_focus_failures_only` boolean (default
+  false; workflow reject step and script check require the focus opt-in) -> `run-android-smoke.sh`
+  `securecallContactFocusFailuresOnly=true` -> unchanged PRE_APP isolation/drop/held shutdown ->
+  API24 -> fixed static 3-method selector (`focus_failure_cases`, no class input) ->
+  `collect_contact_visual.py --focus-probe --focus-failures-only`.
+- Cases: `MainActivityInstrumentedTest#{externalVpnIndicator_matchesCurrentTransport,
+  settingsNavigationItem_click_doesNotCrash,bottomNavigation_isDisplayed}`; no toolbar/contact.
+- Android: one JUnit4 `TestWatcher` `@Rule` in `MainActivityInstrumentedTest`; opt-in only via
+  `securecallMainFailureMetadata` + hex head/tree args, DEBUG Free, API24, ranchu/goldfish, fixed
+  3 methods. Emits one `sendStatus(2)` with `sc242_main_{head,tree,method,phase,exception_class,
+  cause_count,cause_incomplete,cause_N_class}`; phase is a test-owned field set around original
+  SETUP/LAUNCH/CLICK/CHECK/CLOSE steps. Diagnostic errors are caught inside `failed()` so the
+  original failure never changes. No message/stack/UI/shell/device reads; no production change.
+- Collector: exactly 3 cases, numtests=3, sequential; <=1 closed event per failed active case,
+  method-bound; failure without metadata prints `SC242_FAILURE_FIELD:<method>:UNREPORTED` and stays
+  FAIL. Old five-case/root/visual protocols unchanged. Runtime NOT_RUN (owner answer pending).

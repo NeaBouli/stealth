@@ -481,13 +481,42 @@ FOCUS_CASES = (
 )
 FOCUS_SELECTOR = ",".join(f"{klass}#{test}" for klass, test in FOCUS_CASES)
 FOCUS_FINISH = {0: "passed", -2: "assertion_failed", -1: "execution_failed"}
+# SC242 failures-only subset: the three previously failed MainActivity cases, fixed order.
+FAILURE_CASES = FOCUS_CASES[:3]
+FAILURE_SELECTOR = ",".join(f"{klass}#{test}" for klass, test in FAILURE_CASES)
+MAIN_PREFIX = "sc242_main_"
+MAIN_PHASES = {"SETUP", "LAUNCH", "CLICK", "CHECK", "CLOSE"}
+MAIN_FIXED = {"head", "tree", "method", "phase", "exception_class", "cause_count", "cause_incomplete"}
 
 
-def focus_execution(data: bytes, head: str, tree: str) -> tuple[dict, list[dict]]:
-    """Exactly the five fixed cases, each started once and finished once, sequentially.
+def main_fields(block: dict, head: str, tree: str, method: str) -> dict:
+    """Closed sc242_main_* whitelist bound to the active failed case. Never message/stack."""
+    require(all(key.startswith(MAIN_PREFIX) for key in block), "UNAPPROVED_MAIN_FIELDS")
+    value = {key.removeprefix(MAIN_PREFIX): item for key, item in block.items()}
+    require(re.fullmatch(r"[0-4]", value.get("cause_count", "")) is not None, "UNAPPROVED_MAIN_COUNT")
+    causes = int(value["cause_count"])
+    require(set(value) == MAIN_FIXED | {f"cause_{i}_class" for i in range(causes)}, "UNAPPROVED_MAIN_FIELDS")
+    require(value["head"] == head and value["tree"] == tree, "MAIN_SOURCE_RECEIPT_MISMATCH")
+    require(value["method"] == method, "MAIN_METHOD_MISMATCH")
+    require(value["phase"] in MAIN_PHASES, "UNAPPROVED_MAIN_PHASE")
+    require(value["cause_incomplete"] in ROOT_BOOL, "UNAPPROVED_MAIN_VALUE")
+    for key, item in value.items():
+        if key.endswith("_class"):
+            require(item == "UNKNOWN" or ROOT_CLASS.fullmatch(item) is not None, "UNAPPROVED_MAIN_CLASS")
+    return value
 
-    Only the contact root case may carry one closed sc241_root_* status. Stack/message never read.
+
+def focus_execution(data: bytes, head: str, tree: str,
+                    cases: tuple = FOCUS_CASES) -> tuple[dict, list[dict]]:
+    """Exactly the fixed cases, each started once and finished once, sequentially.
+
+    Five-case mode: only the contact root case may carry one closed sc241_root_* status.
+    Failures-only mode: each failed Main case may carry one closed sc242_main_* status.
+    Stack/message never read.
     """
+    require(cases in (FOCUS_CASES, FAILURE_CASES), "UNAPPROVED_FOCUS_PROFILE")
+    failures_only = cases == FAILURE_CASES
+    prefixes = ("sc241_", MAIN_PREFIX) if failures_only else ("sc241_",)
     require(len(data) <= 512 * 1024, "PROTOCOL_TOO_LARGE")
     text = data.decode("utf-8", errors="strict")
     block: dict[str, str] = {}
@@ -507,16 +536,24 @@ def focus_execution(data: bytes, head: str, tree: str) -> tuple[dict, list[dict]
                 block[key] = value
         elif line.startswith("INSTRUMENTATION_STATUS_CODE: "):
             code = status_code(line)
-            if code == 2 or any(key.startswith("sc241_") for key in block):
-                require(code == 2 and active == ROOT_CASE and not duplicate,
-                        "FOCUS_DIAGNOSTIC_OUTSIDE_ACTIVE_ROOT_CASE")
-                require(not diagnostics, "FOCUS_DIAGNOSTIC_COUNT_EXCEEDED")
-                diagnostics.append(root_fields(block, head, tree))
+            if code == 2 or any(key.startswith(prefixes) for key in block):
+                if failures_only:
+                    require(code == 2 and active in cases and not duplicate,
+                            "FOCUS_DIAGNOSTIC_OUTSIDE_ACTIVE_MAIN_CASE")
+                    require(all(item["method"] != active[1] for item in diagnostics),
+                            "FOCUS_DIAGNOSTIC_COUNT_EXCEEDED")
+                    diagnostics.append(main_fields(block, head, tree, active[1]))
+                else:
+                    require(code == 2 and active == ROOT_CASE and not duplicate,
+                            "FOCUS_DIAGNOSTIC_OUTSIDE_ACTIVE_ROOT_CASE")
+                    require(not diagnostics, "FOCUS_DIAGNOSTIC_COUNT_EXCEEDED")
+                    diagnostics.append(root_fields(block, head, tree))
             else:
                 require(not duplicate, "FOCUS_DUPLICATE_STATUS_FIELD")
                 case = (block.get("class"), block.get("test"))
-                require(case in FOCUS_CASES, "UNEXPECTED_OR_MISSING_FOCUS_CASE")
-                require(block.get("numtests") == str(len(FOCUS_CASES)), "FOCUS_REQUIRES_EXACTLY_FIVE_TESTS")
+                require(case in cases, "UNEXPECTED_OR_MISSING_FOCUS_CASE")
+                require(block.get("numtests") == str(len(cases)),
+                        "FOCUS_REQUIRES_EXACTLY_THREE_TESTS" if failures_only else "FOCUS_REQUIRES_EXACTLY_FIVE_TESTS")
                 if code == 1:
                     require(active is None, "FOCUS_CASE_ORDER_OR_INCOMPLETE")
                     require(case not in started, "FOCUS_DUPLICATE_CASE")
@@ -541,27 +578,46 @@ def focus_execution(data: bytes, head: str, tree: str) -> tuple[dict, list[dict]
     if not started:
         raise GateError("FOCUS_CASES_DID_NOT_START", 2)
     require(active is None, "FOCUS_CASE_ORDER_OR_INCOMPLETE")
-    require(set(started) == set(FOCUS_CASES) and set(outcomes) == set(FOCUS_CASES), "FOCUS_MISSING_CASE")
+    require(set(started) == set(cases) and set(outcomes) == set(cases), "FOCUS_MISSING_CASE")
     if all(outcome == "passed" for outcome in outcomes.values()):
         require(not diagnostics, "FAILURE_DIAGNOSTIC_WITH_SUCCESS")
-        require(re.search(r"^OK \(5 tests\)$", text, re.MULTILINE) is not None, "SUCCESS_SUMMARY_MISSING")
+        require(re.search(rf"^OK \({len(cases)} tests\)$", text, re.MULTILINE) is not None,
+                "SUCCESS_SUMMARY_MISSING")
     else:
         require(re.search(r"^OK \(", text, re.MULTILINE) is None, "FALSE_SUCCESS_SUMMARY")
-    if diagnostics:
+    if diagnostics and failures_only:
+        require(all(outcomes[(MAIN_CLASS, item["method"])] != "passed" for item in diagnostics),
+                "FAILURE_DIAGNOSTIC_WITH_SUCCESS")
+    elif diagnostics:
         require(outcomes[ROOT_CASE] != "passed", "FAILURE_DIAGNOSTIC_WITH_SUCCESS")
     return outcomes, diagnostics
 
 
-def collect_focus(result: Path, head: str, tree: str) -> int:
+def collect_focus(result: Path, head: str, tree: str, cases: tuple = FOCUS_CASES) -> int:
     require(os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted",
             "PUBLIC_HOSTED_CI_REQUIRED")
     require(re.fullmatch(r"[0-9a-f]{40}", head) is not None and re.fullmatch(r"[0-9a-f]{40}", tree) is not None,
             "INVALID_SOURCE_RECEIPT")
     require(result.stat().st_size <= 512 * 1024, "PROTOCOL_TOO_LARGE")
-    outcomes, diagnostics = focus_execution(result.read_bytes(), head, tree)
+    outcomes, diagnostics = focus_execution(result.read_bytes(), head, tree, cases)
     print(f"SC242_FOCUS_SOURCE:{head}:{tree}")
-    for klass, test in FOCUS_CASES:
+    for klass, test in cases:
         print(f"SC242_FOCUS_CASE:{klass.rsplit('.', 1)[1]}#{test}:{outcomes[(klass, test)]}")
+    if cases == FAILURE_CASES:
+        reported = {item["method"]: item for item in diagnostics}
+        for _, test in cases:
+            if outcomes[(MAIN_CLASS, test)] == "passed":
+                continue
+            if test not in reported:
+                print(f"SC242_FAILURE_FIELD:{test}:UNREPORTED")
+                continue
+            for key in ("phase", "exception_class", "cause_count", "cause_incomplete"):
+                print(f"SC242_FAILURE_FIELD:{test}:{key}={reported[test][key]}")
+            for i in range(int(reported[test]["cause_count"])):
+                print(f"SC242_FAILURE_FIELD:{test}:cause_{i}_class={reported[test][f'cause_{i}_class']}")
+        passed = sum(outcome == "passed" for outcome in outcomes.values())
+        print(f"SC242_FOCUS_RESULT:passed={passed}:failed={len(cases) - passed}")
+        return 0 if passed == len(cases) else 1
     for value in diagnostics:
         for key in sorted(value):
             if key not in {"head", "tree"}:
@@ -582,13 +638,18 @@ def main() -> int:
     parser.add_argument("--tree", required=True)
     parser.add_argument("--root-probe", action="store_true")
     parser.add_argument("--focus-probe", action="store_true")
+    parser.add_argument("--focus-failures-only", action="store_true")
     args = parser.parse_args()
+    if args.focus_failures_only and not args.focus_probe:
+        print("SC242_FOCUS_REJECTED:MIXED_COLLECTOR_MODE", file=sys.stderr)
+        return 2
     if args.focus_probe:
         if args.root_probe or args.ordinary_result is not None or args.output is not None:
             print("SC242_FOCUS_REJECTED:MIXED_COLLECTOR_MODE", file=sys.stderr)
             return 2
         try:
-            return collect_focus(args.result, args.head, args.tree)
+            cases = FAILURE_CASES if args.focus_failures_only else FOCUS_CASES
+            return collect_focus(args.result, args.head, args.tree, cases)
         except GateError as error:
             print(f"SC242_FOCUS_REJECTED:{error}", file=sys.stderr)
             return error.code
