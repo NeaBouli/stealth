@@ -7,6 +7,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.webrtc.PeerConnection
 
 /** SC-OWNED-CALL-CONFIG-20261119: owned-test network data never reaches default builds. */
 class OwnedTestNetworkConfigTest {
@@ -56,6 +57,11 @@ class OwnedTestNetworkConfigTest {
         assertTrue(gradle.contains("refuse('ownedTestPin must equal the SHA-256 SPKI pin of ownedTestCaCert')"))
         assertTrue(gradle.contains("if (ownedTestNetwork) debug.res.srcDir(ownedTestNetwork.resDir)"))
         assertFalse("no TURN input may exist", gradle.contains("ownedTestTurn"))
+        val graphGuard = gradle.substringAfter("gradle.taskGraph.whenReady { graph ->").substringBefore("\n    }\n")
+        assertTrue(graphGuard.contains("graph.allTasks.findAll"))
+        assertTrue(graphGuard.contains("n.toLowerCase().contains('release') || n.endsWith('Bundle')"))
+        assertTrue(graphGuard.contains("refuse(\"task graph selects Release/bundle tasks"))
+        assertTrue("graph guard only inside owned block", gradle.indexOf("gradle.taskGraph.whenReady") > gradle.indexOf("ownedTestNetwork = [signalUrl"))
 
         val release = gradle.substringAfter("    buildTypes {").substringAfter("        release {").substringBefore("        debug {")
         assertTrue(release.contains("\"\\\"wss://api.stealthx.tech/signal\\\"\""))
@@ -72,6 +78,31 @@ class OwnedTestNetworkConfigTest {
         val mainNsc = File("src/main/res/xml/network_security_config.xml").readText()
         assertFalse(mainNsc.contains("10.0.2.2"))
         assertFalse(mainNsc.contains("owned_test_ca"))
+    }
+
+    @Test
+    fun `owned dynamic ICE accepts only owned servers and keeps TURN credentials`() {
+        val turn = PeerConnection.IceServer.builder("turn:10.0.2.2:3478?transport=udp")
+            .setUsername("synthetic-user").setPassword("synthetic-pass").createIceServer()
+        val public = PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer()
+        val decide = { servers: List<PeerConnection.IceServer>?, relay: Boolean, host: String ->
+            WebRtcManager.decideIceSource(servers, relay, host)
+        }
+        assertEquals(WebRtcManager.IceSourceDecision.DYNAMIC, decide(listOf(turn), true, "10.0.2.2"))
+        assertEquals("synthetic-user", turn.username)
+        assertEquals("synthetic-pass", turn.password)
+        assertEquals(WebRtcManager.IceSourceDecision.REJECT_OWNED_ICE, decide(listOf(turn, public), false, "10.0.2.2"))
+        assertEquals(WebRtcManager.IceSourceDecision.REJECT_OWNED_ICE, decide(listOf(public), true, "10.0.2.2"))
+        // Empty owned ICE keeps the existing owned STUN/host-candidate fallback and relay-only rule.
+        assertEquals(WebRtcManager.IceSourceDecision.STUN_FALLBACK, decide(null, false, "10.0.2.2"))
+        assertEquals(WebRtcManager.IceSourceDecision.REJECT, decide(emptyList(), true, "10.0.2.2"))
+        val ownedStunOnly = PeerConnection.IceServer.builder("stun:10.0.2.2:3478").createIceServer()
+        assertEquals(WebRtcManager.IceSourceDecision.REJECT, decide(listOf(ownedStunOnly), true, "10.0.2.2"))
+        // Default (owned mode off): ordinary dynamic ICE unchanged.
+        assertEquals(WebRtcManager.IceSourceDecision.DYNAMIC, decide(listOf(public), false, ""))
+        if (BuildConfig.OWNED_TEST_PIN_HOST.isEmpty()) {
+            assertEquals(WebRtcManager.IceSourceDecision.DYNAMIC, WebRtcManager.decideIceSource(listOf(public), false))
+        }
     }
 
     private companion object {

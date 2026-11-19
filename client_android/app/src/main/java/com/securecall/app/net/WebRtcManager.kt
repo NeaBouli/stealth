@@ -20,7 +20,7 @@ class WebRtcManager(
     private val isExternalVpnActive: () -> Boolean
 ) {
 
-    internal enum class IceSourceDecision { DYNAMIC, STUN_FALLBACK, REJECT }
+    internal enum class IceSourceDecision { DYNAMIC, STUN_FALLBACK, REJECT, REJECT_OWNED_ICE }
 
     companion object {
         private const val TAG = "WEBRTC"
@@ -32,9 +32,14 @@ class WebRtcManager(
 
         internal fun decideIceSource(
             dynamicIceServers: List<PeerConnection.IceServer>?,
-            relayOnly: Boolean
+            relayOnly: Boolean,
+            ownedHost: String = OwnedIcePolicy.ownedHost(BuildConfig.DEBUG, BuildConfig.OWNED_TEST_PIN_HOST)
         ): IceSourceDecision {
             val supplied = dynamicIceServers.orEmpty()
+            // Owned-test debug only: any non-owned dynamic ICE URL refuses the whole init.
+            if (!OwnedIcePolicy.accepts(supplied.map { it.urls to it.hostname }, ownedHost)) {
+                return IceSourceDecision.REJECT_OWNED_ICE
+            }
             if (supplied.isEmpty()) {
                 return if (relayOnly) IceSourceDecision.REJECT else IceSourceDecision.STUN_FALLBACK
             }
@@ -101,6 +106,11 @@ class WebRtcManager(
             com.securecall.app.debug.SecLogManager.log("ICE", "Init rejected: TURN unavailable for RELAY-only mode")
             return false
         }
+        if (sourceDecision == IceSourceDecision.REJECT_OWNED_ICE) {
+            Log.e(TAG, "Owned-test ICE refused: dynamic server outside owned host")
+            com.securecall.app.debug.SecLogManager.log("ICE", "Init rejected: non-owned dynamic ICE in owned-test build")
+            return false
+        }
 
         factory = PeerConnectionFactory.builder()
             .setOptions(PeerConnectionFactory.Options())
@@ -109,7 +119,7 @@ class WebRtcManager(
         val iceServers = when (sourceDecision) {
             IceSourceDecision.DYNAMIC -> dynamicIceServers.orEmpty()
             IceSourceDecision.STUN_FALLBACK -> buildStunFallback()
-            IceSourceDecision.REJECT -> error("Handled above")
+            IceSourceDecision.REJECT, IceSourceDecision.REJECT_OWNED_ICE -> error("Handled above")
         }.let { servers -> if (relayOnly) prioritizeRelayServers(servers) else servers }
         Log.d(TAG, "Using ${iceServers.size} ICE servers (dynamic=${dynamicIceServers != null})")
         com.securecall.app.debug.SecLogManager.log("ICE", "Init: ${iceServers.size} servers (dynamic=${dynamicIceServers != null})")

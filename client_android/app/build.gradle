@@ -119,6 +119,17 @@ ${nscClosing}
     new File(ownedResDir, 'xml/network_security_config.xml').setText(ownedNsc, 'UTF-8')
     new File(ownedResDir, 'raw/owned_test_ca.pem').setText(caPem, 'US-ASCII')
     ownedTestNetwork = [signalUrl: signalRaw, stunUrl: stunRaw, host: signal.host, pin: caPin, resDir: ownedResDir]
+
+    // Final guard on the resolved task graph: aggregates or dependencies that pull in any
+    // Release-variant or app-bundle task are refused even if requested names look debug-only.
+    gradle.taskGraph.whenReady { graph ->
+        def forbidden = graph.allTasks.findAll { t ->
+            def n = t.name
+            n.toLowerCase().contains('release') || n.endsWith('Bundle') ||
+                (n ==~ /bundle[A-Z]\w*(Debug|Release)(Resources)?/ && !n.contains('Classes'))
+        }
+        if (forbidden) refuse("task graph selects Release/bundle tasks: ${forbidden*.path.take(5)}")
+    }
 }
 
 android {

@@ -741,3 +741,11 @@ Bounded variant-data node (no new client/wrapper/engine):
   the public CA and pin); pin must equal the CA SPKI digest. PEM with private-key material is
   refused. Release/main source sets and production pins unchanged.
 - `CertificatePinPolicy.entries()` adds the owned host pin only when `BuildConfig.DEBUG`.
+- Delta (SC-OWNED-CALL-DELTA-20261119), same hop: `WebRtcManager.decideIceSource` asks the pure
+  `OwnedIcePolicy` (only when `BuildConfig.DEBUG` and `OWNED_TEST_PIN_HOST` nonempty) to validate
+  every dynamic ICE URL: exact owned numeric host, explicit port 1024-65535, `stun`/`turn`/`turns`
+  with allowed `transport` only, no userinfo/path/fragment/TLS hostname override. Any violation ->
+  `REJECT_OWNED_ICE` before factory/PeerConnection creation. Credentials are never read. Empty
+  owned ICE keeps the existing STUN/host-candidate fallback and relay-only REJECT rule.
+- Gradle `taskGraph.whenReady` final guard (owned inputs only) refuses any resolved Release or
+  app-bundle task, including indirect aggregates; the config-time requested-task check stays.
