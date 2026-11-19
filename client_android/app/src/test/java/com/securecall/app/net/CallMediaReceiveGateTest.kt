@@ -292,6 +292,107 @@ class CallMediaReceiveGateTest {
         }
     }
 
+    @Test
+    fun ownedReceiptIgnoresFailedAuthenticationAndStaleTransports() {
+        Mockito.mockStatic(CoreCrypto::class.java).use { native ->
+            native.`when`<Boolean> { CoreCrypto.isNativeAvailable() }.thenReturn(true)
+            val cipher = CountingCipher()
+            val target = service()
+            val receipt = requireNotNull(OwnedMediaReceipt.createIfActive(true, "10.0.2.2"))
+            set(target, "ownedMediaReceipt", receipt)
+            val current = media(cipher)
+            val currentManager = Mockito.mock(WebRtcManager::class.java)
+            set(target, "mediaSession", current)
+            set(target, "webRtcManager", currentManager)
+            set(target, "callSecurityState", securityState(sessionId, established = true))
+
+            receive(target, currentManager, sessionId, current) // authentication fails
+            receive(target, Mockito.mock(WebRtcManager::class.java), sessionId, current)
+            receive(target, currentManager, sessionId, media(cipher))
+            assertEquals(1, cipher.opens.get())
+            assertEquals(OwnedMediaReceipt.Snapshot(0, 0, 0), receipt.snapshot())
+            assertNoAudioStarted(target)
+            current.close()
+        }
+    }
+
+    @Test
+    fun playerWriteReturnsTheCapturedTrackResultAndZeroWhenRetired() {
+        val track = Mockito.mock(AudioTrack::class.java)
+        val pcm = ShortArray(960)
+        val player = preparedPlayer(track)
+        Mockito.`when`(track.write(pcm, 0, pcm.size)).thenReturn(480, 0, -3)
+        assertEquals(480, player.write(pcm))
+        assertEquals(0, player.write(pcm))
+        assertEquals(-3, player.write(pcm))
+        player.retire()
+        assertEquals(0, player.write(pcm))
+        Mockito.verify(track, Mockito.times(3)).write(pcm, 0, pcm.size)
+    }
+
+    @Test
+    fun syntheticAuthenticatedConsumeFeedsRealPlayoutAndKeepsItsBlockedWriteMark() {
+        val target = service()
+        val cipher = AuthenticatingCipher()
+        val current = media(cipher)
+        val receipt = requireNotNull(OwnedMediaReceipt.createIfActive(true, "10.0.2.2"))
+        val track = Mockito.mock(AudioTrack::class.java)
+        val player = preparedPlayer(track)
+        val lifecycle = AudioPlaybackLifecycle()
+        val writing = CountDownLatch(1)
+        val finishWrite = CountDownLatch(1)
+        val frames = List(JitterBuffer.PREFILL + JitterBuffer.MAX_SIZE) { ShortArray(960) }
+        val first = frames.first()
+        var decoded = 0
+        var playout: Thread? = null
+        set(target, "audioPlaybackLifecycle", lifecycle)
+        set(target, "ownedMediaReceipt", receipt)
+        set(target, "mediaSession", current)
+        set(target, "audioPlayer", player)
+        Mockito.`when`(track.write(first, 0, first.size)).thenAnswer {
+            writing.countDown()
+            check(finishWrite.await(5, TimeUnit.SECONDS))
+            480
+        }
+        fun consumeSyntheticDecodedFrame() {
+            // Real consume/replay boundary with the existing synthetic cipher; PCM replaces JNI decode.
+            current.consume(ByteArray(MediaSessionV3.MIN_FRAME)) { authenticated ->
+                assertTrue(authenticated.isNotEmpty())
+                val pcm = frames[decoded++]
+                receipt.decoded(current, pcm)
+                JitterBuffer.push(pcm)
+            }
+        }
+        JitterBuffer.clear()
+        try {
+            repeat(JitterBuffer.PREFILL) { consumeSyntheticDecodedFrame() }
+            WebSocketService::class.java.getDeclaredMethod("startJitterPlayback", Any::class.java).apply {
+                isAccessible = true
+            }.invoke(target, lifecycle.snapshot())
+            playout = get(target, "jitterPlaybackThread") as Thread
+            check(writing.await(2, TimeUnit.SECONDS))
+            repeat(JitterBuffer.MAX_SIZE) { consumeSyntheticDecodedFrame() }
+            assertEquals(frames.size, decoded)
+            assertEquals(frames.size, cipher.opens.get())
+            assertEquals(OwnedMediaReceipt.Snapshot(0, 0, JitterBuffer.MAX_SIZE, 1), receipt.snapshot())
+            finishWrite.countDown()
+            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+            while (receipt.snapshot().consumed == 0 && System.nanoTime() < deadline) Thread.yield()
+            assertEquals(1, receipt.snapshot().consumed)
+            assertEquals(1, receipt.snapshot().partial)
+            Mockito.verify(track).write(first, 0, first.size)
+            target.stopAudioPlayback()
+            assertEquals(OwnedMediaReceipt.Snapshot(0, 0, 0), receipt.snapshot())
+            assertRetired(player)
+        } finally {
+            finishWrite.countDown()
+            target.stopAudioPlayback()
+            playout?.join(2_000)
+            JitterBuffer.clear()
+            current.close()
+        }
+    }
+
     /** Authenticates every frame with a fresh replay sequence and runs [onOpen] inside the media lock. */
     private class AuthenticatingCipher : MediaFrameCipher {
         val opens = AtomicInteger()

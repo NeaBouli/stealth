@@ -743,3 +743,73 @@ Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
 - Focused JVM regression sources exercise the real guarded query-to-launch hop through
   mocked BillingClient callbacks while the BuildConfig sales gate remains closed. Tests
   and compilation NOT_RUN in this source-only task; independent review/execution owed.
+
+# Narrow trace: owned-test network variant data (SC-OWNED-CALL-CONFIG-20261119)
+
+Module: Android build variant data -> transport hop. Existing hop only:
+`app/build.gradle` debug `buildConfigField SIGNAL_WS_URL/STUN_URL` -> `WebSocketService.wsUrl`
+-> `HeartbeatClient(url)` (OkHttp + `NetworkManager.buildCertificatePinner()`), and
+`WebRtcManager.buildStunFallback()` (`BuildConfig.STUN_URL`); TURN stays server-issued.
+TLS: `network_security_config.xml` + `CertificatePinPolicy`.
+
+Bounded variant-data node (no new client/wrapper/engine):
+- Inputs `ownedTestSignalUrl`, `ownedTestStunUrl` (optional, empty = host candidates only),
+  `ownedTestCaCert` (public PEM path), `ownedTestPin` (sha256 SPKI of that CA).
+- Effective only for the `debug` build type when `-PisolatedDeviceTest` is also set.
+  `-PisolatedDeviceTest` alone keeps production WSS/STUN. Any input without
+  `isolatedDeviceTest`, on release/bundle tasks, or incomplete/invalid -> GradleException.
+- Host allow-list: literal `10.0.2.2` / `127.0.0.1`, port 1024-65535, path `/signal`,
+  no userinfo/query/fragment; STUN `stun:<same host>:<port>` only, no TURN/public DNS.
+- TLS: generated debug-only res overlay (main NSC + `domain-config` for the owned host with
+  the public CA and pin); pin must equal the CA SPKI digest. PEM with private-key material is
+  refused. Release/main source sets and production pins unchanged.
+- `CertificatePinPolicy.entries()` adds the owned host pin only when `BuildConfig.DEBUG`.
+- Delta (SC-OWNED-CALL-DELTA-20261119), same hop: `WebRtcManager.decideIceSource` asks the pure
+  `OwnedIcePolicy` (only when `BuildConfig.DEBUG` and `OWNED_TEST_PIN_HOST` nonempty) to validate
+  every dynamic ICE URL: exact owned numeric host, explicit port 1024-65535, `stun`/`turn`/`turns`
+  with allowed `transport` only, no userinfo/path/fragment/TLS hostname override. Any violation ->
+  `REJECT_OWNED_ICE` before factory/PeerConnection creation. Credentials are never read. Empty
+  owned ICE keeps the existing STUN/host-candidate fallback and relay-only REJECT rule.
+- Gradle `taskGraph.whenReady` final guard (owned inputs only) refuses any resolved Release or
+  app-bundle task, including indirect aggregates; the config-time requested-task check stays.
+- Hosted compile-only qualification (SC-OWNED-CALL-COMPILE-PREP-20261119), same node, no app/build
+  source change: `.github/workflows/android-instrumentation.yml` manual input
+  `owned_config_compile_only` (default false) + `expected_source_sha` skips `instrumented-tests`
+  and runs one bounded `owned-config-compile-only` job -> `.github/scripts/owned-config-compile-check.sh`.
+  The script only drives existing Gradle tasks (Free/Premium debug unit-test compile, Free debug
+  assemble with owned inputs, Free release assemble with ephemeral CI-only signing, two `--dry-run`
+  refusals) and inspects BuildConfig/APK outputs. No emulator, device, connected test, network to
+  an owned service, artifact upload or secret. Indirect Release graph case: NOT_RUN (no existing
+  debug-labelled task depends on a Release task).
+- Parent qualification refinement: run the three scoped owned-network/relay JVM test classes
+  for Free and Premium, then require nonempty JUnit XML results with zero failures/errors/skips.
+  Compilation alone is not assertion acceptance; no whole unit suite or emulator is added.
+- Owned media receipt (SC-OWNED-MEDIA-RECEIPT-20261119), same owned-test activation, existing
+  receive hop only: `receiveDataChannelMedia` authenticated consumer (after `MediaSessionV3`
+  AEAD + replay commit and the ownership recheck) -> `OpusDecoder.decode` nonempty PCM ->
+  `JitterBuffer.push` -> playout `JitterBuffer.pop` -> `GhostAudioPlayer.write` (now returns the
+  captured `AudioTrack.write` result, 0 when retired/untracked; partial/blocking semantics unchanged).
+  `OwnedMediaReceipt.createIfActive(BuildConfig.DEBUG, OWNED_TEST_PIN_HOST)` is null otherwise, so
+  production/release allocate and track nothing. Correlation is by array identity: the exact
+  decoded PCM is marked (bounded FIFO, jitter capacity) for its immutable `MediaSessionV3` owner
+  before enqueue; only a later positive write of that same popped array counts once (partial
+  writes counted separately). Underflow/paused silence, failed auth/decode, stale/replayed or
+  rejected frames (never reach the consumer), zero/negative writes and frames of a replaced
+  owner or after `stopAudioPlayback` (which logs final counts and drops owner + marks) never
+  count. Receipt lock is a leaf (media -> audio -> receipt; playout takes only receipt). Log
+  carries counts only. No second pipeline, protocol or flag. Tests: `OwnedMediaReceiptTest` +
+  gate cases; NOT_RUN until admitted.
+- Diagnostic repair (SC-OWNED-MEDIA-RECEIPT-REPAIR-20261119): same mapped hop;
+  the existing playout pop now tells the receipt whether that marked array is
+  discarded or in flight. At most32 queued marks plus1 in-flight mark are kept;
+  producer overflow cannot evict the already-popped frame. Playback queue policy,
+  audio generation locking and AudioTrack blocking/retirement stay unchanged.
+  Fixed Android Log emission is serialized with owner replacement/reset under the
+  existing diagnostic leaf lock (no callback into media/audio or new lock order),
+  so a captured old-owner progress line cannot appear after reset completes.
+  Regression sources cover blocked log/reset and real MediaSessionV3.consume with
+  the existing synthetic cipher + synthetic PCM decoder output feeding the actual
+  service jitter dequeue->blocked mock AudioTrack write->refill hop. This is not
+  execution of the native decoder or a positive receive-handler/crypto proof.
+  Source-only: compilation/JVM/runtime NOT_RUN; parent independent review owed.
+- Media qualification extension: existing owned-config script also selects OwnedMediaReceiptTest and CallMediaReceiveGateTest for each Free/Premium task, requires both XML reports and compiled classes, and retains all original checks/release guards;22 media source cases, execution NOT_RUN.
