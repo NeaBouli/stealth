@@ -166,6 +166,9 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
 
     // Audio playback pipeline
     private val audioPlaybackLifecycle = AudioPlaybackLifecycle()
+    // Owned-test debug evidence only; null in production and release (counts, no content).
+    private val ownedMediaReceipt: OwnedMediaReceipt? =
+        OwnedMediaReceipt.createIfActive(BuildConfig.DEBUG, BuildConfig.OWNED_TEST_PIN_HOST)
     private var audioPlayer: com.securecall.app.ghostnet.media.playback.GhostAudioPlayer? = null
     private var opusDecoderInitialized = false
     private var jitterPlaybackThread: Thread? = null
@@ -1474,6 +1477,8 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 }
                 val pcm = com.securecall.app.ghostnet.media.codec.OpusDecoder.decode(audioData)
                 if (pcm.isNotEmpty()) {
+                    // Mark before enqueue so the playout thread cannot dequeue it unmarked.
+                    ownedMediaReceipt?.decoded(owner, pcm)
                     com.securecall.app.audio.jitter.JitterBuffer.push(pcm)
                     startJitterPlayback(playbackGeneration)
                 }
@@ -1506,14 +1511,18 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 if (!audioPlaybackLifecycle.consume(playbackGeneration) {
                     if (audioPlaybackPaused) {
                         // During cell call: drain buffer but don't play, write silence
-                        com.securecall.app.audio.jitter.JitterBuffer.pop() // discard
+                        val discarded = com.securecall.app.audio.jitter.JitterBuffer.pop()
+                        if (discarded != null) ownedMediaReceipt?.dequeued(discarded, playable = false)
                     } else {
                         pcm = com.securecall.app.audio.jitter.JitterBuffer.pop() ?: silence
+                        ownedMediaReceipt?.dequeued(pcm, playable = true)
                     }
                 }) return@Thread
                 // Never hold the audio lifecycle lock across a blocking AudioTrack write.
                 // stop retires this exact player, so delayed old workers cannot recreate it.
-                player.write(pcm)
+                val wrote = player.write(pcm)
+                // Only a marked, dequeued authenticated array counts; unmarked replacement silence does not.
+                ownedMediaReceipt?.written(pcm, wrote)
                 try { Thread.sleep(20) } catch (_: InterruptedException) { return@Thread }
             }
             Log.d("WS_SERVICE", "Jitter playout thread stopped")
@@ -1590,6 +1599,7 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
             jitterPlaybackThread?.interrupt()
             jitterPlaybackThread = null
             com.securecall.app.audio.jitter.JitterBuffer.clear()
+            ownedMediaReceipt?.reset()
             val player = audioPlayer
             audioPlayer = null
             try {

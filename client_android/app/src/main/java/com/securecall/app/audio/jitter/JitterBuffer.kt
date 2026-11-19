@@ -10,7 +10,7 @@ object JitterBuffer {
     private val TAG = "JITTER_BUFFER"
     private val buffer: java.util.LinkedList<ShortArray> = java.util.LinkedList()
 
-    private const val MAX_SIZE = 32
+    const val MAX_SIZE = 32
     const val PREFILL = 3  // 3 frames × 20ms = 60ms pre-buffer
 
     @Synchronized
