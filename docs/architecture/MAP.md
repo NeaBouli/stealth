@@ -533,3 +533,14 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   Mixed root/visual/live-pin modes reject before builds. Explicit fresh-AVD
   setting equals the existing pinned action's default, not a changed policy.
   These are prospective admission fixes, not causes of the prior focus failure.
+
+## SC241 root failure classes (source only, 2026-11-19)
+
+- Hop: existing `ContactRootObservation.acquire` catch -> same single
+  `sc241_root_*` code2 status. Adds `exception_class`, `cause_{0..3}_class`,
+  `cause_count`/`cause_incomplete`, `suppressed_{0..3}_class`,
+  `suppressed_count`/`suppressed_incomplete`. Simple class names only, regex
+  `[A-Za-z_][A-Za-z0-9_]{0,63}` else UNKNOWN; cycle-guarded, at most 4 per chain.
+  Never Throwable.message, stack frames, UI text or ids.
+- Original Throwable is still rethrown unchanged; no new flag, runner argument,
+  wait, retry, focus/dialog/unlock action or assertion change. Runtime NOT_RUN.
