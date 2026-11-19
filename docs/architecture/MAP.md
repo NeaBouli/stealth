@@ -749,3 +749,12 @@ Bounded variant-data node (no new client/wrapper/engine):
   owned ICE keeps the existing STUN/host-candidate fallback and relay-only REJECT rule.
 - Gradle `taskGraph.whenReady` final guard (owned inputs only) refuses any resolved Release or
   app-bundle task, including indirect aggregates; the config-time requested-task check stays.
+- Hosted compile-only qualification (SC-OWNED-CALL-COMPILE-PREP-20261119), same node, no app/build
+  source change: `.github/workflows/android-instrumentation.yml` manual input
+  `owned_config_compile_only` (default false) + `expected_source_sha` skips `instrumented-tests`
+  and runs one bounded `owned-config-compile-only` job -> `.github/scripts/owned-config-compile-check.sh`.
+  The script only drives existing Gradle tasks (Free/Premium debug unit-test compile, Free debug
+  assemble with owned inputs, Free release assemble with ephemeral CI-only signing, two `--dry-run`
+  refusals) and inspects BuildConfig/APK outputs. No emulator, device, connected test, network to
+  an owned service, artifact upload or secret. Indirect Release graph case: NOT_RUN (no existing
+  debug-labelled task depends on a Release task).
