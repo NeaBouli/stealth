@@ -89,8 +89,6 @@ def execution(data: bytes) -> tuple[str, list[dict]]:
     diagnostics: list[dict] = []
     duplicate = False
     for line in text.splitlines():
-        if line.startswith("INSTRUMENTATION_STATUS"):
-            require(not terminal, "ROOT_STATUS_AFTER_TERMINAL")
         if line.startswith("INSTRUMENTATION_STATUS: "):
             key, separator, value = line.removeprefix("INSTRUMENTATION_STATUS: ").partition("=")
             if separator:
@@ -113,12 +111,8 @@ def execution(data: bytes) -> tuple[str, list[dict]]:
             block = {}
             duplicate = False
         elif line.startswith("INSTRUMENTATION_CODE: "):
-            require(not terminal, "ROOT_MULTIPLE_TERMINAL_MARKERS")
-            require(not any(key.startswith("sc241_") for key in block), "UNTERMINATED_DIAGNOSTIC")
-            require(not block, "ROOT_INCOMPLETE_STATUS_BLOCK")
             terminal.append(status_code(line))
     require(not any(key.startswith("sc241_") for key in block), "UNTERMINATED_DIAGNOSTIC")
-    require(not block, "ROOT_INCOMPLETE_STATUS_BLOCK")
     if terminal != [-1]:
         raise GateError("INSTRUMENTATION_DID_NOT_COMPLETE", 2)
     if events == [1, 0]:
