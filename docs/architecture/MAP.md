@@ -789,3 +789,4 @@ Bounded variant-data node (no new client/wrapper/engine):
   service jitter dequeue->blocked mock AudioTrack write->refill hop. This is not
   execution of the native decoder or a positive receive-handler/crypto proof.
   Source-only: compilation/JVM/runtime NOT_RUN; parent independent review owed.
+- Media qualification extension: existing owned-config script also selects OwnedMediaReceiptTest and CallMediaReceiveGateTest for each Free/Premium task, requires both XML reports and compiled classes, and retains all original checks/release guards;22 media source cases, execution NOT_RUN.

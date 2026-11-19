@@ -84,7 +84,7 @@ OWNED_ARGS=(
 
 # --- Step 2: execute only the scoped owned/relay JVM tests for Free and Premium. ---
 UNIT_CASES=(--tests com.securecall.app.net.OwnedTestNetworkConfigTest
-  --tests com.securecall.app.net.OwnedIcePolicyTest --tests com.securecall.app.net.WebRtcRelayPolicyTest)
+  --tests com.securecall.app.net.OwnedIcePolicyTest --tests com.securecall.app.net.WebRtcRelayPolicyTest --tests com.securecall.app.net.OwnedMediaReceiptTest --tests com.securecall.app.net.CallMediaReceiveGateTest)
 gradle_run -Pinternal testFreeDebugUnitTest "${UNIT_CASES[@]}" testPremiumDebugUnitTest "${UNIT_CASES[@]}" \
   || fail "step=unit_tests"
 python3 - <<'PY'
@@ -94,7 +94,7 @@ import xml.etree.ElementTree as ET
 try:
     for variant in ("Free", "Premium"):
         total = 0
-        for name in ("OwnedTestNetworkConfigTest", "OwnedIcePolicyTest", "WebRtcRelayPolicyTest"):
+        for name in ("OwnedTestNetworkConfigTest", "OwnedIcePolicyTest", "WebRtcRelayPolicyTest", "OwnedMediaReceiptTest", "CallMediaReceiveGateTest"):
             report = pathlib.Path(f"app/build/test-results/test{variant}DebugUnitTest/TEST-com.securecall.app.net.{name}.xml")
             result = ET.parse(report).getroot()
             count = int(result.attrib["tests"])
@@ -105,7 +105,7 @@ except (OSError, ET.ParseError, KeyError, ValueError, AssertionError):
     sys.exit("FAILED step=unit_results")
 PY
 for variant in freeDebugUnitTest premiumDebugUnitTest; do
-  for cls in OwnedTestNetworkConfigTest OwnedIcePolicyTest WebRtcRelayPolicyTest; do
+  for cls in OwnedTestNetworkConfigTest OwnedIcePolicyTest WebRtcRelayPolicyTest OwnedMediaReceiptTest CallMediaReceiveGateTest; do
     n="$(find app/build -type f -name "${cls}.class" -path "*${variant}*" \
       -path '*com/securecall/app/net/*' | wc -l | tr -d ' ')"
     test "${n}" -ge 1 || fail "step=unit_test_compile variant=${variant} class=${cls} count=0"
