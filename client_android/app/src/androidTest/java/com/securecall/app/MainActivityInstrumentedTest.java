@@ -94,7 +94,7 @@ public class MainActivityInstrumentedTest {
         }
         payload.putString("sc242_main_cause_count", Integer.toString(count));
         payload.putString("sc242_main_cause_incomplete",
-                Boolean.toString(cause != null && !seen.containsKey(cause)));
+                Boolean.toString(cause != null));
         InstrumentationRegistry.getInstrumentation().sendStatus(2, payload);
     }
 
@@ -127,7 +127,6 @@ public class MainActivityInstrumentedTest {
     }
 
     private ActivityScenario<MainActivity> launchMainActivity() {
-        phase = Phase.LAUNCH;
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         boolean prefsReady = context.getSharedPreferences("securecall_prefs", Context.MODE_PRIVATE)
                 .edit()
@@ -137,6 +136,7 @@ public class MainActivityInstrumentedTest {
                 .putString("confirmed_phone_number", "+490000000000")
                 .commit();
         assertTrue(prefsReady);
+        phase = Phase.LAUNCH;
         return ActivityScenario.launch(MainActivity.class);
     }
 

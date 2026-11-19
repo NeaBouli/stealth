@@ -302,6 +302,9 @@ class SourceContracts(unittest.TestCase):
         self.assertIn("private enum Phase { SETUP, LAUNCH, CLICK, CHECK, CLOSE }", current)
         self.assertEqual(re.findall(r"phase = Phase\.(\w+);", current),
                          ["SETUP", "LAUNCH", "CHECK", "CLOSE", "CLICK", "CHECK", "CLOSE", "CHECK", "CLOSE"])
+        self.assertIn("assertTrue(prefsReady);\n        phase = Phase.LAUNCH;\n"
+                      "        return ActivityScenario.launch(MainActivity.class);", current)
+        self.assertIn("Boolean.toString(cause != null)", current)
 
     def test_original_geometry_privacy_caps_and_failure_preservation(self):
         baseline = git("show", f"{BASE}:{MATRIX_PATH}").decode()
