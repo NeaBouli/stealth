@@ -349,7 +349,7 @@ class CallMediaReceiveGateTest {
         set(target, "ownedMediaReceipt", receipt)
         set(target, "mediaSession", current)
         set(target, "audioPlayer", player)
-        Mockito.`when`(track.write(first, 0, first.size)).thenAnswer {
+        Mockito.`when`(track.write(Mockito.same(first), Mockito.eq(0), Mockito.eq(first.size))).thenAnswer {
             writing.countDown()
             check(finishWrite.await(5, TimeUnit.SECONDS))
             480
@@ -380,7 +380,7 @@ class CallMediaReceiveGateTest {
             while (receipt.snapshot().consumed == 0 && System.nanoTime() < deadline) Thread.yield()
             assertEquals(1, receipt.snapshot().consumed)
             assertEquals(1, receipt.snapshot().partial)
-            Mockito.verify(track).write(first, 0, first.size)
+            Mockito.verify(track).write(Mockito.same(first), Mockito.eq(0), Mockito.eq(first.size))
             target.stopAudioPlayback()
             assertEquals(OwnedMediaReceipt.Snapshot(0, 0, 0), receipt.snapshot())
             assertRetired(player)

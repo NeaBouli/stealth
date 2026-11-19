@@ -813,3 +813,18 @@ Bounded variant-data node (no new client/wrapper/engine):
   execution of the native decoder or a positive receive-handler/crypto proof.
   Source-only: compilation/JVM/runtime NOT_RUN; parent independent review owed.
 - Media qualification extension: existing owned-config script also selects OwnedMediaReceiptTest and CallMediaReceiveGateTest for each Free/Premium task, requires both XML reports and compiled classes, and retains all original checks/release guards;22 media source cases, execution NOT_RUN.
+
+## Review delta: existing purchase ownership and media qualification hops (2026-11-19)
+
+- `BillingManager.queryExistingPurchases/onPurchasesUpdated` distinguishes current pending
+  inventory from instance-sticky confirmed `PURCHASED` observations. A later complete empty
+  inventory can clear a pending-only block; confirmed ownership is still retained.
+- `BillingManager` -> `SubscriptionManager.hasRecordedPurchase` reads pending receipts and
+  the stored verified token under the existing shared receipt lock. Receipt-to-entitlement
+  resolution uses that same lock; persistence failures remain closed. No new manager,
+  purchase route, price calculation, provider or release gate is introduced.
+- Existing media qualification stubs and verifies `AudioTrack.write` using the identity of
+  its first decoded PCM array, not equal-content frames or underflow silence.
+- Bounded regression sources are being corrected; changed-head execution and independent
+  fix verification are owed. Earlier green CI and the owner's exact d8 scan exception do
+  not automatically qualify this new delta. Production billing remains unchanged.

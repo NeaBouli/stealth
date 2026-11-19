@@ -412,6 +412,75 @@ class BillingManagerTest {
         assertNotNull(BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(product)).build())
     }
 
+    @Test
+    fun canceledPendingCanRetryAfterCompleteEmptyInventoryOnTheSameManager() {
+        for (fromInventory in listOf(true, false)) {
+            val observer: BillingManager.BillingListener = mock()
+            val subject = BillingManager(activity, observer)
+            val (client, callbacks) = purchaseClient(subject)
+            val pending = purchase(listOf(BuildConfig.SKU_PRO_LIFETIME), "synthetic-pending", Purchase.PurchaseState.PENDING)
+            if (!fromInventory) {
+                subject.onPurchasesUpdated(result, listOf(pending))
+            }
+            guardedQuery(subject)
+            callbacks[0].onQueryPurchasesResponse(result, emptyList())
+            callbacks[1].onQueryPurchasesResponse(result, listOf(pending))
+            verify(client, never()).launchBillingFlow(any(), any())
+            verify(observer).onPurchaseFailed(BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE,
+                "Purchase ownership is unresolved")
+            val canceled: BillingResult = mock()
+            whenever(canceled.responseCode).thenReturn(BillingClient.BillingResponseCode.USER_CANCELED)
+            subject.onPurchasesUpdated(canceled, null)
+            guardedQuery(subject)
+            callbacks.takeLast(2).forEach { it.onQueryPurchasesResponse(result, emptyList()) }
+            verify(client, times(1)).launchBillingFlow(any(), any())
+            verify(observer, never()).onPurchaseCompleted(any(), any(), any())
+        }
+    }
+
+    @Test
+    fun confirmedPurchasedOwnershipStaysStickyAcrossCancellationAndEmptyInventory() {
+        for (fromInventory in listOf(true, false)) {
+            val subject = BillingManager(activity, mock())
+            val (client, callbacks) = purchaseClient(subject)
+            val owned = purchase(listOf(BuildConfig.SKU_PRO_LIFETIME), "synthetic-purchased")
+            if (fromInventory) {
+                guardedQuery(subject)
+                callbacks[0].onQueryPurchasesResponse(result, emptyList())
+                callbacks[1].onQueryPurchasesResponse(result, listOf(owned))
+            } else {
+                subject.onPurchasesUpdated(result, listOf(owned))
+            }
+            val canceled: BillingResult = mock()
+            whenever(canceled.responseCode).thenReturn(BillingClient.BillingResponseCode.USER_CANCELED)
+            subject.onPurchasesUpdated(canceled, null)
+            guardedQuery(subject)
+            callbacks.takeLast(2).forEach { it.onQueryPurchasesResponse(result, emptyList()) }
+            verify(client, never()).launchBillingFlow(any(), any())
+        }
+    }
+
+    @Test
+    fun ownershipStorageErrorsRefuseBeforeLaunchAndNeverMutateEntitlement() {
+        for (tokenReadFails in listOf(true, false)) {
+            val observer: BillingManager.BillingListener = mock()
+            val subject = BillingManager(activity, observer)
+            val (client, callbacks) = purchaseClient(subject)
+            val prefs = activity.getSharedPreferences("securecall_subscription", Context.MODE_PRIVATE)
+            if (tokenReadFails) {
+                whenever(prefs.getString("purchase_token", "")).thenThrow(IllegalStateException("synthetic storage error"))
+            } else {
+                whenever(prefs.getStringSet("pending_receipt_ids", emptySet())).thenThrow(IllegalStateException("synthetic storage error"))
+            }
+            guardedQuery(subject)
+            callbacks.forEach { it.onQueryPurchasesResponse(result, emptyList()) }
+            verify(client, never()).launchBillingFlow(any(), any())
+            verify(prefs, never()).edit()
+            verify(observer).onPurchaseFailed(BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE,
+                "Purchase ownership is unresolved")
+        }
+    }
+
     private fun purchaseClient(subject: BillingManager = manager): Pair<BillingClient, MutableList<PurchasesResponseListener>> {
         val client: BillingClient = mock()
         val callbacks = mutableListOf<PurchasesResponseListener>()

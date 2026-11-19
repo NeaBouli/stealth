@@ -35,6 +35,7 @@ class BillingManager(
     private val purchaseLock = Any()
     private var purchaseInFlight: Any? = null
     private var inventoryVersion = 0L
+    // Only confirmed PURCHASED observations persist beyond the current inventory query.
     private var ownershipObserved = false
 
     private val lifetimeSkus = listOf(
@@ -136,7 +137,9 @@ class BillingManager(
                         || it.purchaseToken.isBlank()
                 }
                 ownedInventory = ownedInventory || purchases.isNotEmpty()
-                if (purchases.isNotEmpty()) synchronized(purchaseLock) { ownershipObserved = true }
+                if (purchases.any { it.purchaseState == Purchase.PurchaseState.PURCHASED }) {
+                    synchronized(purchaseLock) { ownershipObserved = true }
+                }
                 results[type] = purchases.mapNotNull { purchaseReceipt(it) }
                 if (results.size != 2) return
                 delivered = true
@@ -152,8 +155,7 @@ class BillingManager(
                                 "Restore existing purchases; another lifetime purchase is unavailable"
                             else -> try {
                                 val verifiedState = SubscriptionManager(activity)
-                                if (verifiedState.getPurchaseToken().isNotBlank()
-                                    || verifiedState.pendingReceiptCount() != 0) {
+                                if (verifiedState.hasRecordedPurchase()) {
                                     BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED to
                                         "Restore existing purchases; another lifetime purchase is unavailable"
                                 } else null
@@ -241,7 +243,9 @@ class BillingManager(
         synchronized(purchaseLock) {
             inventoryVersion++
             purchaseInFlight = null
-            if (!purchases.isNullOrEmpty()) ownershipObserved = true
+            if (purchases?.any { it.purchaseState == Purchase.PurchaseState.PURCHASED } == true) {
+                ownershipObserved = true
+            }
         }
         when (result.responseCode) {
             BillingClient.BillingResponseCode.OK -> {
