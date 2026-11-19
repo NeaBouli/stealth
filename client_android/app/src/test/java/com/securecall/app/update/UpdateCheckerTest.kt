@@ -1,11 +1,19 @@
 package com.securecall.app.update
 
+import com.securecall.app.BuildConfig
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
 
 class UpdateCheckerTest {
+
+    @Test
+    fun `paid flavors still skip internal checks while Free remains eligible`() {
+        val paidDirect = BuildConfig.FLAVOR in setOf("pro", "premium")
+        assertEquals(paidDirect, UpdateChecker.isAdbOnlyFlavor())
+        if (paidDirect) assertNull(UpdateChecker.checkLatest())
+    }
 
     private val TEST_FLAVOR = "free"
     private val TEST_VERSION_CODE = 50

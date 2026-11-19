@@ -105,6 +105,7 @@ function buildContext(externalDeps) {
     verifyIfrLock: verifyIfrLockOverride,
     issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
+    verifyPlayOneTimePurchase, acknowledgePlayOneTimePurchase, playLifetimePolicy,
     saveWalletMappings: saveWalletMappingsOverride,
     saveFcmTokens: saveFcmTokensOverride,
     testerLicenseRegistry,
@@ -144,6 +145,7 @@ function buildContext(externalDeps) {
     verifyIfrLock: verifyIfrLockOverride || verifyIfrLock,
     issueEntitlementToken, verifyEntitlementToken, entitlementOrderHash,
     verifyPlaySubscription, acknowledgePlaySubscription, playBillingEnabled,
+    verifyPlayOneTimePurchase, acknowledgePlayOneTimePurchase, playLifetimePolicy,
     // External services
     testerLicenseRegistry,
     identityRegistry, identityMigrationRoutes, identityMigrationAudit,

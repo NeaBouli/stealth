@@ -6138,6 +6138,13 @@ Open next:
 - Red scaffold:19 lifecycle tests,7 expected assertion failures. Final focused green:48/48 cases after independent review added the registered-session guard. Full Free/Pro/Premium suites and lint running; not yet accepted. Device proof of this fixed candidate, long-idle/FCM/call acceptance and Codex Security review remain separate gates.
 - Source candidate is not a signed release and does not update installed1.0.51. Codex owns review/integration; source worker has no server/device/signing/provider access. No server restart, app data reset, reinstall, payment or activation performed. Financial coordination is handled separately by the VLABS operator.
 
+## 2026-11-16 [AUTHOR: CODEX] - Issue223 Direct manual update handoff - Draft
+
+- Bounded source candidate from main42b336da. Direct Pro/Premium manual Settings update action opens only the existing official HTTPS download page; missing/denied browser is handled. Existing Free/Play routing and paid automatic-check suppression remain unchanged. No installer, purchase, entitlement, version/signing or permission change.
+- Focused source regressions added; local execution/compile/lint NOT_RUN because actual shared-host capacity was insufficient. Whitespace, exact source-scope and unchanged Free/background suffix checks PASS. Existing Android CI now also runs Pro unit tests alongside Free/Premium; no gate is disabled.
+- Candidate is unverified and must remain Draft until exact-head CI and missing runtime/visual acceptance are complete. New source does not change already-signed78020artifacts; reconnect delivery222and this future Direct correction are separate. No release, sale or deployment acceptance is inferred.
+- Codex owns integration and device acceptance. Source worker is finished with no remaining build/process. Financial coordination is handled separately by the VLABS operator.
+
 ## 2026-11-16 06:57 UTC SC-PLAY-DE-METADATA-20261116 German Play metadata -> Review
 
 - **Branch:** `agent/codex/SC-PLAY-DE-METADATA-20261116`
@@ -6153,6 +6160,17 @@ Open next:
   transfer in Play Console. Google review and public listing verification remain open.
 - No English, changelog, app/runtime, permission or screenshot changes. No delegation,
   device/browser access, build, push, PR, merge or deployment performed.
+
+## 2026-11-16 [AUTHOR: CODEX] - Issue223 current-main synchronization
+
+- Merged current main668be288 into the existing Direct update candidate. Only
+  append conflicts in Bridge and architecture MAP required resolution; retained
+  both original entries verbatim. No app-code, policy, price or metadata rewrite.
+- Previous exact-head10/10CI retained as historical evidence; the synchronized
+  candidate needs its own checks. Local red-control and runtime/visual gates
+  remain open; current CPU admission failed before starting any Android task.
+- No device/test installation, signing, production release or commerce activation.
+  Financial coordination is handled separately by the VLABS operator.
 
 ## 2026-11-16 09:19 UTC SC-SHOP-LINK-20261116 SecureCall shop links -> Review
 
@@ -6213,3 +6231,97 @@ Open next:
   commercial release acceptance. No server install/restart, provider/customer
   mutation or financial activation. Financial coordination remains separate
   with the VLABS operator; whole product remains NOT_READY.
+
+## 2026-11-16 11:23 UTC SC-PLAY-UPGRADE-20261116 -> PARTIAL / Parent Integration
+
+- Exclusive source work on `agent/codex/SC-PLAY-UPGRADE-20261116`, exact base
+  `4c270ad18a03c5bda7993ca96476018efd59b061`; initial worktree clean.
+- Settings now exposes the existing internal Play upgrade activity for Free/Pro
+  without enabling external buy links. Lifetime controls reject SUBS/mismatched
+  details and blank prices. Billing callbacks carry product ID with their token
+  rather than reading mutable last-purchase state during queued UI delivery.
+- RTDN dedup now commits IDs to disk before marking them processed in memory.
+  Real atomic-write-failure regression: original RED, fixed GREEN, including
+  retry, idempotent revocation and restart deduplication.
+- `npm run test:play-source`, JS syntax, XML parse, source contract preservation
+  checks and `git diff --check` PASS. Added Kotlin tests NOT RUN. No Gradle/native
+  build, dependency install, device, browser, server/provider access or agents.
+- BLOCKER: lifetime purchases still lead to activation codes, not a persisted
+  entitlement accepted by the Play `TierManager`. Direct verifier rejects Free;
+  source SKUs are not evidence of configured Play one-time products. Do not use
+  historical subscriptions, change commerce flags or invent ownership/lease policy.
+- All commerce/readiness flags, SKU/catalog values, server entitlement behavior,
+  distribution/VPN boundaries and unrelated source preserved. No commit or
+  external mutation. Retain this worktree for parent review/integration.
+- Full implementation trace, tests, exact contract gaps and operator questions:
+  `/Users/gio/agent-fleet/evidence/stealth/sales-readiness-20261116/SC-PLAY-UPGRADE-IMPLEMENTATION.md`.
+
+`SAFE SOURCE CORRECTIONS IMPLEMENTED / LIFETIME SAME-PACKAGE UNLOCK STILL INCOMPLETE / NOT RELEASED`
+
+### 2026-11-16 11:45 UTC - Play Upgrade Parent Review / Draft Only
+
+- Owner-reported missing Play upgrade is tracked in issue231. Same installed
+  Free package must support server-verified Pro/Premium; the new entry alone
+  does not complete purchasing. No commerce flag, SKU, price or entitlement
+  grant was enabled. Financial coordination is handled separately by VLABS.
+- Independent bounded specialist review found one P2: new RTDN write-failure
+  regression was not reached by ordinary CI. Added the absent npm posttest hook
+  for that test only; all existing test/pretest commands retained verbatim.
+  No other concrete regression identified in that source review; this is not
+  an official Codex Security scan or Android runtime/visual acceptance.
+- Worker small backend red/green proof retained. Parent publishes a Draft for
+  full existing hosted compilation, test, lint and distribution guards; Android
+  results remain NOT_RUN until that exact-head run completes. No local heavy
+  build, personal-phone test install, release or production deployment.
+
+## 2026-11-17 [AUTHOR: CLAUDE] SC-FINAL-CANDIDATE-ASSEMBLY-20261117 -> PARTIAL / Parent Integration
+
+- Source-only assembly on `agent/claude/SC-FINAL-CANDIDATE-ASSEMBLY-20261117` atop
+  `d1eefa87` (media/native candidate, contains main `b59f9742`). Ordinary local merges of
+  Direct PR224 `4abfa7df` (clean) and Play PR232 `58e35abf` (append-only conflicts in
+  BRIDGE/MAP; both sides kept verbatim). All other input files byte-identical to inputs.
+- Preserved: native `verifyCoreCryptoExports` guard, signaling `pretest` incl.
+  `test:call-lifecycle` plus PR232 `posttest`, `verifyFreeReleaseBillingClosed` (as updated
+  by PR232, still requires hidden paid surface), BILLING_ENABLED=false everywhere, Free
+  EXTERNAL_PURCHASE_LINKS_ENABLED=false, Direct/Play package and VPN split untouched.
+- No Gradle/npm/Cargo/CI/device run (NOT_RUN, not PASS). Parent owns exact-head CI:
+  Free/Pro/Premium unit tests, Free/Pro VPN policy, Premium runtime guard, closed-billing
+  guard, signaling `npm test` (pre/posttest) and Play RTDN retry test.
+- No push, PR, merge to main, signing, release or commerce activation.
+
+## 2026-11-17 — SC-FINAL-NDK-CI-ENV-20261117 (claude)
+
+- Cause: Basic CI44083920215 Android job failed at `verifyCoreCryptoExports`: runner ambient
+  `ANDROID_NDK_HOME` did not match pinned NDK 27.0.12077973 (no app failure).
+- Fix: `.github/workflows/ci-basic.yml` `Verify Android client` step exports
+  `ANDROID_NDK_HOME` and `ANDROID_NDK_ROOT` = `$ANDROID_HOME/ndk/27.0.12077973` (the NDK the
+  previous step installs). No guard, revision, app code or test change.
+- Checks: YAML parse ok; synthetic `resolve_ndk`: ambient mismatch -> exit 1 (reproduced),
+  pinned -> resolves and proceeds to tool check, pinned-but-missing -> fail-closed.
+- NOT_RUN: CI/Gradle/device; parent pushes and reruns integration once.
+
+## 2026-11-17 [AUTHOR: CLAUDE] SC-PLAY-LIFETIME-SAME-PACKAGE-20261117 -> PARTIAL (source staged, policy-gated)
+
+- Hop: Free UpgradeActivity -> SubscriptionManager pending -> SUBSCRIPTION_VERIFY lifetime branch ->
+  Play one-time verify -> durable identity-bound record in subscriptions store -> Play ack -> finite ACK ->
+  existing client apply/TierManager. Restore/refresh/revoke use the same record (MAP section).
+- Policy inputs required, none supplied: approved package/product tuple + offerVersion (bound to
+  PLAY_CATALOG_VERSION), `proofTtlMs` (offline/refresh/revoke-propagation bound), `rebindAuthority`
+  (`none` | `identity_registry_alias`). `server.js::PLAY_LIFETIME_POLICY = null` -> fails closed.
+- Tests: `npm test` (incl. pre/posttest) exit 0, 364 assertions ✓ / 0 ✗ + node:test files;
+  new `google_play_lifetime.test.js` 8/8 (RED 0/8 on base sources); `test:play-source` PASS.
+  Kotlin UpgradeActivity routing tests added, NOT RUN (no local Gradle). Commerce flags unchanged.
+- Not PRODUCT_READY: owner policy, Android CI/device run, Play Console products absent.
+
+## 2026-11-18 [AUTHOR: CLAUDE] SC-LIFETIME-ONLY-20261118 -> OK (source requirement correction)
+
+- Owner correction: SecureCall never sold subscriptions; paid upgrades are one-time Pro/Premium
+  lifetime only. Supersedes SC-PLAY-LEGACY-SKU-20261118 monthly compatibility (f3300a89).
+- Free BillingManager queries/offers only INAPP `securecall_pro_lifetime`,
+  `securecall_premium_lifetime` (+ unchanged activation-code product); SUBS query/launch and
+  `SKU_*_MONTHLY/YEARLY` removed. Backend `SUBSCRIPTION_PRODUCTS = {}` refuses all recurring ids.
+- Tests: Gradle focused `testFreeDebugUnitTest` BillingManager 7/7, UpgradeActivity 8/8,
+  SubscriptionManager 26/26; node google_play_billing, subscriptions_payment, google_play_rtdn,
+  subscription_webrtc 301/301, handlers 62/62, google_play_lifetime 75/75, rtdn_retry 1/1.
+- UI unchanged (already lifetime-only); flags closed; VPN split untouched. Not evidence that any
+  Play Console product was deactivated. NOT_RUN: full CI, artifact VPN guards (parent CI).

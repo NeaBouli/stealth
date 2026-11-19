@@ -125,6 +125,37 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
 
 ---
 
+# Narrow trace: Android manual Direct update handoff (2026-11-16)
+
+Scope: existing `UpdateManager` manual Settings action only; not commerce or an
+automatic updater. Source base: `42b336da8c18eb7f0a12bb3e6dc3cc4c834c6781`.
+
+1. `SettingsFragment.setupAboutLinks::pref_check_update` ->
+   `UpdateManager.getUpdateLabel` / `checkAndPromptUpdate(Activity)` (manual tap).
+2. `checkAndPromptUpdate` -> `UpdateChecker.isAdbOnlyFlavor` (Pro/Premium build
+   flavor, not entitlement). Baseline incorrectly ends at an ADB-only toast.
+3. Candidate: the paid manual branch -> Android `ACTION_VIEW` with only
+   `https://stealthx.tech/download.html`; missing/denied browser -> existing-style
+   short feedback, no fallback destination or state mutation.
+
+| Module | Ownership | State |
+| --- | --- | --- |
+| Settings | Existing manual entry and summary | Built, unchanged caller |
+| UpdateManager | Manual paid handoff and launch-failure feedback | Bounded candidate |
+| UpdateChecker | Existing paid internal-check suppression | Built, unchanged |
+
+Untouched: automatic checks, legacy `openUpdate`, Free in-app checking, Play-store
+routing, entitlement/activation/proof, policy flags, pricing, website, installer,
+signing/version, resources/layout and the signed 78020 worktree/artifacts.
+JVM regression tests cover this hop only. Device/browser/visual acceptance and
+integration belong to the parent; no checkout, sale or release readiness implied.
+
+The existing Android Client CI invocation now executes Pro unit tests alongside
+Free and Premium, covering the same shared handoff under both paid build flags.
+No CI gate is skipped; this is qualification wiring for the mapped manual hop.
+
+---
+
 # Narrow trace: German Google Play listing metadata (2026-11-16)
 
 - Module: static Play listing metadata, not application runtime or direct-download offers.
@@ -279,3 +310,413 @@ foreground-service API, preference, authentication or reconnect-policy redesign.
   Syntax/source checks are not transport acceptance. Executed 12+20 PASS
   remains separate; parent hosted locked npm-ci/full CI must run all cases
   and perform scoped exact-candidate security review before integration.
+
+---
+
+# Narrow trace: STX24 authenticated call media (SC-STX24-AUTHENTICATED-MEDIA-20261116)
+
+- Module: call media path + shared signed call transcript, not registration,
+  routing lifecycle, SDP/ICE, VPN flavors or UI.
+- Send hop: `WebSocketService.sendBinary` -> current `MediaSessionV3.seal`
+  (per-direction key, monotonically increasing sequence) -> JNI
+  `CoreCrypto.mediaSeal` -> `aead::seal_media_frame` -> `WebRtcManager.send`
+  (DataChannel only; unchanged).
+- Receive hop: `WebRtcManager.dcObserver.onMessage` -> `onDataReceived` of the
+  manager that `startWebRtc` created -> `WebSocketService.receiveDataChannelMedia`
+  (exact current manager + session + media session, else drop) ->
+  `MediaSessionV3.open` (lock; length check; replay state passed in, committed
+  only after AEAD success) -> JNI `CoreCrypto.mediaOpen` ->
+  `aead::open_media_frame` (bounded header checks before allocation, existing
+  `ReplayDetector` on a copy, XChaCha20Poly1305 with header AAD) ->
+  `OpusDecoder` -> `JitterBuffer`.
+- Removed entry: `HeartbeatClient.Listener.onBinaryMessage` (WebSocket binary)
+  no longer reaches decryption/playback; it only drops and logs.
+- Key hop: `CoreCrypto.deriveSessionKey` (X25519 + HKDF, unchanged) ->
+  `SessionKeyBinding.deriveV3(base, inviteDigest, acceptDigest)` -> HKDF
+  expand: call key (CALL_KEY_CONFIRM + SAS, v3 labels) and two media keys
+  (`caller->callee`, `callee->caller`). Base/private keys are wiped as before.
+- Negotiation hop: signed `CALL_INVITE`/`CALL_ACCEPT` transcript v3 with
+  `securecall-call-*-v3` labels and an explicit `securecall-media-frame-v3`
+  field -> server `call.js` protocol 3 path (session pinned to its protocol;
+  accept/confirm must match) -> peer verification. Protocol 2 server path is
+  unchanged for old-to-old clients. New clients verify v3 only; a valid v2
+  invite is rejected explicitly (`peer_media_upgrade_required`), never served.
+- Teardown: `clearSession` closes the media session (keys + replay state
+  cleared together) before the WebRTC manager is closed.
+- Untouched: identity registration v2, `WebRtcManager`, SDP/ICE, heartbeat/
+  reconnect, FCM payload builder, generic `CoreCrypto.encrypt/decrypt`,
+  routing/admission/timeouts, manifests, flavors, UI layout, dependencies.
+- Release limitation: new-to-old and old-to-new calls fail (update required);
+  this is not a compatibility pass. Runtime/codec/transport evidence NOT_RUN.
+
+## Delta cycle (parent findings A-E)
+
+- Consume hop (A): `receiveDataChannelMedia` -> `MediaSessionV3.consume(frame,
+  consumer)`. Under the session lock: open, atomic replay commit, then the
+  consumer (Opus decode -> `JitterBuffer.push` -> `startJitterPlayback`), then
+  plaintext wipe. `close()` takes the same lock, so it waits for an in-flight
+  consumer and no consumer starts after it returns. `clearSession` calls it
+  before `webRtcManager.close()`/`killAllAudio()`; no service-wide lock is held
+  across native transport dispose, and the consumer takes no service monitor.
+- Plaintext bound (D): `native-lib.cpp` encodes into `MAX_PACKET = 4000`, so the
+  media plaintext limit is 4000 in Rust (`MEDIA_MAX_PLAINTEXT`) and Kotlin
+  (`MediaSessionV3.MAX_PLAINTEXT`); frame max 4060. Codec untouched.
+- Interop (E) unchanged: v3 -> old callee still ends as ring timeout, not as a
+  detected-old-peer error; no capability handshake added.
+
+## Audio stop ownership (SC-AUDIO-STOP-OWNERSHIP-20261117)
+
+- Bounded module: `WebSocketService` audio lifecycle and direct player neighbour
+  `GhostAudioPlayer`, not media cryptography (parent feedback extension).
+- Proven source race: `handleIncomingMessage::CALL_ACCEPT_ACK` -> `killAllAudio`
+  -> `stopAudioPlayback` -> singleton `OpusDecoder.release`, independent of
+  `MediaSessionV3.consume` -> decoder init/decode -> jitter enqueue/player start.
+  The old stop could free a handle during native decode or clear playback before
+  the still-running consumer restarted it. No runtime reproduction is claimed.
+- Receive now snapshots an audio generation before admission/authentication;
+  the authenticated consumer takes `AudioPlaybackLifecycle` and rechecks current
+  manager/media/security-state ownership and service destruction before decoding.
+- Stop takes the audio lock, replaces its generation, then clears jitter,
+  interrupts playout and terminally retires the player/releases the decoder. Old admitted consumers and old
+  playout generations cannot touch replacement audio. Fresh valid current-call
+  callbacks may start audio again; a tone stop does not close the crypto session.
+- Playout prefill/pop use the generation lock, but player.write runs outside it.
+  `GhostAudioPlayer.write` prepares/plays and captures its track under a short
+  private state lock; blocking AudioTrack.write runs outside all teardown locks.
+  `retire` marks the player terminal and detaches its track under that state lock,
+  then stop/release run without that lock, able to interrupt an in-flight write.
+  A delayed old worker cannot prepare/play again; a captured old track never
+  redirects to a fresh resource. Blocking mode and transfer handling stay unchanged.
+- Direct-user check: GhostMediaRouter keeps a persistent player and uses ordinary
+  stop/release. Those methods remain reusable; only WebSocketService uses retire,
+  discards that player and creates a fresh resource for subsequent valid audio.
+- Lock order: existing media consume lock -> audio -> jitter/player-state; audio never takes
+  media/service monitors or closes native transport. Existing clearSession order
+  remains media.close (returns), transport.close (returns), then audio stop.
+- Source regressions: `AudioPlaybackLifecycleTest` has latch-bounded decode/stop,
+  pre-stop admission, old playout/current-call reuse and one-way lock-order cases;
+  `CallMediaReceiveGateTest` adds mocked blocked-write vs real service stop/retire,
+  old-player no-resurrection, fresh-resource playback and legacy release reuse.
+  Constructor-bypassed service mocks initialize the lifecycle field.
+- Tests/compilation/native/device/runtime: NOT_RUN by source-only authorization.
+  Gate tests use synthetic actions; player tests use mocked AudioTracks, not native
+  execution. No timeout-based write cancellation or non-blocking mode is introduced.
+- Unchanged: accepted consume/close implementation, protocol/keys/replay,
+  signaling decisions, reconnect, flavors, native codec and other legacy routers.
+- Review fix (SC-AUDIO-STOP-REVIEW-FIX-20261117): `stopAudioPlayback` releases the
+  decoder in `finally` when `retire` throws (failure still propagates to the caller's
+  log). `CallMediaReceiveGateTest` now drives the real `receiveDataChannelMedia` path
+  with an authenticating synthetic cipher: stop during authentication, and manager/
+  media/security-state/destroyed swaps, leave decoder/jitter/player/playout untouched
+  and media open. Retirement is asserted on player fields. NOT_RUN (source-only).
+
+## Callee accept once (SC-CALL-ACCEPT-ONCE-20261117)
+
+- Module/hop: `WebSocketService.sendCallAccept` (local callee accept) on the existing
+  `CallSecurityState`; signed call transcript, crypto, native, timers and queue unchanged.
+- Guard: a current state that is claimed or already holds `accept` (caller side) makes any
+  local accept a no-op before audio stop, key generation or media replacement (duplicate
+  or stale session id). No error is emitted, so the accepted call UI is not torn down.
+- Claim: `CallSecurityState.acceptClaim` (AtomicBoolean, body field, outside data equality)
+  is set inside the per-state `acceptAdmission` monitor after role/session validation and
+  the claim/accept recheck, before `killAllAudio`; no CAS. Overlap losers return.
+  Never released: a later local failure (identity/native/key agreement/send) keeps the
+  existing fail-closed error and allows no second rekey. A new invite = new state = new claim.
+- Unregistered path: stops ringing and queues as before but takes no claim (the queue can
+  be cleared on disconnect); the queued callback claims when it runs, extra ones no-op.
+- Admission (SC-CALL-ACCEPT-RACE-20261117): `CallSecurityState.acceptAdmission` is a short
+  per-invite monitor around the fresh `callSecurityState === state`/claim/accept recheck, the
+  registered-vs-queue decision (+ queue add) and the owner's `killAllAudio`. Not held across
+  identity, key agreement, `client.send`, `mediaSession.close` or `forceReconnect`; order is
+  admission -> audio lifecycle lock only (no caller of `sendCallAccept` holds media/audio locks).
+  The lock-free pre-check stays so duplicates return while the owner is stopping ringing.
+  Closes: unregistered caller paused after the pre-check stopping audio after another caller
+  claimed the invite. Stale state (replaced before admission) returns silently.
+- Residual (out of scope): no current state + unregistered still stops audio/queues without
+  admission; invite clear/replace concurrent with an admitted caller and the unsynchronized
+  `pendingCallQueue` remain broader lifecycle concurrency, intentionally not globally locked.
+- Invalid session without an accepted current call keeps `killAllAudio` + `invalid_secure_invite`.
+- Regression: `CallAcceptOnceTest` (real entry, synthetic state, bounded latches; 8 tests incl.
+  `unregisteredAcceptPausedBeforeAudioStopCannotStopAudioAfterRegisteredClaim`). NOT_RUN.
+- Proof (parent-recorded): exact `354913fb58470685f10cbe9a47f5399cb4302459`, hosted JVM run
+  44042171861, 8+8 new JVM cases green. JVM/mocked only: no device, native or call success.
+
+---
+
+# Narrow trace: Rust crypto JNI packaging (SC-JNI-V3-PACKAGING-20261117)
+
+- Module: native build/package path of `libsecurecall_core_crypto.so`, not Rust
+  algorithms, JNI ABI, `CoreCrypto` methods, flavors or VPN code.
+- Build hop (manual): `tools/build_android_crypto.sh` -> `cargo ndk` (3 targets,
+  `--release --locked`, 16 KB page flags for aarch64/x86_64) -> `src/main/jniLibs/<abi>/`
+  -> `tools/verify_android_crypto_exports.sh` -> stdout provenance receipt (git HEAD,
+  `core_crypto` tree, dirty count, Cargo.lock/rustc/cargo-ndk/NDK, per-ABI .so SHA-256).
+- Package hop (Gradle): committed jniLibs (not rebuilt by Gradle; CMake builds only the
+  Opus JNI lib) -> `verifyCoreCryptoExports` (Exec, NDK `llvm-nm -D --defined-only`,
+  `llvm-readelf -lW`) -> every `merge*NativeLibs` (APK, AAB, androidTest APK, all
+  flavors). Host unit tests do not merge native libs and do not run the guard.
+- Guard contract: arm64-v8a, armeabi-v7a, x86_64 each export
+  `Java_com_securecall_crypto_CoreCrypto_{encrypt,decrypt,deriveSessionKey,generateKeyPair,
+  selfTest,mediaSeal,mediaOpen}`; 64-bit LOAD align >= 16384. Missing NDK/tool/lib/symbol
+  fails; no skip. `JNI_OnLoad` is not required (Rust defines none; static name binding).
+- Verified at 354913fb: committed libs lack mediaSeal/mediaOpen on all three ABIs (guard
+  exit 1). Unreleased candidate blocker; no production crash is claimed.
+- Native proof: `CoreCryptoMediaV3InstrumentedTest` (8 tests, real JNI, synthetic keys,
+  fails rather than skips when the library is missing/stale). NOT_RUN until the parent
+  rebuilds the three libs from pinned source and runs it on an admitted emulator.
+
+## Native artifact qualification, 2026-11-17
+
+- Actual isolated build44051364431 succeeded: core subtree
+  `f08686c2628aabdfdd5123bc363d3b4efb5d0232`, source354913fb,
+  Rust1.99.1/NDK27.0.12077973/API24, locked offline dependencies.
+  Temporary controllere87aae6c is not application source and must never merge.
+- Parent verified receipt/source/controller/hash/ABI bindings, seven JNI exports,
+  and 16KiB LOAD alignment on all three artifacts, then replaced only these
+  prebuilt libraries. The real packaging export guard passed (all three ABIs).
+  Receipt SHA256: `dbfe5ddcf18ac3f463a2ce01479f3b605a8d80b4c845160839e82fdcab7453da`.
+- SHA256 arm64-v8a: `2782617de7793cc0040bae2ffff3588350e78734dffe91aaa83edf1f461e4f9f`;
+  armeabi-v7a: `01b0ec8a1fda6363baf30eda275cd142f4857743ced8b012798c47afd74d4280`;
+  x86_64: `4a932002caab2e585f56950f5ea35d587d4f13b588c62549f5ad513eaf207c59`.
+- This is build/ELF/package-guard proof, not Android execution. The eight JNI
+  instrumentation tests, codec/audio, calls, interoperability and final release
+  integration remain separate open acceptance gates. No customer release.
+
+---
+
+# Narrow trace: Play in-package upgrades (SC-PLAY-UPGRADE-20261116)
+
+## Core Idea And Boundary
+
+Settings must offer Pro/Premium upgrades within `com.securecall.app.free`.
+Purchases require authoritative Play verification, durable server entitlement
+and matching product/finance readiness. A paid Play tier never adds Direct VPN
+(`AGENTS.md`, `docs/DISTRIBUTION_MATRIX.md`). No provider changes in this task.
+
+## Trace And Modules
+
+| Module | Hop and data | Source state before correction |
+| --- | --- | --- |
+| Settings | `SettingsFragment::configureExternalPurchaseLinks` -> Free-only `UpgradeActivity` (explicit internal intent) | Missing: external-link gate hides the internal upgrade entry too |
+| Upgrade UI | `UpgradeActivity::launchPurchase/bindPurchaseButton` -> `BillingManager::launchInAppPurchaseFlow` (`ProductDetails`, price) | Lifetime buttons can fall back to subscription offers |
+| Play Billing | `BillingManager::queryExistingPurchases/handlePurchase` -> `UpgradeActivity::onPurchaseCompleted` (tier, token, mutable last product) | Existing SUBS/INAPP restore; callback product association is mutable |
+| One-time verification | `PurchaseResultActivity::verifyPurchase` -> `server.js::POST /billing/verify-purchase` -> `google_play_billing::verifyPlayOneTimePurchase/issuePlayActivationCode` | Verified/persisted activation code, not an in-package entitlement |
+| Subscription verification | `UpgradeActivity::sendVerificationToBackend` -> `subscription.js::SUBSCRIPTION_VERIFY` -> `verifyPlaySubscription` -> `subscriptions::recordVerifiedSubscription` -> server acknowledgement -> `WebSocketService::handleSubscriptionVerifyAck` | Existing server-authoritative SUBS path only |
+| Effective tier | `SubscriptionManager::applyServerVerification/verifyAgainstServer` -> `TierManager::getCurrentTier/applyTier` -> feature registry | Free flavor reads subscription state only; legacy activation strings are not proof |
+| Refund/revoke | authenticated `google_play_rtdn::installGooglePlayRtdnRoute` -> subscription expiry/refresh or activation/gift removal -> durable processed IDs | Existing revocation stores; processed ID enters memory before disk write, breaking same-process retry on write failure |
+
+## Wiring And Gaps
+
+- Settings must separate internal Play navigation from forbidden external buy links.
+- Lifetime controls must accept only matching INAPP details and Play-provided prices,
+  never a historical SUBS offer. Historical subscription restore is not a lifetime sale.
+- One-time products currently mint a code with a one-year redemption expiry and two
+  uses; `ACTIVATION_CODE_ENABLED=false`, and Play tier resolution does not consume
+  that code. No lifetime entitlement lease/ownership/restore contract exists here.
+- RTDN removes persisted records; the app learns subscription revocation on its
+  existing status revalidation/expiry, not an immediate push to the active UI.
+  One-time notifications currently have no entitlement refresh handler.
+- Scope of correction: Settings navigation, strict lifetime offer binding, immutable
+  callback product binding, and durable RTDN deduplication. Keep both commerce gates
+  closed; do not invent SKUs, prices, transfer policy or lifetime access duration.
+- Visual contract: visible internal upgrade entry for Free/Pro; external custom-ID
+  buy stays hidden; closed purchases show unavailable state; absent/mismatched offers
+  cannot enable a buy button. Required later device/layout/state gate is NOT RUN.
+- Diagrams for this narrow source trace: this table only; existing landing diagram
+  files are unrelated and unchanged. Next hop remains the missing authoritative
+  one-time purchase -> persisted same-package lifetime entitlement contract.
+
+## Source Correction Outcome (2026-11-16)
+
+- Internal Settings navigation is now separate from external-link policy and
+  refreshed on return. Free/Pro can reach the existing Free-only activity; the
+  unavailable state and purchase execution gate remain closed.
+- Lifetime/gift controls bind matching INAPP details and nonblank Play prices
+  only. Billing callbacks carry their own product/token tuple; unknown or
+  ambiguous products do not start verification. No new payment path exists.
+- RTDN persists the next processed-ID set before marking the ID in memory. A
+  real atomic-write failure regression was RED on the original code and GREEN
+  after correction, including duplicate delivery and restart deduplication.
+- `npm run test:play-source` PASS: existing Play billing and subscription-store
+  assertions plus the new synthetic RTDN route regression. No HTTP server or
+  provider client was started. Source contracts and XML syntax PASS.
+- Kotlin regressions added/updated but NOT RUN: Settings route/external-link
+  isolation, INAPP binding/no SUBS fallback, immutable restore callbacks and
+  pending/unknown/ambiguous purchase rejection. Gradle/native/visual tests NOT RUN
+  under the Mac heavy-build HOLD. This is PARTIAL, not a sale-ready upgrade.
+- Additional inspected gap: `DirectEntitlementStore::verify` explicitly rejects
+  `free`; routing Play codes through the Direct verifier is not a valid shortcut.
+
+---
+
+# Assembly note: final candidate (SC-FINAL-CANDIDATE-ASSEMBLY-20261117)
+
+- Direct UpdateManager download handoff (PR224) and Free Settings -> UpgradeActivity ->
+  verified Billing/RTDN hops (PR232) merged unchanged onto the media/native candidate
+  `d1eefa87`. No new node, path, flag or wrapper; both traces above remain authoritative.
+
+## CI NDK environment pin (SC-FINAL-NDK-CI-ENV-20261117)
+
+- Hop: `ci-basic.yml` Android job -> sdkmanager `ndk;27.0.12077973` -> `Verify Android client`
+  -> Gradle `verifyCoreCryptoExports` -> `resolve_ndk` (prefers `ANDROID_NDK_HOME`, checks
+  `Pkg.Revision`). Runner ambient `ANDROID_NDK_HOME` pointed at another NDK; the step now
+  exports `ANDROID_NDK_HOME`/`ANDROID_NDK_ROOT` = `$ANDROID_HOME/ndk/27.0.12077973`.
+  Guard, NDK revision and fail-closed behaviour unchanged.
+
+---
+
+# Narrow trace: same-package Play lifetime (SC-PLAY-LIFETIME-SAME-PACKAGE-20261117)
+
+Module/hop: Free `UpgradeActivity::onPurchaseCompleted` -> `SubscriptionManager::recordPendingPurchase`
+-> `subscription.js::SUBSCRIPTION_VERIFY` (lifetime branch `verifyLifetimePurchase`) ->
+`google_play_billing::resolveLifetimeProduct` (policy) + `verifyPlayOneTimePurchase` ->
+`subscriptions::recordVerifiedLifetime` (durable, identity-bound) -> `acknowledgePlayOneTimePurchase`
+-> `markLifetimeAcknowledged` -> `SUBSCRIPTION_VERIFY_ACK` (finite `expiresAt`) ->
+`WebSocketService::handleSubscriptionVerifyAck` -> `SubscriptionManager::applyServerVerification` -> `TierManager`.
+Restore: same hop (Play INAPP query -> same token record; same identity idempotent).
+Refresh: `/subscription/status` -> `getLifetimeEntitlement` -> `lifetimeStatusResponse` (now + policy `proofTtlMs`).
+Revoke: RTDN voided / one-time CANCELED -> `revokeLifetimeByPurchaseToken` (tombstone on the same record).
+
+| Node | Change | State |
+| --- | --- | --- |
+| Upgrade UI | lifetime SKUs no longer open `PurchaseResultActivity`; activation-code SKU unchanged | built |
+| Play catalog | `LIFETIME_PRODUCTS`, `normalizeLifetimePolicy`, `resolveLifetimeProduct`, `lifetimeStatusResponse` | built |
+| Subscription store | `inapp:<sha256(token)>` lifetime records in the same `subscriptions.json`; monthly paths skip them | built |
+| WS handler | lifetime branch inside existing `SUBSCRIPTION_VERIFY`; monthly branch unchanged | built |
+| Code route | `/billing/verify-purchase` rejects lifetime products/tokens (code path = activation-code product only) | built |
+| RTDN | voided + one-time CANCELED revoke lifetime record; dedup unchanged | built |
+| Policy input | `server.js::PLAY_LIFETIME_POLICY = null` (owner-approved tuple/TTL/rebind) | open: owner input |
+
+No new flag, module, database, protocol message or checkout. `PLAY_BILLING_ENABLED`/`BILLING_ENABLED`
+stay closed. Missing policy -> `lifetime_entitlement_unavailable`.
+
+## Consistency completion (SC-PLAY-LIFETIME-CONSISTENCY-20261117)
+
+- Same module/hops; preserve the existing lifetime implementation and monthly/gift paths.
+- RTDN -> durable unbound token tombstone -> first-record rejection, including restart;
+  provider acknowledgement -> synchronous current binding/revocation recheck -> success.
+- `server.js` -> read-only `GOOGLE_PLAY_LIFETIME_POLICY_FILE` -> strict normalization;
+  no public values/defaults, new enable flag or commerce activation.
+- `BillingManager::queryExistingPurchases` joins SUBS+INAPP query results before
+  `UpgradeActivity::onPurchasesRestored` records every receipt before sending any request.
+  An incomplete query returns an error, not a commercially selected subset.
+- `SubscriptionManager` isolates pending receipts and finite verified rights. Final ACKs
+  cannot be overwritten by duplicates; HTTP answers are bound to a receipt generation.
+  Distinct verified purchases require explicit coexistence policy, never tier ranking.
+  Failed preference commits restore the prior in-memory view and remain retryable.
+- Scope includes those existing client hops, handler/store/policy/RTDN and focused synthetic
+  regression sources only. Direct verification, authentication, Free VPN separation, native
+  code and commerce flags stay unchanged. Parent owns Android, visual, security and integration
+  gates; source tests do not imply runtime, provider, policy or release acceptance.
+
+## Bounded handler security remediation (SC-PLAY-SECURITY-FIX-20261117)
+
+- Same WS subscription module and mapped hops only: receipt ingress -> catalog lookup,
+  and verified provider answer -> current identity alias authority -> durable lifetime record.
+- Validate bounded primitive receipt fields before any catalog lookup or provider call;
+  malformed requests use the existing fixed error response, with commerce-gate precedence intact.
+- Evaluate alias authority after provider verification, immediately before persistence;
+  later alias revocation does not retroactively invalidate a completed transfer or same-owner restore.
+- Scope: subscription handler and existing synthetic lifetime regression suite only, plus
+  this append and a bounded report. Policy, flags, monthly/gift rules, Android, dispatcher,
+  provider configuration and independent scan/fix finalization remain with the parent.
+
+## IFR holder handoff to the central shop (narrow trace)
+
+1. `website/js/ifr-checkout.js::checkout` -> `connect` (existing browser wallet; the script unlocks the initially disabled controls only behind `data-ifr-enabled`, default `false`, and serializes wallet actions). The existing IFR action grid wraps the tier labels and keeps its minimum button height.
+2. `checkout` -> `backend/signaling/src/payments/ifr_eligibility.js` `POST /vlabs/ifr-eligibility/challenge` -> wallet `personal_sign` -> `POST /vlabs/ifr-eligibility` (global CORS middleware in `server.js` plus route origin check; the configured origin must be in the global allow-list or the path stays closed).
+3. `checkout` -> `https://vlabs.gr/en/shop?focus=security#stealthx-ifr=<signed eligibility>`: the signed, product/offer-bound eligibility travels only in the URL fragment; the shop consumes it, keeps it in memory and submits it to its existing checkout, which verifies it again.
+
+State: built behind required operator configuration; disabled by default. No checkout, price or wallet state on the landing page.
+
+## Existing Play monthly receipt compatibility (SC-PLAY-LEGACY-SKU-20261118)
+
+BillingManager queries the existing short monthly IDs and preserves prior
+prefixed receipts; the provider verifier's exact catalog accepts both families.
+This restores the already published PR37 mapping, not a price/conversion rule.
+Unknown products, wrong package/product proofs and one-time classification stay
+closed. Lifetime policy and all purchase/activation flags are unchanged.
+
+## Lifetime-only Play catalog (SC-LIFETIME-ONLY-20261118)
+
+Requirement correction: the owner confirms SecureCall never sold a subscription;
+new paid upgrades are one-time Pro/Premium lifetime purchases only. Supersedes the
+monthly receipt compatibility section above (no subscription migration exists).
+
+Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
+(`queryInAppProducts`, `purchaseReceipt`) -> `UpgradeActivity` -> `SUBSCRIPTION_VERIFY`
+-> `google_play_billing` catalog.
+
+- Removed: `SKU_*_MONTHLY/YEARLY` BuildConfig fields, SUBS product query, SUBS
+  offer-token launch, client recurring SKU list and every backend recurring product id.
+- Retained as neutral plumbing: SUBS purchase-history query inside the atomic restore
+  (receipts are dropped), subscription parser/verifier/RTDN code paths. With
+  `SUBSCRIPTION_PRODUCTS = {}` each recurring verify/acknowledge/token lookup refuses.
+- Unchanged: lifetime policy (fail-closed when absent/mismatched), activation-code and
+  gift paths, commerce flags (all closed), distribution/VPN split, upgrade UI.
+
+## Call-end ownership boundary (SC245-CALL-COMPATIBILITY-20261118, follow-up)
+
+- Hop: call adoption -> CALL_END/grace reservation -> media/audio close ->
+  Telecom/UI/callbacks/notifications and the existing FCM producer. No new class,
+  queue, retry, flag or protocol change; crypto/signature/wire untouched.
+- Owner (one rule, `CallEndPolicy.owner`): nonblank `_currentSessionId` is
+  authoritative; else the pending `callSecurityState` invite; else the FCM-pending id.
+  A CALL_END/grace/Telecom/UI end applies only when its id equals that owner.
+- State mutations under the Service monitor (`this`): incoming adoption + FCM-pending
+  assignment (`acceptAuthenticatedInvite`), outgoing security adoption, CALL_INVITE_ACK,
+  WS-duplicate FCM suppression, callee media install after accept, detach in clear.
+- Close: `reserveCallEnd` checks owner + sets `closingCallSessionId` under the monitor,
+  releases it, drains the old `acceptAdmission`, closes media/transport/audio, clears
+  the reservation in `finally` (only its own). Adoption waits while another thread
+  holds a reservation (same-thread reentry does not wait). Detach never blind-nulls a
+  replacement: it re-checks the owner before nulling fields.
+- After the reservation: scoped Telecom end, scoped activity dismiss, notification
+  cancel by session tag, captured `_onCallEnded`/upgrade `_onCallError` of the owner.
+  Grace runnables capture their owner and re-run the same reservation (stale -> no-op).
+- Lock order: acceptAdmission -> Service monitor (short); Service monitor is never held
+  across media close, audio, native, Telecom, UI or callbacks. Telecom monitor no longer
+  calls service/UI while held (decide under lock, act after). Media.consume -> audio
+  lifecycle unchanged.
+- Notifications: WS and all three byte-identical FCM producers post with tag
+  `IncomingCallNotifications.tag(session)` and a per-session PendingIntent (data URI +
+  request code); cancel/silence are session-scoped. Legacy untagged notifications from a
+  pre-update process are retained as an explicit residual (no migration cancel).
+  FCM delivery stays independent of a running service (Telecom/notification fallback).
+- Activities: IncomingCallActivity/CallActivity clear only their own callbacks,
+  stop audio / clear session only when they own the call or the service is idle.
+
+### Owner correction (SC245 plan P1-P7, accepted with parent corrections)
+
+- Immutable owner: outgoing `CallActivity` generates its session UUID in `onCreate` and
+  passes it to `sendCallInvite(target, sessionId)`; the id is registered in
+  `pendingInviteOwners` (only live queued/in-flight requests, cleared with the queue).
+  Admission consumes it under the monitor; `clearSessionIfOwner` removes it first, so a
+  queued or copied/in-flight request ended before admission never starts. The local
+  private key is published to `localPrivKey` only inside the admitting block. The UI
+  never reloads a global id (`getCallerSessionId` removed).
+- Admission is fail-closed: `awaitCallCloseLocked(): Boolean` is false on same-thread
+  reentry or after the 2 s bound; incoming adoption, outgoing admission, CALL_INVITE_ACK,
+  caller/callee media install reject without key/id/callback/heartbeat mutation.
+- Callbacks: `bindCallCallbacks(owner, ended, error)` binds owner+ended+error as one
+  unit under the monitor and refuses while another bound owner is still the call owner
+  or closing. `closeOwnedCall` snapshots the bound callbacks in the same block that
+  reserves+detaches; they run outside the monitor. Owner-scoped errors use
+  `reportOwnedError(session, ...)`; error paths clear only by their own immutable owner.
+- Effects under reservation: `withCallReservation(session, requireOwner)` sets a
+  non-null reservation (idle uses an internal identity) across the effect for ringtone
+  start/stop, kill-audio and `setCallActiveIfOwner`; reentry/another reservation rejects.
+  Old callee media is detached under the monitor and closed after release.
+- Effect-time FCM/WS UI: `showUi` re-admits at execution: Telecom route requires the
+  call still live; with a service present it requires `isRingingOwner` (same unaccepted
+  callee owner) or, only for a cold push whose service appeared later, a not-ended invite
+  that the service accepts now. Service absent keeps the existing cold wake. Late stale
+  UI cancels only its own tag. IncomingCallActivity rechecks activation before effects.
+- Four-case follow-up: ACK reads state/owner only after the close wait; outgoing requests
+  remain cancellable through each wait and publish keys only while consuming a live request.
+  The successful-send tail reserves both heartbeat activation and ring-timer installation.
+  All three FCM producers re-read the current service after posting and withdraw only the
+  posted session's tag on rejection; genuine service-absent cold wake remains available.
+- `CALL_ACCEPT_ACK` is informational only: it retains its protocol check and logging,
+  but never stops audio, including after replacement or same-call playback start. Local
+  `sendCallAccept` remains the authoritative ring-stop transition before signaling.

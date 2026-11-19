@@ -8,6 +8,8 @@ const {
   registrationTranscript,
   isLegacyTransitionActive,
   verifySignature,
+  CALL_PROTOCOL_V2,
+  CALL_PROTOCOLS,
 } = require("../../security/identity_protocol");
 
 // STX-17: hard cap on tracked rejected clientIds. The 60s sweep in server.js
@@ -24,12 +26,24 @@ const { networkKey } = require("../../utils/network_key");
 // A binding is live while its socket answered a heartbeat ping (every 5 s) within this window.
 const LEGACY_LIVE_WINDOW_MS = 15000;
 
+// Advisory call-protocol capability of an accepted session (SC245). It only steers
+// routing UX; the signed invite/accept protocol checks in call.js stay authoritative.
+// Missing or malformed claims fall back to the legacy protocol-2 classification.
+const MAX_ADVERTISED_CALL_PROTOCOLS = 4;
+function advertisedCallProtocols(value) {
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_ADVERTISED_CALL_PROTOCOLS
+      || !value.every(protocol => CALL_PROTOCOLS.has(protocol))) {
+    return new Set([CALL_PROTOCOL_V2]);
+  }
+  return new Set(value);
+}
+
 module.exports = function registerHandlers(ctx) {
   const {
     clients, clientIds, phoneNumbers, phoneHashes, fcmTokens,
     rejectionTracker, getClientId, normalizePhone, hashPhone,
     saveFcmTokens, getIceServers, identityRegistry, identityMigrationRoutes, fcm,
-    identityMigrationAudit,
+    identityMigrationAudit, routingTable, sendToClient,
   } = ctx;
   const protocolMode = ctx.identityProtocolMode || "enforce";
   const transitionDeadline = ctx.identityTransitionDeadline;
@@ -105,9 +119,24 @@ module.exports = function registerHandlers(ctx) {
     }
   }
 
+  // A pending (pushed) non-legacy invite whose callee now registers without that protocol
+  // can never be accepted; end it for the caller with the fixed upgrade reason instead of
+  // letting it ring out. Protocol-2 sessions and supported protocols are untouched.
+  function endUnsupportedPendingInvites(clientId, callProtocols) {
+    if (!routingTable || typeof sendToClient !== "function") return;
+    for (const [sessionId, session] of routingTable) {
+      if (session.to !== clientId || session.state !== "INVITE") continue;
+      const protocol = session.protocol ?? CALL_PROTOCOL_V2;
+      if (protocol === CALL_PROTOCOL_V2 || callProtocols.has(protocol)) continue;
+      routingTable.delete(sessionId);
+      sendToClient(session.from, { type: "CALL_END", sessionId, from: clientId,
+        reason: "media_upgrade_required" });
+    }
+  }
+
   function finishRegistration(ws, connId, {
     clientId, identityId = null, publicKey = null, phoneNumber = null, legacyAlias = null,
-    authVersion = 2,
+    authVersion = 2, callProtocols = new Set([CALL_PROTOCOL_V2]),
   }) {
     const client = clients.get(connId);
     if (!client) return sendError(ws, "connection_not_found");
@@ -127,7 +156,9 @@ module.exports = function registerHandlers(ctx) {
     client.identityId = identityId;
     client.identityPublicKey = publicKey;
     client.authVersion = authVersion;
+    client.callProtocols = callProtocols;
     clientIds.set(clientId, connId);
+    endUnsupportedPendingInvites(clientId, callProtocols);
 
     const phone = normalizePhone(phoneNumber);
     if (phone.length >= 4) {
@@ -432,6 +463,7 @@ module.exports = function registerHandlers(ctx) {
       phoneNumber: pending.phoneNumber,
       legacyAlias: binding.migratedAlias,
       authVersion: 2,
+      callProtocols: advertisedCallProtocols(msg.callProtocols),
     });
   }
 

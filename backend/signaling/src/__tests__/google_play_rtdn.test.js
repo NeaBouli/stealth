@@ -32,6 +32,7 @@ async function run() {
   installGooglePlayRtdnRoute(app, {
     subscriptions: {
       expireByPurchaseToken(token) { calls.expire += 1; calls.lastExpired = token; return 1; },
+      revokeLifetimeByPurchaseToken() { return 0; },
       refreshByPurchaseToken(token, productId, tier, expiresAt, packageName, catalogVersion) {
         calls.refresh += 1;
         calls.lastRefresh = { token, productId, tier, expiresAt, packageName, catalogVersion };

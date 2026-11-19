@@ -177,18 +177,35 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             putExtra("callerName", callerName)
             putExtra("from_fcm", true) // Flag: came from FCM, WS may not be connected
         }
-        val showUi = {
+        val showUi: (Boolean) -> Unit = showUi@{ viaTelecom ->
+            val sessionId = invite.sessionId
             val service = com.securecall.app.net.WebSocketService.instance
+            // Effect-time admission: an ended, accepted or replaced call never rings, posts or
+            // reopens. With a service present only the same still-ringing owner passes; a cold
+            // push whose service appeared later lets that service adopt the never-ended invite.
+            // Service absent keeps the existing cold wake / start-failure fallback.
+            if (viaTelecom && !IncomingCallTelecom.hasCall(sessionId)) return@showUi
+            val serviceAbsentAtDelivery = existingService == null
+            if (!com.securecall.app.net.WebSocketService.admitFcmUiEffect(sessionId, payload, serviceAbsentAtDelivery)) {
+                return@showUi
+            }
             val serviceHandlesRingtone = IncomingCallAlertPolicy.serviceHandlesRingtone(
-                IncomingCallTelecom.hasCall(invite.sessionId), service != null,
+                IncomingCallTelecom.hasCall(sessionId), service != null,
             )
-            if (serviceHandlesRingtone) service?.startIncomingRingtone()
+            if (serviceHandlesRingtone && service?.startIncomingRingtoneIfRinging(sessionId) == false) return@showUi
             // Post FSI before the direct launch; a successful start is not proof of visibility.
             showIncomingCallNotification(
-                invite.sessionId, callerName, invite.fromClientId, invite.callerPhone,
+                sessionId, callerName, invite.fromClientId, invite.callerPhone,
                 serviceHandlesRingtone = serviceHandlesRingtone
             )
-            if (!com.securecall.app.IncomingCallActivity.isShowingSession(invite.sessionId)) {
+            // Post-check re-reads the CURRENT service: one that appeared (or changed owner)
+            // while posting must still admit this session; otherwise withdraw only its own tag.
+            if (!com.securecall.app.net.WebSocketService.admitFcmUiEffect(sessionId, payload, serviceAbsentAtDelivery) {
+                    IncomingCallNotifications.cancel(this, sessionId)
+                }) {
+                return@showUi
+            }
+            if (!com.securecall.app.IncomingCallActivity.isShowingSession(sessionId)) {
                 try {
                     startActivity(intent)
                 } catch (e: Exception) {
@@ -196,8 +213,8 @@ class SecureCallMessagingService : FirebaseMessagingService() {
                 }
             }
         }
-        if (!IncomingCallTelecom.reportIncomingCall(this, invite.sessionId, callerName, intent, showUi)) {
-            showUi()
+        if (!IncomingCallTelecom.reportIncomingCall(this, invite.sessionId, callerName, intent) { showUi(true) }) {
+            showUi(false)
         }
 
         // E) Force reconnect if an existing service instance is disconnected.
@@ -254,9 +271,11 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             putExtra("from_fcm", true)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
+        // Tag and PendingIntent identity are bound to the verified session id.
+        IncomingCallNotifications.bindSession(intent, sessionId)
 
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
+            this, IncomingCallNotifications.requestCode(sessionId), intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -279,6 +298,8 @@ class SecureCallMessagingService : FirebaseMessagingService() {
             // until answer, decline or the ring deadline.
             notification.flags = notification.flags or android.app.Notification.FLAG_INSISTENT
         }
-        manager.notify(IncomingCallNotifications.FCM_BACKUP_NOTIFICATION_ID, notification)
+        manager.notify(
+            IncomingCallNotifications.tag(sessionId), IncomingCallNotifications.FCM_BACKUP_NOTIFICATION_ID, notification,
+        )
     }
 }

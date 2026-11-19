@@ -5,7 +5,7 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.UUID
@@ -28,24 +28,48 @@ class SessionKeyBindingTest {
     ))
     private val acceptDigest = requireNotNull(IdentityProtocol.transcriptDigest(accept))
 
+    private fun keys(base: ByteArray, invite: String = inviteDigest, accept: String = acceptDigest) =
+        requireNotNull(SessionKeyBinding.deriveV3(base, invite, accept))
+
     @Test
-    fun bothPeersDeriveSameContextBoundKeyAndCode() {
+    fun bothPeersDeriveSameContextBoundKeysAndCode() {
         val base = ByteArray(32) { it.toByte() }
-        val caller = SessionKeyBinding.bind(base, invite, accept)
-        val callee = SessionKeyBinding.bind(base.copyOf(), invite, accept)
-        assertNotNull(caller)
-        assertArrayEquals(caller, callee)
-        assertEquals(32, caller!!.size)
+        val caller = keys(base)
+        val callee = keys(base.copyOf())
+        assertArrayEquals(caller.callKey, callee.callKey)
+        assertArrayEquals(caller.callerToCallee, callee.callerToCallee)
+        assertArrayEquals(caller.calleeToCaller, callee.calleeToCaller)
+        assertArrayEquals(caller.context, callee.context)
+        assertEquals(32, caller.callKey.size)
+        assertEquals(32, caller.context.size)
         assertEquals(
-            SessionKeyBinding.securityCode(caller, sessionId, inviteDigest, acceptDigest),
-            SessionKeyBinding.securityCode(callee!!, sessionId, inviteDigest, acceptDigest),
+            SessionKeyBinding.securityCode(caller.callKey, sessionId, inviteDigest, acceptDigest),
+            SessionKeyBinding.securityCode(callee.callKey, sessionId, inviteDigest, acceptDigest),
         )
-        assertEquals(6, SessionKeyBinding.securityCode(caller, sessionId, inviteDigest, acceptDigest)?.length)
+        assertEquals(6, SessionKeyBinding.securityCode(caller.callKey, sessionId, inviteDigest, acceptDigest)?.length)
+    }
+
+    @Test
+    fun directionAndCallKeysAreDistinctAndContextBound() {
+        val k = keys(ByteArray(32) { 9 })
+        assertFalse(k.callKey.contentEquals(k.callerToCallee))
+        assertFalse(k.callKey.contentEquals(k.calleeToCaller))
+        assertFalse(k.callerToCallee.contentEquals(k.calleeToCaller))
+        val otherAccept = IdentityProtocol.transcriptDigest(accept + "x")!!
+        val changed = keys(ByteArray(32) { 9 }, accept = otherAccept)
+        assertFalse(changed.callerToCallee.contentEquals(k.callerToCallee))
+        assertFalse(changed.context.contentEquals(k.context))
+        assertNull(SessionKeyBinding.deriveV3(ByteArray(31), inviteDigest, acceptDigest))
+        assertNull(SessionKeyBinding.deriveV3(ByteArray(32), "short", acceptDigest))
+        k.clear()
+        assertTrue(k.callKey.all { it == 0.toByte() })
+        assertTrue(k.callerToCallee.all { it == 0.toByte() })
+        assertTrue(k.calleeToCaller.all { it == 0.toByte() })
     }
 
     @Test
     fun transcriptAndRoleChangesCannotReuseConfirmation() {
-        val key = requireNotNull(SessionKeyBinding.bind(ByteArray(32) { 9 }, invite, accept))
+        val key = keys(ByteArray(32) { 9 }).callKey
         val caller = SessionKeyBinding.confirmation(key, sessionId, "caller", inviteDigest, acceptDigest)
         val callee = SessionKeyBinding.confirmation(key, sessionId, "callee", inviteDigest, acceptDigest)
         assertNotEquals(caller, callee)
@@ -53,13 +77,13 @@ class SessionKeyBindingTest {
         assertFalse(SessionKeyBinding.matches(caller, callee))
 
         val changedAccept = accept.replace(ephemeralB, IdentityProtocol.encodeBase64Url(ByteArray(32) { 8 }))
-        assertFalse(requireNotNull(SessionKeyBinding.bind(ByteArray(32) { 9 }, invite, changedAccept))
-            .contentEquals(key))
+        val changedDigest = requireNotNull(IdentityProtocol.transcriptDigest(changedAccept))
+        assertFalse(keys(ByteArray(32) { 9 }, accept = changedDigest).callKey.contentEquals(key))
     }
 
     @Test
     fun mediaGateAcceptsOnlyTheExpectedPeerConfirmation() {
-        val key = requireNotNull(SessionKeyBinding.bind(ByteArray(32) { 7 }, invite, accept))
+        val key = keys(ByteArray(32) { 7 }).callKey
         val expected = SessionKeyBinding.confirmation(
             key, sessionId, "callee", inviteDigest, acceptDigest,
         )
@@ -67,7 +91,7 @@ class SessionKeyBindingTest {
             SessionKeyBinding.acceptsPeerConfirmation(
                 established = false,
                 localConfirmationSent = true,
-                protocol = 2,
+                protocol = SessionKeyBinding.CALL_PROTOCOL,
                 expectedSessionId = sessionId,
                 receivedSessionId = sessionId,
                 expectedRole = "callee",
@@ -78,22 +102,26 @@ class SessionKeyBindingTest {
         }
         assertTrue(valid())
         assertFalse(SessionKeyBinding.acceptsPeerConfirmation(
-            false, true, 2, sessionId, sessionId, "callee", "callee", expected, "forged",
+            false, true, 3, sessionId, sessionId, "callee", "callee", expected, "forged",
         ))
         assertFalse(SessionKeyBinding.acceptsPeerConfirmation(
-            false, true, 2, sessionId, "wrong-session", "callee", "callee", expected, expected,
+            false, true, 3, sessionId, "wrong-session", "callee", "callee", expected, expected,
         ))
         assertFalse(SessionKeyBinding.acceptsPeerConfirmation(
-            false, true, 2, sessionId, sessionId, "callee", "caller", expected, expected,
+            false, true, 3, sessionId, sessionId, "callee", "caller", expected, expected,
         ))
         assertFalse(SessionKeyBinding.acceptsPeerConfirmation(
-            false, false, 2, sessionId, sessionId, "callee", "callee", expected, expected,
+            false, false, 3, sessionId, sessionId, "callee", "callee", expected, expected,
         ))
         assertFalse(SessionKeyBinding.acceptsPeerConfirmation(
-            true, true, 2, sessionId, sessionId, "callee", "callee", expected, expected,
+            true, true, 3, sessionId, sessionId, "callee", "callee", expected, expected,
         ))
         assertFalse(SessionKeyBinding.acceptsPeerConfirmation(
             false, true, 1, sessionId, sessionId, "callee", "callee", expected, expected,
+        ))
+        // Protocol-2 confirmations are a downgrade and are rejected.
+        assertFalse(SessionKeyBinding.acceptsPeerConfirmation(
+            false, true, 2, sessionId, sessionId, "callee", "callee", expected, expected,
         ))
     }
 }

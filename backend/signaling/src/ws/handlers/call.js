@@ -10,10 +10,14 @@ const {
   verifySignature,
   isLegacyTransitionActive,
   UUID,
+  CALL_PROTOCOL_V2,
+  CALL_PROTOCOLS,
 } = require("../../security/identity_protocol");
 
 const MAX_ROUTING_ENTRIES = 10000;
 const MAX_ORIGINATING_ENTRIES = 32;
+// Peer-visible CALL_END reasons are a fixed allowlist; anything else relays as user_hangup.
+const RELAYED_CALL_END_REASONS = new Set(["user_hangup", "media_upgrade_required"]);
 
 module.exports = function callHandlers(ctx) {
   const {
@@ -61,6 +65,11 @@ module.exports = function callHandlers(ctx) {
     catch { return null; }
   }
 
+  // Sessions created before protocol pinning are protocol 2.
+  function sessionProtocol(session) {
+    return session.protocol ?? CALL_PROTOCOL_V2;
+  }
+
   function authenticatedClient(connId) {
     const client = clients.get(connId);
     // The socket's routing id must be the authenticated identity itself (friend audit FB-01).
@@ -88,7 +97,7 @@ module.exports = function callHandlers(ctx) {
   function authenticatedInvite(ws, connId, msg) {
     const client = authenticatedClient(connId);
     if (!client || clientIds.get(client.clientId) !== connId) return sendError(ws, "not_authenticated");
-    if (msg.protocol !== 2 || !UUID.test(msg.sessionId || "") || routingTable.has(msg.sessionId)
+    if (!CALL_PROTOCOLS.has(msg.protocol) || !UUID.test(msg.sessionId || "") || routingTable.has(msg.sessionId)
         || typeof msg.to !== "string" || typeof msg.ephemeralPublicKey !== "string"
         || typeof msg.nonce !== "string" || typeof msg.signature !== "string") {
       return sendError(ws, "invalid_call_invite");
@@ -108,6 +117,7 @@ module.exports = function callHandlers(ctx) {
         ephemeralPublicKey: msg.ephemeralPublicKey,
         issuedAt: msg.issuedAt,
         nonce: msg.nonce,
+        protocol: msg.protocol,
       });
     } catch { return sendError(ws, "invalid_call_invite"); }
     if (!verifySignature(identity.publicKey, transcript, msg.signature)) {
@@ -120,13 +130,24 @@ module.exports = function callHandlers(ctx) {
     const targetConnId = clientIds.get(targetClientId);
     const target = targetConnId ? clients.get(targetConnId) : null;
     if (target && target.authVersion !== 2) return sendError(ws, "peer_identity_upgrade_required");
+    // SC245: an online callee whose accepted session did not advertise this non-legacy
+    // protocol cannot verify it; fail fast instead of ringing out. Sessions without the
+    // advisory field are legacy (protocol 2). Offline/push delivery is not classified here.
+    if (target && msg.protocol !== CALL_PROTOCOL_V2) {
+      const peerProtocols = target.callProtocols instanceof Set ? target.callProtocols
+        : new Set([CALL_PROTOCOL_V2]);
+      if (!peerProtocols.has(msg.protocol)) {
+        return sendError(ws, "peer_media_upgrade_required",
+          "The other party must update SecureCall before a protected call is possible");
+      }
+    }
 
     const inviteDigest = transcriptDigest(transcript);
     const callerPhone = typeof msg.callerPhone === "string" && msg.callerPhone.length <= 64
       ? msg.callerPhone : "";
     const payload = {
       type: "CALL_INVITE",
-      protocol: 2,
+      protocol: msg.protocol,
       sessionId: msg.sessionId,
       from: client.clientId,
       fromIdentityId: client.identityId,
@@ -154,6 +175,7 @@ module.exports = function callHandlers(ctx) {
       to: targetClientId,
       requestedTo: msg.to,
       state: "INVITE",
+      protocol: msg.protocol,
       inviteDigest,
       callerEphemeralPublicKey: msg.ephemeralPublicKey,
       callerConfirmed: false,
@@ -163,7 +185,7 @@ module.exports = function callHandlers(ctx) {
     });
     return respond(ws, {
       type: "CALL_INVITE_ACK",
-      protocol: 2,
+      protocol: msg.protocol,
       ok: true,
       sessionId: msg.sessionId,
       from: client.clientId,
@@ -179,7 +201,9 @@ module.exports = function callHandlers(ctx) {
     if (!session) return sendError(ws, "session_not_found");
     if (session.to !== client.clientId) return sendError(ws, "not_callee");
     if (session.state !== "INVITE") return sendError(ws, "invalid_session_state");
-    if (msg.protocol !== 2 || msg.inviteDigest !== session.inviteDigest
+    // The accept must use the exact signed protocol of the invite (no downgrade/upgrade).
+    const protocol = sessionProtocol(session);
+    if (msg.protocol !== protocol || msg.inviteDigest !== session.inviteDigest
         || msg.toIdentityId !== session.fromIdentityId || typeof msg.ephemeralPublicKey !== "string"
         || typeof msg.nonce !== "string" || typeof msg.signature !== "string"
         || !validateIssuedAt(msg.issuedAt, nowSeconds())) return sendError(ws, "invalid_call_accept");
@@ -197,6 +221,7 @@ module.exports = function callHandlers(ctx) {
         ephemeralPublicKey: msg.ephemeralPublicKey,
         issuedAt: msg.issuedAt,
         nonce: msg.nonce,
+        protocol,
       });
     } catch { return sendError(ws, "invalid_call_accept"); }
     if (identity.identityId !== client.identityId
@@ -209,10 +234,10 @@ module.exports = function callHandlers(ctx) {
     session.calleeEphemeralPublicKey = msg.ephemeralPublicKey;
     session.acceptDigest = transcriptDigest(transcript);
     session.updated = Date.now();
-    respond(ws, { type: "CALL_ACCEPT_ACK", protocol: 2, ok: true, sessionId: msg.sessionId });
+    respond(ws, { type: "CALL_ACCEPT_ACK", protocol, ok: true, sessionId: msg.sessionId });
     return sendToClient(session.from, {
       type: "CALL_ACCEPT",
-      protocol: 2,
+      protocol,
       sessionId: msg.sessionId,
       inviteDigest: msg.inviteDigest,
       acceptDigest: session.acceptDigest,
@@ -237,7 +262,8 @@ module.exports = function callHandlers(ctx) {
     }
     const role = session.from === client.clientId ? "caller"
       : session.to === client.clientId ? "callee" : null;
-    if (!role || msg.protocol !== 2 || msg.role !== role
+    const protocol = sessionProtocol(session);
+    if (!role || msg.protocol !== protocol || msg.role !== role
         || typeof msg.confirmation !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(msg.confirmation)) {
       return sendError(ws, "invalid_key_confirmation");
     }
@@ -248,13 +274,13 @@ module.exports = function callHandlers(ctx) {
     const peer = getSessionPeer(msg.sessionId, client.clientId);
     if (peer) sendToClient(peer, {
       type: "CALL_KEY_CONFIRM",
-      protocol: 2,
+      protocol,
       sessionId: msg.sessionId,
       role,
       confirmation: msg.confirmation,
     });
     if (session.callerConfirmed && session.calleeConfirmed) session.state = "ACTIVE";
-    return respond(ws, { type: "CALL_KEY_CONFIRM_ACK", protocol: 2, ok: true,
+    return respond(ws, { type: "CALL_KEY_CONFIRM_ACK", protocol, ok: true,
       sessionId: msg.sessionId, active: session.state === "ACTIVE" });
   }
 
@@ -326,8 +352,9 @@ module.exports = function callHandlers(ctx) {
           return sendError(ws, "not_participant");
         }
         const peerClientId = getSessionPeer(msg.sessionId, myClientId);
+        const reason = RELAYED_CALL_END_REASONS.has(msg.reason) ? msg.reason : "user_hangup";
         if (peerClientId) sendToClient(peerClientId, { type: "CALL_END",
-          sessionId: msg.sessionId, from: myClientId, reason: "user_hangup" });
+          sessionId: msg.sessionId, from: myClientId, reason });
         routingTable.delete(msg.sessionId);
       }
       return respond(ws, { type: "CALL_END_ACK", ok: true, sessionId: msg.sessionId });

@@ -201,6 +201,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("pref_client_id")?.summary =
             if (!customId.isNullOrEmpty()) "$customId ($clientId)" else clientId
 
+        val effectiveTier = TierManager.getCurrentTier(requireContext())
+        findPreference<Preference>("pref_tier")?.summary = effectiveTier
+        configureExternalPurchaseLinks(effectiveTier)
+
         // BUG-022: Refresh network info + bound status on every resume
         refreshNetworkStatus()
         com.securecall.app.vpn.VpnFeature.refresh(this)
@@ -425,11 +429,33 @@ class SettingsFragment : PreferenceFragmentCompat() {
     internal fun configureExternalPurchaseLinks(effectiveTier: String) {
         val upgrade = findPreference<Preference>("pref_upgrade")
         val customIdBuy = findPreference<Preference>("pref_custom_id_buy")
-        // Play must hide purchase prompts even after an entitlement changes the effective tier.
+        // Internal Play upgrades are not external purchase links. Keep discovery
+        // available even while the existing purchase execution gate is closed.
         if (!BuildConfig.EXTERNAL_PURCHASE_LINKS_ENABLED) {
-            listOfNotNull(upgrade, customIdBuy).forEach {
-                it.isVisible = false
-                it.onPreferenceClickListener = null
+            customIdBuy?.apply {
+                isVisible = false
+                onPreferenceClickListener = null
+            }
+            val showUpgrade = BuildConfig.FLAVOR == "free" && effectiveTier != "PREMIUM"
+            upgrade?.apply {
+                isVisible = showUpgrade
+                title = getString(if (effectiveTier == "PRO") {
+                    R.string.pref_play_upgrade_premium
+                } else {
+                    R.string.pref_play_upgrade
+                })
+                summary = getString(if (BuildConfig.BILLING_ENABLED) {
+                    R.string.upgrade_choose_edition
+                } else {
+                    R.string.upgrade_purchases_unavailable
+                })
+                onPreferenceClickListener = null
+                if (showUpgrade) setOnPreferenceClickListener {
+                    startActivity(Intent().apply {
+                        setClassName(BuildConfig.APPLICATION_ID, "com.securecall.app.billing.UpgradeActivity")
+                    })
+                    true
+                }
             }
             return
         }

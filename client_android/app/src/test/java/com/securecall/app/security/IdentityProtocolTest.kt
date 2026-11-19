@@ -117,4 +117,51 @@ class IdentityProtocolTest {
         assertTrue(IdentityProtocol.verifyCallAccept(accept, now))
         assertFalse(IdentityProtocol.verifyCallAccept(accept.copy(toIdentityId = callee.identityId), now))
     }
+
+    @Test
+    fun v3InviteBindsMediaLabelAndRejectsV2Downgrade() {
+        val (callerPair, caller) = material()
+        val (_, callee) = material()
+        val now = 2_000_000_000L
+        val sessionId = UUID.randomUUID().toString()
+        val ephemeral = IdentityProtocol.encodeBase64Url(ByteArray(32) { 9 })
+        val nonce = IdentityProtocol.randomNonce()
+        val v3 = requireNotNull(IdentityProtocol.callInviteTranscript(
+            sessionId, caller.identityId, caller.identityId, callee.identityId, ephemeral, now, nonce,
+        ))
+        val v2 = requireNotNull(IdentityProtocol.callInviteTranscript(
+            sessionId, caller.identityId, caller.identityId, callee.identityId, ephemeral, now, nonce,
+            IdentityProtocol.CALL_PROTOCOL_V2,
+        ))
+        assertTrue(v3.startsWith("securecall-call-invite-v3\n"))
+        assertTrue(v3.endsWith("\n" + IdentityProtocol.MEDIA_FRAME_LABEL_V3))
+        assertTrue(v2.startsWith("securecall-call-invite-v2\n"))
+        assertNull(IdentityProtocol.callInviteTranscript(
+            sessionId, caller.identityId, caller.identityId, callee.identityId, ephemeral, now, nonce, 4,
+        ))
+
+        fun invite(transcript: String) = VerifiedCallInvite(
+            sessionId, caller.identityId, caller.identityId, callee.identityId,
+            callee.identityId, ephemeral, caller.publicKey, now, nonce,
+            sign(callerPair, transcript), requireNotNull(IdentityProtocol.transcriptDigest(transcript)),
+        )
+        val v3Invite = invite(v3)
+        val v2Invite = invite(v2)
+        assertTrue(IdentityProtocol.verifyCallInvite(v3Invite, now))
+        assertFalse(IdentityProtocol.isAuthenticLegacyInvite(v3Invite, now))
+        // An authentic old-client invite is recognised only for explicit rejection.
+        assertFalse(IdentityProtocol.verifyCallInvite(v2Invite, now))
+        assertTrue(IdentityProtocol.isAuthenticLegacyInvite(v2Invite, now))
+        // A v3 signature relabelled as v2 (or the reverse) never verifies.
+        assertFalse(IdentityProtocol.verifyCallInvite(v2Invite.copy(signature = v3Invite.signature), now))
+        assertFalse(IdentityProtocol.verifyCallInvite(v3Invite.copy(inviteDigest = v2Invite.inviteDigest), now))
+        assertFalse(IdentityProtocol.isAuthenticLegacyInvite(v2Invite, now + 121))
+
+        val accept = requireNotNull(IdentityProtocol.callAcceptTranscript(
+            sessionId, v3Invite.inviteDigest, callee.identityId, callee.identityId,
+            caller.identityId, ephemeral, now, nonce,
+        ))
+        assertTrue(accept.startsWith("securecall-call-accept-v3\n"))
+        assertTrue(accept.endsWith("\n" + IdentityProtocol.MEDIA_FRAME_LABEL_V3))
+    }
 }

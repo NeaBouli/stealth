@@ -8,8 +8,17 @@
   var WC_PROJECT_ID = "32f56abaa4b1d7f59fb1571c0c0a551f";
   var WC_ESM_URL = "https://esm.sh/@walletconnect/ethereum-provider@2.17.3";
   var RPC_URL = "https://eth.llamarpc.com";
+  // Canonical central shop entry. The signed eligibility travels only in the URL
+  // fragment, which browsers never send to a server or in a Referer header.
+  var SHOP_URL = "https://vlabs.gr/en/shop?focus=security";
+  var HANDOFF_KEY = "stealthx-ifr";
+  var PRODUCT_IDS = {
+    pro_lifetime: "stealthx-securecall-pro-lifetime",
+    premium_lifetime: "stealthx-securecall-premium-lifetime"
+  };
   var provider = null;
   var address = "";
+  var walletActionPending = false;
 
   var connectButton = root.querySelector("[data-ifr-connect]");
   var disconnectButton = root.querySelector("[data-ifr-disconnect]");
@@ -30,21 +39,40 @@
     if (status) status.textContent = message;
   }
 
-  function balanceText(value) {
-    return value ? " Balance: " + value + " IFR." : "";
+  function setWalletActionPending(pending) {
+    walletActionPending = pending;
+    if (connectButton) connectButton.disabled = pending;
+    if (disconnectButton) disconnectButton.disabled = pending || !address;
+    checkoutButtons.forEach(function (button) { button.disabled = pending; });
   }
 
-  function checkoutError(data) {
-    var error = data && data.error ? data.error : "Checkout unavailable";
-    if (error === "checkout_moved_to_vlabs") return "Discount checkout is temporarily unavailable while the fiscal checkout is completed.";
-    if (error === "invalid_tier") return "This product is not available for IFR discount checkout.";
-    if (error === "ifr_not_eligible") return "This wallet does not currently hold IFR." + balanceText(data.balanceAmount);
-    if (error === "wallet_signature_required") return "Sign the wallet message before checkout can open.";
-    if (error === "wallet_signature_invalid") return "The wallet signature could not be verified. Reconnect and try again.";
-    if (error === "wallet_challenge_expired") return "Wallet verification expired. Start the checkout again.";
-    if (error === "invalid_wallet_challenge" || error === "wallet_challenge_mismatch") return "Wallet verification did not match this checkout. Reconnect and try again.";
+  setWalletActionPending(false);
+  setStatus("Connect a browser wallet to verify IFR eligibility.");
+
+  function eligibilityError(data) {
+    var error = data && data.error ? data.error : "";
+    if (error === "ifr_eligibility_unavailable") return "IFR holder verification is currently unavailable. No discount was requested.";
+    if (error === "ifr_provider_unavailable") return "The read-only IFR balance check is unavailable right now. Try again later; no discount was requested.";
+    if (error === "ifr_not_eligible") return "This wallet does not currently hold IFR. You can still buy at the regular price in the shop.";
+    if (error === "invalid_product") return "This product is not available for the IFR holder price.";
+    if (error === "invalid_wallet") return "The connected wallet address is not valid. Reconnect and try again.";
+    if (error === "wallet_signature_required" || error === "wallet_signature_invalid") return "The wallet signature could not be verified. Reconnect and try again.";
+    if (error === "wallet_challenge_expired") return "Wallet verification expired. Start again.";
+    if (error === "invalid_wallet_challenge" || error === "wallet_challenge_mismatch") return "Wallet verification did not match this product. Start again.";
+    if (error === "origin_not_allowed") return "Verification is only available on the official StealthX website.";
     if (error === "rate_limited") return "Too many attempts. Wait a few minutes and try again.";
-    return error;
+    return "IFR holder verification is currently unavailable. No discount was requested.";
+  }
+
+  function base64Url(text) {
+    var bytes = new TextEncoder().encode(text);
+    var binary = "";
+    bytes.forEach(function (byte) { binary += String.fromCharCode(byte); });
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function handoffUrl(eligibility) {
+    return SHOP_URL + "#" + HANDOFF_KEY + "=" + base64Url(JSON.stringify(eligibility));
   }
 
   async function fetchJson(url, options) {
@@ -139,9 +167,7 @@
     if (addressField) addressField.value = address;
     if (connectButton) {
       connectButton.textContent = "Wallet connected";
-      connectButton.disabled = false;
     }
-    if (disconnectButton) disconnectButton.disabled = false;
     setStatus("Connected: " + address.slice(0, 6) + "..." + address.slice(-4) + ". Select a discount checkout to verify the IFR balance.");
   }
 
@@ -153,7 +179,14 @@
     } catch (error) {
       if (error && error.code === 4001) throw error;
     }
-    if (!address) address = await connectWalletConnect();
+    if (!address) {
+      try {
+        address = await connectWalletConnect();
+      } catch (error) {
+        if (error && error.code === 4001) throw error;
+        throw new Error("No browser wallet is available. Install or unlock a browser wallet, or buy at the regular price in the shop.");
+      }
+    }
     renderConnected();
     return address;
   }
@@ -163,26 +196,23 @@
     provider = null;
     address = "";
     if (addressField) addressField.value = "";
-    if (connectButton) {
-      connectButton.textContent = "Connect wallet";
-      connectButton.disabled = false;
-    }
-    if (disconnectButton) disconnectButton.disabled = true;
+    if (connectButton) connectButton.textContent = "Connect wallet";
     try {
       if (current && current.disconnect) await current.disconnect();
     } catch (_) {}
     setStatus("Wallet disconnected. No wallet state is stored in the Android app.");
   }
 
-  async function walletProof(tier) {
+  async function holderEligibility(productId) {
     var walletAddress = await connect();
-    var challengeResult = await fetchJson(API + "/stripe/ifr-discount-challenge", {
+    var challengeResult = await fetchJson(API + "/vlabs/ifr-eligibility/challenge", {
       method: "POST",
+      credentials: "omit",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tier: tier, walletAddress: walletAddress })
+      body: JSON.stringify({ productId: productId, walletAddress: walletAddress })
     });
     var challenge = challengeResult.data;
-    if (!challengeResult.response.ok || !challenge.message || !challenge.nonce) throw new Error(checkoutError(challenge));
+    if (!challengeResult.response.ok || !challenge.message || !challenge.nonce) throw new Error(eligibilityError(challenge));
     setStatus("Sign the message to prove wallet ownership. This cannot move tokens.");
     var signature;
     try {
@@ -191,42 +221,52 @@
       if (!canRetryPersonalSign(error)) throw error;
       signature = await provider.request({ method: "personal_sign", params: [walletAddress, challenge.message] });
     }
-    return { walletAddress: walletAddress, walletNonce: challenge.nonce, walletSignature: signature };
+    setStatus("Checking the IFR balance read-only...");
+    var result = await fetchJson(API + "/vlabs/ifr-eligibility", {
+      method: "POST",
+      credentials: "omit",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId: productId, walletAddress: walletAddress, nonce: challenge.nonce, signature: signature })
+    });
+    if (!result.response.ok || !result.data.eligibility) throw new Error(eligibilityError(result.data));
+    return result.data.eligibility;
   }
 
   async function checkout(button) {
+    if (walletActionPending) return;
     var original = button.textContent;
-    button.disabled = true;
+    var productId = PRODUCT_IDS[button.dataset.ifrTier];
+    if (!productId) {
+      setStatus(eligibilityError({ error: "invalid_product" }));
+      return;
+    }
+    setWalletActionPending(true);
     button.textContent = "Verifying...";
     try {
-      var payload = { tier: button.dataset.ifrTier, ifrDiscount: true };
-      Object.assign(payload, await walletProof(payload.tier));
-      setStatus("Checking IFR balance on Ethereum Mainnet...");
-      var checkoutResult = await fetchJson(API + "/stripe/create-dynamic-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      var data = checkoutResult.data;
-      if (!checkoutResult.response.ok || !data.url) throw new Error(checkoutError(data));
-      setStatus("Holder verified" + balanceText(data.ifrBalanceAmount) + " Opening Stripe with the displayed discount...");
-      window.location.assign(data.url);
+      var eligibility = await holderEligibility(productId);
+      setStatus("Holder verified for this product. Opening the central shop; the final price is confirmed there before payment.");
+      window.location.assign(handoffUrl(eligibility));
     } catch (error) {
-      setStatus(error && error.message ? error.message : "Checkout unavailable");
-      button.disabled = false;
+      if (error && error.code === 4001) setStatus("Signature rejected. No discount was requested.");
+      else setStatus(error && error.message ? error.message : eligibilityError(null));
       button.textContent = original;
+      setWalletActionPending(false);
     }
   }
 
   if (connectButton) connectButton.addEventListener("click", function () {
-    connectButton.disabled = true;
+    if (walletActionPending) return;
+    setWalletActionPending(true);
     connect().catch(function (error) {
-      connectButton.disabled = false;
       connectButton.textContent = "Connect wallet";
       setStatus(error && error.message ? error.message : "Wallet connection failed.");
-    });
+    }).finally(function () { setWalletActionPending(false); });
   });
-  if (disconnectButton) disconnectButton.addEventListener("click", disconnect);
+  if (disconnectButton) disconnectButton.addEventListener("click", function () {
+    if (walletActionPending) return;
+    setWalletActionPending(true);
+    disconnect().finally(function () { setWalletActionPending(false); });
+  });
   checkoutButtons.forEach(function (button) {
     button.addEventListener("click", function () { checkout(button); });
   });

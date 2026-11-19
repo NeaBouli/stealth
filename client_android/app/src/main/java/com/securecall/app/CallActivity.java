@@ -59,6 +59,12 @@ public class CallActivity extends AppCompatActivity {
     }
 
     private AudioCapturePlaceholder audioCapture;
+    // Session and callbacks owned by this screen: cleanup never ends or clears a newer call's.
+    private String ownedSessionId;
+    private kotlin.jvm.functions.Function2<String, String, kotlin.Unit> ownedSecureCallback;
+    private kotlin.jvm.functions.Function1<String, kotlin.Unit> ownedAcceptedCallback;
+    private kotlin.jvm.functions.Function2<String, String, kotlin.Unit> ownedErrorCallback;
+    private kotlin.jvm.functions.Function1<String, kotlin.Unit> ownedEndedCallback;
     // Saved refs for starting audio after permission grant
     private TextView pendingConnectionState;
     private Chronometer pendingCallTimer;
@@ -193,6 +199,7 @@ public class CallActivity extends AppCompatActivity {
         }
 
         String sessionId = getIntent().getStringExtra("sessionId");
+        if (sessionId != null && !sessionId.isEmpty()) ownedSessionId = sessionId;
         boolean isIncoming = getIntent().getBooleanExtra("isIncoming", false);
         boolean fromNotification = getIntent().getBooleanExtra("fromNotification", false);
 
@@ -231,10 +238,10 @@ public class CallActivity extends AppCompatActivity {
         com.securecall.app.net.WebSocketService ws =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
 
-        if (ws != null) {
-            ws.setOnSecureSessionEstablished((establishedSessionId, code) -> {
-                if (sessionId != null && !sessionId.isEmpty()
-                        && !sessionId.equals(establishedSessionId)) return kotlin.Unit.INSTANCE;
+        // Owner-scoped callbacks; registered only after this screen's owner binding succeeded.
+        ownedSecureCallback = (establishedSessionId, code) -> {
+                String owner = ownedSessionId;
+                if (owner == null || !owner.equals(establishedSessionId)) return kotlin.Unit.INSTANCE;
                 runOnUiThread(() -> {
                     stopRingbackTone();
                     if (encryptionIndicator != null) encryptionIndicator.setVisibility(View.VISIBLE);
@@ -247,13 +254,29 @@ public class CallActivity extends AppCompatActivity {
                     startTransportAndTimer(connectionState, callTimer);
                 });
                 return kotlin.Unit.INSTANCE;
-            });
+        };
+        ownedEndedCallback = endedSessionId -> {
+            Log.d(TAG, "Remote ended call, session=" + endedSessionId);
+            runOnUiThread(this::endCall);
+            return kotlin.Unit.INSTANCE;
+        };
+        boolean incomingBound = false;
+        if (ws != null && (isIncoming || fromNotification) && ownedSessionId != null) {
+            incomingBound = ws.bindCallCallbacks(ownedSessionId, ownedEndedCallback, null);
+            if (incomingBound) {
+                ws.setOnSecureSessionEstablished(ownedSecureCallback);
+            } else {
+                // Another live call owns the service; this screen must not touch it.
+                Log.w(TAG, "Incoming call screen refused: another call owns the service");
+                connectionState.setText("Call unavailable");
+                connectionState.postDelayed(this::endCall, 2000);
+            }
         }
 
         if (fromNotification) {
             // FCM push path — accept and start
             Log.d(TAG, "Launched from notification: session=" + sessionId + ", caller=" + callerName);
-            if (ws != null && sessionId != null && !sessionId.isEmpty()) {
+            if (ws != null && incomingBound && sessionId != null && !sessionId.isEmpty()) {
                 ws.sendCallAccept(sessionId);
             }
             prepareCallAudio();
@@ -272,7 +295,9 @@ public class CallActivity extends AppCompatActivity {
                 com.securecall.app.trial.TrialManager.INSTANCE.showTrialExpiredDialog(this);
                 return;
             }
-            // Outgoing call — send CALL_INVITE, wait for CALL_ACCEPT
+            // Outgoing call — send CALL_INVITE, wait for CALL_ACCEPT. The immutable owner id
+            // is generated here, before registration/queue/send; it is never reloaded.
+            ownedSessionId = java.util.UUID.randomUUID().toString();
             String targetId = phoneNumber;
             connectionState.setText(R.string.call_ringing);
             updateCallButton(true);
@@ -289,16 +314,17 @@ public class CallActivity extends AppCompatActivity {
             prepareCallAudio();
 
             if (ws != null && targetId != null && !targetId.isEmpty()) {
-                ws.setOnCallAccepted(acceptedSessionId -> {
+                ownedAcceptedCallback = acceptedSessionId -> {
+                    if (!acceptedSessionId.equals(ownedSessionId)) return kotlin.Unit.INSTANCE;
                     Log.d(TAG, "Remote accepted with authenticated key confirmation");
                     stopRingbackTone();
                     return kotlin.Unit.INSTANCE;
-                });
-                ws.setOnCallError((error, message) -> {
+                };
+                ownedErrorCallback = (error, message) -> {
                     Log.e(TAG, "Call error: " + error + " — " + message);
                     stopRingbackTone();
-                    // Clear callback to prevent repeated error handling
-                    ws.setOnCallError(null);
+                    // Clear callback to prevent repeated error handling (only our own)
+                    ws.clearCallbacksIfOwned(null, ownedErrorCallback, null, null);
                     runOnUiThread(() -> {
                         String userMessage;
                         if ("peer_not_found".equals(error)) {
@@ -315,21 +341,24 @@ public class CallActivity extends AppCompatActivity {
                         connectionState.postDelayed(this::endCall, 4000);
                     });
                     return kotlin.Unit.INSTANCE;
-                });
-                ws.sendCallInvite(targetId);
+                };
+                if (ws.bindCallCallbacks(ownedSessionId, ownedEndedCallback, ownedErrorCallback)) {
+                    ws.setOnSecureSessionEstablished(ownedSecureCallback);
+                    ws.setOnCallAccepted(ownedAcceptedCallback);
+                    ws.sendCallInvite(targetId, ownedSessionId);
+                } else {
+                    // Refused ownership: another live call keeps its callbacks and state.
+                    stopRingbackTone();
+                    connectionState.setText("Another call is in progress.");
+                    connectionState.setTextColor(getResources().getColor(R.color.stealthx_red, getTheme()));
+                    connectionState.postDelayed(this::endCall, 4000);
+                }
             } else {
                 connectionState.setText("Connection error");
             }
         }
 
-        // Listen for remote hangup in all cases
-        if (ws != null) {
-            ws.setOnCallEnded(endedSessionId -> {
-                Log.d(TAG, "Remote ended call, session=" + endedSessionId);
-                runOnUiThread(this::endCall);
-                return kotlin.Unit.INSTANCE;
-            });
-        }
+        // Remote hangup is bound with the owner above (incoming) or before the invite (outgoing).
 
         // Mute toggle
         fabMute.setOnClickListener(v -> {
@@ -1016,15 +1045,13 @@ public class CallActivity extends AppCompatActivity {
         com.securecall.app.net.WebSocketService ws =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
         if (ws != null) {
-            String sid = ws.getCurrentSessionId();
-            if (sid != null && !sid.isEmpty()) {
+            // Our own immutable owner only (queued, in-flight or admitted); never a global id.
+            String sid = ownedSessionId;
+            ws.clearCallbacksIfOwned(ownedEndedCallback, ownedErrorCallback,
+                    ownedAcceptedCallback, ownedSecureCallback);
+            if (sid != null && !sid.isEmpty() && ws.clearSessionIfOwner(sid)) {
                 ws.sendCallEnd(sid);
             }
-            ws.setOnCallAccepted(null);
-            ws.setOnSecureSessionEstablished(null);
-            ws.setOnCallEnded(null);
-            ws.setOnCallError(null);
-            ws.clearSession();
         }
 
         // Save call to history (only if user hasn't disabled it)
@@ -1061,7 +1088,7 @@ public class CallActivity extends AppCompatActivity {
         // Clear call active flag on WebSocket — restores normal staleness threshold
         com.securecall.app.net.WebSocketService wsFlag =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
-        if (wsFlag != null) wsFlag.setCallActive(false);
+        if (wsFlag != null) wsFlag.setCallActiveIfOwner(ownedSessionId, false);
 
         // Stop phone state monitoring and release audio focus
         stopPhoneStateMonitor();
@@ -1077,7 +1104,7 @@ public class CallActivity extends AppCompatActivity {
         com.securecall.app.net.WebSocketService wsAudio =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
         if (wsAudio != null) {
-            wsAudio.killAllAudio();
+            wsAudio.killAllAudioIfOwner(ownedSessionId);
             // Post-call recovery: ensure WebSocket reconnects cleanly
             wsAudio.postCallRecovery();
         }
@@ -1281,8 +1308,8 @@ public class CallActivity extends AppCompatActivity {
         com.securecall.app.net.WebSocketService ws =
                 com.securecall.app.net.WebSocketService.Companion.getInstance();
         if (ws != null) {
-            try { ws.killAllAudio(); } catch (Exception e) { Log.e(TAG, "Error in killAllAudio", e); }
-            ws.setOnSecureSessionEstablished(null);
+            try { ws.killAllAudioIfOwner(ownedSessionId); } catch (Exception e) { Log.e(TAG, "Error in killAllAudio", e); }
+            ws.clearCallbacksIfOwned(null, null, null, ownedSecureCallback);
         }
         if (secureCallMonitor != null) {
             secureCallMonitor.stopMonitoring(this);

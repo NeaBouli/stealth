@@ -77,7 +77,40 @@ async function verifyIfrHolding(walletAddress) {
   return result.success ? classifyHolderEligibility(result.balance) : result;
 }
 
+// Holder eligibility read for an explicitly approved chain/token and provider list.
+// No default endpoints: an empty list fails closed. Each endpoint must report the
+// approved chain id before its balance is trusted.
+async function readConfiguredTokenBalance({
+  walletAddress, chainId, tokenAddress, rpcUrls,
+  createProvider = (url) => new ethers.JsonRpcProvider(url, chainId, { staticNetwork: true }),
+  timeoutMs = 10000,
+}) {
+  if (!Array.isArray(rpcUrls) || rpcUrls.length === 0) return { success: false, error: "eth_unavailable" };
+  for (const url of rpcUrls) {
+    const provider = createProvider(url);
+    try {
+      const withTimeout = (p) => Promise.race([
+        p,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs)),
+      ]);
+      const reported = BigInt(await withTimeout(provider.send("eth_chainId", [])));
+      if (reported !== BigInt(chainId)) throw new Error("chain_mismatch");
+      const contract = new ethers.Contract(tokenAddress, IFR_TOKEN_ABI, provider);
+      const balance = await withTimeout(contract.balanceOf(walletAddress));
+      if (typeof balance !== "bigint" || balance < 0n) throw new Error("invalid_balance");
+      return { success: true, balance };
+    } catch (_e) {
+      // Provider errors may echo endpoint URLs (which can embed credentials); log none of it.
+      console.warn("[IFR] eligibility RPC endpoint failed - trying next");
+    } finally {
+      if (provider && typeof provider.destroy === "function") provider.destroy();
+    }
+  }
+  return { success: false, error: "all_rpc_failed" };
+}
+
 module.exports = {
+  readConfiguredTokenBalance,
   verifyIfrLock,
   verifyIfrHolding,
   classifyHolderEligibility,

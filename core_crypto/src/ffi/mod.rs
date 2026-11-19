@@ -16,11 +16,11 @@
 //!   overwrites its X25519 secret with zeros on `Drop` (see the `identity`
 //!   module). This is best-effort scrubbing of freed memory, not a guarantee
 //!   about transient copies made by the compiler or the JVM.
-//! - No AAD parameter (current behaviour): `encrypt_frame_aead` /
+//! - No AAD parameter on the generic API: `encrypt_frame_aead` /
 //!   `decrypt_frame_aead` authenticate the frame only
-//!   (`[nonce | ciphertext | tag]`); no additional authenticated data is
-//!   bound. Adding AAD is a wire-protocol change tracked separately (STX-24)
-//!   and is intentionally not changed here.
+//!   (`[nonce | ciphertext | tag]`) and stay unchanged for unrelated callers.
+//!   Call media uses the narrow STX-24 `mediaSeal` / `mediaOpen` JNI functions,
+//!   which bind version, role, sequence and call context as AAD.
 //! - Panic containment (STX-27): every exported function runs through
 //!   [`catch_ffi`] (`catch_unwind`). A panic returns the function's existing
 //!   error value (`-1` / null array / `false`) instead of unwinding across
@@ -178,7 +178,7 @@ pub unsafe extern "C" fn core_crypto_zeroize(ptr: *mut u8, len: usize) {
 use jni::JNIEnv;
 use jni::objects::JClass;
 use jni::objects::JByteArray;
-use jni::sys::jboolean;
+use jni::sys::{jboolean, jint, jlong};
 
 /// JNI: CoreCrypto.selfTest() -> boolean
 #[no_mangle]
@@ -358,6 +358,120 @@ pub extern "system" fn Java_com_securecall_crypto_CoreCrypto_generateKeyPair<'lo
 
         env.byte_array_from_slice(&combined[..])
             .unwrap_or_else(|_| JByteArray::default())
+    }), JByteArray::default())
+}
+
+fn media_key_from(bytes: &[u8]) -> Option<AeadKey> {
+    if bytes.len() != 32 {
+        return None;
+    }
+    let mut key_arr = [0u8; 32];
+    key_arr.copy_from_slice(bytes);
+    let key = AeadKey::from_bytes(key_arr);
+    key_arr.zeroize();
+    Some(key)
+}
+
+fn media_context_from(bytes: &[u8]) -> Option<[u8; aead::MEDIA_CONTEXT_SIZE]> {
+    if bytes.len() != aead::MEDIA_CONTEXT_SIZE {
+        return None;
+    }
+    let mut context = [0u8; aead::MEDIA_CONTEXT_SIZE];
+    context.copy_from_slice(bytes);
+    Some(context)
+}
+
+fn media_role_from(role: jint) -> Option<u8> {
+    match role {
+        1 => Some(aead::MEDIA_ROLE_CALLER),
+        2 => Some(aead::MEDIA_ROLE_CALLEE),
+        _ => None,
+    }
+}
+
+/// JNI: CoreCrypto.mediaSeal(byte[] key, int senderRole, byte[] context, long sequence, byte[] plaintext) -> byte[]
+///
+/// STX-24 media v3 sender. Returns the authenticated frame, or null on any error.
+#[no_mangle]
+pub extern "system" fn Java_com_securecall_crypto_CoreCrypto_mediaSeal<'local>(
+    env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    key: JByteArray<'local>,
+    sender_role: jint,
+    context: JByteArray<'local>,
+    sequence: jlong,
+    plaintext: JByteArray<'local>,
+) -> JByteArray<'local> {
+    catch_ffi(AssertUnwindSafe(|| {
+        let result = (|| -> Option<Vec<u8>> {
+            let role = media_role_from(sender_role)?;
+            if sequence <= 0 {
+                return None;
+            }
+            let plain_len = env.get_array_length(&plaintext).ok()?;
+            if plain_len <= 0 || plain_len as usize > aead::MEDIA_MAX_PLAINTEXT {
+                return None;
+            }
+            let key_bytes = Zeroizing::new(env.convert_byte_array(&key).ok()?);
+            let aead_key = media_key_from(&key_bytes)?;
+            let context = media_context_from(&env.convert_byte_array(&context).ok()?)?;
+            let plain = Zeroizing::new(env.convert_byte_array(&plaintext).ok()?);
+            aead::seal_media_frame(&aead_key, role, &context, sequence as u64, &plain).ok()
+        })();
+        match result {
+            Some(frame) => env.byte_array_from_slice(&frame).unwrap_or_else(|_| JByteArray::default()),
+            None => JByteArray::default(),
+        }
+    }), JByteArray::default())
+}
+
+/// JNI: CoreCrypto.mediaOpen(byte[] key, int expectedPeerRole, byte[] context, long highest, long bitmap, byte[] frame) -> byte[]
+///
+/// STX-24 media v3 receiver. `highest`/`bitmap` are the caller's last committed
+/// replay state. Returns `[newHighest (8B BE) | newBitmap (8B BE) | plaintext]`
+/// only for an authenticated, fresh frame; null otherwise. The caller commits the
+/// new state atomically with its own lock; a rejected frame leaves it unchanged.
+#[no_mangle]
+pub extern "system" fn Java_com_securecall_crypto_CoreCrypto_mediaOpen<'local>(
+    env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    key: JByteArray<'local>,
+    expected_peer_role: jint,
+    context: JByteArray<'local>,
+    highest: jlong,
+    bitmap: jlong,
+    frame: JByteArray<'local>,
+) -> JByteArray<'local> {
+    catch_ffi(AssertUnwindSafe(|| {
+        let result = (|| -> Option<Zeroizing<Vec<u8>>> {
+            let role = media_role_from(expected_peer_role)?;
+            if highest < 0 {
+                return None;
+            }
+            // Bound the untrusted frame before copying it out of the JVM.
+            let frame_len = env.get_array_length(&frame).ok()?;
+            if frame_len < 0 || (frame_len as usize) < aead::MEDIA_MIN_FRAME
+                || frame_len as usize > aead::MEDIA_MAX_FRAME {
+                return None;
+            }
+            let key_bytes = Zeroizing::new(env.convert_byte_array(&key).ok()?);
+            let aead_key = media_key_from(&key_bytes)?;
+            let context = media_context_from(&env.convert_byte_array(&context).ok()?)?;
+            let frame_bytes = env.convert_byte_array(&frame).ok()?;
+            let replay = aead::ReplayDetector::from_state(highest as u64, bitmap as u64);
+            let (plain, next) = aead::open_media_frame(&aead_key, role, &context, &replay, &frame_bytes).ok()?;
+            let plain = Zeroizing::new(plain);
+            let (next_highest, next_bitmap) = next.state();
+            let mut out = Zeroizing::new(Vec::with_capacity(16 + plain.len()));
+            out.extend_from_slice(&next_highest.to_be_bytes());
+            out.extend_from_slice(&next_bitmap.to_be_bytes());
+            out.extend_from_slice(&plain);
+            Some(out)
+        })();
+        match result {
+            Some(out) => env.byte_array_from_slice(&out).unwrap_or_else(|_| JByteArray::default()),
+            None => JByteArray::default(),
+        }
     }), JByteArray::default())
 }
 

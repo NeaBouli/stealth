@@ -8,7 +8,8 @@ import com.securecall.app.BuildConfig
 /**
  * Google Play Billing Library wrapper (FREE flavor only).
  *
- * Manages subscription and lifetime purchases for upgrading from FREE to PRO/PREMIUM.
+ * Sells only one-time (INAPP) Pro/Premium lifetime products and the activation-code
+ * product. No recurring (SUBS) product is queried, offered or accepted.
  */
 class BillingManager(
     private val activity: Activity,
@@ -21,21 +22,16 @@ class BillingManager(
 
     interface BillingListener {
         fun onProductsLoaded(products: List<ProductDetails>)
-        fun onPurchaseCompleted(tier: SubscriptionTier, token: String)
+        fun onPurchaseCompleted(tier: SubscriptionTier, token: String, productId: String)
+        fun onPurchasesRestored(purchases: List<RestoredPurchase>)
         fun onPurchaseFailed(errorCode: Int, message: String)
         fun onBillingDisconnected()
     }
 
+    data class RestoredPurchase(val tier: SubscriptionTier, val token: String, val productId: String)
+
     private var billingClient: BillingClient? = null
     private var productDetailsList: List<ProductDetails> = emptyList()
-    private var lastPurchasedProductId: String? = null
-
-    private val subscriptionSkus = listOf(
-        BuildConfig.SKU_PRO_MONTHLY,
-        BuildConfig.SKU_PRO_YEARLY,
-        BuildConfig.SKU_PREMIUM_MONTHLY,
-        BuildConfig.SKU_PREMIUM_YEARLY
-    )
 
     private val lifetimeSkus = listOf(
         BuildConfig.SKU_PRO_LIFETIME,
@@ -64,7 +60,6 @@ class BillingManager(
             override fun onBillingSetupFinished(result: BillingResult) {
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     Log.d(TAG, "Billing client connected")
-                    querySubscriptionProducts()
                     queryInAppProducts()
                     queryExistingPurchases()
                 } else {
@@ -78,30 +73,6 @@ class BillingManager(
                 listener.onBillingDisconnected()
             }
         })
-    }
-
-    private fun querySubscriptionProducts() {
-        val productList = subscriptionSkus.map { sku ->
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(sku)
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build()
-        }
-
-        val params = QueryProductDetailsParams.newBuilder()
-            .setProductList(productList)
-            .build()
-
-        billingClient?.queryProductDetailsAsync(params) { result, queryResult ->
-            val detailsList = queryResult.productDetailsList
-            if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                productDetailsList = productDetailsList + detailsList
-                Log.d(TAG, "Subscription products loaded: ${detailsList.size}")
-                listener.onProductsLoaded(productDetailsList)
-            } else {
-                Log.e(TAG, "querySubscriptionProducts failed: ${result.debugMessage}")
-            }
-        }
     }
 
     private fun queryInAppProducts() {
@@ -129,19 +100,35 @@ class BillingManager(
     }
 
     private fun queryExistingPurchases() {
-        // Check subscriptions
+        val client = billingClient ?: return
+        val results = mutableMapOf<String, List<RestoredPurchase>>()
+        var failed: BillingResult? = null
+        var delivered = false
+        fun completed(type: String, result: BillingResult, purchases: List<Purchase>) {
+            synchronized(results) {
+                if (delivered || billingClient !== client || results.containsKey(type)) return
+                if (result.responseCode != BillingClient.BillingResponseCode.OK) failed = result
+                results[type] = purchases.mapNotNull { purchaseReceipt(it) }
+                if (results.size != 2) return
+                delivered = true
+                val error = failed
+                if (error != null) {
+                    // A missing half is not evidence that only the other purchase exists.
+                    listener.onPurchaseFailed(error.responseCode, "Unable to restore all purchases")
+                } else {
+                    listener.onPurchasesRestored((results.getValue(BillingClient.ProductType.SUBS)
+                        + results.getValue(BillingClient.ProductType.INAPP)).distinct())
+                }
+            }
+        }
+        // Neutral restore plumbing: no recurring product is accepted, so any SUBS
+        // receipt is dropped by purchaseReceipt and only INAPP receipts can restore.
         val subsParams = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
 
-        billingClient?.queryPurchasesAsync(subsParams) { result, purchases ->
-            if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                for (purchase in purchases) {
-                    if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                        handlePurchase(purchase)
-                    }
-                }
-            }
+        client.queryPurchasesAsync(subsParams) { result, purchases ->
+            completed(BillingClient.ProductType.SUBS, result, purchases)
         }
 
         // Check in-app purchases (lifetime)
@@ -149,31 +136,9 @@ class BillingManager(
             .setProductType(BillingClient.ProductType.INAPP)
             .build()
 
-        billingClient?.queryPurchasesAsync(inappParams) { result, purchases ->
-            if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                for (purchase in purchases) {
-                    if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                        handlePurchase(purchase)
-                    }
-                }
-            }
+        client.queryPurchasesAsync(inappParams) { result, purchases ->
+            completed(BillingClient.ProductType.INAPP, result, purchases)
         }
-    }
-
-    fun launchPurchaseFlow(productDetails: ProductDetails, offerToken: String) {
-        if (!BuildConfig.BILLING_ENABLED) return
-        val productDetailsParamsList = listOf(
-            BillingFlowParams.ProductDetailsParams.newBuilder()
-                .setProductDetails(productDetails)
-                .setOfferToken(offerToken)
-                .build()
-        )
-
-        val billingFlowParams = BillingFlowParams.newBuilder()
-            .setProductDetailsParamsList(productDetailsParamsList)
-            .build()
-
-        billingClient?.launchBillingFlow(activity, billingFlowParams)
     }
 
     fun launchInAppPurchaseFlow(productDetails: ProductDetails) {
@@ -215,19 +180,22 @@ class BillingManager(
         }
     }
 
-    fun getLastPurchasedProductId(): String? = lastPurchasedProductId
-
     private fun handlePurchase(purchase: Purchase) {
-        val productId = purchase.products.firstOrNull() ?: return
-        lastPurchasedProductId = productId
+        val receipt = purchaseReceipt(purchase) ?: return
+        // The backend acknowledges only after verification and durable persistence.
+        listener.onPurchaseCompleted(receipt.tier, receipt.token, receipt.productId)
+    }
+
+    private fun purchaseReceipt(purchase: Purchase): RestoredPurchase? {
+        if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) return null
+        val productId = purchase.products.singleOrNull()
+            ?.takeIf { it in lifetimeSkus } ?: return null
         val tier = SubscriptionTier.fromProductId(productId)
         val token = purchase.purchaseToken
 
         Log.d(TAG, "Purchase completed: productId=$productId, tier=$tier")
 
-        // The backend acknowledges only after authoritative verification and
-        // durable entitlement persistence.
-        listener.onPurchaseCompleted(tier, token)
+        return RestoredPurchase(tier, token, productId)
     }
 
     fun destroy() {

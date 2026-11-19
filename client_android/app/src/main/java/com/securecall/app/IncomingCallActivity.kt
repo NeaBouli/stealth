@@ -72,6 +72,10 @@ class IncomingCallActivity : AppCompatActivity() {
     private var fromFcm = false // BUG-010: true when launched from FCM without WS
     private var ringTimeoutHandler: android.os.Handler? = null
     private var ringTimeoutRunnable: Runnable? = null
+    // Own callback reference: onDestroy clears it only if a newer screen has not replaced it.
+    private var endedCallback: ((String) -> Unit)? = null
+    // False for a refused/stale launch: onDestroy then has no audio/callback side effects.
+    private var activated = false
 
     @Suppress("DEPRECATION")
     private fun wakeScreen() {
@@ -131,6 +135,17 @@ class IncomingCallActivity : AppCompatActivity() {
             finish()
             return
         }
+        // Activation-time ownership: with a service present only the same still-ringing owner
+        // may open; a cold push whose service has not adopted yet is allowed only while the
+        // invite was never ended. Service absent keeps the existing cold-wake path.
+        val owner = com.securecall.app.net.WebSocketService.instance
+        if (owner != null && !owner.isRingingOwner(sessionId) &&
+            !(fromFcm && owner.isCallIdle() && !IncomingCallTelecom.isEnded(sessionId))) {
+            Log.w(TAG, "Stale incoming UI for session=$sessionId — finishing without side effects")
+            finish()
+            return
+        }
+        activated = true
 
         setContentView(R.layout.activity_incoming_call)
         EdgeToEdgeHelper.applySystemBarPaddingToContent(this)
@@ -189,7 +204,7 @@ class IncomingCallActivity : AppCompatActivity() {
         ringTimeoutHandler?.postDelayed(ringTimeoutRunnable!!, 60000)
 
         // Backup: also use callback for caller hangup during ringing
-        ws?.setOnCallEnded { endedSessionId ->
+        val onEnded: (String) -> Unit = { endedSessionId ->
             if (endedSessionId == sessionId) {
                 Log.d(TAG, "Caller ended call while ringing (callback)")
                 saveMissedCall()
@@ -199,6 +214,15 @@ class IncomingCallActivity : AppCompatActivity() {
                     finish()
                 }
             }
+        }
+        endedCallback = onEnded
+        if (ws != null && !ws.bindCallCallbacks(sessionId, onEnded, null)) {
+            // Another live call owns the service callbacks: leave it untouched.
+            Log.w(TAG, "Incoming UI refused callback ownership for session=$sessionId")
+            endedCallback = null
+            activated = false
+            finish()
+            return
         }
         if (intent.getBooleanExtra(IncomingCallTelecom.EXTRA_ANSWER, false) &&
             IncomingCallTelecom.isAnswered(sessionId)) acceptCall()
@@ -222,7 +246,7 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun dismissIncomingCallNotification() {
-        IncomingCallNotifications.cancelAll(this)
+        IncomingCallNotifications.cancel(this, sessionId)
     }
 
     private fun cancelRingTimeout() {
@@ -258,7 +282,7 @@ class IncomingCallActivity : AppCompatActivity() {
             }
             ws = com.securecall.app.net.WebSocketService.instance
         }
-        ws?.killAllAudio()
+        ws?.killAllAudioIfOwner(sessionId)
 
         // CALL_ACCEPT is only valid after the server REGISTERED ack.
         // A connected-but-unregistered socket gets `not_registered` from the server.
@@ -330,7 +354,8 @@ class IncomingCallActivity : AppCompatActivity() {
         saveMissedCall()
         val ws = com.securecall.app.net.WebSocketService.instance
         if (sessionId.isNotEmpty()) ws?.sendCallEnd(sessionId)
-        ws?.clearSession() // BUG-032: clear session so next call isn't rejected as BUSY
+        // BUG-032: clear session so next call isn't rejected as BUSY — only this call's session.
+        if (sessionId.isNotEmpty()) ws?.clearSessionIfOwner(sessionId)
         activeSessionId = null
         if (acceptedSessionId == sessionId) acceptedSessionId = null
         finish()
@@ -425,11 +450,19 @@ class IncomingCallActivity : AppCompatActivity() {
 
     /** Stop ringtone+vibration — delegates to WebSocketService which owns the audio. */
     private fun stopRingtoneAndVibration() {
-        com.securecall.app.net.WebSocketService.instance?.stopIncomingRingtone()
+        // A stale screen must not silence a newer call's service-owned ringtone.
+        com.securecall.app.net.WebSocketService.instance?.stopIncomingRingtoneIfOwner(sessionId)
     }
 
     override fun onDestroy() {
         cancelRingTimeout()
+        if (!activated) {
+            if (com.securecall.app.net.WebSocketService.instance?.isCallIdle() != false) {
+                com.securecall.app.ads.AdMobManager.resumeAfterCall()
+            }
+            super.onDestroy()
+            return
+        }
         stopRingtoneAndVibration()
         // Only clear activeInstance if WE are the current instance (avoids race with new instance)
         if (activeInstance === this) {
@@ -439,7 +472,7 @@ class IncomingCallActivity : AppCompatActivity() {
         if (!accepted && acceptedSessionId == sessionId) acceptedSessionId = null
         // Only clear callback if we didn't accept — CallActivity sets its own onCallEnded
         if (!accepted) {
-            com.securecall.app.net.WebSocketService.instance?.setOnCallEnded(null)
+            com.securecall.app.net.WebSocketService.instance?.clearCallbacksIfOwned(endedCallback, null, null, null)
             com.securecall.app.ads.AdMobManager.resumeAfterCall()
         }
         super.onDestroy()

@@ -24,6 +24,10 @@ const HeartbeatManager = require("./heartbeat");
 const pkd = require("./pkd");
 const rateLimit = require("./rate_limit");
 const subscriptions = require("./subscriptions");
+// Owner-approved same-package lifetime policy, read once from the operator-supplied
+// GOOGLE_PLAY_LIFETIME_POLICY_FILE (google_play_billing::loadLifetimePolicy). No values or
+// defaults in source: absent/invalid input keeps lifetime verification and status closed.
+const PLAY_LIFETIME_POLICY = require("./payments/google_play_billing").loadLifetimePolicy();
 const fcm = require("./fcm");
 const customIds = require("./custom_ids");
 
@@ -344,6 +348,15 @@ app.post("/subscription/status", (req, res) => {
     return res.status(400).json({ error: "invalid_subscription_status_request" });
   }
   const sub = subscriptions.getSubscription(clientId);
+  if (!sub || purchaseToken !== sub.purchaseToken
+      || packageName !== sub.packageName
+      || catalogVersion !== sub.catalogVersion) {
+    const lifetime = require("./payments/google_play_billing").lifetimeStatusResponse(
+      subscriptions.getLifetimeEntitlement(clientId, purchaseToken, packageName, catalogVersion),
+      PLAY_LIFETIME_POLICY
+    );
+    if (lifetime) return res.json(lifetime);
+  }
   if (!sub) {
     return res.json({ valid: false, tier: "FREE", reason: "not_found" });
   }
@@ -675,6 +688,7 @@ app.post("/billing/verify-purchase", billingVerificationRateLimit, async (req, r
   }
 
   const {
+    LIFETIME_PRODUCTS,
     PLAY_CATALOG_VERSION,
     acknowledgePlayOneTimePurchase,
     issuePlayActivationCode,
@@ -684,6 +698,11 @@ app.post("/billing/verify-purchase", billingVerificationRateLimit, async (req, r
   try {
     if (!isPlayBillingEnabled()) throw new Error("play_billing_disabled");
     if (catalog_version !== PLAY_CATALOG_VERSION) throw new Error("catalog_version_mismatch");
+    // Lifetime products unlock the same package via SUBSCRIPTION_VERIFY, never a code.
+    if (Object.prototype.hasOwnProperty.call(LIFETIME_PRODUCTS, product_id)
+        || subscriptions.hasLifetimePurchase(purchase_token)) {
+      throw new Error("unsupported_package_or_product");
+    }
     const verifiedPurchase = await verifyPlayOneTimePurchase(package_name, product_id, purchase_token);
     const result = issuePlayActivationCode({
       activationCodes,
@@ -857,6 +876,22 @@ setupIfrCheckoutRoutes(app, {
   maxChallenges: SIWE_CHALLENGE_MAX,
 });
 
+// --- IFR holder eligibility for the central web checkout (closed unless fully configured) ---
+try {
+  const { setupIfrEligibilityRoutes } = require('./payments/ifr_eligibility');
+  const { readConfiguredTokenBalance } = require('./services/ifr');
+  setupIfrEligibilityRoutes(app, {
+    challengeStore: siweChallenges,
+    readHolderBalance: readConfiguredTokenBalance,
+    rateLimit: createCheckoutRateLimiter({ limits: new Map(), getClientIp, max: 10, maxKeys: CHECKOUT_RL_MAX_KEYS }),
+    maxChallenges: SIWE_CHALLENGE_MAX,
+    corsAllowedOrigins: ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS,
+  });
+} catch (e) {
+  // Unwired routes return 404: the eligibility path stays closed.
+  console.warn("[IFR-ELIGIBILITY] Could not load routes:", e.message);
+}
+
 // --- Wire modular WS context (replaces inline wss.on("connection",...) block) ---
 // All Maps/arrays passed here are the same singletons used by HTTP routes above,
 // so HTTP routes and WS handlers share one consistent state — no split-brain.
@@ -875,6 +910,9 @@ ctx = buildContext({
   verifyPlaySubscription: require("./payments/google_play_billing").verifyPlaySubscription,
   acknowledgePlaySubscription: require("./payments/google_play_billing").acknowledgePlaySubscription,
   playBillingEnabled: require("./payments/google_play_billing").isPlayBillingEnabled(),
+  verifyPlayOneTimePurchase: require("./payments/google_play_billing").verifyPlayOneTimePurchase,
+  acknowledgePlayOneTimePurchase: require("./payments/google_play_billing").acknowledgePlayOneTimePurchase,
+  playLifetimePolicy: PLAY_LIFETIME_POLICY,
 });
 wireWs(wss, ctx);
 

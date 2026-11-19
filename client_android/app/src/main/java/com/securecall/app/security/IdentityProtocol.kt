@@ -41,6 +41,12 @@ data class VerifiedCallAccept(
 )
 
 object IdentityProtocol {
+    /** Signed call protocol of this client (STX-24 authenticated media v3). */
+    const val CALL_PROTOCOL_V3 = 3
+    /** Previous call protocol; recognised only to reject old peers explicitly. */
+    const val CALL_PROTOCOL_V2 = 2
+    /** Media frame version bound into every v3 invite/accept signature. */
+    const val MEDIA_FRAME_LABEL_V3 = "securecall-media-frame-v3"
     private val clientId = Regex("^[A-Za-z0-9_-]{1,64}$")
     private val identityId = Regex("^sc-[A-Za-z0-9_-]{43}$")
     private val uuid = Regex("^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$")
@@ -125,15 +131,21 @@ object IdentityProtocol {
         ephemeralPublicKey: String,
         issuedAt: Long,
         nonceValue: String,
+        protocol: Int = CALL_PROTOCOL_V3,
     ): String? {
         if (!uuid.matches(sessionId) || !clientId.matches(fromClientId)
             || !identityId.matches(fromIdentityId) || !clientId.matches(to)
             || decodeBase64Url(ephemeralPublicKey, 32) == null || issuedAt <= 0
             || !nonce.matches(nonceValue)) return null
-        return listOf(
-            "securecall-call-invite-v2", sessionId, fromClientId, fromIdentityId,
+        val fields = listOf(
+            sessionId, fromClientId, fromIdentityId,
             to, ephemeralPublicKey, issuedAt.toString(), nonceValue,
-        ).joinToString("\n")
+        )
+        return when (protocol) {
+            CALL_PROTOCOL_V3 -> listOf("securecall-call-invite-v3") + fields + MEDIA_FRAME_LABEL_V3
+            CALL_PROTOCOL_V2 -> listOf("securecall-call-invite-v2") + fields
+            else -> return null
+        }.joinToString("\n")
     }
 
     fun callAcceptTranscript(
@@ -150,9 +162,11 @@ object IdentityProtocol {
             || !clientId.matches(fromClientId) || !identityId.matches(fromIdentityId)
             || !identityId.matches(toIdentityId) || decodeBase64Url(ephemeralPublicKey, 32) == null
             || issuedAt <= 0 || !nonce.matches(nonceValue)) return null
+        // Accept is v3-only: this client never completes a v2 call.
         return listOf(
-            "securecall-call-accept-v2", sessionId, inviteDigest, fromClientId,
+            "securecall-call-accept-v3", sessionId, inviteDigest, fromClientId,
             fromIdentityId, toIdentityId, ephemeralPublicKey, issuedAt.toString(), nonceValue,
+            MEDIA_FRAME_LABEL_V3,
         ).joinToString("\n")
     }
 
@@ -161,14 +175,25 @@ object IdentityProtocol {
         return encodeBase64Url(MessageDigest.getInstance("SHA-256").digest(transcript.toByteArray(Charsets.UTF_8)))
     }
 
-    fun verifyCallInvite(value: VerifiedCallInvite, nowEpochSeconds: Long): Boolean {
+    /** Verifies a signed v3 invite. The signature label, not an outer field, selects the version. */
+    fun verifyCallInvite(value: VerifiedCallInvite, nowEpochSeconds: Long): Boolean =
+        verifyInvite(value, nowEpochSeconds, CALL_PROTOCOL_V3)
+
+    /**
+     * True only for a genuinely signed, fresh v2 invite. Used to reject an old caller
+     * explicitly as update-required; such an invite is never accepted or answered.
+     */
+    fun isAuthenticLegacyInvite(value: VerifiedCallInvite, nowEpochSeconds: Long): Boolean =
+        verifyInvite(value, nowEpochSeconds, CALL_PROTOCOL_V2)
+
+    private fun verifyInvite(value: VerifiedCallInvite, nowEpochSeconds: Long, protocol: Int): Boolean {
         if (value.fromClientId != value.fromIdentityId || value.to.isEmpty()
             || kotlin.math.abs(nowEpochSeconds - value.issuedAt) > 120) return false
         val identity = identityFromPublicKey(value.identityPublicKey) ?: return false
         if (identity.identityId != value.fromIdentityId) return false
         val transcript = callInviteTranscript(
             value.sessionId, value.fromClientId, value.fromIdentityId, value.requestedTo,
-            value.ephemeralPublicKey, value.issuedAt, value.nonce,
+            value.ephemeralPublicKey, value.issuedAt, value.nonce, protocol,
         ) ?: return false
         return transcriptDigest(transcript) == value.inviteDigest
             && verify(identity.publicKey, transcript, value.signature)

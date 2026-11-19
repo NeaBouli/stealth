@@ -38,6 +38,21 @@ public class CoreCrypto {
     /** Entschluesselt data mit key (32 Byte). Gibt plaintext zurueck. */
     public static native byte[] decrypt(byte[] key, byte[] data);
 
+    /**
+     * STX-24 media v3: seals one audio payload with the sender's direction key.
+     * senderRole is 1 (caller) or 2 (callee); context is the 32-byte call context digest.
+     * Returns the authenticated frame or null.
+     */
+    public static native byte[] mediaSeal(byte[] key, int senderRole, byte[] context,
+                                          long sequence, byte[] plaintext);
+
+    /**
+     * STX-24 media v3: opens a frame from the expected peer role using the last committed
+     * replay state. Returns [newHighest(8 BE) | newBitmap(8 BE) | plaintext] or null.
+     */
+    public static native byte[] mediaOpen(byte[] key, int expectedPeerRole, byte[] context,
+                                          long highest, long bitmap, byte[] frame);
+
     /** X25519 DH + HKDF: leitet 32-Byte Session-Key ab. */
     public static native byte[] deriveSessionKey(byte[] localPriv, byte[] remotePub);
 
