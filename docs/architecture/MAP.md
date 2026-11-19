@@ -761,3 +761,31 @@ Bounded variant-data node (no new client/wrapper/engine):
 - Parent qualification refinement: run the three scoped owned-network/relay JVM test classes
   for Free and Premium, then require nonempty JUnit XML results with zero failures/errors/skips.
   Compilation alone is not assertion acceptance; no whole unit suite or emulator is added.
+- Owned media receipt (SC-OWNED-MEDIA-RECEIPT-20261119), same owned-test activation, existing
+  receive hop only: `receiveDataChannelMedia` authenticated consumer (after `MediaSessionV3`
+  AEAD + replay commit and the ownership recheck) -> `OpusDecoder.decode` nonempty PCM ->
+  `JitterBuffer.push` -> playout `JitterBuffer.pop` -> `GhostAudioPlayer.write` (now returns the
+  captured `AudioTrack.write` result, 0 when retired/untracked; partial/blocking semantics unchanged).
+  `OwnedMediaReceipt.createIfActive(BuildConfig.DEBUG, OWNED_TEST_PIN_HOST)` is null otherwise, so
+  production/release allocate and track nothing. Correlation is by array identity: the exact
+  decoded PCM is marked (bounded FIFO, jitter capacity) for its immutable `MediaSessionV3` owner
+  before enqueue; only a later positive write of that same popped array counts once (partial
+  writes counted separately). Underflow/paused silence, failed auth/decode, stale/replayed or
+  rejected frames (never reach the consumer), zero/negative writes and frames of a replaced
+  owner or after `stopAudioPlayback` (which logs final counts and drops owner + marks) never
+  count. Receipt lock is a leaf (media -> audio -> receipt; playout takes only receipt). Log
+  carries counts only. No second pipeline, protocol or flag. Tests: `OwnedMediaReceiptTest` +
+  gate cases; NOT_RUN until admitted.
+- Diagnostic repair (SC-OWNED-MEDIA-RECEIPT-REPAIR-20261119): same mapped hop;
+  the existing playout pop now tells the receipt whether that marked array is
+  discarded or in flight. At most32 queued marks plus1 in-flight mark are kept;
+  producer overflow cannot evict the already-popped frame. Playback queue policy,
+  audio generation locking and AudioTrack blocking/retirement stay unchanged.
+  Fixed Android Log emission is serialized with owner replacement/reset under the
+  existing diagnostic leaf lock (no callback into media/audio or new lock order),
+  so a captured old-owner progress line cannot appear after reset completes.
+  Regression sources cover blocked log/reset and real MediaSessionV3.consume with
+  the existing synthetic cipher + synthetic PCM decoder output feeding the actual
+  service jitter dequeue->blocked mock AudioTrack write->refill hop. This is not
+  execution of the native decoder or a positive receive-handler/crypto proof.
+  Source-only: compilation/JVM/runtime NOT_RUN; parent independent review owed.
