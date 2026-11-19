@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "$#" -lt 3 || "$#" -gt 5 ]]; then
-  echo "usage: $0 <app-apk> <test-apk> <instrumentation-component> [securecallLivePinTest=true] [securecallContactVisualGate=true] [securecallContactRootProbe=true]" >&2
+if [[ "$#" -lt 3 || "$#" -gt 7 ]]; then
+  echo "usage: $0 <app-apk> <test-apk> <instrumentation-component> [securecallLivePinTest=true] [securecallContactVisualGate=true] [securecallContactRootProbe=true] [securecallContactFocusProbe=true]" >&2
   exit 2
 fi
 
@@ -49,6 +49,7 @@ instrumentation_args=()
 visual=false
 live_pin=false
 root_probe=false
+focus=false
 for option in "${@:4}"; do
   case "$option" in
     "") ;;
@@ -65,9 +66,18 @@ for option in "${@:4}"; do
       [[ "$root_probe" == false ]] || exit 2
       root_probe=true
       ;;
+    securecallContactFocusProbe=true)
+      [[ "$focus" == false ]] || exit 2
+      focus=true
+      ;;
     *) echo 'unsupported instrumentation option' >&2; exit 2 ;;
   esac
 done
+
+if [[ "$focus" == true ]]; then
+  # SC242: fixed five-case API24 qualification; mutually exclusive with every other opt-in.
+  [[ "$visual" == false && "$live_pin" == false && "$root_probe" == false ]] || exit 2
+fi
 
 if [[ "$root_probe" == true ]]; then
   [[ "$visual" == false && "$live_pin" == false ]] || exit 2
@@ -83,7 +93,7 @@ if [[ "$root_probe" == true ]]; then
 fi
 
 visual_case='com.securecall.app.ContactLookupPreservationInstrumentedTest#syntheticContactWindowMatrix'
-if [[ "$visual" == true ]]; then
+if [[ "$visual" == true || "$focus" == true ]]; then
   # This is an explicit opt-in, not permission to emulate/fabricate a hosted environment.
   [[ "${GITHUB_ACTIONS:-}" == true && "${RUNNER_ENVIRONMENT:-}" == github-hosted ]] || {
     echo 'CONTACT_VISUAL_REJECTED:PUBLIC_HOSTED_CI_REQUIRED' >&2; exit 2;
@@ -111,12 +121,22 @@ if [[ "$visual" == true ]]; then
       rm -f "$visual_tmp/result.txt" || cleanup_failed=true
       rmdir "$visual_tmp" || cleanup_failed=true
     fi
+    if [[ -n "${focus_tmp:-}" ]]; then
+      rm -f "$focus_tmp/result.txt" "$focus_tmp/stderr.txt" || cleanup_failed=true
+      rmdir "$focus_tmp" || cleanup_failed=true
+    fi
     if [[ "$primary" == 0 && "$cleanup_failed" == true ]]; then primary=2; fi
     exit "$primary"
   }
   trap sc241_visual_exit EXIT
   trap 'exit 2' HUP INT TERM
   sc241_prepare_isolation || { echo 'CONTACT_VISUAL_REJECTED:PRE_APP_ISOLATION' >&2; exit 2; }
+  if [[ "$focus" == true ]]; then
+    [[ "$sc241_api" == 24 ]] || { echo 'SC242_FOCUS_REJECTED:API24_REQUIRED' >&2; exit 2; }
+    # Unchanged root observer may attach closed sc241_root_* metadata to the contact case only.
+    instrumentation_args+=(-e securecallContactRootProbe true -e securecallRootProbeHosted true
+      -e securecallRootProbeHead "$head" -e securecallRootProbeTree "$tree")
+  fi
 fi
 
 du -h "$app_apk" "$test_apk"
@@ -145,6 +165,31 @@ if [[ "$root_probe" == true ]]; then
   python3 "${GITHUB_WORKSPACE:?}/.github/scripts/collect_contact_visual.py" --root-probe \
     --result "$root_tmp/result.txt" --head "$head" --tree "$tree" || root_status=$?
   exit "$root_status"
+fi
+
+if [[ "$focus" == true ]]; then
+  # Exactly the five fixed cases; never the ordinary suite or the visual matrix. Raw protocol and
+  # adb/timeout stderr stay in a private mktemp removed by sc241_visual_exit after guest shutdown.
+  focus_cases='com.securecall.app.MainActivityInstrumentedTest#externalVpnIndicator_matchesCurrentTransport,com.securecall.app.MainActivityInstrumentedTest#settingsNavigationItem_click_doesNotCrash,com.securecall.app.MainActivityInstrumentedTest#bottomNavigation_isDisplayed,com.securecall.app.MainActivityInstrumentedTest#toolbar_isDisplayed,com.securecall.app.ContactLookupPreservationInstrumentedTest#explicitUserDeleteStillRequiresConfirmationAndRemovesOnlyChosenContact'
+  focus_tmp="$(mktemp -d)"
+  sc241_verify_isolation || { echo 'SC242_FOCUS_REJECTED:ISOLATION_HOLD' >&2; exit 2; }
+  focus_transport=0
+  timeout 900 adb shell am instrument -w -r -e class "$focus_cases" "${instrumentation_args[@]}" \
+    "$instrumentation" >"$focus_tmp/result.txt" 2>"$focus_tmp/stderr.txt" || focus_transport=$?
+  if [[ "$focus_transport" -eq 124 ]]; then
+    echo 'SC242_FOCUS_REJECTED:INSTRUMENTATION_TIMEOUT' >&2
+    exit 2
+  elif [[ "$focus_transport" -ne 0 ]]; then
+    echo 'SC242_FOCUS_REJECTED:INSTRUMENTATION_STARTUP_OR_TRANSPORT_FAILURE' >&2
+    exit 2
+  fi
+  sc241_verify_isolation || { echo 'SC242_FOCUS_REJECTED:ISOLATION_HOLD' >&2; exit 2; }
+  [[ "$(git rev-parse HEAD)" == "$head" && "$(git rev-parse 'HEAD^{tree}')" == "$tree" &&
+    -z "$(git status --porcelain)" ]] || exit 2
+  focus_status=0
+  python3 "${GITHUB_WORKSPACE:?}/.github/scripts/collect_contact_visual.py" --focus-probe \
+    --result "$focus_tmp/result.txt" --head "$head" --tree "$tree" || focus_status=$?
+  exit "$focus_status"
 fi
 
 result="${GITHUB_WORKSPACE:?}/client_android/app/build/outputs/androidTest-results/instrumentation/result.txt"

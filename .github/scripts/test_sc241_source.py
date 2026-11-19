@@ -25,7 +25,9 @@ INTEGRATED_PATHS = frozenset({
 LOCAL_REPORTS = frozenset({
     ".fleet/reports/SC242-INTEGRATION-PLAN-20261119.md", ".fleet/reports/SC242-FINAL-SOURCE-20261119.md",
     ".fleet/reports/SC241-NORMAL-LIFECYCLE-IMPLEMENT-20261116.md",
+    ".fleet/reports/SC242-FIVE-ISOLATED-20261119.md",
 })
+MAIN_TEST_PATH = "client_android/app/src/androidTest/java/com/securecall/app/MainActivityInstrumentedTest.java"
 BASE_MAP_SECTION = "# Narrow trace: contact lookup preserves saved identities (2026-11-16)"
 PURE = {
     "sc241_host_guard", "sc241_one_emulator", "sc241_fresh_guard", "sc241_policy_guard",
@@ -195,6 +197,55 @@ class SourceContracts(unittest.TestCase):
                       '  else\n'
                       '    processes="$(sc241_adb shell ps -A)" || return 1\n'
                       '  fi', self.isolation)
+
+    def test_sc242_focus_selector_is_exact_five_existing_methods(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("collector", SCRIPTS / "collect_contact_visual.py")
+        collector = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(collector)
+        main_source = (ROOT / MAIN_TEST_PATH).read_text()
+        self.assertIn("package com.securecall.app;", main_source)
+        self.assertIn("public class MainActivityInstrumentedTest", main_source)
+        for klass, test in collector.FOCUS_CASES:
+            if klass == collector.MAIN_CLASS:
+                self.assertRegex(main_source, rf"@Test\s+public void {test}\(\)")
+            else:
+                self.assertEqual(klass, "com.securecall.app.ContactLookupPreservationInstrumentedTest")
+                self.assertRegex(self.test, rf"@Test\s+fun {test}\(\)")
+        selector = re.findall(r"^  focus_cases='([^']+)'$", self.smoke, re.MULTILINE)
+        self.assertEqual(selector, [collector.FOCUS_SELECTOR])
+        focus = self.smoke[self.smoke.index('if [[ "$focus" == true ]]; then\n  # Exactly'):]
+        focus = focus[:focus.index("\nfi\n")]
+        self.assertIn('-e class "$focus_cases"', focus)
+        self.assertNotIn("notClass", focus)
+        self.assertNotIn("visual_case", focus)
+        self.assertNotIn("tee ", focus)
+        self.assertIn('2>"$focus_tmp/stderr.txt"', focus)
+        self.assertIn("--focus-probe", focus)
+        self.assertEqual(focus.count("sc241_verify_isolation"), 2)
+        self.assertIn('exit "$focus_status"', focus)
+
+    def test_sc242_focus_reuses_pre_app_isolation_and_exit_trap(self):
+        smoke = self.smoke
+        self.assertIn('if [[ "$visual" == true || "$focus" == true ]]; then', smoke)
+        self.assertLess(smoke.index("sc241_prepare_isolation ||"), smoke.index("SC242_FOCUS_REJECTED:API24_REQUIRED"))
+        self.assertLess(smoke.index("SC242_FOCUS_REJECTED:API24_REQUIRED"), smoke.index("timeout 600 adb install"))
+        self.assertLess(smoke.index("timeout 600 adb install"), smoke.index("focus_tmp=\"$(mktemp -d)\""))
+        self.assertLess(smoke.index("focus_tmp=\"$(mktemp -d)\""), smoke.index("-e notClass"))
+        self.assertEqual(1, smoke.count("trap sc241_visual_exit EXIT"))
+        exit_fn = smoke[smoke.index("sc241_visual_exit() {"):smoke.index("trap sc241_visual_exit EXIT")]
+        self.assertLess(exit_fn.index("sc241_shutdown_guest"), exit_fn.index('rm -f "$focus_tmp/result.txt"'))
+        self.assertIn('if [[ "$primary" == 0 && "$cleanup_failed" == true ]]; then primary=2; fi', exit_fn)
+        self.assertIn('[[ "$visual" == false && "$live_pin" == false && "$root_probe" == false ]] || exit 2', smoke)
+        workflow = (ROOT / ".github/workflows/android-instrumentation.yml").read_text()
+        self.assertIn("      contact_focus_probe:\n", workflow)
+        self.assertIn("contact_focus_probe:\n        description:", workflow)
+        block = workflow[workflow.index("      contact_focus_probe:"):]
+        self.assertIn("type: boolean\n        default: false", block[:300])
+        self.assertIn("(inputs.contact_root_probe || inputs.contact_focus_probe) && fromJSON('[24]')", workflow)
+        self.assertIn("inputs.contact_focus_probe) && 'securecallContactFocusProbe=true'", workflow)
+        self.assertIn("force-avd-creation: true", workflow)
+        self.assertIn('export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.0.12077973"', workflow)
 
     def test_original_geometry_privacy_caps_and_failure_preservation(self):
         baseline = git("show", f"{BASE}:{MATRIX_PATH}").decode()

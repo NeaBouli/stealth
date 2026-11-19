@@ -471,6 +471,108 @@ def collect_root(result: Path, head: str, tree: str) -> int:
     return 0 if outcome == "passed" else 1
 
 
+MAIN_CLASS = "com.securecall.app.MainActivityInstrumentedTest"
+FOCUS_CASES = (
+    (MAIN_CLASS, "externalVpnIndicator_matchesCurrentTransport"),
+    (MAIN_CLASS, "settingsNavigationItem_click_doesNotCrash"),
+    (MAIN_CLASS, "bottomNavigation_isDisplayed"),
+    (MAIN_CLASS, "toolbar_isDisplayed"),
+    ROOT_CASE,
+)
+FOCUS_SELECTOR = ",".join(f"{klass}#{test}" for klass, test in FOCUS_CASES)
+FOCUS_FINISH = {0: "passed", -2: "assertion_failed", -1: "execution_failed"}
+
+
+def focus_execution(data: bytes, head: str, tree: str) -> tuple[dict, list[dict]]:
+    """Exactly the five fixed cases, each started once and finished once, sequentially.
+
+    Only the contact root case may carry one closed sc241_root_* status. Stack/message never read.
+    """
+    require(len(data) <= 512 * 1024, "PROTOCOL_TOO_LARGE")
+    text = data.decode("utf-8", errors="strict")
+    block: dict[str, str] = {}
+    outcomes: dict[tuple[str, str], str] = {}
+    started: list[tuple[str, str]] = []
+    active: tuple[str, str] | None = None
+    terminal: list[int] = []
+    diagnostics: list[dict] = []
+    duplicate = False
+    for line in text.splitlines():
+        if line.startswith("INSTRUMENTATION_STATUS"):
+            require(not terminal, "FOCUS_STATUS_AFTER_TERMINAL")
+        if line.startswith("INSTRUMENTATION_STATUS: "):
+            key, separator, value = line.removeprefix("INSTRUMENTATION_STATUS: ").partition("=")
+            if separator:
+                duplicate = duplicate or key in block
+                block[key] = value
+        elif line.startswith("INSTRUMENTATION_STATUS_CODE: "):
+            code = status_code(line)
+            if code == 2 or any(key.startswith("sc241_") for key in block):
+                require(code == 2 and active == ROOT_CASE and not duplicate,
+                        "FOCUS_DIAGNOSTIC_OUTSIDE_ACTIVE_ROOT_CASE")
+                require(not diagnostics, "FOCUS_DIAGNOSTIC_COUNT_EXCEEDED")
+                diagnostics.append(root_fields(block, head, tree))
+            else:
+                require(not duplicate, "FOCUS_DUPLICATE_STATUS_FIELD")
+                case = (block.get("class"), block.get("test"))
+                require(case in FOCUS_CASES, "UNEXPECTED_OR_MISSING_FOCUS_CASE")
+                require(block.get("numtests") == str(len(FOCUS_CASES)), "FOCUS_REQUIRES_EXACTLY_FIVE_TESTS")
+                if code == 1:
+                    require(active is None, "FOCUS_CASE_ORDER_OR_INCOMPLETE")
+                    require(case not in started, "FOCUS_DUPLICATE_CASE")
+                    started.append(case)
+                    require(block.get("current") == str(len(started)), "FOCUS_CASE_ORDER_OR_INCOMPLETE")
+                    active = case
+                else:
+                    require(active == case and block.get("current") == str(len(started)),
+                            "FOCUS_CASE_ORDER_OR_INCOMPLETE")
+                    require(code in FOCUS_FINISH, "FOCUS_CASE_SKIPPED_OR_UNAPPROVED_STATUS")
+                    outcomes[case] = FOCUS_FINISH[code]
+                    active = None
+            block = {}
+            duplicate = False
+        elif line.startswith("INSTRUMENTATION_CODE: "):
+            require(not terminal, "FOCUS_MULTIPLE_TERMINAL_MARKERS")
+            require(not block, "FOCUS_INCOMPLETE_STATUS_BLOCK")
+            terminal.append(status_code(line))
+    require(not block, "FOCUS_INCOMPLETE_STATUS_BLOCK")
+    if terminal != [-1]:
+        raise GateError("INSTRUMENTATION_DID_NOT_COMPLETE", 2)
+    if not started:
+        raise GateError("FOCUS_CASES_DID_NOT_START", 2)
+    require(active is None, "FOCUS_CASE_ORDER_OR_INCOMPLETE")
+    require(set(started) == set(FOCUS_CASES) and set(outcomes) == set(FOCUS_CASES), "FOCUS_MISSING_CASE")
+    if all(outcome == "passed" for outcome in outcomes.values()):
+        require(not diagnostics, "FAILURE_DIAGNOSTIC_WITH_SUCCESS")
+        require(re.search(r"^OK \(5 tests\)$", text, re.MULTILINE) is not None, "SUCCESS_SUMMARY_MISSING")
+    else:
+        require(re.search(r"^OK \(", text, re.MULTILINE) is None, "FALSE_SUCCESS_SUMMARY")
+    if diagnostics:
+        require(outcomes[ROOT_CASE] != "passed", "FAILURE_DIAGNOSTIC_WITH_SUCCESS")
+    return outcomes, diagnostics
+
+
+def collect_focus(result: Path, head: str, tree: str) -> int:
+    require(os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted",
+            "PUBLIC_HOSTED_CI_REQUIRED")
+    require(re.fullmatch(r"[0-9a-f]{40}", head) is not None and re.fullmatch(r"[0-9a-f]{40}", tree) is not None,
+            "INVALID_SOURCE_RECEIPT")
+    require(result.stat().st_size <= 512 * 1024, "PROTOCOL_TOO_LARGE")
+    outcomes, diagnostics = focus_execution(result.read_bytes(), head, tree)
+    print(f"SC242_FOCUS_SOURCE:{head}:{tree}")
+    for klass, test in FOCUS_CASES:
+        print(f"SC242_FOCUS_CASE:{klass.rsplit('.', 1)[1]}#{test}:{outcomes[(klass, test)]}")
+    for value in diagnostics:
+        for key in sorted(value):
+            if key not in {"head", "tree"}:
+                print(f"SC241_ROOT_FIELD:{key}={value[key]}")
+    if outcomes[ROOT_CASE] != "passed" and not diagnostics:
+        print("SC241_ROOT_FIELD:UNREPORTED")
+    passed = sum(outcome == "passed" for outcome in outcomes.values())
+    print(f"SC242_FOCUS_RESULT:passed={passed}:failed={len(FOCUS_CASES) - passed}")
+    return 0 if passed == len(FOCUS_CASES) else 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--result", type=Path, required=True)
@@ -479,7 +581,20 @@ def main() -> int:
     parser.add_argument("--head", required=True)
     parser.add_argument("--tree", required=True)
     parser.add_argument("--root-probe", action="store_true")
+    parser.add_argument("--focus-probe", action="store_true")
     args = parser.parse_args()
+    if args.focus_probe:
+        if args.root_probe or args.ordinary_result is not None or args.output is not None:
+            print("SC242_FOCUS_REJECTED:MIXED_COLLECTOR_MODE", file=sys.stderr)
+            return 2
+        try:
+            return collect_focus(args.result, args.head, args.tree)
+        except GateError as error:
+            print(f"SC242_FOCUS_REJECTED:{error}", file=sys.stderr)
+            return error.code
+        except (OSError, ValueError, UnicodeError):
+            print("SC242_FOCUS_REJECTED:INPUT_OR_TOOL_FAILURE", file=sys.stderr)
+            return 2
     if args.root_probe:
         if args.ordinary_result is not None or args.output is not None:
             print("SC241_ROOT_REJECTED:MIXED_COLLECTOR_MODE", file=sys.stderr)

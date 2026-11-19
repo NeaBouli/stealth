@@ -373,5 +373,143 @@ class RootProbeTests(unittest.TestCase):
             collector.execution(diagnosed_result(root_status().encode()))
 
 
+def focus_block(case, code, current, extra=""):
+    klass, test = case
+    return (f"INSTRUMENTATION_STATUS: class={klass}\nINSTRUMENTATION_STATUS: current={current}\n"
+            f"INSTRUMENTATION_STATUS: id=AndroidJUnitRunner\nINSTRUMENTATION_STATUS: numtests=5\n{extra}"
+            f"INSTRUMENTATION_STATUS: stream=\n{klass}:\nINSTRUMENTATION_STATUS: test={test}\n"
+            f"INSTRUMENTATION_STATUS_CODE: {code}\n")
+
+
+def focus_result(codes=None, cases=None, status=None, summary=None, terminal=-1):
+    cases = list(collector.FOCUS_CASES if cases is None else cases)
+    codes = codes or {}
+    out = []
+    for index, case in enumerate(cases, 1):
+        code = codes.get(case[1], 0)
+        out.append(focus_block(case, 1, index))
+        if case == collector.ROOT_CASE and status is not None:
+            out.append(status)
+        stack = "" if code == 0 else "INSTRUMENTATION_STATUS: stack=java.lang.SecretMessage: private-ui-text\n\tat x\n"
+        out.append(focus_block(case, code, index, stack))
+    if summary is None:
+        summary = "OK (5 tests)" if not any(codes.values()) else "FAILURES!!!\nTests run: 5,  Failures: 1"
+    out.append(f"INSTRUMENTATION_RESULT: stream=\n\nTime: 1\n\n{summary}\n\nINSTRUMENTATION_CODE: {terminal}\n")
+    return "".join(out).encode()
+
+
+class FocusProbeTests(unittest.TestCase):
+    def run_focus(self, data):
+        return collector.focus_execution(data, HEAD, TREE)
+
+    def assert_rejected(self, data, label):
+        with self.assertRaisesRegex(collector.GateError, label):
+            self.run_focus(data)
+
+    def test_exact_five_fixed_cases_and_selector(self):
+        self.assertEqual(len(set(collector.FOCUS_CASES)), 5)
+        self.assertEqual(collector.FOCUS_CASES[4], collector.ROOT_CASE)
+        self.assertNotIn(collector.CASE, collector.FOCUS_CASES)
+        self.assertEqual(collector.FOCUS_SELECTOR.count(","), 4)
+        self.assertNotIn("syntheticContactWindowMatrix", collector.FOCUS_SELECTOR)
+
+    def test_five_case_success(self):
+        outcomes, diagnostics = self.run_focus(focus_result())
+        self.assertEqual(set(outcomes.values()), {"passed"})
+        self.assertEqual((len(outcomes), diagnostics), (5, []))
+
+    def test_each_case_failure_stays_failure(self):
+        for _, test in collector.FOCUS_CASES:
+            for code, outcome in ((-2, "assertion_failed"), (-1, "execution_failed")):
+                outcomes, _ = self.run_focus(focus_result(codes={test: code}))
+                self.assertEqual(outcomes[next(c for c in collector.FOCUS_CASES if c[1] == test)], outcome)
+                self.assertEqual(sum(o == "passed" for o in outcomes.values()), 4)
+
+    def test_root_metadata_only_on_failing_contact_case(self):
+        root = collector.ROOT_CASE[1]
+        outcomes, diagnostics = self.run_focus(focus_result(codes={root: -2}, status=root_status()))
+        self.assertEqual((outcomes[collector.ROOT_CASE], len(diagnostics)), ("assertion_failed", 1))
+        self.assertFalse(any("Secret" in v or "private" in v for v in diagnostics[0].values()))
+        self.assert_rejected(focus_result(status=root_status()), "FAILURE_DIAGNOSTIC_WITH_SUCCESS")
+        self.assert_rejected(focus_result(codes={root: -2}, status=root_status() + root_status()),
+                             "FOCUS_DIAGNOSTIC_COUNT_EXCEEDED")
+        main = focus_block(collector.FOCUS_CASES[0], 1, 1)
+        misplaced = focus_result(codes={root: -2}).replace(main.encode(), (main + root_status()).encode(), 1)
+        self.assert_rejected(misplaced, "FOCUS_DIAGNOSTIC_OUTSIDE_ACTIVE_ROOT_CASE")
+        self.assert_rejected(focus_result(codes={root: -2}, status=root_status(exception_message="x")),
+                             "UNAPPROVED_ROOT_FIELDS")
+        self.assert_rejected(focus_result(codes={root: -2}, status=root_status(head="c" * 40)),
+                             "ROOT_SOURCE_RECEIPT_MISMATCH")
+
+    def test_skip_extra_missing_duplicate_wrong_case(self):
+        first = collector.FOCUS_CASES[0][1]
+        self.assert_rejected(focus_result(codes={first: -3}), "FOCUS_CASE_SKIPPED")
+        self.assert_rejected(focus_result(codes={first: -4}), "FOCUS_CASE_SKIPPED")
+        self.assert_rejected(focus_result(cases=collector.FOCUS_CASES[:4]), "FOCUS_MISSING_CASE")
+        self.assert_rejected(focus_result(cases=collector.FOCUS_CASES + (collector.CASE,)), "UNEXPECTED_OR_MISSING")
+        extra = (collector.MAIN_CLASS, "callsNavigationItem_isDisplayed")
+        self.assert_rejected(focus_result(cases=collector.FOCUS_CASES[:4] + (extra,)), "UNEXPECTED_OR_MISSING")
+        dup = collector.FOCUS_CASES[:4] + (collector.FOCUS_CASES[0],)
+        self.assert_rejected(focus_result(cases=dup), "FOCUS_DUPLICATE_CASE")
+        self.assert_rejected(focus_result().replace(b"numtests=5", b"numtests=6"), "EXACTLY_FIVE")
+        self.assert_rejected(b"INSTRUMENTATION_CODE: -1\n", "FOCUS_CASES_DID_NOT_START")
+
+    def test_incomplete_order_and_terminal_rejected(self):
+        ok = focus_result()
+        self.assert_rejected(ok.replace(b"INSTRUMENTATION_CODE: -1", b"INSTRUMENTATION_CODE: 0"),
+                             "INSTRUMENTATION_DID_NOT_COMPLETE")
+        self.assert_rejected(ok.replace(b"INSTRUMENTATION_CODE: -1\n", b""), "INSTRUMENTATION_DID_NOT_COMPLETE")
+        self.assert_rejected(ok + b"INSTRUMENTATION_CODE: -1\n", "FOCUS_MULTIPLE_TERMINAL_MARKERS")
+        self.assert_rejected(ok + b"INSTRUMENTATION_STATUS: class=X\n", "FOCUS_STATUS_AFTER_TERMINAL")
+        last = collector.FOCUS_CASES[4]
+        unfinished = ok.replace(focus_block(last, 0, 5).encode(), b"")
+        self.assert_rejected(unfinished, "FOCUS_CASE_ORDER_OR_INCOMPLETE")
+        interleaved = ok.replace(focus_block(collector.FOCUS_CASES[0], 0, 1).encode(), b"", 1)
+        self.assert_rejected(interleaved, "FOCUS_CASE_ORDER_OR_INCOMPLETE")
+        self.assert_rejected(ok.replace(b"current=2", b"current=3", 1), "FOCUS_CASE_ORDER_OR_INCOMPLETE")
+        pending = ok.replace(b"INSTRUMENTATION_CODE: -1\n", b"INSTRUMENTATION_STATUS: class=X\nINSTRUMENTATION_CODE: -1\n")
+        self.assert_rejected(pending, "FOCUS_INCOMPLETE_STATUS_BLOCK")
+        dup_field = ok.replace(b"INSTRUMENTATION_STATUS: numtests=5\n",
+                               b"INSTRUMENTATION_STATUS: numtests=5\nINSTRUMENTATION_STATUS: numtests=5\n", 1)
+        self.assert_rejected(dup_field, "FOCUS_DUPLICATE_STATUS_FIELD")
+
+    def test_summary_must_match_outcomes(self):
+        self.assert_rejected(focus_result(summary="OK (1 test)"), "SUCCESS_SUMMARY_MISSING")
+        self.assert_rejected(focus_result(codes={collector.FOCUS_CASES[2][1]: -2}, summary="OK (5 tests)"),
+                             "FALSE_SUCCESS_SUMMARY")
+
+    def test_raw_payload_never_printed(self):
+        import contextlib, io, os, tempfile
+        root = collector.ROOT_CASE[1]
+        data = focus_result(codes={root: -2, collector.FOCUS_CASES[0][1]: -1}, status=root_status())
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "result.txt"
+            path.write_bytes(data)
+            out = io.StringIO()
+            env = {"GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted"}
+            saved = {k: os.environ.get(k) for k in env}
+            os.environ.update(env)
+            try:
+                with contextlib.redirect_stdout(out):
+                    code = collector.collect_focus(path, HEAD, TREE)
+            finally:
+                for k, v in saved.items():
+                    os.environ.pop(k) if v is None else os.environ.__setitem__(k, v)
+        text = out.getvalue()
+        self.assertEqual(code, 1)
+        self.assertNotRegex(text, r"Secret|private|stack|stream|\tat ")
+        lines = text.splitlines()
+        self.assertTrue(all(re.fullmatch(r"SC242_FOCUS_(SOURCE|CASE|RESULT):[A-Za-z0-9_#:=]+|SC241_ROOT_FIELD:[a-z0-9_]+=[A-Za-z0-9_-]+", l)
+                            for l in lines), lines)
+        self.assertEqual(sum(l.startswith("SC242_FOCUS_CASE:") for l in lines), 5)
+        self.assertIn("SC242_FOCUS_RESULT:passed=3:failed=2", lines)
+
+    def test_visual_and_root_collectors_reject_focus_protocol(self):
+        with self.assertRaises(collector.GateError):
+            collector.root_execution(focus_result(), HEAD, TREE)
+        with self.assertRaises(collector.GateError):
+            collector.execution(focus_result())
+
+
 if __name__ == "__main__":
     unittest.main()

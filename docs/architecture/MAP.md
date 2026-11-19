@@ -1041,3 +1041,22 @@ Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
   `INSTRUMENTATION_STARTUP_OR_TRANSPORT_FAILURE`.
 - Workflow: reuses the accepted public 2cb55a84 `ANDROID_NDK_HOME`/`ANDROID_NDK_ROOT`
   exports before gradlew; no SDK/version/verification change. Runtime NOT_RUN.
+
+## SC242 five-case isolated qualification (source only, 2026-11-19)
+
+- Hop: manual `contact_focus_probe` (default false, API24-only matrix, mutually exclusive
+  with live-pin/visual/root; workflow reject step + script check) -> `run-android-smoke.sh`
+  `securecallContactFocusProbe=true` -> shared visual admission block (`sc241_host_guard`,
+  `sc241_prepare_isolation` PRE_APP IPv4+IPv6 DROP, `sc241_visual_exit` guest shutdown) ->
+  API24 check -> install -> `am instrument -e class` with the fixed 5-method selector ->
+  private `mktemp` protocol/stderr -> `collect_contact_visual.py --focus-probe`.
+- Cases: `MainActivityInstrumentedTest#{externalVpnIndicator_matchesCurrentTransport,
+  settingsNavigationItem_click_doesNotCrash,bottomNavigation_isDisplayed,toolbar_isDisplayed}`
+  and `ContactLookupPreservationInstrumentedTest#explicitUserDelete...ChosenContact`.
+  Never `-e notClass`, ordinary suite or visual matrix.
+- Collector: exactly 5 distinct cases, numtests=5, sequential `current`, one start/finish
+  each; skip/extra/missing/duplicate/wrong/incomplete/terminal reject (exit 2/3); failures
+  exit 1. Unchanged root observer may add one closed `sc241_root_*` status to the contact
+  case only. Output only `SC242_FOCUS_{SOURCE,CASE,RESULT}` + `SC241_ROOT_FIELD`.
+- Exit trap: existing `sc241_visual_exit` (shutdown first) also removes the focus tmp;
+  cleanup failure turns success into 2, never masks failure. Helper byte-unchanged. Runtime NOT_RUN.

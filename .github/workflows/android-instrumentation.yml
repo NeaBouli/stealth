@@ -20,6 +20,10 @@ on:
         description: "Observe the first synthetic menu root failure on a fresh hosted API24 guest"
         type: boolean
         default: false
+      contact_focus_probe:
+        description: "Run exactly the five fixed SC242 cases on one fresh isolated hosted API24 guest"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -36,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api-level: ${{ github.event_name == 'workflow_dispatch' && inputs.contact_root_probe && fromJSON('[24]') || fromJSON('[24,36]') }}
+        api-level: ${{ github.event_name == 'workflow_dispatch' && (inputs.contact_root_probe || inputs.contact_focus_probe) && fromJSON('[24]') || fromJSON('[24,36]') }}
     defaults:
       run:
         working-directory: client_android
@@ -61,6 +65,13 @@ jobs:
         run: |
           test '${{ inputs.live_pin_test }}' = 'false'
           test '${{ inputs.contact_visual_gate }}' = 'false'
+
+      - name: Reject mixed focus qualification modes
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.contact_focus_probe }}
+        run: |
+          test '${{ inputs.live_pin_test }}' = 'false'
+          test '${{ inputs.contact_visual_gate }}' = 'false'
+          test '${{ inputs.contact_root_probe }}' = 'false'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
@@ -110,6 +121,7 @@ jobs:
             ${{ (github.event_name == 'workflow_dispatch' && inputs.live_pin_test && !inputs.contact_root_probe) && 'securecallLivePinTest=true' || '' }}
             ${{ (github.event_name == 'workflow_dispatch' && inputs.contact_visual_gate && !inputs.contact_root_probe) && 'securecallContactVisualGate=true' || '' }}
             ${{ (github.event_name == 'workflow_dispatch' && inputs.contact_root_probe) && 'securecallContactRootProbe=true' || '' }}
+            ${{ (github.event_name == 'workflow_dispatch' && inputs.contact_focus_probe) && 'securecallContactFocusProbe=true' || '' }}
 
       - name: Upload instrumentation results
         if: always()
