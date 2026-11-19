@@ -717,3 +717,6 @@ Hop (unchanged shape): `build.gradle` SKU constants -> Free `BillingManager`
   The successful-send tail reserves both heartbeat activation and ring-timer installation.
   All three FCM producers re-read the current service after posting and withdraw only the
   posted session's tag on rejection; genuine service-absent cold wake remains available.
+- `CALL_ACCEPT_ACK` is informational only: it retains its protocol check and logging,
+  but never stops audio, including after replacement or same-call playback start. Local
+  `sendCallAccept` remains the authoritative ring-stop transition before signaling.

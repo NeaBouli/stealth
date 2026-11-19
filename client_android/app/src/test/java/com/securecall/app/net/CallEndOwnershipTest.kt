@@ -644,6 +644,97 @@ class CallEndOwnershipTest {
     }
 
     @Test
+    fun `delayed accept ACK for A leaves replacement B ringing and playing`() {
+        val ws = service()
+        owned(ws, a)
+        callEnd(ws, a)
+        assertTrue(adopt(ws, invite(b), fromFcm = false))
+        val state = get(ws, "callSecurityState")
+        val lifecycle = get(ws, "audioPlaybackLifecycle") as AudioPlaybackLifecycle
+        val playback = lifecycle.snapshot()
+        val ringtone = Mockito.mock(android.media.MediaPlayer::class.java)
+        val player = Mockito.mock(com.securecall.app.ghostnet.media.playback.GhostAudioPlayer::class.java)
+        val ended = mutableListOf<String>()
+        val errors = mutableListOf<String>()
+        assertTrue(bind(ws, b, { ended.add(it) }, { code, _ -> errors.add(code) }))
+        set(ws, "incomingRingtone", ringtone)
+        set(ws, "audioPlayer", player)
+        set(ws, "jitterPlaybackRunning", true)
+        Mockito.clearInvocations(ws)
+
+        ws.onMessage("""{"type":"CALL_ACCEPT_ACK","protocol":3,"ok":true,"sessionId":"$a"}""")
+
+        assertEquals(b, ws.getCurrentSessionId())
+        assertSame(state, get(ws, "callSecurityState"))
+        assertSame(ringtone, get(ws, "incomingRingtone"))
+        assertSame(player, get(ws, "audioPlayer"))
+        assertEquals(true, get(ws, "jitterPlaybackRunning"))
+        assertTrue(lifecycle.consume(playback) {})
+        assertTrue(ended.isEmpty() && errors.isEmpty())
+        Mockito.verify(ws, Mockito.never()).killAllAudio()
+        Mockito.verifyNoInteractions(ringtone, player)
+    }
+
+    @Test
+    fun `valid current accept ACK after playback starts is informational`() {
+        val ws = service()
+        owned(ws, a)
+        val state = get(ws, "callSecurityState")!!
+        state.javaClass.getDeclaredMethod("getAcceptClaim").apply { isAccessible = true }
+            .invoke(state).let { (it as java.util.concurrent.atomic.AtomicBoolean).set(true) }
+        state.javaClass.getDeclaredMethod("setEstablished", Boolean::class.javaPrimitiveType)
+            .apply { isAccessible = true }.invoke(state, true)
+        val lifecycle = get(ws, "audioPlaybackLifecycle") as AudioPlaybackLifecycle
+        val playback = lifecycle.snapshot()
+        val player = Mockito.mock(com.securecall.app.ghostnet.media.playback.GhostAudioPlayer::class.java)
+        set(ws, "audioPlayer", player)
+        set(ws, "jitterPlaybackRunning", true)
+
+        repeat(2) {
+            ws.onMessage("""{"type":"CALL_ACCEPT_ACK","protocol":3,"ok":true,"sessionId":"$a"}""")
+        }
+
+        assertEquals(a, ws.getCurrentSessionId())
+        assertSame(state, get(ws, "callSecurityState"))
+        assertTrue(ws.isSecureSessionEstablished())
+        assertSame(player, get(ws, "audioPlayer"))
+        assertEquals(true, get(ws, "jitterPlaybackRunning"))
+        assertTrue(lifecycle.consume(playback) {})
+        Mockito.verify(ws, Mockito.never()).killAllAudio()
+        Mockito.verifyNoInteractions(player)
+    }
+
+    @Test
+    fun `missing foreign and invalid accept ACK fields cannot trigger effects`() {
+        val ws = service()
+        owned(ws, b)
+        val state = get(ws, "callSecurityState")
+        val lifecycle = get(ws, "audioPlaybackLifecycle") as AudioPlaybackLifecycle
+        val playback = lifecycle.snapshot()
+        val ringtone = Mockito.mock(android.media.MediaPlayer::class.java)
+        set(ws, "incomingRingtone", ringtone)
+        val acknowledgements = listOf(
+            """{"type":"CALL_ACCEPT_ACK","protocol":3,"ok":true}""",
+            """{"type":"CALL_ACCEPT_ACK","protocol":3,"ok":true,"sessionId":""}""",
+            """{"type":"CALL_ACCEPT_ACK","protocol":3,"ok":true,"sessionId":"$a"}""",
+            """{"type":"CALL_ACCEPT_ACK","protocol":3,"ok":false,"sessionId":"$b"}""",
+            """{"type":"CALL_ACCEPT_ACK","protocol":3,"sessionId":"$b"}""",
+            """{"type":"CALL_ACCEPT_ACK","ok":true,"sessionId":"$b"}""",
+            """{"type":"CALL_ACCEPT_ACK","protocol":2,"ok":true,"sessionId":"$b"}""",
+            """{"type":"CALL_ACCEPT_ACK","protocol":"invalid","ok":true,"sessionId":"$b"}""",
+        )
+        acknowledgements.forEach { acknowledgement ->
+            ws.onMessage(acknowledgement)
+            assertEquals(b, ws.getCurrentSessionId())
+            assertSame(state, get(ws, "callSecurityState"))
+            assertSame(ringtone, get(ws, "incomingRingtone"))
+            assertTrue(lifecycle.consume(playback) {})
+        }
+        Mockito.verify(ws, Mockito.never()).killAllAudio()
+        Mockito.verifyNoInteractions(ringtone)
+    }
+
+    @Test
     fun `notification tag and pending intent identity differ per session`() {
         assertNotEquals(IncomingCallNotifications.tag(a), IncomingCallNotifications.tag(b))
         assertNotEquals(IncomingCallNotifications.requestCode(a), IncomingCallNotifications.requestCode(b))

@@ -2411,7 +2411,6 @@ class WebSocketService : Service(), HeartbeatClient.Listener {
                 "CALL_ACCEPT_ACK" -> {
                     if (obj.optInt("protocol", -1) == SessionKeyBinding.CALL_PROTOCOL) {
                         Log.d("WS_SERVICE", "Authenticated CALL_ACCEPT acknowledged")
-                        killAllAudio()
                     }
                 }
                 "CALL_KEY_CONFIRM" -> {
