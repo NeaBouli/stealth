@@ -6325,3 +6325,26 @@ Open next:
   subscription_webrtc 301/301, handlers 62/62, google_play_lifetime 75/75, rtdn_retry 1/1.
 - UI unchanged (already lifetime-only); flags closed; VPN split untouched. Not evidence that any
   Play Console product was deactivated. NOT_RUN: full CI, artifact VPN guards (parent CI).
+
+## 2026-11-16 - Contact Continuity Candidate (Issue241)
+
+SC-CONTACT-LOOKUP-PRESERVATION-20261116 removes a destructive discovery-refresh
+cleanup and preserves explicit user deletion and positive contact association.
+Seven synthetic instrumented regressions exercise real storage/result handling
+and delete confirmation using the existing SettingsActivity/testing stack.
+No new dependency, component, permission, protocol, tier, purchase configuration
+or customer-data fixture. Static diff/scope/whitespace checks pass.
+Actual Kotlin/build/instrumentation, affected UI/state evidence and independent
+security/integration gates are pending; no product/runtime/release readiness
+claimed. This does not close the broader privacy audit. No personal-device,
+production or provider operation. Financial coordination remains separate with
+VLABS operator.
+
+## 2026-11-22 - SC242 UI/harness integration onto sales source 8ace (source only)
+SC242-UI-INTEGRATION-20261122 merges UI qualification tip ad3d31d (contains 4d89887
+unified source and the ad732c8 lookup fix) into 8ace9a3. Conflicts: workflow inputs
+(union; 8ace owned compile-only job and ad3 contact gates both byte-preserved) and MAP
+(keep both, append order). Smoke/isolation/collector scripts identical to ad3; 8ace
+owned/media/billing paths untouched. Source scope guard base moved 2e98fe37 -> 8ace.
+Local pure checks: collector 51/51, source guards 18/18, bash -n, YAML, diff --check.
+Compile, runtime, visual and security acceptance are NOT_RUN/owed; not PRODUCT_READY.
