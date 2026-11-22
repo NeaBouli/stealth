@@ -203,7 +203,7 @@ object NetworkManager {
 
     fun buildCertificatePinner(): CertificatePinner = CertificatePinner.Builder()
         .apply {
-            CertificatePinPolicy.PINS.forEach { pin -> add(CertificatePinPolicy.HOST, pin) }
+            CertificatePinPolicy.entries().forEach { (host, pin) -> add(host, pin) }
         }
         .build()
 

@@ -82,17 +82,19 @@ class GhostAudioPlayer(
         Log.d("AUDIO_PLAYER", "play(): started")
     }
 
-    fun write(pcm: ShortArray) {
+    /** Returns the captured AudioTrack.write result (may be partial or negative), or 0 without a track. */
+    fun write(pcm: ShortArray): Int {
         val track = synchronized(stateLock) {
-            if (retired) return
+            if (retired) return 0
             if (!isPlaying) playLocked()
             audioTrack
-        } ?: return
+        } ?: return 0
 
         // A concurrent stop/retire must be able to interrupt this blocking write.
         // Only the captured track is used; never prepare/play again after retirement.
         val wrote = track.write(pcm, 0, pcm.size)
         Log.d("AUDIO_PLAYER", "write(): wrote=$wrote samples")
+        return wrote
     }
 
     fun stop() {

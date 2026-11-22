@@ -108,6 +108,11 @@ class SubscriptionManager @JvmOverloads constructor(
 
     fun pendingReceiptCount(): Int = synchronized(LOCK) { loadReceipts().size }
 
+    /** A pre-charge ownership read must not split an atomic pending-to-verified transition. */
+    fun hasRecordedPurchase(): Boolean = synchronized(LOCK) {
+        getPurchaseToken().isNotBlank() || loadReceipts().isNotEmpty()
+    }
+
     /**
      * Records a pending receipt without touching the verified entitlement. Re-recording the
      * same purchase token replaces its older request, so that request's answer becomes stale.

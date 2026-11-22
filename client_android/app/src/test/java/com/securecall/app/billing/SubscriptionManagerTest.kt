@@ -12,6 +12,9 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 class SubscriptionManagerTest {
     private lateinit var prefs: MemoryPreferences
@@ -161,6 +164,94 @@ class SubscriptionManagerTest {
         expiresAt: Long = clockNow + 60_000,
         success: Boolean = true
     ) = m.onVerificationAck(success, requestId, tier, expiresAt, productId, pkg, catalog)
+
+    @Test
+    fun atomicOwnershipPredicateCoversPendingVerifiedAndExplicitlyClearedState() {
+        val subject = clocked()
+        assertFalse(subject.hasRecordedPurchase())
+        val request = subject.recordPendingPurchase("synthetic-lifetime", "securecall_pro_lifetime")
+        assertTrue(subject.hasRecordedPurchase())
+        assertEquals(SubscriptionManager.VerificationOutcome.ACCEPTED,
+            ack(subject, request, "securecall_pro_lifetime"))
+        assertEquals(0, subject.pendingReceiptCount())
+        assertTrue(subject.hasRecordedPurchase())
+        clockNow += 60_001
+        assertEquals(SubscriptionTier.FREE, subject.getCurrentTier())
+        assertTrue("Expired proof is not evidence that the lifetime purchase disappeared", subject.hasRecordedPurchase())
+        subject.clearSubscription()
+        assertFalse(subject.hasRecordedPurchase())
+    }
+
+    @Test
+    fun splitReadsCanMissARealPendingToVerifiedCommitButAtomicPredicateCannot() {
+        val subject = clocked()
+        val request = subject.recordPendingPurchase("synthetic-lifetime", "securecall_pro_lifetime")
+        val oldTokenRead = subject.getPurchaseToken()
+        assertEquals(SubscriptionManager.VerificationOutcome.ACCEPTED,
+            ack(subject, request, "securecall_pro_lifetime"))
+        val laterPendingRead = subject.pendingReceiptCount()
+        assertFalse("Old guard combined reads from opposite sides of one commit",
+            oldTokenRead.isNotBlank() || laterPendingRead != 0)
+        assertTrue(subject.hasRecordedPurchase())
+    }
+
+    @Test
+    fun ownershipPredicateSerializesAgainstTheRealVerificationWriter() {
+        val subject = clocked()
+        val request = subject.recordPendingPurchase("synthetic-lifetime", "securecall_pro_lifetime")
+        val tokenRead = CountDownLatch(1)
+        val releaseRead = CountDownLatch(1)
+        val readerDone = CountDownLatch(1)
+        val writerStarted = CountDownLatch(1)
+        val writerDone = CountDownLatch(1)
+        val ownership = AtomicReference<Boolean>()
+        val outcome = AtomicReference<SubscriptionManager.VerificationOutcome>()
+        val failure = AtomicReference<Throwable>()
+        val reader = Thread {
+            try { ownership.set(subject.hasRecordedPurchase()) }
+            catch (error: Throwable) { failure.compareAndSet(null, error) }
+            finally { readerDone.countDown() }
+        }
+        val writer = Thread {
+            writerStarted.countDown()
+            try { outcome.set(ack(subject, request, "securecall_pro_lifetime")) }
+            catch (error: Throwable) { failure.compareAndSet(null, error) }
+            finally { writerDone.countDown() }
+        }
+        prefs.onPurchaseTokenRead = {
+            if (Thread.currentThread() === reader) {
+                tokenRead.countDown()
+                check(releaseRead.await(5, TimeUnit.SECONDS))
+            }
+        }
+        try {
+            reader.start()
+            check(tokenRead.await(2, TimeUnit.SECONDS))
+            writer.start()
+            check(writerStarted.await(2, TimeUnit.SECONDS))
+            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+            while (writer.state != Thread.State.BLOCKED && writerDone.count > 0
+                && System.nanoTime() < deadline) Thread.yield()
+            assertEquals(Thread.State.BLOCKED, writer.state)
+            assertEquals(1L, writerDone.count)
+            releaseRead.countDown()
+            check(readerDone.await(2, TimeUnit.SECONDS))
+            check(writerDone.await(2, TimeUnit.SECONDS))
+            assertEquals(null, failure.get())
+            assertEquals(true, ownership.get())
+            assertEquals(SubscriptionManager.VerificationOutcome.ACCEPTED, outcome.get())
+            assertEquals(0, subject.pendingReceiptCount())
+            assertEquals("synthetic-lifetime", subject.getPurchaseToken())
+            assertTrue(subject.hasRecordedPurchase())
+        } finally {
+            releaseRead.countDown()
+            prefs.onPurchaseTokenRead = null
+            reader.join(2_000)
+            writer.join(2_000)
+        }
+        assertFalse(reader.isAlive)
+        assertFalse(writer.isAlive)
+    }
 
     private fun verifiedMonthly(m: SubscriptionManager, token: String = "tok-monthly"): String {
         val requestId = m.recordPendingPurchase(token, "securecall_pro_monthly")
@@ -517,9 +608,14 @@ class SubscriptionManagerTest {
         private val values = linkedMapOf<String, Any?>()
         var commits = 0
         var failCommitAt = -1
+        var onPurchaseTokenRead: (() -> Unit)? = null
 
         override fun getAll(): Map<String, *> = values.toMap()
-        override fun getString(key: String?, defValue: String?): String? = values[key] as? String ?: defValue
+        override fun getString(key: String?, defValue: String?): String? {
+            val value = values[key] as? String ?: defValue
+            if (key == "purchase_token") onPurchaseTokenRead?.invoke()
+            return value
+        }
         override fun getStringSet(key: String?, defValues: MutableSet<String>?): MutableSet<String>? =
             @Suppress("UNCHECKED_CAST") ((values[key] as? Set<String>)?.toMutableSet() ?: defValues)
         override fun getInt(key: String?, defValue: Int): Int = values[key] as? Int ?: defValue
