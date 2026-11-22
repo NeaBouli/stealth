@@ -173,9 +173,17 @@ jobs:
         env:
           EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
           LIVE_PIN_TEST: ${{ inputs.live_pin_test }}
+          CONTACT_VISUAL_GATE: ${{ inputs.contact_visual_gate }}
+          CONTACT_ROOT_PROBE: ${{ inputs.contact_root_probe }}
+          CONTACT_FOCUS_PROBE: ${{ inputs.contact_focus_probe }}
+          CONTACT_FOCUS_FAILURES_ONLY: ${{ inputs.contact_focus_failures_only }}
         run: |
           [[ "$EXPECTED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "RECEIPT source_sha_format=false"; exit 1; }
           [ "$LIVE_PIN_TEST" = "false" ] || { echo "RECEIPT live_pin_test_off=false"; exit 1; }
+          [ "$CONTACT_VISUAL_GATE" = "false" ] || { echo "RECEIPT contact_visual_gate_off=false"; exit 1; }
+          [ "$CONTACT_ROOT_PROBE" = "false" ] || { echo "RECEIPT contact_root_probe_off=false"; exit 1; }
+          [ "$CONTACT_FOCUS_PROBE" = "false" ] || { echo "RECEIPT contact_focus_probe_off=false"; exit 1; }
+          [ "$CONTACT_FOCUS_FAILURES_ONLY" = "false" ] || { echo "RECEIPT contact_focus_failures_only_off=false"; exit 1; }
           [ "$GITHUB_SHA" = "$EXPECTED_SOURCE_SHA" ] || { echo "RECEIPT github_sha_match=false"; exit 1; }
           [ "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA" ] || { echo "RECEIPT head_sha_match=false"; exit 1; }
           echo "RECEIPT source_sha=$EXPECTED_SOURCE_SHA tree=$(git rev-parse 'HEAD^{tree}') match=true"

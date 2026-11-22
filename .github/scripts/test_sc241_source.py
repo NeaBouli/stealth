@@ -14,8 +14,8 @@ TEST_PATH = "client_android/app/src/androidTest/java/com/securecall/app/ContactL
 MATRIX_PATH = "client_android/app/src/androidTest/java/com/securecall/app/ContactVisualMatrix.kt"
 PRODUCTION = "client_android/app/src/main/java/com/securecall/app/ui/ContactsFragment.kt"
 # Source-scope comparison ONLY. BASE above stays the immutable SC241 regression-contract base.
-# SC242 UI integration: scope base moved to accepted sales source 8ace (contains 2e98fe37).
-SOURCE_SCOPE_BASE = "8ace9a39f2de1c723adac074acd72db2dd2dfe57"
+# SC242 UI integration: scope base is public main bca4e59 (tree-identical to accepted 8ace).
+SOURCE_SCOPE_BASE = "bca4e59c36cb22782e581ebf7d9592d1c2270789"
 MAIN_TEST_PATH = "client_android/app/src/androidTest/java/com/securecall/app/MainActivityInstrumentedTest.java"
 INTEGRATED_PATHS = frozenset({
     ".github/scripts/collect_contact_visual.py", ".github/scripts/run-android-smoke.sh",
@@ -332,6 +332,21 @@ class SourceContracts(unittest.TestCase):
         original_map = git("show", f"{BASE}:docs/architecture/MAP.md")
         own = original_map[original_map.index(BASE_MAP_SECTION.encode()):]
         self.assertIn(own, current_map[len(scope_map):])
+
+    def test_compile_only_refuses_every_contact_mode_before_setup(self):
+        wf = (ROOT / ".github/workflows/android-instrumentation.yml").read_text()
+        job = wf[wf.index("  owned-config-compile-only:"):]
+        verify = job[job.index("      - name: Verify exact expected source"):job.index("      - name: Set up JDK 17")]
+        self.assertLess(job.index("Verify exact expected source"), job.index("actions/setup-java@"))
+        for name in ("live_pin_test", "contact_visual_gate", "contact_root_probe",
+                     "contact_focus_probe", "contact_focus_failures_only"):
+            env = name.upper()
+            self.assertIn(f"          {env}: ${{{{ inputs.{name} }}}}\n", verify)
+            self.assertIn(f'[ "${env}" = "false" ] || {{ echo "RECEIPT {name}_off=false"; exit 1; }}', verify)
+            self.assertIn(f"      {name}:\n", wf[:wf.index("jobs:")])
+        for later in ("setup-java@", "setup-gradle@", "setup-android@", "sdkmanager", "owned-config-compile-check.sh"):
+            self.assertNotIn(later, verify)
+            self.assertLess(job.index("RECEIPT contact_focus_failures_only_off"), job.index(later))
 
     def test_scope_validator_accepts_integration_and_rejects_extras(self):
         self.assertEqual(BASE, "12756b9591db809f937e6443b3d1c847a622b603")
