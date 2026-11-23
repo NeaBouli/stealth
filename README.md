@@ -14,18 +14,18 @@
 [![Crypto: XChaCha20-Poly1305](https://img.shields.io/badge/Crypto-XChaCha20--Poly1305-7C6CFF.svg)](docs/SECURITY_DESIGN.md)
 [![Security: Audit Open Findings](https://img.shields.io/badge/Security-Audit_Open_Findings-orange.svg)](docs/SECURITY_AUDIT_REPORT.md)
 [![Rust Crypto Engine](https://img.shields.io/badge/Engine-Rust-DEA584.svg)](core_crypto/)
-[![Version](https://img.shields.io/badge/Published-v1.0.50-4ade80.svg)](https://github.com/NeaBouli/stealth/releases/latest)
+[![Version](https://img.shields.io/badge/Published-v1.0.51-4ade80.svg)](https://github.com/NeaBouli/stealth/releases/latest)
 
-Direct APK release: v1.0.50 / versionCode 78017. Google Play v1.0.50 in review (v1.0.49 live); submitted on 2026-10-17. Pro/Premium features require a verified license; licenses are not on sale yet.
+Latest published release: v1.0.51 (GitHub release assets `SecureCall-Free-LATEST.apk`, `SecureCall-Pro-LATEST.apk`, `SecureCall-Premium-LATEST.apk` and `v1.0.51-SHA256SUMS.txt`); the public Google Play listing shows v1.0.51. This version information does not establish artifact or source parity with current `main`. Pro/Premium features require a verified lifetime license (no subscriptions). Available offers and eligibility are presented by the VLABS shop; in-app paid upgrades are released separately.
 [![Website](https://img.shields.io/badge/Website-stealthx.tech-34D399.svg)](https://stealthx.tech)
-[![Testers](https://img.shields.io/badge/Beta_Testers-15-blue.svg)](https://play.google.com/apps/testing/com.securecall.app.free)
+[![Google Play](https://img.shields.io/badge/Google_Play-Free_edition-34A853.svg)](https://play.google.com/store/apps/details?id=com.securecall.app.free)
 
 ---
 
 **SecureCall is a voice communication app built from the ground up for privacy.**
 Application media frames are protected with XChaCha20-Poly1305 using per-call X25519/HKDF-SHA256 key material. Current security limits and open audit findings are documented publicly.
 
-[Website](https://stealthx.tech) | [Play Store Beta](https://play.google.com/apps/testing/com.securecall.app.free) | [Download APK](https://github.com/NeaBouli/stealth/releases/latest) | [Features](#features) | [Security](#security)
+[Website](https://stealthx.tech) | [Google Play](https://play.google.com/store/apps/details?id=com.securecall.app.free) | [Download APK](https://github.com/NeaBouli/stealth/releases/latest) | [Features](#features) | [Security](#security)
 
 </div>
 
