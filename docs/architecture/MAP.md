@@ -828,3 +828,372 @@ Bounded variant-data node (no new client/wrapper/engine):
 - Bounded regression sources are being corrected; changed-head execution and independent
   fix verification are owed. Earlier green CI and the owner's exact d8 scan exception do
   not automatically qualify this new delta. Production billing remains unchanged.
+
+---
+
+# Narrow trace: contact lookup preserves saved identities (2026-11-16)
+
+- Task: `SC-CONTACT-LOOKUP-PRESERVATION-20261116`.
+- Module: Android contact discovery results and local saved-contact storage.
+- Hop: `WebSocketService::BATCH_PHONE_LOOKUP_RESULT` ->
+  `ContactsFragment::checkSecureCallMembers` -> `finalizeResults` ->
+  existing positive `dedupAndRefresh` -> `ContactRepository::replaceAll`.
+- Lookup results cover only queried phone hashes, and accumulated results can
+  contain a nonempty successful subset followed by failed/empty batches or
+  service loss. Absence from that subset is not global identity revocation.
+- Removed hop: `finalizeResults` -> `cleanupStaleSecureIds` -> removal of
+  unrelated direct-ID contacts / clearing saved `secureId` metadata. The
+  now-unused helper is removed; result absence never authorizes those writes.
+- Preserve positive association, positive duplicate merging, registration and
+  online caches, existing discovery/presence refresh, and the explicit user
+  delete/confirmation -> repository delete/hide path. No protocol, identity,
+  authentication, rights, tier, presence-policy or remote revocation change.
+- Regression requirements: real result-path/storage checks for nonempty
+  subsets, missing metadata IDs, partial/error coverage, positive association
+  and explicit deletion. Baseline has JUnit/Mockito but no Robolectric;
+  test framework resolution remains parent-owned under the no-new-dependency
+  boundary. Kotlin compilation/tests are NOT_RUN locally.
+- Hosted compile/tests, scoped Security and UI/state acceptance remain parent
+  integration gates. No build, runtime, device, provider or release proof is
+  claimed; qualification240, media mapping and diagram files are untouched.
+
+## Clarified test boundary and regression source
+
+- Parent clarified that Robolectric is not required; no dependency is added.
+  `ContactLookupPreservationInstrumentedTest.kt` uses the existing AndroidJUnit4,
+  ActivityScenario and Espresso stack with real `ContactRepository` JSON and
+  Android SharedPreferences, not mocked storage or string-only source checks.
+- Host: existing `SettingsActivity`, its theme and `settingsContainer`; no
+  MainActivity, new activity, manifest entry, permission or test runner. The
+  real `ContactsFragment` is attached at CREATED and its real layout is bound
+  only for synchronous result refresh; ordinary onViewCreated/onResume loading
+  and permission requests do not run. Reflection invokes production private
+  `finalizeResults`; no production test seam or rights override is introduced.
+- Seven source cases cover nonempty subsets preserving unrelated direct IDs,
+  absent `secureId` metadata, incomplete queried coverage, an empty failure-shaped
+  result following success, positive phone association, positive duplicate
+  merging, and the actual explicit-delete menu/confirmation/hide path. The
+  failure-shaped case starts at the result boundary, not the network protocol.
+- Explicit-delete coverage cancels once, then confirms after fragment removal:
+  the real dialog retains its storage context while its later async reload has
+  no attached context and cannot read the device phonebook. The test asserts
+  that only the chosen contact disappears and its phone is hidden.
+- Fixtures require an empty hosted-CI contact store, contain synthetic contacts
+  only, clear owned storage, and restore the prior discovery cache/registered
+  phone preference. Normal application/SettingsActivity startup is not mocked;
+  hosted CI owns application-startup isolation and API24/36 runtime acceptance.
+- Kotlin compilation, JVM tests, instrumentation, Gradle/build, UI/state and
+  scoped Security are NOT_RUN locally. This is regression source, not an
+  executed red/green result or release acceptance; parent runs ordinary CI.
+- Local static checks PASS: `git diff --check`, exact cleanup-only production
+  delta, baseline MAP-prefix preservation, exact three-file allowlist, and
+  seven test declarations wired to the real repository/private result entry.
+  These source assertions do not execute the behavioral regression cases.
+
+## API24 dialog harness follow-up (parent CI evidence)
+
+- Parent reports API36 job `133446743884` SUCCESS, including all seven new
+  cases, on the published candidate through `b4e67b3d`. API24 job
+  `133446744322` passed the six storage/preservation cases but failed the
+  explicit-delete case at its first menu selection: `RootViewWithoutFocusException`
+  selected the unfocused base Activity root (window type 1), not a dialog.
+  A later existing MainActivity VPN test reported the same focus exception.
+  These are parent-provided results, not a locally reproduced root cause.
+- Source-confirmed harness gap: the menu data action and confirmation buttons
+  used Espresso's default root selection despite production creating platform
+  AlertDialogs. They now use `inRoot(isDialog())`; displayed menu/confirmation
+  titles are checked, and acquired dialog roots are retained for cleanup.
+- The dialog-only case now asserts interactive/unlocked PowerManager/Keyguard
+  state and records Activity focus in the failure message. It does not unlock,
+  wake, bypass focus, skip assertions or change timeouts. An unfocused Activity
+  alone does not establish screen lock, emulator readiness or dialog leakage;
+  those remain hypotheses until hosted diagnostics distinguish them.
+- Teardown cancels still-attached acquired dialogs through their actual negative
+  buttons, drains queued dismissal, and closes ActivityScenario in finally even
+  if dialog cleanup fails. The existing storage/preference/cache restoration
+  still runs. Test actions remain real Espresso clicks; cleanup never confirms
+  deletion. A dialog not yet acquired by Espresso still falls under host close.
+- Relevant read-only CI source: `android-instrumentation.yml` invokes
+  `run-android-smoke.sh`; the checked-in script installs APKs and instruments
+  them without an explicit interactive/keyguard check. The pinned emulator
+  action may perform additional setup; its execution was not inspected here.
+  Missing script checks do not prove the API24 device was locked. No workflow,
+  script, VPN test, manifest, dependency or production file is changed.
+- All seven cases and original storage assertions remain; the production
+  cleanup-removal patch is unchanged. This follow-up is test + append-only MAP
+  only. Compilation, API24/36 rerun, UI/state and scoped Security are NOT_RUN
+  locally and remain parent-owned; prior green jobs do not validate this patch.
+- Local static checks PASS: whitespace, exact two-file scope, MAP-prefix
+  preservation, all seven case names/original storage assertions retained,
+  dialog-root scoping and unchanged production/VPN/CI/dependency files. No
+  emulator or test runner was started; screen-lock/leak causality is unproven.
+
+### Final efficiency boundary
+
+- Keep this correction to explicit dialog roots/title checks and owned-window
+  cleanup. The diagnostic PowerManager/Keyguard assertions from the preceding
+  candidate are removed; no observed lock/screen state justifies a new gate.
+- If scoped dialog input still fails in parent-admitted CI, a separate bounded
+  diagnostic proposal is to capture interactive/keyguard/device-lock state,
+  Activity focus and the failing selected-root type once at the failure site,
+  without waking/unlocking, waits, retries or skips. Do not alter CI setup until
+  those measurements demonstrate a missing precondition and parent reviews it.
+- All seven cases/storage invariants, production and CI/VPN code remain intact.
+  Causal/runtime verification is pending; no additional execution is admitted here.
+
+---
+
+# Narrow trace: SC241 synthetic actual-window visual matrix (2026-11-16)
+
+- Task: `SC241-CONTACT-VISUAL-GATE-20261116`; source base `7852bdac`, tree
+  `aa72bbb92c86f2c253963b77f72019e6d116c27a`. Parent reports all ten prior CI
+  checks PASS and all seven contact cases code0 on API24/36; these results do
+  not execute or qualify this new visual source.
+- Hop: explicit `securecallContactVisualGate=true` smoke-script option ->
+  exactly `ContactLookupPreservationInstrumentedTest#syntheticContactWindowMatrix`
+  -> existing synthetic storage/SettingsActivity fixture -> production contact
+  adapter/list and partial-result path -> UiAutomation actual display capture
+  -> fixed-file structured collector -> existing instrumentation artifact path.
+- Normal smoke invocation excludes only the new opt-in method, preserving the
+  seven original case bodies and the existing two assumptions. The opt-in case
+  must start once and finish code0 to qualify; zero tests, skips, assumptions,
+  duplicate cases, missing states and startup/transport failures fail closed.
+  No workflow, retention, runner, cache or automatic runtime admission is added.
+- Guards precede visual fixture storage reads: explicit argument, DEBUG Free,
+  effective FREE, actual `ro.kernel.qemu=1`, ranchu/goldfish and API24/36. The
+  existing fixture requires empty owned contact preferences. No rights, keys,
+  permission, component or production test seam is introduced. FLAG_SECURE and
+  an unfocused/blank/incorrectly sized actual window refuse capture, never bypass.
+- Matrix: 320x676, 390x844, 820x1180, 1180x820 native logical viewports at
+  density160, fonts1/2, before/after a nonempty partial snapshot =16 PNG/API.
+  Twenty synthetic saved contacts include an unrelated direct ID, a preserved
+  metadata ID, positive phone association and a long name. Assert saved record
+  equality, adapter identity/content, real Espresso swipe/all-row reachability, scroll end, text
+  bounds/line fit/no ellipsis, row/control bounds/overlap and native48px targets.
+- Frames are actual SettingsActivity windows with the production contact layout
+  mounted by the existing lifecycle-capped fixture; no offscreen Canvas, bitmap
+  resize, crop, fallback renderer or silent omitted state. This does not test
+  ordinary phonebook/network startup, paid UI or physical-device acceptance.
+  Layout violations accumulate closed numeric error codes across all16 frames
+  and still fail the case. Complete failed evidence can be exported as FAILED,
+  never qualified PASS; incomplete/unsafe capture is rejected, not substituted.
+- Display size/density and exact font/rotation setting values are snapshotted
+  before changing only the disposable guest, restored in finally (all restore
+  actions attempted), and checked against the original snapshot before emitting
+  `restored=true`. No local guest/SDK/ADB execution is admitted or performed.
+- Export: only16 fixed `sc241-{width}x{height}-f{1|2}-{before|after}.png`, bounded
+  `matrix.json` and generated `source-receipt.json`. Collector validates exact
+  names/count/schema/source/API, PNG CRC/chunks/pixel stream/dimensions, numeric
+  invariants and actual case protocol. Private text/extra JSON/PNG metadata,
+  arbitrary paths and stale output are rejected. No APK, key, token, preferences,
+  device identity, raw visual log or base64-log transport is exported.
+- Cap: PNG <=4MiB individually; all images/metadata/receipt <=8MiB/API,
+  <=16MiB for both APIs; metadata <=128KiB. No resampling/dropped states to meet
+  the cap. Current7-day retention is unchanged. Parent owns included-storage
+  recheck/cost admission, publication and final inspection of every source PNG.
+- Source interface only: the existing workflow does not automatically pass the
+  new option. Parent must review/admit and arrange the ordinary hosted invocation;
+  the script requires real GitHub-hosted environment markers and never sets them.
+- Local pure collector tests, shell syntax and source-preservation checks are
+  separate from Kotlin compilation/instrumentation, actual display restoration,
+  generated screenshots, image inspection and final scoped Security: all of the
+  latter remain NOT_RUN here. UI gate remains NOT_RUN pending parent acceptance.
+- The collector also requires actual code0 outcomes for each of the original
+  seven cases in the ordinary invocation, not merely an OK summary. Row checks
+  compare actual bound names/identity subtitles with the production adapter's
+  expected synthetic model; numeric error categories contain no contact text.
+- Source-freeze checks: twelve pure synthetic collector tests PASS; shell
+  `bash -n`, `git diff --check`, exact six-file scope and original seven method
+  bodies/production/dependency/workflow preservation checks PASS. No CI markers
+  were fabricated and no Android command was executed by these checks.
+
+- Parent integration: existing instrumentation workflow exposes an explicitly
+  manual `contact_visual_gate` boolean (default false); ordinary PR runs do not
+  opt in. The existing standard hosted API24/36 matrix, source checkout and
+  seven-day artifacts are reused. Collector pure tests are wired before builds.
+  No larger runner, live-pin opt-in, paid tier, new provider or policy waiver.
+  Runtime admission is one bounded candidate qualification after parent source
+  review, not a PASS claim or automatic retry loop.
+
+## SC241 visual failure diagnostics (source-only follow-up)
+
+- Base: `a1e1267c5a68932edfee5749a028a581e94a5848`. Parent reports run
+  `43921548638`: API24 ordinary37 completed, visual statuses [1,-2], then
+  `GUEST_FILE_ALLOWLIST` for incomplete captures; discarded raw output leaves
+  the exact failed guard UNKNOWN. API36 failed before instrumentation on Maven
+  Central HTTP429 for error_prone_annotations2.30.0, not a proven app defect.
+- Hop: visual diagnostic wrapper -> at most four code2 Instrumentation status
+  bundles -> existing collector parser -> stable safe failure labels before
+  guest-file validation. Payload is exactly `sc241_phase` (closed enum) and
+  `sc241_failure` (ASSERTION/EXECUTION). No exception message/stack, contact or
+  device text, settings/preference content, extra guest file or base64 transport.
+  A separate fixed source label binds diagnostics to the validated head/tree.
+- Coverage includes admission/fixture, loop/render/capture, finally host close,
+  display restoration/cleanup, and final metadata/count/budget/layout checks.
+  Same-Throwable rethrows are deduplicated; separate observed restoration or
+  teardown errors can retain their own bounded labels. Reporting failure never
+  replaces the original exception; restore actions and every assertion remain.
+- Collector accepts markers only inside the exact started visual case, rejects
+  extra/duplicate/unknown fields, phases, failure kinds, malformed codes and
+  more than four records. Startup/transport, execution and assertion outcomes
+  remain distinct. No marker means UNREPORTED, not an inferred cause; any failure
+  diagnostic paired with code0 is rejected rather than accepted as a PASS.
+- Missing PNG/matrix states still fail the original file allowlist. Labels are
+  emitted before that check, so temporary raw-log deletion no longer discards
+  a valid stage diagnostic. Existing artifact paths/allowlists, caps, timeouts,
+  production/dependencies/verification/workflow and original seven bodies stay
+  unchanged; this patch diagnoses, not fixes, the unobserved original cause.
+- Twenty pure collector tests, shell syntax and preservation checks are local
+  source evidence only. Kotlin/Android, actual marker delivery, screenshots,
+  any next CI qualification and final scoped Security remain NOT_RUN here.
+  Parent owns review and a separate changed-source admission; no rerun started.
+- Local preservation checks PASS: all eight test method bodies and every
+  existing assertion/check call unchanged, geometry/target implementation and
+  GuestDisplay restoration byte-identical, exact five-file scope, MAP append-only.
+
+## SC241 root observation (source only, 2026-11-16)
+
+- Hop: synthetic contact menu -> existing public Espresso `isDialog()` predicate
+  -> bounded candidate observer -> first MENU acquisition failure status only.
+  Base `e415853b` / tree `73c0616b`; actual ordinary API24 run `43925574706`
+  failed at the first `rememberDialogRoot`, before Delete selection/confirmation.
+  Six storage cases passed; API36 passed all seven. Exact cause remains UNKNOWN.
+- `ContactRootObservation` never changes the delegate result or selected root.
+  Default-off uses the original delegate; no failure means no payload. Only the
+  first failing menu acquisition is reported, at most one status, original error rethrown.
+- Admission follows the empty synthetic-store guard: manual hosted fresh QEMU,
+  API24, DEBUG Free/effective FREE, visual/live-pin off, exact clean SHA/tree.
+  Manual `contact_root_probe=false` selects the unchanged API24/36 matrix; true
+  selects API24 ordinary cases only, never bypassing a failed ordinary outcome.
+- Fixed `sc241_root_*` fields: source SHA/tree, MENU, selected=UNKNOWN, candidate
+  count<=8/incomplete flag; host lifecycle/focus and interactive/keyguard booleans;
+  eight candidate slots with public type (-1 unavailable), attachment/focus,
+  synthetic-title and host-context tri-state booleans (UNKNOWN unavailable).
+  Title traversal<=128 nodes/queued views per candidate, context chain<=8 hops.
+  Candidates/title/context matches do not prove selection or ownership. No text,
+  hierarchy, identifiers, exceptions, preferences, keys or paths are exported.
+- No focus/settings/PIN/security/production/dependency/timeout/skip changes.
+  Visual capture/transport/caps unchanged. Kotlin/Android/runtime NOT_RUN;
+  parent owns complete privacy review, source integration and any hosted probe.
+
+- Parent preflight: pure collector checks use Python `-B`, so their import does
+  not dirty the checkout. Ignore only the documented generated project-local
+  Kotlin metadata directory, not source; the exact clean-tree guard is intact.
+  Mixed root/visual/live-pin modes reject before builds. Explicit fresh-AVD
+  setting equals the existing pinned action's default, not a changed policy.
+  These are prospective admission fixes, not causes of the prior focus failure.
+
+## SC241 corrected normal-lifecycle qualification (implementation only)
+
+- Base: clean `12756b9591db`; task `SC241-NORMAL-LIFECYCLE-IMPLEMENT-20261116`.
+- Module/hop: fresh hosted disposable QEMU -> pre-app IPv4/IPv6 OUTPUT DROP
+  witness -> real Application -> existing SettingsActivity -> normal
+  FragmentManager contact lifecycle -> fixture-owned loader completion ->
+  before/partial/after captures -> display restoration/owned cleanup.
+  Isolation is HELD UNTIL guest shutdown, never restored to ACCEPT.
+- Cause: the previous visual host capped lifecycle/manually inflated the view;
+  ordinary ContactsLoader can publish an older snapshot, including global cache
+  writes outside the attachment guard. Main-looper idle alone is not completion.
+- Implementation boundary: visual-only normal attachment with pre-seeded synthetic
+  repository/cache, current FragmentManager instance resolution, and off-main
+  bounded joins of the source-unique fixture-owned ContactsLoader threads before
+  mutations/captures/teardown. Original seven bodies and capped fixture stay intact.
+- Guest-only admission/witness: existing manual visual mode, first-attempt real
+  hosted clean source, one rooted API24/36 QEMU, no pre-existing target packages
+  or processes; no OUTPUT allow exceptions. Positive IPv4 probe DROP delta;
+  IPv6 probe evidence is distinguished from policy-only proof. Fixed source-bound
+  booleans/counts only, with shutdown attempted on every isolated exit.
+- Files: this map, the existing ContactLookupPreservationInstrumentedTest.kt and
+  ContactVisualMatrix.kt, run-android-smoke.sh, sc241-guest-isolation.sh, and one
+  pure source/parser/guard test. Parent owns operator/handover/security integration.
+- No production, manifest, dependency, permission, rights, provider or host/server
+  policy change. Collector schema, privacy, 16MiB/7day bounds, geometry and capture
+  assertions remain unchanged. Direct224 controller/paid qualification stays closed.
+- Verification here is pure source/parser/collector/shell only. Compilation,
+  runtime isolation, instrumentation, screenshots and visual/security acceptance
+  are NOT_RUN and require parent review/freeze before a separately admitted run.
+
+## SC241 root failure classes (source only, 2026-11-19)
+
+- Hop: existing `ContactRootObservation.acquire` catch -> same single
+  `sc241_root_*` code2 status. Adds `exception_class`, `cause_{0..3}_class`,
+  `cause_count`/`cause_incomplete`, `suppressed_{0..3}_class`,
+  `suppressed_count`/`suppressed_incomplete`. Simple class names only, regex
+  `[A-Za-z_][A-Za-z0-9_]{0,63}` else UNKNOWN; cycle-guarded, at most 4 per chain.
+  Never Throwable.message, stack frames, UI text or ids.
+- Original Throwable is still rethrown unchanged; no new flag, runner argument,
+  wait, retry, focus/dialog/unlock action or assertion change. Runtime NOT_RUN.
+
+## SC241 root probe single case + collector (source only, 2026-11-19)
+
+- Hop: existing `root_probe` mode in `run-android-smoke.sh` -> `am instrument -e class
+  ContactLookupPreservationInstrumentedTest#explicitUserDeleteStillRequiresConfirmationAndRemovesOnlyChosenContact`
+  (replaces, only in that mode, the ordinary `-e notClass` suite) -> raw protocol in
+  `mktemp` outside artifacts -> `collect_contact_visual.py --root-probe` -> stdout lines
+  `SC241_ROOT_CASE:` / `SC241_ROOT_FIELD:` only.
+- Collector: closed `sc241_root_*` whitelist (fixed keys + `cause_i`/`suppressed_i`
+  exactly per count, <=4), token/class-regex values, head/tree receipt match, at most
+  one status inside the active case. Rejects zero or >1 executed case, wrong case,
+  numtests!=1, incomplete run. Assertion/execution failure stays exit 1; rejection 2/3.
+  Never reads/prints stack, message, UI text or ids.
+- Ordinary, visual and live-pin paths unchanged; the visual collector still rejects
+  `sc241_root_*` fields. Runtime NOT_RUN.
+
+## SC241 root probe protocol/stderr hardening (source only, 2026-11-19)
+
+- Same hop (`root_probe` -> `am instrument -e class` -> `--root-probe` collector). Parser
+  now also rejects status after terminal (covers terminal-before-case), duplicate ordinary
+  status fields, a pending status block at terminal/EOF and multiple terminal markers.
+- Root-mode adb/timeout stderr goes to the same private `mktemp` dir as the protocol and is
+  removed by the existing EXIT trap; job log gets only `INSTRUMENTATION_TIMEOUT` or
+  `INSTRUMENTATION_STARTUP_OR_TRANSPORT_FAILURE`.
+- Workflow: reuses the accepted public 2cb55a84 `ANDROID_NDK_HOME`/`ANDROID_NDK_ROOT`
+  exports before gradlew; no SDK/version/verification change. Runtime NOT_RUN.
+
+## SC242 five-case isolated qualification (source only, 2026-11-19)
+
+- Hop: manual `contact_focus_probe` (default false, API24-only matrix, mutually exclusive
+  with live-pin/visual/root; workflow reject step + script check) -> `run-android-smoke.sh`
+  `securecallContactFocusProbe=true` -> shared visual admission block (`sc241_host_guard`,
+  `sc241_prepare_isolation` PRE_APP IPv4+IPv6 DROP, `sc241_visual_exit` guest shutdown) ->
+  API24 check -> install -> `am instrument -e class` with the fixed 5-method selector ->
+  private `mktemp` protocol/stderr -> `collect_contact_visual.py --focus-probe`.
+- Cases: `MainActivityInstrumentedTest#{externalVpnIndicator_matchesCurrentTransport,
+  settingsNavigationItem_click_doesNotCrash,bottomNavigation_isDisplayed,toolbar_isDisplayed}`
+  and `ContactLookupPreservationInstrumentedTest#explicitUserDelete...ChosenContact`.
+  Never `-e notClass`, ordinary suite or visual matrix.
+- Collector: exactly 5 distinct cases, numtests=5, sequential `current`, one start/finish
+  each; skip/extra/missing/duplicate/wrong/incomplete/terminal reject (exit 2/3); failures
+  exit 1. Unchanged root observer may add one closed `sc241_root_*` status to the contact
+  case only. Output only `SC242_FOCUS_{SOURCE,CASE,RESULT}` + `SC241_ROOT_FIELD`.
+- Exit trap: existing `sc241_visual_exit` (shutdown first) also removes the focus tmp;
+  cleanup failure turns success into 2, never masks failure. Helper byte-unchanged. Runtime NOT_RUN.
+
+## SC242 three-failure closed metadata (source only, 2026-11-19)
+
+- Hop: existing `contact_focus_probe` lane + new `contact_focus_failures_only` boolean (default
+  false; workflow reject step and script check require the focus opt-in) -> `run-android-smoke.sh`
+  `securecallContactFocusFailuresOnly=true` -> unchanged PRE_APP isolation/drop/held shutdown ->
+  API24 -> fixed static 3-method selector (`focus_failure_cases`, no class input) ->
+  `collect_contact_visual.py --focus-probe --focus-failures-only`.
+- Cases: `MainActivityInstrumentedTest#{externalVpnIndicator_matchesCurrentTransport,
+  settingsNavigationItem_click_doesNotCrash,bottomNavigation_isDisplayed}`; no toolbar/contact.
+- Android: one JUnit4 `TestWatcher` `@Rule` in `MainActivityInstrumentedTest`; opt-in only via
+  `securecallMainFailureMetadata` + hex head/tree args, DEBUG Free, API24, ranchu/goldfish, fixed
+  3 methods. Emits one `sendStatus(2)` with `sc242_main_{head,tree,method,phase,exception_class,
+  cause_count,cause_incomplete,cause_N_class}`; phase is a test-owned field set around original
+  SETUP/LAUNCH/CLICK/CHECK/CLOSE steps. Diagnostic errors are caught inside `failed()` so the
+  original failure never changes. No message/stack/UI/shell/device reads; no production change.
+- Collector: exactly 3 cases, numtests=3, sequential; <=1 closed event per failed active case,
+  method-bound; failure without metadata prints `SC242_FAILURE_FIELD:<method>:UNREPORTED` and stays
+  FAIL. Old five-case/root/visual protocols unchanged. Runtime NOT_RUN (owner answer pending).
+
+## SC242 UI integration onto 8ace (source only, 2026-11-22)
+
+- Module/hop unchanged: `ContactsFragment` discovery refresh -> durable saved contacts;
+  Android CI smoke -> root/normal guest isolation -> bounded collector.
+- `android-instrumentation.yml` = union: 8ace `owned-config-compile-only` job/inputs and
+  ad3 contact gate inputs, mode rejects and single-API24 selection. The instrumentation job
+  remains excluded only by `owned_config_compile_only`; contact inputs do not reach that job.
+- `test_sc241_source.py` source-scope base moved to 8ace; whitelist paths unchanged.
+- Runtime/compile/visual qualification of the combined head: NOT_RUN.

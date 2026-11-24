@@ -6325,3 +6325,35 @@ Open next:
   subscription_webrtc 301/301, handlers 62/62, google_play_lifetime 75/75, rtdn_retry 1/1.
 - UI unchanged (already lifetime-only); flags closed; VPN split untouched. Not evidence that any
   Play Console product was deactivated. NOT_RUN: full CI, artifact VPN guards (parent CI).
+
+## 2026-11-16 - Contact Continuity Candidate (Issue241)
+
+SC-CONTACT-LOOKUP-PRESERVATION-20261116 removes a destructive discovery-refresh
+cleanup and preserves explicit user deletion and positive contact association.
+Seven synthetic instrumented regressions exercise real storage/result handling
+and delete confirmation using the existing SettingsActivity/testing stack.
+No new dependency, component, permission, protocol, tier, purchase configuration
+or customer-data fixture. Static diff/scope/whitespace checks pass.
+Actual Kotlin/build/instrumentation, affected UI/state evidence and independent
+security/integration gates are pending; no product/runtime/release readiness
+claimed. This does not close the broader privacy audit. No personal-device,
+production or provider operation. Financial coordination remains separate with
+VLABS operator.
+
+## 2026-11-22 - SC242 UI/harness integration onto sales source 8ace (source only)
+SC242-UI-INTEGRATION-20261122 merges UI qualification tip ad3d31d (contains 4d89887
+unified source and the ad732c8 lookup fix) into 8ace9a3. Conflicts: workflow inputs
+(union; 8ace owned compile-only job and ad3 contact gates both byte-preserved) and MAP
+(keep both, append order). Smoke/isolation/collector scripts identical to ad3; 8ace
+owned/media/billing paths untouched. Source scope guard base moved 2e98fe37 -> 8ace.
+Local pure checks: collector 51/51, source guards 18/18, bash -n, YAML, diff --check.
+Compile, runtime, visual and security acceptance are NOT_RUN/owed; not PRODUCT_READY.
+
+### 2026-11-22 SC242-UI-FINALBASE (claude, agent/claude/SC242-UI-FINALBASE-20261122)
+Rebound UI delta mechanically onto public main bca4e59 (tree 45b5205 == 8ace): cherry-pick -m1
+of local merge 9b6c441, resulting tree == 9b6c441, 14 delta paths. Source scope base -> bca4e59
+(BASE and INTEGRATED_PATHS unchanged). Workflow hop owned-config-compile-only "Verify exact
+expected source" now also refuses contact_visual_gate/root_probe/focus_probe/focus_failures_only
+unless each is false, before JDK/Gradle/SDK setup; other modes unchanged. Source guards 19/19,
+YAML, bash -n, diff --check; collector 51-case suite reused by blob identity (3417792, 1242717).
+Compile, runtime, visual and security acceptance are NOT_RUN/owed; not PRODUCT_READY.
